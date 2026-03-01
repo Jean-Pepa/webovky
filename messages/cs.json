@@ -1,0 +1,42 @@
+{
+  "nav": {
+    "about": "O mně",
+    "atelierWork": "Ateliérová tvorba",
+    "otherWork": "Ostatní tvorba",
+    "projects": "Projekty",
+    "blog": "Blog",
+    "contact": "Kontakt"
+  },
+  "hero": {
+    "title": "ARCHITEKTURA & DESIGN",
+    "subtitle": "Student Fakulty architektury VUT v Brně.\nZkoumání prostoru, kontextu a pocitů."
+  },
+  "about": {
+    "title": "O mně",
+    "education": "Vzdělání",
+    "languages": "Jazyky",
+    "experience": "Zkušenosti",
+    "workshops": "Workshopy"
+  },
+  "projects": {
+    "atelierTitle": "ATELIÉROVÁ TVORBA",
+    "otherTitle": "OSTATNÍ TVORBA",
+    "viewProject": "Zobrazit projekt",
+    "allProjects": "Všechny projekty",
+    "backToProjects": "Zpět na projekty",
+    "moreProjects": "Další projekty"
+  },
+  "blog": {
+    "title": "Blog",
+    "readMore": "Číst dále",
+    "backToBlog": "Zpět na blog",
+    "noPosts": "Zatím žádné příspěvky."
+  },
+  "contact": {
+    "title": "Kontakt",
+    "subtitle": "Líbí se vám moje práce? Ozvěte se mi."
+  },
+  "footer": {
+    "copyright": "Všechna práva vyhrazena."
+  }
+}

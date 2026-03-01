@@ -1,0 +1,42 @@
+{
+  "nav": {
+    "about": "About",
+    "atelierWork": "Studio Work",
+    "otherWork": "Other Work",
+    "projects": "Projects",
+    "blog": "Blog",
+    "contact": "Contact"
+  },
+  "hero": {
+    "title": "ARCHITECTURE & DESIGN",
+    "subtitle": "Student at the Faculty of Architecture, BUT in Brno.\nExploring space, context, and feelings."
+  },
+  "about": {
+    "title": "About Me",
+    "education": "Education",
+    "languages": "Languages",
+    "experience": "Experience",
+    "workshops": "Workshops"
+  },
+  "projects": {
+    "atelierTitle": "STUDIO WORK",
+    "otherTitle": "OTHER WORK",
+    "viewProject": "View project",
+    "allProjects": "All projects",
+    "backToProjects": "Back to projects",
+    "moreProjects": "More projects"
+  },
+  "blog": {
+    "title": "Blog",
+    "readMore": "Read more",
+    "backToBlog": "Back to blog",
+    "noPosts": "No posts yet."
+  },
+  "contact": {
+    "title": "Contact",
+    "subtitle": "Do you like my work? Get in touch."
+  },
+  "footer": {
+    "copyright": "All rights reserved."
+  }
+}
