@@ -19,6 +19,7 @@ export interface Project {
   year: number | null;
   sort_order: number;
   is_published: boolean;
+  is_active: boolean;
   doc_images: DocImage[];
   doc_video: string | null;
   created_at: string;

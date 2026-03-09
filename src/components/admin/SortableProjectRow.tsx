@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import DeleteButton from "./DeleteButton";
 import type { Project } from "@/types/database";
 
@@ -14,6 +16,30 @@ interface SortableProjectRowProps {
 }
 
 export default function SortableProjectRow({ project, locale, onDuplicate, duplicating }: SortableProjectRowProps) {
+  const router = useRouter();
+  const [isActive, setIsActive] = useState(project.is_active);
+  const [toggling, setToggling] = useState(false);
+
+  async function handleToggleActive() {
+    setToggling(true);
+    try {
+      const res = await fetch(`/api/admin/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: !isActive }),
+      });
+      if (res.ok) {
+        setIsActive(!isActive);
+        router.refresh();
+      } else {
+        alert("Nepodařilo se změnit stav projektu");
+      }
+    } catch {
+      alert("Chyba sítě");
+    } finally {
+      setToggling(false);
+    }
+  }
   const {
     attributes,
     listeners,
@@ -75,6 +101,16 @@ export default function SortableProjectRow({ project, locale, onDuplicate, dupli
             className="text-black/50 hover:text-black text-[21px] transition-colors disabled:opacity-30"
           >
             {duplicating === project.id ? "..." : "Duplikovat"}
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleActive}
+            disabled={toggling}
+            className="text-[21px] transition-colors disabled:opacity-30"
+            style={{ color: isActive ? "#16a34a" : "#dc2626" }}
+            title={isActive ? "Projekt je aktivní — klikněte pro deaktivaci" : "Projekt je neaktivní — klikněte pro aktivaci"}
+          >
+            {toggling ? "..." : isActive ? "ON" : "OFF"}
           </button>
           <DeleteButton
             endpoint={`/api/admin/projects/${project.id}`}

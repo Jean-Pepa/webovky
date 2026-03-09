@@ -87,6 +87,23 @@ export default async function ProjectDetailPage({
     notFound();
   }
 
+  // If project is not active (and not admin preview), show "coming soon" page
+  if (!project.is_active && !isPreview) {
+    return (
+      <>
+        <Header showNav={false} showIntro={false} idleTimeout={10_000} logoTop={51} scrollTrigger=".coming-soon-text" />
+        <BackArrow locale={locale} />
+        <article className="relative z-[1] bg-white min-h-screen flex items-center justify-center px-6 sm:px-12 md:px-[150px]">
+          <p className="coming-soon-text text-[clamp(24px,3vw,36px)] font-extralight tracking-[0.04em] text-black/40">
+            {isEn ? "Coming soon..." : "Již brzy..."}
+          </p>
+        </article>
+        <ScrollToTop />
+        <Footer />
+      </>
+    );
+  }
+
   const title = isEn ? project.title_en : project.title_cs;
   const description = isEn ? project.description_en : project.description_cs;
   const detail = isEn ? project.detail_en : project.detail_cs;
