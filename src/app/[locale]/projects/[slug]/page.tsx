@@ -249,13 +249,27 @@ export default async function ProjectDetailPage({
                   className="flex justify-between items-center border-b border-border text-[13px] font-light"
                   style={{ paddingTop: 14, paddingBottom: 14 }}
                 >
-                  {isEn ? pdf.label_en : pdf.label_cs}
+                  <span
+                    style={{
+                      textDecoration: "underline",
+                      textDecorationColor: "#dc2626",
+                      textUnderlineOffset: "3px",
+                    }}
+                  >
+                    {isEn ? pdf.label_en : pdf.label_cs}
+                  </span>
                   <a
                     href={pdf.url}
                     download
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-muted text-xs shrink-0 ml-3 hover:text-primary transition-colors underline underline-offset-2"
+                    className="shrink-0 ml-3 text-xs font-medium transition-colors hover:opacity-70"
+                    style={{
+                      color: "#dc2626",
+                      textDecoration: "underline",
+                      textDecorationColor: "#000",
+                      textUnderlineOffset: "3px",
+                    }}
                   >
                     {isEn ? "Download" : "Ke stažení"}
                   </a>
