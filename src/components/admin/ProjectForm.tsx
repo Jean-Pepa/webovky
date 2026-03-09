@@ -6,6 +6,7 @@ import { Project } from "@/types/database";
 import ImageUpload from "./ImageUpload";
 import MultiImageUpload from "./MultiImageUpload";
 import DocImageUpload from "./DocImageUpload";
+import PdfUpload from "./PdfUpload";
 
 interface ProjectFormProps {
   project?: Project;
@@ -39,6 +40,7 @@ export default function ProjectForm({ project, title }: ProjectFormProps) {
     detail_en: project?.detail_en ?? "",
     thumbnail_url: project?.thumbnail_url ?? "",
     images: project?.images ?? [],
+    pdf_files: project?.pdf_files ?? [],
     doc_images: project?.doc_images ?? [],
     doc_video: project?.doc_video ?? "",
     year: project?.year ?? new Date().getFullYear(),
@@ -213,6 +215,14 @@ export default function ProjectForm({ project, title }: ProjectFormProps) {
                 />
               </div>
             </div>
+
+            {/* PDF files */}
+            <PdfUpload
+              value={form.pdf_files}
+              onChange={(files) => setForm((prev) => ({ ...prev, pdf_files: files }))}
+              folder="projects/pdfs"
+              label="PDF ke stažení"
+            />
 
             {/* Description */}
             <div>

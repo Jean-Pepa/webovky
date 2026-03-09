@@ -69,7 +69,7 @@ export async function PUT(request: NextRequest) {
 
   // Preserve array fields if incoming data is empty but DB has data
   const safeData = { ...updateData };
-  for (const key of ["images", "doc_images"] as const) {
+  for (const key of ["images", "doc_images", "pdf_files"] as const) {
     if (
       Array.isArray(existing[key]) &&
       existing[key].length > 0 &&
@@ -91,6 +91,7 @@ export async function PUT(request: NextRequest) {
   // Check array fields
   if (JSON.stringify(safeData.images) !== JSON.stringify(existing.images)) changedFields.push("images");
   if (JSON.stringify(safeData.doc_images) !== JSON.stringify(existing.doc_images)) changedFields.push("doc_images");
+  if (JSON.stringify(safeData.pdf_files) !== JSON.stringify(existing.pdf_files)) changedFields.push("pdf_files");
 
   const { data, error } = await supabase
     .from("projects")

@@ -3,6 +3,12 @@ export interface DocImage {
   alt: string;
 }
 
+export interface PdfFile {
+  url: string;
+  label_cs: string;
+  label_en: string;
+}
+
 export interface Project {
   id: string;
   slug: string;
@@ -20,6 +26,7 @@ export interface Project {
   sort_order: number;
   is_published: boolean;
   is_active: boolean;
+  pdf_files: PdfFile[];
   doc_images: DocImage[];
   doc_video: string | null;
   created_at: string;

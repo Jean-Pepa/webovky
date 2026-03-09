@@ -243,6 +243,24 @@ export default async function ProjectDetailPage({
                   </span>
                 </li>
               )}
+              {project.pdf_files && project.pdf_files.length > 0 && (project.pdf_files as { url: string; label_cs: string; label_en: string }[]).map((pdf, i) => (
+                <li
+                  key={i}
+                  className="flex justify-between items-center border-b border-border text-[13px] font-light"
+                  style={{ paddingTop: 14, paddingBottom: 14 }}
+                >
+                  {isEn ? pdf.label_en : pdf.label_cs}
+                  <a
+                    href={pdf.url}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted text-xs shrink-0 ml-3 hover:text-primary transition-colors underline underline-offset-2"
+                  >
+                    {isEn ? "Download" : "Ke stažení"}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
