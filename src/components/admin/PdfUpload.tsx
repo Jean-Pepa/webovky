@@ -24,27 +24,50 @@ export default function PdfUpload({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 30 * 1024 * 1024) {
+      setError("Soubor je příliš velký (max 30 MB)");
+      e.target.value = "";
+      return;
+    }
+
     setUploading(true);
     setError("");
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("folder", folder);
-
     try {
-      const res = await fetch("/api/admin/upload", {
+      // 1. Get signed upload URL from our API
+      const signedRes = await fetch("/api/admin/upload/signed-url", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          folder,
+          contentType: file.type,
+        }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Upload failed");
+      if (!signedRes.ok) {
+        const data = await signedRes.json();
+        throw new Error(data.error || "Failed to get upload URL");
       }
 
-      const data = await res.json();
+      const { signedUrl, token, publicUrl } = await signedRes.json();
+
+      // 2. Upload directly to Supabase Storage (bypasses Vercel 4.5MB limit)
+      const uploadRes = await fetch(signedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+          "x-upsert": "false",
+        },
+        body: file,
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error("Upload to storage failed");
+      }
+
       const defaultLabel = file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
-      onChange([...value, { url: data.url, label_cs: defaultLabel, label_en: defaultLabel }]);
+      onChange([...value, { url: publicUrl, label_cs: defaultLabel, label_en: defaultLabel }]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload selhal");
     } finally {
