@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { createClient } from "@/lib/supabase/client";
 import type { PdfFile } from "@/types/database";
 
 interface PdfUploadProps {
@@ -50,20 +51,18 @@ export default function PdfUpload({
         throw new Error(data.error || "Failed to get upload URL");
       }
 
-      const { signedUrl, token, publicUrl } = await signedRes.json();
+      const { path, publicUrl, token: uploadToken } = await signedRes.json();
 
       // 2. Upload directly to Supabase Storage (bypasses Vercel 4.5MB limit)
-      const uploadRes = await fetch(signedUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": file.type,
-          "x-upsert": "false",
-        },
-        body: file,
-      });
+      const supabase = createClient();
+      const { error: uploadError } = await supabase.storage
+        .from("media")
+        .uploadToSignedUrl(path, uploadToken, file, {
+          contentType: file.type,
+        });
 
-      if (!uploadRes.ok) {
-        throw new Error("Upload to storage failed");
+      if (uploadError) {
+        throw new Error(uploadError.message);
       }
 
       const defaultLabel = file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
