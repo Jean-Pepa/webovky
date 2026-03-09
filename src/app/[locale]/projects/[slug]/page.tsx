@@ -170,6 +170,7 @@ export default async function ProjectDetailPage({
         )}
 
         {/* ── INFORMACE ── */}
+        <div style={{ paddingLeft: "8%", paddingRight: "8%" }}>
         <div
           id="informace"
           className="pb-4 border-b border-border-dark text-center"
@@ -227,6 +228,7 @@ export default async function ProjectDetailPage({
               )}
             </ul>
           </div>
+        </div>
         </div>
 
         {/* ── DOKUMENTACE ── */}
