@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useParams } from "next/navigation";
 import { BlogPost } from "@/types/database";
+import ImageUpload from "./ImageUpload";
 
 interface BlogPostFormProps {
   post?: BlogPost;
+  title?: string;
 }
 
 function slugify(text: string): string {
@@ -18,9 +19,11 @@ function slugify(text: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
-export default function BlogPostForm({ post }: BlogPostFormProps) {
-  const router = useRouter();
+export default function BlogPostForm({ post, title }: BlogPostFormProps) {
+  const params = useParams();
+  const locale = (params?.locale as string) ?? "cs";
   const isEdit = !!post;
+  const pageTitle = title ?? (isEdit ? "Upravit příspěvek" : "Nový příspěvek");
 
   const [form, setForm] = useState({
     title_cs: post?.title_cs ?? "",
@@ -61,7 +64,6 @@ export default function BlogPostForm({ post }: BlogPostFormProps) {
     setLoading(true);
     setError("");
 
-    const supabase = createClient();
     const data = {
       ...form,
       tags: form.tags
@@ -71,170 +73,175 @@ export default function BlogPostForm({ post }: BlogPostFormProps) {
       published_at: form.is_published ? new Date().toISOString() : null,
     };
 
-    if (isEdit) {
-      const { error } = await supabase
-        .from("blog_posts")
-        .update(data)
-        .eq("id", post!.id);
+    const payload = isEdit ? { id: post!.id, ...data } : data;
 
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-        return;
-      }
-    } else {
-      const { error } = await supabase.from("blog_posts").insert(data);
+    try {
+      const res = await fetch("/api/admin/blog", {
+        method: isEdit ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-        return;
+      if (!res.ok) {
+        const resData = await res.json();
+        throw new Error(resData.error || "Chyba při ukládání");
       }
+
+      window.location.href = `/${locale}/admin/blog`;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Neznámá chyba");
+      setLoading(false);
     }
-
-    router.push("/admin/blog");
-    router.refresh();
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-[800px]">
-      {/* Language tabs */}
-      <div className="flex gap-0 mb-6">
-        <button
-          type="button"
-          onClick={() => setTab("cs")}
-          className={`px-6 py-2 text-sm ${
-            tab === "cs" ? "bg-accent text-white" : "bg-white text-primary"
-          }`}
-        >
-          Čeština
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("en")}
-          className={`px-6 py-2 text-sm ${
-            tab === "en" ? "bg-accent text-white" : "bg-white text-primary"
-          }`}
-        >
-          English
-        </button>
-      </div>
-
-      <div className="flex flex-col gap-5">
-        <div>
-          <label className="block text-sm text-secondary mb-1">
-            Název ({tab === "cs" ? "CZ" : "EN"})
-          </label>
-          <input
-            type="text"
-            name={tab === "cs" ? "title_cs" : "title_en"}
-            value={tab === "cs" ? form.title_cs : form.title_en}
-            onChange={handleChange}
-            required
-            className="w-full border border-border px-4 py-3 text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm text-secondary mb-1">Slug</label>
-          <input
-            type="text"
-            name="slug"
-            value={form.slug}
-            onChange={handleChange}
-            required
-            className="w-full border border-border px-4 py-3 text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm text-secondary mb-1">
-            Výtah ({tab === "cs" ? "CZ" : "EN"})
-          </label>
-          <textarea
-            name={tab === "cs" ? "excerpt_cs" : "excerpt_en"}
-            value={tab === "cs" ? form.excerpt_cs : form.excerpt_en}
-            onChange={handleChange}
-            rows={2}
-            className="w-full border border-border px-4 py-3 text-sm resize-y"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm text-secondary mb-1">
-            Obsah / Markdown ({tab === "cs" ? "CZ" : "EN"})
-          </label>
-          <textarea
-            name={tab === "cs" ? "content_cs" : "content_en"}
-            value={tab === "cs" ? form.content_cs : form.content_en}
-            onChange={handleChange}
-            required
-            rows={15}
-            className="w-full border border-border px-4 py-3 text-sm resize-y font-mono"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm text-secondary mb-1">
-            Cover Image URL
-          </label>
-          <input
-            type="text"
-            name="cover_image_url"
-            value={form.cover_image_url}
-            onChange={handleChange}
-            className="w-full border border-border px-4 py-3 text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm text-secondary mb-1">
-            Tagy (oddělené čárkou)
-          </label>
-          <input
-            type="text"
-            name="tags"
-            value={form.tags}
-            onChange={handleChange}
-            placeholder="architektura, design, projekt"
-            className="w-full border border-border px-4 py-3 text-sm"
-          />
-        </div>
-
-        <label className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            name="is_published"
-            checked={form.is_published}
-            onChange={handleChange}
-            className="w-4 h-4"
-          />
-          <span className="text-sm">Publikováno</span>
-        </label>
-
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-accent text-white px-8 py-3 text-sm uppercase tracking-[1px] hover:bg-primary transition-colors disabled:opacity-50"
-          >
-            {loading
-              ? "Ukládání..."
-              : isEdit
-              ? "Uložit změny"
-              : "Vytvořit příspěvek"}
-          </button>
+    <div>
+      {/* Page header with save */}
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-[30px] font-light tracking-wide uppercase">{pageTitle}</h1>
+        <div className="flex items-center gap-3">
+          {error && <span className="text-red-600 text-[21px]">{error}</span>}
+          {isEdit && (
+            <button
+              type="button"
+              onClick={() => window.open(`/${locale}/blog/${form.slug}?preview=true`, "_blank")}
+              className="border border-black/15 text-black/60 text-[21px] hover:bg-black/[0.03] transition-colors" style={{ borderRadius: 14, paddingLeft: 20, paddingRight: 20, paddingTop: 10, paddingBottom: 10 }}
+            >
+              Náhled
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => router.push("/admin/blog")}
-            className="border border-border px-8 py-3 text-sm hover:bg-bg-light transition-colors"
+            onClick={() => { window.location.href = `/${locale}/admin/blog`; }}
+            className="border border-black/15 text-black/60 text-[21px] hover:bg-black/[0.03] transition-colors" style={{ borderRadius: 14, paddingLeft: 20, paddingRight: 20, paddingTop: 10, paddingBottom: 10 }}
           >
             Zrušit
           </button>
+          <button
+            type="submit"
+            form="blog-form"
+            disabled={loading}
+            className="bg-black text-white text-[21px] hover:bg-black/80 transition-colors disabled:opacity-50" style={{ borderRadius: 14, paddingLeft: 24, paddingRight: 24, paddingTop: 10, paddingBottom: 10 }}
+          >
+            {loading ? "Ukládání..." : isEdit ? "Uložit" : "Vytvořit"}
+          </button>
         </div>
       </div>
-    </form>
+
+      {/* Card */}
+      <div className="border border-black/[0.06]" style={{ borderRadius: 20, padding: 40, backgroundColor: '#efefef' }}>
+        <form id="blog-form" onSubmit={handleSubmit} className="max-w-[800px]">
+          {/* Language tabs */}
+          <div className="flex gap-0 mb-6">
+            <button
+              type="button"
+              onClick={() => setTab("cs")}
+              className={`px-6 py-2 text-[21px] rounded-l-xl ${
+                tab === "cs" ? "bg-black text-white" : "bg-black/5 text-black/60"
+              }`}
+            >
+              Čeština
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("en")}
+              className={`px-6 py-2 text-[21px] rounded-r-xl ${
+                tab === "en" ? "bg-black text-white" : "bg-black/5 text-black/60"
+              }`}
+            >
+              English
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-7">
+            <div>
+              <label className="block text-[20px] font-medium text-black/70 mb-1.5">
+                Název ({tab === "cs" ? "CZ" : "EN"})
+              </label>
+              <input
+                type="text"
+                name={tab === "cs" ? "title_cs" : "title_en"}
+                value={tab === "cs" ? form.title_cs : form.title_en}
+                onChange={handleChange}
+                required
+                className="w-full border border-black/15 rounded-lg px-4 py-3 text-[21px]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[20px] font-medium text-black/70 mb-1.5">Slug</label>
+              <input
+                type="text"
+                name="slug"
+                value={form.slug}
+                onChange={handleChange}
+                required
+                className="w-full border border-black/15 rounded-lg px-4 py-3 text-[21px]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[20px] font-medium text-black/70 mb-1.5">
+                Výtah ({tab === "cs" ? "CZ" : "EN"})
+              </label>
+              <textarea
+                name={tab === "cs" ? "excerpt_cs" : "excerpt_en"}
+                value={tab === "cs" ? form.excerpt_cs : form.excerpt_en}
+                onChange={handleChange}
+                rows={2}
+                className="w-full border border-black/15 rounded-lg px-4 py-3 text-[21px] resize-y"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[20px] font-medium text-black/70 mb-1.5">
+                Obsah / Markdown ({tab === "cs" ? "CZ" : "EN"})
+              </label>
+              <textarea
+                name={tab === "cs" ? "content_cs" : "content_en"}
+                value={tab === "cs" ? form.content_cs : form.content_en}
+                onChange={handleChange}
+                required
+                rows={15}
+                className="w-full border border-black/15 rounded-lg px-4 py-3 text-[21px] resize-y font-mono"
+              />
+            </div>
+
+            {/* Cover Image Upload */}
+            <ImageUpload
+              value={form.cover_image_url}
+              onChange={(url) => setForm((prev) => ({ ...prev, cover_image_url: url }))}
+              folder="blog/covers"
+              label="Cover obrázek"
+            />
+
+            <div>
+              <label className="block text-[20px] font-medium text-black/70 mb-1.5">
+                Tagy (oddělené čárkou)
+              </label>
+              <input
+                type="text"
+                name="tags"
+                value={form.tags}
+                onChange={handleChange}
+                placeholder="architektura, design, projekt"
+                className="w-full border border-black/15 rounded-lg px-4 py-3 text-[21px]"
+              />
+            </div>
+
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                name="is_published"
+                checked={form.is_published}
+                onChange={handleChange}
+                className="w-4 h-4"
+              />
+              <span className="text-[21px]">Publikováno</span>
+            </label>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

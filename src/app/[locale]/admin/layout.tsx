@@ -1,5 +1,6 @@
+import { cookies } from "next/headers";
+import { jwtVerify } from "jose";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 
 export default async function AdminLayout({
@@ -7,23 +8,32 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // Verify JWT token (middleware also checks, but this is defense-in-depth)
+  const cookieStore = await cookies();
+  const token = cookieStore.get("admin_token")?.value;
+  let isAuthenticated = false;
 
-  // Allow login page without auth
-  // The layout wraps all admin pages, so we check auth here
-  // Login page needs to be accessible without auth
-  if (!user) {
-    // We can't check the pathname in server layout directly,
-    // so we'll redirect only from the layout's own render context.
-    // The login page has its own layout-free structure.
+  if (token) {
+    try {
+      const secret = new TextEncoder().encode(process.env.ADMIN_SECRET);
+      await jwtVerify(token, secret);
+      isAuthenticated = true;
+    } catch {
+      // Invalid token
+    }
+  }
+
+  if (!isAuthenticated) {
+    redirect("/cs/login");
   }
 
   return (
     <div className="flex min-h-screen">
-      {user && <AdminSidebar />}
-      <main className={`flex-1 bg-bg-light ${user ? "p-8" : ""}`}>
-        {children}
+      <AdminSidebar />
+      <main className="flex-1 bg-[#f7f7f7] text-black" style={{ padding: '40px 60px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          {children}
+        </div>
       </main>
     </div>
   );

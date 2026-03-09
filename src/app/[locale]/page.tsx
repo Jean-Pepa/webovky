@@ -32,7 +32,7 @@ export default async function Home({
 
   return (
     <>
-      <Header />
+      <Header idleTimeout={10_000} />
       <Hero title={heroTitle} />
       <ProjectsPreview projects={projects} locale={locale} />
       <About about={about} locale={locale} />

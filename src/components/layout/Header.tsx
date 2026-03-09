@@ -10,21 +10,29 @@ const IDLE_TRANSITION = 2_000;
 interface HeaderProps {
   showLogo?: boolean;
   showNav?: boolean;
+  showIntro?: boolean;
+  idleTimeout?: number;
+  logoTop?: number;
+  scrollTrigger?: string;
 }
 
-export default function Header({ showLogo = true, showNav = true }: HeaderProps) {
+export default function Header({ showLogo = true, showNav = true, showIntro = true, idleTimeout, logoTop, scrollTrigger }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [heroOpacity, setHeroOpacity] = useState(1);
   const [idle, setIdle] = useState(false);
   const [idleExiting, setIdleExiting] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [idleEnabled, setIdleEnabled] = useState(true);
+  const [introPhase, setIntroPhase] = useState<"splash" | "transition" | "done">(showLogo && showIntro ? "splash" : "done");
+  const [overDark, setOverDark] = useState(false);
+  const navRef = useRef<HTMLElement | null>(null);
+  const logoRef = useRef<HTMLDivElement | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const t = useTranslations("nav");
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
-
   function switchLocale() {
     const newLocale = locale === "cs" ? "en" : "cs";
     const scrollY = window.scrollY;
@@ -33,14 +41,45 @@ export default function Header({ showLogo = true, showNav = true }: HeaderProps)
     window.location.href = newUrl;
   }
 
+  const effectiveIdleTimeout = idleTimeout ?? IDLE_TIMEOUT;
+
+  // Read idle preference from sessionStorage (persists across pages, resets on tab close)
+  useEffect(() => {
+    const saved = sessionStorage.getItem("idleEffect");
+    if (saved === "off") setIdleEnabled(false);
+  }, []);
+
+  function toggleIdleEffect() {
+    setIdleEnabled((prev) => {
+      const next = !prev;
+      sessionStorage.setItem("idleEffect", next ? "on" : "off");
+      if (!next) {
+        setIdle(false);
+        if (idleTimer.current) clearTimeout(idleTimer.current);
+      }
+      return next;
+    });
+  }
+
   const resetIdle = useCallback(() => {
     if (idleTimer.current) clearTimeout(idleTimer.current);
+    if (!idleEnabled) return;
     idleTimer.current = setTimeout(() => {
       // Don't trigger idle when a modal is open (body overflow hidden)
       if (document.body.style.overflow === "hidden") return;
       setIdle(true);
-    }, IDLE_TIMEOUT);
-  }, []);
+    }, effectiveIdleTimeout);
+  }, [effectiveIdleTimeout, idleEnabled]);
+
+  // Intro animation sequence
+  useEffect(() => {
+    if (introPhase === "done") return;
+    // Splash: show INVENTIO NOVI for 0.9s
+    const t1 = setTimeout(() => setIntroPhase("transition"), 900);
+    // Transition: move takes 3s, then done
+    const t2 = setTimeout(() => setIntroPhase("done"), 3900);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Restore scroll position after locale switch
   useEffect(() => {
@@ -52,33 +91,95 @@ export default function Header({ showLogo = true, showNav = true }: HeaderProps)
   }, []);
 
   // Scroll effect
+  const effectiveLogoTop = logoTop ?? 70;
+
   useEffect(() => {
     function handleScroll() {
+      // Homepage mode: fade based on hero wrapper
       const wrapper = document.querySelector(".headline-wrapper");
-      if (!wrapper) return;
-      const wrapperBottom = wrapper.getBoundingClientRect().bottom;
-      const windowH = window.innerHeight;
-      const fadeZone = windowH * 0.6;
+      if (wrapper) {
+        const wrapperBottom = wrapper.getBoundingClientRect().bottom;
+        const windowH = window.innerHeight;
+        const fadeZone = windowH * 0.6;
 
-      let opacity: number;
-      if (wrapperBottom >= windowH) {
-        opacity = 1;
-      } else if (wrapperBottom <= windowH - fadeZone) {
-        opacity = 0;
-      } else {
-        opacity = (wrapperBottom - (windowH - fadeZone)) / fadeZone;
+        let opacity: number;
+        if (wrapperBottom >= windowH) {
+          opacity = 1;
+        } else if (wrapperBottom <= windowH - fadeZone) {
+          opacity = 0;
+        } else {
+          opacity = (wrapperBottom - (windowH - fadeZone)) / fadeZone;
+        }
+
+        setHeroOpacity(opacity);
+        setScrolled(opacity <= 0);
+        return;
       }
 
-      setHeroOpacity(opacity);
-      setScrolled(opacity <= 0);
+      // Detail mode: shrink when trigger element scrolls above logo
+      if (scrollTrigger) {
+        const target = document.querySelector(scrollTrigger);
+        if (!target) return;
+        const targetTop = target.getBoundingClientRect().top;
+        const threshold = effectiveLogoTop + 100;
+        setScrolled(targetTop < threshold);
+        setHeroOpacity(1);
+      }
     }
 
-    // Initialize immediately based on current scroll position
     handleScroll();
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [scrollTrigger, effectiveLogoTop]);
+
+  // Detect if nav/logo is over an image (on detail pages, only gallery images count)
+  useEffect(() => {
+    const isDetailPage = !showNav;
+
+    function checkOverImage(el: HTMLElement | null): boolean {
+      if (!el) return false;
+      const rect = el.getBoundingClientRect();
+      const y = rect.top + rect.height / 2;
+      const sampleXs = [
+        rect.left + rect.width * 0.3,
+        rect.left + rect.width * 0.5,
+        rect.left + rect.width * 0.7,
+      ];
+      for (const x of sampleXs) {
+        const elements = document.elementsFromPoint(x, y);
+        for (const e of elements) {
+          if (el.contains(e)) continue;
+          const isImg = e.tagName === "IMG";
+          const hasBgImage = (() => {
+            const style = window.getComputedStyle(e);
+            return style.backgroundImage && style.backgroundImage !== "none" && style.backgroundImage.includes("url(");
+          })();
+          if (isImg || hasBgImage) {
+            // On detail pages, only count images inside [data-gallery]
+            if (isDetailPage && !e.closest("[data-gallery]")) break;
+            return true;
+          }
+          const bg = window.getComputedStyle(e).backgroundColor;
+          if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") break;
+        }
+      }
+      return false;
+    }
+
+    function check() {
+      const result = checkOverImage(navRef.current) || checkOverImage(logoRef.current);
+      setOverDark(result);
+    }
+
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+    };
+  }, [showNav]);
 
   // Idle effect
   useEffect(() => {
@@ -122,7 +223,7 @@ export default function Header({ showLogo = true, showNav = true }: HeaderProps)
         transition: "all 2s ease",
       }
     : {
-        top: scrolled ? "33px" : "70px",
+        top: scrolled ? "33px" : `${logoTop ?? 70}px`,
         transform: scrolled ? "scale(0.55)" : "scale(1)",
         opacity: scrolled ? 0.35 : 1,
         transition: idleExiting ? "all 2s ease" : undefined,
@@ -136,6 +237,18 @@ export default function Header({ showLogo = true, showNav = true }: HeaderProps)
 
   return (
     <>
+      {/* Intro white backdrop */}
+      {introPhase !== "done" && (
+        <div
+          className="fixed inset-0 z-[200] bg-white"
+          style={{
+            opacity: introPhase === "splash" ? 1 : 0,
+            transition: "opacity 1.4s ease",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+
       {/* Idle white overlay */}
       <div className={`idle-fade${idle ? " visible" : ""}`} />
 
@@ -143,21 +256,41 @@ export default function Header({ showLogo = true, showNav = true }: HeaderProps)
       {showNav && (
         <>
           <nav
-            className="fixed top-[10px] sm:top-[19px] left-0 right-0 flex items-center justify-center gap-4 sm:gap-8 px-4 sm:px-7 py-5 flex-wrap z-10 transition-[background] duration-300"
+            ref={navRef}
+            className="fixed top-[10px] sm:top-[19px] left-0 right-0 flex items-center justify-center gap-4 sm:gap-8 px-4 sm:px-7 py-5 flex-wrap z-10 transition-all duration-300"
             style={{
               fontFamily: '"Montserrat", sans-serif',
               background: "transparent",
               backdropFilter: "none",
               WebkitBackdropFilter: "none",
-              opacity: scrolled ? 1 : heroOpacity,
+              opacity: introPhase !== "done" ? 0 : (scrolled ? 1 : heroOpacity),
+              transition: introPhase === "done" ? undefined : "opacity 1.2s ease 0.3s",
             }}
           >
+            {/* Idle effect toggle — left side */}
+            <button
+              onClick={toggleIdleEffect}
+              className="hidden sm:inline absolute left-7 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full border border-black/20 text-xs transition-opacity hover:opacity-40 text-black"
+              style={{ fontFamily: '"Montserrat", sans-serif' }}
+              aria-label="Toggle idle effect"
+            >
+              {idleEnabled ? "●" : "○"}
+            </button>
+
             {/* Desktop nav links */}
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="hidden sm:inline text-xs font-normal uppercase tracking-[0.1em] transition-opacity hover:opacity-40 text-black"
+                className="hidden sm:inline text-xs font-normal uppercase tracking-[0.1em] hover:opacity-40"
+                style={{
+                  color: overDark ? "white" : "black",
+                  border: overDark ? "1px solid rgba(255,255,255,0.4)" : "1px solid transparent",
+                  borderRadius: 9999,
+                  padding: "6px 16px",
+                  transition: "color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease",
+                  backgroundColor: overDark ? "rgba(255,255,255,0.15)" : "transparent",
+                }}
               >
                 {link.label}
               </a>
@@ -218,21 +351,52 @@ export default function Header({ showLogo = true, showNav = true }: HeaderProps)
       {/* KVIN Logo */}
       {showLogo && (
         <div
-          className="fixed top-[70px] left-0 right-0 text-center px-4 sm:px-7 pt-[30px] pb-[10px] z-10 pointer-events-none transition-all duration-400"
-          style={logoStyle}
+          ref={logoRef}
+          className={`fixed top-[70px] left-0 right-0 text-center px-4 sm:px-7 pt-[30px] pb-[10px] transition-all duration-400${!scrolled && !idle ? " cursor-pointer" : ""}`}
+          onClick={() => { if (!scrolled && !idle) window.location.href = `/${locale}`; }}
+          style={{
+            ...logoStyle,
+            opacity: introPhase === "done" ? logoStyle.opacity : 1,
+            transition: introPhase === "done" ? logoStyle.transition : undefined,
+            zIndex: introPhase !== "done" ? 201 : 10,
+          }}
         >
+          {/* KVIN letters — hidden during splash, fade in during transition */}
           <svg
             className="inline-block w-[180px] h-[53px] sm:w-[240px] sm:h-[70px]"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="5 0 186 80"
+            style={{
+              opacity: introPhase === "splash" ? 0 : 1,
+              transition: "opacity 1.2s ease",
+            }}
           >
-            <path d="M8 8 L8 72" stroke="#222" strokeWidth="2" fill="none" />
-            <path d="M8 40 L38 8" stroke="#222" strokeWidth="2" fill="none" />
-            <path d="M24 24 L42 72" stroke="#222" strokeWidth="2" fill="none" />
-            <path d="M60 8 L82 72 L104 8" stroke="#222" strokeWidth="2" fill="none" strokeLinejoin="miter" />
-            <path d="M124 8 L124 72" stroke="#222" strokeWidth="2" fill="none" />
-            <path d="M148 72 L148 8 L188 72 L188 8" stroke="#222" strokeWidth="2" fill="none" strokeLinejoin="miter" />
+            <path d="M8 8 L8 72" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" style={{ transition: "stroke 0.3s ease" }} />
+            <path d="M8 40 L38 8" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" style={{ transition: "stroke 0.3s ease" }} />
+            <path d="M24 24 L42 72" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" style={{ transition: "stroke 0.3s ease" }} />
+            <path d="M60 8 L82 72 L104 8" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" strokeLinejoin="miter" style={{ transition: "stroke 0.3s ease" }} />
+            <path d="M124 8 L124 72" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" style={{ transition: "stroke 0.3s ease" }} />
+            <path d="M148 72 L148 8 L188 72 L188 8" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" strokeLinejoin="miter" style={{ transition: "stroke 0.3s ease" }} />
           </svg>
+          {/* INVENTIO NOVI — animates from screen center to below KVIN */}
+          <span
+            className="block uppercase tracking-[0.18em]"
+            style={{
+              color: scrolled && overDark && !idle ? "#fff" : "#222",
+              fontFamily: '"Montserrat", sans-serif',
+              fontSize: "clamp(7px, 0.9vw, 9px)",
+              fontWeight: 300,
+              marginTop: 4,
+              transform: introPhase === "splash"
+                ? "translateY(calc(50vh - 170px)) scale(3)"
+                : "translateY(0) scale(1)",
+              transition: introPhase !== "splash"
+                ? "transform 3s cubic-bezier(0.22, 1, 0.36, 1), color 0.3s ease"
+                : "color 0.3s ease",
+            }}
+          >
+            INVENTIO NOVI
+          </span>
         </div>
       )}
     </>

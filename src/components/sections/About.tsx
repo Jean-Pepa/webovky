@@ -28,7 +28,7 @@ export default async function About({ about, locale }: AboutProps) {
       <div
         id="about"
         className="pb-4 border-b border-border-dark relative z-[1] bg-white"
-        style={{ paddingLeft: 54, paddingRight: 54, paddingTop: 126 }}
+        style={{ paddingLeft: 120, paddingRight: 120, paddingTop: 126 }}
       >
         <h3 className="text-xs font-medium uppercase tracking-[0.12em] text-muted">
           {t("title")} &bull; About
@@ -36,7 +36,7 @@ export default async function About({ about, locale }: AboutProps) {
       </div>
 
       {/* About content */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-20 pt-10 pb-[60px] relative z-[1] bg-white" style={{ paddingLeft: 54, paddingRight: 54 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-20 pt-10 pb-[60px] relative z-[1] bg-white" style={{ paddingLeft: 120, paddingRight: 120 }}>
         {/* Bio */}
         <div>
           {bio.split("\n").map((paragraph, i) =>
@@ -138,6 +138,31 @@ export default async function About({ about, locale }: AboutProps) {
               </ul>
             </>
           )}
+
+          {/* Custom Sections */}
+          {(about.custom_sections ?? []).map((section) => (
+            <div key={section.id}>
+              <div className="text-[11px] font-medium uppercase tracking-[0.1em] text-light mb-[10px]" style={{ marginTop: 50 }}>
+                {isEn ? section.name_en : section.name_cs}
+              </div>
+              <ul className="list-none">
+                {section.items.map((item, i) => (
+                  <li
+                    key={i}
+                    className="flex justify-between border-b border-border text-[13px] font-light"
+                    style={{ paddingTop: 14, paddingBottom: 14 }}
+                  >
+                    {isEn ? item.col1_en : item.col1_cs}
+                    {section.type === "two_column" && (
+                      <span className="text-muted text-xs shrink-0 ml-3">
+                        {isEn ? item.col2_en : item.col2_cs}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
     </>

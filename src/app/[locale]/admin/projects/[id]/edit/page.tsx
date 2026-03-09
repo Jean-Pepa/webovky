@@ -1,6 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import ProjectForm from "@/components/admin/ProjectForm";
+import ProjectHistory from "@/components/admin/ProjectHistory";
 
 export default async function EditProjectPage({
   params,
@@ -8,7 +9,7 @@ export default async function EditProjectPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data: project } = await supabase
     .from("projects")
     .select("*")
@@ -20,9 +21,9 @@ export default async function EditProjectPage({
   }
 
   return (
-    <div>
-      <h1 className="text-2xl mb-8">Upravit projekt</h1>
+    <>
       <ProjectForm project={project} />
-    </div>
+      <ProjectHistory projectId={id} />
+    </>
   );
 }

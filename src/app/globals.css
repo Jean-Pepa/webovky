@@ -74,3 +74,10 @@ h1, h2, h3 {
 .idle-fade.visible {
   opacity: 1;
 }
+
+/* Hide UI elements when lightbox is open */
+body.lightbox-open .back-arrow,
+body.lightbox-open .idle-fade {
+  display: none;
+}
+

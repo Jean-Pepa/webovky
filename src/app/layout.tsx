@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
+import AdminToolbar from "@/components/admin/AdminToolbar";
 
 export const metadata: Metadata = {
   title: "KVIN | Kristián Vyskočil",
@@ -22,7 +24,12 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <AuthProvider>
+          {children}
+          <AdminToolbar />
+        </AuthProvider>
+      </body>
     </html>
   );
 }

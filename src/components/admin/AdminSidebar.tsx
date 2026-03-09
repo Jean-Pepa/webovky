@@ -1,47 +1,47 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { usePathname, useParams } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/projects", label: "Projekty" },
   { href: "/admin/blog", label: "Blog" },
+  { href: "/admin/about", label: "O mně" },
+  { href: "/admin/settings", label: "Nastavení" },
+  { href: "/admin/media", label: "Média" },
 ];
 
 export default function AdminSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-
-  async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/admin/login");
-    router.refresh();
-  }
+  const params = useParams();
+  const locale = (params?.locale as string) ?? "cs";
+  const { logout } = useAuth();
 
   return (
-    <aside className="w-[220px] min-h-screen bg-[#222] text-white flex flex-col">
-      <div className="p-6 text-lg font-bold border-b border-white/10">
+    <aside className="w-[220px] min-h-screen bg-white border-r border-black/[0.06] flex flex-col">
+      <div className="text-[21px] font-light tracking-widest uppercase text-black" style={{ paddingLeft: 62, paddingTop: 43, paddingBottom: 24 }}>
         KVIN Admin
       </div>
 
-      <nav className="flex-1 py-4">
+      <nav className="flex-1 py-2">
         {navItems.map((item) => {
+          const fullHref = `/${locale}${item.href}`;
           const isActive =
-            pathname === item.href ||
-            (item.href !== "/admin" && pathname.startsWith(item.href));
+            pathname === fullHref ||
+            (item.href !== "/admin" && pathname?.startsWith(fullHref));
 
           return (
             <Link
               key={item.href}
-              href={item.href}
-              className={`block px-6 py-3 text-sm transition-colors ${
+              href={fullHref}
+              className={`block py-3 text-[21px] transition-colors ${
                 isActive
-                  ? "bg-white/10 text-white"
-                  : "text-white/70 hover:text-white hover:bg-white/5"
+                  ? "border-l-2 border-black font-semibold text-black"
+                  : "text-black/65 hover:text-black hover:bg-black/[0.02]"
               }`}
+              style={{ paddingLeft: 62 }}
             >
               {item.label}
             </Link>
@@ -49,19 +49,16 @@ export default function AdminSidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-white/10">
+      <div style={{ paddingLeft: 62, paddingBottom: 16, paddingTop: 16 }}>
         <button
-          onClick={handleLogout}
-          className="text-white/60 text-sm hover:text-white transition-colors"
+          onClick={async () => {
+            await logout();
+            window.location.href = `/${locale}`;
+          }}
+          className="text-black/40 text-[21px] hover:text-black transition-colors"
         >
-          Odhlásit se
-        </button>
-      </div>
-
-      <div className="p-4 border-t border-white/10">
-        <Link href="/" className="text-white/60 text-sm hover:text-white transition-colors">
           Zpět na web
-        </Link>
+        </button>
       </div>
     </aside>
   );

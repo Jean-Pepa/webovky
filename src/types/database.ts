@@ -1,3 +1,8 @@
+export interface DocImage {
+  src: string;
+  alt: string;
+}
+
 export interface Project {
   id: string;
   slug: string;
@@ -14,6 +19,8 @@ export interface Project {
   year: number | null;
   sort_order: number;
   is_published: boolean;
+  doc_images: DocImage[];
+  doc_video: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -49,6 +56,29 @@ export interface WorkshopItem {
   org_en: string;
 }
 
+export interface CustomSectionItem {
+  col1_cs: string;
+  col1_en: string;
+  col2_cs: string;
+  col2_en: string;
+}
+
+export interface CustomSection {
+  id: string;
+  name_cs: string;
+  name_en: string;
+  type: "two_column" | "single";
+  items: CustomSectionItem[];
+}
+
+export interface CustomField {
+  id: string;
+  label_cs: string;
+  label_en: string;
+  value: string;
+  type: "text" | "email" | "link";
+}
+
 export interface AboutContent {
   id: string;
   bio_cs: string;
@@ -59,6 +89,7 @@ export interface AboutContent {
   experience_en: string | null;
   experience: ExperienceItem[] | null;
   workshops: WorkshopItem[] | null;
+  custom_sections: CustomSection[];
   profile_image_url: string | null;
   updated_at: string;
 }
@@ -78,6 +109,14 @@ export interface LanguageItem {
   level?: string;
 }
 
+export interface ProjectHistoryEntry {
+  id: string;
+  project_id: string;
+  action: "created" | "updated" | "duplicated";
+  changes_summary: string | null;
+  created_at: string;
+}
+
 export interface SiteSettings {
   id: string;
   hero_title_cs: string;
@@ -87,5 +126,6 @@ export interface SiteSettings {
   contact_email_primary: string | null;
   contact_email_secondary: string | null;
   social_links: Record<string, string>;
+  custom_fields: CustomField[];
   updated_at: string;
 }

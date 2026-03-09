@@ -1,13 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
+import { cookies } from "next/headers";
+import { jwtVerify } from "jose";
 import type { Metadata } from "next";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import BackArrow from "@/components/blog/BackArrow";
 import MarkdownContent from "@/components/blog/MarkdownContent";
 import ProjectGallery from "@/components/projects/ProjectGallery";
+import AdminTab from "@/components/admin/AdminTab";
+import AdminBudgetCard from "@/components/admin/AdminBudgetCard";
+import DocGallery from "@/components/projects/DocGallery";
+import ScrollToTop from "@/components/layout/ScrollToTop";
+import VideoPlayer from "@/components/projects/VideoPlayer";
 
 export async function generateMetadata({
   params,
@@ -33,20 +40,48 @@ export async function generateMetadata({
 
 export default async function ProjectDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<{ preview?: string }>;
 }) {
   const { locale, slug } = await params;
-  const supabase = await createClient();
+  const { preview } = await searchParams;
   const t = await getTranslations("projects");
   const isEn = locale === "en";
 
-  const { data: project } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("slug", slug)
-    .eq("is_published", true)
-    .single();
+  let isPreview = false;
+  if (preview === "true") {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("admin_token")?.value;
+    if (token) {
+      try {
+        const secret = new TextEncoder().encode(process.env.ADMIN_SECRET);
+        await jwtVerify(token, secret);
+        isPreview = true;
+      } catch { /* not admin */ }
+    }
+  }
+
+  let project;
+  if (isPreview) {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("slug", slug)
+      .single();
+    project = data;
+  } else {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("slug", slug)
+      .eq("is_published", true)
+      .single();
+    project = data;
+  }
 
   if (!project) {
     notFound();
@@ -55,59 +90,177 @@ export default async function ProjectDetailPage({
   const title = isEn ? project.title_en : project.title_cs;
   const description = isEn ? project.description_en : project.description_cs;
   const detail = isEn ? project.detail_en : project.detail_cs;
+  const categoryLabel =
+    project.category === "atelier" ? "Atelier" : "Design";
+
+  const hasImages =
+    (project.images && project.images.length > 0) || project.thumbnail_url;
+  const hasDetail = !!detail;
+
+  const tabs = [
+    ...(hasImages
+      ? [{ id: "fotografie", label: isEn ? "Photos" : "Fotografie" }]
+      : []),
+    { id: "informace", label: isEn ? "Information" : "Informace" },
+    { id: "dokumentace", label: isEn ? "Documentation" : "Dokumentace" },
+  ];
 
   return (
     <>
-      <Header />
-      <article className="py-20">
-        <div className="mx-auto max-w-[1000px] px-5">
-          <Link
-            href={`/${locale}/projects`}
-            className="text-[0.85rem] text-secondary uppercase tracking-[1px] mb-8 inline-block"
-          >
-            &larr; {t("backToProjects")}
-          </Link>
+      {isPreview && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999, backgroundColor: "#fef3c7", color: "#92400e", textAlign: "center", padding: "8px 16px", fontSize: 14, fontWeight: 500 }}>
+          Náhled nepublikované stránky
+        </div>
+      )}
+      <Header showNav={false} showIntro={false} idleTimeout={10_000} logoTop={51} scrollTrigger=".detail-title" />
+      <BackArrow locale={locale} />
 
-          {/* Hero image */}
-          {project.thumbnail_url && (
-            <div className="relative w-full h-[400px] md:h-[500px] mb-10">
-              <Image
-                src={project.thumbnail_url}
-                alt={title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1000px) 100vw, 1000px"
-                priority
-              />
+      <article className="relative z-[1] bg-white px-6 sm:px-12 md:px-[150px]">
+        {/* Title */}
+        <div className="text-center" style={{ paddingTop: 200 }}>
+          {project.subcategory && (
+            <div className="text-[11px] font-medium uppercase tracking-[0.1em] text-light mb-3">
+              {project.subcategory}
             </div>
           )}
+          <h1 className="detail-title text-[clamp(26px,3.5vw,42px)] font-extralight leading-[1.15] tracking-[0.02em] mb-2">
+            {title}
+          </h1>
+        </div>
 
-          {/* Metadata */}
-          <div className="mb-8">
-            {project.subcategory && (
-              <span className="text-[0.8rem] text-[#999] uppercase tracking-[1px]">
-                {project.subcategory}
-              </span>
-            )}
-            <h1 className="text-[2rem] md:text-[2.5rem] mt-2 mb-4">{title}</h1>
-            <p className="text-[1.1rem] text-secondary leading-relaxed">
+        {/* Tab cards */}
+        <div className="flex items-center justify-center mb-0 pb-0" style={{ marginTop: 24 }}>
+          {tabs.map((tab, i) => (
+            <div key={tab.id} className="flex items-center">
+              {i > 0 && (
+                <div className="w-px h-4 bg-border-dark" style={{ marginLeft: 11, marginRight: 11 }} />
+              )}
+              <a
+                href={`#${tab.id}`}
+                className="text-xs font-medium uppercase tracking-[0.12em] text-muted hover:text-primary transition-colors py-3 border-b-2 border-transparent hover:border-primary -mb-px"
+              >
+                {tab.label}
+              </a>
+            </div>
+          ))}
+          <AdminTab isEn={isEn} />
+        </div>
+
+        {/* ── FOTOGRAFIE ── */}
+        {hasImages && (
+          <>
+            <div
+              id="fotografie"
+              className="pb-4 border-b border-border-dark text-center"
+              style={{ paddingTop: 60 }}
+            >
+              <h3 className="text-xs font-medium uppercase tracking-[0.12em] text-muted">
+                {isEn ? "Photos" : "Fotografie"} &bull; Gallery
+              </h3>
+            </div>
+
+            <div className="pb-[60px]" style={{ paddingTop: 78 }} data-gallery>
+              <ProjectGallery
+                images={project.images || []}
+                title={title}
+                thumbnailUrl={project.thumbnail_url ?? undefined}
+              />
+            </div>
+          </>
+        )}
+
+        {/* ── INFORMACE ── */}
+        <div
+          id="informace"
+          className="pb-4 border-b border-border-dark text-center"
+          style={{ paddingTop: 60 }}
+        >
+          <h3 className="text-xs font-medium uppercase tracking-[0.12em] text-muted">
+            {isEn ? "Information" : "Informace"} &bull; Info
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-20 pt-10 pb-[60px]">
+          {/* Left — description */}
+          <div>
+            <p className="text-sm leading-[1.9] font-light text-secondary">
               {description}
             </p>
           </div>
 
-          {/* Detail content (markdown) */}
-          {detail && (
-            <div className="mb-12">
-              <MarkdownContent content={detail} />
+          {/* Right — metadata rows */}
+          <div>
+            <div className="text-[11px] font-medium uppercase tracking-[0.1em] text-light mb-[10px]">
+              {isEn ? "Project details" : "Detail projektu"}
             </div>
+            <ul className="list-none">
+              <li
+                className="flex justify-between border-b border-border text-[13px] font-light"
+                style={{ paddingTop: 14, paddingBottom: 14 }}
+              >
+                Typ
+                <span className="text-muted text-xs shrink-0 ml-3">
+                  {categoryLabel}
+                </span>
+              </li>
+              {project.year && (
+                <li
+                  className="flex justify-between border-b border-border text-[13px] font-light"
+                  style={{ paddingTop: 14, paddingBottom: 14 }}
+                >
+                  Rok
+                  <span className="text-muted text-xs shrink-0 ml-3">
+                    {project.year}
+                  </span>
+                </li>
+              )}
+              {project.subcategory && (
+                <li
+                  className="flex justify-between border-b border-border text-[13px] font-light"
+                  style={{ paddingTop: 14, paddingBottom: 14 }}
+                >
+                  {isEn ? "Category" : "Kategorie"}
+                  <span className="text-muted text-xs shrink-0 ml-3">
+                    {project.subcategory}
+                  </span>
+                </li>
+              )}
+            </ul>
+          </div>
+        </div>
+
+        {/* ── DOKUMENTACE ── */}
+        <div
+          id="dokumentace"
+          className="pb-4 border-b border-border-dark text-center"
+          style={{ paddingTop: 60 }}
+        >
+          <h3 className="text-xs font-medium uppercase tracking-[0.12em] text-muted">
+            {isEn ? "Documentation" : "Dokumentace"} &bull; Detail
+          </h3>
+        </div>
+
+        <div className="pt-10 pb-[60px]">
+          <div className="max-w-[800px] mx-auto text-center">
+            {detail && <MarkdownContent content={detail} />}
+          </div>
+
+          {/* Documentation video (data-driven) */}
+          {project.doc_video && (
+            <VideoPlayer src={project.doc_video} />
           )}
 
-          {/* Gallery */}
-          {project.images && project.images.length > 0 && (
-            <ProjectGallery images={project.images} title={title} />
+          {/* Documentation images (data-driven) */}
+          {project.doc_images && project.doc_images.length > 0 && (
+            <DocGallery images={project.doc_images} />
           )}
         </div>
+
+        {/* ── ROZPOČET (admin only) ── */}
+        <AdminBudgetCard isEn={isEn} />
       </article>
+
+      <ScrollToTop />
       <Footer />
     </>
   );

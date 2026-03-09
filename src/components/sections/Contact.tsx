@@ -16,7 +16,7 @@ export default async function Contact({ settings, locale }: ContactProps) {
       <div
         id="contact"
         className="pb-4 border-b border-border-dark relative z-[1] bg-white"
-        style={{ paddingLeft: 54, paddingRight: 54, paddingTop: 88 }}
+        style={{ paddingLeft: 120, paddingRight: 120, paddingTop: 88 }}
       >
         <h3 className="text-xs font-medium uppercase tracking-[0.12em] text-muted">
           {t("title")} &bull; Contact
@@ -24,7 +24,7 @@ export default async function Contact({ settings, locale }: ContactProps) {
       </div>
 
       {/* Contact content */}
-      <div className="grid grid-cols-1 md:grid-cols-2 pt-10 gap-6 md:gap-20 relative z-[1] bg-white" style={{ paddingLeft: 54, paddingRight: 54, paddingBottom: 136 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 pt-10 gap-6 md:gap-20 relative z-[1] bg-white" style={{ paddingLeft: 120, paddingRight: 120, paddingBottom: 136 }}>
         <div>
           <h2 className="text-[clamp(22px,3vw,34px)] font-light leading-[1.3]">
             {isEn ? (
@@ -81,6 +81,35 @@ export default async function Contact({ settings, locale }: ContactProps) {
           <p className="block py-3 border-b border-border text-sm">
             Znojmo / Brno, CZ
           </p>
+          {/* Custom Fields */}
+          {(settings?.custom_fields ?? []).map((field) => (
+            <div key={field.id}>
+              <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-muted block" style={{ marginTop: 11 }}>
+                {isEn ? field.label_en : field.label_cs}
+              </span>
+              {field.type === "email" ? (
+                <a
+                  href={`mailto:${field.value}`}
+                  className="block py-3 border-b border-border text-sm transition-colors hover:text-[rgba(100,160,215,1)]"
+                >
+                  {field.value}
+                </a>
+              ) : field.type === "link" ? (
+                <a
+                  href={field.value}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block py-3 border-b border-border text-sm transition-colors hover:text-[rgba(100,160,215,1)]"
+                >
+                  {field.value}
+                </a>
+              ) : (
+                <p className="block py-3 border-b border-border text-sm">
+                  {field.value}
+                </p>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </>

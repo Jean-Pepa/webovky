@@ -1,22 +1,29 @@
 import Image from "next/image";
+import Link from "next/link";
 
 interface ProjectCardProps {
   image: string;
   title: string;
   subtitle: string;
-  onClick: () => void;
+  href?: string;
+  onClick?: () => void;
+  aspectRatio?: string;
 }
 
 export default function ProjectCard({
   image,
   title,
   subtitle,
+  href,
   onClick,
+  aspectRatio = "100/140",
 }: ProjectCardProps) {
+  const Wrapper = href ? Link : "div";
+  const wrapperProps = href ? { href } : { onClick };
   return (
     <>
-      <div className="cursor-pointer group" onClick={onClick}>
-        <div className="relative w-full aspect-[100/140] overflow-hidden">
+      <Wrapper className="cursor-pointer group block" {...wrapperProps as any}>
+        <div className="relative w-full overflow-hidden" style={{ aspectRatio }}>
           <Image
             src={image}
             alt={title}
@@ -24,9 +31,9 @@ export default function ProjectCard({
             className="object-cover grayscale contrast-[1.15] brightness-[1.1]"
             sizes="(max-width: 768px) 100vw, 33vw"
           />
-          {/* Indigo duotone wash */}
+          {/* Warm duotone wash */}
           <div className="project-card-wash absolute inset-0 bg-[rgba(80,90,170,0.40)] mix-blend-multiply transition-[background] duration-400 pointer-events-none" />
-          {/* Indigo tint overlay */}
+          {/* Cool tint overlay */}
           <div className="project-card-tint absolute inset-0 bg-[rgba(110,120,200,0.18)] transition-[background] duration-400 pointer-events-none" />
           {/* Name overlay — visible on touch, hover on desktop */}
           <div className="project-card-label absolute inset-0 flex flex-col items-center justify-center text-center p-5 transition-opacity duration-300 pointer-events-none z-[5]">
@@ -38,7 +45,7 @@ export default function ProjectCard({
             </span>
           </div>
         </div>
-      </div>
+      </Wrapper>
       <style jsx>{`
         /* Touch devices: always show label subtly */
         @media (hover: none) {

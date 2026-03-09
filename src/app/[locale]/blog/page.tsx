@@ -20,7 +20,7 @@ export default async function BlogPage({
           <h1 className="text-center mt-[57px] text-[3rem] font-light">{t("title")}</h1>
         </div>
       </section>
-      <Footer showNovinky={false} showBackToTop={false} />
+      <Footer showNovinky={false} />
     </>
   );
 }
