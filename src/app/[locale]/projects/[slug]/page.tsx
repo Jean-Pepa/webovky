@@ -249,13 +249,7 @@ export default async function ProjectDetailPage({
                   className="flex justify-between items-center border-b border-border text-[13px] font-light"
                   style={{ paddingTop: 14, paddingBottom: 14 }}
                 >
-                  <span
-                    style={{
-                      textDecoration: "underline",
-                      textDecorationColor: "#dc2626",
-                      textUnderlineOffset: "3px",
-                    }}
-                  >
+                  <span>
                     {isEn ? pdf.label_en : pdf.label_cs}
                   </span>
                   <a
