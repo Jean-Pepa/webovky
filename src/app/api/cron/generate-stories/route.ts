@@ -85,12 +85,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 8. Mark article as used
-    await supabase.from("used_articles").insert({
-      url: selected.link,
-      source_feed: selected.sourceFeed,
-      title: selected.title,
-    });
+    // 8. Mark article as used (upsert to handle duplicates)
+    const { error: usedError } = await supabase
+      .from("used_articles")
+      .upsert(
+        {
+          url: selected.link,
+          source_feed: selected.sourceFeed,
+          title: selected.title,
+        },
+        { onConflict: "url" }
+      );
+    if (usedError) {
+      console.error("used_articles upsert error:", usedError);
+    }
 
     // 9. Auto-unpublish old RSS stories
     const cutoff = new Date();
@@ -108,10 +116,16 @@ export async function GET(request: NextRequest) {
       message: "Story generated successfully",
       generated: 1,
       slides: story.story_data.slides.length,
-      images: allImages.length,
+      images_total: allImages.length,
+      images_scraped: scrapedImages.length,
+      images_rss: selected.image ? 1 : 0,
       source: selected.sourceFeed,
       title: selected.title,
+      url: selected.link,
+      fresh_count: fresh.length,
+      used_count: usedUrls.size,
       unpublished: unpublished?.length || 0,
+      used_error: usedError?.message || null,
     });
   } catch (err) {
     console.error("Cron error:", err);
