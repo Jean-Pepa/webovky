@@ -171,7 +171,8 @@ function renderCover(slide: StorySlideData) {
         {slide.caption && (
           <span
             style={{
-              fontSize: 24,
+              fontSize: 42,
+              fontWeight: 300,
               color: "rgba(255,255,255,0.6)",
               marginTop: 16,
             }}

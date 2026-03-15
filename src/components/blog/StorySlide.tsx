@@ -70,7 +70,8 @@ function CoverSlide({ slide }: { slide: StorySlideData }) {
 
         {/* Architect / caption */}
         {slide.caption && (
-          <p className="text-white/60 text-[12px] mt-2 tracking-wide">
+          <p className="text-white/60 text-[22px] sm:text-[24px] mt-3 tracking-wide font-light"
+            style={{ fontFamily: "'Montserrat', sans-serif" }}>
             {slide.caption}
           </p>
         )}

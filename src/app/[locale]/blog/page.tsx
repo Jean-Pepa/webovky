@@ -36,7 +36,7 @@ export default async function BlogPage({
 
       <section className="py-20">
         <div className="mx-auto max-w-[1200px] px-5">
-          <h1 className="text-center mt-[120px] text-[3rem] font-light">
+          <h1 className="text-center mt-[180px] text-[3rem] font-light">
             {t("title")}
           </h1>
 
