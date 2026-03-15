@@ -374,43 +374,45 @@ function renderClosing(slide: StorySlideData) {
         background: "#111",
       }}
     >
-      {/* INN logo as SVG paths — matching Header */}
-      <svg
-        width="320"
-        height="94"
-        viewBox="5 0 186 80"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d="M36 8 L36 72" stroke="white" strokeWidth="2" fill="none" />
-        <path d="M58 72 L58 8 L98 72 L98 8" stroke="white" strokeWidth="2" fill="none" strokeLinejoin="miter" />
-        <path d="M120 72 L120 8 L160 72 L160 8" stroke="white" strokeWidth="2" fill="none" strokeLinejoin="miter" />
-      </svg>
-
-      {/* INVENTIO NOVI */}
       <span
         style={{
-          fontSize: 16,
-          fontWeight: 300,
-          color: "rgba(255,255,255,0.6)",
-          letterSpacing: 6,
-          textTransform: "uppercase",
-          marginTop: 8,
-          marginBottom: 60,
+          fontSize: 84,
+          fontWeight: 700,
+          color: "white",
+          letterSpacing: 16,
+          marginBottom: 40,
         }}
       >
-        INVENTIO NOVI
+        INN
       </span>
 
       {slide.caption && (
         <span
           style={{
-            fontSize: 22,
-            color: "rgba(255,255,255,0.35)",
-            letterSpacing: 4,
+            position: "absolute",
+            bottom: 80,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 12,
+            fontSize: 16,
+            color: "rgba(255,255,255,0.25)",
+            letterSpacing: 5,
             textTransform: "uppercase",
           }}
         >
-          {slide.caption}
+          <span style={{
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            border: "1px solid rgba(255,255,255,0.15)",
+            background: "rgba(255,255,255,0.08)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 24,
+          }}>↓</span>
+          link
         </span>
       )}
     </div>

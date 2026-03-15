@@ -34,25 +34,19 @@ export default async function BlogPage({
       <BackArrow locale={locale} />
 
       <section className="py-20">
-        <div className="mx-auto max-w-[1200px] px-5">
+        <div className="mx-auto w-full max-w-[1200px] px-6 sm:px-10 lg:px-16">
           <h1 className="text-center mt-[120px] text-[3rem] font-light">
             {t("title")}
           </h1>
 
-          {/* Arch Stories viewer */}
+          {/* Stories viewer */}
           {storyPosts.length > 0 && (
-            <div className="mt-16 mb-20">
-              <h2
-                className="text-center text-[13px] uppercase tracking-[4px] mb-10"
-                style={{ opacity: 0.4 }}
-              >
-                Arch Stories
-              </h2>
+            <div className="mt-12 mb-16">
               <ArchStories stories={storyPosts} locale={locale} />
             </div>
           )}
 
-          {/* All posts — single grid */}
+          {/* All posts */}
           {allPosts.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {allPosts.map((post) => (

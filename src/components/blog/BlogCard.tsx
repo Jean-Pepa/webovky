@@ -26,9 +26,9 @@ export default function BlogCard({ post, locale, readMoreText }: BlogCardProps) 
           />
         </div>
       )}
-      <div className="p-[25px]">
+      <div className="p-[25px] text-center">
         {post.tags.length > 0 && (
-          <div className="flex gap-2 mb-2">
+          <div className="flex gap-2 mb-2 justify-center">
             {post.tags.map((tag) => (
               <span
                 key={tag}
@@ -43,12 +43,23 @@ export default function BlogCard({ post, locale, readMoreText }: BlogCardProps) 
         {excerpt && (
           <p className="text-[0.9rem] text-secondary mb-[15px]">{excerpt}</p>
         )}
-        <Link
-          href={`/${locale}/blog/${post.slug}`}
-          className="text-[0.85rem] uppercase tracking-[1px] font-semibold"
-        >
-          {readMoreText} &rarr;
-        </Link>
+        {post.source === "rss" && post.story_data?.source_url ? (
+          <a
+            href={post.story_data.source_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[0.85rem] uppercase tracking-[1px] font-semibold"
+          >
+            {post.story_data.source_name || "Source"} &rarr;
+          </a>
+        ) : (
+          <Link
+            href={`/${locale}/blog/${post.slug}`}
+            className="text-[0.85rem] uppercase tracking-[1px] font-semibold"
+          >
+            {readMoreText} &rarr;
+          </Link>
+        )}
       </div>
     </article>
   );

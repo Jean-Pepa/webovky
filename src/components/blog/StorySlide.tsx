@@ -184,34 +184,32 @@ function ClosingSlide({ slide }: { slide: StorySlideData }) {
       className="absolute inset-0 flex flex-col items-center justify-center"
       style={{ background: "#111" }}
     >
-      {/* INN SVG logo — same as Header */}
-      <svg
-        className="w-[160px] h-[47px] mb-2"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="5 0 186 80"
-      >
-        <path d="M36 8 L36 72" stroke="#fff" strokeWidth="2" fill="none" />
-        <path d="M58 72 L58 8 L98 72 L98 8" stroke="#fff" strokeWidth="2" fill="none" strokeLinejoin="miter" />
-        <path d="M120 72 L120 8 L160 72 L160 8" stroke="#fff" strokeWidth="2" fill="none" strokeLinejoin="miter" />
-      </svg>
-
-      {/* INVENTIO NOVI */}
+      {/* INN logo — large, centered */}
       <span
-        className="uppercase tracking-[0.18em] text-white/70 mb-8"
-        style={{
-          fontFamily: "'Montserrat', sans-serif",
-          fontSize: 9,
-          fontWeight: 300,
-        }}
+        className="text-white font-bold text-[48px] tracking-[8px] mb-6"
+        style={{ fontFamily: "'Montserrat', sans-serif" }}
       >
-        INVENTIO NOVI
+        INN
       </span>
 
-      {/* Caption */}
+      {/* Arrow + link — positioned near bottom */}
       {slide.caption && (
-        <p className="text-white/30 text-[11px] tracking-[2px] uppercase">
-          {slide.caption}
-        </p>
+        <div className="absolute bottom-8 left-0 right-0 flex flex-col items-center gap-2">
+          <div className="w-10 h-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center">
+            <svg
+              className="w-4 h-4"
+              viewBox="0 0 24 24"
+              stroke="rgba(255,255,255,0.5)"
+              strokeWidth="1.5"
+              fill="none"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
+          <p className="text-white/25 text-[10px] tracking-[3px] uppercase font-light">
+            link
+          </p>
+        </div>
       )}
     </div>
   );

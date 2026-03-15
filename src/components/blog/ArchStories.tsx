@@ -38,21 +38,9 @@ export default function ArchStories({ stories, locale }: ArchStoriesProps) {
   const slides = getSlides(currentStory, locale);
   const currentSlide = slides[slideIdx];
 
-  const goToSlide = useCallback(
-    (idx: number) => {
-      if (idx < 0 || idx >= slides.length) return;
-      setTransitioning(true);
-      setTimeout(() => {
-        setSlideIdx(idx);
-        setTimeout(() => setTransitioning(false), 50);
-      }, 200);
-    },
-    [slides.length]
-  );
-
   const selectStory = useCallback(
     (idx: number) => {
-      if (idx === storyIdx) return;
+      if (idx < 0 || idx >= stories.length || idx === storyIdx) return;
       setTransitioning(true);
       setTimeout(() => {
         setStoryIdx(idx);
@@ -60,7 +48,35 @@ export default function ArchStories({ stories, locale }: ArchStoriesProps) {
         setTimeout(() => setTransitioning(false), 50);
       }, 200);
     },
-    [storyIdx]
+    [storyIdx, stories.length]
+  );
+
+  const goToSlide = useCallback(
+    (idx: number) => {
+      // Past last slide → next story
+      if (idx >= slides.length) {
+        selectStory(storyIdx + 1);
+        return;
+      }
+      // Before first slide → previous story (last slide)
+      if (idx < 0 && storyIdx > 0) {
+        setTransitioning(true);
+        setTimeout(() => {
+          setStoryIdx(storyIdx - 1);
+          const prevSlides = getSlides(stories[storyIdx - 1], locale);
+          setSlideIdx(prevSlides.length - 1);
+          setTimeout(() => setTransitioning(false), 50);
+        }, 200);
+        return;
+      }
+      if (idx < 0 || idx >= slides.length) return;
+      setTransitioning(true);
+      setTimeout(() => {
+        setSlideIdx(idx);
+        setTimeout(() => setTransitioning(false), 50);
+      }, 200);
+    },
+    [slides.length, storyIdx, stories, locale, selectStory]
   );
 
   // Keyboard navigation
@@ -89,33 +105,9 @@ export default function ArchStories({ stories, locale }: ArchStoriesProps) {
 
   return (
     <div className="flex flex-col items-center">
-      {/* Story selector — horizontal scroll */}
-      {stories.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto mb-6 pb-2 max-w-full px-2 no-scrollbar">
-          {stories.map((s, i) => {
-            const isActive = i === storyIdx;
-            const title =
-              locale === "en" ? s.title_en : s.title_cs;
-            return (
-              <button
-                key={s.id}
-                onClick={() => selectStory(i)}
-                className="flex-shrink-0 px-4 py-2 text-[12px] rounded-full transition-all whitespace-nowrap"
-                style={{
-                  background: isActive ? "#111" : "rgba(0,0,0,0.05)",
-                  color: isActive ? "#fff" : "rgba(0,0,0,0.5)",
-                }}
-              >
-                {title.length > 30 ? title.slice(0, 30) + "..." : title}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
       {/* Main viewer — 9:16 aspect ratio */}
       <div
-        className="relative w-full max-w-[380px] rounded-xl overflow-hidden shadow-xl"
+        className="relative w-full max-w-[320px] sm:max-w-[380px] rounded-xl overflow-hidden shadow-xl"
         style={{ aspectRatio: "9/16" }}
       >
         {/* Progress bars */}
@@ -159,7 +151,7 @@ export default function ArchStories({ stories, locale }: ArchStoriesProps) {
         />
 
         {/* Arrow hints on hover */}
-        {slideIdx > 0 && (
+        {(slideIdx > 0 || storyIdx > 0) && (
           <button
             onClick={() => goToSlide(slideIdx - 1)}
             className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
@@ -175,7 +167,7 @@ export default function ArchStories({ stories, locale }: ArchStoriesProps) {
             </svg>
           </button>
         )}
-        {slideIdx < slides.length - 1 && (
+        {(slideIdx < slides.length - 1 || storyIdx < stories.length - 1) && (
           <button
             onClick={() => goToSlide(slideIdx + 1)}
             className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
@@ -246,6 +238,43 @@ export default function ArchStories({ stories, locale }: ArchStoriesProps) {
         >
           {currentStory.story_data.source_name || "Source"}
         </a>
+      )}
+
+      {/* Story switcher */}
+      {stories.length > 1 && (
+        <div className="flex items-center gap-3 mt-6">
+          <button
+            onClick={() => selectStory(storyIdx - 1)}
+            disabled={storyIdx === 0}
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity"
+            style={{
+              background: "rgba(0,0,0,0.08)",
+              opacity: storyIdx === 0 ? 0.3 : 1,
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="#333" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+
+          <span className="text-[12px] text-black/50">
+            {storyIdx + 1} / {stories.length}
+          </span>
+
+          <button
+            onClick={() => selectStory(storyIdx + 1)}
+            disabled={storyIdx === stories.length - 1}
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity"
+            style={{
+              background: "rgba(0,0,0,0.08)",
+              opacity: storyIdx === stories.length - 1 ? 0.3 : 1,
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <path d="M6 3L11 8L6 13" stroke="#333" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
       )}
     </div>
   );
