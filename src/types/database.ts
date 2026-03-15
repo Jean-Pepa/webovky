@@ -33,11 +33,22 @@ export interface Project {
   updated_at: string;
 }
 
+export interface StorySlideData {
+  type: "cover" | "photo" | "info" | "closing";
+  image?: string;
+  headline?: string;
+  caption?: string;
+  facts?: { label: string; value: string }[];
+}
+
 export interface StoryData {
   style: "dark" | "light" | "orange" | "blueprint" | "minimal";
   subtitle?: string;
   architect?: string;
   year?: string;
+  source_url?: string;
+  source_name?: string;
+  slides?: StorySlideData[];
   stat1_label?: string;
   stat1_value?: string;
   stat2_label?: string;

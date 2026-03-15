@@ -1,7 +1,5 @@
 import { RssArticle } from "./fetchFeeds";
-import { translateTags } from "./translations";
-
-const STYLES = ["dark", "light", "orange", "blueprint", "minimal"] as const;
+import { StorySlideData } from "@/types/database";
 
 export interface GeneratedStory {
   slug: string;
@@ -17,40 +15,76 @@ export interface GeneratedStory {
   published_at: string;
   source: "rss";
   story_data: {
-    style: (typeof STYLES)[number];
-    subtitle: string;
+    style: "dark";
     architect: string;
     year: string;
-    stat1_label: string;
-    stat1_value: string;
-    stat2_label: string;
-    stat2_value: string;
-    tags: string[];
+    source_url: string;
+    source_name: string;
+    slides: StorySlideData[];
   };
 }
 
 export function generateStory(
   article: RssArticle,
-  index: number
+  images: string[]
 ): GeneratedStory {
   const architect = extractArchitect(article.title);
-  const year = extractYear(article.description) || new Date().getFullYear().toString();
-  const style = STYLES[index % STYLES.length];
+  const year =
+    extractYear(article.description) ||
+    new Date().getFullYear().toString();
 
-  const sourceLabel = {
-    archdaily: "ArchDaily",
-    dezeen: "Dezeen",
-    designboom: "Designboom",
-  }[article.sourceFeed] || article.sourceFeed;
-
-  // Tags: use RSS categories, translate for CZ display
-  const rawTags = article.categories.length > 0
-    ? article.categories.slice(0, 4)
-    : guessTagsFromTitle(article.title);
-  const czTags = translateTags(rawTags);
+  const sourceLabel =
+    {
+      archdaily: "ArchDaily",
+      dezeen: "Dezeen",
+      designboom: "Designboom",
+    }[article.sourceFeed] || article.sourceFeed;
 
   const slug = makeSlug(article.title);
   const now = new Date().toISOString();
+
+  // Build slides
+  const slides: StorySlideData[] = [];
+
+  // Slide 1: Cover — main image + headline
+  const coverImage = article.image || images[0] || undefined;
+  slides.push({
+    type: "cover",
+    image: coverImage,
+    headline: article.title,
+    caption: architect || sourceLabel,
+  });
+
+  // Slides 2-N: Photos from scraped images
+  const photoImages = images.filter((img) => img !== coverImage);
+  for (const img of photoImages) {
+    slides.push({
+      type: "photo",
+      image: img,
+    });
+  }
+
+  // Info slide: facts about the building
+  const facts: { label: string; value: string }[] = [];
+  if (architect) facts.push({ label: "Architect", value: architect });
+  facts.push({ label: "Year", value: year });
+  facts.push({ label: "Source", value: sourceLabel });
+  if (article.categories.length > 0) {
+    facts.push({ label: "Category", value: article.categories.slice(0, 2).join(", ") });
+  }
+
+  slides.push({
+    type: "info",
+    headline: article.title,
+    facts,
+  });
+
+  // Closing slide
+  slides.push({
+    type: "closing",
+    headline: "INN",
+    caption: `Link v popisku`,
+  });
 
   return {
     slug,
@@ -60,31 +94,28 @@ export function generateStory(
     excerpt_en: article.description,
     content_cs: `${article.description}\n\n[Celý článek na ${sourceLabel}](${article.link})`,
     content_en: `${article.description}\n\n[Full article on ${sourceLabel}](${article.link})`,
-    cover_image_url: article.image,
-    tags: rawTags,
+    cover_image_url: coverImage || null,
+    tags: article.categories.slice(0, 4),
     is_published: true,
     published_at: now,
     source: "rss",
     story_data: {
-      style,
-      subtitle: sourceLabel,
+      style: "dark",
       architect,
       year,
-      stat1_label: "Source",
-      stat1_value: sourceLabel,
-      stat2_label: "Year",
-      stat2_value: year,
-      tags: czTags,
+      source_url: article.link,
+      source_name: sourceLabel,
+      slides,
     },
   };
 }
 
 function extractArchitect(title: string): string {
-  // Common pattern: "Project Name / Architect Name"
+  // "Project Name / Architect Name"
   const slashMatch = title.match(/\/\s*(.+?)$/);
   if (slashMatch) return slashMatch[1].trim();
 
-  // Pattern: "Project Name by Architect Name"
+  // "Project Name by Architect Name"
   const byMatch = title.match(/\bby\s+(.+?)$/i);
   if (byMatch) return byMatch[1].trim();
 
@@ -94,16 +125,6 @@ function extractArchitect(title: string): string {
 function extractYear(text: string): string {
   const match = text.match(/(19|20)\d{2}/);
   return match ? match[0] : "";
-}
-
-function guessTagsFromTitle(title: string): string[] {
-  const keywords = [
-    "house", "museum", "library", "school", "tower", "bridge",
-    "pavilion", "chapel", "hotel", "office", "villa", "apartment",
-    "renovation", "extension", "residential", "cultural",
-  ];
-  const lower = title.toLowerCase();
-  return keywords.filter((k) => lower.includes(k)).slice(0, 3);
 }
 
 function makeSlug(title: string): string {

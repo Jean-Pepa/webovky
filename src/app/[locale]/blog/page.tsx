@@ -22,8 +22,12 @@ export default async function BlogPage({
     .order("published_at", { ascending: false });
 
   // Separate stories from regular posts
-  const storyPosts = (posts ?? []).filter((p: Record<string, unknown>) => p.story_data != null);
-  const regularPosts = (posts ?? []).filter((p: Record<string, unknown>) => p.story_data == null);
+  const storyPosts = (posts ?? []).filter(
+    (p: Record<string, unknown>) => p.story_data != null
+  );
+  const regularPosts = (posts ?? []).filter(
+    (p: Record<string, unknown>) => p.story_data == null
+  );
 
   return (
     <>
@@ -36,7 +40,7 @@ export default async function BlogPage({
             {t("title")}
           </h1>
 
-          {/* Arch Stories viewer */}
+          {/* Arch Stories viewer — pass stories as props */}
           {storyPosts.length > 0 && (
             <div className="mt-16 mb-20">
               <h2
@@ -45,29 +49,7 @@ export default async function BlogPage({
               >
                 Arch Stories
               </h2>
-              <ArchStories locale={locale} />
-            </div>
-          )}
-
-          {/* Story cards list */}
-          {storyPosts.length > 0 && (
-            <div className="mb-16">
-              <h2
-                className="text-[13px] uppercase tracking-[4px] mb-6"
-                style={{ opacity: 0.4 }}
-              >
-                {locale === "en" ? "All Stories" : "Všechny stories"}
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {storyPosts.map((post) => (
-                  <BlogCard
-                    key={post.id}
-                    post={post}
-                    locale={locale}
-                    readMoreText={t("readMore")}
-                  />
-                ))}
-              </div>
+              <ArchStories stories={storyPosts} locale={locale} />
             </div>
           )}
 
