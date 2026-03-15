@@ -6,6 +6,8 @@ import ArchStories from "@/components/blog/ArchStories";
 import BlogCard from "@/components/blog/BlogCard";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export const revalidate = 0;
+
 export default async function BlogPage({
   params,
 }: {
