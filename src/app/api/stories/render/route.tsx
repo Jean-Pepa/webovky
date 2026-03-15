@@ -210,16 +210,17 @@ function renderPhoto(slide: StorySlideData) {
         />
       )}
 
-      {/* Bottom gradient */}
+      {/* Bottom gradient — stronger when caption present */}
       <div
         style={{
           position: "absolute",
           bottom: 0,
           left: 0,
           right: 0,
-          height: "20%",
-          background:
-            "linear-gradient(to bottom, transparent, rgba(0,0,0,0.5))",
+          height: slide.caption ? "40%" : "20%",
+          background: slide.caption
+            ? "linear-gradient(to bottom, transparent, rgba(0,0,0,0.75))"
+            : "linear-gradient(to bottom, transparent, rgba(0,0,0,0.4))",
           display: "flex",
         }}
       />
@@ -258,8 +259,9 @@ function renderPhoto(slide: StorySlideData) {
         >
           <span
             style={{
-              fontSize: 22,
-              color: "rgba(255,255,255,0.8)",
+              fontSize: 24,
+              color: "rgba(255,255,255,0.9)",
+              lineHeight: 1.5,
               textShadow: "0 2px 8px rgba(0,0,0,0.5)",
             }}
           >

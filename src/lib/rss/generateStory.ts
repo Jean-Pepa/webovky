@@ -26,7 +26,8 @@ export interface GeneratedStory {
 
 export function generateStory(
   article: RssArticle,
-  images: string[]
+  images: string[],
+  captions: string[] = []
 ): GeneratedStory {
   const architect = extractArchitect(article.title);
   const year =
@@ -56,10 +57,13 @@ export function generateStory(
     caption: architect || sourceLabel,
   });
 
-  // Slides 2-N: Photos with captions
+  // Slides 2-N: Photos with text captions from article
   const photoImages = images.slice(1); // skip cover image
   for (let i = 0; i < photoImages.length; i++) {
-    const caption = buildPhotoCaption(i, architect, year, article.categories, projectName);
+    // Use scraped article text as caption, fall back to metadata
+    const caption = captions[i]
+      ? truncate(captions[i], 140)
+      : buildPhotoCaption(i, architect, year, article.categories, projectName);
     slides.push({
       type: "photo",
       image: photoImages[i],
@@ -67,12 +71,12 @@ export function generateStory(
     });
   }
 
-  // If we have very few photos, add one info slide with description
+  // If we have very few photos, add slides with description text
   if (photoImages.length < 2 && article.description) {
     slides.push({
       type: "photo",
       image: coverImage,
-      caption: truncate(article.description, 120),
+      caption: truncate(article.description, 140),
     });
   }
 

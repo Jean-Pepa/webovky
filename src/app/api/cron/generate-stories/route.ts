@@ -56,8 +56,8 @@ export async function GET(request: NextRequest) {
     const selected =
       topCandidates[Math.floor(Math.random() * topCandidates.length)];
 
-    // 5. Scrape images from article page
-    const scrapedImages = await scrapeArticleImages(
+    // 5. Scrape images + text from article page
+    const scraped = await scrapeArticleImages(
       selected.link,
       selected.sourceFeed
     );
@@ -65,12 +65,12 @@ export async function GET(request: NextRequest) {
     // Merge: RSS image + scraped images (deduplicated)
     const allImages: string[] = [];
     if (selected.image) allImages.push(selected.image);
-    for (const img of scrapedImages) {
+    for (const img of scraped.images) {
       if (!allImages.includes(img)) allImages.push(img);
     }
 
-    // 6. Generate multi-slide story
-    const story = generateStory(selected, allImages);
+    // 6. Generate multi-slide story with captions
+    const story = generateStory(selected, allImages, scraped.captions);
 
     // 7. Insert blog post
     const { error: blogError } = await supabase
@@ -117,7 +117,8 @@ export async function GET(request: NextRequest) {
       generated: 1,
       slides: story.story_data.slides.length,
       images_total: allImages.length,
-      images_scraped: scrapedImages.length,
+      images_scraped: scraped.images.length,
+      captions_scraped: scraped.captions.length,
       images_rss: selected.image ? 1 : 0,
       source: selected.sourceFeed,
       title: selected.title,

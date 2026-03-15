@@ -94,12 +94,13 @@ function PhotoSlide({ slide }: { slide: StorySlideData }) {
         />
       )}
 
-      {/* Subtle gradient at bottom for caption */}
+      {/* Gradient at bottom for caption readability */}
       <div
         className="absolute inset-0"
         style={{
-          background:
-            "linear-gradient(to bottom, transparent 70%, rgba(0,0,0,0.5) 100%)",
+          background: slide.caption
+            ? "linear-gradient(to bottom, transparent 55%, rgba(0,0,0,0.7) 100%)"
+            : "linear-gradient(to bottom, transparent 80%, rgba(0,0,0,0.3) 100%)",
         }}
       />
 
@@ -113,10 +114,10 @@ function PhotoSlide({ slide }: { slide: StorySlideData }) {
         </span>
       </div>
 
-      {/* Caption at bottom */}
+      {/* Caption text at bottom */}
       {slide.caption && (
         <div className="absolute bottom-6 left-6 right-6 z-10">
-          <p className="text-white/80 text-[12px] drop-shadow-lg">
+          <p className="text-white/90 text-[11px] leading-[1.5] drop-shadow-lg">
             {slide.caption}
           </p>
         </div>

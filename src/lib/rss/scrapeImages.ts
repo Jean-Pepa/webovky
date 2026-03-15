@@ -1,11 +1,16 @@
+export interface ScrapeResult {
+  images: string[];
+  captions: string[];
+}
+
 /**
- * Scrape project images from an article page.
+ * Scrape project images AND text snippets from an article page.
  * Handles lazy-loaded images (data-src), srcset, og:image, etc.
  */
 export async function scrapeArticleImages(
   url: string,
   sourceFeed: string
-): Promise<string[]> {
+): Promise<ScrapeResult> {
   try {
     const res = await fetch(url, {
       signal: AbortSignal.timeout(6000),
@@ -14,7 +19,7 @@ export async function scrapeArticleImages(
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       },
     });
-    if (!res.ok) return [];
+    if (!res.ok) return { images: [], captions: [] };
 
     const html = await res.text();
     const images: string[] = [];
@@ -61,9 +66,12 @@ export async function scrapeArticleImages(
     // Deduplicate by base image ID (ignore resolution suffix)
     const unique = deduplicateByBase(upgraded, sourceFeed);
 
-    return unique.slice(0, 10);
+    // 6. Extract text paragraphs for captions
+    const captions = extractCaptions(html);
+
+    return { images: unique.slice(0, 10), captions };
   } catch {
-    return [];
+    return { images: [], captions: [] };
   }
 }
 
@@ -154,4 +162,51 @@ function deduplicateByBase(images: string[], sourceFeed: string): string[] {
     seen.add(url);
     return true;
   });
+}
+
+/**
+ * Extract short text snippets from article paragraphs.
+ * Returns 1-2 sentence captions suitable for story slides.
+ */
+function extractCaptions(html: string): string[] {
+  const captions: string[] = [];
+
+  // Extract <p> tags content (main article text)
+  const pRegex = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+  let match;
+
+  while ((match = pRegex.exec(html)) !== null) {
+    // Strip HTML tags from paragraph content
+    const text = match[1]
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // Skip empty, too short, or boilerplate paragraphs
+    if (text.length < 40) continue;
+    if (text.length > 300) continue;
+    if (
+      text.includes("cookie") ||
+      text.includes("subscribe") ||
+      text.includes("newsletter") ||
+      text.includes("advertisement") ||
+      text.includes("©") ||
+      text.includes("All rights") ||
+      text.includes("Read more") ||
+      text.includes("Save this") ||
+      text.includes("Cite:") ||
+      text.includes("ArchDaily")
+    )
+      continue;
+
+    captions.push(text);
+  }
+
+  return captions.slice(0, 12);
 }
