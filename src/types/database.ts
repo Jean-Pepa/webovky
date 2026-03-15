@@ -33,6 +33,18 @@ export interface Project {
   updated_at: string;
 }
 
+export interface StoryData {
+  style: "dark" | "light";
+  subtitle?: string;
+  architect?: string;
+  year?: string;
+  stat1_label?: string;
+  stat1_value?: string;
+  stat2_label?: string;
+  stat2_value?: string;
+  tags?: string[];
+}
+
 export interface BlogPost {
   id: string;
   slug: string;
@@ -46,6 +58,8 @@ export interface BlogPost {
   tags: string[];
   is_published: boolean;
   published_at: string | null;
+  story_data: StoryData | null;
+  source: "manual" | "rss";
   created_at: string;
   updated_at: string;
 }

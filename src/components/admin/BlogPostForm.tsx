@@ -5,9 +5,18 @@ import { useParams } from "next/navigation";
 import { BlogPost } from "@/types/database";
 import ImageUpload from "./ImageUpload";
 
+interface PrefillData {
+  title: string;
+  content: string;
+  cover: string;
+  source: string;
+  link: string;
+}
+
 interface BlogPostFormProps {
   post?: BlogPost;
   title?: string;
+  prefill?: PrefillData;
 }
 
 function slugify(text: string): string {
@@ -19,23 +28,37 @@ function slugify(text: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
-export default function BlogPostForm({ post, title }: BlogPostFormProps) {
+export default function BlogPostForm({ post, title, prefill }: BlogPostFormProps) {
   const params = useParams();
   const locale = (params?.locale as string) ?? "cs";
   const isEdit = !!post;
   const pageTitle = title ?? (isEdit ? "Upravit příspěvek" : "Nový příspěvek");
 
+  const [isStory, setIsStory] = useState(!!post?.story_data);
+  const [storyFields, setStoryFields] = useState({
+    style: (post?.story_data?.style ?? "dark") as "dark" | "light",
+    subtitle: post?.story_data?.subtitle ?? "",
+    architect: post?.story_data?.architect ?? "",
+    year: post?.story_data?.year ?? "",
+    stat1_label: post?.story_data?.stat1_label ?? "",
+    stat1_value: post?.story_data?.stat1_value ?? "",
+    stat2_label: post?.story_data?.stat2_label ?? "",
+    stat2_value: post?.story_data?.stat2_value ?? "",
+    story_tags: post?.story_data?.tags?.join(", ") ?? "",
+  });
+
   const [form, setForm] = useState({
-    title_cs: post?.title_cs ?? "",
+    title_cs: post?.title_cs ?? prefill?.title ?? "",
     title_en: post?.title_en ?? "",
-    slug: post?.slug ?? "",
+    slug: post?.slug ?? (prefill?.title ? slugify(prefill.title) : ""),
     excerpt_cs: post?.excerpt_cs ?? "",
     excerpt_en: post?.excerpt_en ?? "",
-    content_cs: post?.content_cs ?? "",
+    content_cs: post?.content_cs ?? prefill?.content ?? "",
     content_en: post?.content_en ?? "",
-    cover_image_url: post?.cover_image_url ?? "",
+    cover_image_url: post?.cover_image_url ?? prefill?.cover ?? "",
     tags: post?.tags?.join(", ") ?? "",
     is_published: post?.is_published ?? false,
+    source: post?.source ?? prefill?.source ?? "manual",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -64,6 +87,22 @@ export default function BlogPostForm({ post, title }: BlogPostFormProps) {
     setLoading(true);
     setError("");
 
+    const storyData = isStory
+      ? {
+          style: storyFields.style,
+          subtitle: storyFields.subtitle || undefined,
+          architect: storyFields.architect || undefined,
+          year: storyFields.year || undefined,
+          stat1_label: storyFields.stat1_label || undefined,
+          stat1_value: storyFields.stat1_value || undefined,
+          stat2_label: storyFields.stat2_label || undefined,
+          stat2_value: storyFields.stat2_value || undefined,
+          tags: storyFields.story_tags
+            ? storyFields.story_tags.split(",").map((t) => t.trim()).filter(Boolean)
+            : undefined,
+        }
+      : null;
+
     const data = {
       ...form,
       tags: form.tags
@@ -71,6 +110,7 @@ export default function BlogPostForm({ post, title }: BlogPostFormProps) {
         .map((t) => t.trim())
         .filter(Boolean),
       published_at: form.is_published ? new Date().toISOString() : null,
+      story_data: storyData,
     };
 
     const payload = isEdit ? { id: post!.id, ...data } : data;
@@ -228,6 +268,137 @@ export default function BlogPostForm({ post, title }: BlogPostFormProps) {
                 className="w-full border border-black/15 rounded-lg px-4 py-3 text-[21px]"
               />
             </div>
+
+            {/* Story toggle */}
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={isStory}
+                onChange={(e) => setIsStory(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <span className="text-[21px]">Arch Story (stories formát)</span>
+            </label>
+
+            {/* Story fields */}
+            {isStory && (
+              <div className="border border-black/10 rounded-xl p-5 flex flex-col gap-4 bg-black/[0.02]">
+                <p className="text-[17px] font-medium text-black/50 uppercase tracking-wider">Story nastavení</p>
+
+                <div className="flex gap-3">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="story_style"
+                      checked={storyFields.style === "dark"}
+                      onChange={() => setStoryFields((p) => ({ ...p, style: "dark" }))}
+                    />
+                    <span className="text-[18px]">Dark</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="story_style"
+                      checked={storyFields.style === "light"}
+                      onChange={() => setStoryFields((p) => ({ ...p, style: "light" }))}
+                    />
+                    <span className="text-[18px]">Light</span>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[16px] text-black/60 mb-1">Podtitulek</label>
+                    <input
+                      type="text"
+                      value={storyFields.subtitle}
+                      onChange={(e) => setStoryFields((p) => ({ ...p, subtitle: e.target.value }))}
+                      placeholder="Praha, Česko"
+                      className="w-full border border-black/15 rounded-lg px-3 py-2 text-[18px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[16px] text-black/60 mb-1">Architekt / Studio</label>
+                    <input
+                      type="text"
+                      value={storyFields.architect}
+                      onChange={(e) => setStoryFields((p) => ({ ...p, architect: e.target.value }))}
+                      placeholder="Zaha Hadid Architects"
+                      className="w-full border border-black/15 rounded-lg px-3 py-2 text-[18px]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[16px] text-black/60 mb-1">Rok</label>
+                  <input
+                    type="text"
+                    value={storyFields.year}
+                    onChange={(e) => setStoryFields((p) => ({ ...p, year: e.target.value }))}
+                    placeholder="2026"
+                    className="w-full border border-black/15 rounded-lg px-3 py-2 text-[18px]"
+                    style={{ maxWidth: 120 }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[16px] text-black/60 mb-1">Statistika 1 — název</label>
+                    <input
+                      type="text"
+                      value={storyFields.stat1_label}
+                      onChange={(e) => setStoryFields((p) => ({ ...p, stat1_label: e.target.value }))}
+                      placeholder="Plocha"
+                      className="w-full border border-black/15 rounded-lg px-3 py-2 text-[18px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[16px] text-black/60 mb-1">Statistika 1 — hodnota</label>
+                    <input
+                      type="text"
+                      value={storyFields.stat1_value}
+                      onChange={(e) => setStoryFields((p) => ({ ...p, stat1_value: e.target.value }))}
+                      placeholder="12 000 m²"
+                      className="w-full border border-black/15 rounded-lg px-3 py-2 text-[18px]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[16px] text-black/60 mb-1">Statistika 2 — název</label>
+                    <input
+                      type="text"
+                      value={storyFields.stat2_label}
+                      onChange={(e) => setStoryFields((p) => ({ ...p, stat2_label: e.target.value }))}
+                      placeholder="Cena"
+                      className="w-full border border-black/15 rounded-lg px-3 py-2 text-[18px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[16px] text-black/60 mb-1">Statistika 2 — hodnota</label>
+                    <input
+                      type="text"
+                      value={storyFields.stat2_value}
+                      onChange={(e) => setStoryFields((p) => ({ ...p, stat2_value: e.target.value }))}
+                      placeholder="€45M"
+                      className="w-full border border-black/15 rounded-lg px-3 py-2 text-[18px]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[16px] text-black/60 mb-1">Story tagy (čárkou)</label>
+                  <input
+                    type="text"
+                    value={storyFields.story_tags}
+                    onChange={(e) => setStoryFields((p) => ({ ...p, story_tags: e.target.value }))}
+                    placeholder="Muzeum, Beton, Sklo"
+                    className="w-full border border-black/15 rounded-lg px-3 py-2 text-[18px]"
+                  />
+                </div>
+              </div>
+            )}
 
             <label className="flex items-center gap-3">
               <input

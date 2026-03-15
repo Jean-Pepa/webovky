@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 import DeleteButton from "@/components/admin/DeleteButton";
+import AdminBlogActions from "@/components/admin/AdminBlogActions";
 
 export default async function AdminBlogPage({
   params,
@@ -18,13 +19,7 @@ export default async function AdminBlogPage({
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 40 }}>
         <h1 className="text-[30px] font-light tracking-wide uppercase">Blog příspěvky</h1>
-        <Link
-          href={`/${locale}/admin/blog/new`}
-          className="border border-black/[0.06] text-[21px] hover:shadow-sm transition-shadow"
-          style={{ borderRadius: 20, paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, backgroundColor: '#efefef' }}
-        >
-          + Přidat příspěvek
-        </Link>
+        <AdminBlogActions locale={locale} />
       </div>
 
       <div className="border border-black/[0.06] overflow-hidden" style={{ borderRadius: 20, backgroundColor: '#efefef' }}>
