@@ -32,6 +32,7 @@ export function generateStory(
   const year =
     extractYear(article.description) ||
     new Date().getFullYear().toString();
+  const projectName = extractProjectName(article.title);
 
   const sourceLabel =
     {
@@ -43,47 +44,43 @@ export function generateStory(
   const slug = makeSlug(article.title);
   const now = new Date().toISOString();
 
-  // Build slides
+  // Build slides: cover + photos + closing
   const slides: StorySlideData[] = [];
 
-  // Slide 1: Cover — main image + headline
-  const coverImage = article.image || images[0] || undefined;
+  // Slide 1: Cover — main image + headline + architect
+  const coverImage = images[0] || article.image || undefined;
   slides.push({
     type: "cover",
     image: coverImage,
-    headline: article.title,
+    headline: projectName || article.title,
     caption: architect || sourceLabel,
   });
 
-  // Slides 2-N: Photos from scraped images
-  const photoImages = images.filter((img) => img !== coverImage);
-  for (const img of photoImages) {
+  // Slides 2-N: Photos with captions
+  const photoImages = images.slice(1); // skip cover image
+  for (let i = 0; i < photoImages.length; i++) {
+    const caption = buildPhotoCaption(i, architect, year, article.categories, projectName);
     slides.push({
       type: "photo",
-      image: img,
+      image: photoImages[i],
+      caption,
     });
   }
 
-  // Info slide: facts about the building
-  const facts: { label: string; value: string }[] = [];
-  if (architect) facts.push({ label: "Architect", value: architect });
-  facts.push({ label: "Year", value: year });
-  facts.push({ label: "Source", value: sourceLabel });
-  if (article.categories.length > 0) {
-    facts.push({ label: "Category", value: article.categories.slice(0, 2).join(", ") });
+  // If we have very few photos, add one info slide with description
+  if (photoImages.length < 2 && article.description) {
+    slides.push({
+      type: "photo",
+      image: coverImage,
+      caption: truncate(article.description, 120),
+    });
   }
-
-  slides.push({
-    type: "info",
-    headline: article.title,
-    facts,
-  });
 
   // Closing slide
   slides.push({
     type: "closing",
     headline: "INN",
-    caption: `Link v popisku`,
+    caption: "Link v popisku",
   });
 
   return {
@@ -110,12 +107,43 @@ export function generateStory(
   };
 }
 
+/**
+ * Build a contextual caption for each photo slide.
+ * Rotates between different info to keep it interesting.
+ */
+function buildPhotoCaption(
+  index: number,
+  architect: string,
+  year: string,
+  categories: string[],
+  projectName: string
+): string {
+  const options: string[] = [];
+
+  if (architect) options.push(architect);
+  if (year) options.push(year);
+  if (projectName) options.push(projectName);
+  if (categories.length > 0) options.push(categories.slice(0, 2).join(" / "));
+
+  // Rotate through available captions
+  if (options.length === 0) return "";
+  return options[index % options.length];
+}
+
+/**
+ * Extract project name (without architect).
+ * "Villa Moerkensheide / Dieter De Vos Architecten" → "Villa Moerkensheide"
+ */
+function extractProjectName(title: string): string {
+  const slashMatch = title.match(/^(.+?)\s*\/\s*/);
+  if (slashMatch) return slashMatch[1].trim();
+  return title;
+}
+
 function extractArchitect(title: string): string {
-  // "Project Name / Architect Name"
   const slashMatch = title.match(/\/\s*(.+?)$/);
   if (slashMatch) return slashMatch[1].trim();
 
-  // "Project Name by Architect Name"
   const byMatch = title.match(/\bby\s+(.+?)$/i);
   if (byMatch) return byMatch[1].trim();
 
@@ -135,4 +163,9 @@ function makeSlug(title: string): string {
     .replace(/\s+/g, "-")
     .slice(0, 60);
   return `${base}-${date}`;
+}
+
+function truncate(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  return text.slice(0, maxLen).replace(/\s+\S*$/, "") + "...";
 }

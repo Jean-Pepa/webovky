@@ -1,6 +1,6 @@
 /**
  * Scrape project images from an article page.
- * Tries to extract multiple high-quality photos from the article HTML.
+ * Handles lazy-loaded images (data-src), srcset, og:image, etc.
  */
 export async function scrapeArticleImages(
   url: string,
@@ -19,61 +19,85 @@ export async function scrapeArticleImages(
     const html = await res.text();
     const images: string[] = [];
 
-    // Extract all img src attributes
-    const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+    // 1. Extract data-src (lazy-loaded images — ArchDaily, Designboom)
+    const dataSrcRegex = /data-src=["']([^"']+)["']/gi;
     let match;
-
-    while ((match = imgRegex.exec(html)) !== null) {
-      const src = match[1];
-      if (isProjectImage(src, sourceFeed)) {
-        // Normalize URL
-        const normalized = src.startsWith("//") ? `https:${src}` : src;
-        if (!images.includes(normalized)) {
-          images.push(normalized);
-        }
-      }
+    while ((match = dataSrcRegex.exec(html)) !== null) {
+      addIfRelevant(images, match[1], sourceFeed);
     }
 
-    // Also check srcset for higher res images
+    // 2. Extract data-original (another lazy-load pattern)
+    const dataOrigRegex = /data-original=["']([^"']+)["']/gi;
+    while ((match = dataOrigRegex.exec(html)) !== null) {
+      addIfRelevant(images, match[1], sourceFeed);
+    }
+
+    // 3. Extract regular src
+    const srcRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+    while ((match = srcRegex.exec(html)) !== null) {
+      addIfRelevant(images, match[1], sourceFeed);
+    }
+
+    // 4. Extract srcset entries
     const srcsetRegex = /srcset=["']([^"']+)["']/gi;
     while ((match = srcsetRegex.exec(html)) !== null) {
       const entries = match[1].split(",");
       for (const entry of entries) {
         const src = entry.trim().split(/\s+/)[0];
-        if (src && isProjectImage(src, sourceFeed)) {
-          const normalized = src.startsWith("//") ? `https:${src}` : src;
-          if (!images.includes(normalized)) {
-            images.push(normalized);
-          }
-        }
+        if (src) addIfRelevant(images, src, sourceFeed);
       }
     }
 
-    return images.slice(0, 8);
+    // 5. Extract og:image meta tag
+    const ogRegex =
+      /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/gi;
+    while ((match = ogRegex.exec(html)) !== null) {
+      addIfRelevant(images, match[1], sourceFeed);
+    }
+
+    // For ArchDaily: upgrade to large_jpg resolution
+    const upgraded = images.map((img) => upgradeResolution(img, sourceFeed));
+
+    // Deduplicate by base image ID (ignore resolution suffix)
+    const unique = deduplicateByBase(upgraded, sourceFeed);
+
+    return unique.slice(0, 10);
   } catch {
     return [];
   }
 }
 
+function addIfRelevant(
+  images: string[],
+  src: string,
+  sourceFeed: string
+): void {
+  if (!isProjectImage(src, sourceFeed)) return;
+  const normalized = src.startsWith("//") ? `https:${src}` : src;
+  if (!images.includes(normalized)) {
+    images.push(normalized);
+  }
+}
+
 function isProjectImage(src: string, sourceFeed: string): boolean {
-  // Skip small/utility images
+  // Skip utility images
   if (
     src.includes("logo") ||
     src.includes("icon") ||
     src.includes("avatar") ||
     src.includes("favicon") ||
-    src.includes("1x1") ||
     src.includes("pixel") ||
     src.includes("blank") ||
     src.includes("spinner") ||
     src.includes("loading") ||
     src.includes("ad-") ||
     src.includes("banner") ||
-    src.includes("widget")
+    src.includes("widget") ||
+    src.includes("data:image") ||
+    src.includes("base64")
   )
     return false;
 
-  // Source-specific: only keep images from known project CDNs
   if (sourceFeed === "archdaily") {
     return src.includes("images.adsttc.com") && src.includes("media/images");
   }
@@ -88,4 +112,46 @@ function isProjectImage(src: string, sourceFeed: string): boolean {
   }
 
   return false;
+}
+
+/**
+ * Upgrade ArchDaily image URLs to large_jpg resolution.
+ * thumb_jpg → newsletter (good quality, reasonable size)
+ */
+function upgradeResolution(url: string, sourceFeed: string): string {
+  if (sourceFeed === "archdaily") {
+    return url
+      .replace(/\/thumb_jpg\//, "/newsletter/")
+      .replace(/\/medium_jpg\//, "/newsletter/")
+      .replace(/\/small_jpg\//, "/newsletter/");
+  }
+  return url;
+}
+
+/**
+ * Deduplicate images that are the same photo at different resolutions.
+ * ArchDaily uses same hash path with different size suffixes.
+ */
+function deduplicateByBase(images: string[], sourceFeed: string): string[] {
+  if (sourceFeed === "archdaily") {
+    const seen = new Set<string>();
+    return images.filter((url) => {
+      // Extract the hash path (6 hex segments before the resolution folder)
+      const hashMatch = url.match(
+        /media\/images\/([a-f0-9/]+)\/(newsletter|large_jpg|medium_jpg|thumb_jpg|small_jpg)\//
+      );
+      const key = hashMatch ? hashMatch[1] : url;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  // For other sources, simple URL dedup
+  const seen = new Set<string>();
+  return images.filter((url) => {
+    if (seen.has(url)) return false;
+    seen.add(url);
+    return true;
+  });
 }
