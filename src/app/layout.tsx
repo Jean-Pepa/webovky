@@ -4,7 +4,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 
 export const metadata: Metadata = {
-  title: "KVIN | Kristián Vyskočil",
+  title: "INN | Kristián Vyskočil",
   description:
     "Domy. Prostory. Místa. Design. Student Fakulty architektury VUT v Brně.",
 };

@@ -22,7 +22,7 @@ export default function AdminSidebar() {
   return (
     <aside className="w-[220px] min-h-screen bg-white border-r border-black/[0.06] flex flex-col">
       <div className="text-[21px] font-light tracking-widest uppercase text-black" style={{ paddingLeft: 62, paddingTop: 43, paddingBottom: 24 }}>
-        KVIN Admin
+        INN Admin
       </div>
 
       <nav className="flex-1 py-2">

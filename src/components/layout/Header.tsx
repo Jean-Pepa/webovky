@@ -348,7 +348,7 @@ export default function Header({ showLogo = true, showNav = true, showIntro = tr
         </>
       )}
 
-      {/* KVIN Logo */}
+      {/* INN Logo */}
       {showLogo && (
         <div
           ref={logoRef}
@@ -361,7 +361,7 @@ export default function Header({ showLogo = true, showNav = true, showIntro = tr
             zIndex: introPhase !== "done" ? 201 : 10,
           }}
         >
-          {/* KVIN letters — hidden during splash, fade in during transition */}
+          {/* INN letters — hidden during splash, fade in during transition */}
           <svg
             className="inline-block w-[180px] h-[53px] sm:w-[240px] sm:h-[70px]"
             xmlns="http://www.w3.org/2000/svg"
@@ -371,14 +371,11 @@ export default function Header({ showLogo = true, showNav = true, showIntro = tr
               transition: "opacity 1.2s ease",
             }}
           >
-            <path d="M8 8 L8 72" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" style={{ transition: "stroke 0.3s ease" }} />
-            <path d="M8 40 L38 8" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" style={{ transition: "stroke 0.3s ease" }} />
-            <path d="M24 24 L42 72" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" style={{ transition: "stroke 0.3s ease" }} />
-            <path d="M60 8 L82 72 L104 8" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" strokeLinejoin="miter" style={{ transition: "stroke 0.3s ease" }} />
-            <path d="M124 8 L124 72" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" style={{ transition: "stroke 0.3s ease" }} />
-            <path d="M148 72 L148 8 L188 72 L188 8" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" strokeLinejoin="miter" style={{ transition: "stroke 0.3s ease" }} />
+            <path d="M36 8 L36 72" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" style={{ transition: "stroke 0.3s ease" }} />
+            <path d="M58 72 L58 8 L98 72 L98 8" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" strokeLinejoin="miter" style={{ transition: "stroke 0.3s ease" }} />
+            <path d="M120 72 L120 8 L160 72 L160 8" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" strokeLinejoin="miter" style={{ transition: "stroke 0.3s ease" }} />
           </svg>
-          {/* INVENTIO NOVI — animates from screen center to below KVIN */}
+          {/* INVENTIO NOVI — animates from screen center to below INN */}
           <span
             className="block uppercase tracking-[0.18em]"
             style={{
