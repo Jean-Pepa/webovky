@@ -123,15 +123,16 @@ function isProjectImage(src: string, sourceFeed: string): boolean {
 }
 
 /**
- * Upgrade ArchDaily image URLs to large_jpg resolution.
- * thumb_jpg → newsletter (good quality, reasonable size)
+ * Upgrade ArchDaily image URLs to maximum resolution.
+ * thumb_jpg/medium_jpg/newsletter → large_jpg (~2000px, best quality)
  */
 function upgradeResolution(url: string, sourceFeed: string): string {
   if (sourceFeed === "archdaily") {
     return url
-      .replace(/\/thumb_jpg\//, "/newsletter/")
-      .replace(/\/medium_jpg\//, "/newsletter/")
-      .replace(/\/small_jpg\//, "/newsletter/");
+      .replace(/\/thumb_jpg\//, "/large_jpg/")
+      .replace(/\/medium_jpg\//, "/large_jpg/")
+      .replace(/\/small_jpg\//, "/large_jpg/")
+      .replace(/\/newsletter\//, "/large_jpg/");
   }
   return url;
 }
@@ -146,7 +147,7 @@ function deduplicateByBase(images: string[], sourceFeed: string): string[] {
     return images.filter((url) => {
       // Extract the hash path (6 hex segments before the resolution folder)
       const hashMatch = url.match(
-        /media\/images\/([a-f0-9/]+)\/(newsletter|large_jpg|medium_jpg|thumb_jpg|small_jpg)\//
+        /media\/images\/([a-f0-9/]+)\/(large_jpg|newsletter|medium_jpg|thumb_jpg|small_jpg)\//
       );
       const key = hashMatch ? hashMatch[1] : url;
       if (seen.has(key)) return false;

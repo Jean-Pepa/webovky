@@ -21,6 +21,7 @@ export default function BlogCard({ post, locale, readMoreText }: BlogCardProps) 
             src={post.cover_image_url}
             alt={title}
             fill
+            quality={100}
             className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
