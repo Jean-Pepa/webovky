@@ -184,20 +184,32 @@ function ClosingSlide({ slide }: { slide: StorySlideData }) {
       className="absolute inset-0 flex flex-col items-center justify-center"
       style={{ background: "#111" }}
     >
-      {/* INN logo — large, centered */}
-      <span
-        className="text-white font-bold text-[40px] tracking-[10px] mb-6"
-        style={{ fontFamily: "'Montserrat', sans-serif" }}
+      {/* INN SVG logo — same as Header */}
+      <svg
+        className="w-[160px] h-[47px] mb-2"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="5 0 186 80"
       >
-        {slide.headline || "INN"}
-      </span>
+        <path d="M36 8 L36 72" stroke="#fff" strokeWidth="2" fill="none" />
+        <path d="M58 72 L58 8 L98 72 L98 8" stroke="#fff" strokeWidth="2" fill="none" strokeLinejoin="miter" />
+        <path d="M120 72 L120 8 L160 72 L160 8" stroke="#fff" strokeWidth="2" fill="none" strokeLinejoin="miter" />
+      </svg>
 
-      {/* Accent line */}
-      <div className="w-12 h-[2px] bg-white/30 mb-6" />
+      {/* INVENTIO NOVI */}
+      <span
+        className="uppercase tracking-[0.18em] text-white/70 mb-8"
+        style={{
+          fontFamily: "'Montserrat', sans-serif",
+          fontSize: 9,
+          fontWeight: 300,
+        }}
+      >
+        INVENTIO NOVI
+      </span>
 
       {/* Caption */}
       {slide.caption && (
-        <p className="text-white/40 text-[12px] tracking-[2px] uppercase">
+        <p className="text-white/30 text-[11px] tracking-[2px] uppercase">
           {slide.caption}
         </p>
       )}

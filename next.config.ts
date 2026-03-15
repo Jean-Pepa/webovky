@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
         hostname: "static.dezeen.com",
       },
       {
+        protocol: "http",
+        hostname: "static.dezeen.com",
+      },
+      {
         protocol: "https",
         hostname: "www.designboom.com",
       },
