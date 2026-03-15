@@ -36,7 +36,7 @@ export default function BlogPostForm({ post, title, prefill }: BlogPostFormProps
 
   const [isStory, setIsStory] = useState(!!post?.story_data);
   const [storyFields, setStoryFields] = useState({
-    style: (post?.story_data?.style ?? "dark") as "dark" | "light",
+    style: (post?.story_data?.style ?? "dark") as "dark" | "light" | "orange" | "blueprint" | "minimal",
     subtitle: post?.story_data?.subtitle ?? "",
     architect: post?.story_data?.architect ?? "",
     year: post?.story_data?.year ?? "",
@@ -285,25 +285,18 @@ export default function BlogPostForm({ post, title, prefill }: BlogPostFormProps
               <div className="border border-black/10 rounded-xl p-5 flex flex-col gap-4 bg-black/[0.02]">
                 <p className="text-[17px] font-medium text-black/50 uppercase tracking-wider">Story nastavení</p>
 
-                <div className="flex gap-3">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="story_style"
-                      checked={storyFields.style === "dark"}
-                      onChange={() => setStoryFields((p) => ({ ...p, style: "dark" }))}
-                    />
-                    <span className="text-[18px]">Dark</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="story_style"
-                      checked={storyFields.style === "light"}
-                      onChange={() => setStoryFields((p) => ({ ...p, style: "light" }))}
-                    />
-                    <span className="text-[18px]">Light</span>
-                  </label>
+                <div className="flex flex-wrap gap-3">
+                  {(["dark", "light", "orange", "blueprint", "minimal"] as const).map((s) => (
+                    <label key={s} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="story_style"
+                        checked={storyFields.style === s}
+                        onChange={() => setStoryFields((p) => ({ ...p, style: s }))}
+                      />
+                      <span className="text-[18px] capitalize">{s}</span>
+                    </label>
+                  ))}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">

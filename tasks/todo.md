@@ -1,21 +1,18 @@
-# Arch Stories na Blog stránku
+# Phase 25: Auto Daily Arch Stories Generator
 
-## Implementace (DONE)
-- [x] Migration: `story_data` JSONB + `source` text sloupce do `blog_posts`
-- [x] Types update: `StoryData` interface + rozšíření `BlogPost`
-- [x] API route `/api/stories` — GET published stories
-- [x] API route `/api/stories/rss` — GET ArchDaily RSS feed
-- [x] Component `StorySlide.tsx` — dark/light story slide
-- [x] Component `ArchStories.tsx` — phone mockup viewer s progress bars
-- [x] Blog page integrace — stories viewer + cards + regular posts
-- [x] Admin: `BlogPostForm` — story fields (style, subtitle, architect, year, stats, tags)
-- [x] Admin: `RssImportModal` — ArchDaily RSS import dialog
-- [x] Admin: `AdminBlogActions` — Import z ArchDaily + Přidat příspěvek buttons
-- [x] Test data: 3 test stories v Supabase
-- [x] Build passes, dev server works
+## Implementation (DONE)
+- [x] Migration: `used_articles` table (applied to Supabase)
+- [x] RSS library: `src/lib/rss/fetchFeeds.ts` (multi-source: ArchDaily, Dezeen, Designboom)
+- [x] Story generator: `src/lib/rss/generateStory.ts` + `translations.ts`
+- [x] StorySlide: 5 visual styles (dark, light, orange, blueprint, minimal)
+- [x] BlogPostForm: updated style selector with all 5 options
+- [x] Cron route: `src/app/api/cron/generate-stories/route.ts`
+- [x] `next.config.ts`: remote image patterns for RSS sources
+- [x] `vercel.json`: daily cron at 06:00 UTC
+- [x] TypeScript compiles clean
+- [x] Migration applied to Supabase
 
-## Verification
-- [x] `/api/stories` returns 3 stories with story_data
-- [x] `/api/stories/rss` returns ArchDaily articles with images
-- [x] `/cs/blog` renders "Arch Stories" section
-- [x] Build successful (no TypeScript errors)
+## Remaining (manual)
+- [ ] Set `CRON_SECRET` env var in Vercel dashboard
+- [ ] Deploy to Vercel + verify cron in dashboard
+- [ ] Manual test: `curl` the cron endpoint with `?secret=ADMIN_SECRET`

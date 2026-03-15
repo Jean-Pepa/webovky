@@ -356,26 +356,39 @@ export default function Header({ showLogo = true, showNav = true, showIntro = tr
           onClick={() => { if (!scrolled && !idle) window.location.href = `/${locale}`; }}
           style={{
             ...logoStyle,
+            ...(introPhase === "splash" ? {
+              top: "50%",
+              transform: "translateY(-50%)",
+              opacity: 1,
+            } : introPhase === "transition" ? {
+              top: `${logoTop ?? 70}px`,
+              transform: "scale(1)",
+              opacity: 1,
+              transition: "all 3s cubic-bezier(0.22, 1, 0.36, 1)",
+            } : {}),
             opacity: introPhase === "done" ? logoStyle.opacity : 1,
-            transition: introPhase === "done" ? logoStyle.transition : undefined,
             zIndex: introPhase !== "done" ? 201 : 10,
           }}
         >
-          {/* INN letters — hidden during splash, fade in during transition */}
+          {/* INN letters — visible during splash (centered, large), then moves up */}
           <svg
             className="inline-block w-[180px] h-[53px] sm:w-[240px] sm:h-[70px]"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="5 0 186 80"
             style={{
-              opacity: introPhase === "splash" ? 0 : 1,
-              transition: "opacity 1.2s ease",
+              transform: introPhase === "splash"
+                ? "scale(2.5)"
+                : "scale(1)",
+              transition: introPhase !== "splash"
+                ? "transform 3s cubic-bezier(0.22, 1, 0.36, 1)"
+                : undefined,
             }}
           >
             <path d="M36 8 L36 72" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" style={{ transition: "stroke 0.3s ease" }} />
             <path d="M58 72 L58 8 L98 72 L98 8" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" strokeLinejoin="miter" style={{ transition: "stroke 0.3s ease" }} />
             <path d="M120 72 L120 8 L160 72 L160 8" stroke={scrolled && overDark && !idle ? "#fff" : "#222"} strokeWidth="2" fill="none" strokeLinejoin="miter" style={{ transition: "stroke 0.3s ease" }} />
           </svg>
-          {/* INVENTIO NOVI — animates from screen center to below INN */}
+          {/* INVENTIO NOVI — hidden during splash, fades in after INN moves up */}
           <span
             className="block uppercase tracking-[0.18em]"
             style={{
@@ -384,11 +397,9 @@ export default function Header({ showLogo = true, showNav = true, showIntro = tr
               fontSize: "clamp(7px, 0.9vw, 9px)",
               fontWeight: 300,
               marginTop: 4,
-              transform: introPhase === "splash"
-                ? "translateY(calc(50vh - 170px)) scale(3)"
-                : "translateY(0) scale(1)",
+              opacity: introPhase === "splash" ? 0 : 1,
               transition: introPhase !== "splash"
-                ? "transform 3s cubic-bezier(0.22, 1, 0.36, 1), color 0.3s ease"
+                ? "opacity 1.5s ease 0.5s, color 0.3s ease"
                 : "color 0.3s ease",
             }}
           >

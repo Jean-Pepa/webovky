@@ -34,7 +34,7 @@ export interface Project {
 }
 
 export interface StoryData {
-  style: "dark" | "light";
+  style: "dark" | "light" | "orange" | "blueprint" | "minimal";
   subtitle?: string;
   architect?: string;
   year?: string;

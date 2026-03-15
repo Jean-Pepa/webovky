@@ -16,6 +16,18 @@ const nextConfig: NextConfig = {
         hostname: "tozasdhvjewrodbvowzw.supabase.co",
         pathname: "/storage/v1/object/public/**",
       },
+      {
+        protocol: "https",
+        hostname: "images.adsttc.com",
+      },
+      {
+        protocol: "https",
+        hostname: "static.dezeen.com",
+      },
+      {
+        protocol: "https",
+        hostname: "www.designboom.com",
+      },
     ],
   },
 };
