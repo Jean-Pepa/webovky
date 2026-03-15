@@ -27,7 +27,7 @@ export default async function BlogPage({
 
   return (
     <>
-      <Header showNav={false} showIntro={false} />
+      <Header showNav={false} showIntro={true} />
       <BackArrow locale={locale} />
 
       <section className="py-20">
