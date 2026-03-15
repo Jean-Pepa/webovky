@@ -165,48 +165,111 @@ function deduplicateByBase(images: string[], sourceFeed: string): string[] {
 }
 
 /**
- * Extract short text snippets from article paragraphs.
- * Returns 1-2 sentence captions suitable for story slides.
+ * Extract short text snippets from article for story captions.
+ * Tries multiple sources: meta descriptions, JSON-LD schema, visible paragraphs.
+ * Splits longer texts into individual sentences.
  */
 function extractCaptions(html: string): string[] {
-  const captions: string[] = [];
+  const rawTexts: string[] = [];
 
-  // Extract <p> tags content (main article text)
-  const pRegex = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+  // 1. Meta description (always available, even behind paywalls)
+  const metaDesc = extractMetaContent(html, "description");
+  if (metaDesc) rawTexts.push(metaDesc);
+
+  // 2. OG description
+  const ogDesc = extractMetaProperty(html, "og:description");
+  if (ogDesc && ogDesc !== metaDesc) rawTexts.push(ogDesc);
+
+  // 3. JSON-LD schema description
+  const schemaRegex =
+    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
   let match;
-
-  while ((match = pRegex.exec(html)) !== null) {
-    // Strip HTML tags from paragraph content
-    const text = match[1]
-      .replace(/<[^>]+>/g, "")
-      .replace(/&nbsp;/g, " ")
-      .replace(/&amp;/g, "&")
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    // Skip empty, too short, or boilerplate paragraphs
-    if (text.length < 40) continue;
-    if (text.length > 300) continue;
-    if (
-      text.includes("cookie") ||
-      text.includes("subscribe") ||
-      text.includes("newsletter") ||
-      text.includes("advertisement") ||
-      text.includes("©") ||
-      text.includes("All rights") ||
-      text.includes("Read more") ||
-      text.includes("Save this") ||
-      text.includes("Cite:") ||
-      text.includes("ArchDaily")
-    )
-      continue;
-
-    captions.push(text);
+  while ((match = schemaRegex.exec(html)) !== null) {
+    try {
+      const data = JSON.parse(match[1]);
+      if (data.description && typeof data.description === "string") {
+        const desc = cleanText(data.description);
+        if (desc && !rawTexts.includes(desc)) rawTexts.push(desc);
+      }
+      // Also try articleBody
+      if (data.articleBody && typeof data.articleBody === "string") {
+        const body = cleanText(data.articleBody);
+        if (body) rawTexts.push(body);
+      }
+    } catch {
+      // invalid JSON-LD
+    }
   }
 
-  return captions.slice(0, 12);
+  // 4. Visible <p> paragraphs (works for Dezeen, Designboom)
+  const pRegex = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+  while ((match = pRegex.exec(html)) !== null) {
+    const text = cleanText(match[1]);
+    if (text.length < 30 || text.length > 400) continue;
+    if (isBoilerplate(text)) continue;
+    if (!rawTexts.includes(text)) rawTexts.push(text);
+  }
+
+  // Split all collected texts into individual sentences
+  const sentences: string[] = [];
+  for (const text of rawTexts) {
+    const split = text.split(/(?<=[.!?])\s+/);
+    for (const s of split) {
+      const trimmed = s.trim();
+      if (trimmed.length >= 25 && trimmed.length <= 160 && !isBoilerplate(trimmed)) {
+        if (!sentences.includes(trimmed)) sentences.push(trimmed);
+      }
+    }
+  }
+
+  return sentences.slice(0, 12);
+}
+
+function extractMetaContent(html: string, name: string): string {
+  const regex = new RegExp(
+    `<meta[^>]+name=["']${name}["'][^>]+content=["']([^"']+)["']`,
+    "i"
+  );
+  const match = html.match(regex);
+  return match ? cleanText(match[1]) : "";
+}
+
+function extractMetaProperty(html: string, prop: string): string {
+  const regex = new RegExp(
+    `<meta[^>]+property=["']${prop}["'][^>]+content=["']([^"']+)["']`,
+    "i"
+  );
+  const match = html.match(regex);
+  return match ? cleanText(match[1]) : "";
+}
+
+function cleanText(text: string): string {
+  return text
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isBoilerplate(text: string): boolean {
+  const lower = text.toLowerCase();
+  return (
+    lower.includes("cookie") ||
+    lower.includes("subscribe") ||
+    lower.includes("newsletter") ||
+    lower.includes("advertisement") ||
+    lower.includes("©") ||
+    lower.includes("all rights") ||
+    lower.includes("read more") ||
+    lower.includes("save this") ||
+    lower.includes("cite:") ||
+    lower.includes("archdaily") ||
+    lower.includes("sign up") ||
+    lower.includes("log in")
+  );
 }
