@@ -6,6 +6,9 @@ import {
   productsByCategory,
 } from "@/data/catalog";
 import CatalogBrowser from "@/components/CatalogBrowser";
+import { getLang } from "@/i18n/server";
+import { t } from "@/i18n/messages";
+import { locCategory } from "@/i18n/data";
 
 export function generateStaticParams() {
   return CATEGORIES.map((c) => ({ kategorie: c.slug }));
@@ -17,10 +20,12 @@ export default async function CategoryPage({
   params: Promise<{ kategorie: string }>;
 }) {
   const { kategorie } = await params;
-  const category = getCategory(kategorie);
-  if (!category) notFound();
+  const orig = getCategory(kategorie);
+  if (!orig) notFound();
 
-  const products = productsByCategory(category.slug);
+  const lang = await getLang();
+  const category = locCategory(orig, lang);
+  const products = productsByCategory(orig.slug);
 
   return (
     <div>
@@ -28,9 +33,9 @@ export default async function CategoryPage({
       <div className="bg-white border-b border-[var(--color-border)]">
         <div className="mx-auto max-w-7xl px-4 py-8">
           <nav className="text-sm text-[var(--color-ink-soft)] mb-4">
-            <Link href="/" className="hover:text-[var(--color-accent)]">Úvod</Link>
+            <Link href="/" className="hover:text-[var(--color-accent)]">{t(lang, "crumb.home")}</Link>
             <span className="mx-2">/</span>
-            <Link href="/katalog" className="hover:text-[var(--color-accent)]">Katalog</Link>
+            <Link href="/katalog" className="hover:text-[var(--color-accent)]">{t(lang, "nav.catalog")}</Link>
             <span className="mx-2">/</span>
             <span className="text-[var(--color-ink)]">{category.name}</span>
           </nav>
@@ -50,7 +55,7 @@ export default async function CategoryPage({
 
           {/* Other categories */}
           <div className="flex flex-wrap gap-2 mt-5">
-            {CATEGORIES.filter((c) => c.slug !== category.slug).map((c) => (
+            {CATEGORIES.filter((c) => c.slug !== orig.slug).map((c) => locCategory(c, lang)).map((c) => (
               <Link
                 key={c.slug}
                 href={`/katalog/${c.slug}`}

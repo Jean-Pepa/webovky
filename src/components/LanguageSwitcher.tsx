@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CzFlag, GbFlag, DeFlag } from "./Icons";
-
-type Lang = "cs" | "en" | "de";
+import { useI18n, type Lang } from "@/i18n/context";
 
 const LANGS: { code: Lang; label: string; Flag: typeof CzFlag }[] = [
   { code: "cs", label: "Čeština", Flag: CzFlag },
@@ -12,11 +11,10 @@ const LANGS: { code: Lang; label: string; Flag: typeof CzFlag }[] = [
 ];
 
 export default function LanguageSwitcher() {
+  const { lang, setLang } = useI18n();
   const [open, setOpen] = useState(false);
-  const [current, setCurrent] = useState<Lang>("cs");
   const ref = useRef<HTMLDivElement>(null);
 
-  // zavřít při kliknutí mimo
   useEffect(() => {
     function onDoc(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
@@ -25,12 +23,10 @@ export default function LanguageSwitcher() {
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  const Active = LANGS.find((l) => l.code === current)!.Flag;
-
-  // pořadí: aktivní nahoře, pak ostatní
+  const Active = LANGS.find((l) => l.code === lang)!.Flag;
   const ordered = [
-    ...LANGS.filter((l) => l.code === current),
-    ...LANGS.filter((l) => l.code !== current),
+    ...LANGS.filter((l) => l.code === lang),
+    ...LANGS.filter((l) => l.code !== lang),
   ];
 
   return (
@@ -38,7 +34,7 @@ export default function LanguageSwitcher() {
       <button
         onClick={() => setOpen((o) => !o)}
         className="grid place-items-center w-10 h-10 rounded-lg hover:bg-[var(--color-bg)]"
-        aria-label="Změnit jazyk"
+        aria-label="Change language"
         aria-expanded={open}
       >
         <Active className="w-6 h-6" />
@@ -50,18 +46,16 @@ export default function LanguageSwitcher() {
             <button
               key={code}
               onClick={() => {
-                setCurrent(code);
+                setLang(code);
                 setOpen(false);
               }}
               className={`w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-[var(--color-bg)] ${
-                code === current ? "font-semibold" : ""
+                code === lang ? "font-semibold" : ""
               }`}
             >
               <Flag className="w-5 h-5" />
               <span>{label}</span>
-              {code === current && (
-                <span className="ml-auto text-[var(--color-accent)]">✓</span>
-              )}
+              {code === lang && <span className="ml-auto text-[var(--color-accent)]">✓</span>}
             </button>
           ))}
         </div>

@@ -2,15 +2,28 @@
 
 import { useState } from "react";
 import type { Param } from "@/data/catalog";
+import { useI18n } from "@/i18n/context";
 import Stars from "./Stars";
 
 type Tab = "popis" | "parametry" | "hodnoceni";
 
-const DEMO_REVIEWS = [
-  { author: "Martin K. (živnostník)", rating: 5, text: "Kvalita sedí, dodání rychlé. Doporučuji pro každodenní práci." },
-  { author: "Stavby Novák s.r.o.", rating: 5, text: "Objednáváme opakovaně, vždy skladem a za dobrou cenu." },
-  { author: "Petr S.", rating: 4, text: "Spokojenost, jen závoz přišel o den později." },
-];
+const REVIEWS: Record<"cs" | "en" | "de", { author: string; rating: number; text: string }[]> = {
+  cs: [
+    { author: "Martin K. (živnostník)", rating: 5, text: "Kvalita sedí, dodání rychlé. Doporučuji pro každodenní práci." },
+    { author: "Stavby Novák s.r.o.", rating: 5, text: "Objednáváme opakovaně, vždy skladem a za dobrou cenu." },
+    { author: "Petr S.", rating: 4, text: "Spokojenost, jen závoz přišel o den později." },
+  ],
+  en: [
+    { author: "Martin K. (tradesman)", rating: 5, text: "Quality is spot on, fast delivery. Recommended for everyday work." },
+    { author: "Novák Construction Ltd.", rating: 5, text: "We order repeatedly, always in stock and at a good price." },
+    { author: "Peter S.", rating: 4, text: "Happy, only the delivery came a day later." },
+  ],
+  de: [
+    { author: "Martin K. (Handwerker)", rating: 5, text: "Qualität stimmt, schnelle Lieferung. Für den täglichen Einsatz empfehlenswert." },
+    { author: "Novák Bau GmbH", rating: 5, text: "Wir bestellen regelmäßig, immer auf Lager und zu gutem Preis." },
+    { author: "Peter S.", rating: 4, text: "Zufrieden, nur die Lieferung kam einen Tag später." },
+  ],
+};
 
 export default function ProductTabs({
   description,
@@ -23,12 +36,14 @@ export default function ProductTabs({
   rating: number;
   ratingCount: number;
 }) {
+  const { t, lang } = useI18n();
   const [tab, setTab] = useState<Tab>("popis");
+  const DEMO_REVIEWS = REVIEWS[lang];
 
   const tabs: [Tab, string][] = [
-    ["popis", "Popis"],
-    ["parametry", "Parametry"],
-    ["hodnoceni", `Hodnocení (${ratingCount})`],
+    ["popis", t("pd.tab.desc")],
+    ["parametry", t("pd.tab.params")],
+    ["hodnoceni", `${t("pd.tab.reviews")} (${ratingCount})`],
   ];
 
   return (
@@ -76,7 +91,7 @@ export default function ProductTabs({
               <div>
                 <Stars rating={rating} size="md" />
                 <div className="text-sm text-[var(--color-ink-soft)] mt-1">
-                  {ratingCount} hodnocení
+                  {ratingCount} {t("pd.ratingsCount")}
                 </div>
               </div>
             </div>

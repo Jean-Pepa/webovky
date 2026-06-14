@@ -1,43 +1,31 @@
 import Link from "next/link";
+import { getLang } from "@/i18n/server";
+import { t } from "@/i18n/messages";
 
 const BRANCHES = [
-  {
-    city: "Brno",
-    address: "Vodařská 10, Horní Heršpice, 619 00 Brno",
-    phone: "545 233 742",
-    tel: "+420545233742",
-    email: "brno@eika.cz",
-  },
-  {
-    city: "Znojmo",
-    address: "Oblekovice, 671 81 Znojmo",
-    phone: "—",
-    tel: "",
-    email: "info@eika.cz",
-  },
+  { city: "Brno", address: "Vodařská 10, Horní Heršpice, 619 00 Brno", phone: "545 233 742", tel: "+420545233742", email: "brno@eika.cz" },
+  { city: "Znojmo", address: "Oblekovice, 671 81 Znojmo", phone: "—", tel: "", email: "info@eika.cz" },
 ];
 
-const HOURS = [
-  ["Pondělí – Pátek", "7:00 – 16:00"],
-  ["Sobota", "8:00 – 11:00"],
-  ["Neděle", "Zavřeno"],
-];
+export default async function ContactPage() {
+  const lang = await getLang();
+  const HOURS: [string, string][] = [
+    [t(lang, "contact.mon_fri"), "7:00 – 16:00"],
+    [t(lang, "contact.sat"), "8:00 – 11:00"],
+    [t(lang, "contact.sun"), t(lang, "contact.closed")],
+  ];
 
-export default function ContactPage() {
   return (
     <div>
       <div className="bg-[var(--color-steel-900)] text-white">
         <div className="mx-auto max-w-7xl px-4 py-14">
           <nav className="text-sm text-[var(--color-steel-400)] mb-4">
-            <Link href="/" className="hover:text-white">Úvod</Link>
+            <Link href="/" className="hover:text-white">{t(lang, "crumb.home")}</Link>
             <span className="mx-2">/</span>
-            <span className="text-white">Kontakt</span>
+            <span className="text-white">{t(lang, "nav.contact")}</span>
           </nav>
-          <h1 className="text-4xl font-extrabold">Kontakt a pobočky</h1>
-          <p className="mt-3 max-w-xl text-[var(--color-steel-200)]">
-            Jsme tu pro firmy, živnostníky i koncové zákazníky. Ozvěte se nám –
-            poradíme s výběrem materiálu, cenou i dopravou.
-          </p>
+          <h1 className="text-4xl font-extrabold">{t(lang, "contact.title")}</h1>
+          <p className="mt-3 max-w-xl text-[var(--color-steel-200)]">{t(lang, "contact.intro")}</p>
         </div>
       </div>
 
@@ -45,29 +33,19 @@ export default function ContactPage() {
         <div className="space-y-6">
           {BRANCHES.map((b) => (
             <div key={b.city} className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6">
-              <h2 className="text-xl font-bold">Pobočka {b.city}</h2>
+              <h2 className="text-xl font-bold">{t(lang, "pd.branch")} {b.city}</h2>
               <p className="mt-2 text-[var(--color-ink-soft)]">{b.address}</p>
               <div className="mt-3 space-y-1 text-sm">
                 {b.tel && (
-                  <p>
-                    Telefon:{" "}
-                    <a href={`tel:${b.tel}`} className="font-semibold text-[var(--color-accent)]">
-                      {b.phone}
-                    </a>
-                  </p>
+                  <p>{t(lang, "cart.phone")}: <a href={`tel:${b.tel}`} className="font-semibold text-[var(--color-accent)]">{b.phone}</a></p>
                 )}
-                <p>
-                  E-mail:{" "}
-                  <a href={`mailto:${b.email}`} className="font-semibold text-[var(--color-accent)]">
-                    {b.email}
-                  </a>
-                </p>
+                <p>{t(lang, "cart.email")}: <a href={`mailto:${b.email}`} className="font-semibold text-[var(--color-accent)]">{b.email}</a></p>
               </div>
             </div>
           ))}
 
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6">
-            <h2 className="text-xl font-bold mb-3">Otevírací doba</h2>
+            <h2 className="text-xl font-bold mb-3">{t(lang, "contact.hours")}</h2>
             <dl className="space-y-2 text-sm">
               {HOURS.map(([d, h]) => (
                 <div key={d} className="flex justify-between">
@@ -79,42 +57,17 @@ export default function ContactPage() {
           </div>
         </div>
 
-        {/* Contact form (demo) */}
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 h-fit">
-          <h2 className="text-xl font-bold mb-1">Napište nám</h2>
-          <p className="text-sm text-[var(--color-ink-soft)] mb-5">
-            Poptávka, dotaz na sortiment nebo cenu — odpovíme co nejdříve.
-          </p>
+          <h2 className="text-xl font-bold mb-1">{t(lang, "contact.write")}</h2>
+          <p className="text-sm text-[var(--color-ink-soft)] mb-5">{t(lang, "contact.formIntro")}</p>
           <form className="space-y-4">
-            <input
-              placeholder="Jméno / firma"
-              className="w-full px-3 py-2 rounded-md border border-[var(--color-border)] outline-none focus:border-[var(--color-accent)]"
-            />
-            <input
-              type="email"
-              placeholder="E-mail"
-              className="w-full px-3 py-2 rounded-md border border-[var(--color-border)] outline-none focus:border-[var(--color-accent)]"
-            />
-            <input
-              type="tel"
-              placeholder="Telefon"
-              className="w-full px-3 py-2 rounded-md border border-[var(--color-border)] outline-none focus:border-[var(--color-accent)]"
-            />
-            <textarea
-              rows={4}
-              placeholder="Vaše zpráva…"
-              className="w-full px-3 py-2 rounded-md border border-[var(--color-border)] outline-none focus:border-[var(--color-accent)]"
-            />
-            <button
-              type="button"
-              className="w-full py-3 rounded-md font-semibold text-white"
-              style={{ background: "var(--color-accent)" }}
-            >
-              Odeslat zprávu
+            <input placeholder={t(lang, "cart.companyOrName")} className="w-full px-3 py-2 rounded-md border border-[var(--color-border)] outline-none focus:border-[var(--color-accent)]" />
+            <input type="email" placeholder={t(lang, "cart.email")} className="w-full px-3 py-2 rounded-md border border-[var(--color-border)] outline-none focus:border-[var(--color-accent)]" />
+            <input type="tel" placeholder={t(lang, "cart.phone")} className="w-full px-3 py-2 rounded-md border border-[var(--color-border)] outline-none focus:border-[var(--color-accent)]" />
+            <textarea rows={4} placeholder={t(lang, "cart.note")} className="w-full px-3 py-2 rounded-md border border-[var(--color-border)] outline-none focus:border-[var(--color-accent)]" />
+            <button type="button" className="w-full py-3 rounded-full font-semibold text-white" style={{ background: "var(--color-accent)" }}>
+              {t(lang, "contact.send")}
             </button>
-            <p className="text-xs text-[var(--color-ink-soft)] text-center">
-              Demo Fáze 1 — formulář zatím neodesílá e-mail.
-            </p>
           </form>
         </div>
       </div>
