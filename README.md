@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EIKA – objednávková webová aplikace
 
-## Getting Started
+Webová aplikace pro firmu **EIKA ZNOJMO, a.s.** (hutní materiál, železářství,
+vinohradnictví) — objednávání a provoz pro firmy, živnostníky i koncové
+zákazníky.
 
-First, run the development server:
+> Postaveno na Next.js 16 (App Router) + React 19 + Tailwind CSS 4.
+
+## Spuštění
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Aplikace běží na [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Co je hotové (Fáze 1 – vzhled + katalog)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Veřejná část:
 
-## Learn More
+- **Úvod** (`/`) — hero, kategorie, služby, doporučené zboží, B2B blok
+- **Katalog** (`/katalog`) — vyhledávání a přehled zboží
+- **Kategorie** (`/katalog/[kategorie]`) — hutní materiál / železářství / vinohradnictví
+- **Detail produktu** (`/produkt/[slug]`) — cena B2C/B2B, sklad, popis
+- **Košík + objednávka** (`/kosik`) — košík v prohlížeči, formulář s poli pro firmy (IČO/DIČ)
+- **Kontakt** (`/kontakt`) — pobočky Brno a Znojmo
 
-To learn more about Next.js, take a look at the following resources:
+Provozní část (admin):
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Přehled** (`/admin`) — statistiky tržeb, top produkty, objednávky dle typu zákazníka
+- **Produkty** (`/admin/produkty`) — přehled sortimentu
+- **Objednávky** (`/admin/objednavky`) — přehled a stavy objednávek
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Data jsou zatím **ukázková** (`src/data/`). 
 
-## Deploy on Vercel
+## Další fáze (plán)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Fáze 2** — napojení na databázi (Supabase): produkty, objednávky, zákazníci
+- **Fáze 3** — firemní účty, přihlášení, velkoobchodní ceny, historie objednávek
+- **Fáze 4** — reálné statistiky a reporty v adminu
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Struktura
+
+```
+src/
+  app/
+    (shop)/        # veřejný web (hlavička + patička)
+    admin/         # administrace (vlastní layout)
+  components/      # sdílené UI prvky
+  context/         # košík (CartContext)
+  data/            # demo data (katalog, statistiky)
+  lib/             # pomocné funkce (formátování)
+```

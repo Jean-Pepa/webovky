@@ -1,34 +1,28 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AuthProvider } from "@/contexts/AuthContext";
-import AdminToolbar from "@/components/admin/AdminToolbar";
+import { CartProvider } from "@/context/CartContext";
 
 export const metadata: Metadata = {
-  title: "INN | Kristián Vyskočil",
+  title: "EIKA – hutní materiál a železářství | objednávkový systém",
   description:
-    "Domy. Prostory. Místa. Design. Student Fakulty architektury VUT v Brně.",
+    "Objednávková aplikace EIKA ZNOJMO, a.s. – hutní materiál, železářství a vinohradnictví pro firmy, živnostníky i koncové zákazníky.",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="cs">
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=Montserrat:wght@100;200;300;400&subset=latin-ext&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&subset=latin-ext&display=swap"
           rel="stylesheet"
         />
       </head>
       <body>
-        <AuthProvider>
-          {children}
-          <AdminToolbar />
-        </AuthProvider>
+        <CartProvider>{children}</CartProvider>
       </body>
     </html>
   );
