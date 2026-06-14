@@ -22,6 +22,7 @@ const M: Dict = {
   "nav.catalog": { cs: "Katalog", en: "Catalogue", de: "Katalog" },
   "nav.inquiry": { cs: "Poptávka", en: "Request a quote", de: "Anfrage" },
   "nav.back": { cs: "Zpět", en: "Back", de: "Zurück" },
+  "nav.onlineShop": { cs: "Online obchod", en: "Online shop", de: "Online-Shop" },
 
   // Inquiry / Poptávka
   "inq.title": { cs: "Poptávka", en: "Request a quote", de: "Anfrage" },

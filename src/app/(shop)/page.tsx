@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { featuredProducts } from "@/data/catalog";
 import ProductCard from "@/components/ProductCard";
-import { BeamIcon, CartIcon, TruckIcon, StarBadgeIcon, BoxesIcon, ArrowRightIcon } from "@/components/Icons";
+import { BeamIcon, CartIcon, TruckIcon, StarBadgeIcon, BoxesIcon, ArrowRightIcon, ChevronDownIcon } from "@/components/Icons";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
 import { locCategories } from "@/i18n/data";
@@ -64,6 +64,16 @@ export default async function HomePage() {
               );
             })}
           </div>
+
+          {/* Skákající tlačítko – Online obchod */}
+          <Link
+            href="/katalog"
+            className="mt-10 inline-flex items-center gap-2 px-7 py-3 rounded-full text-white font-semibold shadow-md animate-bounce"
+            style={{ background: "var(--color-accent)" }}
+          >
+            {t(lang, "nav.onlineShop")}
+            <ChevronDownIcon className="w-5 h-5" />
+          </Link>
         </div>
       </section>
 
