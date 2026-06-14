@@ -14,7 +14,7 @@ export default async function HomePage() {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 space-y-8">
       {/* HERO BANNER – obsah na střed (bez obrázku) */}
-      <section className="rounded-3xl overflow-hidden bg-[#f3f4f6]">
+      <section className="rounded-3xl overflow-hidden bg-[#f3f4f6]" style={{ transform: "scale(0.95)", transformOrigin: "top center" }}>
         <div className="px-6 md:px-12 py-16 md:py-20 flex flex-col items-center text-center">
           <h2 className="text-4xl md:text-6xl font-semibold tracking-tight leading-[1.08]">
             {t(lang, "hero.t1")}
