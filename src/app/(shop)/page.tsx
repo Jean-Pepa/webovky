@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { PRODUCTS, featuredProducts } from "@/data/catalog";
 import ProductCard from "@/components/ProductCard";
-import { BeamIcon, CartIcon, TruckIcon, BoxIcon, ArrowRightIcon } from "@/components/Icons";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
 import { locCategories } from "@/i18n/data";
@@ -14,71 +13,23 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 space-y-8">
-      {/* HERO BANNER */}
-      <section className="rounded-3xl overflow-hidden bg-[#f3f4f6] grid lg:grid-cols-[1.15fr_0.85fr]">
-        {/* Left – content */}
-        <div className="p-8 md:p-12 lg:p-14 order-2 lg:order-1">
-          <h2 className="text-3xl md:text-5xl font-semibold tracking-tight leading-[1.08]">
-            {t(lang, "hero.t1")}
-            <br />
-            {t(lang, "hero.t2a")}{" "}
-            <span style={{ color: "var(--color-accent)" }}>{t(lang, "hero.t2b")}</span>
-          </h2>
-          <div className="mt-4 w-12 h-1 rounded-full" style={{ background: "var(--color-accent)" }} />
-          <p className="mt-5 text-[var(--color-ink-soft)] max-w-md">{t(lang, "hero.sub")}</p>
-
-          {/* 3 funkční tlačítka */}
-          <div className="mt-7 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { icon: BeamIcon, label: t(lang, "promo.t1"), href: "/katalog" },
-              { icon: CartIcon, label: t(lang, "hero.retail"), href: "/kontakt" },
-              { icon: TruckIcon, label: t(lang, "promo.t4"), href: "/kontakt" },
-            ].map((c, i) => {
-              const Icon = c.icon;
-              return (
-                <Link key={i} href={c.href} className="group bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition flex flex-col gap-5">
-                  <Icon className="w-7 h-7" style={{ color: "var(--color-accent)" }} />
-                  <div>
-                    <div className="font-bold text-sm tracking-wide uppercase">{c.label}</div>
-                    <ArrowRightIcon className="w-5 h-5 mt-2 text-[var(--color-ink-soft)] group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Údaje */}
-          <div className="mt-8 pt-6 border-t border-[var(--color-border)] flex flex-wrap gap-x-10 gap-y-4">
-            {[
-              { icon: BoxIcon, title: t(lang, "hero.f1t"), sub: t(lang, "hero.f1s") },
-              { icon: TruckIcon, title: t(lang, "hero.f2t"), sub: t(lang, "hero.f2s") },
-            ].map((f, i) => {
-              const Icon = f.icon;
-              return (
-                <div key={i} className="flex items-center gap-3">
-                  <span className="w-10 h-10 rounded-xl grid place-items-center bg-white shadow-sm text-[var(--color-accent)]">
-                    <Icon className="w-5 h-5" />
-                  </span>
-                  <div>
-                    <div className="font-semibold text-sm">{f.title}</div>
-                    <div className="text-xs text-[var(--color-ink-soft)]">{f.sub}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right – fotka (nahraj public/hero.jpg) */}
-        <div
-          className="relative min-h-[240px] lg:min-h-[500px] order-1 lg:order-2"
-          style={{
-            backgroundImage: "url(/hero.jpg)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundColor: "#2b323b",
-          }}
-        />
+      {/* HERO BANNER – nahraný obrázek + funkční tlačítka */}
+      <section className="relative rounded-3xl overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/hero.jpg" alt={t(lang, "hero.t1")} className="block w-full h-auto" />
+        {[
+          { href: "/katalog", label: t(lang, "promo.t1"), left: "5%" },
+          { href: "/kontakt", label: t(lang, "hero.retail"), left: "26.5%" },
+          { href: "/kontakt", label: t(lang, "promo.t4"), left: "48%" },
+        ].map((h, i) => (
+          <Link
+            key={i}
+            href={h.href}
+            aria-label={h.label}
+            className="absolute rounded-xl hover:bg-white/10 transition"
+            style={{ left: h.left, width: "20%", top: "48%", height: "34%" }}
+          />
+        ))}
       </section>
 
       {/* CATEGORY TILES */}
