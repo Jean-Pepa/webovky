@@ -15,17 +15,17 @@ export default async function HomePage() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 space-y-8">
       {/* HERO BANNER – obsah na střed (bez obrázku) */}
       <section className="rounded-3xl overflow-hidden bg-[#f3f4f6]">
-        <div className="px-6 py-12 md:py-16 flex flex-col items-center text-center">
-          <h2 className="text-3xl md:text-5xl font-semibold tracking-tight leading-[1.08] uppercase">
+        <div className="px-6 md:px-12 py-16 md:py-20 flex flex-col items-center text-center">
+          <h2 className="text-4xl md:text-6xl font-semibold tracking-tight leading-[1.08] uppercase">
             {t(lang, "hero.t1")}
             <br />
             {t(lang, "hero.t2a")}{" "}
             <span style={{ color: "var(--color-accent)" }}>{t(lang, "hero.t2b")}</span>
           </h2>
-          <p className="mt-5 text-[var(--color-ink-soft)] max-w-xl">{t(lang, "hero.sub")}</p>
+          <p className="mt-6 text-base md:text-lg text-[var(--color-ink-soft)] max-w-2xl">{t(lang, "hero.sub")}</p>
 
           {/* 3 funkční tlačítka */}
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-2xl">
+          <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-5 w-full max-w-6xl">
             {[
               { icon: BeamIcon, label: t(lang, "promo.t1"), href: "/katalog" },
               { icon: CartIcon, label: t(lang, "hero.retail"), href: "/kontakt" },
@@ -33,17 +33,17 @@ export default async function HomePage() {
             ].map((c, i) => {
               const Icon = c.icon;
               return (
-                <Link key={i} href={c.href} className="group bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition flex flex-col items-center gap-3">
-                  <Icon className="w-7 h-7 text-[var(--color-accent)]" />
-                  <div className="font-bold text-sm tracking-wide uppercase text-[var(--color-ink)]">{c.label}</div>
-                  <ArrowRightIcon className="w-5 h-5 text-[var(--color-ink-soft)] group-hover:translate-x-1 transition-transform" />
+                <Link key={i} href={c.href} className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition flex flex-col items-center gap-4">
+                  <Icon className="w-9 h-9 text-[var(--color-accent)]" />
+                  <div className="font-bold text-base tracking-wide uppercase text-[var(--color-ink)]">{c.label}</div>
+                  <ArrowRightIcon className="w-6 h-6 text-[var(--color-ink-soft)] group-hover:translate-x-1 transition-transform" />
                 </Link>
               );
             })}
           </div>
 
           {/* Statistiky */}
-          <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-8 w-full max-w-4xl">
+          <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-10 w-full max-w-6xl">
             {[
               { icon: StarBadgeIcon, h: t(lang, "stat.h1"), s: t(lang, "stat.s1") },
               { icon: BoxesIcon, h: t(lang, "stat.h2"), s: t(lang, "stat.s2") },
@@ -52,9 +52,9 @@ export default async function HomePage() {
               const Icon = st.icon;
               return (
                 <div key={i} className="flex flex-col items-center text-center">
-                  <Icon className="w-10 h-10 text-[var(--color-accent)]" />
-                  <div className="mt-3 text-lg font-bold text-[var(--color-accent)]">{st.h}</div>
-                  <div className="mt-1 text-sm text-[var(--color-ink-soft)] max-w-[16rem]">{st.s}</div>
+                  <Icon className="w-12 h-12 text-[var(--color-accent)]" />
+                  <div className="mt-3 text-xl font-bold text-[var(--color-accent)]">{st.h}</div>
+                  <div className="mt-1 text-base text-[var(--color-ink-soft)] max-w-[18rem]">{st.s}</div>
                 </div>
               );
             })}
