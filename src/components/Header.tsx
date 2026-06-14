@@ -10,9 +10,9 @@ import {
   HeartIcon,
   UserIcon,
   ClipboardIcon,
-  CzFlag,
   ChevronDownIcon,
 } from "./Icons";
+import LanguageSwitcher from "./LanguageSwitcher";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/context/FavoritesContext";
 import { CATEGORIES } from "@/data/catalog";
@@ -94,9 +94,9 @@ export default function Header() {
           </Link>
 
           {/* Jazyk */}
-          <span className="hidden sm:grid place-items-center w-10 h-10" aria-hidden>
-            <CzFlag className="w-6 h-6" />
-          </span>
+          <div className="hidden sm:block">
+            <LanguageSwitcher />
+          </div>
 
           {/* Košík */}
           <Link href="/kosik" className="relative grid place-items-center w-10 h-10 rounded-lg hover:bg-[var(--color-bg)] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]" aria-label="Košík">

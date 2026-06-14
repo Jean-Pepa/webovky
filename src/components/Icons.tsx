@@ -195,6 +195,40 @@ export function CzFlag({ className }: IconProps) {
   );
 }
 
+export function GbFlag({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-label="English">
+      <defs>
+        <clipPath id="gb-circle"><circle cx="12" cy="12" r="11" /></clipPath>
+      </defs>
+      <g clipPath="url(#gb-circle)">
+        <rect width="24" height="24" fill="#012169" />
+        <path d="M0 0 24 24M24 0 0 24" stroke="#fff" strokeWidth="5" />
+        <path d="M0 0 24 24M24 0 0 24" stroke="#C8102E" strokeWidth="2" />
+        <path d="M12 0V24M0 12H24" stroke="#fff" strokeWidth="6" />
+        <path d="M12 0V24M0 12H24" stroke="#C8102E" strokeWidth="3.5" />
+      </g>
+      <circle cx="12" cy="12" r="11" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="1" />
+    </svg>
+  );
+}
+
+export function DeFlag({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-label="Deutsch">
+      <defs>
+        <clipPath id="de-circle"><circle cx="12" cy="12" r="11" /></clipPath>
+      </defs>
+      <g clipPath="url(#de-circle)">
+        <rect width="24" height="8" y="0" fill="#000000" />
+        <rect width="24" height="8" y="8" fill="#DD0000" />
+        <rect width="24" height="8" y="16" fill="#FFCE00" />
+      </g>
+      <circle cx="12" cy="12" r="11" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="1" />
+    </svg>
+  );
+}
+
 export function UserIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
