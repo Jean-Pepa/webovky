@@ -12,7 +12,7 @@ export default function Logo({
 }) {
   return (
     <img
-      src="/logo.svg"
+      src="/logo.png"
       alt="Eika"
       className={`${className} w-auto`}
       style={light ? { filter: "brightness(0) invert(1)" } : undefined}

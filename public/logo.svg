@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 108" fill="none" role="img" aria-label="Eika">
-  <path d="M40 8 C28 8 22 14 21 26 C16 34 16 40 18 46 C16 52 16 58 21 66 C22 82 28 92 40 100 C120 96 140 96 220 100 C232 92 238 82 239 66 C244 58 244 52 242 46 C244 40 244 34 239 26 C238 14 232 8 220 8 C140 12 120 12 40 8 Z" stroke="#d4332b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
-  <path d="M44 18 C34 18 30 23 29 32 C25 40 25 44 27 50 C25 56 25 60 29 68 C30 81 34 88 44 92 C120 89 140 89 216 92 C226 88 230 81 231 68 C235 60 235 56 233 50 C235 44 235 40 231 32 C230 23 226 18 216 18 C140 21 120 21 44 18 Z" stroke="#d4332b" stroke-width="2" stroke-linejoin="round" opacity="0.85"/>
-  <text x="130" y="72" text-anchor="middle" font-family="'Arial Rounded MT Bold','Helvetica Rounded',system-ui,sans-serif" font-weight="900" font-size="50" letter-spacing="-1" fill="#d4332b">Eika</text>
-</svg>
