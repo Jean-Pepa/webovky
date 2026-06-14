@@ -9,43 +9,26 @@ export default function HomePage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 space-y-8">
-      {/* PROMO BANNERS */}
-      <section className="grid lg:grid-cols-3 gap-4">
-        {/* Hlavní banner */}
+      {/* PROMO BANNER */}
+      <section>
         <Link
           href="/katalog"
-          className="lg:col-span-2 relative overflow-hidden rounded-2xl text-white p-8 md:p-10 min-h-[240px] flex flex-col justify-center"
+          className="relative overflow-hidden rounded-2xl text-white p-8 md:p-12 min-h-[240px] flex flex-col justify-center"
           style={{ background: "linear-gradient(120deg,#d4332b,#a51f18)" }}
         >
           <span className="inline-block w-fit px-3 py-1 rounded-full text-xs font-bold bg-white/20">
             Cenové hity
           </span>
-          <h1 className="mt-3 text-3xl md:text-5xl font-extrabold leading-tight max-w-lg">
+          <h1 className="mt-3 text-3xl md:text-5xl font-extrabold leading-tight max-w-2xl">
             Eika dny — slevy na celý sortiment
           </h1>
-          <p className="mt-2 text-white/90 max-w-md">
+          <p className="mt-2 text-white/90 max-w-xl">
             Hutní materiál, železářství a vinohradnictví za zvýhodněné ceny.
           </p>
           <span className="mt-5 inline-block w-fit px-5 py-2.5 rounded-full bg-white text-[var(--color-accent)] font-semibold text-sm">
             Nakoupit se slevou
           </span>
         </Link>
-
-        {/* Dva malé bannery */}
-        <div className="grid gap-4">
-          <Link href="/kosik" className="rounded-2xl bg-white p-6 flex flex-col justify-center hover:shadow-md transition">
-            <span className="text-xs font-bold text-[var(--color-accent)]">Pro firmy</span>
-            <h3 className="mt-1 text-xl font-bold leading-snug">Velkoobchodní ceny</h3>
-            <p className="text-sm text-[var(--color-ink-soft)] mt-1">Účet pro firmy a živnostníky</p>
-            <span className="mt-3 text-sm font-semibold text-[var(--color-accent)]">Více ›</span>
-          </Link>
-          <Link href="/katalog/vinohradnictvi" className="rounded-2xl bg-white p-6 flex flex-col justify-center hover:shadow-md transition">
-            <span className="text-xs font-bold text-[var(--color-accent)]">Sezóna</span>
-            <h3 className="mt-1 text-xl font-bold leading-snug">Potřeby pro vinaře</h3>
-            <p className="text-sm text-[var(--color-ink-soft)] mt-1">Sloupky, drát, nářadí</p>
-            <span className="mt-3 text-sm font-semibold text-[var(--color-accent)]">Více ›</span>
-          </Link>
-        </div>
       </section>
 
       {/* CATEGORY TILES */}
