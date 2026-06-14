@@ -23,6 +23,9 @@ const M: Dict = {
   "nav.inquiry": { cs: "Poptávka", en: "Request a quote", de: "Anfrage" },
   "nav.back": { cs: "Zpět", en: "Back", de: "Zurück" },
   "nav.onlineShop": { cs: "Online obchod", en: "Online shop", de: "Online-Shop" },
+  "badge.tagline": { cs: "Spolehlivý partner", en: "Reliable partner", de: "Zuverlässiger Partner" },
+  "badge.since": { cs: "od roku 1991", en: "since 1991", de: "seit 1991" },
+  "badge.cta": { cs: "Zjistěte víc", en: "Find out more", de: "Mehr erfahren" },
 
   // Inquiry / Poptávka
   "inq.title": { cs: "Poptávka", en: "Request a quote", de: "Anfrage" },
