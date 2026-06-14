@@ -14,7 +14,6 @@ import AddToCartButton from "@/components/AddToCartButton";
 import FavoriteButton from "@/components/FavoriteButton";
 import Stars from "@/components/Stars";
 import Badges, { discountPercent } from "@/components/Badges";
-import { TruckIcon, ShieldIcon } from "@/components/Icons";
 
 export function generateStaticParams() {
   return PRODUCTS.map((p) => ({ slug: p.slug }));
@@ -153,18 +152,6 @@ export default async function ProductPage({
               </div>
             </div>
           )}
-
-          {/* Delivery info */}
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 space-y-3 text-sm">
-            <div className="flex items-start gap-3">
-              <TruckIcon className="w-5 h-5 text-[var(--color-accent)] shrink-0" />
-              <span><strong>Doprava do 15 km zdarma.</strong> Závoz na stavbu i provozovnu dle objemu objednávky.</span>
-            </div>
-            <div className="flex items-start gap-3">
-              <ShieldIcon className="w-5 h-5 text-[var(--color-accent)] shrink-0" />
-              <span><strong>Kompletace zakázek.</strong> Připravíme zboží na jeden odběr — ušetříte čas.</span>
-            </div>
-          </div>
         </div>
       </div>
 

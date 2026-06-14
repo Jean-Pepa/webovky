@@ -1,8 +1,8 @@
-// Logo EIKA – červený nápis "Eika" v zaobleném rámečku (dle značky).
-// light=true → bílá varianta pro tmavé sekce (patička, admin).
+// Logo EIKA – červený nápis "Eika" v ozdobném rámečku (vektorová rekreace).
+// light=true → bílá varianta pro barevné/tmavé plochy.
 export default function Logo({
   light = false,
-  className = "h-9",
+  className = "h-10",
 }: {
   light?: boolean;
   className?: string;
@@ -10,42 +10,50 @@ export default function Logo({
   const color = light ? "#ffffff" : "var(--color-accent)";
   return (
     <svg
-      viewBox="0 0 132 48"
+      viewBox="0 0 168 64"
       className={className}
       role="img"
       aria-label="Eika"
       fill="none"
     >
-      {/* Rámeček (cedulka) */}
+      {/* Vnější ozdobný rámeček */}
       <rect
-        x="2.5"
+        x="3"
         y="6"
-        width="127"
-        height="36"
-        rx="12"
+        width="162"
+        height="52"
+        rx="18"
         stroke={color}
-        strokeWidth="3.5"
+        strokeWidth="4.5"
       />
-      {/* Vnitřní jemný rámeček pro „plaketový" vzhled */}
+      {/* Vnitřní linka (plaketový vzhled) */}
       <rect
-        x="7"
-        y="10.5"
-        width="118"
-        height="27"
-        rx="8"
+        x="9"
+        y="11.5"
+        width="150"
+        height="41"
+        rx="13"
         stroke={color}
-        strokeWidth="1"
-        opacity="0.45"
+        strokeWidth="1.6"
       />
+      {/* Rohové ozdoby (náznak svorek) */}
+      {[
+        [20, 18],
+        [148, 18],
+        [20, 46],
+        [148, 46],
+      ].map(([cx, cy], i) => (
+        <circle key={i} cx={cx} cy={cy} r="1.7" fill={color} />
+      ))}
       {/* Nápis Eika */}
       <text
-        x="66"
-        y="33.5"
+        x="84"
+        y="44"
         textAnchor="middle"
         fontFamily="Inter, system-ui, sans-serif"
-        fontWeight="800"
-        fontSize="26"
-        letterSpacing="-0.5"
+        fontWeight="900"
+        fontSize="34"
+        letterSpacing="-1"
         fill={color}
       >
         Eika

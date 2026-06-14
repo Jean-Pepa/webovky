@@ -165,7 +165,7 @@ export default function CartPage() {
             <div>
               <label className="block text-sm font-medium mb-1.5">Způsob dodání</label>
               <select className="w-full px-3 py-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] outline-none focus:border-[var(--color-accent)]">
-                <option>Závoz na adresu (do 15 km zdarma)</option>
+                <option>Závoz na adresu</option>
                 <option>Osobní odběr — pobočka Brno</option>
                 <option>Osobní odběr — pobočka Znojmo</option>
               </select>
@@ -207,16 +207,12 @@ export default function CartPage() {
             </div>
             <div className="flex justify-between">
               <dt className="text-[var(--color-ink-soft)]">Doprava</dt>
-              <dd className="font-semibold text-[var(--color-success)]">do 15 km zdarma</dd>
+              <dd className="font-semibold">dle dohody</dd>
             </div>
           </dl>
           <div className="border-t border-[var(--color-border)] mt-4 pt-4 flex justify-between items-end">
             <span className="font-semibold">Celkem s DPH</span>
             <span className="text-2xl font-extrabold">{formatCZK(withVat(total))}</span>
-          </div>
-          <div className="mt-4 flex items-center gap-2 text-xs text-[var(--color-success)] bg-green-50 rounded-lg p-3">
-            <span className="text-base">✓</span>
-            Doprava do 15 km zdarma — ušetříte za závoz na stavbu i provoz.
           </div>
         </aside>
       </div>
