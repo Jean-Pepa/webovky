@@ -56,9 +56,9 @@ const M: Dict = {
   "home.fullCatalog": { cs: "Celý katalog ›", en: "Full catalogue ›", de: "Ganzer Katalog ›" },
 
   // Hero banner
-  "hero.t1": { cs: "Profesionální materiál.", en: "Professional material.", de: "Profi-Material." },
+  "hero.t1": { cs: "Profesionální materiál", en: "Professional material", de: "Profi-Material" },
   "hero.t2a": { cs: "Pro", en: "For", de: "Für" },
-  "hero.t2b": { cs: "každý projekt.", en: "every project.", de: "jedes Projekt." },
+  "hero.t2b": { cs: "každý projekt", en: "every project", de: "jedes Projekt" },
   "hero.sub": { cs: "Kvalitní železářství, vinohradnické potřeby a hutní materiál pro firmy i profesionály.", en: "Quality hardware, viticulture supplies and metal materials for companies and professionals.", de: "Hochwertige Eisenwaren, Weinbaubedarf und Hüttenmaterial für Firmen und Profis." },
   "hero.retail": { cs: "Maloobchod", en: "Retail", de: "Einzelhandel" },
   "hero.f1t": { cs: "Velké skladové zásoby", en: "Large stock", de: "Großes Lager" },

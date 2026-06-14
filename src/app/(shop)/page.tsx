@@ -22,7 +22,6 @@ export default async function HomePage() {
             {t(lang, "hero.t2a")}{" "}
             <span style={{ color: "var(--color-accent)" }}>{t(lang, "hero.t2b")}</span>
           </h2>
-          <div className="mt-4 w-12 h-1 rounded-full" style={{ background: "var(--color-accent)" }} />
           <p className="mt-5 text-[var(--color-ink-soft)] max-w-xl">{t(lang, "hero.sub")}</p>
 
           {/* 3 funkční tlačítka */}
@@ -44,7 +43,7 @@ export default async function HomePage() {
           </div>
 
           {/* Údaje */}
-          <div className="mt-8 pt-6 border-t border-[var(--color-border)] flex flex-wrap justify-center gap-x-10 gap-y-4">
+          <div className="mt-8 flex flex-wrap justify-center gap-x-10 gap-y-4">
             {[
               { icon: BoxIcon, title: t(lang, "hero.f1t"), sub: t(lang, "hero.f1s") },
               { icon: TruckIcon, title: t(lang, "hero.f2t"), sub: t(lang, "hero.f2s") },
