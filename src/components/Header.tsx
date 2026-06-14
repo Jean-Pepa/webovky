@@ -110,7 +110,7 @@ export default function Header() {
           ))}
           <Link
             href="/poptavka"
-            className="ml-auto inline-flex items-center px-3.5 py-1.5 rounded-md border border-black text-white font-semibold hover:opacity-90 transition"
+            className="ml-auto inline-flex items-center px-3.5 py-1.5 rounded-md text-white font-semibold hover:opacity-90 transition"
             style={{ background: "var(--color-accent)" }}
           >
             {t("nav.inquiry")}
@@ -127,7 +127,7 @@ export default function Header() {
             <Link key={c.slug} href={`/katalog/${c.slug}`} onClick={() => setOpen(false)} className="block text-sm">{c.name}</Link>
           ))}
           <Link href="/oblibene" onClick={() => setOpen(false)} className="block text-sm">{t("nav.favorites")} ({favCount})</Link>
-          <Link href="/poptavka" onClick={() => setOpen(false)} className="inline-flex items-center px-3.5 py-1.5 rounded-md border border-black text-white font-semibold" style={{ background: "var(--color-accent)" }}>{t("nav.inquiry")}</Link>
+          <Link href="/poptavka" onClick={() => setOpen(false)} className="inline-flex items-center px-3.5 py-1.5 rounded-md text-white font-semibold" style={{ background: "var(--color-accent)" }}>{t("nav.inquiry")}</Link>
           <Link href="/kontakt" onClick={() => setOpen(false)} className="block text-sm">{t("nav.contact")}</Link>
           <Link href="/admin" onClick={() => setOpen(false)} className="block text-sm">{t("account.account")}</Link>
           <div className="pt-2"><LanguageSwitcher /></div>

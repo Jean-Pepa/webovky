@@ -12,7 +12,7 @@ export default function BackButton({ className = "" }: { className?: string }) {
       type="button"
       onClick={() => router.back()}
       aria-label={t("nav.back")}
-      className={`shrink-0 grid place-items-center w-9 h-9 rounded-md border border-black text-white hover:opacity-90 transition ${className}`}
+      className={`shrink-0 grid place-items-center w-9 h-9 rounded-md text-white hover:opacity-90 transition ${className}`}
       style={{ background: "var(--color-accent)" }}
     >
       <ArrowLeftIcon className="w-5 h-5" />
