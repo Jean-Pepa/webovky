@@ -23,13 +23,13 @@ export default async function HomePage() {
         <div className="absolute inset-0 bg-white/45" />
 
         <div className="relative z-10 px-6 md:px-12 py-16 md:py-20 flex flex-col items-center text-center">
-          <h2 className="text-4xl md:text-6xl font-semibold tracking-tight leading-[1.08]">
+          <h2 className="text-4xl md:text-6xl font-semibold tracking-tight leading-[1.08] text-black">
             {t(lang, "hero.t1")}
             <br />
             {t(lang, "hero.t2a")}{" "}
             <span style={{ color: "var(--color-accent)" }}>{t(lang, "hero.t2b")}</span>
           </h2>
-          <p className="mt-6 text-base md:text-lg text-[var(--color-ink-soft)] max-w-2xl">{t(lang, "hero.sub")}</p>
+          <p className="mt-6 text-base md:text-lg text-white max-w-2xl" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.55)" }}>{t(lang, "hero.sub")}</p>
 
           {/* 3 funkční tlačítka */}
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-5 w-full max-w-6xl">
@@ -42,7 +42,7 @@ export default async function HomePage() {
               return (
                 <Link key={i} href={c.href} className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition flex flex-col items-center gap-4">
                   <Icon className="w-9 h-9 text-[var(--color-accent)]" />
-                  <div className="font-bold text-base tracking-wide uppercase text-[var(--color-ink)]">{c.label}</div>
+                  <div className="font-bold text-base tracking-wide uppercase text-black">{c.label}</div>
                   <ArrowRightIcon className="w-6 h-6 text-[var(--color-ink-soft)] group-hover:translate-x-1 transition-transform" />
                 </Link>
               );
@@ -61,7 +61,7 @@ export default async function HomePage() {
                 <div key={i} className="flex flex-col items-center text-center">
                   <Icon className="w-12 h-12 text-[var(--color-accent)]" />
                   <div className="mt-3 text-xl font-bold text-[var(--color-accent)]">{st.h}</div>
-                  <div className="mt-1 text-base text-[var(--color-ink-soft)] max-w-[18rem]">{st.s}</div>
+                  <div className="mt-1 text-base text-white max-w-[18rem]" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.55)" }}>{st.s}</div>
                 </div>
               );
             })}
