@@ -14,8 +14,15 @@ export default async function HomePage() {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 space-y-8">
       {/* HERO BANNER – obsah na střed (bez obrázku) */}
-      <section className="rounded-3xl overflow-hidden bg-[#f3f4f6]" style={{ transform: "scale(0.95)", transformOrigin: "top center", marginTop: "-2cm" }}>
-        <div className="px-6 md:px-12 py-16 md:py-20 flex flex-col items-center text-center">
+      <section className="relative rounded-3xl overflow-hidden bg-[#f3f4f6]" style={{ transform: "scale(0.95)", transformOrigin: "top center", marginTop: "-2cm" }}>
+        {/* Video na pozadí (nahraj public/banner.mp4) – běží ve smyčce, ztlumené */}
+        <video autoPlay muted loop playsInline preload="auto" className="absolute inset-0 w-full h-full object-cover">
+          <source src="/banner.mp4" type="video/mp4" />
+        </video>
+        {/* Světlý překryv pro čitelnost obsahu */}
+        <div className="absolute inset-0 bg-white/70" />
+
+        <div className="relative z-10 px-6 md:px-12 py-16 md:py-20 flex flex-col items-center text-center">
           <h2 className="text-4xl md:text-6xl font-semibold tracking-tight leading-[1.08]">
             {t(lang, "hero.t1")}
             <br />
