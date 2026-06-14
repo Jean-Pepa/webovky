@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { CATEGORIES, PRODUCTS, featuredProducts } from "@/data/catalog";
 import ProductCard from "@/components/ProductCard";
-import { CategoryIcon } from "@/components/Icons";
 
 export default function HomePage() {
   const deals = PRODUCTS.filter((p) => p.originalPrice);
@@ -38,13 +37,20 @@ export default function HomePage() {
             <Link
               key={c.slug}
               href={`/katalog/${c.slug}`}
-              className="bg-white rounded-2xl p-4 sm:p-6 flex flex-col items-center text-center hover:shadow-md transition"
+              className="group bg-white rounded-2xl overflow-hidden hover:shadow-md transition"
             >
-              <span className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl grid place-items-center text-white" style={{ background: "var(--color-accent)" }}>
-                <CategoryIcon icon={c.icon} className="w-6 h-6 sm:w-7 sm:h-7" />
-              </span>
-              <span className="mt-3 font-semibold text-sm sm:text-base">{c.name}</span>
-              <span className="hidden sm:block text-xs text-[var(--color-ink-soft)] mt-0.5">{c.tagline}</span>
+              <div className="aspect-[4/3] overflow-hidden bg-[var(--color-bg)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/categories/${c.slug}.png`}
+                  alt={c.name}
+                  className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-300"
+                />
+              </div>
+              <div className="p-3 sm:p-4 text-center">
+                <span className="font-semibold text-sm sm:text-base">{c.name}</span>
+                <p className="hidden sm:block text-xs text-[var(--color-ink-soft)] mt-0.5">{c.tagline}</p>
+              </div>
             </Link>
           ))}
         </div>

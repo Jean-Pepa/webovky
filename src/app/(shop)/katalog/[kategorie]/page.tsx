@@ -5,7 +5,6 @@ import {
   getCategory,
   productsByCategory,
 } from "@/data/catalog";
-import { CategoryIcon } from "@/components/Icons";
 import CatalogBrowser from "@/components/CatalogBrowser";
 
 export function generateStaticParams() {
@@ -36,8 +35,9 @@ export default async function CategoryPage({
             <span className="text-[var(--color-ink)]">{category.name}</span>
           </nav>
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl grid place-items-center text-white" style={{ background: "var(--color-accent)" }}>
-              <CategoryIcon icon={category.icon} className="w-7 h-7" />
+            <div className="w-14 h-14 rounded-xl overflow-hidden bg-[var(--color-bg)] shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/categories/${category.slug}.png`} alt={category.name} className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="text-3xl font-extrabold">{category.name}</h1>
