@@ -42,7 +42,7 @@ export default async function HomePage() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={`/categories/${c.slug}.png`} alt={c.name} className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-300" />
               </div>
-              <div className="p-3 sm:p-4 text-center" style={{ transform: "translateY(-15mm)" }}>
+              <div className="p-3 sm:p-4 text-center" style={{ transform: "translateY(-10mm)" }}>
                 <span
                   className="block text-xs sm:text-lg lg:text-2xl leading-tight"
                   style={{ fontFamily: "Helvetica, Arial, sans-serif", fontWeight: 400 }}
