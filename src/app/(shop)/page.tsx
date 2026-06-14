@@ -68,17 +68,17 @@ export default async function HomePage() {
           {/* Skákající tlačítko – Online obchod */}
           <Link
             href="/katalog"
-            className="mt-10 inline-flex items-center gap-2 px-7 py-3 rounded-full text-white font-semibold shadow-md animate-bounce"
-            style={{ background: "var(--color-accent)" }}
+            className="mt-10 inline-flex items-center gap-2 px-7 py-3 rounded-full font-semibold shadow-md animate-bounce"
+            style={{ background: "var(--color-accent)", color: "#ffffff" }}
           >
             {t(lang, "nav.onlineShop")}
-            <ChevronDownIcon className="w-5 h-5" />
+            <ChevronDownIcon className="w-5 h-5 text-white" />
           </Link>
         </div>
       </section>
 
       {/* CATEGORY TILES */}
-      <section style={{ marginTop: "6cm" }}>
+      <section style={{ marginTop: "1cm" }}>
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           {cats.map((c) => (
             <Link key={c.slug} href={`/katalog/${c.slug}`} className="group bg-white rounded-2xl overflow-hidden hover:shadow-md transition">
