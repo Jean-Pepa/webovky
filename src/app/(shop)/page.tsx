@@ -13,19 +13,11 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 space-y-8">
-      {/* PROMO BANNER – nahraná fotka Eika dny (zaoblené rohy, červené pozadí, celý text vidět) */}
+      {/* PROMO BANNER – nahraná fotka Eika dny (celý obrázek, plná šířka) */}
       <section>
-        <Link
-          href="/katalog"
-          className="block overflow-hidden rounded-3xl"
-          style={{ background: "var(--color-accent)" }}
-        >
+        <Link href="/katalog" className="block overflow-hidden rounded-2xl">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/eika-dny.png"
-            alt={t(lang, "home.banner.title")}
-            className="mx-auto h-[190px] sm:h-[250px] lg:h-[300px] w-auto max-w-full object-contain"
-          />
+          <img src="/eika-dny.png" alt={t(lang, "home.banner.title")} className="block w-full h-auto" />
         </Link>
       </section>
 
