@@ -13,23 +13,25 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 space-y-8">
-      {/* HERO BANNER – nahraný obrázek + funkční tlačítka */}
-      <section className="relative rounded-3xl overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/hero.jpg" alt={t(lang, "hero.t1")} className="block w-full h-auto" />
-        {[
-          { href: "/katalog", label: t(lang, "promo.t1"), left: "5%" },
-          { href: "/kontakt", label: t(lang, "hero.retail"), left: "26.5%" },
-          { href: "/kontakt", label: t(lang, "promo.t4"), left: "48%" },
-        ].map((h, i) => (
-          <Link
-            key={i}
-            href={h.href}
-            aria-label={h.label}
-            className="absolute rounded-xl hover:bg-white/10 transition"
-            style={{ left: h.left, width: "20%", top: "48%", height: "34%" }}
-          />
-        ))}
+      {/* HERO BANNER – nahraný obrázek + funkční tlačítka (ořez 5 mm shora a zdola) */}
+      <section className="rounded-3xl overflow-hidden">
+        <div className="relative" style={{ marginTop: "-5mm", marginBottom: "-5mm" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/hero.jpg" alt={t(lang, "hero.t1")} className="block w-full h-auto" />
+          {[
+            { href: "/katalog", label: t(lang, "promo.t1"), left: "5%" },
+            { href: "/kontakt", label: t(lang, "hero.retail"), left: "26.5%" },
+            { href: "/kontakt", label: t(lang, "promo.t4"), left: "48%" },
+          ].map((h, i) => (
+            <Link
+              key={i}
+              href={h.href}
+              aria-label={h.label}
+              className="absolute rounded-xl hover:bg-white/10 transition"
+              style={{ left: h.left, width: "20%", top: "48%", height: "34%" }}
+            />
+          ))}
+        </div>
       </section>
 
       {/* CATEGORY TILES */}
