@@ -183,6 +183,26 @@ export function ArrowRightIcon({ className }: IconProps) {
   );
 }
 
+export function StarBadgeIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <circle cx="12" cy="9.5" r="6.5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="m12 6 1.3 2.7 2.9.4-2.1 2 .5 2.9L12 12.6 9.5 14l.5-2.9-2.1-2 2.9-.4L12 6Z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round" />
+      <path d="M9 15.5 7.5 21l4.5-2 4.5 2-1.5-5.5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function BoxesIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <rect x="2.5" y="13" width="8" height="8" rx="1" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="13.5" y="13" width="8" height="8" rx="1" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="8" y="3.5" width="8" height="8" rx="1" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
 export function BoxIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { featuredProducts } from "@/data/catalog";
 import ProductCard from "@/components/ProductCard";
-import { BeamIcon, CartIcon, TruckIcon, BoxIcon, ArrowRightIcon } from "@/components/Icons";
+import { BeamIcon, CartIcon, TruckIcon, StarBadgeIcon, BoxesIcon, ArrowRightIcon } from "@/components/Icons";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
 import { locCategories } from "@/i18n/data";
@@ -42,22 +42,19 @@ export default async function HomePage() {
             })}
           </div>
 
-          {/* Údaje */}
-          <div className="mt-8 flex flex-wrap justify-center gap-x-10 gap-y-4">
+          {/* Statistiky */}
+          <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-8 w-full max-w-4xl">
             {[
-              { icon: BoxIcon, title: t(lang, "hero.f1t"), sub: t(lang, "hero.f1s") },
-              { icon: TruckIcon, title: t(lang, "hero.f2t"), sub: t(lang, "hero.f2s") },
-            ].map((f, i) => {
-              const Icon = f.icon;
+              { icon: StarBadgeIcon, h: t(lang, "stat.h1"), s: t(lang, "stat.s1") },
+              { icon: BoxesIcon, h: t(lang, "stat.h2"), s: t(lang, "stat.s2") },
+              { icon: TruckIcon, h: t(lang, "stat.h3"), s: t(lang, "stat.s3") },
+            ].map((st, i) => {
+              const Icon = st.icon;
               return (
-                <div key={i} className="flex items-center gap-3">
-                  <span className="w-10 h-10 rounded-xl grid place-items-center bg-white shadow-sm text-[var(--color-accent)]">
-                    <Icon className="w-5 h-5" />
-                  </span>
-                  <div className="text-left">
-                    <div className="font-semibold text-sm">{f.title}</div>
-                    <div className="text-xs text-[var(--color-ink-soft)]">{f.sub}</div>
-                  </div>
+                <div key={i} className="flex flex-col items-center text-center">
+                  <Icon className="w-10 h-10 text-[var(--color-accent)]" />
+                  <div className="mt-3 text-lg font-bold text-[var(--color-accent)]">{st.h}</div>
+                  <div className="mt-1 text-sm text-[var(--color-ink-soft)] max-w-[16rem]">{st.s}</div>
                 </div>
               );
             })}

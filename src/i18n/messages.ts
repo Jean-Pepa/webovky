@@ -65,6 +65,12 @@ const M: Dict = {
   "hero.f1s": { cs: "tisíce položek skladem", en: "thousands of items in stock", de: "Tausende Artikel auf Lager" },
   "hero.f2t": { cs: "Rychlé dodání", en: "Fast delivery", de: "Schnelle Lieferung" },
   "hero.f2s": { cs: "po celé ČR", en: "across the country", de: "landesweit" },
+  "stat.h1": { cs: "Tradice od roku 1991", en: "Tradition since 1991", de: "Tradition seit 1991" },
+  "stat.s1": { cs: "spolehlivý dodavatel pro firmy i živnostníky", en: "a reliable supplier for companies and tradespeople", de: "ein zuverlässiger Lieferant für Firmen und Gewerbe" },
+  "stat.h2": { cs: "Tisíce položek skladem", en: "Thousands of items in stock", de: "Tausende Artikel auf Lager" },
+  "stat.s2": { cs: "připraveno k odběru na pobočkách Brno a Znojmo", en: "ready to collect at our Brno and Znojmo branches", de: "abholbereit in den Filialen Brno und Znojmo" },
+  "stat.h3": { cs: "Doprava až k vám", en: "Delivery to your door", de: "Lieferung bis zu Ihnen" },
+  "stat.s3": { cs: "závoz materiálu na stavbu i provozovnu", en: "we deliver material to your site or premises", de: "Materiallieferung zur Baustelle und zum Betrieb" },
 
   // Promo tiles (4 dlaždice)
   "promo.t1": { cs: "Velkoobchod", en: "Wholesale", de: "Großhandel" },
