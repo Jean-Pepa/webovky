@@ -3,7 +3,6 @@ import { CATEGORIES, featuredProducts } from "@/data/catalog";
 import ProductCard from "@/components/ProductCard";
 import CategorySidebar from "@/components/CategorySidebar";
 import CategoryBanner from "@/components/CategoryBanner";
-import { TruckIcon } from "@/components/Icons";
 
 const SERVICES = [
   { title: "Doprava do 15 km zdarma", text: "Závoz materiálu na stavbu i provozovnu dle objemu objednávky." },
@@ -24,44 +23,11 @@ export default function HomePage() {
           <CategorySidebar />
         </div>
 
-        {/* Pravá část – velký banner + 3 kategorie */}
-        <div className="space-y-5">
-          {/* Hlavní banner */}
-          <div className="relative overflow-hidden rounded-2xl bg-[var(--color-steel-900)] text-white bg-grid">
-            <div
-              className="absolute -right-20 -top-16 w-80 h-80 rounded-full opacity-25 blur-2xl"
-              style={{ background: "var(--color-accent)" }}
-            />
-            <div className="relative p-8 md:p-10 max-w-xl">
-              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-[var(--color-accent)] text-white">
-                EIKA · od roku 1991
-              </span>
-              <h1 className="mt-4 text-3xl md:text-4xl font-extrabold leading-tight">
-                Vše pro stavbu, řemeslo i vinohrad.{" "}
-                <span className="text-[var(--color-accent-light)]">Objednejte online.</span>
-              </h1>
-              <p className="mt-3 text-[var(--color-steel-200)]">
-                Hutní materiál, železářství a potřeby pro vinohradnictví pro firmy,
-                živnostníky i kutily — skladem a s dopravou až k vám.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link href="/katalog" className="px-5 py-3 rounded-md font-semibold text-white" style={{ background: "var(--color-accent)" }}>
-                  Procházet katalog
-                </Link>
-                <span className="inline-flex items-center gap-2 px-4 py-3 rounded-md border border-white/20 text-sm">
-                  <TruckIcon className="w-5 h-5 text-[var(--color-accent-light)]" />
-                  Doprava do 15 km zdarma
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* 3 klikací kategorie (úvodní fotky) */}
-          <div className="grid sm:grid-cols-3 gap-5">
-            {CATEGORIES.map((c) => (
-              <CategoryBanner key={c.slug} category={c} />
-            ))}
-          </div>
+        {/* Pravá část – tři stejně velké klikací kategorie */}
+        <div className="space-y-4">
+          {CATEGORIES.map((c) => (
+            <CategoryBanner key={c.slug} category={c} />
+          ))}
         </div>
       </section>
 

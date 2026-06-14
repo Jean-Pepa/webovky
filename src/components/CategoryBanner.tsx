@@ -2,43 +2,51 @@ import Link from "next/link";
 import type { Category, CategorySlug } from "@/data/catalog";
 import { CategoryIcon } from "./Icons";
 
-const BG: Record<CategorySlug, string> = {
-  "hutni-material": "linear-gradient(135deg,#2b3a52,#0e1622)",
-  zelezarstvi: "linear-gradient(135deg,#3a4a64,#161f2e)",
-  vinohradnictvi: "linear-gradient(135deg,#46371f,#1c1710)",
+// Barvy dle reálných kategorií EIKA (tyrkysová / zlatá / zelená)
+const THEME: Record<CategorySlug, { bg: string; label: string }> = {
+  "hutni-material": {
+    bg: "linear-gradient(135deg,#3a8c8c,#205f5f)",
+    label: "HUTNÍ MATERIÁL",
+  },
+  zelezarstvi: {
+    bg: "linear-gradient(135deg,#bda23a,#8f7a22)",
+    label: "ŽELEZÁŘSTVÍ",
+  },
+  vinohradnictvi: {
+    bg: "linear-gradient(135deg,#4ca05c,#347a43)",
+    label: "VINOHRADNICTVÍ",
+  },
 };
 
-export default function CategoryBanner({
-  category,
-  size = "sm",
-}: {
-  category: Category;
-  size?: "sm" | "lg";
-}) {
+export default function CategoryBanner({ category }: { category: Category }) {
+  const t = THEME[category.slug];
   return (
     <Link
       href={`/katalog/${category.slug}`}
-      className={`group relative block rounded-xl overflow-hidden bg-grid ${
-        size === "lg" ? "min-h-[220px]" : "min-h-[150px]"
-      }`}
-      style={{ background: BG[category.slug] }}
+      aria-label={category.name}
+      className="group relative block w-full h-40 md:h-44 rounded-xl overflow-hidden bg-grid"
+      style={{ background: t.bg }}
     >
-      {/* Watermark icon */}
+      {/* Dekorativní ikony (textura) */}
       <CategoryIcon
         icon={category.icon}
-        className="absolute -right-4 -bottom-4 w-32 h-32 text-white/10 group-hover:text-white/15 transition"
+        className="absolute -left-6 -bottom-6 w-40 h-40 text-white/10"
       />
-      {/* Content */}
-      <div className="relative h-full p-5 flex flex-col justify-between">
-        <span className="self-start w-11 h-11 rounded-lg grid place-items-center text-white" style={{ background: "var(--color-accent)" }}>
-          <CategoryIcon icon={category.icon} className="w-6 h-6" />
-        </span>
+      <CategoryIcon
+        icon={category.icon}
+        className="absolute -right-8 -top-8 w-44 h-44 text-white/10 rotate-12"
+      />
+
+      {/* Tmavší přechod pro čitelnost */}
+      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition" />
+
+      {/* Název uprostřed */}
+      <div className="relative h-full grid place-items-center text-center px-6">
         <div>
-          <h3 className={`font-extrabold text-white ${size === "lg" ? "text-2xl" : "text-lg"}`}>
-            {category.name}
+          <h3 className="text-2xl md:text-3xl font-extrabold text-white tracking-wide drop-shadow">
+            {t.label}
           </h3>
-          <p className="text-sm text-white/75 mt-0.5">{category.tagline}</p>
-          <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-accent-light)] group-hover:gap-2 transition-all">
+          <span className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-white/90 opacity-0 group-hover:opacity-100 group-hover:gap-2 transition-all">
             Zobrazit sortiment →
           </span>
         </div>
