@@ -20,6 +20,20 @@ const M: Dict = {
   "nav.deals": { cs: "Cenové hity", en: "Top deals", de: "Top-Angebote" },
   "nav.contact": { cs: "Kontakt", en: "Contact", de: "Kontakt" },
   "nav.catalog": { cs: "Katalog", en: "Catalogue", de: "Katalog" },
+  "nav.inquiry": { cs: "Poptávka", en: "Request a quote", de: "Anfrage" },
+
+  // Inquiry / Poptávka
+  "inq.title": { cs: "Poptávka", en: "Request a quote", de: "Anfrage" },
+  "inq.intro": { cs: "Nezávazně poptejte zboží – ozveme se vám s cenou, dostupností a termínem dodání.", en: "Send a non-binding inquiry – we will get back to you with price, availability and delivery date.", de: "Senden Sie eine unverbindliche Anfrage – wir melden uns mit Preis, Verfügbarkeit und Liefertermin." },
+  "inq.name": { cs: "Jméno a příjmení / firma", en: "Name / company", de: "Name / Firma" },
+  "inq.email": { cs: "Váš e-mail", en: "Your email", de: "Ihre E-Mail" },
+  "inq.phone": { cs: "Váš telefon", en: "Your phone", de: "Ihr Telefon" },
+  "inq.place": { cs: "Místo dodání zboží", en: "Delivery location", de: "Lieferort" },
+  "inq.message": { cs: "Poptáváme", en: "Your request", de: "Ihre Anfrage" },
+  "inq.messagePlaceholder": { cs: "Napište, o jaké zboží a množství máte zájem…", en: "Describe the goods and quantity you are interested in…", de: "Beschreiben Sie Ware und Menge, die Sie interessieren…" },
+  "inq.submit": { cs: "Odeslat poptávku", en: "Send request", de: "Anfrage senden" },
+  "inq.sent": { cs: "Poptávka odeslána", en: "Request sent", de: "Anfrage gesendet" },
+  "inq.sentText": { cs: "Děkujeme! Vaši poptávku jsme přijali a brzy se vám ozveme.", en: "Thank you! We have received your request and will contact you soon.", de: "Danke! Wir haben Ihre Anfrage erhalten und melden uns bald." },
   "nav.favorites": { cs: "Oblíbené", en: "Favourites", de: "Favoriten" },
   "nav.orders": { cs: "Objednávky", en: "Orders", de: "Bestellungen" },
 
