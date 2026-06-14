@@ -38,7 +38,7 @@ export default function Header() {
       {/* Main row */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-[72px] flex items-center gap-4 lg:gap-6">
         <Link href="/" aria-label="Eika" className="shrink-0">
-          <Logo className="h-10" />
+          <Logo className="h-12" />
         </Link>
 
         <form
