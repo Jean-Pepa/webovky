@@ -4,14 +4,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Logo from "./Logo";
-import { CartIcon, SearchIcon, HeartIcon, UserIcon } from "./Icons";
+import {
+  CartIcon,
+  SearchIcon,
+  HeartIcon,
+  UserIcon,
+  ClipboardIcon,
+  CzFlag,
+  ChevronDownIcon,
+} from "./Icons";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/context/FavoritesContext";
 import { CATEGORIES } from "@/data/catalog";
-import { formatCZK } from "@/lib/format";
 
 export default function Header() {
-  const { count, total } = useCart();
+  const { count } = useCart();
   const { count: favCount } = useFavorites();
   const router = useRouter();
   const [q, setQ] = useState("");
@@ -25,57 +32,83 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
-      {/* Main row */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-[68px] flex items-center gap-4">
+      {/* Main row – Alza styl */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-[72px] flex items-center gap-4 lg:gap-6">
         <Link href="/" aria-label="Eika – domů" className="shrink-0">
-          <Logo className="h-9" />
+          <Logo className="h-10" />
         </Link>
 
         {/* Search */}
         <form
           onSubmit={submitSearch}
-          className="flex flex-1 items-center bg-white rounded-full border-2 border-[var(--color-ink)] overflow-hidden"
+          className="flex flex-1 items-center bg-white rounded-lg border border-[var(--color-border)] focus-within:border-[var(--color-accent)] focus-within:ring-2 focus-within:ring-[var(--color-accent-soft)] transition overflow-hidden"
         >
-          <SearchIcon className="w-5 h-5 ml-4 text-[var(--color-ink-soft)]" />
+          <SearchIcon className="w-5 h-5 ml-3.5 text-[var(--color-ink-soft)]" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Hledat v sortimentu Eika…"
-            className="flex-1 bg-transparent px-3 py-2.5 text-sm outline-none"
+            placeholder="Co hledáte? Např. jekl, vrut, sloupek…"
+            className="flex-1 bg-transparent px-3 py-3 text-sm outline-none"
           />
           <button
             type="submit"
-            className="m-1 px-5 py-2 rounded-full text-sm font-semibold text-white"
+            className="self-stretch px-5 text-sm font-semibold text-white"
             style={{ background: "var(--color-accent)" }}
           >
             Hledat
           </button>
         </form>
 
-        {/* Right actions */}
-        <div className="flex items-center gap-1 shrink-0">
-          <Link href="/admin" className="hidden sm:flex flex-col items-center px-2 py-1 rounded-lg hover:bg-[var(--color-bg)] text-[var(--color-ink-soft)]" aria-label="Účet">
-            <UserIcon className="w-5 h-5" />
-            <span className="text-[10px] mt-0.5">Účet</span>
+        {/* Right side */}
+        <div className="flex items-center gap-2 lg:gap-3 shrink-0">
+          {/* Účet */}
+          <Link
+            href="/admin"
+            className="hidden md:flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-[var(--color-bg)]"
+          >
+            <span className="w-8 h-8 rounded-full grid place-items-center bg-[var(--color-bg)] text-[var(--color-ink-soft)]">
+              <UserIcon className="w-5 h-5" />
+            </span>
+            <span className="flex flex-col leading-tight text-left">
+              <span className="text-[13px] font-semibold text-[var(--color-ink)]">Moje Eika</span>
+              <span className="text-[11px] text-[var(--color-ink-soft)]">Přihlásit se</span>
+            </span>
+            <ChevronDownIcon className="w-3.5 h-3.5 text-[var(--color-ink-soft)]" />
           </Link>
-          <Link href="/oblibene" className="relative hidden sm:flex flex-col items-center px-2 py-1 rounded-lg hover:bg-[var(--color-bg)] text-[var(--color-ink-soft)]" aria-label="Oblíbené">
-            <HeartIcon className="w-5 h-5" />
-            <span className="text-[10px] mt-0.5">Oblíbené</span>
+
+          <span className="hidden md:block w-px h-7 bg-[var(--color-border)]" />
+
+          {/* Objednávky */}
+          <Link href="/admin/objednavky" className="hidden sm:grid place-items-center w-10 h-10 rounded-lg hover:bg-[var(--color-bg)] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]" aria-label="Objednávky">
+            <ClipboardIcon className="w-[22px] h-[22px]" />
+          </Link>
+
+          {/* Oblíbené */}
+          <Link href="/oblibene" className="relative grid place-items-center w-10 h-10 rounded-lg hover:bg-[var(--color-bg)] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]" aria-label="Oblíbené">
+            <HeartIcon className="w-[22px] h-[22px]" />
             {favCount > 0 && (
-              <span className="absolute top-0 right-1 min-w-[15px] h-[15px] px-1 grid place-items-center text-[9px] font-bold text-white rounded-full" style={{ background: "var(--color-accent)" }}>
+              <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 grid place-items-center text-[10px] font-bold text-white rounded-full" style={{ background: "var(--color-accent)" }}>
                 {favCount}
               </span>
             )}
           </Link>
-          <Link href="/kosik" className="relative flex flex-col items-center px-2 py-1 rounded-lg hover:bg-[var(--color-bg)] text-[var(--color-ink-soft)]" aria-label="Košík">
-            <CartIcon className="w-5 h-5" />
-            <span className="text-[10px] mt-0.5">{formatCZK(total)}</span>
+
+          {/* Jazyk */}
+          <span className="hidden sm:grid place-items-center w-10 h-10" aria-hidden>
+            <CzFlag className="w-6 h-6" />
+          </span>
+
+          {/* Košík */}
+          <Link href="/kosik" className="relative grid place-items-center w-10 h-10 rounded-lg hover:bg-[var(--color-bg)] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]" aria-label="Košík">
+            <CartIcon className="w-[22px] h-[22px]" />
             {count > 0 && (
-              <span className="absolute top-0 right-1 min-w-[15px] h-[15px] px-1 grid place-items-center text-[9px] font-bold text-white rounded-full" style={{ background: "var(--color-accent)" }}>
+              <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 grid place-items-center text-[10px] font-bold text-white rounded-full" style={{ background: "var(--color-accent)" }}>
                 {count}
               </span>
             )}
           </Link>
+
+          {/* Mobile menu */}
           <button onClick={() => setOpen((o) => !o)} className="md:hidden grid place-items-center w-9 h-9 ml-1" aria-label="Menu">
             <div className="w-5 h-0.5 bg-[var(--color-ink)] mb-1" />
             <div className="w-5 h-0.5 bg-[var(--color-ink)] mb-1" />
@@ -106,7 +139,7 @@ export default function Header() {
           ))}
           <Link href="/oblibene" onClick={() => setOpen(false)} className="block text-sm">Oblíbené ({favCount})</Link>
           <Link href="/kontakt" onClick={() => setOpen(false)} className="block text-sm">Kontakt</Link>
-          <Link href="/admin" onClick={() => setOpen(false)} className="block text-sm">Účet / admin</Link>
+          <Link href="/admin" onClick={() => setOpen(false)} className="block text-sm">Můj účet</Link>
         </div>
       )}
     </header>

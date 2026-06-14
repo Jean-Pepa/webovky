@@ -167,6 +167,34 @@ export function ShieldIcon({ className }: IconProps) {
   );
 }
 
+export function ClipboardIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M9 4.5h6V6a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V4.5Z" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M8.5 11h7M8.5 14.5h7M8.5 18h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function CzFlag({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-label="Čeština">
+      <defs>
+        <clipPath id="cz-circle">
+          <circle cx="12" cy="12" r="11" />
+        </clipPath>
+      </defs>
+      <g clipPath="url(#cz-circle)">
+        <rect x="0" y="0" width="24" height="12" fill="#ffffff" />
+        <rect x="0" y="12" width="24" height="12" fill="#d7141a" />
+        <path d="M0 0 L13 12 L0 24 Z" fill="#11457e" />
+      </g>
+      <circle cx="12" cy="12" r="11" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="1" />
+    </svg>
+  );
+}
+
 export function UserIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
