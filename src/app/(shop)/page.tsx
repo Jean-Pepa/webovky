@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PRODUCTS, featuredProducts } from "@/data/catalog";
 import ProductCard from "@/components/ProductCard";
-import { BeamIcon, ToolsIcon, CartIcon, TruckIcon } from "@/components/Icons";
+import { BeamIcon, ToolsIcon, TruckIcon } from "@/components/Icons";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
 import { locCategories } from "@/i18n/data";
@@ -27,12 +27,11 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 space-y-8">
-      {/* PROMO TILES – Velkoobchod / Železářství / Online / Služby */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* PROMO TILES – Velkoobchod / Železářství / Služby */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
           { icon: BeamIcon, badge: t(lang, "promo.t1"), text: t(lang, "promo.x1"), btn: t(lang, "promo.b1"), href: "/katalog" },
           { icon: ToolsIcon, badge: t(lang, "promo.t2"), text: t(lang, "promo.x2"), btn: t(lang, "promo.b2"), href: "/kontakt" },
-          { icon: CartIcon, badge: t(lang, "promo.t3"), text: t(lang, "promo.x3"), btn: t(lang, "promo.b3"), href: "/katalog", accent: true },
           { icon: TruckIcon, badge: t(lang, "promo.t4"), text: t(lang, "promo.x4"), btn: t(lang, "promo.b4"), href: "/kontakt" },
         ].map((tile, i) => {
           const Icon = tile.icon;
@@ -40,11 +39,7 @@ export default async function HomePage() {
             <div
               key={i}
               className="rounded-2xl overflow-hidden flex flex-col text-white"
-              style={{
-                background: tile.accent
-                  ? "linear-gradient(165deg,#e01219,#8d080d)"
-                  : "linear-gradient(165deg,#33404f,#161b22)",
-              }}
+              style={{ background: "linear-gradient(165deg,#33404f,#161b22)" }}
             >
               <div className="relative h-32 grid place-items-center">
                 <Icon className="w-16 h-16 text-white/90" />
