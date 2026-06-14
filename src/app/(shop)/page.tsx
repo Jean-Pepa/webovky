@@ -19,6 +19,8 @@ export default async function HomePage() {
         <video autoPlay muted loop playsInline preload="auto" className="absolute inset-0 w-full h-full object-cover">
           <source src="/banner.mp4" type="video/mp4" />
         </video>
+        {/* Světlý překryv pro čitelnost obsahu nad videem */}
+        <div className="absolute inset-0 bg-white/45" />
 
         <div className="relative z-10 px-6 md:px-12 py-16 md:py-20 flex flex-col items-center text-center">
           <h2 className="text-4xl md:text-6xl font-semibold tracking-tight leading-[1.08]">
