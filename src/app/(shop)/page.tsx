@@ -61,7 +61,7 @@ export default async function HomePage() {
       </section>
 
       {/* CATEGORY TILES */}
-      <section style={{ marginTop: "4cm" }}>
+      <section style={{ marginTop: "6cm" }}>
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           {cats.map((c) => (
             <Link key={c.slug} href={`/katalog/${c.slug}`} className="group bg-white rounded-2xl overflow-hidden hover:shadow-md transition">
