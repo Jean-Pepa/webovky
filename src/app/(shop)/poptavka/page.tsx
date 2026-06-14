@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useI18n } from "@/i18n/context";
+import BackButton from "@/components/BackButton";
 
 export default function InquiryPage() {
   const { t } = useI18n();
@@ -29,11 +30,14 @@ export default function InquiryPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <nav className="text-sm text-[var(--color-ink-soft)] mb-3">
-        <Link href="/" className="hover:text-[var(--color-accent)]">{t("crumb.home")}</Link>
-        <span className="mx-2">/</span>
-        <span>{t("inq.title")}</span>
-      </nav>
+      <div className="flex items-center gap-3 mb-3">
+        <BackButton />
+        <nav className="text-sm text-[var(--color-ink-soft)]">
+          <Link href="/" className="hover:text-[var(--color-accent)]">{t("crumb.home")}</Link>
+          <span className="mx-2">/</span>
+          <span>{t("inq.title")}</span>
+        </nav>
+      </div>
 
       <h1 className="text-4xl font-extrabold border-b border-[var(--color-border)] pb-4">{t("inq.title")}</h1>
       <p className="mt-4 text-[var(--color-ink-soft)]">{t("inq.intro")}</p>

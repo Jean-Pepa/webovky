@@ -6,6 +6,7 @@ import {
   productsByCategory,
 } from "@/data/catalog";
 import CatalogBrowser from "@/components/CatalogBrowser";
+import BackButton from "@/components/BackButton";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
 import { locCategory } from "@/i18n/data";
@@ -32,13 +33,16 @@ export default async function CategoryPage({
       {/* Category header */}
       <div className="bg-white border-b border-[var(--color-border)]">
         <div className="mx-auto max-w-7xl px-4 py-8">
-          <nav className="text-sm text-[var(--color-ink-soft)] mb-4">
-            <Link href="/" className="hover:text-[var(--color-accent)]">{t(lang, "crumb.home")}</Link>
-            <span className="mx-2">/</span>
-            <Link href="/katalog" className="hover:text-[var(--color-accent)]">{t(lang, "nav.catalog")}</Link>
-            <span className="mx-2">/</span>
-            <span className="text-[var(--color-ink)]">{category.name}</span>
-          </nav>
+          <div className="flex items-center gap-3 mb-4">
+            <BackButton />
+            <nav className="text-sm text-[var(--color-ink-soft)]">
+              <Link href="/" className="hover:text-[var(--color-accent)]">{t(lang, "crumb.home")}</Link>
+              <span className="mx-2">/</span>
+              <Link href="/katalog" className="hover:text-[var(--color-accent)]">{t(lang, "nav.catalog")}</Link>
+              <span className="mx-2">/</span>
+              <span className="text-[var(--color-ink)]">{category.name}</span>
+            </nav>
+          </div>
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-xl overflow-hidden bg-[var(--color-bg)] shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -55,6 +59,13 @@ export default async function CategoryPage({
 
           {/* Other categories */}
           <div className="flex flex-wrap gap-2 mt-5">
+            <Link
+              href="/katalog"
+              className="inline-flex items-center px-3.5 py-1.5 rounded-md border border-black text-white text-sm font-semibold hover:opacity-90 transition"
+              style={{ background: "var(--color-accent)" }}
+            >
+              {t(lang, "catalog.all")}
+            </Link>
             {CATEGORIES.filter((c) => c.slug !== orig.slug).map((c) => locCategory(c, lang)).map((c) => (
               <Link
                 key={c.slug}

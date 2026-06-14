@@ -14,6 +14,7 @@ import AddToCartButton from "@/components/AddToCartButton";
 import FavoriteButton from "@/components/FavoriteButton";
 import Stars from "@/components/Stars";
 import Badges, { discountPercent } from "@/components/Badges";
+import BackButton from "@/components/BackButton";
 import { getLang } from "@/i18n/server";
 import { t, unit as unitFn } from "@/i18n/messages";
 import { locProduct, locCategory } from "@/i18n/data";
@@ -45,15 +46,18 @@ export default async function ProductPage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
-      <nav className="text-sm text-[var(--color-ink-soft)] mb-5">
-        <Link href="/" className="hover:text-[var(--color-accent)]">{t(lang, "crumb.home")}</Link>
-        <span className="mx-2">/</span>
-        <Link href="/katalog" className="hover:text-[var(--color-accent)]">{t(lang, "nav.catalog")}</Link>
-        <span className="mx-2">/</span>
-        <Link href={`/katalog/${category.slug}`} className="hover:text-[var(--color-accent)]">{category.name}</Link>
-        <span className="mx-2">/</span>
-        <span className="text-[var(--color-ink)]">{product.name}</span>
-      </nav>
+      <div className="flex items-center gap-3 mb-5">
+        <BackButton />
+        <nav className="text-sm text-[var(--color-ink-soft)]">
+          <Link href="/" className="hover:text-[var(--color-accent)]">{t(lang, "crumb.home")}</Link>
+          <span className="mx-2">/</span>
+          <Link href="/katalog" className="hover:text-[var(--color-accent)]">{t(lang, "nav.catalog")}</Link>
+          <span className="mx-2">/</span>
+          <Link href={`/katalog/${category.slug}`} className="hover:text-[var(--color-accent)]">{category.name}</Link>
+          <span className="mx-2">/</span>
+          <span className="text-[var(--color-ink)]">{product.name}</span>
+        </nav>
+      </div>
 
       <div className="grid lg:grid-cols-[1fr_380px] gap-8">
         {/* LEFT: gallery + info */}

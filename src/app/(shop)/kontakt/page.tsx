@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
+import BackButton from "@/components/BackButton";
 
 const BRANCHES = [
   { city: "Brno", address: "Vodařská 10, Horní Heršpice, 619 00 Brno", phone: "545 233 742", tel: "+420545233742", email: "brno@eika.cz" },
@@ -19,11 +20,14 @@ export default async function ContactPage() {
     <div>
       <div className="bg-[var(--color-steel-900)] text-white">
         <div className="mx-auto max-w-7xl px-4 py-14">
-          <nav className="text-sm text-[var(--color-steel-400)] mb-4">
-            <Link href="/" className="hover:text-white">{t(lang, "crumb.home")}</Link>
-            <span className="mx-2">/</span>
-            <span className="text-white">{t(lang, "nav.contact")}</span>
-          </nav>
+          <div className="flex items-center gap-3 mb-4">
+            <BackButton />
+            <nav className="text-sm text-[var(--color-steel-400)]">
+              <Link href="/" className="hover:text-white">{t(lang, "crumb.home")}</Link>
+              <span className="mx-2">/</span>
+              <span className="text-white">{t(lang, "nav.contact")}</span>
+            </nav>
+          </div>
           <h1 className="text-4xl font-extrabold">{t(lang, "contact.title")}</h1>
           <p className="mt-3 max-w-xl text-[var(--color-steel-200)]">{t(lang, "contact.intro")}</p>
         </div>

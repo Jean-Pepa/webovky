@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PRODUCTS, searchProducts } from "@/data/catalog";
 import CatalogBrowser from "@/components/CatalogBrowser";
+import BackButton from "@/components/BackButton";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
 import { locCategories } from "@/i18n/data";
@@ -18,11 +19,14 @@ export default async function CatalogPage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
-      <nav className="text-sm text-[var(--color-ink-soft)] mb-3">
-        <Link href="/" className="hover:text-[var(--color-accent)]">{t(lang, "crumb.home")}</Link>
-        <span className="mx-2">/</span>
-        <span>{t(lang, "nav.catalog")}</span>
-      </nav>
+      <div className="flex items-center gap-3 mb-3">
+        <BackButton />
+        <nav className="text-sm text-[var(--color-ink-soft)]">
+          <Link href="/" className="hover:text-[var(--color-accent)]">{t(lang, "crumb.home")}</Link>
+          <span className="mx-2">/</span>
+          <span>{t(lang, "nav.catalog")}</span>
+        </nav>
+      </div>
 
       <h1 className="text-3xl font-bold">
         {query ? `${t(lang, "catalog.resultsFor")} „${query}“` : t(lang, "catalog.title")}
