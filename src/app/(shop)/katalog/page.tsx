@@ -12,7 +12,7 @@ export default async function CatalogPage({
   const products = query ? searchProducts(query) : PRODUCTS;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-8">
       <nav className="text-sm text-[var(--color-ink-soft)] mb-3">
         <Link href="/" className="hover:text-[var(--color-accent)]">Úvod</Link>
         <span className="mx-2">/</span>

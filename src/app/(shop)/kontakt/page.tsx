@@ -27,7 +27,7 @@ export default function ContactPage() {
   return (
     <div>
       <div className="bg-[var(--color-steel-900)] text-white">
-        <div className="mx-auto max-w-6xl px-4 py-14">
+        <div className="mx-auto max-w-7xl px-4 py-14">
           <nav className="text-sm text-[var(--color-steel-400)] mb-4">
             <Link href="/" className="hover:text-white">Úvod</Link>
             <span className="mx-2">/</span>
@@ -41,7 +41,7 @@ export default function ContactPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 py-12 grid lg:grid-cols-2 gap-10">
+      <div className="mx-auto max-w-7xl px-4 py-12 grid lg:grid-cols-2 gap-10">
         <div className="space-y-6">
           {BRANCHES.map((b) => (
             <div key={b.city} className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6">

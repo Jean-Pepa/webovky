@@ -4,7 +4,7 @@ import { CATEGORIES } from "@/data/catalog";
 export default function Footer() {
   return (
     <footer className="bg-[var(--color-bg)] text-[var(--color-ink-soft)]">
-      <div className="mx-auto max-w-5xl px-5 py-10 text-xs leading-relaxed">
+      <div className="mx-auto max-w-7xl px-5 py-10 text-xs leading-relaxed">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pb-8 border-b border-[var(--color-border)]">
           <div>
             <h4 className="text-[var(--color-ink)] font-semibold mb-3">Sortiment</h4>

@@ -38,7 +38,7 @@ export default async function ProductPage({
   const znojmoStock = product.stock - brnoStock;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
+    <div className="mx-auto max-w-7xl px-4 py-6">
       <nav className="text-sm text-[var(--color-ink-soft)] mb-5">
         <Link href="/" className="hover:text-[var(--color-accent)]">Úvod</Link>
         <span className="mx-2">/</span>

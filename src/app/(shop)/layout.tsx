@@ -9,7 +9,7 @@ export default function ShopLayout({
   return (
     <>
       <Header />
-      <main className="min-h-[60vh]">{children}</main>
+      <main className="min-h-[60vh] bg-[var(--color-bg)]">{children}</main>
       <Footer />
     </>
   );

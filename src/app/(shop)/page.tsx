@@ -1,84 +1,100 @@
 import Link from "next/link";
-import { CATEGORIES, featuredProducts } from "@/data/catalog";
+import { CATEGORIES, PRODUCTS, featuredProducts } from "@/data/catalog";
 import ProductCard from "@/components/ProductCard";
-import CategoryBanner from "@/components/CategoryBanner";
+import { CategoryIcon } from "@/components/Icons";
 
 export default function HomePage() {
+  const deals = PRODUCTS.filter((p) => p.originalPrice);
   const featured = featuredProducts();
 
   return (
-    <div>
-      {/* HERO */}
-      <section className="text-center px-5 pt-20 pb-16 md:pt-28 md:pb-20">
-        <p className="text-[var(--color-accent)] text-base md:text-lg font-medium">Eika</p>
-        <h1 className="mt-2 text-4xl md:text-6xl font-semibold tracking-tight text-[var(--color-ink)]">
-          Vše pro řemeslo i stavbu.
-        </h1>
-        <p className="mt-4 text-lg md:text-2xl text-[var(--color-ink-soft)] max-w-2xl mx-auto">
-          Hutní materiál, železářství a vinohradnictví. Objednejte online.
-        </p>
-        <div className="mt-8 flex items-center justify-center gap-6">
-          <Link
-            href="/katalog"
-            className="px-6 py-2.5 rounded-full text-white text-[15px] font-medium"
-            style={{ background: "var(--color-accent)" }}
-          >
-            Procházet katalog
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 space-y-8">
+      {/* PROMO BANNERS */}
+      <section className="grid lg:grid-cols-3 gap-4">
+        {/* Hlavní banner */}
+        <Link
+          href="/katalog"
+          className="lg:col-span-2 relative overflow-hidden rounded-2xl text-white p-8 md:p-10 min-h-[240px] flex flex-col justify-center"
+          style={{ background: "linear-gradient(120deg,#d4332b,#a51f18)" }}
+        >
+          <span className="inline-block w-fit px-3 py-1 rounded-full text-xs font-bold bg-white/20">
+            Cenové hity
+          </span>
+          <h1 className="mt-3 text-3xl md:text-5xl font-extrabold leading-tight max-w-lg">
+            Eika dny — slevy na celý sortiment
+          </h1>
+          <p className="mt-2 text-white/90 max-w-md">
+            Hutní materiál, železářství a vinohradnictví za zvýhodněné ceny.
+          </p>
+          <span className="mt-5 inline-block w-fit px-5 py-2.5 rounded-full bg-white text-[var(--color-accent)] font-semibold text-sm">
+            Nakoupit se slevou
+          </span>
+        </Link>
+
+        {/* Dva malé bannery */}
+        <div className="grid gap-4">
+          <Link href="/kosik" className="rounded-2xl bg-white p-6 flex flex-col justify-center hover:shadow-md transition">
+            <span className="text-xs font-bold text-[var(--color-accent)]">Pro firmy</span>
+            <h3 className="mt-1 text-xl font-bold leading-snug">Velkoobchodní ceny</h3>
+            <p className="text-sm text-[var(--color-ink-soft)] mt-1">Účet pro firmy a živnostníky</p>
+            <span className="mt-3 text-sm font-semibold text-[var(--color-accent)]">Více ›</span>
           </Link>
-          <Link href="/kontakt" className="text-[15px] text-[var(--color-accent)] hover:underline">
-            Kontakt ›
+          <Link href="/katalog/vinohradnictvi" className="rounded-2xl bg-white p-6 flex flex-col justify-center hover:shadow-md transition">
+            <span className="text-xs font-bold text-[var(--color-accent)]">Sezóna</span>
+            <h3 className="mt-1 text-xl font-bold leading-snug">Potřeby pro vinaře</h3>
+            <p className="text-sm text-[var(--color-ink-soft)] mt-1">Sloupky, drát, nářadí</p>
+            <span className="mt-3 text-sm font-semibold text-[var(--color-accent)]">Více ›</span>
           </Link>
         </div>
       </section>
 
       {/* CATEGORY TILES */}
-      <section className="px-5 pb-4">
-        <div className="mx-auto max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-5">
+      <section>
+        <div className="grid grid-cols-3 gap-3 sm:gap-4">
           {CATEGORIES.map((c) => (
-            <CategoryBanner key={c.slug} category={c} />
+            <Link
+              key={c.slug}
+              href={`/katalog/${c.slug}`}
+              className="bg-white rounded-2xl p-4 sm:p-6 flex flex-col items-center text-center hover:shadow-md transition"
+            >
+              <span className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl grid place-items-center text-white" style={{ background: "var(--color-accent)" }}>
+                <CategoryIcon icon={c.icon} className="w-6 h-6 sm:w-7 sm:h-7" />
+              </span>
+              <span className="mt-3 font-semibold text-sm sm:text-base">{c.name}</span>
+              <span className="hidden sm:block text-xs text-[var(--color-ink-soft)] mt-0.5">{c.tagline}</span>
+            </Link>
           ))}
         </div>
       </section>
 
-      {/* FEATURED */}
-      <section className="px-5 py-16 md:py-24">
-        <div className="mx-auto max-w-5xl">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Doporučené zboží</h2>
-            <p className="mt-2 text-lg text-[var(--color-ink-soft)]">Nejžádanější položky našeho sortimentu</p>
+      {/* CENOVÉ HITY */}
+      {deals.length > 0 && (
+        <section className="bg-white rounded-2xl p-5 sm:p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded text-sm font-bold text-white" style={{ background: "var(--color-accent)" }}>%</span>
+              Cenové hity
+            </h2>
+            <Link href="/katalog" className="text-sm font-semibold text-[var(--color-accent)]">Vše ›</Link>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {featured.map((p) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {deals.map((p) => (
               <ProductCard key={p.slug} product={p} />
             ))}
           </div>
-          <div className="text-center mt-10">
-            <Link href="/katalog" className="text-[15px] text-[var(--color-accent)] hover:underline">
-              Zobrazit celý katalog ›
-            </Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* B2B */}
-      <section className="px-5 pb-20">
-        <div className="mx-auto max-w-5xl rounded-3xl bg-[var(--color-bg)] text-center px-6 py-16 md:py-20">
-          <p className="text-[var(--color-accent)] text-sm font-medium">Pro firmy a živnostníky</p>
-          <h2 className="mt-2 text-3xl md:text-5xl font-semibold tracking-tight max-w-2xl mx-auto">
-            Velkoobchodní ceny. Online objednávky.
-          </h2>
-          <p className="mt-4 text-lg text-[var(--color-ink-soft)] max-w-xl mx-auto">
-            Firemní účet zpřístupní zvýhodněné ceny, historii objednávek a
-            fakturaci na IČO/DIČ.
-          </p>
-          <div className="mt-8 flex items-center justify-center gap-6">
-            <Link href="/kosik" className="px-6 py-2.5 rounded-full text-white text-[15px] font-medium" style={{ background: "var(--color-accent)" }}>
-              Založit firemní účet
-            </Link>
-            <Link href="/katalog" className="text-[15px] text-[var(--color-accent)] hover:underline">
-              Procházet sortiment ›
-            </Link>
-          </div>
+      {/* DOPORUČUJEME */}
+      <section className="bg-white rounded-2xl p-5 sm:p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-xl sm:text-2xl font-bold">Doporučujeme</h2>
+          <Link href="/katalog" className="text-sm font-semibold text-[var(--color-accent)]">Celý katalog ›</Link>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {featured.map((p) => (
+            <ProductCard key={p.slug} product={p} />
+          ))}
         </div>
       </section>
     </div>

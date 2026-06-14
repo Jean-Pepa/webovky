@@ -27,7 +27,7 @@ export default async function CategoryPage({
     <div>
       {/* Category header */}
       <div className="bg-white border-b border-[var(--color-border)]">
-        <div className="mx-auto max-w-6xl px-4 py-8">
+        <div className="mx-auto max-w-7xl px-4 py-8">
           <nav className="text-sm text-[var(--color-ink-soft)] mb-4">
             <Link href="/" className="hover:text-[var(--color-accent)]">Úvod</Link>
             <span className="mx-2">/</span>
@@ -63,7 +63,7 @@ export default async function CategoryPage({
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8">
         <CatalogBrowser products={products} />
       </div>
     </div>
