@@ -70,7 +70,7 @@ export default async function HomePage() {
           {/* Skákající tlačítko – Online obchod */}
           <Link
             href="/katalog"
-            className="mt-10 inline-flex items-center gap-2 px-7 py-3 rounded-full font-semibold shadow-md animate-bounce"
+            className="mt-10 inline-flex items-center gap-2 px-7 py-3 rounded-full font-semibold shadow-md animate-bounce-high"
             style={{ background: "var(--color-accent)", color: "#ffffff" }}
           >
             {t(lang, "nav.onlineShop")}

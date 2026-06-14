@@ -65,3 +65,19 @@ h4 {
 .applink:hover {
   text-decoration: underline;
 }
+
+/* Vyšší skákání (cca 2× výše než výchozí bounce) */
+@keyframes bounceHigh {
+  0%,
+  100% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(-28px);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+.animate-bounce-high {
+  animation: bounceHigh 1s infinite;
+}
