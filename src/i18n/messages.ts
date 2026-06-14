@@ -22,10 +22,21 @@ const M: Dict = {
   "nav.catalog": { cs: "Katalog", en: "Catalogue", de: "Katalog" },
   "nav.inquiry": { cs: "Poptávka", en: "Request a quote", de: "Anfrage" },
   "nav.back": { cs: "Zpět", en: "Back", de: "Zurück" },
+  "nav.about": { cs: "O nás", en: "About us", de: "Über uns" },
   "nav.onlineShop": { cs: "Online obchod", en: "Online shop", de: "Online-Shop" },
   "badge.tagline": { cs: "Spolehlivý partner", en: "Reliable partner", de: "Zuverlässiger Partner" },
   "badge.since": { cs: "od roku 1991", en: "since 1991", de: "seit 1991" },
   "badge.cta": { cs: "Zjistěte víc", en: "Find out more", de: "Mehr erfahren" },
+
+  // O společnosti
+  "about.title": { cs: "O společnosti EIKA", en: "About EIKA", de: "Über EIKA" },
+  "about.intro": { cs: "Tradice od roku 1991, tisíce položek skladem a osobní přístup.", en: "Tradition since 1991, thousands of items in stock and a personal approach.", de: "Tradition seit 1991, Tausende Artikel auf Lager und persönlicher Service." },
+  "about.historyTitle": { cs: "Naše historie", en: "Our history", de: "Unsere Geschichte" },
+  "about.historyText": { cs: "EIKA ZNOJMO, a.s. působí na trhu od roku 1991 a patří k největším dodavatelům hutního materiálu, železářství a potřeb pro vinohradnictví na jižní Moravě. Za více než 30 let jsme si vybudovali pověst spolehlivého partnera firem, živnostníků i koncových zákazníků.", en: "EIKA ZNOJMO, a.s. has been on the market since 1991 and is one of the largest suppliers of metal materials, hardware and viticulture supplies in South Moravia. Over more than 30 years we have built a reputation as a reliable partner for companies, tradespeople and consumers.", de: "EIKA ZNOJMO, a.s. ist seit 1991 am Markt und einer der größten Lieferanten von Hüttenmaterial, Eisenwaren und Weinbaubedarf in Südmähren. In über 30 Jahren haben wir uns den Ruf eines zuverlässigen Partners für Firmen, Gewerbetreibende und Endkunden erarbeitet." },
+  "about.offerTitle": { cs: "Co nabízíme", en: "What we offer", de: "Was wir bieten" },
+  "about.deliveryTitle": { cs: "Kam dodáváme", en: "Where we deliver", de: "Wohin wir liefern" },
+  "about.deliveryText": { cs: "Zboží si odeberete osobně na pobočkách v Brně a Znojmě, nebo vám ho dovezeme. Zajišťujeme závoz materiálu na stavbu i provozovnu podle objemu objednávky – působíme především na jižní Moravě s rozvozem po celé ČR.", en: "You can collect goods in person at our Brno and Znojmo branches, or we will deliver them to you. We arrange delivery of material to your site or premises according to the order volume – we operate mainly in South Moravia with delivery across the country.", de: "Sie holen die Ware persönlich in den Filialen Brno und Znojmo ab, oder wir liefern sie Ihnen. Wir liefern Material je nach Bestellvolumen zur Baustelle und zum Betrieb – wir sind vor allem in Südmähren tätig, mit Lieferung im ganzen Land." },
+  "about.branchesTitle": { cs: "Naše pobočky", en: "Our branches", de: "Unsere Filialen" },
 
   // Inquiry / Poptávka
   "inq.title": { cs: "Poptávka", en: "Request a quote", de: "Anfrage" },

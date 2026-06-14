@@ -29,7 +29,7 @@ export default function StickyBadge() {
         <div className="mt-2 text-[15px] font-bold leading-tight">{t("badge.tagline")}</div>
         <div className="text-xs text-white/80">{t("badge.since")}</div>
         <Link
-          href="/kontakt"
+          href="/o-nas"
           className="mt-3 inline-block bg-white rounded-lg px-4 py-1.5 text-sm font-semibold"
           style={{ color: "var(--color-accent)" }}
         >
