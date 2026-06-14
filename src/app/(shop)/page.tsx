@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PRODUCTS, featuredProducts } from "@/data/catalog";
+import { featuredProducts } from "@/data/catalog";
 import ProductCard from "@/components/ProductCard";
 import { BeamIcon, CartIcon, TruckIcon, BoxIcon, ArrowRightIcon } from "@/components/Icons";
 import { getLang } from "@/i18n/server";
@@ -9,7 +9,6 @@ import { locCategories } from "@/i18n/data";
 export default async function HomePage() {
   const lang = await getLang();
   const cats = locCategories(lang);
-  const deals = PRODUCTS.filter((p) => p.originalPrice);
   const featured = featuredProducts();
 
   return (
@@ -108,22 +107,6 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
-
-      {/* CENOVÉ HITY */}
-      {deals.length > 0 && (
-        <section className="bg-white rounded-2xl p-5 sm:p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded text-sm font-bold text-white" style={{ background: "var(--color-accent)" }}>%</span>
-              {t(lang, "home.deals")}
-            </h2>
-            <Link href="/katalog" className="text-sm font-semibold text-[var(--color-accent)]">{t(lang, "home.all")}</Link>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {deals.map((p) => (<ProductCard key={p.slug} product={p} />))}
-          </div>
-        </section>
-      )}
 
       {/* DOPORUČUJEME */}
       <section className="bg-white rounded-2xl p-5 sm:p-6">
