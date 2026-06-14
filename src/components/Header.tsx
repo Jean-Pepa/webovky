@@ -102,7 +102,7 @@ export default function Header() {
       </div>
 
       {/* Category bar */}
-      <div className="hidden md:block border-t border-[var(--color-border)]">
+      <div className="hidden md:block">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center gap-6 h-11 text-sm">
           {cats.map((c) => (
             <Link key={c.slug} href={`/katalog/${c.slug}`} className="text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]">{c.name}</Link>
