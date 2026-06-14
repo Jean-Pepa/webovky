@@ -1,9 +1,23 @@
 import Link from "next/link";
 import { PRODUCTS, featuredProducts } from "@/data/catalog";
 import ProductCard from "@/components/ProductCard";
+import { BeamIcon, ToolsIcon, CartIcon, TruckIcon } from "@/components/Icons";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
 import { locCategories } from "@/i18n/data";
+
+function HexBadge({ title }: { title: string }) {
+  return (
+    <div className="relative w-24 h-[104px]">
+      <svg viewBox="0 0 100 112" className="absolute inset-0 w-full h-full" aria-hidden>
+        <polygon points="50,4 92,29 92,83 50,108 8,83 8,29" fill="rgba(0,0,0,0.25)" stroke="#ffffff" strokeWidth="2.5" />
+      </svg>
+      <div className="absolute inset-0 grid place-items-center px-2 text-center">
+        <span className="text-white font-extrabold uppercase tracking-wide text-[13px] leading-tight">{title}</span>
+      </div>
+    </div>
+  );
+}
 
 export default async function HomePage() {
   const lang = await getLang();
@@ -13,17 +27,42 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 space-y-8">
-      {/* PROMO BANNER – nahraná fotka Eika dny (ořez 1 cm shora a zdola) */}
-      <section>
-        <Link href="/katalog" className="block overflow-hidden rounded-2xl">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/eika-dny.png"
-            alt={t(lang, "home.banner.title")}
-            className="block w-full h-auto"
-            style={{ marginTop: "-1cm", marginBottom: "-1cm" }}
-          />
-        </Link>
+      {/* PROMO TILES – Velkoobchod / Železářství / Online / Služby */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { icon: BeamIcon, badge: t(lang, "promo.t1"), text: t(lang, "promo.x1"), btn: t(lang, "promo.b1"), href: "/katalog" },
+          { icon: ToolsIcon, badge: t(lang, "promo.t2"), text: t(lang, "promo.x2"), btn: t(lang, "promo.b2"), href: "/kontakt" },
+          { icon: CartIcon, badge: t(lang, "promo.t3"), text: t(lang, "promo.x3"), btn: t(lang, "promo.b3"), href: "/katalog", accent: true },
+          { icon: TruckIcon, badge: t(lang, "promo.t4"), text: t(lang, "promo.x4"), btn: t(lang, "promo.b4"), href: "/kontakt" },
+        ].map((tile, i) => {
+          const Icon = tile.icon;
+          return (
+            <div
+              key={i}
+              className="rounded-2xl overflow-hidden flex flex-col text-white"
+              style={{
+                background: tile.accent
+                  ? "linear-gradient(165deg,#e01219,#8d080d)"
+                  : "linear-gradient(165deg,#33404f,#161b22)",
+              }}
+            >
+              <div className="relative h-32 grid place-items-center">
+                <Icon className="w-16 h-16 text-white/90" />
+              </div>
+              <div className="px-5 pb-6 -mt-12 flex flex-col items-center text-center">
+                <HexBadge title={tile.badge} />
+                <p className="mt-4 text-sm text-white/90 min-h-[3.5em]">{tile.text}</p>
+                <Link
+                  href={tile.href}
+                  className="mt-4 px-5 py-2.5 rounded-md bg-white font-semibold text-sm hover:opacity-90 transition"
+                  style={{ color: "var(--color-accent)" }}
+                >
+                  {tile.btn}
+                </Link>
+              </div>
+            </div>
+          );
+        })}
       </section>
 
       {/* CATEGORY TILES */}

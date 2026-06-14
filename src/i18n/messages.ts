@@ -55,6 +55,20 @@ const M: Dict = {
   "home.recommended": { cs: "Doporučujeme", en: "We recommend", de: "Empfehlungen" },
   "home.fullCatalog": { cs: "Celý katalog ›", en: "Full catalogue ›", de: "Ganzer Katalog ›" },
 
+  // Promo tiles (4 dlaždice)
+  "promo.t1": { cs: "Velkoobchod", en: "Wholesale", de: "Großhandel" },
+  "promo.x1": { cs: "Velký výběr hutního materiálu pro firmy a živnostníky po celé ČR.", en: "A large selection of metal materials for companies and tradespeople nationwide.", de: "Große Auswahl an Hüttenmaterial für Firmen und Gewerbe landesweit." },
+  "promo.b1": { cs: "Velkoobchod", en: "Wholesale", de: "Großhandel" },
+  "promo.t2": { cs: "Železářství", en: "Hardware", de: "Eisenwaren" },
+  "promo.x2": { cs: "Široký sortiment najdete i na našich pobočkách v Brně a Znojmě.", en: "Find a wide range also at our branches in Brno and Znojmo.", de: "Breites Sortiment auch in unseren Filialen in Brno und Znojmo." },
+  "promo.b2": { cs: "Pobočky", en: "Branches", de: "Filialen" },
+  "promo.t3": { cs: "Online", en: "Online", de: "Online" },
+  "promo.x3": { cs: "Vyberte si zboží a vytvořte poptávku pohodlně a rychle online.", en: "Pick your goods and create an inquiry quickly and easily online.", de: "Wählen Sie Ware und erstellen Sie bequem und schnell eine Online-Anfrage." },
+  "promo.b3": { cs: "Eika online", en: "Eika online", de: "Eika online" },
+  "promo.t4": { cs: "Služby", en: "Services", de: "Leistungen" },
+  "promo.x4": { cs: "Zboží Vám rozdělíme, nařežeme, certifikujeme i dovezeme.", en: "We will cut, divide, certify and deliver your goods.", de: "Wir teilen, schneiden, zertifizieren und liefern Ihre Ware." },
+  "promo.b4": { cs: "Služby", en: "Services", de: "Leistungen" },
+
   // Product card / common
   "stock.in": { cs: "Skladem", en: "In stock", de: "Auf Lager" },
   "stock.onRequest": { cs: "Na dotaz", en: "On request", de: "Auf Anfrage" },
