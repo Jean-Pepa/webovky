@@ -23,8 +23,8 @@ export default function HomePage() {
           <CategorySidebar />
         </div>
 
-        {/* Pravá část – tři stejně velké klikací kategorie */}
-        <div className="space-y-4">
+        {/* Pravá část – tři stejně velké kategorie vedle sebe (zleva doprava) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {CATEGORIES.map((c) => (
             <CategoryBanner key={c.slug} category={c} />
           ))}
