@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CATEGORIES, PRODUCTS, searchProducts } from "@/data/catalog";
-import ProductCard from "@/components/ProductCard";
+import CatalogBrowser from "@/components/CatalogBrowser";
 
 export default async function CatalogPage({
   searchParams,
@@ -12,7 +12,7 @@ export default async function CatalogPage({
   const products = query ? searchProducts(query) : PRODUCTS;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-8">
       <nav className="text-sm text-[var(--color-ink-soft)] mb-3">
         <Link href="/" className="hover:text-[var(--color-accent)]">Úvod</Link>
         <span className="mx-2">/</span>
@@ -22,12 +22,9 @@ export default async function CatalogPage({
       <h1 className="text-3xl font-bold">
         {query ? <>Výsledky pro „{query}“</> : "Katalog zboží"}
       </h1>
-      <p className="text-[var(--color-ink-soft)] mt-1">
-        {products.length} {products.length === 1 ? "položka" : "položek"}
-      </p>
 
-      {/* Category chips */}
-      <div className="flex flex-wrap gap-2 mt-6">
+      {/* Category quick links */}
+      <div className="flex flex-wrap gap-2 mt-5 mb-8">
         <span className="px-3 py-1.5 rounded-full text-sm font-semibold text-white" style={{ background: "var(--color-steel-800)" }}>
           Vše
         </span>
@@ -43,18 +40,14 @@ export default async function CatalogPage({
       </div>
 
       {products.length === 0 ? (
-        <div className="mt-12 text-center text-[var(--color-ink-soft)]">
-          <p className="text-lg">Nic jsme nenašli.</p>
+        <div className="py-16 text-center text-[var(--color-ink-soft)]">
+          <p className="text-lg">Pro „{query}“ jsme nic nenašli.</p>
           <Link href="/katalog" className="text-[var(--color-accent)] font-semibold">
             Zobrazit celý katalog →
           </Link>
         </div>
       ) : (
-        <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {products.map((p) => (
-            <ProductCard key={p.slug} product={p} />
-          ))}
-        </div>
+        <CatalogBrowser products={products} />
       )}
     </div>
   );

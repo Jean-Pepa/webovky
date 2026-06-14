@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { formatCZK, withVat } from "@/lib/format";
+import { featuredProducts } from "@/data/catalog";
+import ProductCard from "@/components/ProductCard";
 
 type CustomerType = "koncovy" | "zivnostnik" | "firma";
 
@@ -67,6 +69,10 @@ export default function CartPage() {
   }
 
   const vat = withVat(total) - total;
+  const inCart = new Set(items.map((i) => i.slug));
+  const recommended = featuredProducts()
+    .filter((p) => !inCart.has(p.slug))
+    .slice(0, 4);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -208,8 +214,24 @@ export default function CartPage() {
             <span className="font-semibold">Celkem s DPH</span>
             <span className="text-2xl font-extrabold">{formatCZK(withVat(total))}</span>
           </div>
+          <div className="mt-4 flex items-center gap-2 text-xs text-[var(--color-success)] bg-green-50 rounded-lg p-3">
+            <span className="text-base">✓</span>
+            Doprava do 15 km zdarma — ušetříte za závoz na stavbu i provoz.
+          </div>
         </aside>
       </div>
+
+      {/* Recommended */}
+      {recommended.length > 0 && (
+        <section className="mt-16">
+          <h2 className="text-2xl font-bold mb-6">Mohlo by se hodit</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {recommended.map((p) => (
+              <ProductCard key={p.slug} product={p} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

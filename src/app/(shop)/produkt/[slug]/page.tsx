@@ -9,7 +9,12 @@ import {
 import { formatCZK, withVat } from "@/lib/format";
 import ProductThumb from "@/components/ProductThumb";
 import ProductCard from "@/components/ProductCard";
+import ProductTabs from "@/components/ProductTabs";
 import AddToCartButton from "@/components/AddToCartButton";
+import FavoriteButton from "@/components/FavoriteButton";
+import Stars from "@/components/Stars";
+import Badges, { discountPercent } from "@/components/Badges";
+import { TruckIcon, ShieldIcon } from "@/components/Icons";
 
 export function generateStaticParams() {
   return PRODUCTS.map((p) => ({ slug: p.slug }));
@@ -29,84 +34,135 @@ export default async function ProductPage({
     .filter((p) => p.slug !== product.slug)
     .slice(0, 4);
   const inStock = product.stock > 0;
+  const discount = discountPercent(product.price, product.originalPrice);
+  const brnoStock = Math.ceil(product.stock * 0.6);
+  const znojmoStock = product.stock - brnoStock;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <nav className="text-sm text-[var(--color-ink-soft)] mb-6">
+    <div className="mx-auto max-w-6xl px-4 py-6">
+      <nav className="text-sm text-[var(--color-ink-soft)] mb-5">
         <Link href="/" className="hover:text-[var(--color-accent)]">Úvod</Link>
         <span className="mx-2">/</span>
         <Link href="/katalog" className="hover:text-[var(--color-accent)]">Katalog</Link>
         <span className="mx-2">/</span>
-        <Link href={`/katalog/${category.slug}`} className="hover:text-[var(--color-accent)]">
-          {category.name}
-        </Link>
+        <Link href={`/katalog/${category.slug}`} className="hover:text-[var(--color-accent)]">{category.name}</Link>
         <span className="mx-2">/</span>
         <span className="text-[var(--color-ink)]">{product.name}</span>
       </nav>
 
-      <div className="grid md:grid-cols-2 gap-10">
-        <ProductThumb
-          category={product.category}
-          className="aspect-square rounded-2xl"
-        />
-
+      <div className="grid lg:grid-cols-[1fr_380px] gap-8">
+        {/* LEFT: gallery + info */}
         <div>
-          <span className="text-xs uppercase tracking-wide text-[var(--color-ink-soft)]">
-            {product.subcategory}
-          </span>
-          <h1 className="mt-1 text-3xl font-extrabold">{product.name}</h1>
-
-          <div className="mt-3 flex items-center gap-3 text-sm">
-            <span className="text-[var(--color-ink-soft)]">Kód: {product.sku}</span>
-            <span
-              className={`px-2 py-0.5 rounded-full font-medium ${
-                inStock
-                  ? "text-[var(--color-success)] bg-green-50"
-                  : "text-[var(--color-warning)] bg-amber-50"
-              }`}
-            >
-              {inStock ? `Skladem ${product.stock} ${product.unit}` : "Na dotaz"}
-            </span>
+          <div className="grid sm:grid-cols-[88px_1fr] gap-3">
+            {/* Thumbnails */}
+            <div className="hidden sm:flex flex-col gap-3 order-1">
+              {[0, 1, 2].map((i) => (
+                <ProductThumb
+                  key={i}
+                  category={product.category}
+                  className="aspect-square rounded-lg border border-[var(--color-border)]"
+                />
+              ))}
+            </div>
+            {/* Main image */}
+            <div className="relative order-2">
+              <div className="absolute top-3 left-3 z-10">
+                <Badges badges={product.badges} />
+              </div>
+              <FavoriteButton slug={product.slug} className="absolute top-3 right-3 z-10 w-10 h-10" />
+              <ProductThumb category={product.category} className="aspect-square rounded-2xl" />
+            </div>
           </div>
 
-          <div className="mt-6 p-5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-            <div className="flex items-end gap-3">
-              <span className="text-3xl font-extrabold">{formatCZK(product.price)}</span>
-              <span className="text-sm text-[var(--color-ink-soft)] mb-1">
-                / {product.unit} · bez DPH
-              </span>
+          {/* Tabs */}
+          <div className="mt-8">
+            <ProductTabs
+              description={product.description}
+              params={product.params}
+              rating={product.rating}
+              ratingCount={product.ratingCount}
+            />
+          </div>
+        </div>
+
+        {/* RIGHT: purchase box (sticky) */}
+        <div className="lg:sticky lg:top-28 h-fit space-y-4">
+          <div>
+            <span className="text-xs uppercase tracking-wide text-[var(--color-ink-soft)]">
+              {product.brand} · {product.subcategory}
+            </span>
+            <h1 className="mt-1 text-2xl font-extrabold leading-tight">{product.name}</h1>
+            <div className="mt-2 flex items-center gap-3">
+              <Stars rating={product.rating} count={product.ratingCount} />
+              <span className="text-xs text-[var(--color-ink-soft)]">Kód: {product.sku}</span>
             </div>
-            <div className="text-sm text-[var(--color-ink-soft)] mt-1">
-              {formatCZK(withVat(product.price))} s DPH
+          </div>
+
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5">
+            <div className="flex items-end gap-2">
+              <span className="text-3xl font-extrabold">{formatCZK(product.price)}</span>
+              {product.originalPrice && (
+                <span className="text-base text-[var(--color-ink-soft)] line-through mb-1">
+                  {formatCZK(product.originalPrice)}
+                </span>
+              )}
+              {discount && (
+                <span className="mb-1.5 px-2 py-0.5 rounded text-xs font-bold text-white bg-[var(--color-accent)]">
+                  −{discount}%
+                </span>
+              )}
+            </div>
+            <div className="text-sm text-[var(--color-ink-soft)]">
+              {formatCZK(withVat(product.price))} s DPH · za {product.unit}
             </div>
 
-            <div className="mt-3 flex items-center gap-2 text-sm p-3 rounded-lg bg-[var(--color-bg)]">
-              <span className="font-semibold text-[var(--color-accent)]">
+            <div className="mt-3 flex items-center gap-2 text-sm p-2.5 rounded-lg bg-[var(--color-bg)]">
+              <span className="font-bold text-[var(--color-accent)]">
                 Firemní cena {formatCZK(product.priceB2B)}
               </span>
-              <span className="text-[var(--color-ink-soft)]">/ {product.unit} — pro firmy a živnostníky po přihlášení</span>
+              <span className="text-[var(--color-ink-soft)] text-xs">pro firmy a živnostníky</span>
             </div>
 
-            <div className="mt-5">
+            <div
+              className={`mt-4 inline-flex items-center gap-2 text-sm font-semibold ${
+                inStock ? "text-[var(--color-success)]" : "text-[var(--color-warning)]"
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${inStock ? "bg-[var(--color-success)]" : "bg-[var(--color-warning)]"}`} />
+              {inStock ? `Skladem ${product.stock} ${product.unit}` : "Na dotaz"}
+            </div>
+
+            <div className="mt-4">
               <AddToCartButton product={product} withQty />
             </div>
           </div>
 
-          <div className="mt-6">
-            <h2 className="font-semibold mb-2">Popis</h2>
-            <p className="text-[var(--color-ink-soft)] leading-relaxed">
-              {product.description}
-            </p>
-          </div>
-
-          <div className="mt-6 grid grid-cols-2 gap-3 text-sm">
-            <div className="p-3 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)]">
-              <div className="text-[var(--color-ink-soft)]">Měrná jednotka</div>
-              <div className="font-semibold">{product.unit}</div>
+          {/* Branch availability */}
+          {inStock && (
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5">
+              <h3 className="text-sm font-semibold mb-3">Dostupnost na pobočkách</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span>Pobočka Brno</span>
+                  <span className="text-[var(--color-success)] font-medium">{brnoStock} {product.unit} skladem</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Pobočka Znojmo</span>
+                  <span className="text-[var(--color-success)] font-medium">{znojmoStock} {product.unit} skladem</span>
+                </div>
+              </div>
             </div>
-            <div className="p-3 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)]">
-              <div className="text-[var(--color-ink-soft)]">Kategorie</div>
-              <div className="font-semibold">{category.name}</div>
+          )}
+
+          {/* Delivery info */}
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 space-y-3 text-sm">
+            <div className="flex items-start gap-3">
+              <TruckIcon className="w-5 h-5 text-[var(--color-accent)] shrink-0" />
+              <span><strong>Doprava do 15 km zdarma.</strong> Závoz na stavbu i provozovnu dle objemu objednávky.</span>
+            </div>
+            <div className="flex items-start gap-3">
+              <ShieldIcon className="w-5 h-5 text-[var(--color-accent)] shrink-0" />
+              <span><strong>Kompletace zakázek.</strong> Připravíme zboží na jeden odběr — ušetříte čas.</span>
             </div>
           </div>
         </div>
