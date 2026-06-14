@@ -14,7 +14,7 @@ export default async function HomePage() {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 space-y-8">
       {/* HERO BANNER – obsah na střed (bez obrázku) */}
-      <section className="relative rounded-3xl overflow-hidden bg-[var(--color-bg)]" style={{ transform: "scale(0.95)", transformOrigin: "top center", marginTop: "-2cm" }}>
+      <section className="relative overflow-hidden bg-[var(--color-bg)]" style={{ marginTop: "-2cm", marginLeft: "calc(50% - 50vw)", marginRight: "calc(50% - 50vw)", width: "100vw" }}>
         {/* Video na pozadí (nahraj public/banner.mp4) – běží ve smyčce, ztlumené */}
         <video autoPlay muted loop playsInline preload="auto" className="absolute inset-0 w-full h-full object-cover">
           <source src="/banner.mp4" type="video/mp4" />
