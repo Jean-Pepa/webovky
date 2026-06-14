@@ -104,7 +104,6 @@ export default function Header() {
       {/* Category bar */}
       <div className="hidden md:block border-t border-[var(--color-border)]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center gap-6 h-11 text-sm">
-          <Link href="/katalog" className="font-semibold text-[var(--color-accent)]">{t("nav.deals")}</Link>
           {cats.map((c) => (
             <Link key={c.slug} href={`/katalog/${c.slug}`} className="text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]">{c.name}</Link>
           ))}
@@ -122,7 +121,6 @@ export default function Header() {
       {/* Mobile menu */}
       {open && (
         <div className="md:hidden border-t border-[var(--color-border)] bg-white px-4 py-4 space-y-3">
-          <Link href="/katalog" onClick={() => setOpen(false)} className="block font-semibold text-[var(--color-accent)]">{t("nav.deals")}</Link>
           {cats.map((c) => (
             <Link key={c.slug} href={`/katalog/${c.slug}`} onClick={() => setOpen(false)} className="block text-sm">{c.name}</Link>
           ))}
