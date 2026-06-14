@@ -61,8 +61,8 @@ export default async function CategoryPage({
           <div className="flex flex-wrap gap-2 mt-5">
             <Link
               href="/katalog"
-              className="inline-flex items-center px-3.5 py-1.5 rounded-md text-white text-sm font-semibold hover:opacity-90 transition"
-              style={{ background: "var(--color-accent)" }}
+              className="inline-flex items-center px-3.5 py-1.5 rounded-md text-sm font-semibold hover:opacity-90 transition"
+              style={{ background: "var(--color-accent)", color: "#ffffff" }}
             >
               {t(lang, "catalog.all")}
             </Link>

@@ -13,31 +13,11 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 space-y-8">
-      {/* PROMO BANNER */}
+      {/* PROMO BANNER – nahraná fotka Eika dny */}
       <section>
-        <Link
-          href="/katalog"
-          className="relative block overflow-hidden rounded-2xl min-h-[240px]"
-          style={{ background: "linear-gradient(120deg,#d4332b,#a51f18)" }}
-        >
-          {/* Záložní textový banner (zmizí, jakmile nahraješ fotku) */}
-          <div className="relative z-0 p-8 md:p-12 min-h-[240px] flex flex-col justify-center text-white">
-            <span className="inline-block w-fit px-3 py-1 rounded-full text-xs font-bold bg-white/20">
-              {t(lang, "home.deals")}
-            </span>
-            <h1 className="mt-3 text-3xl md:text-5xl font-extrabold leading-tight max-w-2xl">
-              {t(lang, "home.banner.title")}
-            </h1>
-            <p className="mt-2 text-white/90 max-w-xl">{t(lang, "home.banner.text")}</p>
-            <span className="mt-5 inline-block w-fit px-5 py-2.5 rounded-full bg-white text-[var(--color-accent)] font-semibold text-sm">
-              {t(lang, "home.banner.cta")}
-            </span>
-          </div>
-          {/* Nahraná fotka Eika dny – public/eika-dny.png (stejné umístění i velikost) */}
-          <div
-            className="absolute inset-0 z-10 bg-center bg-cover"
-            style={{ backgroundImage: "url(/eika-dny.png)" }}
-          />
+        <Link href="/katalog" className="block overflow-hidden rounded-2xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/eika-dny.png" alt={t(lang, "home.banner.title")} className="block w-full h-auto" />
         </Link>
       </section>
 
