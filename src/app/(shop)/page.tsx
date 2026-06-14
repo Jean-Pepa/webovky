@@ -1,23 +1,10 @@
 import Link from "next/link";
 import { PRODUCTS, featuredProducts } from "@/data/catalog";
 import ProductCard from "@/components/ProductCard";
-import { BeamIcon, ToolsIcon, TruckIcon } from "@/components/Icons";
+import { BeamIcon, CartIcon, TruckIcon, BoxIcon, ArrowRightIcon } from "@/components/Icons";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
 import { locCategories } from "@/i18n/data";
-
-function HexBadge({ title }: { title: string }) {
-  return (
-    <div className="relative w-24 h-[104px]">
-      <svg viewBox="0 0 100 112" className="absolute inset-0 w-full h-full" aria-hidden>
-        <polygon points="50,4 92,29 92,83 50,108 8,83 8,29" fill="rgba(0,0,0,0.25)" stroke="#ffffff" strokeWidth="2.5" />
-      </svg>
-      <div className="absolute inset-0 grid place-items-center px-2 text-center">
-        <span className="text-white font-extrabold uppercase tracking-wide text-[13px] leading-tight">{title}</span>
-      </div>
-    </div>
-  );
-}
 
 export default async function HomePage() {
   const lang = await getLang();
@@ -27,37 +14,71 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 space-y-8">
-      {/* PROMO TILES – Velkoobchod / Železářství / Služby */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[
-          { icon: BeamIcon, badge: t(lang, "promo.t1"), text: t(lang, "promo.x1"), btn: t(lang, "promo.b1"), href: "/katalog" },
-          { icon: ToolsIcon, badge: t(lang, "promo.t2"), text: t(lang, "promo.x2"), btn: t(lang, "promo.b2"), href: "/kontakt" },
-          { icon: TruckIcon, badge: t(lang, "promo.t4"), text: t(lang, "promo.x4"), btn: t(lang, "promo.b4"), href: "/kontakt" },
-        ].map((tile, i) => {
-          const Icon = tile.icon;
-          return (
-            <div
-              key={i}
-              className="rounded-2xl overflow-hidden flex flex-col text-white"
-              style={{ background: "linear-gradient(165deg,#33404f,#161b22)" }}
-            >
-              <div className="relative h-32 grid place-items-center">
-                <Icon className="w-16 h-16 text-white/90" />
-              </div>
-              <div className="px-5 pb-6 -mt-12 flex flex-col items-center text-center">
-                <HexBadge title={tile.badge} />
-                <p className="mt-4 text-sm text-white/90 min-h-[3.5em]">{tile.text}</p>
-                <Link
-                  href={tile.href}
-                  className="mt-4 px-5 py-2.5 rounded-md bg-white font-semibold text-sm hover:opacity-90 transition"
-                  style={{ color: "var(--color-accent)" }}
-                >
-                  {tile.btn}
+      {/* HERO BANNER */}
+      <section className="rounded-3xl overflow-hidden bg-[#f3f4f6] grid lg:grid-cols-[1.15fr_0.85fr]">
+        {/* Left – content */}
+        <div className="p-8 md:p-12 lg:p-14 order-2 lg:order-1">
+          <h2 className="text-3xl md:text-5xl font-semibold tracking-tight leading-[1.08]">
+            {t(lang, "hero.t1")}
+            <br />
+            {t(lang, "hero.t2a")}{" "}
+            <span style={{ color: "var(--color-accent)" }}>{t(lang, "hero.t2b")}</span>
+          </h2>
+          <div className="mt-4 w-12 h-1 rounded-full" style={{ background: "var(--color-accent)" }} />
+          <p className="mt-5 text-[var(--color-ink-soft)] max-w-md">{t(lang, "hero.sub")}</p>
+
+          {/* 3 funkční tlačítka */}
+          <div className="mt-7 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { icon: BeamIcon, label: t(lang, "promo.t1"), href: "/katalog" },
+              { icon: CartIcon, label: t(lang, "hero.retail"), href: "/kontakt" },
+              { icon: TruckIcon, label: t(lang, "promo.t4"), href: "/kontakt" },
+            ].map((c, i) => {
+              const Icon = c.icon;
+              return (
+                <Link key={i} href={c.href} className="group bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition flex flex-col gap-5">
+                  <Icon className="w-7 h-7" style={{ color: "var(--color-accent)" }} />
+                  <div>
+                    <div className="font-bold text-sm tracking-wide uppercase">{c.label}</div>
+                    <ArrowRightIcon className="w-5 h-5 mt-2 text-[var(--color-ink-soft)] group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </Link>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+
+          {/* Údaje */}
+          <div className="mt-8 pt-6 border-t border-[var(--color-border)] flex flex-wrap gap-x-10 gap-y-4">
+            {[
+              { icon: BoxIcon, title: t(lang, "hero.f1t"), sub: t(lang, "hero.f1s") },
+              { icon: TruckIcon, title: t(lang, "hero.f2t"), sub: t(lang, "hero.f2s") },
+            ].map((f, i) => {
+              const Icon = f.icon;
+              return (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="w-10 h-10 rounded-xl grid place-items-center bg-white shadow-sm text-[var(--color-accent)]">
+                    <Icon className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <div className="font-semibold text-sm">{f.title}</div>
+                    <div className="text-xs text-[var(--color-ink-soft)]">{f.sub}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right – fotka (nahraj public/hero.jpg) */}
+        <div
+          className="relative min-h-[240px] lg:min-h-[500px] order-1 lg:order-2"
+          style={{
+            backgroundImage: "url(/hero.jpg)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundColor: "#2b323b",
+          }}
+        />
       </section>
 
       {/* CATEGORY TILES */}

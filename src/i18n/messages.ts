@@ -55,6 +55,17 @@ const M: Dict = {
   "home.recommended": { cs: "Doporučujeme", en: "We recommend", de: "Empfehlungen" },
   "home.fullCatalog": { cs: "Celý katalog ›", en: "Full catalogue ›", de: "Ganzer Katalog ›" },
 
+  // Hero banner
+  "hero.t1": { cs: "Profesionální materiál.", en: "Professional material.", de: "Profi-Material." },
+  "hero.t2a": { cs: "Pro", en: "For", de: "Für" },
+  "hero.t2b": { cs: "každý projekt.", en: "every project.", de: "jedes Projekt." },
+  "hero.sub": { cs: "Kvalitní železářství, vinohradnické potřeby a hutní materiál pro firmy i profesionály.", en: "Quality hardware, viticulture supplies and metal materials for companies and professionals.", de: "Hochwertige Eisenwaren, Weinbaubedarf und Hüttenmaterial für Firmen und Profis." },
+  "hero.retail": { cs: "Maloobchod", en: "Retail", de: "Einzelhandel" },
+  "hero.f1t": { cs: "Velké skladové zásoby", en: "Large stock", de: "Großes Lager" },
+  "hero.f1s": { cs: "tisíce položek skladem", en: "thousands of items in stock", de: "Tausende Artikel auf Lager" },
+  "hero.f2t": { cs: "Rychlé dodání", en: "Fast delivery", de: "Schnelle Lieferung" },
+  "hero.f2s": { cs: "po celé ČR", en: "across the country", de: "landesweit" },
+
   // Promo tiles (4 dlaždice)
   "promo.t1": { cs: "Velkoobchod", en: "Wholesale", de: "Großhandel" },
   "promo.x1": { cs: "Velký výběr hutního materiálu pro firmy a živnostníky po celé ČR.", en: "A large selection of metal materials for companies and tradespeople nationwide.", de: "Große Auswahl an Hüttenmaterial für Firmen und Gewerbe landesweit." },
