@@ -70,8 +70,8 @@ export default async function HomePage() {
           {/* Skákající tlačítko – Online obchod */}
           <Link
             href="/katalog"
-            className="mt-10 inline-flex items-center gap-2 px-7 py-3 rounded-full font-semibold shadow-md animate-bounce-high"
-            style={{ background: "var(--color-accent)", color: "#ffffff" }}
+            className="inline-flex items-center gap-2 px-7 py-3 rounded-full font-semibold shadow-md animate-bounce-high"
+            style={{ background: "var(--color-accent)", color: "#ffffff", marginTop: "calc(2.5rem - 3mm)" }}
           >
             {t(lang, "nav.onlineShop")}
             <ChevronDownIcon className="w-5 h-5 text-white" />
