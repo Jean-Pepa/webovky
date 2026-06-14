@@ -92,12 +92,17 @@ export default async function HomePage() {
               </div>
               <div className="p-3 sm:p-4 text-center" style={{ transform: "translateY(-10mm)" }}>
                 <span
-                  className="block text-xs sm:text-lg lg:text-2xl leading-tight"
-                  style={{ fontFamily: "Helvetica, Arial, sans-serif", fontWeight: 400 }}
+                  className="inline-block px-4 py-1.5 rounded-md text-white text-sm sm:text-base lg:text-lg leading-tight"
+                  style={{
+                    fontFamily: "Helvetica, Arial, sans-serif",
+                    fontWeight: 400,
+                    background: "var(--color-accent)",
+                    border: "2px solid var(--color-accent)",
+                  }}
                 >
                   {c.name}
                 </span>
-                <p className="hidden sm:block text-xs text-[var(--color-ink-soft)] mt-1">{c.tagline}</p>
+                <p className="hidden sm:block text-xs text-[var(--color-ink-soft)] mt-2">{c.tagline}</p>
               </div>
             </Link>
           ))}
