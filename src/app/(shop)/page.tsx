@@ -23,7 +23,7 @@ export default async function HomePage() {
         <div className="absolute inset-0 bg-white/45" />
 
         <div className="relative z-10 px-6 md:px-12 py-16 md:py-20 flex flex-col items-center text-center">
-          <h2 className="text-4xl md:text-6xl font-semibold tracking-tight leading-[1.08] text-black">
+          <h2 className="text-4xl md:text-6xl font-semibold tracking-tight leading-[1.08] text-white" style={{ textShadow: "0 1px 6px rgba(0,0,0,0.5)" }}>
             {t(lang, "hero.t1")}
             <br />
             {t(lang, "hero.t2a")}{" "}
