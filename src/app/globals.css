@@ -1,30 +1,32 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* Brand – industrial steel + orange accent */
-  --color-steel-950: #0b111b;
-  --color-steel-900: #121a28;
-  --color-steel-800: #1a2536;
-  --color-steel-700: #25344a;
-  --color-steel-600: #364963;
-  --color-steel-400: #7d8ba3;
-  --color-steel-200: #c9d2e0;
+  /* Neutrální paleta (Apple) + červený akcent Eika */
+  --color-steel-950: #1d1d1f;
+  --color-steel-900: #1d1d1f;
+  --color-steel-800: #2b2b2f;
+  --color-steel-700: #3a3a3f;
+  --color-steel-600: #6e6e73;
+  --color-steel-400: #86868b;
+  --color-steel-200: #d2d2d7;
 
   --color-accent: #d4332b;
   --color-accent-dark: #ab251f;
   --color-accent-light: #ec5d54;
-  --color-accent-soft: #fdeceb;
+  --color-accent-soft: #fbeceb;
 
-  --color-bg: #f6f7f9;
+  --color-bg: #f5f5f7;
   --color-surface: #ffffff;
-  --color-border: #e6e9ee;
-  --color-ink: #1a2536;
-  --color-ink-soft: #51607a;
+  --color-border: #d2d2d7;
+  --color-ink: #1d1d1f;
+  --color-ink-soft: #6e6e73;
 
-  --color-success: #16a34a;
-  --color-warning: #d97706;
+  --color-success: #1a9c4a;
+  --color-warning: #b25000;
 
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "SF Pro Text", "Segoe UI", Roboto, system-ui, "Helvetica Neue", Arial,
+    sans-serif;
 }
 
 * {
@@ -39,10 +41,12 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background: var(--color-bg);
+  background: #ffffff;
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
-  line-height: 1.55;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  letter-spacing: -0.011em;
 }
 
 a {
@@ -54,14 +58,16 @@ h1,
 h2,
 h3,
 h4 {
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  line-height: 1.08;
 }
 
-/* Subtle industrial grid backdrop for dark sections */
-.bg-grid {
-  background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 28px 28px;
+/* Apple-style "more" odkaz */
+.applink {
+  color: var(--color-accent);
+  font-weight: 400;
+}
+.applink:hover {
+  text-decoration: underline;
 }

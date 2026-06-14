@@ -33,7 +33,7 @@ export default function AddToCartButton({
   return (
     <div className="flex items-stretch gap-2">
       {withQty && (
-        <div className="flex items-center border border-[var(--color-border)] rounded-md overflow-hidden">
+        <div className="flex items-center border border-[var(--color-border)] rounded-full overflow-hidden">
           <button
             onClick={() => setQty((q) => Math.max(1, q - 1))}
             className="px-3 text-lg text-[var(--color-ink-soft)] hover:bg-[var(--color-bg)]"
@@ -62,7 +62,7 @@ export default function AddToCartButton({
       )}
       <button
         onClick={handleAdd}
-        className="flex-1 px-4 py-2 rounded-md text-sm font-semibold text-white transition active:scale-[0.98]"
+        className="flex-1 px-4 py-2 rounded-full text-sm font-medium text-white transition active:scale-[0.98]"
         style={{ background: added ? "var(--color-success)" : "var(--color-accent)" }}
       >
         {added ? "✓ Přidáno" : "Do košíku"}

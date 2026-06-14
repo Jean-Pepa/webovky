@@ -12,7 +12,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const discount = discountPercent(product.price, product.originalPrice);
 
   return (
-    <div className="group relative bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden flex flex-col hover:shadow-lg hover:border-[var(--color-steel-200)] transition">
+    <div className="group relative bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden flex flex-col hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition">
       {/* Top overlay: badges + favorite */}
       <div className="absolute top-2.5 left-2.5 right-2.5 z-10 flex items-start justify-between">
         <Badges badges={product.badges} />

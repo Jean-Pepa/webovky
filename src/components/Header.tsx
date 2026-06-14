@@ -4,185 +4,107 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Logo from "./Logo";
-import {
-  CartIcon,
-  SearchIcon,
-  HeartIcon,
-  UserIcon,
-  ChevronDownIcon,
-  CategoryIcon,
-} from "./Icons";
+import { CartIcon, SearchIcon, HeartIcon } from "./Icons";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/context/FavoritesContext";
 import { CATEGORIES } from "@/data/catalog";
-import { formatCZK } from "@/lib/format";
 
 export default function Header() {
-  const { count, total } = useCart();
+  const { count } = useCart();
   const { count: favCount } = useFavorites();
   const router = useRouter();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
-  const [megaOpen, setMegaOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   function submitSearch(e: React.FormEvent) {
     e.preventDefault();
     router.push(`/katalog?q=${encodeURIComponent(q)}`);
     setOpen(false);
+    setSearchOpen(false);
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-[var(--color-border)]">
-      {/* Slim red contact bar */}
-      <div className="text-white text-xs" style={{ background: "var(--color-accent)" }}>
-        <div className="mx-auto max-w-6xl px-4 h-9 flex items-center justify-between">
-          <span className="font-medium">Hutní materiál · Železářství · Vinohradnictví</span>
-          <span className="hidden sm:flex items-center gap-4">
-            <a href="tel:+420545233742" className="hover:underline">545 233 742</a>
-            <span className="opacity-50">|</span>
-            <a href="mailto:info@eika.cz" className="hover:underline">info@eika.cz</a>
-          </span>
-        </div>
-      </div>
-
-      {/* Main bar */}
-      <div className="mx-auto max-w-6xl px-4 h-[68px] flex items-center gap-3">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[var(--color-border)]/70">
+      <div className="mx-auto max-w-5xl px-5 h-12 flex items-center gap-6">
         <Link href="/" aria-label="Eika – domů" className="shrink-0">
-          <Logo />
+          <Logo className="h-7" />
         </Link>
 
-        {/* Catalog mega-menu trigger */}
-        <div
-          className="hidden lg:block relative"
-          onMouseEnter={() => setMegaOpen(true)}
-          onMouseLeave={() => setMegaOpen(false)}
-        >
-          <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-white font-semibold text-sm" style={{ background: "var(--color-accent)" }}>
-            <span className="flex flex-col gap-[3px]">
-              <span className="w-4 h-0.5 bg-white" />
-              <span className="w-4 h-0.5 bg-white" />
-              <span className="w-4 h-0.5 bg-white" />
-            </span>
-            Katalog
-            <ChevronDownIcon className="w-4 h-4" />
-          </button>
+        {/* Center nav links */}
+        <nav className="hidden md:flex items-center gap-7 text-[13px] text-[var(--color-ink-soft)] flex-1 justify-center">
+          {CATEGORIES.map((c) => (
+            <Link key={c.slug} href={`/katalog/${c.slug}`} className="hover:text-[var(--color-ink)] transition">
+              {c.name}
+            </Link>
+          ))}
+          <Link href="/katalog" className="hover:text-[var(--color-ink)] transition">Katalog</Link>
+          <Link href="/kontakt" className="hover:text-[var(--color-ink)] transition">Kontakt</Link>
+        </nav>
 
-          {megaOpen && (
-            <div className="absolute left-0 top-full pt-2 w-[640px]">
-              <div className="bg-white border border-[var(--color-border)] rounded-xl shadow-2xl p-4 grid grid-cols-3 gap-3">
-                {CATEGORIES.map((c) => (
-                  <div key={c.slug}>
-                    <Link href={`/katalog/${c.slug}`} className="flex items-center gap-2 font-bold mb-2 hover:text-[var(--color-accent)]">
-                      <span className="w-8 h-8 rounded-md grid place-items-center text-white" style={{ background: "var(--color-accent)" }}>
-                        <CategoryIcon icon={c.icon} className="w-4 h-4" />
-                      </span>
-                      {c.name}
-                    </Link>
-                    <ul className="space-y-1">
-                      {c.subcategories.map((s) => (
-                        <li key={s}>
-                          <Link href={`/katalog/${c.slug}`} className="text-sm text-[var(--color-ink-soft)] hover:text-[var(--color-accent)] block leading-snug">
-                            {s}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Search */}
-        <form
-          onSubmit={submitSearch}
-          className="hidden md:flex flex-1 items-center bg-white rounded-lg border-2 border-[var(--color-border)] focus-within:border-[var(--color-accent)] transition"
-        >
-          <SearchIcon className="w-5 h-5 ml-3 text-[var(--color-ink-soft)]" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Co hledáte? Např. jekl, vrut, sloupek…"
-            className="flex-1 bg-transparent px-3 py-2.5 text-sm outline-none"
-          />
-          <button type="submit" className="px-5 py-2.5 text-sm font-semibold text-white rounded-r-md" style={{ background: "var(--color-accent)" }}>
-            Hledat
-          </button>
-        </form>
-
-        {/* Right actions */}
+        {/* Right icons */}
         <div className="flex items-center gap-1 ml-auto md:ml-0">
-          <Link href="/oblibene" className="relative hidden sm:grid place-items-center w-10 h-10 rounded-lg hover:bg-[var(--color-accent-soft)]" aria-label="Oblíbené">
-            <HeartIcon className="w-5 h-5" />
+          <button
+            onClick={() => setSearchOpen((s) => !s)}
+            className="grid place-items-center w-9 h-9 rounded-full hover:bg-[var(--color-bg)] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
+            aria-label="Hledat"
+          >
+            <SearchIcon className="w-[18px] h-[18px]" />
+          </button>
+
+          <Link href="/oblibene" className="relative grid place-items-center w-9 h-9 rounded-full hover:bg-[var(--color-bg)] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]" aria-label="Oblíbené">
+            <HeartIcon className="w-[18px] h-[18px]" />
             {favCount > 0 && (
-              <span className="absolute top-1 right-1 min-w-4 h-4 px-1 grid place-items-center text-[10px] font-bold text-white rounded-full" style={{ background: "var(--color-accent)" }}>
+              <span className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 grid place-items-center text-[9px] font-semibold text-white rounded-full" style={{ background: "var(--color-accent)" }}>
                 {favCount}
               </span>
             )}
           </Link>
 
-          <Link href="/admin" className="hidden sm:grid place-items-center w-10 h-10 rounded-lg hover:bg-[var(--color-accent-soft)]" aria-label="Účet / admin">
-            <UserIcon className="w-5 h-5" />
+          <Link href="/kosik" className="relative grid place-items-center w-9 h-9 rounded-full hover:bg-[var(--color-bg)] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]" aria-label="Košík">
+            <CartIcon className="w-[18px] h-[18px]" />
+            {count > 0 && (
+              <span className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 grid place-items-center text-[9px] font-semibold text-white rounded-full" style={{ background: "var(--color-accent)" }}>
+                {count}
+              </span>
+            )}
           </Link>
 
-          <Link
-            href="/kosik"
-            className="relative inline-flex items-center gap-2 pl-3 pr-3 h-11 rounded-lg text-white transition"
-            style={{ background: "var(--color-accent)" }}
-          >
-            <div className="relative">
-              <CartIcon className="w-5 h-5" />
-              {count > 0 && (
-                <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 grid place-items-center text-[10px] font-bold rounded-full bg-white" style={{ color: "var(--color-accent)" }}>
-                  {count}
-                </span>
-              )}
-            </div>
-            <span className="hidden lg:flex flex-col leading-tight">
-              <span className="text-[11px] text-white/80">Košík</span>
-              <span className="text-sm font-bold">{formatCZK(total)}</span>
-            </span>
-          </Link>
-
-          <button onClick={() => setOpen((o) => !o)} className="lg:hidden p-2 ml-1" aria-label="Menu">
-            <div className="w-6 h-0.5 bg-[var(--color-ink)] mb-1.5" />
-            <div className="w-6 h-0.5 bg-[var(--color-ink)] mb-1.5" />
-            <div className="w-6 h-0.5 bg-[var(--color-ink)]" />
+          <button onClick={() => setOpen((o) => !o)} className="md:hidden grid place-items-center w-9 h-9" aria-label="Menu">
+            <div className="w-5 h-0.5 bg-[var(--color-ink)] mb-1" />
+            <div className="w-5 h-0.5 bg-[var(--color-ink)]" />
           </button>
         </div>
       </div>
 
-      {/* Category strip (desktop) */}
-      <div className="hidden lg:block border-t border-[var(--color-border)] bg-white">
-        <div className="mx-auto max-w-6xl px-4 flex items-center gap-7 h-11 text-sm">
-          {CATEGORIES.map((c) => (
-            <Link key={c.slug} href={`/katalog/${c.slug}`} className="hover:text-[var(--color-accent)] font-medium">
-              {c.name}
-            </Link>
-          ))}
-          <Link href="/katalog" className="text-[var(--color-ink-soft)] hover:text-[var(--color-accent)] ml-auto">
-            Celý katalog →
-          </Link>
+      {/* Search dropdown */}
+      {searchOpen && (
+        <div className="border-t border-[var(--color-border)]/70 bg-white/95 backdrop-blur-xl">
+          <form onSubmit={submitSearch} className="mx-auto max-w-3xl px-5 py-4 flex items-center gap-3">
+            <SearchIcon className="w-5 h-5 text-[var(--color-ink-soft)]" />
+            <input
+              autoFocus
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Hledat v sortimentu Eika"
+              className="flex-1 bg-transparent text-lg outline-none placeholder:text-[var(--color-ink-soft)]"
+            />
+            <button type="button" onClick={() => setSearchOpen(false)} className="text-sm text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]">Zavřít</button>
+          </form>
         </div>
-      </div>
+      )}
 
       {/* Mobile menu */}
       {open && (
-        <div className="lg:hidden border-t border-[var(--color-border)] bg-white px-4 py-4 space-y-3">
-          <form onSubmit={submitSearch} className="flex items-center bg-white rounded-lg border-2 border-[var(--color-border)]">
-            <SearchIcon className="w-5 h-5 ml-3 text-[var(--color-ink-soft)]" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Hledat zboží…" className="flex-1 bg-transparent px-3 py-2 text-sm outline-none" />
-          </form>
-          <Link href="/katalog" onClick={() => setOpen(false)} className="block font-medium">Katalog</Link>
+        <div className="md:hidden border-t border-[var(--color-border)]/70 bg-white px-5 py-4 space-y-3">
           {CATEGORIES.map((c) => (
-            <Link key={c.slug} href={`/katalog/${c.slug}`} onClick={() => setOpen(false)} className="block pl-3 text-[var(--color-ink-soft)]">
+            <Link key={c.slug} href={`/katalog/${c.slug}`} onClick={() => setOpen(false)} className="block text-sm">
               {c.name}
             </Link>
           ))}
-          <Link href="/oblibene" onClick={() => setOpen(false)} className="block font-medium">Oblíbené ({favCount})</Link>
-          <Link href="/kontakt" onClick={() => setOpen(false)} className="block font-medium">Kontakt</Link>
-          <Link href="/admin" onClick={() => setOpen(false)} className="block font-medium">Admin</Link>
+          <Link href="/katalog" onClick={() => setOpen(false)} className="block text-sm">Katalog</Link>
+          <Link href="/oblibene" onClick={() => setOpen(false)} className="block text-sm">Oblíbené ({favCount})</Link>
+          <Link href="/kontakt" onClick={() => setOpen(false)} className="block text-sm">Kontakt</Link>
         </div>
       )}
     </header>
