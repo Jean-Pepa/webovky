@@ -27,6 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const pages: MetadataRoute.Sitemap = [
     entry("/", "weekly", 1, now),
     entry("/katalog", "weekly", 0.9, now),
+    entry("/sluzby", "monthly", 0.7, now),
     entry("/o-nas", "monthly", 0.6, now),
     entry("/kontakt", "monthly", 0.6, now),
     entry("/poptavka", "monthly", 0.5, now),

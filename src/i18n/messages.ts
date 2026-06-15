@@ -114,6 +114,25 @@ const M: Dict = {
   "promo.x4": { cs: "Zboží Vám rozdělíme, nařežeme, certifikujeme i dovezeme.", en: "We will cut, divide, certify and deliver your goods.", de: "Wir teilen, schneiden, zertifizieren und liefern Ihre Ware." },
   "promo.b4": { cs: "Služby", en: "Services", de: "Leistungen" },
 
+  // Služby (stránka)
+  "nav.services": { cs: "Služby", en: "Services", de: "Leistungen" },
+  "sluzby.title": { cs: "Naše služby", en: "Our services", de: "Unsere Leistungen" },
+  "sluzby.intro": { cs: "EIKA není jen prodejce materiálu. Zboží vám připravíme na míru, dovezeme a poradíme – pro firmy, živnostníky i koncové zákazníky.", en: "EIKA is more than a material supplier. We prepare goods to measure, deliver them and advise you – for companies, tradespeople and consumers.", de: "EIKA ist mehr als ein Materiallieferant. Wir bereiten Ware nach Maß vor, liefern sie und beraten Sie – für Firmen, Gewerbe und Endkunden." },
+  "sluzby.cutTitle": { cs: "Dělení a zpracování materiálu", en: "Cutting and processing of material", de: "Zuschnitt und Bearbeitung von Material" },
+  "sluzby.cutDesc": { cs: "Hutní materiál vám nařežeme a rozdělíme na míru – řezání pilou, pálení i stříhání plechů přesně podle vašich rozměrů.", en: "We cut and divide metal material to measure – saw cutting, flame cutting and shearing of sheets exactly to your dimensions.", de: "Wir schneiden und teilen Hüttenmaterial nach Maß – Sägen, Brennschneiden und Scheren von Blechen genau nach Ihren Maßen." },
+  "sluzby.transportTitle": { cs: "Doprava a rozvoz", en: "Transport and delivery", de: "Transport und Lieferung" },
+  "sluzby.transportDesc": { cs: "Materiál dovezeme vlastní dopravou přímo na stavbu nebo do vaší provozovny. Doprava do 15 km zdarma.", en: "We deliver material with our own transport directly to your site or premises. Delivery within 15 km free of charge.", de: "Wir liefern Material mit eigenem Transport direkt auf die Baustelle oder in Ihren Betrieb. Lieferung bis 15 km kostenlos." },
+  "sluzby.fuelTitle": { cs: "Čerpací stanice", en: "Fuel station", de: "Tankstelle" },
+  "sluzby.fuelDesc": { cs: "Provozujeme čerpací stanici s naftou a benzínem za příznivé ceny – pohodlně při cestě pro materiál.", en: "We operate a fuel station with diesel and petrol at favourable prices – convenient on your way for material.", de: "Wir betreiben eine Tankstelle mit Diesel und Benzin zu günstigen Preisen – bequem auf dem Weg zum Material." },
+  "sluzby.adviceTitle": { cs: "Poradenství a kalkulace", en: "Advice and quotes", de: "Beratung und Kalkulation" },
+  "sluzby.adviceDesc": { cs: "Poradíme s výběrem materiálu i množstvím a připravíme nezávaznou cenovou nabídku na míru vašemu projektu.", en: "We help with material and quantity selection and prepare a non-binding quote tailored to your project.", de: "Wir helfen bei Material- und Mengenauswahl und erstellen ein unverbindliches Angebot für Ihr Projekt." },
+  "sluzby.viticultureTitle": { cs: "Vinohradnictví na míru", en: "Viticulture supplies", de: "Weinbau nach Maß" },
+  "sluzby.viticultureDesc": { cs: "Sloupky, dráty a vázací materiál pro vinice – zkompletujeme vše potřebné pro výsadbu i údržbu.", en: "Posts, wires and tying material for vineyards – we put together everything needed for planting and maintenance.", de: "Pfosten, Drähte und Bindematerial für Weinberge – wir stellen alles für Anbau und Pflege zusammen." },
+  "sluzby.b2bTitle": { cs: "Velkoobchod pro firmy a živnostníky", en: "Wholesale for companies and tradespeople", de: "Großhandel für Firmen und Gewerbe" },
+  "sluzby.b2bDesc": { cs: "Individuální velkoobchodní ceny, stálá dostupnost skladem a osobní přístup pro pravidelné odběratele.", en: "Individual wholesale prices, constant stock availability and a personal approach for regular customers.", de: "Individuelle Großhandelspreise, ständige Lagerverfügbarkeit und persönlicher Ansatz für Stammkunden." },
+  "sluzby.ctaTitle": { cs: "Potřebujete některou ze služeb?", en: "Need any of these services?", de: "Benötigen Sie eine dieser Leistungen?" },
+  "sluzby.ctaDesc": { cs: "Napište nám nebo zavolejte – rádi vám připravíme nabídku na míru.", en: "Write or call us – we will gladly prepare a tailored offer.", de: "Schreiben oder rufen Sie uns an – wir erstellen gern ein maßgeschneidertes Angebot." },
+
   // Product card / common
   "stock.in": { cs: "Skladem", en: "In stock", de: "Auf Lager" },
   "stock.onRequest": { cs: "Na dotaz", en: "On request", de: "Auf Anfrage" },

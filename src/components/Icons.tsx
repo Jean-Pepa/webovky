@@ -283,6 +283,16 @@ export function UserIcon({ className }: IconProps) {
   );
 }
 
+export function FuelIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} fill="none" aria-hidden>
+      <rect x="9" y="7" width="20" height="34" rx="2.5" stroke="currentColor" strokeWidth="3" />
+      <path d="M13 15h12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+      <path d="M29 18l6 6v11a3 3 0 0 0 6 0V21l-6-6" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function PhoneIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>

@@ -114,6 +114,7 @@ export default function Header() {
           {cats.map((c) => (
             <Link key={c.slug} href={`/katalog/${c.slug}`} className="text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]">{c.name}</Link>
           ))}
+          <Link href="/sluzby" className="text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]">{t("nav.services")}</Link>
           <Link href="/o-nas" className="text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]">{t("nav.about")}</Link>
 
           {/* Kontaktní údaje poboček */}
@@ -151,6 +152,7 @@ export default function Header() {
             <Link key={c.slug} href={`/katalog/${c.slug}`} onClick={() => setOpen(false)} className="block text-sm">{c.name}</Link>
           ))}
           <Link href="/oblibene" onClick={() => setOpen(false)} className="block text-sm">{t("nav.favorites")} ({favCount})</Link>
+          <Link href="/sluzby" onClick={() => setOpen(false)} className="block text-sm">{t("nav.services")}</Link>
           <Link href="/o-nas" onClick={() => setOpen(false)} className="block text-sm">{t("nav.about")}</Link>
           <Link href="/poptavka" onClick={() => setOpen(false)} className="inline-flex items-center px-3.5 py-1.5 rounded-md font-semibold" style={{ background: "var(--color-accent)", color: "#ffffff" }}>{t("nav.inquiry")}</Link>
           <Link href="/kontakt" onClick={() => setOpen(false)} className="block text-sm">{t("nav.contact")}</Link>

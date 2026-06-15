@@ -71,9 +71,9 @@ export default async function HomePage() {
           {/* 3 funkční tlačítka */}
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-5 w-full max-w-6xl">
             {[
-              { icon: BeamIcon, label: t(lang, "promo.t1"), href: "/katalog" },
-              { icon: CartIcon, label: t(lang, "hero.retail"), href: "/kontakt" },
-              { icon: TruckIcon, label: t(lang, "promo.t4"), href: "/kontakt" },
+              { icon: BeamIcon, label: t(lang, "promo.t1"), href: "/kontakt" },
+              { icon: CartIcon, label: t(lang, "hero.retail"), href: "/katalog" },
+              { icon: TruckIcon, label: t(lang, "promo.t4"), href: "/sluzby" },
             ].map((c, i) => {
               const Icon = c.icon;
               return (
