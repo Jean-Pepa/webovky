@@ -1,0 +1,156 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useStore, type Property, type PropertyInput, type PropertyType } from "@/lib/store";
+import { PROPERTY_TYPES } from "@/lib/enums";
+
+export function PropertyForm({ initial }: { initial?: Property }) {
+  const { createProperty, updateProperty } = useStore();
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+
+  function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const opt = (k: string) => {
+      const v = String(fd.get(k) || "").trim();
+      return v || undefined;
+    };
+    const name = String(fd.get("name") || "").trim();
+    if (!name) return;
+    const yb = opt("yearBuilt");
+
+    const data: PropertyInput = {
+      name,
+      type: String(fd.get("type") || "HOUSE") as PropertyType,
+      street: opt("street"),
+      city: opt("city"),
+      zip: opt("zip"),
+      cadastralArea: opt("cadastralArea"),
+      parcelNumber: opt("parcelNumber"),
+      yearBuilt: yb ? Number(yb) : undefined,
+      description: opt("description"),
+    };
+
+    setPending(true);
+    if (initial) {
+      updateProperty(initial.id, data);
+      router.push(`/nemovitost/${initial.id}`);
+    } else {
+      const id = createProperty(data);
+      router.push(`/nemovitost/${id}`);
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-5">
+      <div>
+        <label className="label" htmlFor="name">
+          Název nemovitosti *
+        </label>
+        <input
+          id="name"
+          name="name"
+          required
+          className="input"
+          defaultValue={initial?.name ?? ""}
+          placeholder="Např. Rodinný dům Říčany"
+        />
+      </div>
+
+      <div>
+        <label className="label" htmlFor="type">
+          Typ
+        </label>
+        <select id="type" name="type" className="input" defaultValue={initial?.type ?? "HOUSE"}>
+          {Object.entries(PROPERTY_TYPES).map(([v, l]) => (
+            <option key={v} value={v}>
+              {l}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <label className="label" htmlFor="street">
+            Ulice a číslo
+          </label>
+          <input id="street" name="street" className="input" defaultValue={initial?.street ?? ""} />
+        </div>
+        <div>
+          <label className="label" htmlFor="zip">
+            PSČ
+          </label>
+          <input id="zip" name="zip" className="input" defaultValue={initial?.zip ?? ""} />
+        </div>
+        <div>
+          <label className="label" htmlFor="city">
+            Obec
+          </label>
+          <input id="city" name="city" className="input" defaultValue={initial?.city ?? ""} />
+        </div>
+        <div>
+          <label className="label" htmlFor="cadastralArea">
+            Katastrální území
+          </label>
+          <input
+            id="cadastralArea"
+            name="cadastralArea"
+            className="input"
+            defaultValue={initial?.cadastralArea ?? ""}
+          />
+        </div>
+        <div>
+          <label className="label" htmlFor="parcelNumber">
+            Parcela / č. popisné
+          </label>
+          <input
+            id="parcelNumber"
+            name="parcelNumber"
+            className="input"
+            defaultValue={initial?.parcelNumber ?? ""}
+          />
+        </div>
+        <div>
+          <label className="label" htmlFor="yearBuilt">
+            Rok výstavby
+          </label>
+          <input
+            id="yearBuilt"
+            name="yearBuilt"
+            type="number"
+            min={1500}
+            max={2100}
+            className="input"
+            defaultValue={initial?.yearBuilt ?? ""}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="label" htmlFor="description">
+          Popis
+        </label>
+        <textarea
+          id="description"
+          name="description"
+          className="input"
+          defaultValue={initial?.description ?? ""}
+          placeholder="Stručný popis nemovitosti…"
+        />
+      </div>
+
+      <div className="flex gap-3">
+        <button type="submit" className="btn-primary" disabled={pending}>
+          {initial ? "Uložit změny" : "Vytvořit nemovitost"}
+        </button>
+        <Link href={initial ? `/nemovitost/${initial.id}` : "/prehled"} className="btn-secondary">
+          Zrušit
+        </Link>
+      </div>
+    </form>
+  );
+}
