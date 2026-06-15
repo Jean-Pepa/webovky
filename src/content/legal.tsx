@@ -635,7 +635,7 @@ export const termsAppendices: LegalSection[] = [
           Vzorový formulář pro odstoupení od smlouvy podle Nařízení vlády č. 29/2023 Sb. Vyplňte tento formulář a pošlete
           jej zpět pouze v případě, že chcete odstoupit od smlouvy. Můžete jej vyplnit přímo zde a poté vytisknout.
         </p>
-        <PrintableForm>
+        <PrintableForm title="Odstoupení od smlouvy – EIKA ZNOJMO">
           <p className="text-base font-bold text-[var(--color-ink)]">Oznámení o odstoupení od smlouvy</p>
           <p className="mt-3 text-[var(--color-ink)]">
             Adresát: <strong>EIKA ZNOJMO, a.s.</strong>, Evropská 6/41, Oblekovice, 671 81 Znojmo,
@@ -853,7 +853,7 @@ export const complaintsAppendices: LegalSection[] = [
           Oblekovice, 671 81 Znojmo, v případě, že chcete uplatnit právo z vadného plnění. Můžete jej vyplnit přímo zde
           a poté vytisknout.
         </p>
-        <PrintableForm>
+        <PrintableForm title="Reklamační list – EIKA ZNOJMO">
           <p className="text-base font-bold text-[var(--color-ink)]">Reklamační list</p>
           <p className="mt-2 text-[var(--color-ink)]">
             Adresát: <strong>EIKA ZNOJMO, a.s., IČ: 63490439</strong>, Evropská 6/41, Oblekovice, 671 81 Znojmo
