@@ -38,5 +38,23 @@
   },
   "footer": {
     "copyright": "All rights reserved."
+  },
+  "mapa": {
+    "title": "Site explorer",
+    "subtitle": "Cadastre and map layers in one place",
+    "back": "Back",
+    "search": "Search address or place…",
+    "searchBtn": "Search",
+    "searchEmpty": "Place not found.",
+    "baseLayer": "Base",
+    "layers": "Layers",
+    "parcelInfo": "Parcel information",
+    "clickHint": "Click the map for parcel information",
+    "loading": "Loading…",
+    "noInfo": "No information available for this location.",
+    "coords": "Coordinates",
+    "openMapy": "Open in Mapy.cz",
+    "openKn": "Cadastre lookup",
+    "fetchError": "Could not load data (ČÚZK connection)."
   }
 }

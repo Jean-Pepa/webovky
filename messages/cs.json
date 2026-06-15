@@ -38,5 +38,23 @@
   },
   "footer": {
     "copyright": "Všechna práva vyhrazena."
+  },
+  "mapa": {
+    "title": "Průzkum pozemku",
+    "subtitle": "Katastr a mapové podklady na jednom místě",
+    "back": "Zpět",
+    "search": "Hledat adresu nebo místo…",
+    "searchBtn": "Hledat",
+    "searchEmpty": "Místo nenalezeno.",
+    "baseLayer": "Podklad",
+    "layers": "Vrstvy",
+    "parcelInfo": "Informace o parcele",
+    "clickHint": "Klikněte do mapy pro informace o parcele",
+    "loading": "Načítám…",
+    "noInfo": "Pro toto místo nejsou dostupné informace.",
+    "coords": "Souřadnice",
+    "openMapy": "Otevřít v Mapy.cz",
+    "openKn": "Nahlížení do KN",
+    "fetchError": "Data se nepodařilo načíst (připojení k ČÚZK)."
   }
 }
