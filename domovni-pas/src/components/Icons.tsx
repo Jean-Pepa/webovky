@@ -200,6 +200,24 @@ export function IconMenu(p: IconProps) {
   );
 }
 
+export function IconBox(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M21 8 12 3 3 8v8l9 5 9-5V8z" />
+      <path d="m3 8 9 5 9-5M12 13v8" />
+    </svg>
+  );
+}
+
+export function IconExternal(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M14 4h6v6M20 4l-9 9" />
+      <path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+    </svg>
+  );
+}
+
 export function IconClose(p: IconProps) {
   return (
     <svg {...base} {...p}>

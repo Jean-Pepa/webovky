@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useStore } from "@/lib/store";
+import { useStore, type InventoryItem } from "@/lib/store";
 import { Loading } from "@/components/Loading";
 import { BackLink } from "@/components/BackLink";
 import { PrintButton } from "@/components/ui/PrintButton";
@@ -44,6 +44,15 @@ export default function ReportPage() {
   const photos = property.entries.flatMap((e) =>
     e.media.filter((m) => m.kind === "image" && m.dataUrl),
   );
+
+  const inventoryGroups = (() => {
+    const m = new Map<string, InventoryItem[]>();
+    for (const it of property.inventory) {
+      const loc = it.location?.trim() || "Ostatní";
+      m.set(loc, [...(m.get(loc) ?? []), it]);
+    }
+    return [...m.entries()];
+  })();
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -155,6 +164,35 @@ export default function ReportPage() {
                 </li>
               ))}
             </ul>
+          </>
+        )}
+
+        {property.inventory.length > 0 && (
+          <>
+            <h2 className="mt-8 text-lg font-semibold text-stone-900">Vybavení a materiály</h2>
+            {inventoryGroups.map(([loc, items]) => (
+              <div key={loc} className="mt-3">
+                <h3 className="text-sm font-semibold text-stone-700">{loc}</h3>
+                <ul className="mt-1 divide-y divide-stone-100 text-sm">
+                  {items.map((it) => (
+                    <li key={it.id} className="flex justify-between gap-3 py-1.5">
+                      <span className="text-stone-700">
+                        {it.name}
+                        {it.brand ? ` · ${it.brand}` : ""}
+                      </span>
+                      <span className="shrink-0 text-stone-400">
+                        {[
+                          it.price != null ? formatCurrency(it.price) : null,
+                          it.warrantyUntil ? `záruka do ${formatDate(it.warrantyUntil)}` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </>
         )}
 

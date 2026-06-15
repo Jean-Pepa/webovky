@@ -45,3 +45,23 @@ export const REMINDER_TYPES: Record<string, string> = {
   WARRANTY: "Záruka",
   OTHER: "Jiné",
 };
+
+// Návrhy místností / oblastí pro vybavení (datalist)
+export const ROOM_SUGGESTIONS = [
+  "Kuchyně",
+  "Koupelna",
+  "WC",
+  "Obývací pokoj",
+  "Ložnice",
+  "Dětský pokoj",
+  "Chodba",
+  "Kotelna",
+  "Technická místnost",
+  "Garáž",
+  "Sklep",
+  "Půda",
+  "Střecha",
+  "Fasáda",
+  "Zahrada",
+  "Terasa",
+];
