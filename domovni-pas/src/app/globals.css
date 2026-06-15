@@ -1,10 +1,32 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-paper: #faf9f7;
-  --color-ink: #1c1917;
-  --color-brand: #0f766e;
-  --color-brand-dark: #115e56;
+  /* Značková paleta BULO */
+  --color-petrol: #184e5a; /* primární – petrolejová */
+  --color-ivory: #f5f1e8; /* sekundární – teplá slonová kost */
+  --color-brass: #b58b4b; /* akcent – mosaz */
+
+  --color-paper: #f5f1e8; /* pozadí = slonová kost */
+  --color-ink: #1c2b2f;
+
+  /* Primární škála (petrolejová) – přemapování "teal-*" v celé appce */
+  --color-teal-50: #eef4f5;
+  --color-teal-100: #d5e6e9;
+  --color-teal-200: #aecdd4;
+  --color-teal-500: #2d7081;
+  --color-teal-600: #235d6b;
+  --color-teal-700: #184e5a;
+  --color-teal-800: #133e48;
+  --color-teal-900: #0f2f37;
+
+  /* Akcentní škála (mosaz) – přemapování "amber-*" */
+  --color-amber-50: #f4ecdb;
+  --color-amber-100: #e9d9bb;
+  --color-amber-500: #b58b4b;
+  --color-amber-600: #a07a40;
+  --color-amber-700: #856331;
+  --color-amber-800: #6b4f28;
+  --color-amber-900: #574122;
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;

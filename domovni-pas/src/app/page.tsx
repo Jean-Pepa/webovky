@@ -21,7 +21,7 @@ export default function HomePage() {
 
       <section className="mx-auto max-w-6xl px-6 pt-12 pb-20 text-center sm:pt-20">
         <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-600">
-          <IconSparkles className="h-3.5 w-3.5 text-teal-600" />
+          <IconSparkles className="h-3.5 w-3.5 text-brass" />
           Digitální stavební deník pro každou nemovitost
         </span>
         <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-semibold leading-tight tracking-tight text-stone-900 sm:text-5xl">

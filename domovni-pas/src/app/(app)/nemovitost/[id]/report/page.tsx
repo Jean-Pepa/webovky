@@ -62,11 +62,12 @@ export default function ReportPage() {
       </div>
 
       <div className="card print-clean p-8">
+        <div className="-mx-8 -mt-8 mb-6 h-1.5 rounded-t-2xl bg-brass" />
         {/* Hlavička */}
         <div className="flex items-start justify-between border-b border-stone-200 pb-5">
           <Logo />
           <div className="text-right text-sm text-stone-400">
-            <p className="font-medium text-stone-600">Historie nemovitosti</p>
+            <p className="font-medium text-brass">Historie nemovitosti</p>
             <p>Vygenerováno {formatDate(new Date())}</p>
           </div>
         </div>
