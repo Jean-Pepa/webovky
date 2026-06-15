@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-paper: #faf9f7;
+  --color-ink: #1c1917;
+  --color-brand: #0f766e;
+  --color-brand-dark: #115e56;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@layer components {
+  /* Tlačítka – každá varianta je samostatná (žádné @apply vlastní třídy) */
+  .btn-primary {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-teal-700 px-4
+      py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800
+      disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-secondary {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border
+      border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-800 transition-colors
+      hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-ghost {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5
+      text-sm font-medium text-stone-600 transition-colors hover:bg-stone-100
+      disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-danger {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border
+      border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 transition-colors
+      hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  /* Modifikátor velikosti – používá se jako druhá třída (např. "btn-primary btn-sm") */
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  /* Formuláře */
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-stone-700;
+  }
+  .input {
+    @apply w-full rounded-lg border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-900
+      transition outline-none placeholder:text-stone-400 focus:border-teal-600
+      focus:ring-2 focus:ring-teal-600/20;
+  }
+  textarea.input {
+    @apply min-h-24 resize-y;
+  }
+
+  /* Karta */
+  .card {
+    @apply rounded-2xl border border-stone-200 bg-white shadow-sm;
+  }
+}
+
+/* Tisk reportu */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  .print-clean {
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
