@@ -2,6 +2,7 @@ import Link from "@/components/LocLink";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
 import { locCategories } from "@/i18n/data";
+import CookieSettingsButton from "@/components/CookieSettingsButton";
 
 export default async function Footer() {
   const lang = await getLang();
@@ -40,7 +41,14 @@ export default async function Footer() {
             <p className="mt-2"><Link href="/kontakt" className="hover:text-[var(--color-ink)]">{t(lang, "footer.allContacts")}</Link></p>
           </div>
         </div>
-        <p className="pt-6">© {new Date().getFullYear()} EIKA ZNOJMO, a.s.</p>
+        <div className="pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p>© {new Date().getFullYear()} EIKA ZNOJMO, a.s.</p>
+          <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <li><Link href="/ochrana-osobnich-udaju" className="hover:text-[var(--color-ink)]">{t(lang, "legal.privacy")}</Link></li>
+            <li><Link href="/obchodni-podminky" className="hover:text-[var(--color-ink)]">{t(lang, "legal.terms")}</Link></li>
+            <li><CookieSettingsButton className="hover:text-[var(--color-ink)]" /></li>
+          </ul>
+        </div>
       </div>
     </footer>
   );

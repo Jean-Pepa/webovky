@@ -30,6 +30,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry("/o-nas", "monthly", 0.6, now),
     entry("/kontakt", "monthly", 0.6, now),
     entry("/poptavka", "monthly", 0.5, now),
+    entry("/ochrana-osobnich-udaju", "yearly", 0.3, now),
+    entry("/obchodni-podminky", "yearly", 0.3, now),
   ];
   for (const c of CATEGORIES) {
     pages.push(entry(`/katalog/${c.slug}`, "weekly", 0.8, now));

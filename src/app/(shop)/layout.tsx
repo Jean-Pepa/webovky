@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import StickyBadge from "@/components/StickyBadge";
+import CookieConsent from "@/components/CookieConsent";
 
 export default function ShopLayout({
   children,
@@ -13,6 +14,7 @@ export default function ShopLayout({
       <main className="min-h-[60vh] bg-[var(--color-bg)]" style={{ paddingTop: "10mm" }}>{children}</main>
       <Footer />
       <StickyBadge />
+      <CookieConsent />
     </>
   );
 }

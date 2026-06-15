@@ -215,6 +215,28 @@ const M: Dict = {
   "footer.allContacts": { cs: "Všechny kontakty ›", en: "All contacts ›", de: "Alle Kontakte ›" },
   "footer.fullCatalog": { cs: "Celý katalog", en: "Full catalogue", de: "Ganzer Katalog" },
 
+  // Legal / patička – právní
+  "footer.legal": { cs: "Informace", en: "Information", de: "Informationen" },
+  "legal.privacy": { cs: "Ochrana osobních údajů", en: "Privacy policy", de: "Datenschutz" },
+  "legal.terms": { cs: "Obchodní podmínky", en: "Terms & conditions", de: "AGB" },
+  "legal.cookiesSettings": { cs: "Nastavení cookies", en: "Cookie settings", de: "Cookie-Einstellungen" },
+
+  // Cookie lišta
+  "cookie.title": { cs: "Cookies a soukromí", en: "Cookies & privacy", de: "Cookies & Datenschutz" },
+  "cookie.intro": { cs: "Nezbytné cookies jedou vždy, aby web fungoval. Se souhlasem k tomu přidáme vlastní měření návštěvnosti a měření reklam Meta — pomáhá nám web vylepšovat. Změnit nebo odvolat to můžeš kdykoli.", en: "Essential cookies always run so the site works. With your consent we add our own analytics and Meta ad measurement — it helps us improve the site. You can change or withdraw this anytime.", de: "Notwendige Cookies laufen immer, damit die Website funktioniert. Mit Ihrer Zustimmung fügen wir eigene Analysen und Meta-Werbemessung hinzu — das hilft uns, die Website zu verbessern. Sie können dies jederzeit ändern oder widerrufen." },
+  "cookie.more": { cs: "Více v zásadách ochrany soukromí →", en: "More in the privacy policy →", de: "Mehr in den Datenschutzhinweisen →" },
+  "cookie.necessary": { cs: "Nezbytné", en: "Necessary", de: "Notwendig" },
+  "cookie.necessaryAlways": { cs: "Vždy zapnuto", en: "Always on", de: "Immer aktiv" },
+  "cookie.necessaryDesc": { cs: "Provoz webu, bezpečnost, záznam tvé volby. Nelze vypnout.", en: "Site operation, security, storing your choice. Cannot be disabled.", de: "Betrieb der Website, Sicherheit, Speichern Ihrer Auswahl. Kann nicht deaktiviert werden." },
+  "cookie.stats": { cs: "Statistiky", en: "Statistics", de: "Statistik" },
+  "cookie.statsDesc": { cs: "Naše vlastní měření návštěvnosti (bez třetích stran).", en: "Our own traffic measurement (no third parties).", de: "Unsere eigene Besuchermessung (ohne Dritte)." },
+  "cookie.marketing": { cs: "Marketing", en: "Marketing", de: "Marketing" },
+  "cookie.marketingDesc": { cs: "Meta (měření reklam) a interaktivní mapy Google.", en: "Meta (ad measurement) and interactive Google maps.", de: "Meta (Werbemessung) und interaktive Google-Karten." },
+  "cookie.save": { cs: "Uložit volbu", en: "Save choice", de: "Auswahl speichern" },
+  "cookie.acceptAll": { cs: "Přijmout vše", en: "Accept all", de: "Alle akzeptieren" },
+  "cookie.pill": { cs: "Cookies", en: "Cookies", de: "Cookies" },
+  "cookie.pillLink": { cs: "Zásady", en: "Policy", de: "Richtlinie" },
+
   // Favorites page
   "fav.title": { cs: "Oblíbené", en: "Favourites", de: "Favoriten" },
   "fav.empty": { cs: "Zatím nemáte žádné oblíbené zboží.", en: "You have no favourites yet.", de: "Sie haben noch keine Favoriten." },
