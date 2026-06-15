@@ -1,20 +1,45 @@
 "use client";
 
-import { useActionState } from "react";
 import Link from "next/link";
-import { createEntry } from "@/lib/actions/entry";
-import { SubmitButton } from "@/components/ui/SubmitButton";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useStore, type EntryType, type Media } from "@/lib/store";
+import { fileToMedia } from "@/lib/media";
 import { ENTRY_TYPES } from "@/lib/enums";
 import { toDateInputValue } from "@/lib/format";
-import type { FormState } from "@/lib/forms";
 
 export function EntryForm({ propertyId }: { propertyId: string }) {
-  const [state, action] = useActionState<FormState, FormData>(createEntry, {});
+  const { addEntry } = useStore();
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const title = String(fd.get("title") || "").trim();
+    if (!title) return;
+
+    setPending(true);
+    const files = fd.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
+    const media: Media[] = [];
+    for (const f of files) media.push(await fileToMedia(f));
+
+    const costRaw = String(fd.get("cost") || "").replace(/\s/g, "");
+    const desc = String(fd.get("description") || "").trim();
+
+    addEntry(propertyId, {
+      type: String(fd.get("type") || "OTHER") as EntryType,
+      title,
+      description: desc || undefined,
+      date: String(fd.get("date") || toDateInputValue(new Date())),
+      cost: costRaw ? Number(costRaw) : undefined,
+      media,
+    });
+    router.push(`/nemovitost/${propertyId}`);
+  }
 
   return (
-    <form action={action} className="space-y-5">
-      <input type="hidden" name="propertyId" value={propertyId} />
-
+    <form onSubmit={submit} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="label" htmlFor="type">
@@ -71,41 +96,30 @@ export function EntryForm({ propertyId }: { propertyId: string }) {
         <label className="label" htmlFor="cost">
           Náklad (Kč)
         </label>
-        <input
-          id="cost"
-          name="cost"
-          type="number"
-          min={0}
-          className="input"
-          placeholder="volitelné"
-        />
+        <input id="cost" name="cost" type="number" min={0} className="input" placeholder="volitelné" />
       </div>
 
       <div>
         <label className="label" htmlFor="files">
-          Fotky, videa a přílohy
+          Fotky a přílohy
         </label>
         <input
           id="files"
           name="files"
           type="file"
           multiple
-          accept="image/*,video/*,application/pdf"
+          accept="image/*"
           className="block w-full text-sm text-stone-600 file:mr-4 file:rounded-lg file:border-0 file:bg-teal-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-teal-700 hover:file:bg-teal-100"
         />
         <p className="mt-1.5 text-xs text-stone-400">
-          Foto z telefonu, 360° panorama i video — ukládáme výsledek bez ohledu na zařízení.
+          Obrázky se v ukázce ukládají přímo v prohlížeči (zmenšené).
         </p>
       </div>
 
-      {state.error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
-      )}
-
       <div className="flex gap-3">
-        <SubmitButton className="btn-primary" pendingText="Ukládám…">
-          Uložit záznam
-        </SubmitButton>
+        <button type="submit" className="btn-primary" disabled={pending}>
+          {pending ? "Ukládám…" : "Uložit záznam"}
+        </button>
         <Link href={`/nemovitost/${propertyId}`} className="btn-secondary">
           Zrušit
         </Link>

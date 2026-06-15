@@ -1,13 +1,9 @@
-import { requireUser } from "@/lib/auth";
-import { createProperty } from "@/lib/actions/property";
+"use client";
+
 import { PropertyForm } from "@/components/forms/PropertyForm";
 import { BackLink } from "@/components/BackLink";
 
-export const metadata = { title: "Nová nemovitost — Domovní pas" };
-
-export default async function NewPropertyPage() {
-  await requireUser();
-
+export default function NewPropertyPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <BackLink href="/prehled">Zpět na přehled</BackLink>
@@ -16,7 +12,7 @@ export default async function NewPropertyPage() {
         Stačí název, zbytek můžete doplnit kdykoli později.
       </p>
       <div className="card mt-6 p-6">
-        <PropertyForm action={createProperty} submitLabel="Vytvořit nemovitost" />
+        <PropertyForm />
       </div>
     </div>
   );

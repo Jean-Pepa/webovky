@@ -1,15 +1,28 @@
-import { notFound } from "next/navigation";
-import { requireUser, getOwnedProperty } from "@/lib/auth";
+"use client";
+
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useStore } from "@/lib/store";
+import { Loading } from "@/components/Loading";
 import { EntryForm } from "@/components/forms/EntryForm";
 import { BackLink } from "@/components/BackLink";
 
-export const metadata = { title: "Nový záznam — Domovní pas" };
+export default function NewEntryPage() {
+  const { id } = useParams<{ id: string }>();
+  const { getProperty, hydrated } = useStore();
+  if (!hydrated) return <Loading />;
 
-export default async function NewEntryPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const user = await requireUser();
-  const property = await getOwnedProperty(id, user.id);
-  if (!property) notFound();
+  const property = getProperty(id);
+  if (!property) {
+    return (
+      <div className="mx-auto max-w-2xl text-center">
+        <p className="text-stone-500">Nemovitost nenalezena.</p>
+        <Link href="/prehled" className="btn-secondary mt-4">
+          Zpět na přehled
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-2xl">

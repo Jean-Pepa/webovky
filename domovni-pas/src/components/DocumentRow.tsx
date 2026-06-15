@@ -1,22 +1,10 @@
+"use client";
+
 import { IconFile, IconDownload, IconTrash } from "@/components/Icons";
-import { ConfirmSubmit } from "@/components/ui/ConfirmSubmit";
-import { deleteDocument } from "@/lib/actions/document";
-import { DOCUMENT_CATEGORIES, type DocumentCategory } from "@/lib/enums";
-import { formatFileSize } from "@/lib/format";
+import { DOCUMENT_CATEGORIES } from "@/lib/enums";
+import type { DocItem } from "@/lib/store";
 
-type Doc = {
-  id: string;
-  title: string;
-  category: string;
-  fileName: string;
-  storageKey: string;
-  size: number;
-};
-
-export function DocumentRow({ doc, canEdit }: { doc: Doc; canEdit: boolean }) {
-  const category =
-    DOCUMENT_CATEGORIES[doc.category as DocumentCategory] ?? DOCUMENT_CATEGORIES.OTHER;
-
+export function DocumentRow({ doc, onDelete }: { doc: DocItem; onDelete?: () => void }) {
   return (
     <li className="flex items-center gap-3 py-2.5">
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-stone-100 text-stone-500">
@@ -24,29 +12,31 @@ export function DocumentRow({ doc, canEdit }: { doc: Doc; canEdit: boolean }) {
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-stone-800">{doc.title}</p>
-        <p className="text-xs text-stone-400">
-          {category} · {formatFileSize(doc.size)}
+        <p className="truncate text-xs text-stone-400">
+          {DOCUMENT_CATEGORIES[doc.category] ?? DOCUMENT_CATEGORIES.OTHER}
+          {doc.fileName ? ` · ${doc.fileName}` : ""}
         </p>
       </div>
-      <a
-        href={`/api/files/${doc.id}`}
-        target="_blank"
-        rel="noreferrer"
-        className="btn-ghost btn-sm text-stone-500"
-        title="Stáhnout"
-      >
-        <IconDownload className="h-4 w-4" />
-      </a>
-      {canEdit && (
-        <form action={deleteDocument}>
-          <input type="hidden" name="id" value={doc.id} />
-          <ConfirmSubmit
-            message="Opravdu smazat tento dokument?"
-            className="btn-ghost btn-sm text-stone-400 hover:text-red-600"
-          >
-            <IconTrash className="h-4 w-4" />
-          </ConfirmSubmit>
-        </form>
+      {doc.dataUrl && (
+        <a
+          href={doc.dataUrl}
+          download={doc.fileName ?? doc.title}
+          className="btn-ghost btn-sm text-stone-500"
+          title="Stáhnout"
+        >
+          <IconDownload className="h-4 w-4" />
+        </a>
+      )}
+      {onDelete && (
+        <button
+          onClick={() => {
+            if (confirm("Opravdu smazat tento dokument?")) onDelete();
+          }}
+          className="btn-ghost btn-sm text-stone-400 hover:text-red-600"
+          aria-label="Smazat dokument"
+        >
+          <IconTrash className="h-4 w-4" />
+        </button>
       )}
     </li>
   );

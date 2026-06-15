@@ -1,41 +1,31 @@
+"use client";
+
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { useParams } from "next/navigation";
+import { useStore } from "@/lib/store";
+import { Loading } from "@/components/Loading";
 import { Logo } from "@/components/Logo";
 import { Badge } from "@/components/ui/Badge";
 import { EntryCard } from "@/components/EntryCard";
 import { IconFile, IconShield } from "@/components/Icons";
-import {
-  PROPERTY_TYPES,
-  DOCUMENT_CATEGORIES,
-  type PropertyType,
-  type DocumentCategory,
-} from "@/lib/enums";
+import { PROPERTY_TYPES, DOCUMENT_CATEGORIES } from "@/lib/enums";
 import { addressLine, formatCurrency } from "@/lib/format";
 
-export const metadata = {
-  title: "Sdílený náhled nemovitosti — Domovní pas",
-  robots: { index: false },
-};
+export default function SharedPage() {
+  const { id } = useParams<{ id: string }>();
+  const { getProperty, hydrated } = useStore();
 
-export default async function SharedPage({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
+  if (!hydrated) return <Loading />;
 
-  const property = await prisma.property.findFirst({
-    where: { shareToken: token, shareEnabled: true },
-    include: {
-      owner: true,
-      entries: { orderBy: { date: "desc" }, include: { attachments: true } },
-      documents: { orderBy: { createdAt: "desc" } },
-    },
-  });
+  const property = getProperty(id);
 
-  if (!property) {
+  if (!property || !property.shareEnabled) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
         <div className="grid h-14 w-14 place-items-center rounded-2xl bg-stone-100 text-stone-400">
           <IconShield className="h-7 w-7" />
         </div>
-        <h1 className="mt-5 text-xl font-semibold text-stone-900">Odkaz není dostupný</h1>
+        <h1 className="mt-5 text-xl font-semibold text-stone-900">Náhled není dostupný</h1>
         <p className="mt-2 max-w-sm text-sm text-stone-500">
           Tento sdílený odkaz neexistuje nebo ho majitel vypnul.
         </p>
@@ -46,7 +36,7 @@ export default async function SharedPage({ params }: { params: Promise<{ token: 
     );
   }
 
-  const typeLabel = PROPERTY_TYPES[property.type as PropertyType] ?? property.type;
+  const entries = [...property.entries].sort((a, b) => b.date.localeCompare(a.date));
   const totalCost = property.entries.reduce((s, e) => s + (e.cost ?? 0), 0);
 
   return (
@@ -56,12 +46,12 @@ export default async function SharedPage({ params }: { params: Promise<{ token: 
           <Link href="/">
             <Logo />
           </Link>
-          <Badge color="amber">Veřejný náhled · jen ke čtení</Badge>
+          <Badge color="amber">Náhled · jen ke čtení</Badge>
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-8">
-        <Badge color="teal">{typeLabel}</Badge>
+        <Badge color="teal">{PROPERTY_TYPES[property.type]}</Badge>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-900">
           {property.name}
         </h1>
@@ -83,12 +73,12 @@ export default async function SharedPage({ params }: { params: Promise<{ token: 
         )}
 
         <h2 className="mt-8 text-lg font-semibold text-stone-900">Historie</h2>
-        {property.entries.length === 0 ? (
+        {entries.length === 0 ? (
           <p className="mt-3 text-sm text-stone-500">Zatím žádné záznamy.</p>
         ) : (
           <ol className="mt-5 space-y-4 border-l-2 border-stone-200 pl-7">
-            {property.entries.map((entry) => (
-              <EntryCard key={entry.id} entry={entry} canEdit={false} />
+            {entries.map((entry) => (
+              <EntryCard key={entry.id} entry={entry} />
             ))}
           </ol>
         )}
@@ -105,18 +95,9 @@ export default async function SharedPage({ params }: { params: Promise<{ token: 
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-stone-800">{doc.title}</p>
                     <p className="text-xs text-stone-400">
-                      {DOCUMENT_CATEGORIES[doc.category as DocumentCategory] ??
-                        DOCUMENT_CATEGORIES.OTHER}
+                      {DOCUMENT_CATEGORIES[doc.category] ?? DOCUMENT_CATEGORIES.OTHER}
                     </p>
                   </div>
-                  <a
-                    href={`/api/files/${doc.id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn-ghost btn-sm text-stone-500"
-                  >
-                    Otevřít
-                  </a>
                 </li>
               ))}
             </ul>
@@ -126,14 +107,13 @@ export default async function SharedPage({ params }: { params: Promise<{ token: 
         <div className="mt-10 rounded-2xl bg-teal-700 px-6 py-7 text-center text-white">
           <h3 className="text-lg font-semibold">Máte taky nemovitost?</h3>
           <p className="mx-auto mt-1.5 max-w-md text-sm text-teal-50">
-            Veďte si vlastní domovní pas — historii, dokumenty i fotky na jednom místě, připravené
-            na předání novému majiteli.
+            Veďte si vlastní domovní pas — historii, dokumenty i fotky na jednom místě.
           </p>
           <Link
-            href="/registrace"
+            href="/prehled"
             className="mt-4 inline-flex rounded-lg bg-white px-5 py-2.5 text-sm font-medium text-teal-700 hover:bg-teal-50"
           >
-            Vytvořit účet zdarma
+            Otevřít aplikaci
           </Link>
         </div>
       </main>

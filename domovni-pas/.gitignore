@@ -8,17 +8,8 @@
 *.tsbuildinfo
 next-env.d.ts
 
-# uploaded files (local object storage – produkce používá Vercel Blob)
-/storage/*
-!/storage/.gitkeep
-
-# local sqlite (pozůstatek / nechtěné – produkce běží na Postgresu)
-*.db
-*.db-journal
-
-# env (nastav DATABASE_URL atd. lokálně – viz .env.example)
-.env
-.env*.local
+# env
+.env*
 
 # misc
 .DS_Store

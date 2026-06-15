@@ -1,39 +1,35 @@
-import { notFound } from "next/navigation";
-import { requireUser, getOwnedProperty } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+"use client";
+
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useStore } from "@/lib/store";
+import { Loading } from "@/components/Loading";
 import { BackLink } from "@/components/BackLink";
 import { PrintButton } from "@/components/ui/PrintButton";
 import { Logo } from "@/components/Logo";
 import { Badge } from "@/components/ui/Badge";
 import { EntryCard } from "@/components/EntryCard";
-import {
-  PROPERTY_TYPES,
-  DOCUMENT_CATEGORIES,
-  type PropertyType,
-  type DocumentCategory,
-} from "@/lib/enums";
+import { PROPERTY_TYPES, DOCUMENT_CATEGORIES } from "@/lib/enums";
 import { addressLine, formatCurrency, formatDate } from "@/lib/format";
 
-export const metadata = { title: "Report nemovitosti — Domovní pas" };
+export default function ReportPage() {
+  const { id } = useParams<{ id: string }>();
+  const { getProperty, hydrated } = useStore();
+  if (!hydrated) return <Loading />;
 
-export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const user = await requireUser();
+  const property = getProperty(id);
+  if (!property) {
+    return (
+      <div className="mx-auto max-w-2xl text-center">
+        <p className="text-stone-500">Nemovitost nenalezena.</p>
+        <Link href="/prehled" className="btn-secondary mt-4">
+          Zpět na přehled
+        </Link>
+      </div>
+    );
+  }
 
-  const access = await getOwnedProperty(id, user.id);
-  if (!access) notFound();
-
-  const property = await prisma.property.findUnique({
-    where: { id },
-    include: {
-      owner: true,
-      entries: { orderBy: { date: "desc" }, include: { attachments: true } },
-      documents: { orderBy: { createdAt: "desc" } },
-    },
-  });
-  if (!property) notFound();
-
-  const typeLabel = PROPERTY_TYPES[property.type as PropertyType] ?? property.type;
+  const entries = [...property.entries].sort((a, b) => b.date.localeCompare(a.date));
   const totalCost = property.entries.reduce((s, e) => s + (e.cost ?? 0), 0);
 
   return (
@@ -44,7 +40,6 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       </div>
 
       <div className="card print-clean p-8">
-        {/* Hlavička reportu */}
         <div className="flex items-start justify-between border-b border-stone-200 pb-5">
           <Logo />
           <div className="text-right text-sm text-stone-400">
@@ -53,9 +48,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
 
-        {/* Identifikace */}
         <div className="mt-6">
-          <Badge color="teal">{typeLabel}</Badge>
+          <Badge color="teal">{PROPERTY_TYPES[property.type]}</Badge>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-900">
             {property.name}
           </h1>
@@ -66,7 +60,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           {property.cadastralArea && <Fact label="Katastrální území" value={property.cadastralArea} />}
           {property.parcelNumber && <Fact label="Parcela / č. popisné" value={property.parcelNumber} />}
           {property.yearBuilt && <Fact label="Rok výstavby" value={String(property.yearBuilt)} />}
-          <Fact label="Vlastník" value={property.owner.name} />
+          <Fact label="Vlastník" value={property.ownerName} />
           <Fact label="Počet záznamů" value={String(property.entries.length)} />
           <Fact label="Náklady celkem" value={totalCost > 0 ? formatCurrency(totalCost) : "—"} />
         </dl>
@@ -77,19 +71,17 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           </p>
         )}
 
-        {/* Historie */}
         <h2 className="mt-8 text-lg font-semibold text-stone-900">Historie nemovitosti</h2>
-        {property.entries.length === 0 ? (
+        {entries.length === 0 ? (
           <p className="mt-3 text-sm text-stone-500">Zatím nebyl zaznamenán žádný záznam.</p>
         ) : (
           <ol className="mt-5 space-y-4 border-l-2 border-stone-200 pl-7">
-            {property.entries.map((entry) => (
-              <EntryCard key={entry.id} entry={entry} canEdit={false} />
+            {entries.map((entry) => (
+              <EntryCard key={entry.id} entry={entry} />
             ))}
           </ol>
         )}
 
-        {/* Dokumenty */}
         {property.documents.length > 0 && (
           <>
             <h2 className="mt-8 text-lg font-semibold text-stone-900">Dokumenty</h2>
@@ -98,8 +90,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                 <li key={doc.id} className="flex justify-between gap-3">
                   <span className="text-stone-700">{doc.title}</span>
                   <span className="shrink-0 text-stone-400">
-                    {DOCUMENT_CATEGORIES[doc.category as DocumentCategory] ??
-                      DOCUMENT_CATEGORIES.OTHER}
+                    {DOCUMENT_CATEGORIES[doc.category] ?? DOCUMENT_CATEGORIES.OTHER}
                   </span>
                 </li>
               ))}

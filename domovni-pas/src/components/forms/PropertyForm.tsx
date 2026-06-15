@@ -1,39 +1,51 @@
 "use client";
 
-import { useActionState } from "react";
 import Link from "next/link";
-import { SubmitButton } from "@/components/ui/SubmitButton";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useStore, type Property, type PropertyInput, type PropertyType } from "@/lib/store";
 import { PROPERTY_TYPES } from "@/lib/enums";
-import type { FormState } from "@/lib/forms";
 
-type PropertyValues = {
-  id?: string;
-  name?: string;
-  type?: string;
-  street?: string | null;
-  city?: string | null;
-  zip?: string | null;
-  cadastralArea?: string | null;
-  parcelNumber?: string | null;
-  yearBuilt?: number | null;
-  description?: string | null;
-};
+export function PropertyForm({ initial }: { initial?: Property }) {
+  const { createProperty, updateProperty } = useStore();
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
 
-export function PropertyForm({
-  action,
-  initial,
-  submitLabel,
-}: {
-  action: (prev: FormState, fd: FormData) => Promise<FormState>;
-  initial?: PropertyValues;
-  submitLabel: string;
-}) {
-  const [state, formAction] = useActionState<FormState, FormData>(action, {});
+  function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const opt = (k: string) => {
+      const v = String(fd.get(k) || "").trim();
+      return v || undefined;
+    };
+    const name = String(fd.get("name") || "").trim();
+    if (!name) return;
+    const yb = opt("yearBuilt");
+
+    const data: PropertyInput = {
+      name,
+      type: String(fd.get("type") || "HOUSE") as PropertyType,
+      street: opt("street"),
+      city: opt("city"),
+      zip: opt("zip"),
+      cadastralArea: opt("cadastralArea"),
+      parcelNumber: opt("parcelNumber"),
+      yearBuilt: yb ? Number(yb) : undefined,
+      description: opt("description"),
+    };
+
+    setPending(true);
+    if (initial) {
+      updateProperty(initial.id, data);
+      router.push(`/nemovitost/${initial.id}`);
+    } else {
+      const id = createProperty(data);
+      router.push(`/nemovitost/${id}`);
+    }
+  }
 
   return (
-    <form action={formAction} className="space-y-5">
-      {initial?.id && <input type="hidden" name="id" value={initial.id} />}
-
+    <form onSubmit={submit} className="space-y-5">
       <div>
         <label className="label" htmlFor="name">
           Název nemovitosti *
@@ -131,18 +143,11 @@ export function PropertyForm({
         />
       </div>
 
-      {state.error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
-      )}
-
       <div className="flex gap-3">
-        <SubmitButton className="btn-primary" pendingText="Ukládám…">
-          {submitLabel}
-        </SubmitButton>
-        <Link
-          href={initial?.id ? `/nemovitost/${initial.id}` : "/prehled"}
-          className="btn-secondary"
-        >
+        <button type="submit" className="btn-primary" disabled={pending}>
+          {initial ? "Uložit změny" : "Vytvořit nemovitost"}
+        </button>
+        <Link href={initial ? `/nemovitost/${initial.id}` : "/prehled"} className="btn-secondary">
           Zrušit
         </Link>
       </div>

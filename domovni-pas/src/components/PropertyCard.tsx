@@ -1,33 +1,18 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { IconCalendar, IconFile } from "@/components/Icons";
-import { PROPERTY_TYPES, type PropertyType } from "@/lib/enums";
+import { PROPERTY_TYPES } from "@/lib/enums";
 import { addressLine } from "@/lib/format";
+import type { Property } from "@/lib/store";
 
-type Props = {
-  property: {
-    id: string;
-    name: string;
-    type: string;
-    street: string | null;
-    city: string | null;
-    zip: string | null;
-    _count: { entries: number; documents: number };
-  };
-  shared?: boolean;
-};
-
-export function PropertyCard({ property, shared }: Props) {
-  const typeLabel = PROPERTY_TYPES[property.type as PropertyType] ?? property.type;
-
+export function PropertyCard({ property }: { property: Property }) {
   return (
     <Link
       href={`/nemovitost/${property.id}`}
       className="card group flex flex-col p-5 transition hover:border-teal-300 hover:shadow-md"
     >
       <div className="flex items-center gap-2">
-        <Badge color="teal">{typeLabel}</Badge>
-        {shared && <Badge color="amber">Sdílená se mnou</Badge>}
+        <Badge color="teal">{PROPERTY_TYPES[property.type]}</Badge>
       </div>
       <h3 className="mt-3 text-lg font-semibold text-stone-900 group-hover:text-teal-800">
         {property.name}
@@ -37,11 +22,11 @@ export function PropertyCard({ property, shared }: Props) {
       <div className="mt-4 flex items-center gap-4 border-t border-stone-100 pt-3 text-xs text-stone-500">
         <span className="inline-flex items-center gap-1.5">
           <IconCalendar className="h-4 w-4" />
-          {property._count.entries} záznamů
+          {property.entries.length} záznamů
         </span>
         <span className="inline-flex items-center gap-1.5">
           <IconFile className="h-4 w-4" />
-          {property._count.documents} dokumentů
+          {property.documents.length} dokumentů
         </span>
       </div>
     </Link>

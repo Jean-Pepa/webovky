@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
 import { Logo } from "@/components/Logo";
 import {
   IconShield,
@@ -11,24 +9,16 @@ import {
   IconSparkles,
 } from "@/components/Icons";
 
-export default async function HomePage() {
-  if (await getCurrentUser()) redirect("/prehled");
-
+export default function HomePage() {
   return (
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <Logo />
-        <nav className="flex items-center gap-2">
-          <Link href="/prihlaseni" className="btn-ghost">
-            Přihlásit se
-          </Link>
-          <Link href="/registrace" className="btn-primary">
-            Vytvořit účet
-          </Link>
-        </nav>
+        <Link href="/prehled" className="btn-primary">
+          Otevřít aplikaci
+        </Link>
       </header>
 
-      {/* Hero */}
       <section className="mx-auto max-w-6xl px-6 pt-12 pb-20 text-center sm:pt-20">
         <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-600">
           <IconSparkles className="h-3.5 w-3.5 text-teal-600" />
@@ -43,16 +33,12 @@ export default async function HomePage() {
         </p>
         <p className="mt-3 text-sm text-stone-400">Jako CarVertical, ale pro dům či byt.</p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Link href="/registrace" className="btn-primary px-6 py-3 text-base">
-            Začít zdarma
-          </Link>
-          <Link href="/prihlaseni" className="btn-secondary px-6 py-3 text-base">
-            Mám už účet
+          <Link href="/prehled" className="btn-primary px-6 py-3 text-base">
+            Vyzkoušet ukázku
           </Link>
         </div>
       </section>
 
-      {/* Hodnoty */}
       <section className="mx-auto max-w-6xl px-6 pb-20">
         <div className="grid gap-5 sm:grid-cols-3">
           <Feature
@@ -62,8 +48,8 @@ export default async function HomePage() {
           />
           <Feature
             icon={<IconTransfer className="h-6 w-6" />}
-            title="Převod při prodeji"
-            text="Záznam přežije změnu majitele. Při prodeji ho jedním krokem převedete na nového vlastníka i s celou historií."
+            title="Připraveno na prodej"
+            text="Záznam přežije změnu majitele. Při prodeji předáte novému vlastníkovi celou historii nemovitosti."
           />
           <Feature
             icon={<IconFile className="h-6 w-6" />}
@@ -73,17 +59,17 @@ export default async function HomePage() {
           <Feature
             icon={<IconShare className="h-6 w-6" />}
             title="Bezpečné sdílení"
-            text="Vytvořte read-only odkaz pro kupujícího nebo řemeslníka. Kdykoli ho zase vypnete."
+            text="Vytvořte read-only náhled pro kupujícího nebo řemeslníka. Kdykoli ho zase vypnete."
           />
           <Feature
             icon={<IconShield className="h-6 w-6" />}
             title="Důvěryhodný report"
-            text="Při prodeji vygenerujete přehledný report o stavu a péči — doklad, který zvyšuje hodnotu nemovitosti."
+            text="Vygenerujete přehledný report o stavu a péči — doklad, který zvyšuje hodnotu nemovitosti."
           />
           <Feature
             icon={<IconSparkles className="h-6 w-6" />}
-            title="Pro majitele i odborníky"
-            text="Architekt nebo stavební firma může záznam založit, naplnit dokumentací a předat klientovi."
+            title="Brutálně jednoduché"
+            text="Žádná složitá administrativa. Otevřete, kliknete, zapíšete. Hotovo."
           />
         </div>
       </section>
@@ -91,22 +77,14 @@ export default async function HomePage() {
       <footer className="border-t border-stone-200 py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 text-sm text-stone-400 sm:flex-row">
           <Logo />
-          <p>© {new Date().getFullYear()} Domovní pas · Pracovní MVP</p>
+          <p>© {new Date().getFullYear()} Domovní pas · Pracovní ukázka</p>
         </div>
       </footer>
     </div>
   );
 }
 
-function Feature({
-  icon,
-  title,
-  text,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  text: string;
-}) {
+function Feature({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
   return (
     <div className="card p-6">
       <div className="grid h-11 w-11 place-items-center rounded-xl bg-teal-50 text-teal-700">
