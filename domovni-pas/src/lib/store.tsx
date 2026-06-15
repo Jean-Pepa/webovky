@@ -4,8 +4,22 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { newId } from "./id";
 
 export type PropertyType = "HOUSE" | "APARTMENT" | "OTHER";
-export type EntryType = "REPAIR" | "DEFECT" | "INSPECTION" | "RENOVATION" | "OTHER";
-export type DocCategory = "PLAN" | "CERTIFICATE" | "ENERGY_LABEL" | "INVOICE" | "OTHER";
+export type EntryType =
+  | "PURCHASE"
+  | "HANDOVER"
+  | "REPAIR"
+  | "DEFECT"
+  | "INSPECTION"
+  | "RENOVATION"
+  | "INSURANCE"
+  | "OTHER";
+export type DocCategory =
+  | "CONTRACT"
+  | "PLAN"
+  | "CERTIFICATE"
+  | "ENERGY_LABEL"
+  | "INVOICE"
+  | "OTHER";
 
 export type Media = { id: string; name: string; kind: "image" | "file"; dataUrl?: string };
 
@@ -80,6 +94,11 @@ type Store = {
   hydrated: boolean;
   getProperty: (id: string) => Property | undefined;
   createProperty: (data: PropertyInput) => string;
+  createPropertyFull: (
+    data: PropertyInput,
+    entries: EntryInput[],
+    documents: DocumentInput[],
+  ) => string;
   updateProperty: (id: string, data: PropertyInput) => void;
   deleteProperty: (id: string) => void;
   addEntry: (propertyId: string, data: EntryInput) => void;
@@ -136,6 +155,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setProperties((prev) => [p, ...prev]);
     return id;
   }, []);
+
+  // Vytvoří nemovitost rovnou i se záznamy a dokumenty (používá průvodce „Založit pas").
+  const createPropertyFull = useCallback(
+    (data: PropertyInput, entries: EntryInput[], documents: DocumentInput[]) => {
+      const id = newId();
+      const p: Property = {
+        ...data,
+        id,
+        ownerName: "Vy",
+        shareEnabled: false,
+        entries: entries.map((e) => ({ ...e, id: newId(), createdAt: now() })),
+        documents: documents.map((d) => ({ ...d, id: newId() })),
+        createdAt: now(),
+        updatedAt: now(),
+      };
+      setProperties((prev) => [p, ...prev]);
+      return id;
+    },
+    [],
+  );
 
   const updateProperty = useCallback((id: string, data: PropertyInput) => {
     setProperties((prev) =>
@@ -200,6 +239,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     hydrated,
     getProperty,
     createProperty,
+    createPropertyFull,
     updateProperty,
     deleteProperty,
     addEntry,

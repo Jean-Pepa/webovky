@@ -27,10 +27,15 @@ export default function DashboardPage() {
               : "Zatím nemáte žádnou nemovitost."}
           </p>
         </div>
-        <Link href="/nemovitost/nova" className="btn-primary">
-          <IconPlus className="h-4 w-4" />
-          Nová nemovitost
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/nemovitost/nova" className="btn-secondary">
+            Rychlé přidání
+          </Link>
+          <Link href="/nemovitost/zalozit" className="btn-primary">
+            <IconPlus className="h-4 w-4" />
+            Založit pas
+          </Link>
+        </div>
       </div>
 
       {properties.length === 0 ? (
@@ -43,9 +48,9 @@ export default function DashboardPage() {
             Vytvořte záznam pro svůj dům nebo byt a začněte budovat jeho trvalou historii — opravy,
             revize, dokumenty i fotky na jednom místě.
           </p>
-          <Link href="/nemovitost/nova" className="btn-primary mt-6">
+          <Link href="/nemovitost/zalozit" className="btn-primary mt-6">
             <IconPlus className="h-4 w-4" />
-            Vytvořit nemovitost
+            Založit pas
           </Link>
         </div>
       ) : (
