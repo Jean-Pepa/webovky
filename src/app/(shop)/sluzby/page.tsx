@@ -5,6 +5,7 @@ import {
   BeamIcon,
   TruckIcon,
   FuelIcon,
+  WashIcon,
   ShieldIcon,
   GrapeIcon,
   BoxesIcon,
@@ -28,7 +29,8 @@ export default async function ServicesPage() {
   const services = [
     { icon: BeamIcon, title: t(lang, "sluzby.cutTitle"), desc: t(lang, "sluzby.cutDesc") },
     { icon: TruckIcon, title: t(lang, "sluzby.transportTitle"), desc: t(lang, "sluzby.transportDesc") },
-    { icon: FuelIcon, title: t(lang, "sluzby.fuelTitle"), desc: t(lang, "sluzby.fuelDesc") },
+    { icon: FuelIcon, title: t(lang, "sluzby.fuelTitle"), desc: t(lang, "sluzby.fuelDesc"), href: "/cerpaci-stanice" },
+    { icon: WashIcon, title: t(lang, "sluzby.washTitle"), desc: t(lang, "sluzby.washDesc"), href: "/cerpaci-stanice" },
     { icon: ShieldIcon, title: t(lang, "sluzby.adviceTitle"), desc: t(lang, "sluzby.adviceDesc") },
     { icon: GrapeIcon, title: t(lang, "sluzby.viticultureTitle"), desc: t(lang, "sluzby.viticultureDesc") },
     { icon: BoxesIcon, title: t(lang, "sluzby.b2bTitle"), desc: t(lang, "sluzby.b2bDesc") },
@@ -51,14 +53,21 @@ export default async function ServicesPage() {
       <div className="mt-8 grid sm:grid-cols-2 gap-5">
         {services.map((s, i) => {
           const Icon = s.icon;
-          return (
-            <div key={i} className="bg-white border border-[var(--color-border)] rounded-2xl p-6 hover:shadow-md transition">
+          const inner = (
+            <>
               <span className="w-12 h-12 rounded-xl grid place-items-center text-white" style={{ background: "var(--color-accent)" }}>
                 <Icon className="w-6 h-6" />
               </span>
-              <h2 className="mt-4 text-lg font-bold">{s.title}</h2>
+              <h2 className="mt-4 text-lg font-bold group-hover:text-[var(--color-accent)] transition">{s.title}</h2>
               <p className="mt-2 text-sm text-[var(--color-ink-soft)] leading-relaxed">{s.desc}</p>
-            </div>
+              {s.href && <span className="mt-3 inline-block text-sm font-semibold text-[var(--color-accent)]">{t(lang, "footer.allContacts")}</span>}
+            </>
+          );
+          const cls = "group bg-white border border-[var(--color-border)] rounded-2xl p-6 hover:shadow-md transition";
+          return s.href ? (
+            <Link key={i} href={s.href} className={cls}>{inner}</Link>
+          ) : (
+            <div key={i} className={cls}>{inner}</div>
           );
         })}
       </div>

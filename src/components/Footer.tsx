@@ -24,6 +24,7 @@ export default async function Footer() {
             <h4 className="text-[var(--color-ink)] font-semibold mb-3">{t(lang, "footer.shopping")}</h4>
             <ul className="space-y-2">
               <li><Link href="/sluzby" className="hover:text-[var(--color-ink)]">{t(lang, "nav.services")}</Link></li>
+              <li><Link href="/cerpaci-stanice" className="hover:text-[var(--color-ink)]">{t(lang, "nav.fuel")}</Link></li>
               <li><Link href="/kosik" className="hover:text-[var(--color-ink)]">{t(lang, "footer.cart")}</Link></li>
               <li><Link href="/oblibene" className="hover:text-[var(--color-ink)]">{t(lang, "nav.favorites")}</Link></li>
               <li><Link href="/admin" className="hover:text-[var(--color-ink)]">{t(lang, "footer.admin")}</Link></li>

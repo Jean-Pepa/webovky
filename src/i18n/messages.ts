@@ -130,6 +130,21 @@ const M: Dict = {
   "sluzby.viticultureDesc": { cs: "Sloupky, dráty a vázací materiál pro vinice – zkompletujeme vše potřebné pro výsadbu i údržbu.", en: "Posts, wires and tying material for vineyards – we put together everything needed for planting and maintenance.", de: "Pfosten, Drähte und Bindematerial für Weinberge – wir stellen alles für Anbau und Pflege zusammen." },
   "sluzby.b2bTitle": { cs: "Velkoobchod pro firmy a živnostníky", en: "Wholesale for companies and tradespeople", de: "Großhandel für Firmen und Gewerbe" },
   "sluzby.b2bDesc": { cs: "Individuální velkoobchodní ceny, stálá dostupnost skladem a osobní přístup pro pravidelné odběratele.", en: "Individual wholesale prices, constant stock availability and a personal approach for regular customers.", de: "Individuelle Großhandelspreise, ständige Lagerverfügbarkeit und persönlicher Ansatz für Stammkunden." },
+  "sluzby.washTitle": { cs: "Bezkontaktní myčka", en: "Touchless car wash", de: "Kontaktlose Waschanlage" },
+  "sluzby.washDesc": { cs: "V areálu provozujeme bezkontaktní myčku – umyjte si auto rychle a šetrně při cestě pro materiál nebo pro palivo.", en: "We operate a touchless car wash on site – wash your car quickly and gently on your way for material or fuel.", de: "Auf dem Gelände betreiben wir eine kontaktlose Waschanlage – waschen Sie Ihr Auto schnell und schonend." },
+
+  // Čerpací stanice a myčka (stránka)
+  "nav.fuel": { cs: "Čerpací stanice", en: "Fuel station", de: "Tankstelle" },
+  "fuel.title": { cs: "Čerpací stanice a bezkontaktní myčka", en: "Fuel station and touchless car wash", de: "Tankstelle und kontaktlose Waschanlage" },
+  "fuel.intro": { cs: "Přímo v areálu EIKA ve Znojmě najdete čerpací stanici a bezkontaktní myčku. Vše pohodlně na jednom místě – při cestě pro materiál natankujete i umyjete auto.", en: "Right at the EIKA premises in Znojmo you will find a fuel station and a touchless car wash. Everything conveniently in one place.", de: "Direkt auf dem EIKA-Gelände in Znojmo finden Sie eine Tankstelle und eine kontaktlose Waschanlage – alles bequem an einem Ort." },
+  "fuel.stationTitle": { cs: "Čerpací stanice", en: "Fuel station", de: "Tankstelle" },
+  "fuel.stationDesc": { cs: "Nabízíme pohonné hmoty za příznivé ceny. [Doplňte nabídku paliv – nafta, benzín, AdBlue apod.]", en: "We offer fuel at favourable prices. [Add fuel offer – diesel, petrol, AdBlue, etc.]", de: "Wir bieten Kraftstoff zu günstigen Preisen. [Angebot ergänzen – Diesel, Benzin, AdBlue usw.]" },
+  "fuel.washTitle": { cs: "Bezkontaktní myčka", en: "Touchless car wash", de: "Kontaktlose Waschanlage" },
+  "fuel.washDesc": { cs: "Bezkontaktní myčka šetrná k laku vašeho vozu. [Doplňte programy myčky a způsob platby.]", en: "A touchless car wash gentle to your car's paint. [Add wash programmes and payment options.]", de: "Eine lackschonende kontaktlose Waschanlage. [Waschprogramme und Zahlung ergänzen.]" },
+  "fuel.hoursPlaceholder": { cs: "[Doplňte otevírací dobu]", en: "[Add opening hours]", de: "[Öffnungszeiten ergänzen]" },
+  "fuel.locationTitle": { cs: "Kde nás najdete", en: "Where to find us", de: "Wo Sie uns finden" },
+  "fuel.locationDesc": { cs: "Areál EIKA ZNOJMO, Evropská 6/41, Oblekovice, 671 81 Znojmo.", en: "EIKA ZNOJMO premises, Evropská 6/41, Oblekovice, 671 81 Znojmo.", de: "EIKA-ZNOJMO-Gelände, Evropská 6/41, Oblekovice, 671 81 Znojmo." },
+
   "sluzby.ctaTitle": { cs: "Potřebujete některou ze služeb?", en: "Need any of these services?", de: "Benötigen Sie eine dieser Leistungen?" },
   "sluzby.ctaDesc": { cs: "Napište nám nebo zavolejte – rádi vám připravíme nabídku na míru.", en: "Write or call us – we will gladly prepare a tailored offer.", de: "Schreiben oder rufen Sie uns an – wir erstellen gern ein maßgeschneidertes Angebot." },
 

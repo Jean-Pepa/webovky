@@ -293,6 +293,17 @@ export function FuelIcon({ className }: IconProps) {
   );
 }
 
+export function WashIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} fill="none" aria-hidden>
+      <path d="M11 28c0-5 4-9 4-9s4 4 4 9a4 4 0 1 1-8 0z" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" />
+      <path d="M24 8h7a4 4 0 0 1 4 4v6" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="22" y="20" width="20" height="20" rx="3" stroke="currentColor" strokeWidth="3" />
+      <path d="M28 27v6M32 27v6M36 27v6" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function PhoneIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
