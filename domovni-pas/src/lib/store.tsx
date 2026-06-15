@@ -59,6 +59,7 @@ export type Property = {
   documents: DocItem[];
   reminders: Reminder[];
   transfers: TransferRecord[];
+  inventory: InventoryItem[];
   createdAt: string;
   updatedAt: string;
 };
@@ -117,6 +118,32 @@ export type TransferRecord = {
   date: string;
 };
 
+// Vybavení a materiály v domě – „Co je v mém domě" (baterie, kotel, podlaha…)
+export type InventoryItem = {
+  id: string;
+  name: string;
+  location?: string; // místnost / oblast (Koupelna, Kotelna, Střecha…)
+  brand?: string; // značka / model
+  price?: number;
+  warrantyUntil?: string; // záruka do (YYYY-MM-DD)
+  productUrl?: string; // odkaz na produkt
+  note?: string;
+  fileName?: string; // doklad (faktura / záruční list)
+  dataUrl?: string;
+};
+
+export type InventoryInput = {
+  name: string;
+  location?: string;
+  brand?: string;
+  price?: number;
+  warrantyUntil?: string;
+  productUrl?: string;
+  note?: string;
+  fileName?: string;
+  dataUrl?: string;
+};
+
 type Store = {
   properties: Property[];
   hydrated: boolean;
@@ -136,6 +163,8 @@ type Store = {
   addReminder: (propertyId: string, data: ReminderInput) => void;
   toggleReminder: (propertyId: string, reminderId: string) => void;
   deleteReminder: (propertyId: string, reminderId: string) => void;
+  addInventoryItem: (propertyId: string, data: InventoryInput) => void;
+  deleteInventoryItem: (propertyId: string, itemId: string) => void;
   transferProperty: (propertyId: string, toName: string, note?: string) => void;
   setShare: (propertyId: string, enabled: boolean) => void;
 };
@@ -155,7 +184,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const parsed = JSON.parse(raw) as Property[];
         // migrace starších dat bez reminders/transfers
         setProperties(
-          parsed.map((p) => ({ ...p, reminders: p.reminders ?? [], transfers: p.transfers ?? [] })),
+          parsed.map((p) => ({
+            ...p,
+            reminders: p.reminders ?? [],
+            transfers: p.transfers ?? [],
+            inventory: p.inventory ?? [],
+          })),
         );
       } else {
         setProperties(seed());
@@ -191,6 +225,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       documents: [],
       reminders: [],
       transfers: [],
+      inventory: [],
       createdAt: now(),
       updatedAt: now(),
     };
@@ -211,6 +246,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         documents: documents.map((d) => ({ ...d, id: newId() })),
         reminders: [],
         transfers: [],
+        inventory: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -308,6 +344,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const addInventoryItem = useCallback((propertyId: string, data: InventoryInput) => {
+    const item: InventoryItem = { ...data, id: newId() };
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, inventory: [...p.inventory, item], updatedAt: now() }
+          : p,
+      ),
+    );
+  }, []);
+
+  const deleteInventoryItem = useCallback((propertyId: string, itemId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, inventory: p.inventory.filter((i) => i.id !== itemId) }
+          : p,
+      ),
+    );
+  }, []);
+
   // Převod vlastnictví – jádro hodnoty (přenositelnost). V ukázce zaznamená předání
   // a přepíše jméno vlastníka; auditní stopa zůstává v transfers.
   const transferProperty = useCallback((propertyId: string, toName: string, note?: string) => {
@@ -353,6 +410,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     addReminder,
     toggleReminder,
     deleteReminder,
+    addInventoryItem,
+    deleteInventoryItem,
     transferProperty,
     setShare,
   };
@@ -443,6 +502,12 @@ function seed(): Property[] {
         { id: "s-r3", type: "WARRANTY", title: "Konec záruky na střešní okno", dueDate: "2027-11-20", done: false },
       ],
       transfers: [],
+      inventory: [
+        { id: "s-i1", name: "Páková baterie Grohe", location: "Koupelna", brand: "Grohe Eurosmart", price: 3200, warrantyUntil: "2032-06-01", productUrl: "https://www.grohe.cz" },
+        { id: "s-i2", name: "Plynový kotel", location: "Kotelna", brand: "Model XYZ", warrantyUntil: "2027-10-12", note: "Servis 2025, další revize 2027" },
+        { id: "s-i3", name: "Střešní krytina", location: "Střecha", brand: "Krytina ABC", note: "Montáž 2024" },
+        { id: "s-i4", name: "Dřevěná podlaha", location: "Obývací pokoj", brand: "Kährs dub", price: 48000, warrantyUntil: "2030-06-15" },
+      ],
       createdAt: "2024-01-01",
       updatedAt: "2025-11-20",
     },
@@ -474,6 +539,10 @@ function seed(): Property[] {
         { id: "s-r4", type: "MAINTENANCE", title: "Výměna filtrů rekuperace", dueDate: "2026-07-01", done: false },
       ],
       transfers: [],
+      inventory: [
+        { id: "s-i5", name: "Kuchyňská linka na míru", location: "Kuchyně", price: 120000, warrantyUntil: "2030-03-10" },
+        { id: "s-i6", name: "Indukční deska", location: "Kuchyně", brand: "Bosch", warrantyUntil: "2027-03-10" },
+      ],
       createdAt: "2024-02-01",
       updatedAt: "2025-03-10",
     },
