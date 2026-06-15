@@ -29,7 +29,7 @@ export function DocumentRow({ doc, canEdit }: { doc: Doc; canEdit: boolean }) {
         </p>
       </div>
       <a
-        href={`/api/files/${doc.storageKey}`}
+        href={`/api/files/${doc.id}`}
         target="_blank"
         rel="noreferrer"
         className="btn-ghost btn-sm text-stone-500"

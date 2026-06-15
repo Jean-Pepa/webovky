@@ -110,7 +110,7 @@ export default async function SharedPage({ params }: { params: Promise<{ token: 
                     </p>
                   </div>
                   <a
-                    href={`/api/files/${doc.storageKey}`}
+                    href={`/api/files/${doc.id}`}
                     target="_blank"
                     rel="noreferrer"
                     className="btn-ghost btn-sm text-stone-500"

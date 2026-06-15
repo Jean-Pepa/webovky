@@ -1,16 +1,15 @@
 // Domovní pas – datový model (report, sekce 11)
-// SQLite pro vývoj; produkce běží na PostgreSQL (stačí změnit provider + DATABASE_URL).
-// SQLite nepodporuje nativní enumy, proto jsou výčtové hodnoty uloženy jako String
-// a validují se v aplikaci (src/lib/enums.ts).
+// PostgreSQL (produkce na Neon přes Vercel, lokálně libovolný Postgres).
+// Výčtové hodnoty jsou uloženy jako String a validují se v aplikaci (src/lib/enums.ts).
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model User {

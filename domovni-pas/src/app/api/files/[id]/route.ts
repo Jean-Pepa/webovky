@@ -3,22 +3,27 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { readStoredFile } from "@/lib/storage";
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ key: string }> }) {
-  const { key } = await params;
+// Servíruje přílohu/dokument podle ID záznamu. Soubor (lokální disk nebo Vercel Blob)
+// čteme na serveru a streamujeme až po ověření přístupu – aby vypnutí sdílení
+// skutečně odřízlo i přímý přístup k souborům.
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
 
-  const attachment = await prisma.attachment.findFirst({
-    where: { storageKey: key },
+  const attachment = await prisma.attachment.findUnique({
+    where: { id },
     include: { property: true, entry: { include: { property: true } } },
   });
   const document = attachment
     ? null
-    : await prisma.document.findFirst({ where: { storageKey: key }, include: { property: true } });
+    : await prisma.document.findUnique({ where: { id }, include: { property: true } });
 
   const property = attachment?.property ?? attachment?.entry?.property ?? document?.property;
   if (!property) return new Response("Soubor nenalezen", { status: 404 });
 
+  const storageKey = attachment?.storageKey ?? document?.storageKey;
   const mimeType = attachment?.mimeType ?? document?.mimeType ?? "application/octet-stream";
   const fileName = attachment?.fileName ?? document?.fileName ?? "soubor";
+  if (!storageKey) return new Response("Soubor nenalezen", { status: 404 });
 
   // Autorizace: veřejně sdílená nemovitost, vlastník nebo uživatel s přístupem.
   let authorized = property.shareEnabled;
@@ -37,7 +42,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ key
   }
   if (!authorized) return new Response("Přístup odepřen", { status: 403 });
 
-  const buf = await readStoredFile(key);
+  const buf = await readStoredFile(storageKey);
   if (!buf) return new Response("Soubor nenalezen", { status: 404 });
 
   const inline =

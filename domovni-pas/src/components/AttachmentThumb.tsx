@@ -2,14 +2,14 @@ import { IconFile } from "./Icons";
 import { Badge } from "./ui/Badge";
 
 type Att = {
-  storageKey: string;
+  id: string;
   fileName: string;
   mimeType: string;
   caption: string | null;
 };
 
 export function AttachmentThumb({ a }: { a: Att }) {
-  const src = `/api/files/${a.storageKey}`;
+  const src = `/api/files/${a.id}`;
 
   if (a.mimeType.startsWith("image/")) {
     return (

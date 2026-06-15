@@ -22,9 +22,11 @@ export default async function LoginPage() {
         </Link>
       </p>
 
-      <div className="mt-6 rounded-lg bg-stone-50 px-3 py-2.5 text-center text-xs text-stone-500">
-        Demo: <span className="font-medium">majitel@domovnipas.cz</span> · heslo123
-      </div>
+      {process.env.NODE_ENV !== "production" && (
+        <div className="mt-6 rounded-lg bg-stone-50 px-3 py-2.5 text-center text-xs text-stone-500">
+          Demo: <span className="font-medium">majitel@domovnipas.cz</span> · heslo123
+        </div>
+      )}
     </div>
   );
 }
