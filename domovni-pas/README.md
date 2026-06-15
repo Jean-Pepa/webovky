@@ -1,4 +1,4 @@
-# Domovní pas
+# BULO
 
 Trvalý záznam historie nemovitosti — opravy, závady, revize, rekonstrukce, dokumenty a fotky na
 jednom místě. *(Analogie: CarVertical/Carfax, ale pro dům či byt.)*

@@ -77,7 +77,7 @@ export default function HomePage() {
       <footer className="border-t border-stone-200 py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 text-sm text-stone-400 sm:flex-row">
           <Logo />
-          <p>© {new Date().getFullYear()} Domovní pas · Pracovní ukázka</p>
+          <p>© {new Date().getFullYear()} BULO · Pracovní ukázka</p>
         </div>
       </footer>
     </div>

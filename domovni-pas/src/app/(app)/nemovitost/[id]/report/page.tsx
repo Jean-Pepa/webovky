@@ -99,7 +99,7 @@ export default function ReportPage() {
         )}
 
         <p className="mt-10 border-t border-stone-200 pt-4 text-center text-xs text-stone-400">
-          Tento report byl vygenerován z Domovního pasu — trvalého záznamu historie nemovitosti.
+          Tento report byl vygenerován z aplikace BULO — trvalého záznamu historie nemovitosti.
         </p>
       </div>
     </div>

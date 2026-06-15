@@ -107,7 +107,7 @@ export default function SharedPage() {
         <div className="mt-10 rounded-2xl bg-teal-700 px-6 py-7 text-center text-white">
           <h3 className="text-lg font-semibold">Máte taky nemovitost?</h3>
           <p className="mx-auto mt-1.5 max-w-md text-sm text-teal-50">
-            Veďte si vlastní domovní pas — historii, dokumenty i fotky na jednom místě.
+            Veďte si vlastní záznam v BULO — historii, dokumenty i fotky na jednom místě.
           </p>
           <Link
             href="/prehled"
