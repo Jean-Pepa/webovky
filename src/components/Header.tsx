@@ -11,12 +11,19 @@ import {
   UserIcon,
   ClipboardIcon,
   ChevronDownIcon,
+  PhoneIcon,
+  MailIcon,
 } from "./Icons";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/context/FavoritesContext";
 import { useI18n } from "@/i18n/context";
 import { locCategories } from "@/i18n/data";
+
+const BRANCHES = [
+  { city: "Znojmo", phone: "515 244 662", tel: "+420515244662", email: "eika@eika.cz" },
+  { city: "Brno", phone: "545 233 742", tel: "+420545233742", email: "brno@eika.cz" },
+];
 
 export default function Header() {
   const { count } = useCart();
@@ -103,14 +110,32 @@ export default function Header() {
 
       {/* Category bar */}
       <div className="hidden md:block">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center gap-6 h-11 text-sm">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center gap-6 min-h-11 py-2 text-sm">
           {cats.map((c) => (
             <Link key={c.slug} href={`/katalog/${c.slug}`} className="text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]">{c.name}</Link>
           ))}
           <Link href="/o-nas" className="text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]">{t("nav.about")}</Link>
+
+          {/* Kontaktní údaje poboček */}
+          <div className="ml-auto flex flex-col justify-center gap-1 text-[13px] leading-tight">
+            {BRANCHES.map((b) => (
+              <div key={b.city} className="flex items-center gap-3">
+                <span className="w-14 font-bold text-[var(--color-accent)]">{b.city}</span>
+                <a href={`tel:${b.tel}`} className="flex items-center gap-1.5 text-[var(--color-ink)] hover:text-[var(--color-accent)] transition">
+                  <PhoneIcon className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+                  {b.phone}
+                </a>
+                <a href={`mailto:${b.email}`} className="flex items-center gap-1.5 text-[var(--color-ink)] hover:text-[var(--color-accent)] transition">
+                  <MailIcon className="w-4 h-4 text-[var(--color-accent)]" />
+                  {b.email}
+                </a>
+              </div>
+            ))}
+          </div>
+
           <Link
             href="/poptavka"
-            className="ml-auto inline-flex items-center px-3.5 py-1.5 rounded-md font-semibold hover:opacity-90 transition"
+            className="inline-flex items-center px-3.5 py-1.5 rounded-md font-semibold hover:opacity-90 transition"
             style={{ background: "var(--color-accent)", color: "#ffffff" }}
           >
             {t("nav.inquiry")}
