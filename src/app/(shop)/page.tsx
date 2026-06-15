@@ -22,8 +22,34 @@ export default async function HomePage() {
   const cats = locCategories(lang);
   const featured = featuredProducts();
 
+  const orgLd = {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    name: "EIKA ZNOJMO, a.s.",
+    url: "https://www.eika.cz",
+    logo: "https://www.eika.cz/logo.png",
+    image: "https://www.eika.cz/logo.png",
+    description:
+      "Hutní materiál, železářství a potřeby pro vinohradnictví. Pobočky Brno a Znojmo.",
+    telephone: "+420545233742",
+    priceRange: "$$",
+    areaServed: "CZ",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "Evropská 6/41, Oblekovice",
+      addressLocality: "Znojmo",
+      postalCode: "671 81",
+      addressCountry: "CZ",
+    },
+    location: [
+      { "@type": "Place", name: "Pobočka Brno", address: { "@type": "PostalAddress", streetAddress: "Vodařská 10, Horní Heršpice", addressLocality: "Brno", addressCountry: "CZ" } },
+      { "@type": "Place", name: "Pobočka Znojmo", address: { "@type": "PostalAddress", streetAddress: "Oblekovice", addressLocality: "Znojmo", addressCountry: "CZ" } },
+    ],
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 space-y-8">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgLd) }} />
       {/* HERO BANNER – obsah na střed (bez obrázku) */}
       <section className="relative overflow-hidden bg-[var(--color-bg)]" style={{ marginTop: "-2cm", marginLeft: "calc(50% - 50vw)", marginRight: "calc(50% - 50vw)", width: "100vw" }}>
         {/* Video na pozadí (nahraj public/banner.mp4) – běží ve smyčce, ztlumené */}

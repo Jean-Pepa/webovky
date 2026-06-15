@@ -37,6 +37,7 @@ const M: Dict = {
   "about.deliveryTitle": { cs: "Kam dodáváme", en: "Where we deliver", de: "Wohin wir liefern" },
   "about.deliveryText": { cs: "Zboží si odeberete osobně na pobočkách v Brně a Znojmě, nebo vám ho dovezeme. Zajišťujeme závoz materiálu na stavbu i provozovnu podle objemu objednávky – působíme především na jižní Moravě s rozvozem po celé ČR.", en: "You can collect goods in person at our Brno and Znojmo branches, or we will deliver them to you. We arrange delivery of material to your site or premises according to the order volume – we operate mainly in South Moravia with delivery across the country.", de: "Sie holen die Ware persönlich in den Filialen Brno und Znojmo ab, oder wir liefern sie Ihnen. Wir liefern Material je nach Bestellvolumen zur Baustelle und zum Betrieb – wir sind vor allem in Südmähren tätig, mit Lieferung im ganzen Land." },
   "about.branchesTitle": { cs: "Naše pobočky", en: "Our branches", de: "Unsere Filialen" },
+  "seo.stockSuffix": { cs: "Skladem, osobní odběr Brno a Znojmo i doprava.", en: "In stock, pickup in Brno and Znojmo or delivery.", de: "Auf Lager, Abholung in Brno und Znojmo oder Lieferung." },
 
   // Inquiry / Poptávka
   "inq.title": { cs: "Poptávka", en: "Request a quote", de: "Anfrage" },

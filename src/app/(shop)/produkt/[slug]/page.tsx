@@ -34,11 +34,17 @@ export async function generateMetadata({
   if (!orig) return {};
   const lang = await getLang();
   const p = locProduct(orig, lang);
+  let desc = `${p.description} ${t(lang, "seo.stockSuffix")}`.trim();
+  if (desc.length > 158) desc = desc.slice(0, 155).trimEnd() + "…";
   return {
     title: `${p.name} (${p.brand}) – kód ${p.sku}`,
-    description: p.description,
+    description: desc,
     alternates: { canonical: `/produkt/${p.slug}` },
-    openGraph: { title: `${p.name} | EIKA ZNOJMO`, description: p.description },
+    openGraph: {
+      title: `${p.name} | EIKA ZNOJMO`,
+      description: desc,
+      images: [`/categories/${p.category}.png`],
+    },
   };
 }
 
@@ -63,8 +69,45 @@ export default async function ProductPage({
   const brnoStock = Math.ceil(product.stock * 0.6);
   const znojmoStock = product.stock - brnoStock;
 
+  const base = "https://www.eika.cz";
+  const productLd = {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    name: product.name,
+    sku: product.sku,
+    brand: { "@type": "Brand", name: product.brand },
+    category: category.name,
+    description: product.description,
+    image: `${base}/categories/${orig.category}.png`,
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: product.rating,
+      reviewCount: product.ratingCount,
+    },
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "CZK",
+      price: product.price,
+      availability: inStock ? "https://schema.org/InStock" : "https://schema.org/PreOrder",
+      url: `${base}/produkt/${product.slug}`,
+      seller: { "@type": "Organization", name: "EIKA ZNOJMO, a.s." },
+    },
+  };
+  const breadcrumbLd = {
+    "@context": "https://schema.org/",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: t(lang, "crumb.home"), item: `${base}/` },
+      { "@type": "ListItem", position: 2, name: t(lang, "nav.catalog"), item: `${base}/katalog` },
+      { "@type": "ListItem", position: 3, name: category.name, item: `${base}/katalog/${category.slug}` },
+      { "@type": "ListItem", position: 4, name: product.name, item: `${base}/produkt/${product.slug}` },
+    ],
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       <div className="flex items-center gap-3 mb-5">
         <BackButton />
         <nav className="text-sm text-[var(--color-ink-soft)]">
