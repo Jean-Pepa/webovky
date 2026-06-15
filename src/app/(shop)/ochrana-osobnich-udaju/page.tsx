@@ -20,8 +20,9 @@ export default async function PrivacyPage() {
   const meta: LegalMeta[] = [
     { label: "Provozovatel", value: "EIKA ZNOJMO, a.s." },
     { label: "Sídlo", value: "Evropská 6/41, Oblekovice, 671 81 Znojmo" },
-    { label: "IČ / DIČ", value: "[doplňte IČ a DIČ]" },
-    { label: "Kontakt", value: "eika@eika.cz" },
+    { label: "IČ / DIČ", value: "63490439 / CZ63490439" },
+    { label: "Zápis v OR", value: "Krajský soud v Brně, oddíl B, vložka 1814" },
+    { label: "Kontakt", value: "eika@eika.cz · 515 244 662" },
     { label: "Poslední aktualizace", value: "15. 6. 2026" },
   ];
 
