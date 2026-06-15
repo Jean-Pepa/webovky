@@ -65,7 +65,7 @@ export default function Header() {
         </form>
 
         <div className="flex items-center gap-2 lg:gap-3 shrink-0">
-          <Link href="/admin" className="hidden md:flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-[var(--color-bg)]">
+          <Link href="/ucet" className="hidden md:flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-[var(--color-bg)]">
             <span className="w-8 h-8 rounded-full grid place-items-center bg-[var(--color-bg)] text-[var(--color-ink-soft)]">
               <UserIcon className="w-5 h-5" />
             </span>
@@ -156,7 +156,7 @@ export default function Header() {
           <Link href="/o-nas" onClick={() => setOpen(false)} className="block text-sm">{t("nav.about")}</Link>
           <Link href="/poptavka" onClick={() => setOpen(false)} className="inline-flex items-center px-3.5 py-1.5 rounded-md font-semibold" style={{ background: "var(--color-accent)", color: "#ffffff" }}>{t("nav.inquiry")}</Link>
           <Link href="/kontakt" onClick={() => setOpen(false)} className="block text-sm">{t("nav.contact")}</Link>
-          <Link href="/admin" onClick={() => setOpen(false)} className="block text-sm">{t("account.account")}</Link>
+          <Link href="/ucet" onClick={() => setOpen(false)} className="block text-sm">{t("account.account")}</Link>
           <div className="pt-2"><LanguageSwitcher /></div>
         </div>
       )}
