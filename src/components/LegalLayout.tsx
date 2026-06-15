@@ -11,12 +11,16 @@ export default function LegalLayout({
   home,
   meta,
   sections,
+  appendices = [],
+  effectiveNote,
 }: {
   eyebrow: string;
   title: string;
   home: string;
   meta: LegalMeta[];
   sections: LegalSection[];
+  appendices?: LegalSection[];
+  effectiveNote?: string;
 }) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -56,6 +60,12 @@ export default function LegalLayout({
                   <a href={`#${s.id}`} className="text-[var(--color-ink-soft)] hover:text-[var(--color-accent)]">{s.title}</a>
                 </li>
               ))}
+              {appendices.map((s) => (
+                <li key={s.id} className="flex gap-2 pt-1">
+                  <span className="text-[var(--color-ink-soft)]">›</span>
+                  <a href={`#${s.id}`} className="text-[var(--color-ink-soft)] hover:text-[var(--color-accent)]">{s.title}</a>
+                </li>
+              ))}
             </ol>
           </div>
         </aside>
@@ -73,6 +83,21 @@ export default function LegalLayout({
               </section>
             ))}
           </div>
+
+          {effectiveNote && (
+            <p className="mt-10 text-sm font-medium text-[var(--color-ink)]">{effectiveNote}</p>
+          )}
+
+          {appendices.length > 0 && (
+            <div className="mt-12 space-y-10 border-t border-[var(--color-border)] pt-10">
+              {appendices.map((s) => (
+                <section key={s.id} id={s.id} className="scroll-mt-28">
+                  <h2 className="text-lg font-bold uppercase tracking-wide">{s.title}</h2>
+                  <div className="mt-3 space-y-3 text-sm leading-relaxed text-[var(--color-ink-soft)]">{s.body}</div>
+                </section>
+              ))}
+            </div>
+          )}
         </article>
       </div>
     </div>

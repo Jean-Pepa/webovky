@@ -219,6 +219,7 @@ const M: Dict = {
   "footer.legal": { cs: "Informace", en: "Information", de: "Informationen" },
   "legal.privacy": { cs: "Ochrana osobních údajů", en: "Privacy policy", de: "Datenschutz" },
   "legal.terms": { cs: "Obchodní podmínky", en: "Terms & conditions", de: "AGB" },
+  "legal.complaints": { cs: "Reklamační řád", en: "Complaints procedure", de: "Reklamationsordnung" },
   "legal.cookiesSettings": { cs: "Nastavení cookies", en: "Cookie settings", de: "Cookie-Einstellungen" },
 
   // Cookie lišta

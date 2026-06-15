@@ -46,6 +46,7 @@ export default async function Footer() {
           <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <li><Link href="/ochrana-osobnich-udaju" className="hover:text-[var(--color-ink)]">{t(lang, "legal.privacy")}</Link></li>
             <li><Link href="/obchodni-podminky" className="hover:text-[var(--color-ink)]">{t(lang, "legal.terms")}</Link></li>
+            <li><Link href="/reklamacni-rad" className="hover:text-[var(--color-ink)]">{t(lang, "legal.complaints")}</Link></li>
             <li><CookieSettingsButton className="hover:text-[var(--color-ink)]" /></li>
           </ul>
         </div>
