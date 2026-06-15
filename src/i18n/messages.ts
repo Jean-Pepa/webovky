@@ -60,6 +60,23 @@ const M: Dict = {
   "acc.stProcessing": { cs: "Zpracovává se", en: "Processing", de: "In Bearbeitung" },
   "acc.stShipped": { cs: "Odesláno", en: "Shipped", de: "Versandt" },
   "acc.saveDetails": { cs: "Uložit údaje", en: "Save details", de: "Angaben speichern" },
+  "acc.aresLoad": { cs: "Načíst z ARES", en: "Load from ARES", de: "Aus ARES laden" },
+  "acc.aresLoading": { cs: "Načítám…", en: "Loading…", de: "Lädt…" },
+  "acc.aresError": { cs: "Firmu se nepodařilo načíst. Zkontrolujte IČO.", en: "Could not load the company. Check the company ID.", de: "Firma konnte nicht geladen werden. Prüfen Sie die ID." },
+
+  // Novinky / Akce
+  "nav.news": { cs: "Novinky", en: "News", de: "Aktuelles" },
+  "news.title": { cs: "Novinky a akce", en: "News & offers", de: "Aktuelles & Aktionen" },
+  "news.intro": { cs: "Aktuální akce, výprodeje a novinky z EIKA ZNOJMO.", en: "Current offers, sales and news from EIKA ZNOJMO.", de: "Aktuelle Aktionen, Ausverkäufe und Neuigkeiten von EIKA ZNOJMO." },
+  "news.readMore": { cs: "Číst více", en: "Read more", de: "Mehr lesen" },
+  "news.all": { cs: "Všechny novinky", en: "All news", de: "Alle Neuigkeiten" },
+
+  // Newsletter
+  "newsletter.title": { cs: "Odběr novinek", en: "Newsletter", de: "Newsletter" },
+  "newsletter.desc": { cs: "Nechte si posílat akce a novinky z EIKA přímo na e-mail.", en: "Get EIKA offers and news straight to your inbox.", de: "Erhalten Sie EIKA-Aktionen und Neuigkeiten direkt per E-Mail." },
+  "newsletter.placeholder": { cs: "Váš e-mail", en: "Your email", de: "Ihre E-Mail" },
+  "newsletter.btn": { cs: "Přihlásit k odběru", en: "Subscribe", de: "Abonnieren" },
+  "newsletter.thanks": { cs: "Děkujeme! Odběr novinek je aktivní.", en: "Thank you! Your subscription is active.", de: "Danke! Ihr Abo ist aktiv." },
   "nav.deals": { cs: "Cenové hity", en: "Top deals", de: "Top-Angebote" },
   "nav.contact": { cs: "Kontakt", en: "Contact", de: "Kontakt" },
   "nav.catalog": { cs: "Katalog", en: "Catalogue", de: "Katalog" },

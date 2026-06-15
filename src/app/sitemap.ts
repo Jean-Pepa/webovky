@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { CATEGORIES, PRODUCTS } from "@/data/catalog";
+import { ARTICLES } from "@/data/news";
 
 const base = "https://www.eika.cz";
 
@@ -29,6 +30,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry("/katalog", "weekly", 0.9, now),
     entry("/sluzby", "monthly", 0.7, now),
     entry("/cerpaci-stanice", "monthly", 0.6, now),
+    entry("/novinky", "weekly", 0.6, now),
     entry("/o-nas", "monthly", 0.6, now),
     entry("/kontakt", "monthly", 0.6, now),
     entry("/poptavka", "monthly", 0.5, now),
@@ -41,6 +43,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }
   for (const p of PRODUCTS) {
     pages.push(entry(`/produkt/${p.slug}`, "weekly", 0.6, now));
+  }
+  for (const a of ARTICLES) {
+    pages.push(entry(`/novinky/${a.slug}`, "monthly", 0.5, now));
   }
   return pages;
 }

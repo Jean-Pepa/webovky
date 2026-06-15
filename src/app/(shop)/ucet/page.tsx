@@ -10,6 +10,23 @@ export default function AccountAuthPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [accType, setAccType] = useState<"consumer" | "business">("consumer");
+  const [ico, setIco] = useState("");
+  const [company, setCompany] = useState("");
+  const [ares, setAres] = useState<"idle" | "loading" | "error">("idle");
+
+  // Doplnění firmy podle IČO z registru ARES (přes náš server endpoint)
+  async function loadAres() {
+    setAres("loading");
+    try {
+      const r = await fetch(`/api/ares?ico=${encodeURIComponent(ico)}`);
+      if (!r.ok) throw new Error();
+      const d = await r.json();
+      setCompany(d.name || "");
+      setAres("idle");
+    } catch {
+      setAres("error");
+    }
+  }
 
   // Demo: po odeslání jen přejdeme do přehledu účtu
   function go(e: React.FormEvent) {
@@ -81,8 +98,33 @@ export default function AccountAuthPage() {
 
           {accType === "business" ? (
             <>
-              <input required placeholder={t("acc.company")} className={field} />
-              <input required placeholder={t("acc.ico")} className={field} />
+              <div className="flex gap-2">
+                <input
+                  required
+                  value={ico}
+                  onChange={(e) => setIco(e.target.value)}
+                  placeholder={t("acc.ico")}
+                  className={field}
+                  inputMode="numeric"
+                />
+                <button
+                  type="button"
+                  onClick={loadAres}
+                  disabled={ares === "loading"}
+                  className="shrink-0 px-4 rounded-lg font-semibold text-white disabled:opacity-60"
+                  style={{ background: "var(--color-accent)" }}
+                >
+                  {ares === "loading" ? t("acc.aresLoading") : t("acc.aresLoad")}
+                </button>
+              </div>
+              {ares === "error" && <p className="text-xs text-[var(--color-accent)]">{t("acc.aresError")}</p>}
+              <input
+                required
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder={t("acc.company")}
+                className={field}
+              />
             </>
           ) : (
             <input required placeholder={t("acc.name")} className={field} />

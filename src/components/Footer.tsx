@@ -3,6 +3,7 @@ import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
 import { locCategories } from "@/i18n/data";
 import CookieSettingsButton from "@/components/CookieSettingsButton";
+import NewsletterSignup from "@/components/NewsletterSignup";
 
 export default async function Footer() {
   const lang = await getLang();
@@ -10,6 +11,9 @@ export default async function Footer() {
   return (
     <footer className="bg-[var(--color-bg)] text-[var(--color-ink-soft)]">
       <div className="mx-auto max-w-7xl px-5 py-10 text-xs leading-relaxed">
+        <div className="pb-8">
+          <NewsletterSignup />
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pb-8 border-b border-[var(--color-border)]">
           <div>
             <h4 className="text-[var(--color-ink)] font-semibold mb-3">{t(lang, "footer.range")}</h4>
@@ -23,6 +27,7 @@ export default async function Footer() {
           <div>
             <h4 className="text-[var(--color-ink)] font-semibold mb-3">{t(lang, "footer.shopping")}</h4>
             <ul className="space-y-2">
+              <li><Link href="/novinky" className="hover:text-[var(--color-ink)]">{t(lang, "nav.news")}</Link></li>
               <li><Link href="/sluzby" className="hover:text-[var(--color-ink)]">{t(lang, "nav.services")}</Link></li>
               <li><Link href="/cerpaci-stanice" className="hover:text-[var(--color-ink)]">{t(lang, "nav.fuel")}</Link></li>
               <li><Link href="/kosik" className="hover:text-[var(--color-ink)]">{t(lang, "footer.cart")}</Link></li>
