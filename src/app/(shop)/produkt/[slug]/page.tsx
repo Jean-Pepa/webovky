@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -21,6 +22,24 @@ import { locProduct, locCategory } from "@/i18n/data";
 
 export function generateStaticParams() {
   return PRODUCTS.map((p) => ({ slug: p.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const orig = getProduct(slug);
+  if (!orig) return {};
+  const lang = await getLang();
+  const p = locProduct(orig, lang);
+  return {
+    title: `${p.name} (${p.brand}) – kód ${p.sku}`,
+    description: p.description,
+    alternates: { canonical: `/produkt/${p.slug}` },
+    openGraph: { title: `${p.name} | EIKA ZNOJMO`, description: p.description },
+  };
 }
 
 export default async function ProductPage({

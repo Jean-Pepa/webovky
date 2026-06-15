@@ -1,7 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
 import BackButton from "@/components/BackButton";
+
+export const metadata: Metadata = {
+  title: "Kontakt a pobočky Brno a Znojmo",
+  description:
+    "Kontakty a otevírací doba poboček EIKA ZNOJMO v Brně (Horní Heršpice) a ve Znojmě. Telefon, e-mail a poptávkový formulář.",
+  alternates: { canonical: "/kontakt" },
+};
 
 const BRANCHES = [
   { city: "Brno", address: "Vodařská 10, Horní Heršpice, 619 00 Brno", phone: "545 233 742", tel: "+420545233742", email: "brno@eika.cz" },

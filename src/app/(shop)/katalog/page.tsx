@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { PRODUCTS, searchProducts } from "@/data/catalog";
 import CatalogBrowser from "@/components/CatalogBrowser";
@@ -5,6 +6,13 @@ import BackButton from "@/components/BackButton";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
 import { locCategories } from "@/i18n/data";
+
+export const metadata: Metadata = {
+  title: "Katalog – hutní materiál, železářství a vinohradnictví",
+  description:
+    "Procházejte katalog EIKA ZNOJMO: profily, jekly, plechy, betonářská ocel, nářadí, spojovací materiál a potřeby pro vinohradnictví. Filtrování, ceny i dostupnost skladem.",
+  alternates: { canonical: "/katalog" },
+};
 
 export default async function CatalogPage({
   searchParams,

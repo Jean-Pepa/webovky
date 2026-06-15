@@ -1,9 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { StarBadgeIcon, BoxesIcon, TruckIcon, CategoryIcon } from "@/components/Icons";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
 import { locCategories } from "@/i18n/data";
+
+export const metadata: Metadata = {
+  title: "O společnosti EIKA ZNOJMO – od roku 1991",
+  description:
+    "EIKA ZNOJMO, a.s. – dodavatel hutního materiálu, železářství a potřeb pro vinohradnictví od roku 1991. Naše historie, sortiment, kam dodáváme a pobočky Brno a Znojmo.",
+  alternates: { canonical: "/o-nas" },
+};
 
 const BRANCHES = [
   { city: "Brno", address: "Vodařská 10, Horní Heršpice, 619 00 Brno", phone: "545 233 742", tel: "+420545233742", email: "brno@eika.cz" },

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { featuredProducts } from "@/data/catalog";
 import ProductCard from "@/components/ProductCard";
@@ -5,6 +6,16 @@ import { BeamIcon, CartIcon, TruckIcon, StarBadgeIcon, BoxesIcon, ArrowRightIcon
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
 import { locCategories } from "@/i18n/data";
+
+export const metadata: Metadata = {
+  title: {
+    absolute:
+      "EIKA ZNOJMO – hutní materiál, železářství a vinohradnictví | Brno a Znojmo",
+  },
+  description:
+    "Objednejte hutní materiál (profily, jekly, betonářská ocel), železářství i potřeby pro vinohradnictví. Tisíce položek skladem, pobočky Brno a Znojmo, osobní odběr i doprava.",
+  alternates: { canonical: "/" },
+};
 
 export default async function HomePage() {
   const lang = await getLang();
@@ -23,12 +34,12 @@ export default async function HomePage() {
         <div className="absolute inset-0 bg-white/45" />
 
         <div className="relative z-10 px-6 md:px-12 py-16 md:py-20 flex flex-col items-center text-center">
-          <h2 className="text-4xl md:text-6xl font-semibold tracking-tight leading-[1.08] text-white uppercase" style={{ textShadow: "0 1px 6px rgba(0,0,0,0.5)" }}>
+          <h1 className="text-4xl md:text-6xl font-semibold tracking-tight leading-[1.08] text-white uppercase" style={{ textShadow: "0 1px 6px rgba(0,0,0,0.5)" }}>
             {t(lang, "hero.t1")}
             <br />
             {t(lang, "hero.t2a")}{" "}
             <span style={{ color: "var(--color-accent)" }}>{t(lang, "hero.t2b")}</span>
-          </h2>
+          </h1>
           <p className="mt-6 text-base md:text-lg text-white max-w-2xl" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.55)" }}>{t(lang, "hero.sub")}</p>
 
           {/* 3 funkční tlačítka */}

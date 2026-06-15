@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -13,6 +14,24 @@ import { locCategory } from "@/i18n/data";
 
 export function generateStaticParams() {
   return CATEGORIES.map((c) => ({ kategorie: c.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ kategorie: string }>;
+}): Promise<Metadata> {
+  const { kategorie } = await params;
+  const orig = getCategory(kategorie);
+  if (!orig) return {};
+  const lang = await getLang();
+  const c = locCategory(orig, lang);
+  return {
+    title: `${c.name} – Brno a Znojmo`,
+    description: `${c.description} Skladem, osobní odběr Brno a Znojmo i doprava.`,
+    alternates: { canonical: `/katalog/${c.slug}` },
+    openGraph: { title: `${c.name} | EIKA ZNOJMO`, description: c.tagline },
+  };
 }
 
 export default async function CategoryPage({
