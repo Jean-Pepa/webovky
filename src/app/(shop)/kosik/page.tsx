@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/LocLink";
 import { useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { formatCZK, withVat } from "@/lib/format";

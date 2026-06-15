@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/LocLink";
 import { notFound } from "next/navigation";
 import {
   CATEGORIES,
@@ -10,6 +10,7 @@ import CatalogBrowser from "@/components/CatalogBrowser";
 import BackButton from "@/components/BackButton";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
+import { altLinks } from "@/i18n/seo";
 import { locCategory } from "@/i18n/data";
 
 export function generateStaticParams() {
@@ -27,9 +28,9 @@ export async function generateMetadata({
   const lang = await getLang();
   const c = locCategory(orig, lang);
   return {
-    title: `${c.name} – Brno a Znojmo`,
-    description: `${c.description} Skladem, osobní odběr Brno a Znojmo i doprava.`,
-    alternates: { canonical: `/katalog/${c.slug}` },
+    title: `${c.name} – ${t(lang, "seo.cityScope")}`,
+    description: `${c.description} ${t(lang, "seo.stockSuffix")}`,
+    alternates: altLinks(lang, `/katalog/${c.slug}`),
     openGraph: { title: `${c.name} | EIKA ZNOJMO`, description: c.tagline },
   };
 }

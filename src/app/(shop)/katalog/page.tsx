@@ -1,18 +1,21 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/LocLink";
 import { PRODUCTS, searchProducts } from "@/data/catalog";
 import CatalogBrowser from "@/components/CatalogBrowser";
 import BackButton from "@/components/BackButton";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
+import { altLinks } from "@/i18n/seo";
 import { locCategories } from "@/i18n/data";
 
-export const metadata: Metadata = {
-  title: "Katalog – hutní materiál, železářství a vinohradnictví",
-  description:
-    "Procházejte katalog EIKA ZNOJMO: profily, jekly, plechy, betonářská ocel, nářadí, spojovací materiál a potřeby pro vinohradnictví. Filtrování, ceny i dostupnost skladem.",
-  alternates: { canonical: "/katalog" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getLang();
+  return {
+    title: t(lang, "seo.catalogTitle"),
+    description: t(lang, "seo.catalogDesc"),
+    alternates: altLinks(lang, "/katalog"),
+  };
+}
 
 export default async function CatalogPage({
   searchParams,

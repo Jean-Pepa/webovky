@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/LocLink";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
 import { locCategories } from "@/i18n/data";

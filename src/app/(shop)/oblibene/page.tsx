@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/LocLink";
 import { useFavorites } from "@/context/FavoritesContext";
 import { getProducts } from "@/data/catalog";
 import ProductCard from "@/components/ProductCard";

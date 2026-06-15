@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/LocLink";
 import type { Category, CategorySlug } from "@/data/catalog";
 import { CategoryIcon } from "./Icons";
 

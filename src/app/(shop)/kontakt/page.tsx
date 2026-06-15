@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/LocLink";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
+import { altLinks } from "@/i18n/seo";
 import BackButton from "@/components/BackButton";
 
-export const metadata: Metadata = {
-  title: "Kontakt a pobočky Brno a Znojmo",
-  description:
-    "Kontakty a otevírací doba poboček EIKA ZNOJMO v Brně (Horní Heršpice) a ve Znojmě. Telefon, e-mail a poptávkový formulář.",
-  alternates: { canonical: "/kontakt" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getLang();
+  return {
+    title: t(lang, "seo.contactTitle"),
+    description: t(lang, "seo.contactDesc"),
+    alternates: altLinks(lang, "/kontakt"),
+  };
+}
 
 const BRANCHES = [
   { city: "Brno", address: "Vodařská 10, Horní Heršpice, 619 00 Brno", phone: "545 233 742", tel: "+420545233742", email: "brno@eika.cz" },

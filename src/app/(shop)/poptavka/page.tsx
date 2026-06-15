@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/LocLink";
 import { useState } from "react";
 import { useI18n } from "@/i18n/context";
 import BackButton from "@/components/BackButton";

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { CzFlag, GbFlag, DeFlag } from "./Icons";
 import { useI18n, type Lang } from "@/i18n/context";
 
@@ -11,7 +12,9 @@ const LANGS: { code: Lang; label: string; Flag: typeof CzFlag }[] = [
 ];
 
 export default function LanguageSwitcher() {
-  const { lang, setLang } = useI18n();
+  const { lang } = useI18n();
+  const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -22,6 +25,17 @@ export default function LanguageSwitcher() {
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
+
+  function switchTo(code: Lang) {
+    // odstraň stávající jazykový prefix
+    let path = pathname || "/";
+    if (path.startsWith("/en") || path.startsWith("/de")) {
+      path = path.slice(3) || "/";
+    }
+    const target = code === "cs" ? path : `/${code}${path === "/" ? "" : path}`;
+    setOpen(false);
+    router.push(target);
+  }
 
   const Active = LANGS.find((l) => l.code === lang)!.Flag;
   const ordered = [
@@ -45,10 +59,7 @@ export default function LanguageSwitcher() {
           {ordered.map(({ code, label, Flag }) => (
             <button
               key={code}
-              onClick={() => {
-                setLang(code);
-                setOpen(false);
-              }}
+              onClick={() => switchTo(code)}
               className={`w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-[var(--color-bg)] ${
                 code === lang ? "font-semibold" : ""
               }`}

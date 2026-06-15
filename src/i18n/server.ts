@@ -1,9 +1,9 @@
-import { cookies } from "next/headers";
-import { DEFAULT_LANG, LANGS, LANG_COOKIE, type Lang } from "./messages";
+import { headers } from "next/headers";
+import { DEFAULT_LANG, LANGS, type Lang } from "./messages";
 
-// Jazyk pro serverové komponenty (z cookie).
+// Jazyk pro serverové komponenty – z hlavičky x-locale nastavené middlewarem.
 export async function getLang(): Promise<Lang> {
-  const store = await cookies();
-  const raw = store.get(LANG_COOKIE)?.value as Lang | undefined;
+  const h = await headers();
+  const raw = h.get("x-locale") as Lang | null;
   return raw && LANGS.includes(raw) ? raw : DEFAULT_LANG;
 }

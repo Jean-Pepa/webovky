@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/LocLink";
 import type { Product } from "@/data/catalog";
 import { formatCZK } from "@/lib/format";
 import { useI18n } from "@/i18n/context";

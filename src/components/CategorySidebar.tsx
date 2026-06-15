@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/LocLink";
 import { CATEGORIES } from "@/data/catalog";
 import { CategoryIcon, ChevronDownIcon } from "./Icons";
 

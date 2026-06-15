@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/LocLink";
 import { featuredProducts } from "@/data/catalog";
 import ProductCard from "@/components/ProductCard";
 import { BeamIcon, CartIcon, TruckIcon, StarBadgeIcon, BoxesIcon, ArrowRightIcon, ChevronDownIcon } from "@/components/Icons";
 import { getLang } from "@/i18n/server";
 import { t } from "@/i18n/messages";
+import { altLinks } from "@/i18n/seo";
 import { locCategories } from "@/i18n/data";
 
-export const metadata: Metadata = {
-  title: {
-    absolute:
-      "EIKA ZNOJMO – hutní materiál, železářství a vinohradnictví | Brno a Znojmo",
-  },
-  description:
-    "Objednejte hutní materiál (profily, jekly, betonářská ocel), železářství i potřeby pro vinohradnictví. Tisíce položek skladem, pobočky Brno a Znojmo, osobní odběr i doprava.",
-  alternates: { canonical: "/" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getLang();
+  return {
+    title: { absolute: t(lang, "seo.homeTitle") },
+    description: t(lang, "seo.homeDesc"),
+    alternates: altLinks(lang, "/"),
+  };
+}
 
 export default async function HomePage() {
   const lang = await getLang();

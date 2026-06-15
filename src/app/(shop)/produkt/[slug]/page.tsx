@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/LocLink";
 import { notFound } from "next/navigation";
 import {
   PRODUCTS,
@@ -18,6 +18,7 @@ import Badges, { discountPercent } from "@/components/Badges";
 import BackButton from "@/components/BackButton";
 import { getLang } from "@/i18n/server";
 import { t, unit as unitFn } from "@/i18n/messages";
+import { altLinks } from "@/i18n/seo";
 import { locProduct, locCategory } from "@/i18n/data";
 
 export function generateStaticParams() {
@@ -37,9 +38,9 @@ export async function generateMetadata({
   let desc = `${p.description} ${t(lang, "seo.stockSuffix")}`.trim();
   if (desc.length > 158) desc = desc.slice(0, 155).trimEnd() + "…";
   return {
-    title: `${p.name} (${p.brand}) – kód ${p.sku}`,
+    title: `${p.name} (${p.brand}) – ${t(lang, "seo.codeWord")} ${p.sku}`,
     description: desc,
-    alternates: { canonical: `/produkt/${p.slug}` },
+    alternates: altLinks(lang, `/produkt/${p.slug}`),
     openGraph: {
       title: `${p.name} | EIKA ZNOJMO`,
       description: desc,

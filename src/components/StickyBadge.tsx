@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/LocLink";
 import { useI18n } from "@/i18n/context";
 
 // Plovoucí odznak vpravo dole – nahoře vidět napůl, po scrollu vyjede celý.

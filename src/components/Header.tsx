@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/LocLink";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Logo from "./Logo";
@@ -29,7 +29,7 @@ export default function Header() {
 
   function submitSearch(e: React.FormEvent) {
     e.preventDefault();
-    router.push(`/katalog?q=${encodeURIComponent(q)}`);
+    router.push(`${lang === "cs" ? "" : "/" + lang}/katalog?q=${encodeURIComponent(q)}`);
     setOpen(false);
   }
 
