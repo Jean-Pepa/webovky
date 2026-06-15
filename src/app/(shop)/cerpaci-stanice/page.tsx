@@ -18,9 +18,12 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function FuelPage() {
   const lang = await getLang();
 
-  const cards = [
-    { icon: FuelIcon, title: t(lang, "fuel.stationTitle"), desc: t(lang, "fuel.stationDesc") },
-    { icon: WashIcon, title: t(lang, "fuel.washTitle"), desc: t(lang, "fuel.washDesc") },
+  const fuels = [
+    t(lang, "fuel.f1"),
+    t(lang, "fuel.f2"),
+    t(lang, "fuel.f3"),
+    t(lang, "fuel.f4"),
+    t(lang, "fuel.f5"),
   ];
 
   return (
@@ -39,33 +42,57 @@ export default async function FuelPage() {
       <h1 className="text-4xl font-extrabold">{t(lang, "fuel.title")}</h1>
       <p className="mt-3 text-lg text-[var(--color-ink-soft)] max-w-3xl">{t(lang, "fuel.intro")}</p>
 
-      <div className="mt-8 grid sm:grid-cols-2 gap-5">
-        {cards.map((c, i) => {
-          const Icon = c.icon;
-          return (
-            <div key={i} className="bg-white border border-[var(--color-border)] rounded-2xl p-6">
-              <span className="w-12 h-12 rounded-xl grid place-items-center text-white" style={{ background: "var(--color-accent)" }}>
-                <Icon className="w-6 h-6" />
-              </span>
-              <h2 className="mt-4 text-lg font-bold">{c.title}</h2>
-              <p className="mt-2 text-sm text-[var(--color-ink-soft)] leading-relaxed">{c.desc}</p>
-              <div className="mt-4 pt-4 border-t border-[var(--color-border)] text-sm">
-                <span className="font-semibold">{t(lang, "contact.hours")}: </span>
-                <span className="text-[var(--color-ink-soft)]">{t(lang, "fuel.hoursPlaceholder")}</span>
-              </div>
-            </div>
-          );
-        })}
+      <div className="mt-8 grid lg:grid-cols-2 gap-5">
+        {/* Čerpací stanice */}
+        <div className="bg-white border border-[var(--color-border)] rounded-2xl p-6">
+          <div className="flex items-center justify-between gap-3">
+            <span className="w-12 h-12 rounded-xl grid place-items-center text-white" style={{ background: "var(--color-accent)" }}>
+              <FuelIcon className="w-6 h-6" />
+            </span>
+            <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background: "var(--color-accent)" }}>
+              {t(lang, "fuel.nonstop")}
+            </span>
+          </div>
+          <h2 className="mt-4 text-lg font-bold">{t(lang, "fuel.stationTitle")}</h2>
+          <p className="mt-2 text-sm text-[var(--color-ink-soft)]">{t(lang, "fuel.stationLead")}</p>
+          <ul className="mt-2 list-disc pl-5 space-y-1 text-sm text-[var(--color-ink-soft)]">
+            {fuels.map((f, i) => (
+              <li key={i}>{f}</li>
+            ))}
+          </ul>
+          <p className="mt-3 text-sm text-[var(--color-ink-soft)]">{t(lang, "fuel.bottles")}</p>
+          <p className="mt-2 text-sm text-[var(--color-ink-soft)]">{t(lang, "fuel.minishop")}</p>
+        </div>
+
+        {/* Bezkontaktní myčka */}
+        <div className="bg-white border border-[var(--color-border)] rounded-2xl p-6">
+          <div className="flex items-center justify-between gap-3">
+            <span className="w-12 h-12 rounded-xl grid place-items-center text-white" style={{ background: "var(--color-accent)" }}>
+              <WashIcon className="w-6 h-6" />
+            </span>
+            <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background: "var(--color-accent)" }}>
+              {t(lang, "fuel.nonstop")}
+            </span>
+          </div>
+          <h2 className="mt-4 text-lg font-bold">{t(lang, "fuel.washTitle")}</h2>
+          <p className="mt-2 text-sm text-[var(--color-ink-soft)] leading-relaxed">{t(lang, "fuel.washDesc")}</p>
+        </div>
       </div>
 
-      {/* Umístění */}
-      <section className="mt-10 bg-white border border-[var(--color-border)] rounded-2xl p-6">
+      {/* Kontakt – provozovna PHM */}
+      <section className="mt-8 bg-white border border-[var(--color-border)] rounded-2xl p-6">
         <h2 className="text-xl font-bold">{t(lang, "fuel.locationTitle")}</h2>
         <p className="mt-2 text-[var(--color-ink-soft)]">{t(lang, "fuel.locationDesc")}</p>
-        <div className="mt-4">
-          <Link href="/kontakt" className="inline-flex items-center px-5 py-2.5 rounded-full font-semibold text-white" style={{ background: "var(--color-accent)" }}>
-            {t(lang, "nav.contact")}
-          </Link>
+        <div className="mt-3 space-y-1 text-sm">
+          <p>{t(lang, "fuel.contactPerson")}</p>
+          <p>
+            {t(lang, "cart.phone")}: <a href="tel:+420515244577" className="font-semibold text-[var(--color-accent)]">515 244 577</a>
+            {" · "}
+            <a href="tel:+420737285190" className="font-semibold text-[var(--color-accent)]">737 285 190</a>
+          </p>
+          <p>
+            {t(lang, "cart.email")}: <a href="mailto:cseika@eika.cz" className="font-semibold text-[var(--color-accent)]">cseika@eika.cz</a>
+          </p>
         </div>
       </section>
     </div>
