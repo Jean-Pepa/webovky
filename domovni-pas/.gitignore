@@ -1,0 +1,32 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+/build
+*.tsbuildinfo
+next-env.d.ts
+
+# prisma / local database
+/prisma/dev.db
+/prisma/dev.db-journal
+/prisma/migrations/dev.db
+
+# uploaded files (local object storage)
+/storage/*
+!/storage/.gitkeep
+
+# generated prisma client
+/src/generated
+
+# local env overrides
+.env*.local
+# keep the committed .env (only a local SQLite path + dev secret) so the app runs after clone;
+# this negation overrides the parent repo's broad ".env*" ignore for this folder
+!.env
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*

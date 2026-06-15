@@ -1,0 +1,132 @@
+// Domovní pas – datový model (report, sekce 11)
+// SQLite pro vývoj; produkce běží na PostgreSQL (stačí změnit provider + DATABASE_URL).
+// SQLite nepodporuje nativní enumy, proto jsou výčtové hodnoty uloženy jako String
+// a validují se v aplikaci (src/lib/enums.ts).
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("OWNER") // OWNER | PROFESSIONAL
+  createdAt    DateTime @default(now())
+
+  ownedProperties Property[]    @relation("PropertyOwner")
+  entries         Entry[]
+  accesses        Access[]
+  transfersFrom   TransferLog[] @relation("TransferFrom")
+  transfersTo     TransferLog[] @relation("TransferTo")
+}
+
+model Property {
+  id            String  @id @default(cuid())
+  name          String
+  type          String  @default("HOUSE") // HOUSE | APARTMENT | OTHER
+  street        String?
+  city          String?
+  zip           String?
+  cadastralArea String? // katastrální území
+  parcelNumber  String? // parcelní číslo / číslo popisné
+  yearBuilt     Int?
+  description   String?
+
+  ownerId String
+  owner   User   @relation("PropertyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  shareToken   String?  @unique // token pro veřejný read-only odkaz
+  shareEnabled Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entries     Entry[]
+  documents   Document[]
+  attachments Attachment[]
+  accesses    Access[]
+  transfers   TransferLog[]
+}
+
+model Entry {
+  id          String   @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  type        String   @default("REPAIR") // REPAIR | DEFECT | INSPECTION | RENOVATION | OTHER
+  title       String
+  description String?
+  date        DateTime
+  cost        Int? // v celých Kč
+  authorId    String?
+  author      User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  attachments Attachment[]
+}
+
+// Foto / video / 360° panorama / obecná příloha (agnostické vůči zařízení – report, sekce 11)
+model Attachment {
+  id         String    @id @default(cuid())
+  entryId    String?
+  entry      Entry?    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  storageKey String // klíč v objektovém úložišti (lokálně v /storage)
+  fileName   String
+  mimeType   String
+  size       Int
+  mediaType  String    @default("PHOTO") // PHOTO | VIDEO | PANORAMA | FILE
+  caption    String?
+  createdAt  DateTime  @default(now())
+}
+
+model Document {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  category   String   @default("OTHER") // PLAN | CERTIFICATE | ENERGY_LABEL | INVOICE | OTHER
+  title      String
+  storageKey String
+  fileName   String
+  mimeType   String
+  size       Int
+  createdAt  DateTime @default(now())
+}
+
+// Vícetenantní přístup: vlastník / odborník / prohlížející / řemeslník-k-jednomu-záznamu
+model Access {
+  id         String    @id @default(cuid())
+  propertyId String
+  property   Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String?   @unique // přístup přes odkaz (řemeslník bez registrace)
+  type       String    @default("VIEWER") // OWNER | PROFESSIONAL | VIEWER | CRAFTSMAN
+  scope      String    @default("PROPERTY") // PROPERTY | ENTRY
+  entryId    String? // vyplněno když scope = ENTRY
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+// Auditní stopa převodu vlastnictví (report, sekce 11)
+model TransferLog {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  fromUserId String?
+  fromUser   User?    @relation("TransferFrom", fields: [fromUserId], references: [id], onDelete: SetNull)
+  toUserId   String?
+  toUser     User?    @relation("TransferTo", fields: [toUserId], references: [id], onDelete: SetNull)
+  fromEmail  String?
+  toEmail    String?
+  note       String?
+  createdAt  DateTime @default(now())
+}
