@@ -50,3 +50,24 @@ export function addressLine(p: {
   const parts = [p.street, [p.zip, p.city].filter(Boolean).join(" ")].filter(Boolean);
   return parts.join(", ") || "Adresa neuvedena";
 }
+
+function pluralDays(n: number): string {
+  if (n === 1) return "den";
+  if (n >= 2 && n <= 4) return "dny";
+  return "dní";
+}
+
+// Stav termínu připomínky vůči dnešku.
+export function dueStatus(dueDate: string): { overdue: boolean; soon: boolean; label: string } {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(`${dueDate}T00:00:00`);
+  const diff = Math.round((due.getTime() - today.getTime()) / 86_400_000);
+  if (diff < 0) {
+    const n = Math.abs(diff);
+    return { overdue: true, soon: false, label: `Po termínu o ${n} ${pluralDays(n)}` };
+  }
+  if (diff === 0) return { overdue: false, soon: true, label: "Termín dnes" };
+  if (diff <= 30) return { overdue: false, soon: true, label: `Za ${diff} ${pluralDays(diff)}` };
+  return { overdue: false, soon: false, label: formatDate(dueDate) };
+}

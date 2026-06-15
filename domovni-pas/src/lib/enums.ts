@@ -38,3 +38,10 @@ export const DOCUMENT_CATEGORIES: Record<string, string> = {
   INVOICE: "Faktura / doklad",
   OTHER: "Ostatní",
 };
+
+export const REMINDER_TYPES: Record<string, string> = {
+  INSPECTION: "Revize",
+  MAINTENANCE: "Údržba",
+  WARRANTY: "Záruka",
+  OTHER: "Jiné",
+};

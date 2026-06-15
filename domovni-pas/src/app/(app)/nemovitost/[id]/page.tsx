@@ -9,9 +9,11 @@ import { Badge } from "@/components/ui/Badge";
 import { EntryCard } from "@/components/EntryCard";
 import { DocumentRow } from "@/components/DocumentRow";
 import { DocumentUploadForm } from "@/components/forms/DocumentUploadForm";
+import { ReminderSection } from "@/components/ReminderSection";
 import {
   IconPlus,
   IconShare,
+  IconTransfer,
   IconFile,
   IconCalendar,
   IconMoney,
@@ -64,6 +66,10 @@ export default function PropertyDetailPage() {
           <Link href={`/nemovitost/${id}/sdileni`} className="btn-secondary btn-sm">
             <IconShare className="h-4 w-4" />
             Sdílet
+          </Link>
+          <Link href={`/nemovitost/${id}/prevod`} className="btn-secondary btn-sm">
+            <IconTransfer className="h-4 w-4" />
+            Převést
           </Link>
           <Link href={`/nemovitost/${id}/upravit`} className="btn-ghost btn-sm">
             Upravit
@@ -147,6 +153,8 @@ export default function PropertyDetailPage() {
               Smazat nemovitost
             </button>
           </section>
+
+          <ReminderSection propertyId={id} reminders={property.reminders} />
 
           <section className="card p-5">
             <h2 className="text-sm font-semibold text-stone-900">Dokumenty</h2>
