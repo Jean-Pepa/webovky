@@ -23,7 +23,7 @@ export function EntryCard({ entry, onDelete }: { entry: Entry; onDelete?: () => 
   return (
     <li className="relative">
       <span
-        className={`absolute -left-[1.95rem] top-5 h-3.5 w-3.5 rounded-full ring-4 ring-[#faf9f7] ${DOT[color]}`}
+        className={`absolute -left-[1.95rem] top-5 h-3.5 w-3.5 rounded-full ring-4 ring-[#f5f1e8] ${DOT[color]}`}
         aria-hidden
       />
       <div className="card p-5">
