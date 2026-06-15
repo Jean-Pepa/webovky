@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Loading } from "@/components/Loading";
-import { IconPlus, IconHome } from "@/components/Icons";
+import { IconPlus, IconHome, IconCalendar } from "@/components/Icons";
+import { dueStatus } from "@/lib/format";
+import { REMINDER_TYPES } from "@/lib/enums";
 
 function plural(n: number) {
   if (n === 1) return "nemovitost";
@@ -15,6 +17,11 @@ function plural(n: number) {
 export default function DashboardPage() {
   const { properties, hydrated } = useStore();
   if (!hydrated) return <Loading />;
+
+  const upcoming = properties
+    .flatMap((p) => p.reminders.filter((r) => !r.done).map((r) => ({ r, p })))
+    .sort((a, b) => a.r.dueDate.localeCompare(b.r.dueDate))
+    .slice(0, 6);
 
   return (
     <div>
@@ -37,6 +44,42 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {upcoming.length > 0 && (
+        <section className="card mt-6 p-5">
+          <div className="flex items-center gap-2">
+            <IconCalendar className="h-4 w-4 text-teal-700" />
+            <h2 className="text-sm font-semibold text-stone-900">Nadcházející připomínky</h2>
+          </div>
+          <ul className="mt-2 divide-y divide-stone-100">
+            {upcoming.map(({ r, p }) => {
+              const st = dueStatus(r.dueDate);
+              return (
+                <li key={r.id}>
+                  <Link
+                    href={`/nemovitost/${p.id}`}
+                    className="-mx-1 flex items-center justify-between gap-3 rounded px-1 py-2.5 hover:bg-stone-50"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-stone-800">{r.title}</p>
+                      <p className="truncate text-xs text-stone-400">
+                        {REMINDER_TYPES[r.type]} · {p.name}
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 text-xs font-medium ${
+                        st.overdue ? "text-red-600" : st.soon ? "text-amber-600" : "text-stone-500"
+                      }`}
+                    >
+                      {st.label}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {properties.length === 0 ? (
         <div className="card mt-8 flex flex-col items-center px-6 py-16 text-center">

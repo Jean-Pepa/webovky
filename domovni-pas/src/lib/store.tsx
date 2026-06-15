@@ -57,6 +57,8 @@ export type Property = {
   shareEnabled: boolean;
   entries: Entry[];
   documents: DocItem[];
+  reminders: Reminder[];
+  transfers: TransferRecord[];
   createdAt: string;
   updatedAt: string;
 };
@@ -89,6 +91,32 @@ export type DocumentInput = {
   dataUrl?: string;
 };
 
+export type ReminderType = "INSPECTION" | "MAINTENANCE" | "WARRANTY" | "OTHER";
+
+export type Reminder = {
+  id: string;
+  title: string;
+  type: ReminderType;
+  dueDate: string; // YYYY-MM-DD
+  note?: string;
+  done: boolean;
+};
+
+export type ReminderInput = {
+  title: string;
+  type: ReminderType;
+  dueDate: string;
+  note?: string;
+};
+
+export type TransferRecord = {
+  id: string;
+  fromName: string;
+  toName: string;
+  note?: string;
+  date: string;
+};
+
 type Store = {
   properties: Property[];
   hydrated: boolean;
@@ -105,6 +133,10 @@ type Store = {
   deleteEntry: (propertyId: string, entryId: string) => void;
   addDocument: (propertyId: string, data: DocumentInput) => void;
   deleteDocument: (propertyId: string, docId: string) => void;
+  addReminder: (propertyId: string, data: ReminderInput) => void;
+  toggleReminder: (propertyId: string, reminderId: string) => void;
+  deleteReminder: (propertyId: string, reminderId: string) => void;
+  transferProperty: (propertyId: string, toName: string, note?: string) => void;
   setShare: (propertyId: string, enabled: boolean) => void;
 };
 
@@ -119,7 +151,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      setProperties(raw ? (JSON.parse(raw) as Property[]) : seed());
+      if (raw) {
+        const parsed = JSON.parse(raw) as Property[];
+        // migrace starších dat bez reminders/transfers
+        setProperties(
+          parsed.map((p) => ({ ...p, reminders: p.reminders ?? [], transfers: p.transfers ?? [] })),
+        );
+      } else {
+        setProperties(seed());
+      }
     } catch {
       setProperties(seed());
     }
@@ -149,6 +189,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       shareEnabled: false,
       entries: [],
       documents: [],
+      reminders: [],
+      transfers: [],
       createdAt: now(),
       updatedAt: now(),
     };
@@ -167,6 +209,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         shareEnabled: false,
         entries: entries.map((e) => ({ ...e, id: newId(), createdAt: now() })),
         documents: documents.map((d) => ({ ...d, id: newId() })),
+        reminders: [],
+        transfers: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -228,6 +272,66 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const addReminder = useCallback((propertyId: string, data: ReminderInput) => {
+    const reminder: Reminder = { ...data, id: newId(), done: false };
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, reminders: [...p.reminders, reminder], updatedAt: now() }
+          : p,
+      ),
+    );
+  }, []);
+
+  const toggleReminder = useCallback((propertyId: string, reminderId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? {
+              ...p,
+              reminders: p.reminders.map((r) =>
+                r.id === reminderId ? { ...r, done: !r.done } : r,
+              ),
+            }
+          : p,
+      ),
+    );
+  }, []);
+
+  const deleteReminder = useCallback((propertyId: string, reminderId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, reminders: p.reminders.filter((r) => r.id !== reminderId) }
+          : p,
+      ),
+    );
+  }, []);
+
+  // Převod vlastnictví – jádro hodnoty (přenositelnost). V ukázce zaznamená předání
+  // a přepíše jméno vlastníka; auditní stopa zůstává v transfers.
+  const transferProperty = useCallback((propertyId: string, toName: string, note?: string) => {
+    setProperties((prev) =>
+      prev.map((p) => {
+        if (p.id !== propertyId) return p;
+        const record: TransferRecord = {
+          id: newId(),
+          fromName: p.ownerName,
+          toName,
+          note,
+          date: now(),
+        };
+        return {
+          ...p,
+          ownerName: toName,
+          shareEnabled: false,
+          transfers: [record, ...p.transfers],
+          updatedAt: now(),
+        };
+      }),
+    );
+  }, []);
+
   const setShare = useCallback((propertyId: string, enabled: boolean) => {
     setProperties((prev) =>
       prev.map((p) => (p.id === propertyId ? { ...p, shareEnabled: enabled } : p)),
@@ -246,6 +350,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteEntry,
     addDocument,
     deleteDocument,
+    addReminder,
+    toggleReminder,
+    deleteReminder,
+    transferProperty,
     setShare,
   };
 
@@ -329,6 +437,12 @@ function seed(): Property[] {
           fileName: "Pudorysy.pdf",
         },
       ],
+      reminders: [
+        { id: "s-r1", type: "INSPECTION", title: "Revize plynového kotle", dueDate: "2026-10-12", note: "Roční servis", done: false },
+        { id: "s-r2", type: "INSPECTION", title: "Revize komínu", dueDate: "2026-05-30", done: false },
+        { id: "s-r3", type: "WARRANTY", title: "Konec záruky na střešní okno", dueDate: "2027-11-20", done: false },
+      ],
+      transfers: [],
       createdAt: "2024-01-01",
       updatedAt: "2025-11-20",
     },
@@ -356,6 +470,10 @@ function seed(): Property[] {
         },
       ],
       documents: [],
+      reminders: [
+        { id: "s-r4", type: "MAINTENANCE", title: "Výměna filtrů rekuperace", dueDate: "2026-07-01", done: false },
+      ],
+      transfers: [],
       createdAt: "2024-02-01",
       updatedAt: "2025-03-10",
     },

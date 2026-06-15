@@ -158,6 +158,22 @@ export default function ReportPage() {
           </>
         )}
 
+        {property.transfers.length > 0 && (
+          <>
+            <h2 className="mt-8 text-lg font-semibold text-stone-900">Historie převodů</h2>
+            <ul className="mt-3 space-y-1.5 text-sm">
+              {property.transfers.map((t) => (
+                <li key={t.id} className="flex justify-between gap-3">
+                  <span className="text-stone-700">
+                    {t.fromName} → {t.toName}
+                  </span>
+                  <span className="shrink-0 text-stone-400">{formatDate(t.date)}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
         <p className="mt-10 border-t border-stone-200 pt-4 text-center text-xs text-stone-400">
           Tento report byl vygenerován z aplikace BULO — trvalého záznamu historie nemovitosti.
         </p>
