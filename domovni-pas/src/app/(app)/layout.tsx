@@ -10,9 +10,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <Link href="/prehled" aria-label="Přehled">
             <Logo />
           </Link>
-          <Link href="/nemovitost/nova" className="btn-primary btn-sm">
+          <Link href="/nemovitost/zalozit" className="btn-primary btn-sm">
             <IconPlus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nová nemovitost</span>
+            <span className="hidden sm:inline">Založit pas</span>
           </Link>
         </div>
       </header>

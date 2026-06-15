@@ -57,9 +57,9 @@ export default function PropertyDetailPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Link href={`/nemovitost/${id}/report`} className="btn-secondary btn-sm">
+          <Link href={`/nemovitost/${id}/report`} className="btn-primary btn-sm">
             <IconFile className="h-4 w-4" />
-            Report
+            Vygenerovat report
           </Link>
           <Link href={`/nemovitost/${id}/sdileni`} className="btn-secondary btn-sm">
             <IconShare className="h-4 w-4" />

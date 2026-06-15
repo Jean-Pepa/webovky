@@ -12,6 +12,8 @@ const DOT: Record<string, string> = {
   red: "bg-red-500",
   violet: "bg-violet-500",
   emerald: "bg-emerald-500",
+  teal: "bg-teal-500",
+  amber: "bg-amber-500",
   gray: "bg-stone-400",
 };
 
