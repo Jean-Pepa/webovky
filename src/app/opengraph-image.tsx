@@ -1,11 +1,16 @@
 import { ImageResponse } from "next/og";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
-export const alt = "EIKA ZNOJMO – hutní materiál, železářství a vinohradnictví";
+export const alt = "EIKA ZNOJMO";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Dynamicky generovaný náhledový obrázek pro sdílení (Facebook, Messenger, …)
+// Náhledový obrázek pro sdílení = čisté logo EIKA na bílém pozadí
 export default function OpengraphImage() {
+  const logo = readFileSync(join(process.cwd(), "public/logo.png"));
+  const logoSrc = `data:image/png;base64,${logo.toString("base64")}`;
+
   return new ImageResponse(
     (
       <div
@@ -13,20 +18,13 @@ export default function OpengraphImage() {
           width: "100%",
           height: "100%",
           display: "flex",
-          flexDirection: "column",
+          alignItems: "center",
           justifyContent: "center",
-          padding: "80px",
-          background: "#b81f24",
-          color: "#ffffff",
-          fontFamily: "sans-serif",
+          background: "#ffffff",
         }}
       >
-        <div style={{ fontSize: 130, fontWeight: 800, letterSpacing: -4, lineHeight: 1 }}>EIKA</div>
-        <div style={{ fontSize: 46, fontWeight: 700, marginTop: 8, opacity: 0.95 }}>ZNOJMO, a.s.</div>
-        <div style={{ fontSize: 40, marginTop: 40, maxWidth: 900, lineHeight: 1.3 }}>
-          Hutní materiál · Železářství · Vinohradnictví
-        </div>
-        <div style={{ fontSize: 30, marginTop: 28, opacity: 0.9 }}>Pobočky Brno a Znojmo · www.eika.cz</div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={logoSrc} width={820} height={336} alt="EIKA" />
       </div>
     ),
     { ...size },
