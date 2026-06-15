@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import Link from "@/components/LocLink";
 import Logo from "@/components/Logo";
+
+// Administrace se nesmí indexovat.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 const NAV = [
   { href: "/admin", label: "Přehled", icon: "▦" },

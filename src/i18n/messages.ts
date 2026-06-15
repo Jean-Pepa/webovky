@@ -47,6 +47,8 @@ const M: Dict = {
   "seo.contactTitle": { cs: "Kontakt a pobočky Brno a Znojmo", en: "Contact and branches Brno and Znojmo", de: "Kontakt und Filialen Brno und Znojmo" },
   "seo.aboutTitle": { cs: "O společnosti EIKA ZNOJMO – od roku 1991", en: "About EIKA ZNOJMO – since 1991", de: "Über EIKA ZNOJMO – seit 1991" },
   "seo.cityScope": { cs: "Brno a Znojmo", en: "Brno and Znojmo", de: "Brno und Znojmo" },
+  "seo.inquiryTitle": { cs: "Poptávka – nezávazná cenová nabídka", en: "Request a quote – non-binding offer", de: "Anfrage – unverbindliches Angebot" },
+  "seo.inquiryDesc": { cs: "Pošlete nezávaznou poptávku na hutní materiál, železářství nebo vinohradnictví. Připravíme vám cenovou nabídku na míru pro firmy i živnostníky.", en: "Send a non-binding request for metal materials, hardware or viticulture. We will prepare a tailored quote for companies and tradespeople.", de: "Senden Sie eine unverbindliche Anfrage für Hüttenmaterial, Eisenwaren oder Weinbau. Wir erstellen ein maßgeschneidertes Angebot für Firmen und Gewerbetreibende." },
   "seo.codeWord": { cs: "kód", en: "code", de: "Art.-Nr." },
 
   // Inquiry / Poptávka
