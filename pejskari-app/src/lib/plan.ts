@@ -1,8 +1,9 @@
 /** Sestavení personalizovaného výcvikového plánu pro konkrétního psa. */
 
 import { LESSONS } from '@/data/lessons';
+import { dogEnergy } from '@/lib/dog';
 import { ageInMonths } from '@/lib/format';
-import type { Breed, Dog, Lesson } from '@/types';
+import type { Dog, Lesson } from '@/types';
 
 export interface PlanLevel {
   level: number;
@@ -21,9 +22,9 @@ export interface PlanStats {
  * U energických plemen upřednostní lekce s vyšší `energyAffinity`
  * (přivolání, práce na vodítku, sebeovládání).
  */
-export function buildPlan(dog: Dog, breed: Breed | undefined, now: Date = new Date()): Lesson[] {
+export function buildPlan(dog: Dog, now: Date = new Date()): Lesson[] {
   const age = ageInMonths(dog.birthMonth, now);
-  const energetic = (breed?.energy ?? 3) >= 4;
+  const energetic = dogEnergy(dog) >= 4;
 
   // Lekci ukážeme i o měsíc dřív, ať má štěně co dělat.
   const eligible = LESSONS.filter((l) => age >= l.minAgeMonths - 1);

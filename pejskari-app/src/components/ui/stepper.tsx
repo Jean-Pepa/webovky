@@ -26,7 +26,9 @@ export function Stepper({ label, value, onChange, min = 0, max = 99 }: StepperPr
           style={styles.btn}>
           <Icon name="remove" size={20} color={theme.text} />
         </Pressable>
-        <ThemedText style={styles.value}>{value}</ThemedText>
+        <ThemedText weight="extrabold" style={styles.value}>
+          {value}
+        </ThemedText>
         <Pressable
           accessibilityRole="button"
           onPress={() => onChange(Math.min(max, value + 1))}

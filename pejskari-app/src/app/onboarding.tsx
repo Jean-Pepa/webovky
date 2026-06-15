@@ -5,14 +5,15 @@ import { DogForm } from '@/components/dog-form';
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
 import { Screen, SectionTitle } from '@/components/ui/screen';
+import { Heading } from '@/components/ui/typography';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useDogs } from '@/store/dog-store';
 
 const VALUES = [
   { icon: 'paw', text: 'Osobní výcvikový plán podle plemene a věku' },
+  { icon: 'search', text: 'Vyhledávač všech plemen s reálnými fotkami' },
   { icon: 'book', text: 'Průvodce péčí, zdravím a výživou' },
-  { icon: 'trending-up', text: 'Sledování pokroku, které vás vrací zpět' },
 ];
 
 export default function Onboarding() {
@@ -23,20 +24,26 @@ export default function Onboarding() {
   return (
     <Screen>
       <View style={styles.hero}>
-        <View style={[styles.logo, { backgroundColor: theme.tintSoft }]}>
-          <ThemedText style={styles.logoEmoji}>🐶</ThemedText>
+        <View style={[styles.logo, { backgroundColor: theme.tint }]}>
+          <Icon name="paw" size={44} color="#FFFFFF" />
         </View>
-        <ThemedText style={styles.appName}>Pejskaři</ThemedText>
+        <Heading accent="kaři" size={40}>
+          Pejs
+        </Heading>
         <ThemedText themeColor="textSecondary" style={styles.tagline}>
-          Osobní trenér a průvodce pro vašeho psa
+          Osobní trenér a průvodce pro tvého psa
         </ThemedText>
       </View>
 
       <View style={styles.values}>
         {VALUES.map((v) => (
           <View key={v.text} style={styles.valueRow}>
-            <Icon name={v.icon} size={20} color={theme.tint} />
-            <ThemedText style={styles.valueText}>{v.text}</ThemedText>
+            <View style={[styles.valueIcon, { backgroundColor: theme.tintSoft }]}>
+              <Icon name={v.icon} size={18} color={theme.tint} />
+            </View>
+            <ThemedText weight="medium" style={styles.valueText}>
+              {v.text}
+            </ThemedText>
           </View>
         ))}
       </View>
@@ -56,16 +63,21 @@ export default function Onboarding() {
 const styles = StyleSheet.create({
   hero: { alignItems: 'center', gap: Spacing.two, paddingTop: Spacing.four },
   logo: {
-    width: 96,
-    height: 96,
+    width: 92,
+    height: 92,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tagline: { fontSize: 16, textAlign: 'center' },
+  values: { gap: Spacing.three, paddingVertical: Spacing.two },
+  valueRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  valueIcon: {
+    width: 40,
+    height: 40,
     borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoEmoji: { fontSize: 52 },
-  appName: { fontSize: 34, fontWeight: '800' },
-  tagline: { fontSize: 16, textAlign: 'center' },
-  values: { gap: Spacing.two, paddingVertical: Spacing.two },
-  valueRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   valueText: { fontSize: 15, flex: 1 },
 });

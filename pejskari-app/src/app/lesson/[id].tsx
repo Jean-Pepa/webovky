@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
 import { Screen, SectionTitle } from '@/components/ui/screen';
-import { Tag } from '@/components/ui/tag';
+import { StatusPill } from '@/components/ui/status-pill';
+import { Eyebrow, Heading } from '@/components/ui/typography';
 import { Radius, Spacing } from '@/constants/theme';
 import { LESSON_CATEGORIES } from '@/data/categories';
 import { getLesson } from '@/data/lessons';
@@ -35,20 +36,21 @@ export default function LessonDetail() {
     <Screen>
       <Stack.Screen options={{ title: cat.label }} />
 
-      <View style={styles.metaRow}>
-        <Tag label={cat.label} color={cat.color} icon={cat.icon} />
-        <Meta icon="layers-outline" text={`Úroveň ${lesson.level}`} />
-        <Meta icon="time-outline" text={`${lesson.durationMin} min`} />
+      <View style={styles.headerBlock}>
+        <Eyebrow>{cat.label}</Eyebrow>
+        <Heading size={28}>{lesson.title}</Heading>
+        <ThemedText themeColor="textSecondary" style={styles.summary}>
+          {lesson.summary}
+        </ThemedText>
+        <View style={styles.pills}>
+          <StatusPill label={`Úroveň ${lesson.level}`} tone="orange" />
+          <StatusPill label={`${lesson.durationMin} min`} tone="neutral" />
+        </View>
       </View>
-
-      <ThemedText style={styles.h1}>{lesson.title}</ThemedText>
-      <ThemedText themeColor="textSecondary" style={styles.summary}>
-        {lesson.summary}
-      </ThemedText>
 
       <Card style={{ backgroundColor: theme.tintSoft, borderColor: theme.tint + '33' }}>
         <View style={styles.iconRow}>
-          <Icon name="bulb-outline" size={20} color={theme.tint} />
+          <Icon name="bulb" size={20} color={theme.tint} />
           <ThemedText style={styles.flexText}>{lesson.why}</ThemedText>
         </View>
       </Card>
@@ -57,7 +59,9 @@ export default function LessonDetail() {
       {lesson.steps.map((step, i) => (
         <View key={i} style={styles.step}>
           <View style={[styles.stepNum, { backgroundColor: theme.tint }]}>
-            <ThemedText style={styles.stepNumText}>{i + 1}</ThemedText>
+            <ThemedText weight="black" style={styles.stepNumText}>
+              {i + 1}
+            </ThemedText>
           </View>
           <ThemedText style={styles.flexText}>{step}</ThemedText>
         </View>
@@ -68,7 +72,7 @@ export default function LessonDetail() {
           <SectionTitle>Tipy</SectionTitle>
           {lesson.tips.map((tip, i) => (
             <View key={i} style={styles.iconRow}>
-              <Icon name="checkmark-circle" size={18} color={theme.tint} />
+              <Icon name="checkmark-circle" size={18} color={theme.success} />
               <ThemedText style={styles.flexText}>{tip}</ThemedText>
             </View>
           ))}
@@ -76,11 +80,11 @@ export default function LessonDetail() {
       ) : null}
 
       {lesson.gearTip ? (
-        <Card style={{ backgroundColor: theme.accentSoft, borderColor: theme.accent + '55' }}>
+        <Card style={{ backgroundColor: theme.accentSoft, borderColor: theme.tint + '33' }}>
           <View style={styles.iconRow}>
-            <Icon name="bag-handle-outline" size={20} color={theme.accent} />
+            <Icon name="bag-handle-outline" size={20} color={theme.tint} />
             <View style={styles.flex}>
-              <ThemedText style={styles.gearLabel}>
+              <ThemedText weight="extrabold" size={15}>
                 Doporučené vybavení: {lesson.gearTip.label}
               </ThemedText>
               <ThemedText themeColor="textSecondary">{lesson.gearTip.note}</ThemedText>
@@ -99,35 +103,20 @@ export default function LessonDetail() {
   );
 }
 
-function Meta({ icon, text }: { icon: string; text: string }) {
-  const theme = useTheme();
-  return (
-    <View style={styles.meta}>
-      <Icon name={icon} size={14} color={theme.textSecondary} />
-      <ThemedText themeColor="textSecondary" style={styles.metaText}>
-        {text}
-      </ThemedText>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: Spacing.two },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
-  metaText: { fontSize: 13, fontWeight: '600' },
-  h1: { fontSize: 26, fontWeight: '800', lineHeight: 32 },
+  headerBlock: { gap: Spacing.two },
   summary: { fontSize: 16, lineHeight: 23 },
+  pills: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.one },
   iconRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
   flex: { flex: 1 },
   flexText: { flex: 1, fontSize: 15, lineHeight: 22 },
   step: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.three },
   stepNum: {
-    width: 28,
-    height: 28,
+    width: 30,
+    height: 30,
     borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepNumText: { color: '#FFFFFF', fontWeight: '800' },
-  gearLabel: { fontSize: 15, fontWeight: '700' },
+  stepNumText: { color: '#FFFFFF', fontSize: 15 },
 });

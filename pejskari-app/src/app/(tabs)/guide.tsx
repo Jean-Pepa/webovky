@@ -4,7 +4,8 @@ import { StyleSheet, View } from 'react-native';
 
 import { ArticleCard } from '@/components/article-card';
 import { Chip } from '@/components/ui/chip';
-import { Screen, ScreenHeader } from '@/components/ui/screen';
+import { Screen } from '@/components/ui/screen';
+import { Eyebrow, Heading } from '@/components/ui/typography';
 import { Spacing } from '@/constants/theme';
 import { GUIDE_CATEGORIES } from '@/data/categories';
 import { GUIDE_ARTICLES } from '@/data/guide';
@@ -29,16 +30,16 @@ export default function GuideScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="Průvodce" subtitle="Péče, zdraví, výživa i cestování" />
+      <View>
+        <Eyebrow>Vše o pejskovi</Eyebrow>
+        <Heading accent="pejskaře" size={30} style={styles.heading}>
+          Průvodce{' '}
+        </Heading>
+      </View>
 
       <View style={styles.filters}>
         {FILTERS.map((f) => (
-          <Chip
-            key={f.id}
-            label={f.label}
-            selected={filter === f.id}
-            onPress={() => setFilter(f.id)}
-          />
+          <Chip key={f.id} label={f.label} selected={filter === f.id} onPress={() => setFilter(f.id)} />
         ))}
       </View>
 
@@ -54,5 +55,6 @@ export default function GuideScreen() {
 }
 
 const styles = StyleSheet.create({
+  heading: { marginTop: Spacing.one },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
 });

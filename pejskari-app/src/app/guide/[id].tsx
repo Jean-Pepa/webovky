@@ -5,7 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
 import { Screen } from '@/components/ui/screen';
-import { Tag } from '@/components/ui/tag';
+import { Eyebrow, Heading } from '@/components/ui/typography';
 import { Spacing } from '@/constants/theme';
 import { GUIDE_CATEGORIES } from '@/data/categories';
 import { getArticle } from '@/data/guide';
@@ -32,46 +32,50 @@ export default function GuideDetail() {
     <Screen>
       <Stack.Screen options={{ title: cat.label }} />
 
-      <View style={styles.metaRow}>
-        <Tag label={cat.label} color={cat.color} icon={cat.icon} />
-        <ThemedText themeColor="textSecondary" style={styles.meta}>
-          {article.readMin} min čtení
-        </ThemedText>
+      <View style={styles.headerBlock}>
+        <Eyebrow>{`${cat.label} · ${article.readMin} min čtení`}</Eyebrow>
+        <Heading size={28}>{article.title}</Heading>
       </View>
-
-      <ThemedText style={styles.h1}>{article.title}</ThemedText>
 
       {paragraphs.map((p, i) =>
         p.startsWith('• ') ? (
           <View key={i} style={styles.bulletRow}>
-            <ThemedText style={{ color: theme.tint }}>•</ThemedText>
-            <ThemedText style={styles.flexText}>{p.replace(/^•\s*/, '')}</ThemedText>
+            <ThemedText weight="extrabold" style={{ color: theme.tint }}>
+              •
+            </ThemedText>
+            <ThemedText weight="regular" style={styles.flexText}>
+              {p.replace(/^•\s*/, '')}
+            </ThemedText>
           </View>
         ) : (
-          <ThemedText key={i} style={styles.paragraph}>
+          <ThemedText key={i} weight="regular" style={styles.paragraph}>
             {p}
           </ThemedText>
         ),
       )}
 
       {article.vetNote ? (
-        <Card style={{ backgroundColor: theme.backgroundElement }}>
+        <Card style={{ backgroundColor: theme.dangerSoft, borderColor: theme.danger + '33' }}>
           <View style={styles.iconRow}>
             <Icon name="medkit-outline" size={18} color={theme.danger} />
-            <ThemedText themeColor="textSecondary" style={styles.flexText}>
-              Tento článek je orientační. U zdravotních otázek se vždy poraďte se svým veterinářem.
+            <ThemedText weight="regular" themeColor="textSecondary" style={styles.flexText}>
+              Tento článek je orientační. U zdravotních otázek se vždy poraď se svým veterinářem.
             </ThemedText>
           </View>
         </Card>
       ) : null}
 
       {article.affiliate ? (
-        <Card style={{ backgroundColor: theme.accentSoft, borderColor: theme.accent + '55' }}>
+        <Card style={{ backgroundColor: theme.accentSoft, borderColor: theme.tint + '33' }}>
           <View style={styles.iconRow}>
-            <Icon name="pricetag-outline" size={18} color={theme.accent} />
+            <Icon name="pricetag-outline" size={18} color={theme.tint} />
             <View style={styles.flex}>
-              <ThemedText style={styles.affLabel}>{article.affiliate.label}</ThemedText>
-              <ThemedText themeColor="textSecondary">{article.affiliate.note}</ThemedText>
+              <ThemedText weight="extrabold" size={15}>
+                {article.affiliate.label}
+              </ThemedText>
+              <ThemedText weight="regular" themeColor="textSecondary">
+                {article.affiliate.note}
+              </ThemedText>
             </View>
           </View>
         </Card>
@@ -81,13 +85,10 @@ export default function GuideDetail() {
 }
 
 const styles = StyleSheet.create({
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  meta: { fontSize: 13 },
-  h1: { fontSize: 26, fontWeight: '800', lineHeight: 32 },
+  headerBlock: { gap: Spacing.two },
   paragraph: { fontSize: 16, lineHeight: 24 },
   bulletRow: { flexDirection: 'row', gap: Spacing.two, paddingLeft: Spacing.one },
   iconRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
   flex: { flex: 1 },
   flexText: { flex: 1, fontSize: 15, lineHeight: 22 },
-  affLabel: { fontSize: 15, fontWeight: '700' },
 });

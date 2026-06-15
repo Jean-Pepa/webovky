@@ -21,8 +21,16 @@ export interface Breed {
 export interface Dog {
   id: string;
   name: string;
-  /** Reference na Breed.id (vč. "mix" a "unknown"). */
+  /** Reference na plemeno (Dog API id "api-123" nebo lokální id). */
   breedId: string;
+  /** Název plemene (uložený, ať není potřeba znovu API). */
+  breedName?: string;
+  /** URL reálné fotky plemene. */
+  breedPhotoUrl?: string;
+  /** Energie plemene 1–5 (pro personalizaci plánu). */
+  breedEnergy?: number;
+  /** Cvičitelnost plemene 1–5. */
+  breedTrainability?: number;
   sex: DogSex;
   /** Přibližný měsíc narození ve formátu "YYYY-MM". */
   birthMonth: string;

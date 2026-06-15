@@ -1,8 +1,8 @@
 import { Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
 
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { Icon } from '@/components/ui/icon';
+import { Font, Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -42,7 +42,7 @@ export function Button({ title, onPress, variant = 'primary', icon, disabled, st
       disabled={disabled}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: bg, borderColor, opacity: disabled ? 0.45 : pressed ? 0.85 : 1 },
+        { backgroundColor: bg, borderColor, opacity: disabled ? 0.45 : pressed ? 0.9 : 1 },
         style,
       ]}>
       {icon ? <Icon name={icon} size={18} color={fg} /> : null}
@@ -57,13 +57,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
-    paddingVertical: 14,
+    paddingVertical: 15,
     paddingHorizontal: Spacing.four,
-    borderRadius: Radius.md,
-    borderWidth: 1,
+    borderRadius: Radius.pill,
+    borderWidth: 1.5,
   },
   label: {
+    fontFamily: Font.extrabold,
     fontSize: 16,
-    fontWeight: '700',
   },
 });

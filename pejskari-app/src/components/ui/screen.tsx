@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ReactNode } from 'react';
 
 import { ThemedText } from '@/components/themed-text';
+import { Heading } from '@/components/ui/typography';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -12,7 +13,6 @@ interface ScreenProps {
   contentStyle?: StyleProp<ViewStyle>;
 }
 
-/** Obrazovka se safe-area, vycentrovaným obsahem a volitelným scrollem. */
 export function Screen({ children, scroll = true, contentStyle }: ScreenProps) {
   const theme = useTheme();
   return (
@@ -34,19 +34,30 @@ export function Screen({ children, scroll = true, contentStyle }: ScreenProps) {
 }
 
 export function ScreenHeader({
+  eyebrow,
   title,
+  accent,
   subtitle,
   right,
 }: {
+  eyebrow?: ReactNode;
   title: string;
+  accent?: string;
   subtitle?: string;
   right?: ReactNode;
 }) {
   return (
     <View style={styles.headerRow}>
       <View style={styles.flex}>
-        <ThemedText style={styles.headerTitle}>{title}</ThemedText>
-        {subtitle ? <ThemedText themeColor="textSecondary">{subtitle}</ThemedText> : null}
+        {eyebrow}
+        <Heading accent={accent} size={30} style={styles.heading}>
+          {title}
+        </Heading>
+        {subtitle ? (
+          <ThemedText themeColor="textSecondary" style={styles.subtitle}>
+            {subtitle}
+          </ThemedText>
+        ) : null}
       </View>
       {right}
     </View>
@@ -54,7 +65,11 @@ export function ScreenHeader({
 }
 
 export function SectionTitle({ children }: { children: ReactNode }) {
-  return <ThemedText style={styles.sectionTitle}>{children}</ThemedText>;
+  return (
+    <ThemedText weight="extrabold" style={styles.sectionTitle}>
+      {children}
+    </ThemedText>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -68,19 +83,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingBottom: Spacing.six,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-  },
-  headerTitle: {
-    fontSize: 30,
-    fontWeight: '800',
-    lineHeight: 36,
-  },
-  sectionTitle: {
-    fontSize: 19,
-    fontWeight: '700',
-    marginTop: Spacing.one,
-  },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  heading: { marginTop: Spacing.one },
+  subtitle: { fontSize: 15, marginTop: 2 },
+  sectionTitle: { fontSize: 20, marginTop: Spacing.one },
 });

@@ -6,9 +6,10 @@ import { ThemedText } from '@/components/themed-text';
 import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
 import { ProgressBar } from '@/components/ui/progress-bar';
-import { Screen, ScreenHeader } from '@/components/ui/screen';
+import { Screen } from '@/components/ui/screen';
+import { StatusPill } from '@/components/ui/status-pill';
+import { Eyebrow, Heading } from '@/components/ui/typography';
 import { Spacing } from '@/constants/theme';
-import { getBreed } from '@/data/breeds';
 import { useTheme } from '@/hooks/use-theme';
 import { buildPlan, groupByLevel, levelUnlocked, planStats } from '@/lib/plan';
 import { useDogs } from '@/store/dog-store';
@@ -20,23 +21,34 @@ export default function TrainingScreen() {
 
   if (!activeDog) return null;
 
-  const breed = getBreed(activeDog.breedId);
-  const plan = buildPlan(activeDog, breed);
+  const plan = buildPlan(activeDog);
   const levels = groupByLevel(plan);
   const completed = completedFor();
   const stats = planStats(plan, completed);
 
   return (
     <Screen>
-      <ScreenHeader title="Výcvikový plán" subtitle={`Na míru pro ${activeDog.name}`} />
+      <View>
+        <Eyebrow>Plán na míru</Eyebrow>
+        <Heading accent="plán" size={30} style={styles.heading}>
+          Výcvikový{' '}
+        </Heading>
+        <ThemedText themeColor="textSecondary" style={styles.sub}>
+          Sestavený pro {activeDog.name} podle plemene a věku
+        </ThemedText>
+      </View>
 
       <Card>
         <View style={styles.statsRow}>
-          <ThemedText style={styles.bigPct}>{Math.round(stats.pct * 100)} %</ThemedText>
-          <View style={styles.statsText}>
-            <ThemedText style={styles.statsTitle}>Celkový pokrok</ThemedText>
+          <ThemedText weight="black" size={40} themeColor="tint">
+            {Math.round(stats.pct * 100)} %
+          </ThemedText>
+          <View style={styles.flex}>
+            <ThemedText weight="extrabold" size={17}>
+              Celkový pokrok
+            </ThemedText>
             <ThemedText themeColor="textSecondary">
-              {stats.completed} z {stats.total} lekcí
+              {stats.completed} z {stats.total} lekcí splněno
             </ThemedText>
           </View>
         </View>
@@ -46,7 +58,7 @@ export default function TrainingScreen() {
       {levels.length === 0 ? (
         <Card>
           <ThemedText themeColor="textSecondary">
-            Pro toho nejmenšího zatím nemáme lekce. Vraťte se, až trochu povyroste 🐾
+            Pro toho nejmenšího zatím nemáme lekce. Vrať se, až trochu povyroste 🐾
           </ThemedText>
         </Card>
       ) : null}
@@ -54,21 +66,27 @@ export default function TrainingScreen() {
       {levels.map((lvl, index) => {
         const unlocked = levelUnlocked(levels, index, completed);
         const levelDone = lvl.lessons.filter((l) => isLessonDone(l.id)).length;
+        const allDone = levelDone === lvl.lessons.length;
         return (
           <View key={lvl.level} style={styles.level}>
             <View style={styles.levelHead}>
-              <ThemedText style={styles.levelTitle}>Úroveň {lvl.level}</ThemedText>
-              {unlocked ? (
-                <ThemedText themeColor="textSecondary" style={styles.levelCount}>
-                  {levelDone}/{lvl.lessons.length}
+              <View style={styles.levelTitleRow}>
+                <Icon
+                  name={!unlocked ? 'lock-closed' : allDone ? 'checkmark-circle' : 'ellipse-outline'}
+                  size={18}
+                  color={!unlocked ? theme.textSecondary : allDone ? theme.success : theme.tint}
+                />
+                <ThemedText weight="extrabold" size={19}>
+                  Úroveň {lvl.level}
                 </ThemedText>
+              </View>
+              {unlocked ? (
+                <StatusPill
+                  label={`${levelDone}/${lvl.lessons.length}`}
+                  tone={allDone ? 'green' : 'orange'}
+                />
               ) : (
-                <View style={styles.lockRow}>
-                  <Icon name="lock-closed" size={13} color={theme.textSecondary} />
-                  <ThemedText themeColor="textSecondary" style={styles.levelCount}>
-                    Dokončete úroveň {lvl.level - 1}
-                  </ThemedText>
-                </View>
+                <StatusPill label={`Dokonči úroveň ${lvl.level - 1}`} tone="neutral" />
               )}
             </View>
             {lvl.lessons.map((lesson) => (
@@ -88,10 +106,10 @@ export default function TrainingScreen() {
 }
 
 const styles = StyleSheet.create({
+  heading: { marginTop: Spacing.one },
+  sub: { fontSize: 15, marginTop: 2 },
+  flex: { flex: 1 },
   statsRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, marginBottom: Spacing.three },
-  bigPct: { fontSize: 38, fontWeight: '800' },
-  statsText: { flex: 1 },
-  statsTitle: { fontSize: 17, fontWeight: '700' },
   level: { gap: Spacing.two },
   levelHead: {
     flexDirection: 'row',
@@ -99,7 +117,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: Spacing.two,
   },
-  levelTitle: { fontSize: 19, fontWeight: '700' },
-  levelCount: { fontSize: 14 },
-  lockRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  levelTitleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
 });

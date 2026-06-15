@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
@@ -6,10 +7,11 @@ import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
-import { Screen, ScreenHeader, SectionTitle } from '@/components/ui/screen';
+import { Screen, SectionTitle } from '@/components/ui/screen';
+import { Eyebrow, Heading } from '@/components/ui/typography';
 import { Radius, Spacing } from '@/constants/theme';
-import { getBreed } from '@/data/breeds';
 import { useTheme } from '@/hooks/use-theme';
+import { dogBreedName } from '@/lib/dog';
 import { ageInMonths, formatAgeMonths } from '@/lib/format';
 import { buildPlan, planStats } from '@/lib/plan';
 import { useDogs } from '@/store/dog-store';
@@ -21,9 +23,8 @@ export default function ProfileScreen() {
 
   if (!activeDog) return null;
 
-  const breed = getBreed(activeDog.breedId);
   const completed = completedFor();
-  const stats = planStats(buildPlan(activeDog, breed), completed);
+  const stats = planStats(buildPlan(activeDog), completed);
 
   function confirmReset() {
     Alert.alert('Resetovat pokrok?', `Smaže se postup ve výcviku pro psa ${activeDog!.name}.`, [
@@ -34,42 +35,46 @@ export default function ProfileScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="Profil" />
+      <View>
+        <Eyebrow>Můj parťák</Eyebrow>
+        <Heading size={30} style={styles.heading}>
+          Profil
+        </Heading>
+      </View>
 
-      <Card>
-        <View style={styles.dogHead}>
-          <DogAvatar dog={activeDog} size={72} />
-          <View style={styles.dogHeadText}>
-            <ThemedText style={styles.dogName}>{activeDog.name}</ThemedText>
-            <ThemedText themeColor="textSecondary">{breed?.name}</ThemedText>
+      <Card padded={false} style={styles.heroCard}>
+        {activeDog.breedPhotoUrl ? (
+          <Image source={{ uri: activeDog.breedPhotoUrl }} style={styles.banner} contentFit="cover" transition={200} />
+        ) : null}
+        <View style={styles.heroBody}>
+          <View style={styles.dogHead}>
+            <DogAvatar dog={activeDog} size={64} />
+            <View style={styles.flex}>
+              <ThemedText weight="black" size={24}>
+                {activeDog.name}
+              </ThemedText>
+              <ThemedText themeColor="textSecondary">{dogBreedName(activeDog)}</ThemedText>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.infoGrid}>
-          <Info icon="calendar-outline" label="Věk" value={formatAgeMonths(ageInMonths(activeDog.birthMonth))} />
-          <Info icon="male-female-outline" label="Pohlaví" value={activeDog.sex === 'male' ? 'Pes' : 'Fena'} />
-          {activeDog.weightKg ? (
-            <Info icon="barbell-outline" label="Váha" value={`${activeDog.weightKg} kg`} />
-          ) : null}
-          <Info icon="trophy-outline" label="Splněno lekcí" value={String(completed.length)} />
-          <Info icon="flag-outline" label="Aktuálně" value={stats.next ? `Úroveň ${stats.next.level}` : 'Vše hotovo'} />
-        </View>
+          <View style={styles.infoGrid}>
+            <Info icon="calendar-outline" label="Věk" value={formatAgeMonths(ageInMonths(activeDog.birthMonth))} />
+            <Info icon="male-female-outline" label="Pohlaví" value={activeDog.sex === 'male' ? 'Pes' : 'Fena'} />
+            {activeDog.weightKg ? <Info icon="barbell-outline" label="Váha" value={`${activeDog.weightKg} kg`} /> : null}
+            <Info icon="trophy-outline" label="Splněno" value={`${completed.length} lekcí`} />
+            <Info icon="flag-outline" label="Aktuálně" value={stats.next ? `Úroveň ${stats.next.level}` : 'Vše hotovo'} />
+          </View>
 
-        <View style={styles.actions}>
-          <Button
-            title="Upravit"
-            variant="secondary"
-            icon="create-outline"
-            style={styles.flex}
-            onPress={() => router.push({ pathname: '/dog/[id]/edit', params: { id: activeDog.id } })}
-          />
-          <Button
-            title="Přidat pejska"
-            variant="secondary"
-            icon="add"
-            style={styles.flex}
-            onPress={() => router.push('/dog/new')}
-          />
+          <View style={styles.actions}>
+            <Button
+              title="Upravit"
+              variant="secondary"
+              icon="create-outline"
+              style={styles.flex}
+              onPress={() => router.push({ pathname: '/dog/[id]/edit', params: { id: activeDog.id } })}
+            />
+            <Button title="Přidat" variant="secondary" icon="add" style={styles.flex} onPress={() => router.push('/dog/new')} />
+          </View>
         </View>
       </Card>
 
@@ -86,10 +91,14 @@ export default function ProfileScreen() {
                 <View style={styles.dogRow}>
                   <DogAvatar dog={dog} size={44} />
                   <View style={styles.flex}>
-                    <ThemedText style={styles.dogRowName}>{dog.name}</ThemedText>
-                    <ThemedText themeColor="textSecondary">{getBreed(dog.breedId)?.name}</ThemedText>
+                    <ThemedText weight="extrabold" size={16}>
+                      {dog.name}
+                    </ThemedText>
+                    <ThemedText themeColor="textSecondary" size={13}>
+                      {dogBreedName(dog)}
+                    </ThemedText>
                   </View>
-                  {active ? <Icon name="checkmark-circle" size={22} color={theme.tint} /> : null}
+                  {active ? <Icon name="checkmark-circle" size={24} color={theme.tint} /> : null}
                 </View>
               </Card>
             );
@@ -99,11 +108,16 @@ export default function ProfileScreen() {
 
       <SectionTitle>Nastavení</SectionTitle>
       <Card>
-        <SettingRow icon="refresh-outline" label="Resetovat pokrok ve výcviku" color={theme.danger} onPress={confirmReset} />
+        <Pressable onPress={confirmReset} style={styles.settingRow}>
+          <Icon name="refresh-outline" size={20} color={theme.danger} />
+          <ThemedText weight="bold" size={16} style={{ color: theme.danger }}>
+            Resetovat pokrok ve výcviku
+          </ThemedText>
+        </Pressable>
       </Card>
 
       <ThemedText themeColor="textSecondary" style={styles.footer}>
-        Pejskaři · verze 0.1{'\n'}Vytvořeno s láskou k pejskům 🐾
+        Pejskaři · verze 0.2{'\n'}Vytvořeno s láskou k pejskům 🐾
       </ThemedText>
     </Screen>
   );
@@ -112,57 +126,41 @@ export default function ProfileScreen() {
 function Info({ icon, label, value }: { icon: string; label: string; value: string }) {
   const theme = useTheme();
   return (
-    <View style={[styles.info, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-      <Icon name={icon} size={16} color={theme.textSecondary} />
-      <ThemedText themeColor="textSecondary" style={styles.infoLabel}>
-        {label}
+    <View style={[styles.info, { backgroundColor: theme.background, borderColor: theme.border }]}>
+      <View style={styles.infoTop}>
+        <Icon name={icon} size={14} color={theme.tint} />
+        <ThemedText weight="extrabold" themeColor="textSecondary" style={styles.infoLabel}>
+          {label.toUpperCase()}
+        </ThemedText>
+      </View>
+      <ThemedText weight="extrabold" size={16}>
+        {value}
       </ThemedText>
-      <ThemedText style={styles.infoValue}>{value}</ThemedText>
     </View>
   );
 }
 
-function SettingRow({
-  icon,
-  label,
-  color,
-  onPress,
-}: {
-  icon: string;
-  label: string;
-  color?: string;
-  onPress: () => void;
-}) {
-  const theme = useTheme();
-  return (
-    <Pressable onPress={onPress} style={styles.settingRow}>
-      <Icon name={icon} size={18} color={color ?? theme.text} />
-      <ThemedText style={[styles.settingLabel, { color: color ?? theme.text }]}>{label}</ThemedText>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  dogHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, marginBottom: Spacing.three },
-  dogHeadText: { flex: 1 },
-  dogName: { fontSize: 24, fontWeight: '800' },
-  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginBottom: Spacing.three },
+  heading: { marginTop: Spacing.one },
+  flex: { flex: 1 },
+  heroCard: { overflow: 'hidden' },
+  banner: { width: '100%', height: 130 },
+  heroBody: { padding: Spacing.three, gap: Spacing.three },
+  dogHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   info: {
     borderWidth: 1,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-    minWidth: 100,
+    minWidth: 104,
     flexGrow: 1,
     gap: 2,
   },
-  infoLabel: { fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.4 },
-  infoValue: { fontSize: 16, fontWeight: '700' },
+  infoTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  infoLabel: { fontSize: 11, letterSpacing: 0.4 },
   actions: { flexDirection: 'row', gap: Spacing.two },
-  flex: { flex: 1 },
   dogRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  dogRowName: { fontSize: 17, fontWeight: '700' },
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.one },
-  settingLabel: { fontSize: 16, fontWeight: '600' },
   footer: { textAlign: 'center', marginTop: Spacing.four, lineHeight: 20 },
 });

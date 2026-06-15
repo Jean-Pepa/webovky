@@ -1,15 +1,20 @@
-import { useMemo, useState } from 'react';
+import { Image } from 'expo-image';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
+import { BreedPickerModal } from '@/components/breed-picker';
 import { DogAvatar } from '@/components/dog-avatar';
+import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/ui/chip';
+import { Icon } from '@/components/ui/icon';
 import { Stepper } from '@/components/ui/stepper';
-import { BREEDS } from '@/data/breeds';
-import { Radius, Spacing } from '@/constants/theme';
+import { Font, Radius, Spacing } from '@/constants/theme';
+import { getBreed } from '@/data/breeds';
 import { useTheme } from '@/hooks/use-theme';
 import { ageInMonths, birthMonthFrom, splitMonths } from '@/lib/format';
+import { dogBreedName } from '@/lib/dog';
+import type { BreedOption } from '@/lib/breeds-api';
 import type { Dog, DogSex } from '@/types';
 
 const AVATARS = ['🐶', '🐕', '🦮', '🐕‍🦺', '🐩', '🐾', '🦴', '🐺'];
@@ -24,12 +29,16 @@ interface DogFormProps {
   onDelete?: () => void;
 }
 
-function norm(s: string): string {
-  try {
-    return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  } catch {
-    return s.toLowerCase();
-  }
+function breedFromDog(dog: Dog): BreedOption {
+  const local = getBreed(dog.breedId);
+  return {
+    id: dog.breedId,
+    name: dogBreedName(dog),
+    group: local?.group ?? '',
+    photoUrl: dog.breedPhotoUrl,
+    energy: dog.breedEnergy ?? local?.energy ?? 3,
+    trainability: dog.breedTrainability ?? local?.trainability ?? 3,
+  };
 }
 
 export function DogForm({ initial, submitLabel, onSubmit, onDelete }: DogFormProps) {
@@ -37,29 +46,27 @@ export function DogForm({ initial, submitLabel, onSubmit, onDelete }: DogFormPro
   const initialAge = initial ? splitMonths(ageInMonths(initial.birthMonth)) : { years: 0, months: 3 };
 
   const [name, setName] = useState(initial?.name ?? '');
-  const [breedId, setBreedId] = useState(initial?.breedId ?? '');
+  const [breed, setBreed] = useState<BreedOption | null>(initial ? breedFromDog(initial) : null);
   const [sex, setSex] = useState<DogSex>(initial?.sex ?? 'male');
   const [years, setYears] = useState(initialAge.years);
   const [months, setMonths] = useState(initialAge.months);
   const [weight, setWeight] = useState(initial?.weightKg ? String(initial.weightKg) : '');
   const [avatar, setAvatar] = useState(initial?.avatar ?? AVATARS[0]);
   const [color, setColor] = useState(initial?.color ?? COLORS[0]);
-  const [breedQuery, setBreedQuery] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-  const filteredBreeds = useMemo(() => {
-    const q = norm(breedQuery.trim());
-    if (!q) return BREEDS;
-    return BREEDS.filter((b) => norm(b.name).includes(q) || b.id === breedId);
-  }, [breedQuery, breedId]);
-
-  const canSubmit = name.trim().length > 0 && breedId.length > 0;
+  const canSubmit = name.trim().length > 0 && breed !== null;
 
   function handleSubmit() {
-    if (!canSubmit) return;
+    if (!canSubmit || !breed) return;
     const parsedWeight = parseFloat(weight.replace(',', '.'));
     onSubmit({
       name: name.trim(),
-      breedId,
+      breedId: breed.id,
+      breedName: breed.name,
+      breedPhotoUrl: breed.photoUrl,
+      breedEnergy: breed.energy,
+      breedTrainability: breed.trainability,
       sex,
       birthMonth: birthMonthFrom(years, months),
       weightKg: Number.isFinite(parsedWeight) && parsedWeight > 0 ? parsedWeight : undefined,
@@ -68,13 +75,18 @@ export function DogForm({ initial, submitLabel, onSubmit, onDelete }: DogFormPro
     });
   }
 
-  const inputStyle = [styles.input, { backgroundColor: theme.backgroundElement, borderColor: theme.border, color: theme.text }];
+  const inputStyle = [
+    styles.input,
+    { backgroundColor: theme.backgroundElement, borderColor: theme.border, color: theme.text },
+  ];
 
   return (
     <View style={styles.form}>
       <View style={styles.preview}>
         <DogAvatar dog={{ avatar, color }} size={84} />
-        <ThemedText style={styles.previewName}>{name.trim() || 'Váš pejsek'}</ThemedText>
+        <ThemedText weight="extrabold" size={20}>
+          {name.trim() || 'Váš pejsek'}
+        </ThemedText>
       </View>
 
       <View style={styles.field}>
@@ -100,10 +112,7 @@ export function DogForm({ initial, submitLabel, onSubmit, onDelete }: DogFormPro
             <Pressable
               key={c}
               onPress={() => setColor(c)}
-              style={[
-                styles.swatch,
-                { backgroundColor: c, borderColor: color === c ? theme.text : 'transparent' },
-              ]}
+              style={[styles.swatch, { backgroundColor: c, borderColor: color === c ? theme.text : 'transparent' }]}
             />
           ))}
         </View>
@@ -122,6 +131,30 @@ export function DogForm({ initial, submitLabel, onSubmit, onDelete }: DogFormPro
       </View>
 
       <View style={styles.field}>
+        <FieldLabel>Plemeno</FieldLabel>
+        <Pressable
+          onPress={() => setPickerOpen(true)}
+          style={[styles.breedBtn, { backgroundColor: theme.backgroundElement, borderColor: breed ? theme.tint : theme.border }]}>
+          {breed?.photoUrl ? (
+            <Image source={{ uri: breed.photoUrl }} style={styles.breedPhoto} contentFit="cover" transition={150} />
+          ) : (
+            <View style={[styles.breedPhoto, styles.breedPh, { backgroundColor: theme.tintSoft }]}>
+              <Icon name="paw" size={22} color={theme.tint} />
+            </View>
+          )}
+          <View style={styles.flex}>
+            <ThemedText weight="extrabold" size={16}>
+              {breed ? breed.name : 'Vybrat plemeno'}
+            </ThemedText>
+            <ThemedText themeColor="textSecondary" size={13}>
+              {breed ? breed.group || 'Reálná fotka i info' : 'Vyhledej ze všech plemen'}
+            </ThemedText>
+          </View>
+          <Icon name="search" size={20} color={theme.textSecondary} />
+        </Pressable>
+      </View>
+
+      <View style={styles.field}>
         <FieldLabel>Pohlaví</FieldLabel>
         <View style={styles.wrap}>
           <Chip label="Pes" selected={sex === 'male'} onPress={() => setSex('male')} />
@@ -133,30 +166,6 @@ export function DogForm({ initial, submitLabel, onSubmit, onDelete }: DogFormPro
         <FieldLabel>Věk</FieldLabel>
         <Stepper label="Roky" value={years} onChange={setYears} min={0} max={25} />
         <Stepper label="Měsíce" value={months} onChange={setMonths} min={0} max={11} />
-      </View>
-
-      <View style={styles.field}>
-        <FieldLabel>Plemeno</FieldLabel>
-        <TextInput
-          value={breedQuery}
-          onChangeText={setBreedQuery}
-          placeholder="Hledat plemeno…"
-          placeholderTextColor={theme.textSecondary}
-          style={inputStyle}
-        />
-        <View style={styles.wrap}>
-          {filteredBreeds.map((b) => (
-            <Chip
-              key={b.id}
-              label={b.name}
-              selected={breedId === b.id}
-              onPress={() => setBreedId(b.id)}
-            />
-          ))}
-          {filteredBreeds.length === 0 ? (
-            <ThemedText themeColor="textSecondary">Nic nenalezeno — zkuste „Kříženec“.</ThemedText>
-          ) : null}
-        </View>
       </View>
 
       <View style={styles.field}>
@@ -175,14 +184,21 @@ export function DogForm({ initial, submitLabel, onSubmit, onDelete }: DogFormPro
       {onDelete ? (
         <Button title="Odebrat pejska" variant="danger" icon="trash-outline" onPress={onDelete} />
       ) : null}
+
+      <BreedPickerModal
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={setBreed}
+        selectedId={breed?.id}
+      />
     </View>
   );
 }
 
 function FieldLabel({ children }: { children: string }) {
   return (
-    <ThemedText themeColor="textSecondary" style={styles.fieldLabel}>
-      {children}
+    <ThemedText weight="extrabold" themeColor="textSecondary" style={styles.fieldLabel}>
+      {children.toUpperCase()}
     </ThemedText>
   );
 }
@@ -190,17 +206,28 @@ function FieldLabel({ children }: { children: string }) {
 const styles = StyleSheet.create({
   form: { gap: Spacing.four },
   preview: { alignItems: 'center', gap: Spacing.two },
-  previewName: { fontSize: 20, fontWeight: '700' },
+  flex: { flex: 1 },
   field: { gap: Spacing.two },
-  fieldLabel: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  fieldLabel: { fontSize: 12, letterSpacing: 0.6 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   input: {
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.three,
-    paddingVertical: 12,
+    paddingVertical: 13,
     fontSize: 16,
+    fontFamily: Font.medium,
   },
+  breedBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    padding: Spacing.two,
+    borderWidth: 1.5,
+    borderRadius: Radius.lg,
+  },
+  breedPhoto: { width: 52, height: 52, borderRadius: Radius.md },
+  breedPh: { alignItems: 'center', justifyContent: 'center' },
   emoji: {
     width: 48,
     height: 48,
@@ -210,10 +237,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emojiText: { fontSize: 24 },
-  swatch: {
-    width: 36,
-    height: 36,
-    borderRadius: Radius.pill,
-    borderWidth: 3,
-  },
+  swatch: { width: 36, height: 36, borderRadius: Radius.pill, borderWidth: 3 },
 });

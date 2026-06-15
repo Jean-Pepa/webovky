@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import type { ReactNode } from 'react';
 
+import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -24,7 +25,9 @@ export function Chip({ label, selected, onPress, left }: ChipProps) {
         },
       ]}>
       {left}
-      <Text style={[styles.label, { color: selected ? theme.onTint : theme.text }]}>{label}</Text>
+      <ThemedText weight="bold" style={[styles.label, { color: selected ? theme.onTint : theme.text }]}>
+        {label}
+      </ThemedText>
     </Pressable>
   );
 }
@@ -35,12 +38,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.one,
     paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    paddingVertical: 10,
     borderRadius: Radius.pill,
-    borderWidth: 1,
+    borderWidth: 1.5,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  label: { fontSize: 14 },
 });

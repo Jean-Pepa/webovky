@@ -1,14 +1,17 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { Radius, Spacing } from '@/constants/theme';
+import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
+import { Radius, Spacing } from '@/constants/theme';
 
-/** Malý barevný štítek kategorie. `color` je hlavní barva, podklad je z ní zesvětlený. */
+/** Small colored category label (soft tinted background). */
 export function Tag({ label, color, icon }: { label: string; color: string; icon?: string }) {
   return (
     <View style={[styles.tag, { backgroundColor: color + '22' }]}>
       {icon ? <Icon name={icon} size={12} color={color} /> : null}
-      <Text style={[styles.text, { color }]}>{label}</Text>
+      <ThemedText weight="extrabold" style={[styles.text, { color }]}>
+        {label}
+      </ThemedText>
     </View>
   );
 }
@@ -19,12 +22,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.half,
     paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.half,
+    paddingVertical: 4,
     borderRadius: Radius.pill,
     alignSelf: 'flex-start',
   },
-  text: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
+  text: { fontSize: 12 },
 });
