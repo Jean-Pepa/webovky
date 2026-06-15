@@ -7,7 +7,7 @@ export function Logo({ className = "" }: { className?: string }) {
         <IconHome className="h-5 w-5" />
       </span>
       <span className="text-lg font-semibold tracking-tight text-stone-900">
-        Domovní<span className="text-teal-700">pas</span>
+        BULO
       </span>
     </span>
   );

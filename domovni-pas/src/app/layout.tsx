@@ -3,7 +3,7 @@ import "./globals.css";
 import { StoreProvider } from "@/lib/store";
 
 export const metadata: Metadata = {
-  title: "Domovní pas — historie vaší nemovitosti",
+  title: "BULO — historie vaší nemovitosti",
   description:
     "Trvalý záznam stavu a historie vaší nemovitosti — opravy, závady, revize, dokumenty a fotky na jednom místě.",
 };
