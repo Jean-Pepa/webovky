@@ -61,10 +61,10 @@ const cs: Dict = {
   nav: { features: "Co umí", how: "Jak to funguje", forWhom: "Pro koho", enter: "Vstoupit do aplikace" },
   hero: {
     label: "BULO.APP",
-    title1: "Digitální pas",
-    title2: "vaší nemovitosti",
+    title1: "Vše o vaší nemovitosti",
+    title2: "na jednom místě",
     subtitle:
-      "Opravy, revize, rekonstrukce, dokumenty, vybavení i fotky na jednom místě. Trvalý záznam, který dům provází celým životem — a při prodeji ho jedním krokem předáte novému majiteli.",
+      "Dokumentace, opravy, rekonstrukce, vybavení i fotografie. Digitální historie, která zůstává s nemovitostí po celý její život.",
     enter: "Vstoupit do aplikace",
     architect: "Jsem architekt",
     chip1: "Pro majitele, architekty i kupující",
@@ -136,10 +136,10 @@ const sk: Dict = {
   nav: { features: "Čo dokáže", how: "Ako to funguje", forWhom: "Pre koho", enter: "Vstúpiť do aplikácie" },
   hero: {
     label: "BULO.APP",
-    title1: "Digitálny pas",
-    title2: "vašej nehnuteľnosti",
+    title1: "Všetko o vašej nehnuteľnosti",
+    title2: "na jednom mieste",
     subtitle:
-      "Opravy, revízie, rekonštrukcie, dokumenty, vybavenie aj fotky na jednom mieste. Trvalý záznam, ktorý dom sprevádza celým životom — a pri predaji ho jedným krokom odovzdáte novému majiteľovi.",
+      "Dokumentácia, opravy, rekonštrukcie, vybavenie aj fotografie. Digitálna história, ktorá zostáva s nehnuteľnosťou po celý jej život.",
     enter: "Vstúpiť do aplikácie",
     architect: "Som architekt",
     chip1: "Pre majiteľov, architektov aj kupujúcich",
@@ -211,10 +211,10 @@ const pl: Dict = {
   nav: { features: "Co potrafi", how: "Jak to działa", forWhom: "Dla kogo", enter: "Wejdź do aplikacji" },
   hero: {
     label: "BULO.APP",
-    title1: "Cyfrowy paszport",
-    title2: "Twojej nieruchomości",
+    title1: "Wszystko o Twojej nieruchomości",
+    title2: "w jednym miejscu",
     subtitle:
-      "Naprawy, przeglądy, remonty, dokumenty, wyposażenie i zdjęcia w jednym miejscu. Trwały zapis, który towarzyszy domowi przez całe życie — a przy sprzedaży przekażesz go nowemu właścicielowi jednym kliknięciem.",
+      "Dokumentacja, naprawy, remonty, wyposażenie i zdjęcia. Cyfrowa historia, która zostaje z nieruchomością przez całe jej życie.",
     enter: "Wejdź do aplikacji",
     architect: "Jestem architektem",
     chip1: "Dla właścicieli, architektów i kupujących",
@@ -286,10 +286,10 @@ const en: Dict = {
   nav: { features: "Features", how: "How it works", forWhom: "Who it's for", enter: "Enter the app" },
   hero: {
     label: "BULO.APP",
-    title1: "Digital passport",
-    title2: "for your property",
+    title1: "Everything about your property",
+    title2: "in one place",
     subtitle:
-      "Repairs, inspections, renovations, documents, equipment and photos in one place. A permanent record that follows the home through its whole life — and at sale you hand it to the new owner in one step.",
+      "Documentation, repairs, renovations, equipment and photos. A digital history that stays with the property for its whole life.",
     enter: "Enter the app",
     architect: "I'm an architect",
     chip1: "For owners, architects and buyers",
@@ -361,10 +361,10 @@ const de: Dict = {
   nav: { features: "Funktionen", how: "So funktioniert's", forWhom: "Für wen", enter: "Zur App" },
   hero: {
     label: "BULO.APP",
-    title1: "Digitaler Pass",
-    title2: "Ihrer Immobilie",
+    title1: "Alles über Ihre Immobilie",
+    title2: "an einem Ort",
     subtitle:
-      "Reparaturen, Prüfungen, Renovierungen, Dokumente, Ausstattung und Fotos an einem Ort. Eine dauerhafte Aufzeichnung, die das Haus ein Leben lang begleitet — und beim Verkauf übergeben Sie sie in einem Schritt dem neuen Eigentümer.",
+      "Dokumentation, Reparaturen, Renovierungen, Ausstattung und Fotos. Eine digitale Historie, die der Immobilie ein Leben lang erhalten bleibt.",
     enter: "Zur App",
     architect: "Ich bin Architekt",
     chip1: "Für Eigentümer, Architekten und Käufer",
