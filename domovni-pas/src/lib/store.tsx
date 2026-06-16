@@ -13,6 +13,7 @@ function toShareSnapshot(p: Property): Property {
       media: e.media.map((m) => ({ ...m, dataUrl: undefined })),
     })),
     inventory: p.inventory.map((i) => ({ ...i, dataUrl: undefined })),
+    consultations: [], // interní konzultace nesdílíme veřejně
   };
 }
 
@@ -89,6 +90,7 @@ export type Property = {
   reminders: Reminder[];
   transfers: TransferRecord[];
   inventory: InventoryItem[];
+  consultations?: ConsultationNote[];
   createdAt: string;
   updatedAt: string;
 };
@@ -153,6 +155,15 @@ export type TransferRecord = {
   date: string;
 };
 
+// Průběžné konzultace architekta s klientem (vlákno poznámek/dotazů)
+export type ConsultationNote = {
+  id: string;
+  authorRole: Role;
+  topic?: string;
+  text: string;
+  createdAt: string;
+};
+
 // Vybavení a materiály v domě – „Co je v mém domě" (baterie, kotel, podlaha…)
 export type InventoryItem = {
   id: string;
@@ -201,6 +212,8 @@ type Store = {
   deleteReminder: (propertyId: string, reminderId: string) => void;
   addInventoryItem: (propertyId: string, data: InventoryInput) => void;
   deleteInventoryItem: (propertyId: string, itemId: string) => void;
+  addConsultation: (propertyId: string, data: { topic?: string; text: string }) => void;
+  deleteConsultation: (propertyId: string, noteId: string) => void;
   transferProperty: (propertyId: string, toName: string, note?: string) => void;
   setShare: (propertyId: string, enabled: boolean) => void;
   role: Role | null;
@@ -254,6 +267,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             reminders: p.reminders ?? [],
             transfers: p.transfers ?? [],
             inventory: p.inventory ?? [],
+            consultations: p.consultations ?? [],
           })),
         );
       } else {
@@ -319,6 +333,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         reminders: [],
         transfers: [],
         inventory: [],
+        consultations: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -344,6 +359,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         reminders: [],
         transfers: [],
         inventory: [],
+        consultations: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -373,6 +389,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         reminders: p.reminders ?? [],
         transfers: p.transfers ?? [],
         inventory: p.inventory ?? [],
+        consultations: p.consultations ?? [],
       })),
     );
   }, []);
@@ -476,6 +493,36 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const addConsultation = useCallback(
+    (propertyId: string, data: { topic?: string; text: string }) => {
+      const note: ConsultationNote = {
+        id: newId(),
+        authorRole: role ?? "CLIENT",
+        topic: data.topic,
+        text: data.text,
+        createdAt: now(),
+      };
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? { ...p, consultations: [...(p.consultations ?? []), note], updatedAt: now() }
+            : p,
+        ),
+      );
+    },
+    [role],
+  );
+
+  const deleteConsultation = useCallback((propertyId: string, noteId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, consultations: (p.consultations ?? []).filter((c) => c.id !== noteId) }
+          : p,
+      ),
+    );
+  }, []);
+
   // Převod vlastnictví – jádro hodnoty (přenositelnost). V ukázce zaznamená předání
   // a přepíše jméno vlastníka; auditní stopa zůstává v transfers.
   const transferProperty = useCallback((propertyId: string, toName: string, note?: string) => {
@@ -555,6 +602,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteReminder,
     addInventoryItem,
     deleteInventoryItem,
+    addConsultation,
+    deleteConsultation,
     transferProperty,
     setShare,
     role,
@@ -803,6 +852,29 @@ function seed(): Property[] {
       reminders: [],
       transfers: [],
       inventory: [],
+      consultations: [
+        {
+          id: "k-1",
+          authorRole: "ARCHITECT",
+          topic: "Studie — dispozice",
+          text: "Posílám upravenou studii s otevřenou dispozicí přízemí a posunutým schodištěm. Prosím o připomínky.",
+          createdAt: "2026-02-18",
+        },
+        {
+          id: "k-2",
+          authorRole: "CLIENT",
+          topic: "Studie — dispozice",
+          text: "Děkujeme, vypadá to skvěle. Šlo by zvětšit spíž a přidat okno do koupelny?",
+          createdAt: "2026-02-21",
+        },
+        {
+          id: "k-3",
+          authorRole: "ARCHITECT",
+          topic: "Materiály fasády",
+          text: "K fasádě navrhuji kombinaci omítky a dřevěného obkladu. Vzorky ukážu na příští schůzce.",
+          createdAt: "2026-03-10",
+        },
+      ],
       createdAt: "2026-01-10",
       updatedAt: "2026-04-15",
     },

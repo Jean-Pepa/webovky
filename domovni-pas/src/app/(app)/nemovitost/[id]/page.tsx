@@ -12,6 +12,7 @@ import { DocumentRow } from "@/components/DocumentRow";
 import { DocumentUploadForm } from "@/components/forms/DocumentUploadForm";
 import { ReminderSection } from "@/components/ReminderSection";
 import { InventorySection } from "@/components/InventorySection";
+import { ConsultationSection } from "@/components/ConsultationSection";
 import { ProjectCard } from "@/components/ProjectCard";
 import {
   IconPlus,
@@ -237,6 +238,8 @@ export default function PropertyDetailPage() {
       </div>
 
       <InventorySection propertyId={id} inventory={property.inventory} editable={editable} />
+
+      <ConsultationSection propertyId={id} consultations={property.consultations ?? []} />
     </div>
   );
 }
