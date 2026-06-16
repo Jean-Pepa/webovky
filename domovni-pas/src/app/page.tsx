@@ -118,7 +118,7 @@ export default function HomePage() {
       {/* ===== FUNKCE ===== */}
       <section id="funkce" className="mx-auto max-w-6xl px-6 py-20">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-3xl tracking-tight text-stone-900 sm:text-4xl">
+          <h2 className="font-display text-4xl tracking-tight text-stone-900 sm:text-5xl">
             {t.features.heading}
           </h2>
           <p className="mt-3 text-stone-600">{t.features.sub}</p>
@@ -144,7 +144,7 @@ export default function HomePage() {
       <section id="jak" className="bg-white py-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-display text-3xl tracking-tight text-stone-900 sm:text-4xl">
+            <h2 className="font-display text-4xl tracking-tight text-stone-900 sm:text-5xl">
               {t.how.heading}
             </h2>
             <p className="mt-3 text-stone-600">{t.how.sub}</p>
@@ -166,7 +166,7 @@ export default function HomePage() {
       {/* ===== PRO KOHO ===== */}
       <section id="proKoho" className="mx-auto max-w-6xl px-6 py-20">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-3xl tracking-tight text-stone-900 sm:text-4xl">
+          <h2 className="font-display text-4xl tracking-tight text-stone-900 sm:text-5xl">
             {t.who.heading}
           </h2>
         </div>
@@ -189,7 +189,7 @@ export default function HomePage() {
       {/* ===== CTA ===== */}
       <section className="bg-[#b5543a]">
         <div className="mx-auto max-w-4xl px-6 py-16 text-center text-white">
-          <h2 className="font-display text-3xl tracking-tight sm:text-4xl">{t.cta.title}</h2>
+          <h2 className="font-display text-4xl tracking-tight sm:text-5xl">{t.cta.title}</h2>
           <p className="mx-auto mt-3 max-w-xl text-white/85">{t.cta.sub}</p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
             <Link
