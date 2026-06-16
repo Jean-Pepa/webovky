@@ -7,7 +7,8 @@ import { useStore } from "@/lib/store";
 import { Loading } from "@/components/Loading";
 import { BackLink } from "@/components/BackLink";
 import { CopyButton } from "@/components/ui/CopyButton";
-import { IconShare, IconLink } from "@/components/Icons";
+import { QrCode } from "@/components/QrCode";
+import { IconShare, IconLink, IconFile } from "@/components/Icons";
 
 export default function SharePage() {
   const { id } = useParams<{ id: string }>();
@@ -65,6 +66,22 @@ export default function SharePage() {
                 <IconLink className="h-4 w-4" />
                 Otevřít náhled
               </a>
+            </div>
+
+            <div className="border-t border-stone-100 pt-4">
+              <label className="label">QR kód k nalepení u domu</label>
+              <div className="flex flex-wrap items-center gap-4">
+                {url && <QrCode value={url} size={120} />}
+                <div>
+                  <p className="text-sm text-stone-600">
+                    Naskenováním se otevře náhled pasu nemovitosti.
+                  </p>
+                  <Link href={`/nemovitost/${id}/qr`} className="btn-secondary btn-sm mt-2">
+                    <IconFile className="h-4 w-4" />
+                    Tisknout QR štítek
+                  </Link>
+                </div>
+              </div>
             </div>
 
             <div className="border-t border-stone-100 pt-4">

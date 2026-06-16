@@ -85,6 +85,10 @@ export default function PropertyDetailPage() {
           </Link>
           {editable && (
             <>
+              <Link href={`/nemovitost/${id}/prodej`} className="btn-secondary btn-sm">
+                <IconMoney className="h-4 w-4" />
+                Připravit na prodej
+              </Link>
               <Link href={`/nemovitost/${id}/sdileni`} className="btn-secondary btn-sm">
                 <IconShare className="h-4 w-4" />
                 Sdílet
