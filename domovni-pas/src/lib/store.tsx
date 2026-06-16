@@ -3,6 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { newId } from "./id";
 
+export type Role = "ARCHITECT" | "CLIENT" | "CREATOR";
+
 export type PropertyType = "HOUSE" | "APARTMENT" | "OTHER";
 export type EntryType =
   | "PURCHASE"
@@ -58,6 +60,8 @@ export type Property = {
   energyClass?: string; // A–G
   architect?: string;
   contractors?: string; // kontakty na dodavatele (řádky)
+  createdByRole?: Role; // kdo pas vytvořil
+  handedOver?: boolean; // architekt předal klientovi → pro architekta jen ke čtení
   ownerName: string;
   shareEnabled: boolean;
   entries: Entry[];
@@ -177,17 +181,36 @@ type Store = {
   deleteInventoryItem: (propertyId: string, itemId: string) => void;
   transferProperty: (propertyId: string, toName: string, note?: string) => void;
   setShare: (propertyId: string, enabled: boolean) => void;
+  role: Role | null;
+  login: (password: string) => boolean;
+  logout: () => void;
 };
 
 const StoreContext = createContext<Store | null>(null);
 const KEY = "domovni-pas-v1";
+const ROLE_KEY = "bulo-role";
+
+// Demo přihlášení – 3 hesla = 3 role. (Změnit lze tady.)
+const PASSWORDS: Record<string, Role> = {
+  architekt: "ARCHITECT",
+  klient: "CLIENT",
+  tvurce: "CREATOR",
+};
+
 const now = () => new Date().toISOString();
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [properties, setProperties] = useState<Property[]>([]);
+  const [role, setRole] = useState<Role | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    try {
+      const storedRole = localStorage.getItem(ROLE_KEY) as Role | null;
+      if (storedRole) setRole(storedRole);
+    } catch {
+      // ignore
+    }
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
@@ -224,24 +247,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [properties],
   );
 
-  const createProperty = useCallback((data: PropertyInput) => {
-    const id = newId();
-    const p: Property = {
-      ...data,
-      id,
-      ownerName: "Vy",
-      shareEnabled: false,
-      entries: [],
-      documents: [],
-      reminders: [],
-      transfers: [],
-      inventory: [],
-      createdAt: now(),
-      updatedAt: now(),
-    };
-    setProperties((prev) => [p, ...prev]);
-    return id;
-  }, []);
+  const createProperty = useCallback(
+    (data: PropertyInput) => {
+      const id = newId();
+      const p: Property = {
+        ...data,
+        id,
+        ownerName: "Vy",
+        shareEnabled: false,
+        createdByRole: role ?? "CLIENT",
+        handedOver: false,
+        entries: [],
+        documents: [],
+        reminders: [],
+        transfers: [],
+        inventory: [],
+        createdAt: now(),
+        updatedAt: now(),
+      };
+      setProperties((prev) => [p, ...prev]);
+      return id;
+    },
+    [role],
+  );
 
   // Vytvoří nemovitost rovnou i se záznamy a dokumenty (používá průvodce „Založit pas").
   const createPropertyFull = useCallback(
@@ -252,6 +280,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         id,
         ownerName: "Vy",
         shareEnabled: false,
+        createdByRole: role ?? "CLIENT",
+        handedOver: false,
         entries: entries.map((e) => ({ ...e, id: newId(), createdAt: now() })),
         documents: documents.map((d) => ({ ...d, id: newId() })),
         reminders: [],
@@ -263,7 +293,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setProperties((prev) => [p, ...prev]);
       return id;
     },
-    [],
+    [role],
   );
 
   const updateProperty = useCallback((id: string, data: PropertyInput) => {
@@ -392,6 +422,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           ...p,
           ownerName: toName,
           shareEnabled: false,
+          handedOver: true,
           transfers: [record, ...p.transfers],
           updatedAt: now(),
         };
@@ -403,6 +434,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setProperties((prev) =>
       prev.map((p) => (p.id === propertyId ? { ...p, shareEnabled: enabled } : p)),
     );
+  }, []);
+
+  const login = useCallback((password: string) => {
+    const r = PASSWORDS[password.trim().toLowerCase()];
+    if (!r) return false;
+    setRole(r);
+    try {
+      localStorage.setItem(ROLE_KEY, r);
+    } catch {
+      // ignore
+    }
+    return true;
+  }, []);
+
+  const logout = useCallback(() => {
+    setRole(null);
+    try {
+      localStorage.removeItem(ROLE_KEY);
+    } catch {
+      // ignore
+    }
   }, []);
 
   const value: Store = {
@@ -424,6 +476,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteInventoryItem,
     transferProperty,
     setShare,
+    role,
+    login,
+    logout,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
@@ -457,6 +512,8 @@ function seed(): Property[] {
         "Stavební firma: Stavby Novák s.r.o. (777 123 456)\nElektro: Jan Dvořák (605 987 654)\nVoda a topení: TermoInstal (775 222 333)",
       ownerName: "Jana Nováková",
       shareEnabled: false,
+      createdByRole: "CLIENT",
+      handedOver: false,
       entries: [
         {
           id: "s-e1",
@@ -538,6 +595,8 @@ function seed(): Property[] {
       description: "Rekonstrukce bytu v cihlovém domě.",
       ownerName: "Jana Nováková",
       shareEnabled: false,
+      createdByRole: "CLIENT",
+      handedOver: false,
       entries: [
         {
           id: "s-e5",
@@ -561,6 +620,83 @@ function seed(): Property[] {
       ],
       createdAt: "2024-02-01",
       updatedAt: "2025-03-10",
+    },
+    {
+      id: "demo-vila",
+      name: "Vila Beroun",
+      type: "HOUSE",
+      street: "Na Stráni 12",
+      city: "Beroun",
+      zip: "26601",
+      yearBuilt: 2025,
+      description: "Novostavba, dokončeno a předáno investorovi.",
+      investor: "Rodina Svobodova",
+      floorArea: 210,
+      energyClass: "A",
+      architect: "Ateliér Kořínek",
+      contractors: "Stavební firma: Bau Beroun s.r.o.\nOkna: Window Pro",
+      createdByRole: "ARCHITECT",
+      handedOver: true,
+      ownerName: "Rodina Svobodova",
+      shareEnabled: false,
+      entries: [
+        {
+          id: "v-e1",
+          type: "OTHER",
+          title: "Předání projektu architektem",
+          date: "2026-03-01",
+          media: [],
+          createdAt: "2026-03-01",
+        },
+      ],
+      documents: [],
+      reminders: [],
+      transfers: [
+        {
+          id: "v-t1",
+          fromName: "Ateliér Kořínek",
+          toName: "Rodina Svobodova",
+          date: "2026-03-01T10:00:00.000Z",
+          note: "Předání hotové stavby",
+        },
+      ],
+      inventory: [],
+      createdAt: "2025-06-01",
+      updatedAt: "2026-03-01",
+    },
+    {
+      id: "demo-novostavba",
+      name: "Novostavba Černošice",
+      type: "HOUSE",
+      street: "Slunečná 8",
+      city: "Černošice",
+      zip: "25228",
+      yearBuilt: 2026,
+      description: "Rozpracovaný projekt, zatím nepředáno.",
+      investor: "Pan Horák",
+      floorArea: 160,
+      energyClass: "A",
+      architect: "Ateliér Kořínek",
+      createdByRole: "ARCHITECT",
+      handedOver: false,
+      ownerName: "Ateliér Kořínek",
+      shareEnabled: false,
+      entries: [
+        {
+          id: "n-e1",
+          type: "RENOVATION",
+          title: "Zahájení realizace",
+          date: "2026-04-15",
+          media: [],
+          createdAt: "2026-04-15",
+        },
+      ],
+      documents: [],
+      reminders: [],
+      transfers: [],
+      inventory: [],
+      createdAt: "2026-01-10",
+      updatedAt: "2026-04-15",
     },
   ];
 }

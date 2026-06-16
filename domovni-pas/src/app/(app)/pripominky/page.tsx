@@ -5,15 +5,17 @@ import { useStore, type Property, type Reminder } from "@/lib/store";
 import { Loading } from "@/components/Loading";
 import { REMINDER_TYPES } from "@/lib/enums";
 import { dueStatus } from "@/lib/format";
+import { canSeeProperty } from "@/lib/access";
 import { IconCalendar, IconCheck, IconTrash } from "@/components/Icons";
 
 type Item = { r: Reminder; p: Property };
 
 export default function RemindersPage() {
-  const { properties, hydrated, toggleReminder, deleteReminder } = useStore();
+  const { properties, hydrated, role, toggleReminder, deleteReminder } = useStore();
   if (!hydrated) return <Loading />;
 
-  const all: Item[] = properties.flatMap((p) => p.reminders.map((r) => ({ r, p })));
+  const visible = role ? properties.filter((p) => canSeeProperty(p, role)) : [];
+  const all: Item[] = visible.flatMap((p) => p.reminders.map((r) => ({ r, p })));
   const active = all.filter((i) => !i.r.done).sort((a, b) => a.r.dueDate.localeCompare(b.r.dueDate));
   const overdue = active.filter((i) => dueStatus(i.r.dueDate).overdue);
   const upcoming = active.filter((i) => !dueStatus(i.r.dueDate).overdue);

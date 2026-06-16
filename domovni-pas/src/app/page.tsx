@@ -51,7 +51,7 @@ export default function HomePage() {
                 CZ
               </span>
               <Link
-                href="/prehled"
+                href="/prihlaseni"
                 className="rounded-lg bg-brass px-4 py-2 text-sm font-medium text-white transition hover:bg-[#a07a40]"
               >
                 Vstoupit do aplikace
@@ -74,14 +74,14 @@ export default function HomePage() {
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
-                href="/prehled"
+                href="/prihlaseni"
                 className="inline-flex items-center gap-2 rounded-xl bg-brass px-6 py-3.5 text-base font-medium text-white shadow-lg shadow-black/20 transition hover:bg-[#a07a40]"
               >
                 <IconArrowRight className="h-5 w-5" />
                 Vstoupit do aplikace
               </Link>
               <Link
-                href="/projekt/novy"
+                href="/prihlaseni"
                 className="rounded-xl border border-white/30 px-6 py-3.5 text-base font-medium text-white transition hover:bg-white/10"
               >
                 Jsem architekt
@@ -227,14 +227,14 @@ export default function HomePage() {
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/prehled"
+              href="/prihlaseni"
               className="inline-flex items-center gap-2 rounded-xl bg-brass px-6 py-3.5 text-base font-medium text-white shadow-lg shadow-black/20 transition hover:bg-[#a07a40]"
             >
               <IconArrowRight className="h-5 w-5" />
               Vstoupit do aplikace
             </Link>
             <Link
-              href="/projekt/novy"
+              href="/prihlaseni"
               className="rounded-xl border border-white/30 px-6 py-3.5 text-base font-medium text-white transition hover:bg-white/10"
             >
               Předat projekt

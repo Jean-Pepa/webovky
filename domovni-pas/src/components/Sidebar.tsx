@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Logo } from "@/components/Logo";
+import { useStore } from "@/lib/store";
+import { ROLE_LABELS, ROLE_INITIALS } from "@/lib/access";
 import {
   IconHome,
   IconCalendar,
@@ -12,6 +14,7 @@ import {
   IconMenu,
   IconClose,
   IconBuilding,
+  IconLogout,
 } from "@/components/Icons";
 
 const NAV = [
@@ -22,6 +25,8 @@ const NAV = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { role, logout } = useStore();
   const [open, setOpen] = useState(false);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
@@ -36,11 +41,23 @@ export function Sidebar() {
 
       <div className="mt-5 flex items-center gap-3 px-5">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-teal-700 text-sm font-semibold text-white">
-          KV
+          {role ? ROLE_INITIALS[role] : "—"}
         </span>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-stone-800">Kristián Vyskočil</p>
-          <p className="text-xs text-stone-400">Majitel</p>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-stone-800">
+            {role ? ROLE_LABELS[role] : "BULO"}
+          </p>
+          <button
+            onClick={() => {
+              logout();
+              setOpen(false);
+              router.push("/");
+            }}
+            className="inline-flex items-center gap-1 text-xs text-stone-400 transition hover:text-red-600"
+          >
+            <IconLogout className="h-3.5 w-3.5" />
+            Odhlásit se
+          </button>
         </div>
       </div>
 

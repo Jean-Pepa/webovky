@@ -21,9 +21,11 @@ function warrantyInfo(it: InventoryItem) {
 export function InventorySection({
   propertyId,
   inventory,
+  editable = true,
 }: {
   propertyId: string;
   inventory: InventoryItem[];
+  editable?: boolean;
 }) {
   const { deleteInventoryItem } = useStore();
 
@@ -41,10 +43,12 @@ export function InventorySection({
           <IconBox className="h-5 w-5 text-teal-700" />
           <h2 className="text-lg font-semibold text-stone-900">Vybavení a materiály</h2>
         </div>
-        <Link href={`/nemovitost/${propertyId}/vybaveni/nove`} className="btn-primary btn-sm">
-          <IconPlus className="h-4 w-4" />
-          Přidat položku
-        </Link>
+        {editable && (
+          <Link href={`/nemovitost/${propertyId}/vybaveni/nove`} className="btn-primary btn-sm">
+            <IconPlus className="h-4 w-4" />
+            Přidat položku
+          </Link>
+        )}
       </div>
       <p className="mt-1 text-sm text-stone-500">
         „Co je v mém domě" — baterie, spotřebiče, podlahy… s cenou, zárukou a doklady.
@@ -60,13 +64,15 @@ export function InventorySection({
             Přidejte třeba kotel, baterii nebo podlahu — ať víte, co kde je, dokdy platí záruka a kde
             je faktura.
           </p>
-          <Link
-            href={`/nemovitost/${propertyId}/vybaveni/nove`}
-            className="btn-primary btn-sm mt-5"
-          >
-            <IconPlus className="h-4 w-4" />
-            Přidat položku
-          </Link>
+          {editable && (
+            <Link
+              href={`/nemovitost/${propertyId}/vybaveni/nove`}
+              className="btn-primary btn-sm mt-5"
+            >
+              <IconPlus className="h-4 w-4" />
+              Přidat položku
+            </Link>
+          )}
         </div>
       ) : (
         <div className="mt-4 grid gap-5 sm:grid-cols-2">
@@ -83,15 +89,18 @@ export function InventorySection({
                           <p className="text-sm font-medium text-stone-800">{it.name}</p>
                           {it.brand && <p className="text-xs text-stone-400">{it.brand}</p>}
                         </div>
-                        <button
-                          onClick={() => {
-                            if (confirm("Smazat položku vybavení?")) deleteInventoryItem(propertyId, it.id);
-                          }}
-                          className="btn-ghost btn-sm shrink-0 text-stone-400 hover:text-red-600"
-                          aria-label="Smazat"
-                        >
-                          <IconTrash className="h-4 w-4" />
-                        </button>
+                        {editable && (
+                          <button
+                            onClick={() => {
+                              if (confirm("Smazat položku vybavení?"))
+                                deleteInventoryItem(propertyId, it.id);
+                            }}
+                            className="btn-ghost btn-sm shrink-0 text-stone-400 hover:text-red-600"
+                            aria-label="Smazat"
+                          >
+                            <IconTrash className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
 
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">

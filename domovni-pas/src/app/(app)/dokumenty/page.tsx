@@ -4,13 +4,15 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { Loading } from "@/components/Loading";
 import { DOCUMENT_CATEGORIES } from "@/lib/enums";
+import { canSeeProperty } from "@/lib/access";
 import { IconFile, IconDownload } from "@/components/Icons";
 
 export default function DocumentsPage() {
-  const { properties, hydrated } = useStore();
+  const { properties, hydrated, role } = useStore();
   if (!hydrated) return <Loading />;
 
-  const withDocs = properties.filter((p) => p.documents.length > 0);
+  const visible = role ? properties.filter((p) => canSeeProperty(p, role)) : [];
+  const withDocs = visible.filter((p) => p.documents.length > 0);
   const total = withDocs.reduce((s, p) => s + p.documents.length, 0);
 
   return (
