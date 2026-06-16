@@ -247,7 +247,12 @@ export default function HomePage() {
       <footer className="border-t border-stone-200 bg-[#f5f1e8] py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 text-sm text-stone-400 sm:flex-row">
           <Logo />
-          <p>© {new Date().getFullYear()} BULO · Pracovní ukázka</p>
+          <div className="flex items-center gap-4">
+            <Link href="/zasady" className="transition hover:text-stone-600">
+              Zásady ochrany osobních údajů
+            </Link>
+            <p>© {new Date().getFullYear()} BULO · Pracovní ukázka</p>
+          </div>
         </div>
       </footer>
     </div>
