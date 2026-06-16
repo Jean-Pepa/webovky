@@ -64,9 +64,9 @@ export default function HomePage() {
           </header>
 
           <div className="mx-auto max-w-4xl px-6 pb-24 pt-16 text-center sm:pt-24">
-            <h1 className="font-display text-3xl uppercase leading-[1.05] tracking-tight sm:text-4xl">
+            <h1 className="font-display text-3xl leading-[1.1] tracking-tight sm:text-4xl">
               {t.hero.title1}
-              <span className="mt-1 block italic text-brass">{t.hero.title2}</span>
+              <span className="mt-1 block text-brass">{t.hero.title2}</span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/80">
               {t.hero.subtitle}
@@ -118,7 +118,7 @@ export default function HomePage() {
       {/* ===== FUNKCE ===== */}
       <section id="funkce" className="mx-auto max-w-6xl px-6 py-20">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-3xl uppercase tracking-tight text-stone-900 sm:text-4xl">
+          <h2 className="font-display text-3xl tracking-tight text-stone-900 sm:text-4xl">
             {t.features.heading}
           </h2>
           <p className="mt-3 text-stone-600">{t.features.sub}</p>
@@ -144,7 +144,7 @@ export default function HomePage() {
       <section id="jak" className="bg-white py-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-display text-3xl uppercase tracking-tight text-stone-900 sm:text-4xl">
+            <h2 className="font-display text-3xl tracking-tight text-stone-900 sm:text-4xl">
               {t.how.heading}
             </h2>
             <p className="mt-3 text-stone-600">{t.how.sub}</p>
@@ -166,7 +166,7 @@ export default function HomePage() {
       {/* ===== PRO KOHO ===== */}
       <section id="proKoho" className="mx-auto max-w-6xl px-6 py-20">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-3xl uppercase tracking-tight text-stone-900 sm:text-4xl">
+          <h2 className="font-display text-3xl tracking-tight text-stone-900 sm:text-4xl">
             {t.who.heading}
           </h2>
         </div>
@@ -189,7 +189,7 @@ export default function HomePage() {
       {/* ===== CTA ===== */}
       <section className="bg-[#184e5a]">
         <div className="mx-auto max-w-4xl px-6 py-16 text-center text-white">
-          <h2 className="font-display text-3xl uppercase tracking-tight sm:text-4xl">{t.cta.title}</h2>
+          <h2 className="font-display text-3xl tracking-tight sm:text-4xl">{t.cta.title}</h2>
           <p className="mx-auto mt-3 max-w-xl text-white/80">{t.cta.sub}</p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
             <Link
