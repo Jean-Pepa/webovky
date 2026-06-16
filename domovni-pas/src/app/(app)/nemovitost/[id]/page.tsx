@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { canSeeProperty, canEditProperty } from "@/lib/access";
 import { Loading } from "@/components/Loading";
 import { BackLink } from "@/components/BackLink";
 import { Badge } from "@/components/ui/Badge";
@@ -21,6 +22,7 @@ import {
   IconMoney,
   IconBuilding,
   IconTrash,
+  IconShield,
 } from "@/components/Icons";
 import { PROPERTY_TYPES } from "@/lib/enums";
 import { addressLine, formatCurrency } from "@/lib/format";
@@ -28,15 +30,17 @@ import { addressLine, formatCurrency } from "@/lib/format";
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { getProperty, hydrated, deleteEntry, deleteDocument, deleteProperty } = useStore();
+  const { getProperty, hydrated, role, deleteEntry, deleteDocument, deleteProperty } = useStore();
 
   if (!hydrated) return <Loading />;
 
   const property = getProperty(id);
-  if (!property) {
+  if (!property || (role && !canSeeProperty(property, role))) {
     return (
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-stone-500">Nemovitost nenalezena.</p>
+        <p className="text-stone-500">
+          {property ? "K této nemovitosti nemáte přístup." : "Nemovitost nenalezena."}
+        </p>
         <Link href="/prehled" className="btn-secondary mt-4">
           Zpět na přehled
         </Link>
@@ -44,12 +48,26 @@ export default function PropertyDetailPage() {
     );
   }
 
+  const editable = role ? canEditProperty(property, role) : false;
+  const lockedByHandover = role === "ARCHITECT" && property.handedOver;
+
   const entries = [...property.entries].sort((a, b) => b.date.localeCompare(a.date));
   const totalCost = property.entries.reduce((s, e) => s + (e.cost ?? 0), 0);
 
   return (
     <div>
       <BackLink href="/prehled">Zpět na přehled</BackLink>
+
+      {!editable && (
+        <div className="mt-4 flex items-start gap-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
+          <IconShield className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+          <p>
+            {lockedByHandover
+              ? "Tento projekt jste předali klientovi — máte ho jen ke čtení."
+              : "Tuto nemovitost máte jen ke čtení."}
+          </p>
+        </div>
+      )}
 
       <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -65,17 +83,21 @@ export default function PropertyDetailPage() {
             <IconFile className="h-4 w-4" />
             Vygenerovat report
           </Link>
-          <Link href={`/nemovitost/${id}/sdileni`} className="btn-secondary btn-sm">
-            <IconShare className="h-4 w-4" />
-            Sdílet
-          </Link>
-          <Link href={`/nemovitost/${id}/prevod`} className="btn-secondary btn-sm">
-            <IconTransfer className="h-4 w-4" />
-            Převést
-          </Link>
-          <Link href={`/nemovitost/${id}/upravit`} className="btn-ghost btn-sm">
-            Upravit
-          </Link>
+          {editable && (
+            <>
+              <Link href={`/nemovitost/${id}/sdileni`} className="btn-secondary btn-sm">
+                <IconShare className="h-4 w-4" />
+                Sdílet
+              </Link>
+              <Link href={`/nemovitost/${id}/prevod`} className="btn-secondary btn-sm">
+                <IconTransfer className="h-4 w-4" />
+                Převést
+              </Link>
+              <Link href={`/nemovitost/${id}/upravit`} className="btn-ghost btn-sm">
+                Upravit
+              </Link>
+            </>
+          )}
         </div>
       </div>
 
@@ -100,10 +122,12 @@ export default function PropertyDetailPage() {
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-stone-900">Historie</h2>
-            <Link href={`/nemovitost/${id}/zaznam/novy`} className="btn-primary btn-sm">
-              <IconPlus className="h-4 w-4" />
-              Přidat záznam
-            </Link>
+            {editable && (
+              <Link href={`/nemovitost/${id}/zaznam/novy`} className="btn-primary btn-sm">
+                <IconPlus className="h-4 w-4" />
+                Přidat záznam
+              </Link>
+            )}
           </div>
 
           {entries.length === 0 ? (
@@ -112,18 +136,26 @@ export default function PropertyDetailPage() {
                 <IconCalendar className="h-6 w-6" />
               </div>
               <p className="mt-4 text-sm font-medium text-stone-800">Zatím žádný záznam</p>
-              <p className="mt-1 max-w-xs text-sm text-stone-500">
-                Přidejte první událost — opravu, revizi, závadu nebo rekonstrukci.
-              </p>
-              <Link href={`/nemovitost/${id}/zaznam/novy`} className="btn-primary btn-sm mt-5">
-                <IconPlus className="h-4 w-4" />
-                Přidat záznam
-              </Link>
+              {editable && (
+                <>
+                  <p className="mt-1 max-w-xs text-sm text-stone-500">
+                    Přidejte první událost — opravu, revizi, závadu nebo rekonstrukci.
+                  </p>
+                  <Link href={`/nemovitost/${id}/zaznam/novy`} className="btn-primary btn-sm mt-5">
+                    <IconPlus className="h-4 w-4" />
+                    Přidat záznam
+                  </Link>
+                </>
+              )}
             </div>
           ) : (
             <ol className="mt-5 space-y-5 border-l-2 border-stone-200 pl-7">
               {entries.map((entry) => (
-                <EntryCard key={entry.id} entry={entry} onDelete={() => deleteEntry(id, entry.id)} />
+                <EntryCard
+                  key={entry.id}
+                  entry={entry}
+                  onDelete={editable ? () => deleteEntry(id, entry.id) : undefined}
+                />
               ))}
             </ol>
           )}
@@ -144,43 +176,53 @@ export default function PropertyDetailPage() {
                 {property.description}
               </p>
             )}
-            <button
-              onClick={() => {
-                if (confirm("Opravdu smazat tuto nemovitost se všemi záznamy?")) {
-                  deleteProperty(id);
-                  router.push("/prehled");
-                }
-              }}
-              className="btn-danger btn-sm mt-4 w-full"
-            >
-              <IconTrash className="h-4 w-4" />
-              Smazat nemovitost
-            </button>
+            {editable && (
+              <button
+                onClick={() => {
+                  if (confirm("Opravdu smazat tuto nemovitost se všemi záznamy?")) {
+                    deleteProperty(id);
+                    router.push("/prehled");
+                  }
+                }}
+                className="btn-danger btn-sm mt-4 w-full"
+              >
+                <IconTrash className="h-4 w-4" />
+                Smazat nemovitost
+              </button>
+            )}
           </section>
 
-          <ReminderSection propertyId={id} reminders={property.reminders} />
+          <ReminderSection propertyId={id} reminders={property.reminders} editable={editable} />
 
           <section className="card p-5">
             <h2 className="text-sm font-semibold text-stone-900">Dokumenty</h2>
             {property.documents.length > 0 ? (
               <ul className="mt-1 divide-y divide-stone-100">
                 {property.documents.map((doc) => (
-                  <DocumentRow key={doc.id} doc={doc} onDelete={() => deleteDocument(id, doc.id)} />
+                  <DocumentRow
+                    key={doc.id}
+                    doc={doc}
+                    onDelete={editable ? () => deleteDocument(id, doc.id) : undefined}
+                  />
                 ))}
               </ul>
             ) : (
               <p className="mt-2 text-sm text-stone-500">
-                Zatím žádné dokumenty. Nahrajte projekt, energetický štítek nebo certifikáty.
+                {editable
+                  ? "Zatím žádné dokumenty. Nahrajte projekt, energetický štítek nebo certifikáty."
+                  : "Zatím žádné dokumenty."}
               </p>
             )}
-            <div className="mt-4 border-t border-stone-100 pt-4">
-              <DocumentUploadForm propertyId={id} />
-            </div>
+            {editable && (
+              <div className="mt-4 border-t border-stone-100 pt-4">
+                <DocumentUploadForm propertyId={id} />
+              </div>
+            )}
           </section>
         </div>
       </div>
 
-      <InventorySection propertyId={id} inventory={property.inventory} />
+      <InventorySection propertyId={id} inventory={property.inventory} editable={editable} />
     </div>
   );
 }

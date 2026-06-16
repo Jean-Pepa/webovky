@@ -7,6 +7,7 @@ import { Loading } from "@/components/Loading";
 import { IconPlus, IconHome, IconCalendar } from "@/components/Icons";
 import { dueStatus } from "@/lib/format";
 import { REMINDER_TYPES } from "@/lib/enums";
+import { canSeeProperty } from "@/lib/access";
 
 function plural(n: number) {
   if (n === 1) return "nemovitost";
@@ -15,10 +16,11 @@ function plural(n: number) {
 }
 
 export default function DashboardPage() {
-  const { properties, hydrated } = useStore();
+  const { properties, hydrated, role } = useStore();
   if (!hydrated) return <Loading />;
 
-  const upcoming = properties
+  const visible = role ? properties.filter((p) => canSeeProperty(p, role)) : [];
+  const upcoming = visible
     .flatMap((p) => p.reminders.filter((r) => !r.done).map((r) => ({ r, p })))
     .sort((a, b) => a.r.dueDate.localeCompare(b.r.dueDate))
     .slice(0, 6);
@@ -29,8 +31,8 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-stone-900">Moje nemovitosti</h1>
           <p className="mt-1 text-sm text-stone-500">
-            {properties.length > 0
-              ? `Spravujete ${properties.length} ${plural(properties.length)}.`
+            {visible.length > 0
+              ? `Spravujete ${visible.length} ${plural(visible.length)}.`
               : "Zatím nemáte žádnou nemovitost."}
           </p>
         </div>
@@ -81,7 +83,7 @@ export default function DashboardPage() {
         </section>
       )}
 
-      {properties.length === 0 ? (
+      {visible.length === 0 ? (
         <div className="card mt-8 flex flex-col items-center px-6 py-16 text-center">
           <div className="grid h-16 w-16 place-items-center rounded-2xl bg-teal-50 text-teal-700">
             <IconHome className="h-8 w-8" />
@@ -98,7 +100,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {properties.map((p) => (
+          {visible.map((p) => (
             <PropertyCard key={p.id} property={p} />
           ))}
         </div>
