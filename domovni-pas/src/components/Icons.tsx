@@ -182,6 +182,17 @@ export function IconChevronDown(p: IconProps) {
   );
 }
 
+export function IconChart(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M3 3v18h18" />
+      <rect x="7" y="12" width="3" height="5" />
+      <rect x="12.5" y="8" width="3" height="9" />
+      <rect x="18" y="5" width="3" height="12" />
+    </svg>
+  );
+}
+
 export function IconCheck(p: IconProps) {
   return (
     <svg {...base} {...p}>
