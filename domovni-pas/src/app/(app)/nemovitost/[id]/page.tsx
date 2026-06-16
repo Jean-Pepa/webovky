@@ -14,6 +14,7 @@ import { ReminderSection } from "@/components/ReminderSection";
 import { InventorySection } from "@/components/InventorySection";
 import { ConsultationSection } from "@/components/ConsultationSection";
 import { DesignSection } from "@/components/DesignSection";
+import { ArchHistorySection } from "@/components/ArchHistorySection";
 import { ProjectCard } from "@/components/ProjectCard";
 import {
   IconPlus,
@@ -140,6 +141,12 @@ export default function PropertyDetailPage() {
       </div>
 
       <ProjectCard property={property} className="mt-6" />
+
+      <ArchHistorySection
+        propertyId={id}
+        milestones={property.milestones ?? []}
+        editable={editable}
+      />
 
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">

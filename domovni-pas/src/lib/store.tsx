@@ -79,10 +79,14 @@ export type Property = {
   yearBuilt?: number;
   description?: string;
   investor?: string;
-  floorArea?: number; // m²
+  floorArea?: number; // m² (užitná plocha)
   energyClass?: string; // A–G
-  architect?: string;
+  architect?: string; // autor projektu
   contractors?: string; // kontakty na dodavatele (řádky)
+  designer?: string; // projektant
+  constructionSystem?: string; // konstrukční systém
+  builtUpArea?: number; // zastavěná plocha m²
+  materials?: string; // hlavní materiály
   createdByRole?: Role; // kdo pas vytvořil
   handedOver?: boolean; // architekt předal klientovi → pro architekta jen ke čtení
   ownerName: string;
@@ -95,6 +99,7 @@ export type Property = {
   consultations?: ConsultationNote[];
   bids?: ContractorBid[];
   designs?: DesignProposal[];
+  milestones?: ArchMilestone[];
   createdAt: string;
   updatedAt: string;
 };
@@ -114,6 +119,10 @@ export type PropertyInput = {
   energyClass?: string;
   architect?: string;
   contractors?: string;
+  designer?: string;
+  constructionSystem?: string;
+  builtUpArea?: number;
+  materials?: string;
 };
 
 export type EntryInput = {
@@ -205,6 +214,15 @@ export type DesignProposal = {
   createdAt: string;
 };
 
+// Architektonická historie — „životopis stavby" (milníky v čase)
+export type ArchMilestone = {
+  id: string;
+  year: number;
+  title: string;
+  note?: string;
+  createdAt: string;
+};
+
 // Vybavení a materiály v domě – „Co je v mém domě" (baterie, kotel, podlaha…)
 export type InventoryItem = {
   id: string;
@@ -261,6 +279,8 @@ type Store = {
   setBidStatus: (propertyId: string, bidId: string, status: BidStatus) => void;
   addDesign: (propertyId: string, data: { title: string; note?: string; media: Media[] }) => void;
   deleteDesign: (propertyId: string, designId: string) => void;
+  addMilestone: (propertyId: string, data: { year: number; title: string; note?: string }) => void;
+  deleteMilestone: (propertyId: string, milestoneId: string) => void;
   transferProperty: (propertyId: string, toName: string, note?: string) => void;
   setShare: (propertyId: string, enabled: boolean) => void;
   role: Role | null;
@@ -317,6 +337,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             consultations: p.consultations ?? [],
             bids: p.bids ?? [],
             designs: p.designs ?? [],
+            milestones: p.milestones ?? [],
           })),
         );
       } else {
@@ -385,6 +406,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         consultations: [],
         bids: [],
         designs: [],
+        milestones: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -413,6 +435,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         consultations: [],
         bids: [],
         designs: [],
+        milestones: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -445,6 +468,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         consultations: p.consultations ?? [],
         bids: p.bids ?? [],
         designs: p.designs ?? [],
+        milestones: p.milestones ?? [],
       })),
     );
   }, []);
@@ -655,6 +679,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const addMilestone = useCallback(
+    (propertyId: string, data: { year: number; title: string; note?: string }) => {
+      const m: ArchMilestone = { ...data, id: newId(), createdAt: now() };
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? { ...p, milestones: [...(p.milestones ?? []), m], updatedAt: now() }
+            : p,
+        ),
+      );
+    },
+    [],
+  );
+
+  const deleteMilestone = useCallback((propertyId: string, milestoneId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, milestones: (p.milestones ?? []).filter((m) => m.id !== milestoneId) }
+          : p,
+      ),
+    );
+  }, []);
+
   // Převod vlastnictví – jádro hodnoty (přenositelnost). V ukázce zaznamená předání
   // a přepíše jméno vlastníka; auditní stopa zůstává v transfers.
   const transferProperty = useCallback((propertyId: string, toName: string, note?: string) => {
@@ -742,6 +790,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setBidStatus,
     addDesign,
     deleteDesign,
+    addMilestone,
+    deleteMilestone,
     transferProperty,
     setShare,
     role,
@@ -780,6 +830,10 @@ function seed(): Property[] {
       architect: "Ateliér Kořínek",
       contractors:
         "Stavební firma: Stavby Novák s.r.o. (777 123 456)\nElektro: Jan Dvořák (605 987 654)\nVoda a topení: TermoInstal (775 222 333)",
+      designer: "Ing. Petr Malý (statika)",
+      constructionSystem: "Zděný (Porotherm), železobetonové stropy",
+      builtUpArea: 110,
+      materials: "Cihla Porotherm, minerální zateplení, betonová krytina, dřevěná eurookna",
       ownerName: "Jana Nováková",
       shareEnabled: false,
       createdByRole: "CLIENT",
@@ -866,6 +920,13 @@ function seed(): Property[] {
         { id: "s-i2", name: "Plynový kotel", location: "Kotelna", brand: "Model XYZ", warrantyUntil: "2027-10-12", note: "Servis 2025, další revize 2027" },
         { id: "s-i3", name: "Střešní krytina", location: "Střecha", brand: "Krytina ABC", note: "Montáž 2024" },
         { id: "s-i4", name: "Dřevěná podlaha", location: "Obývací pokoj", brand: "Kährs dub", price: 48000, warrantyUntil: "2030-06-15" },
+      ],
+      milestones: [
+        { id: "m-1", year: 2008, title: "Návrh domu", note: "Studie a projektová dokumentace.", createdAt: "2024-01-01" },
+        { id: "m-2", year: 2009, title: "Realizace stavby", note: "Hrubá stavba a dokončení.", createdAt: "2024-01-01" },
+        { id: "m-3", year: 2018, title: "Výměna plynového kotle", createdAt: "2024-01-01" },
+        { id: "m-4", year: 2024, title: "Rekonstrukce koupelny v patře", createdAt: "2024-01-01" },
+        { id: "m-5", year: 2025, title: "Oprava oplechování střešního okna", createdAt: "2024-01-01" },
       ],
       createdAt: "2024-01-01",
       updatedAt: "2025-11-20",
