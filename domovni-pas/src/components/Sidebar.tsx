@@ -23,6 +23,7 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   CLIENT: [
     { href: "/prehled", label: "Moje nemovitosti", icon: IconHome },
     { href: "/kalendar", label: "Záruky a revize", icon: IconShield },
+    { href: "/statistiky", label: "Statistiky", icon: IconChart },
     { href: "/pripominky", label: "Připomínky", icon: IconCalendar },
     { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
   ],
@@ -57,14 +58,26 @@ export function Sidebar() {
         </Link>
       </div>
 
-      {/* Role */}
-      <div className="flex items-center justify-center gap-3 px-2 pb-4 pt-4 lg:justify-start lg:px-5">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-teal-700 text-sm font-semibold text-white">
-          {role ? ROLE_INITIALS[role] : "—"}
-        </span>
-        <p className="hidden min-w-0 flex-1 truncate text-sm font-medium text-stone-800 lg:block">
-          {role ? ROLE_LABELS[role] : "BULO"}
-        </p>
+      {/* Účet (role) — odkaz na nastavení */}
+      <div className="px-2 py-3 lg:px-3">
+        <Link
+          href="/ucet"
+          title="Nastavení účtu"
+          className={`flex items-center justify-center gap-3 rounded-lg p-2 transition hover:bg-stone-100 lg:justify-start ${
+            isActive("/ucet") ? "bg-teal-50" : ""
+          }`}
+        >
+          <span
+            className={`grid h-9 w-9 shrink-0 place-items-center rounded-full bg-teal-700 text-sm font-semibold text-white ${
+              isActive("/ucet") ? "ring-2 ring-teal-300 ring-offset-2 ring-offset-white" : ""
+            }`}
+          >
+            {role ? ROLE_INITIALS[role] : "—"}
+          </span>
+          <p className="hidden min-w-0 flex-1 truncate text-sm font-medium text-stone-800 lg:block">
+            {role ? ROLE_LABELS[role] : "BULO"}
+          </p>
+        </Link>
       </div>
 
       {/* Navigace */}
