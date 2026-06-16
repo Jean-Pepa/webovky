@@ -102,6 +102,40 @@ export default function ReportPage() {
           <Fact label="Vlastník" value={property.ownerName} />
         </dl>
 
+        {(property.investor ||
+          property.architect ||
+          property.floorArea != null ||
+          property.energyClass ||
+          property.contractors) && (
+          <>
+            <h2 className="mt-8 text-lg font-semibold text-stone-900">Projektová karta</h2>
+            <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+              {property.investor && <Fact label="Investor" value={property.investor} />}
+              {property.architect && <Fact label="Architekt" value={property.architect} />}
+              {property.floorArea != null && (
+                <Fact label="Plocha" value={`${property.floorArea} m²`} />
+              )}
+              {property.energyClass && (
+                <Fact label="Energetická třída" value={property.energyClass} />
+              )}
+            </dl>
+            {property.contractors && (
+              <div className="mt-3 text-sm">
+                <p className="text-xs text-stone-400">Kontakty na dodavatele</p>
+                <ul className="mt-1 space-y-0.5 text-stone-700">
+                  {property.contractors
+                    .split("\n")
+                    .map((l) => l.trim())
+                    .filter(Boolean)
+                    .map((line, i) => (
+                      <li key={i}>{line}</li>
+                    ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
+
         {/* Náklady podle kategorie */}
         {costRows.length > 0 && (
           <>

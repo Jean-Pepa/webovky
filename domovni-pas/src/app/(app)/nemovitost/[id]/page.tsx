@@ -11,6 +11,7 @@ import { DocumentRow } from "@/components/DocumentRow";
 import { DocumentUploadForm } from "@/components/forms/DocumentUploadForm";
 import { ReminderSection } from "@/components/ReminderSection";
 import { InventorySection } from "@/components/InventorySection";
+import { ProjectCard } from "@/components/ProjectCard";
 import {
   IconPlus,
   IconShare,
@@ -92,6 +93,8 @@ export default function PropertyDetailPage() {
           value={property.yearBuilt ? String(property.yearBuilt) : "—"}
         />
       </div>
+
+      <ProjectCard property={property} className="mt-6" />
 
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">

@@ -11,6 +11,7 @@ import {
   IconPlus,
   IconMenu,
   IconClose,
+  IconBuilding,
 } from "@/components/Icons";
 
 const NAV = [
@@ -63,7 +64,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-3">
+      <div className="space-y-2 p-3">
         <Link
           href="/nemovitost/zalozit"
           onClick={() => setOpen(false)}
@@ -71,6 +72,14 @@ export function Sidebar() {
         >
           <IconPlus className="h-4 w-4" />
           Založit pas
+        </Link>
+        <Link
+          href="/projekt/novy"
+          onClick={() => setOpen(false)}
+          className="btn-secondary w-full"
+        >
+          <IconBuilding className="h-4 w-4" />
+          Předat projekt
         </Link>
       </div>
     </>
