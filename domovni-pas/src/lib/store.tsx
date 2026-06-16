@@ -1,7 +1,20 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { newId } from "./id";
+
+// Sdílený „pas" pro server — bez datových příloh (dataUrl), ať je payload malý.
+function toShareSnapshot(p: Property): Property {
+  return {
+    ...p,
+    documents: p.documents.map((d) => ({ ...d, dataUrl: undefined })),
+    entries: p.entries.map((e) => ({
+      ...e,
+      media: e.media.map((m) => ({ ...m, dataUrl: undefined })),
+    })),
+    inventory: p.inventory.map((i) => ({ ...i, dataUrl: undefined })),
+  };
+}
 
 export type Role = "ARCHITECT" | "CLIENT" | "CREATOR";
 
@@ -245,6 +258,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(KEY, JSON.stringify(properties));
     } catch {
       // localStorage může být plný (velké obrázky) – v ukázce ignorujeme
+    }
+  }, [properties, hydrated]);
+
+  // Synchronizace sdílených pasů na server (aby QR/odkaz fungoval pro kohokoli).
+  // Bez nakonfigurovaného backendu API vrátí 503 a tichounce se ignoruje.
+  const publishedRef = useRef<Record<string, string>>({});
+  useEffect(() => {
+    if (!hydrated) return;
+    for (const p of properties) {
+      if (!p.shareEnabled) continue;
+      const json = JSON.stringify(toShareSnapshot(p));
+      if (publishedRef.current[p.id] === json) continue;
+      publishedRef.current[p.id] = json;
+      fetch(`/api/passport/${p.id}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: json,
+      }).catch(() => {});
+    }
+    for (const id of Object.keys(publishedRef.current)) {
+      const prop = properties.find((p) => p.id === id);
+      if (!prop || !prop.shareEnabled) {
+        delete publishedRef.current[id];
+        fetch(`/api/passport/${id}`, { method: "DELETE" }).catch(() => {});
+      }
     }
   }, [properties, hydrated]);
 

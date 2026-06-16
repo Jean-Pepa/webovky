@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { useStore } from "@/lib/store";
+import { useStore, type Property } from "@/lib/store";
 import { Loading } from "@/components/Loading";
 import { Logo } from "@/components/Logo";
 import { Badge } from "@/components/ui/Badge";
@@ -14,12 +15,26 @@ import { addressLine, formatCurrency } from "@/lib/format";
 export default function SharedPage() {
   const { id } = useParams<{ id: string }>();
   const { getProperty, hydrated } = useStore();
+  const [server, setServer] = useState<Property | null | undefined>(undefined);
 
-  if (!hydrated) return <Loading />;
+  // Nejdřív zkusíme server (funguje pro kohokoli); jinak fallback na tento prohlížeč.
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/passport/${id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => alive && setServer((d as Property) ?? null))
+      .catch(() => alive && setServer(null));
+    return () => {
+      alive = false;
+    };
+  }, [id]);
 
-  const property = getProperty(id);
+  if (server === undefined || !hydrated) return <Loading />;
 
-  if (!property || !property.shareEnabled) {
+  const local = getProperty(id);
+  const property = server ?? (local && local.shareEnabled ? local : null);
+
+  if (!property) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
         <div className="grid h-14 w-14 place-items-center rounded-2xl bg-stone-100 text-stone-400">
