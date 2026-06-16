@@ -14,6 +14,7 @@ function toShareSnapshot(p: Property): Property {
     })),
     inventory: p.inventory.map((i) => ({ ...i, dataUrl: undefined })),
     consultations: [], // interní konzultace nesdílíme veřejně
+    bids: [], // nabídky firem jsou interní
   };
 }
 
@@ -91,6 +92,7 @@ export type Property = {
   transfers: TransferRecord[];
   inventory: InventoryItem[];
   consultations?: ConsultationNote[];
+  bids?: ContractorBid[];
   createdAt: string;
   updatedAt: string;
 };
@@ -156,12 +158,39 @@ export type TransferRecord = {
 };
 
 // Průběžné konzultace architekta s klientem (vlákno poznámek/dotazů)
+export type ConsultationStatus = "OPEN" | "WAITING" | "RESOLVED";
+
 export type ConsultationNote = {
   id: string;
   authorRole: Role;
   topic?: string;
   text: string;
+  status?: ConsultationStatus;
   createdAt: string;
+};
+
+// Výběr stavební firmy — poptávky a nabídky dodavatelů
+export type BidStatus = "REQUESTED" | "RECEIVED" | "SELECTED" | "REJECTED";
+
+export type ContractorBid = {
+  id: string;
+  company: string;
+  contact?: string;
+  price?: number;
+  durationWeeks?: number;
+  rating?: number; // 1–5
+  note?: string;
+  status: BidStatus;
+  createdAt: string;
+};
+
+export type ContractorBidInput = {
+  company: string;
+  contact?: string;
+  price?: number;
+  durationWeeks?: number;
+  rating?: number;
+  note?: string;
 };
 
 // Vybavení a materiály v domě – „Co je v mém domě" (baterie, kotel, podlaha…)
@@ -214,6 +243,10 @@ type Store = {
   deleteInventoryItem: (propertyId: string, itemId: string) => void;
   addConsultation: (propertyId: string, data: { topic?: string; text: string }) => void;
   deleteConsultation: (propertyId: string, noteId: string) => void;
+  setConsultationStatus: (propertyId: string, noteId: string, status: ConsultationStatus) => void;
+  addBid: (propertyId: string, data: ContractorBidInput) => void;
+  deleteBid: (propertyId: string, bidId: string) => void;
+  setBidStatus: (propertyId: string, bidId: string, status: BidStatus) => void;
   transferProperty: (propertyId: string, toName: string, note?: string) => void;
   setShare: (propertyId: string, enabled: boolean) => void;
   role: Role | null;
@@ -268,6 +301,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             transfers: p.transfers ?? [],
             inventory: p.inventory ?? [],
             consultations: p.consultations ?? [],
+            bids: p.bids ?? [],
           })),
         );
       } else {
@@ -334,6 +368,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         transfers: [],
         inventory: [],
         consultations: [],
+        bids: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -360,6 +395,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         transfers: [],
         inventory: [],
         consultations: [],
+        bids: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -390,6 +426,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         transfers: p.transfers ?? [],
         inventory: p.inventory ?? [],
         consultations: p.consultations ?? [],
+        bids: p.bids ?? [],
       })),
     );
   }, []);
@@ -500,6 +537,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         authorRole: role ?? "CLIENT",
         topic: data.topic,
         text: data.text,
+        status: "OPEN",
         createdAt: now(),
       };
       setProperties((prev) =>
@@ -518,6 +556,51 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       prev.map((p) =>
         p.id === propertyId
           ? { ...p, consultations: (p.consultations ?? []).filter((c) => c.id !== noteId) }
+          : p,
+      ),
+    );
+  }, []);
+
+  const setConsultationStatus = useCallback(
+    (propertyId: string, noteId: string, status: ConsultationStatus) => {
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? {
+                ...p,
+                consultations: (p.consultations ?? []).map((c) =>
+                  c.id === noteId ? { ...c, status } : c,
+                ),
+              }
+            : p,
+        ),
+      );
+    },
+    [],
+  );
+
+  const addBid = useCallback((propertyId: string, data: ContractorBidInput) => {
+    const bid: ContractorBid = { ...data, id: newId(), status: "RECEIVED", createdAt: now() };
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, bids: [...(p.bids ?? []), bid], updatedAt: now() } : p,
+      ),
+    );
+  }, []);
+
+  const deleteBid = useCallback((propertyId: string, bidId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, bids: (p.bids ?? []).filter((b) => b.id !== bidId) } : p,
+      ),
+    );
+  }, []);
+
+  const setBidStatus = useCallback((propertyId: string, bidId: string, status: BidStatus) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, bids: (p.bids ?? []).map((b) => (b.id === bidId ? { ...b, status } : b)) }
           : p,
       ),
     );
@@ -604,6 +687,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteInventoryItem,
     addConsultation,
     deleteConsultation,
+    setConsultationStatus,
+    addBid,
+    deleteBid,
+    setBidStatus,
     transferProperty,
     setShare,
     role,
@@ -858,6 +945,7 @@ function seed(): Property[] {
           authorRole: "ARCHITECT",
           topic: "Studie — dispozice",
           text: "Posílám upravenou studii s otevřenou dispozicí přízemí a posunutým schodištěm. Prosím o připomínky.",
+          status: "RESOLVED",
           createdAt: "2026-02-18",
         },
         {
@@ -865,6 +953,7 @@ function seed(): Property[] {
           authorRole: "CLIENT",
           topic: "Studie — dispozice",
           text: "Děkujeme, vypadá to skvěle. Šlo by zvětšit spíž a přidat okno do koupelny?",
+          status: "RESOLVED",
           createdAt: "2026-02-21",
         },
         {
@@ -872,8 +961,14 @@ function seed(): Property[] {
           authorRole: "ARCHITECT",
           topic: "Materiály fasády",
           text: "K fasádě navrhuji kombinaci omítky a dřevěného obkladu. Vzorky ukážu na příští schůzce.",
+          status: "WAITING",
           createdAt: "2026-03-10",
         },
+      ],
+      bids: [
+        { id: "b-1", company: "Stavby Novák s.r.o.", contact: "777 123 456", price: 9850000, durationWeeks: 52, rating: 4, note: "Reference v okolí, dobrá komunikace.", status: "RECEIVED", createdAt: "2026-03-15" },
+        { id: "b-2", company: "Bau Beroun s.r.o.", contact: "604 222 333", price: 9200000, durationWeeks: 60, rating: 5, note: "Nejlepší cena, delší termín.", status: "SELECTED", createdAt: "2026-03-18" },
+        { id: "b-3", company: "RychláStavba a.s.", contact: "608 999 111", price: 11200000, durationWeeks: 40, rating: 3, note: "Rychlý termín, vyšší cena.", status: "REJECTED", createdAt: "2026-03-20" },
       ],
       createdAt: "2026-01-10",
       updatedAt: "2026-04-15",

@@ -1,10 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { useStore, type ConsultationNote } from "@/lib/store";
+import { useStore, type ConsultationNote, type ConsultationStatus } from "@/lib/store";
 import { ROLE_LABELS, ROLE_INITIALS } from "@/lib/access";
 import { formatDate } from "@/lib/format";
 import { IconUsers, IconPlus, IconTrash } from "@/components/Icons";
+
+const STATUS_TEXT: Record<ConsultationStatus, string> = {
+  OPEN: "text-stone-500",
+  WAITING: "text-amber-600",
+  RESOLVED: "text-emerald-600",
+};
+const STATUS_CARD: Record<ConsultationStatus, string> = {
+  OPEN: "border-stone-200",
+  WAITING: "border-amber-200 bg-amber-50/30",
+  RESOLVED: "border-emerald-200 bg-emerald-50/30",
+};
 
 export function ConsultationSection({
   propertyId,
@@ -13,7 +24,7 @@ export function ConsultationSection({
   propertyId: string;
   consultations: ConsultationNote[];
 }) {
-  const { addConsultation, deleteConsultation, role } = useStore();
+  const { addConsultation, deleteConsultation, setConsultationStatus, role } = useStore();
   const [open, setOpen] = useState(false);
 
   const sorted = [...consultations].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -69,38 +80,55 @@ export function ConsultationSection({
 
       {sorted.length > 0 ? (
         <ul className="mt-3 space-y-3">
-          {sorted.map((c) => (
-            <li key={c.id} className="rounded-xl border border-stone-200 p-3.5">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-teal-700 text-[11px] font-semibold text-white">
-                    {ROLE_INITIALS[c.authorRole]}
-                  </span>
-                  <div>
-                    <p className="text-sm font-medium text-stone-800">
-                      {ROLE_LABELS[c.authorRole]}
-                    </p>
-                    <p className="text-xs text-stone-400">
-                      {formatDate(c.createdAt)}
-                      {c.topic ? ` · ${c.topic}` : ""}
-                    </p>
+          {sorted.map((c) => {
+            const status = c.status ?? "OPEN";
+            return (
+              <li key={c.id} className={`rounded-xl border p-3.5 ${STATUS_CARD[status]}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-teal-700 text-[11px] font-semibold text-white">
+                      {ROLE_INITIALS[c.authorRole]}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-stone-800">
+                        {ROLE_LABELS[c.authorRole]}
+                      </p>
+                      <p className="text-xs text-stone-400">
+                        {formatDate(c.createdAt)}
+                        {c.topic ? ` · ${c.topic}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <select
+                      value={status}
+                      onChange={(e) =>
+                        setConsultationStatus(propertyId, c.id, e.target.value as ConsultationStatus)
+                      }
+                      className={`rounded-md border border-stone-200 bg-white px-2 py-1 text-xs font-medium ${STATUS_TEXT[status]}`}
+                      aria-label="Stav konzultace"
+                    >
+                      <option value="OPEN">Otevřeno</option>
+                      <option value="WAITING">Čeká na klienta</option>
+                      <option value="RESOLVED">Vyřešeno</option>
+                    </select>
+                    <button
+                      onClick={() => {
+                        if (confirm("Smazat konzultaci?")) deleteConsultation(propertyId, c.id);
+                      }}
+                      className="btn-ghost btn-sm text-stone-400 hover:text-red-600"
+                      aria-label="Smazat"
+                    >
+                      <IconTrash className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    if (confirm("Smazat konzultaci?")) deleteConsultation(propertyId, c.id);
-                  }}
-                  className="btn-ghost btn-sm text-stone-400 hover:text-red-600"
-                  aria-label="Smazat"
-                >
-                  <IconTrash className="h-4 w-4" />
-                </button>
-              </div>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-stone-700">
-                {c.text}
-              </p>
-            </li>
-          ))}
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-stone-700">
+                  {c.text}
+                </p>
+              </li>
+            );
+          })}
         </ul>
       ) : (
         !open && (

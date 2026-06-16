@@ -24,6 +24,7 @@ import {
   IconBuilding,
   IconTrash,
   IconShield,
+  IconWrench,
 } from "@/components/Icons";
 import { PROPERTY_TYPES } from "@/lib/enums";
 import { addressLine, formatCurrency } from "@/lib/format";
@@ -94,6 +95,12 @@ export default function PropertyDetailPage() {
             <IconMoney className="h-4 w-4" />
             Rozpočet
           </Link>
+          {(role === "ARCHITECT" || role === "CREATOR") && (
+            <Link href={`/nemovitost/${id}/firmy`} className="btn-secondary btn-sm">
+              <IconWrench className="h-4 w-4" />
+              Výběr firmy
+            </Link>
+          )}
           {editable && (
             <>
               <Link href={`/nemovitost/${id}/prodej`} className="btn-secondary btn-sm">
