@@ -68,7 +68,7 @@ const cs: Dict = {
     enter: "Vstoupit do aplikace",
     architect: "Jsem architekt",
     chip1: "Pro majitele, architekty i kupující",
-    chip2: "Jako CarVertical — ale pro dům či byt",
+    chip2: "4 329+ domů",
   },
   features: {
     heading: "Všechno o vašem domě na jednom místě",
@@ -143,7 +143,7 @@ const sk: Dict = {
     enter: "Vstúpiť do aplikácie",
     architect: "Som architekt",
     chip1: "Pre majiteľov, architektov aj kupujúcich",
-    chip2: "Ako CarVertical — ale pre dom či byt",
+    chip2: "4 329+ domov",
   },
   features: {
     heading: "Všetko o vašom dome na jednom mieste",
@@ -218,7 +218,7 @@ const pl: Dict = {
     enter: "Wejdź do aplikacji",
     architect: "Jestem architektem",
     chip1: "Dla właścicieli, architektów i kupujących",
-    chip2: "Jak CarVertical — ale dla domu lub mieszkania",
+    chip2: "4 329+ domów",
   },
   features: {
     heading: "Wszystko o Twoim domu w jednym miejscu",
@@ -293,7 +293,7 @@ const en: Dict = {
     enter: "Enter the app",
     architect: "I'm an architect",
     chip1: "For owners, architects and buyers",
-    chip2: "Like CarVertical — but for a house or flat",
+    chip2: "4,329+ homes",
   },
   features: {
     heading: "Everything about your home in one place",
@@ -368,7 +368,7 @@ const de: Dict = {
     enter: "Zur App",
     architect: "Ich bin Architekt",
     chip1: "Für Eigentümer, Architekten und Käufer",
-    chip2: "Wie CarVertical — aber für Haus oder Wohnung",
+    chip2: "4.329+ Häuser",
   },
   features: {
     heading: "Alles über Ihr Haus an einem Ort",
