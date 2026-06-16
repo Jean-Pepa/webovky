@@ -50,18 +50,15 @@ export function Sidebar() {
 
   return (
     <aside className="no-print fixed inset-y-0 left-0 z-30 flex w-16 flex-col border-r border-stone-200 bg-white lg:w-64">
-      {/* Logo — kompaktní „B" na mobilu, plné BULO na desktopu */}
-      <div className="flex h-16 shrink-0 items-center justify-center border-b border-stone-100 lg:justify-start lg:px-5">
+      {/* Logo — jen na desktopu (na mobilu je BULO na horní liště) */}
+      <div className="hidden h-16 shrink-0 items-center border-b border-stone-100 px-5 lg:flex">
         <Link href="/prehled" aria-label="BULO">
-          <span className="font-display text-2xl text-[#b5543a] lg:hidden">B</span>
-          <span className="hidden lg:block">
-            <Logo />
-          </span>
+          <Logo />
         </Link>
       </div>
 
       {/* Role */}
-      <div className="flex items-center justify-center gap-3 px-2 py-4 lg:justify-start lg:px-5">
+      <div className="flex items-center justify-center gap-3 px-2 pb-4 pt-4 lg:justify-start lg:px-5">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-teal-700 text-sm font-semibold text-white">
           {role ? ROLE_INITIALS[role] : "—"}
         </span>
