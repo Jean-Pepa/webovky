@@ -13,6 +13,7 @@ import { DocumentUploadForm } from "@/components/forms/DocumentUploadForm";
 import { ReminderSection } from "@/components/ReminderSection";
 import { InventorySection } from "@/components/InventorySection";
 import { ConsultationSection } from "@/components/ConsultationSection";
+import { DesignSection } from "@/components/DesignSection";
 import { ProjectCard } from "@/components/ProjectCard";
 import {
   IconPlus,
@@ -243,6 +244,8 @@ export default function PropertyDetailPage() {
           </section>
         </div>
       </div>
+
+      <DesignSection propertyId={id} designs={property.designs ?? []} editable={editable} />
 
       <InventorySection propertyId={id} inventory={property.inventory} editable={editable} />
 

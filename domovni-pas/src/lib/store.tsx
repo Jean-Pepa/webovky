@@ -15,6 +15,7 @@ function toShareSnapshot(p: Property): Property {
     inventory: p.inventory.map((i) => ({ ...i, dataUrl: undefined })),
     consultations: [], // interní konzultace nesdílíme veřejně
     bids: [], // nabídky firem jsou interní
+    designs: [], // návrhy (velká média) nesdílíme přes server
   };
 }
 
@@ -93,6 +94,7 @@ export type Property = {
   inventory: InventoryItem[];
   consultations?: ConsultationNote[];
   bids?: ContractorBid[];
+  designs?: DesignProposal[];
   createdAt: string;
   updatedAt: string;
 };
@@ -193,6 +195,16 @@ export type ContractorBidInput = {
   note?: string;
 };
 
+// Návrhy — studie a vizualizace, které architekt průběžně nahrává
+export type DesignProposal = {
+  id: string;
+  title: string;
+  note?: string;
+  media: Media[];
+  authorRole: Role;
+  createdAt: string;
+};
+
 // Vybavení a materiály v domě – „Co je v mém domě" (baterie, kotel, podlaha…)
 export type InventoryItem = {
   id: string;
@@ -247,6 +259,8 @@ type Store = {
   addBid: (propertyId: string, data: ContractorBidInput) => void;
   deleteBid: (propertyId: string, bidId: string) => void;
   setBidStatus: (propertyId: string, bidId: string, status: BidStatus) => void;
+  addDesign: (propertyId: string, data: { title: string; note?: string; media: Media[] }) => void;
+  deleteDesign: (propertyId: string, designId: string) => void;
   transferProperty: (propertyId: string, toName: string, note?: string) => void;
   setShare: (propertyId: string, enabled: boolean) => void;
   role: Role | null;
@@ -302,6 +316,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             inventory: p.inventory ?? [],
             consultations: p.consultations ?? [],
             bids: p.bids ?? [],
+            designs: p.designs ?? [],
           })),
         );
       } else {
@@ -369,6 +384,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         inventory: [],
         consultations: [],
         bids: [],
+        designs: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -396,6 +412,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         inventory: [],
         consultations: [],
         bids: [],
+        designs: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -427,6 +444,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         inventory: p.inventory ?? [],
         consultations: p.consultations ?? [],
         bids: p.bids ?? [],
+        designs: p.designs ?? [],
       })),
     );
   }, []);
@@ -606,6 +624,37 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const addDesign = useCallback(
+    (propertyId: string, data: { title: string; note?: string; media: Media[] }) => {
+      const design: DesignProposal = {
+        id: newId(),
+        title: data.title,
+        note: data.note,
+        media: data.media,
+        authorRole: role ?? "ARCHITECT",
+        createdAt: now(),
+      };
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? { ...p, designs: [design, ...(p.designs ?? [])], updatedAt: now() }
+            : p,
+        ),
+      );
+    },
+    [role],
+  );
+
+  const deleteDesign = useCallback((propertyId: string, designId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, designs: (p.designs ?? []).filter((d) => d.id !== designId) }
+          : p,
+      ),
+    );
+  }, []);
+
   // Převod vlastnictví – jádro hodnoty (přenositelnost). V ukázce zaznamená předání
   // a přepíše jméno vlastníka; auditní stopa zůstává v transfers.
   const transferProperty = useCallback((propertyId: string, toName: string, note?: string) => {
@@ -691,6 +740,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     addBid,
     deleteBid,
     setBidStatus,
+    addDesign,
+    deleteDesign,
     transferProperty,
     setShare,
     role,
@@ -969,6 +1020,29 @@ function seed(): Property[] {
         { id: "b-1", company: "Stavby Novák s.r.o.", contact: "777 123 456", price: 9850000, durationWeeks: 52, rating: 4, note: "Reference v okolí, dobrá komunikace.", status: "RECEIVED", createdAt: "2026-03-15" },
         { id: "b-2", company: "Bau Beroun s.r.o.", contact: "604 222 333", price: 9200000, durationWeeks: 60, rating: 5, note: "Nejlepší cena, delší termín.", status: "SELECTED", createdAt: "2026-03-18" },
         { id: "b-3", company: "RychláStavba a.s.", contact: "608 999 111", price: 11200000, durationWeeks: 40, rating: 3, note: "Rychlý termín, vyšší cena.", status: "REJECTED", createdAt: "2026-03-20" },
+      ],
+      designs: [
+        {
+          id: "d-1",
+          title: "Studie — přízemí (v2)",
+          note: "Otevřená dispozice s posunutým schodištěm dle konzultace.",
+          authorRole: "ARCHITECT",
+          media: [
+            { id: "dm-1", name: "studie-prizemi.svg", kind: "image", dataUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iMzIwIj48cmVjdCB3aWR0aD0iNDgwIiBoZWlnaHQ9IjMyMCIgZmlsbD0iIzE4NEU1QSIvPjx0ZXh0IHg9IjI0MCIgeT0iMTcwIiBmb250LXNpemU9IjMwIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+U3R1ZGllIC0gcHJpemVtaTwvdGV4dD48L3N2Zz4=" },
+          ],
+          createdAt: "2026-02-18",
+        },
+        {
+          id: "d-2",
+          title: "Vizualizace fasády + řez",
+          note: "Kombinace omítky a dřevěného obkladu, řez A–A.",
+          authorRole: "ARCHITECT",
+          media: [
+            { id: "dm-2", name: "fasada.svg", kind: "image", dataUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iMzIwIj48cmVjdCB3aWR0aD0iNDgwIiBoZWlnaHQ9IjMyMCIgZmlsbD0iI0I1NTQzQSIvPjx0ZXh0IHg9IjI0MCIgeT0iMTcwIiBmb250LXNpemU9IjMwIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+Vml6dWFsaXphY2UgZmFzYWR5PC90ZXh0Pjwvc3ZnPg==" },
+            { id: "dm-3", name: "rez.svg", kind: "image", dataUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iMzIwIj48cmVjdCB3aWR0aD0iNDgwIiBoZWlnaHQ9IjMyMCIgZmlsbD0iIzJGNUQ1MCIvPjx0ZXh0IHg9IjI0MCIgeT0iMTcwIiBmb250LXNpemU9IjMwIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UmV6IEEtQTwvdGV4dD48L3N2Zz4=" },
+          ],
+          createdAt: "2026-03-10",
+        },
       ],
       createdAt: "2026-01-10",
       updatedAt: "2026-04-15",
