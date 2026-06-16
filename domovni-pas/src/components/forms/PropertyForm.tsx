@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useStore, type Property, type PropertyInput, type PropertyType } from "@/lib/store";
-import { PROPERTY_TYPES } from "@/lib/enums";
+import { PROPERTY_TYPES, ENERGY_CLASSES } from "@/lib/enums";
 
 export function PropertyForm({ initial }: { initial?: Property }) {
   const { createProperty, updateProperty } = useStore();
@@ -21,6 +21,7 @@ export function PropertyForm({ initial }: { initial?: Property }) {
     const name = String(fd.get("name") || "").trim();
     if (!name) return;
     const yb = opt("yearBuilt");
+    const fa = opt("floorArea");
 
     const data: PropertyInput = {
       name,
@@ -32,6 +33,11 @@ export function PropertyForm({ initial }: { initial?: Property }) {
       parcelNumber: opt("parcelNumber"),
       yearBuilt: yb ? Number(yb) : undefined,
       description: opt("description"),
+      investor: opt("investor"),
+      floorArea: fa ? Number(fa) : undefined,
+      energyClass: opt("energyClass"),
+      architect: opt("architect"),
+      contractors: opt("contractors"),
     };
 
     setPending(true);
@@ -142,6 +148,79 @@ export function PropertyForm({ initial }: { initial?: Property }) {
           placeholder="Stručný popis nemovitosti…"
         />
       </div>
+
+      <fieldset className="space-y-4 rounded-xl border border-stone-200 p-4">
+        <legend className="px-1 text-sm font-medium text-stone-600">
+          Projektová karta (volitelné)
+        </legend>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="label" htmlFor="investor">
+              Investor
+            </label>
+            <input
+              id="investor"
+              name="investor"
+              className="input"
+              defaultValue={initial?.investor ?? ""}
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor="architect">
+              Architekt
+            </label>
+            <input
+              id="architect"
+              name="architect"
+              className="input"
+              defaultValue={initial?.architect ?? ""}
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor="floorArea">
+              Plocha (m²)
+            </label>
+            <input
+              id="floorArea"
+              name="floorArea"
+              type="number"
+              min={0}
+              className="input"
+              defaultValue={initial?.floorArea ?? ""}
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor="energyClass">
+              Energetická třída
+            </label>
+            <select
+              id="energyClass"
+              name="energyClass"
+              className="input"
+              defaultValue={initial?.energyClass ?? ""}
+            >
+              <option value="">—</option>
+              {ENERGY_CLASSES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="label" htmlFor="contractors">
+            Kontakty na dodavatele
+          </label>
+          <textarea
+            id="contractors"
+            name="contractors"
+            className="input"
+            defaultValue={initial?.contractors ?? ""}
+            placeholder="Každý dodavatel na nový řádek…"
+          />
+        </div>
+      </fieldset>
 
       <div className="flex gap-3">
         <button type="submit" className="btn-primary" disabled={pending}>

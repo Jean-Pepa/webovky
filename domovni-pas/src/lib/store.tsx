@@ -53,6 +53,11 @@ export type Property = {
   parcelNumber?: string;
   yearBuilt?: number;
   description?: string;
+  investor?: string;
+  floorArea?: number; // m²
+  energyClass?: string; // A–G
+  architect?: string;
+  contractors?: string; // kontakty na dodavatele (řádky)
   ownerName: string;
   shareEnabled: boolean;
   entries: Entry[];
@@ -74,6 +79,11 @@ export type PropertyInput = {
   parcelNumber?: string;
   yearBuilt?: number;
   description?: string;
+  investor?: string;
+  floorArea?: number;
+  energyClass?: string;
+  architect?: string;
+  contractors?: string;
 };
 
 export type EntryInput = {
@@ -439,6 +449,12 @@ function seed(): Property[] {
       parcelNumber: "1284/7",
       yearBuilt: 2009,
       description: "Dvoupodlažní cihlový dům, zateplený, plynový kotel.",
+      investor: "Rodina Nováková",
+      floorArea: 180,
+      energyClass: "B",
+      architect: "Ateliér Kořínek",
+      contractors:
+        "Stavební firma: Stavby Novák s.r.o. (777 123 456)\nElektro: Jan Dvořák (605 987 654)\nVoda a topení: TermoInstal (775 222 333)",
       ownerName: "Jana Nováková",
       shareEnabled: false,
       entries: [

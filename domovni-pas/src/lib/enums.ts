@@ -65,3 +65,6 @@ export const ROOM_SUGGESTIONS = [
   "Zahrada",
   "Terasa",
 ];
+
+// Energetická třída (PENB)
+export const ENERGY_CLASSES = ["A", "B", "C", "D", "E", "F", "G"];
