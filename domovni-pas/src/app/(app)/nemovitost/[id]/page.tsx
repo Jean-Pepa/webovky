@@ -83,6 +83,12 @@ export default function PropertyDetailPage() {
             <IconFile className="h-4 w-4" />
             Vygenerovat report
           </Link>
+          {(role === "ARCHITECT" || role === "CREATOR") && (
+            <Link href={`/nemovitost/${id}/povoleni`} className="btn-secondary btn-sm">
+              <IconBuilding className="h-4 w-4" />
+              Stavební povolení
+            </Link>
+          )}
           {editable && (
             <>
               <Link href={`/nemovitost/${id}/prodej`} className="btn-secondary btn-sm">
