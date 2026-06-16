@@ -64,8 +64,7 @@ export default function HomePage() {
           </header>
 
           <div className="mx-auto max-w-4xl px-6 pb-24 pt-16 text-center sm:pt-24">
-            <p className="text-xs font-semibold tracking-[0.3em] text-white/55">{t.hero.label}</p>
-            <h1 className="mt-5 font-display text-5xl uppercase leading-[1.02] tracking-tight sm:text-7xl">
+            <h1 className="font-display text-3xl uppercase leading-[1.05] tracking-tight sm:text-4xl">
               {t.hero.title1}
               <span className="mt-1 block italic text-brass">{t.hero.title2}</span>
             </h1>
