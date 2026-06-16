@@ -61,10 +61,10 @@ const cs: Dict = {
   nav: { features: "Co umí", how: "Jak to funguje", forWhom: "Pro koho", enter: "Vstoupit do aplikace" },
   hero: {
     label: "BULO.APP",
-    title1: "Vše o vaší nemovitosti",
-    title2: "na jednom místě",
+    title1: "Digitální pas",
+    title2: "vaší nemovitosti",
     subtitle:
-      "Dokumentace, opravy, rekonstrukce, vybavení i fotografie. Digitální historie, která zůstává s nemovitostí po celý její život.",
+      "Dokumentace, opravy, rekonstrukce, vybavení i fotografie. Trvalá historie, která zůstává s nemovitostí po celý její život.",
     enter: "Vstoupit do aplikace",
     architect: "Jsem architekt",
     chip1: "Pro majitele, architekty i kupující",
@@ -76,7 +76,7 @@ const cs: Dict = {
     items: [
       { title: "Přehledná historie", text: "Časová osa všeho — od revize kotle po rekonstrukci koupelny, s fotkami a náklady." },
       { title: "Vybavení a materiály", text: "„Co je v mém domě“ — baterie, kotel, podlahy… s cenou, zárukou a doklady." },
-      { title: "Dokumenty pohromadě", text: "Smlouvy, projekt, energetický štítek, certifikáty a faktury na jednom místě." },
+      { title: "Dokumenty pohromadě", text: "Smlouvy, projekt, energetický štítek, certifikáty i faktury vždy po ruce." },
       { title: "Připomínky", text: "Revize, údržba a záruky — BULO vás upozorní dřív, než vyprší termín." },
       { title: "Převod při prodeji", text: "Celou historii i s reportem předáte novému majiteli jedním krokem." },
       { title: "Report o nemovitosti", text: "Důvěryhodný přehled stavu a péče k tisku či PDF — váš „CarVertical report“." },
@@ -100,7 +100,7 @@ const cs: Dict = {
     ],
   },
   cta: {
-    title: "Začněte vést pas své nemovitosti",
+    title: "Začněte ještě dnes",
     sub: "Zdarma, hned a bez složitého nastavování. Vyzkoušejte ukázku na vlastní nemovitosti.",
     enter: "Vstoupit do aplikace",
     handover: "Předat projekt",
@@ -136,10 +136,10 @@ const sk: Dict = {
   nav: { features: "Čo dokáže", how: "Ako to funguje", forWhom: "Pre koho", enter: "Vstúpiť do aplikácie" },
   hero: {
     label: "BULO.APP",
-    title1: "Všetko o vašej nehnuteľnosti",
-    title2: "na jednom mieste",
+    title1: "Digitálny pas",
+    title2: "vašej nehnuteľnosti",
     subtitle:
-      "Dokumentácia, opravy, rekonštrukcie, vybavenie aj fotografie. Digitálna história, ktorá zostáva s nehnuteľnosťou po celý jej život.",
+      "Dokumentácia, opravy, rekonštrukcie, vybavenie aj fotografie. Trvalá história, ktorá zostáva s nehnuteľnosťou po celý jej život.",
     enter: "Vstúpiť do aplikácie",
     architect: "Som architekt",
     chip1: "Pre majiteľov, architektov aj kupujúcich",
@@ -151,7 +151,7 @@ const sk: Dict = {
     items: [
       { title: "Prehľadná história", text: "Časová os všetkého — od revízie kotla po rekonštrukciu kúpeľne, s fotkami a nákladmi." },
       { title: "Vybavenie a materiály", text: "„Čo je v mojom dome“ — batérie, kotol, podlahy… s cenou, zárukou a dokladmi." },
-      { title: "Dokumenty pohromade", text: "Zmluvy, projekt, energetický štítok, certifikáty a faktúry na jednom mieste." },
+      { title: "Dokumenty pohromade", text: "Zmluvy, projekt, energetický štítok, certifikáty aj faktúry vždy poruke." },
       { title: "Pripomienky", text: "Revízie, údržba a záruky — BULO vás upozorní skôr, než vyprší termín." },
       { title: "Prevod pri predaji", text: "Celú históriu aj s reportom odovzdáte novému majiteľovi jedným krokom." },
       { title: "Report o nehnuteľnosti", text: "Dôveryhodný prehľad stavu a starostlivosti na tlač či PDF — váš „CarVertical report“." },
@@ -175,7 +175,7 @@ const sk: Dict = {
     ],
   },
   cta: {
-    title: "Začnite viesť pas svojej nehnuteľnosti",
+    title: "Začnite ešte dnes",
     sub: "Zadarmo, hneď a bez zložitého nastavovania. Vyskúšajte ukážku na vlastnej nehnuteľnosti.",
     enter: "Vstúpiť do aplikácie",
     handover: "Odovzdať projekt",
@@ -211,10 +211,10 @@ const pl: Dict = {
   nav: { features: "Co potrafi", how: "Jak to działa", forWhom: "Dla kogo", enter: "Wejdź do aplikacji" },
   hero: {
     label: "BULO.APP",
-    title1: "Wszystko o Twojej nieruchomości",
-    title2: "w jednym miejscu",
+    title1: "Cyfrowy paszport",
+    title2: "Twojej nieruchomości",
     subtitle:
-      "Dokumentacja, naprawy, remonty, wyposażenie i zdjęcia. Cyfrowa historia, która zostaje z nieruchomością przez całe jej życie.",
+      "Dokumentacja, naprawy, remonty, wyposażenie i zdjęcia. Trwała historia, która zostaje z nieruchomością przez całe jej życie.",
     enter: "Wejdź do aplikacji",
     architect: "Jestem architektem",
     chip1: "Dla właścicieli, architektów i kupujących",
@@ -226,7 +226,7 @@ const pl: Dict = {
     items: [
       { title: "Przejrzysta historia", text: "Oś czasu wszystkiego — od przeglądu kotła po remont łazienki, ze zdjęciami i kosztami." },
       { title: "Wyposażenie i materiały", text: "„Co jest w moim domu“ — baterie, kocioł, podłogi… z ceną, gwarancją i dokumentami." },
-      { title: "Dokumenty razem", text: "Umowy, projekt, świadectwo energetyczne, certyfikaty i faktury w jednym miejscu." },
+      { title: "Dokumenty razem", text: "Umowy, projekt, świadectwo energetyczne, certyfikaty i faktury zawsze pod ręką." },
       { title: "Przypomnienia", text: "Przeglądy, konserwacja i gwarancje — BULO przypomni, zanim minie termin." },
       { title: "Przekazanie przy sprzedaży", text: "Całą historię wraz z raportem przekażesz nowemu właścicielowi jednym krokiem." },
       { title: "Raport o nieruchomości", text: "Wiarygodny przegląd stanu i dbałości do druku lub PDF — Twój „raport CarVertical“." },
@@ -250,7 +250,7 @@ const pl: Dict = {
     ],
   },
   cta: {
-    title: "Zacznij prowadzić paszport swojej nieruchomości",
+    title: "Zacznij już dziś",
     sub: "Za darmo, od razu i bez skomplikowanej konfiguracji. Wypróbuj demo na własnej nieruchomości.",
     enter: "Wejdź do aplikacji",
     handover: "Przekaż projekt",
@@ -286,10 +286,10 @@ const en: Dict = {
   nav: { features: "Features", how: "How it works", forWhom: "Who it's for", enter: "Enter the app" },
   hero: {
     label: "BULO.APP",
-    title1: "Everything about your property",
-    title2: "in one place",
+    title1: "Digital passport",
+    title2: "for your property",
     subtitle:
-      "Documentation, repairs, renovations, equipment and photos. A digital history that stays with the property for its whole life.",
+      "Documentation, repairs, renovations, equipment and photos. A lasting history that stays with the property for its whole life.",
     enter: "Enter the app",
     architect: "I'm an architect",
     chip1: "For owners, architects and buyers",
@@ -301,7 +301,7 @@ const en: Dict = {
     items: [
       { title: "Clear history", text: "A timeline of everything — from a boiler inspection to a bathroom renovation, with photos and costs." },
       { title: "Equipment and materials", text: "„What's in my home“ — faucets, boiler, floors… with price, warranty and documents." },
-      { title: "Documents together", text: "Contracts, plans, energy certificate, certificates and invoices in one place." },
+      { title: "Documents together", text: "Contracts, plans, energy certificate, certificates and invoices always at hand." },
       { title: "Reminders", text: "Inspections, maintenance and warranties — BULO reminds you before the deadline." },
       { title: "Transfer at sale", text: "Hand over the whole history with a report to the new owner in one step." },
       { title: "Property report", text: "A trustworthy overview of condition and care to print or PDF — your „CarVertical report“." },
@@ -325,7 +325,7 @@ const en: Dict = {
     ],
   },
   cta: {
-    title: "Start keeping your property's passport",
+    title: "Get started today",
     sub: "Free, instantly and with no complex setup. Try the demo on your own property.",
     enter: "Enter the app",
     handover: "Hand over a project",
@@ -361,10 +361,10 @@ const de: Dict = {
   nav: { features: "Funktionen", how: "So funktioniert's", forWhom: "Für wen", enter: "Zur App" },
   hero: {
     label: "BULO.APP",
-    title1: "Alles über Ihre Immobilie",
-    title2: "an einem Ort",
+    title1: "Digitaler Pass",
+    title2: "Ihrer Immobilie",
     subtitle:
-      "Dokumentation, Reparaturen, Renovierungen, Ausstattung und Fotos. Eine digitale Historie, die der Immobilie ein Leben lang erhalten bleibt.",
+      "Dokumentation, Reparaturen, Renovierungen, Ausstattung und Fotos. Eine bleibende Historie, die der Immobilie ein Leben lang erhalten bleibt.",
     enter: "Zur App",
     architect: "Ich bin Architekt",
     chip1: "Für Eigentümer, Architekten und Käufer",
@@ -376,7 +376,7 @@ const de: Dict = {
     items: [
       { title: "Übersichtliche Historie", text: "Eine Zeitleiste von allem — von der Kesselprüfung bis zur Badrenovierung, mit Fotos und Kosten." },
       { title: "Ausstattung und Materialien", text: "„Was ist in meinem Haus“ — Armaturen, Kessel, Böden… mit Preis, Garantie und Belegen." },
-      { title: "Dokumente beisammen", text: "Verträge, Pläne, Energieausweis, Zertifikate und Rechnungen an einem Ort." },
+      { title: "Dokumente beisammen", text: "Verträge, Pläne, Energieausweis, Zertifikate und Rechnungen immer griffbereit." },
       { title: "Erinnerungen", text: "Prüfungen, Wartung und Garantien — BULO erinnert Sie, bevor die Frist abläuft." },
       { title: "Übergabe beim Verkauf", text: "Die gesamte Historie samt Bericht übergeben Sie in einem Schritt dem neuen Eigentümer." },
       { title: "Immobilienbericht", text: "Ein vertrauenswürdiger Überblick über Zustand und Pflege zum Drucken oder als PDF — Ihr „CarVertical-Bericht“." },
@@ -400,7 +400,7 @@ const de: Dict = {
     ],
   },
   cta: {
-    title: "Beginnen Sie, den Pass Ihrer Immobilie zu führen",
+    title: "Starten Sie noch heute",
     sub: "Kostenlos, sofort und ohne komplizierte Einrichtung. Testen Sie die Demo an Ihrer eigenen Immobilie.",
     enter: "Zur App",
     handover: "Projekt übergeben",
