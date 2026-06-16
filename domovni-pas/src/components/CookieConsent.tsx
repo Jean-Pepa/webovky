@@ -27,6 +27,12 @@ export function CookieConsent() {
     }
   }, []);
 
+  useEffect(() => {
+    const openModal = () => setOpen(true);
+    window.addEventListener("bulo-open-cookies", openModal);
+    return () => window.removeEventListener("bulo-open-cookies", openModal);
+  }, []);
+
   function persist(stats: boolean, mkt: boolean) {
     try {
       localStorage.setItem(

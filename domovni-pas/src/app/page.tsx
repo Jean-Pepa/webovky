@@ -210,14 +210,39 @@ export default function HomePage() {
       </section>
 
       {/* ===== FOOTER ===== */}
-      <footer className="border-t border-stone-200 bg-[#faf9f7] py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 text-sm text-stone-400 sm:flex-row">
-          <Logo />
-          <div className="flex items-center gap-4">
-            <Link href="/zasady" className="transition hover:text-stone-600">
+      <footer className="border-t border-stone-200 bg-[#faf9f7]">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <h2 className="max-w-2xl font-display text-3xl leading-tight tracking-tight text-stone-900 sm:text-4xl">
+            {t.footer.tagline}
+          </h2>
+
+          <nav className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-stone-600">
+            <a href="#funkce" className="transition hover:text-[#b5543a]">
+              {t.nav.features}
+            </a>
+            <a href="#jak" className="transition hover:text-[#b5543a]">
+              {t.nav.how}
+            </a>
+            <a href="#proKoho" className="transition hover:text-[#b5543a]">
+              {t.nav.forWhom}
+            </a>
+            <Link href="/zasady" className="transition hover:text-[#b5543a]">
               {t.footer.privacy}
             </Link>
-            <p>© {new Date().getFullYear()} BULO</p>
+            <button
+              onClick={() => window.dispatchEvent(new Event("bulo-open-cookies"))}
+              className="transition hover:text-[#b5543a]"
+            >
+              {t.footer.cookiePrefs}
+            </button>
+          </nav>
+
+          <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-stone-200 pt-6">
+            <div className="flex items-center gap-5">
+              <Logo />
+              <LanguageSwitcher />
+            </div>
+            <p className="text-sm text-stone-400">© {new Date().getFullYear()} BULO</p>
           </div>
         </div>
       </footer>

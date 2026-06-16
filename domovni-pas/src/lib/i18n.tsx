@@ -30,7 +30,7 @@ export type Dict = {
   how: { heading: string; sub: string; steps: Item[] };
   who: { heading: string; items: Item[] };
   cta: { title: string; sub: string; enter: string; handover: string };
-  footer: { privacy: string };
+  footer: { privacy: string; tagline: string; cookiePrefs: string };
   login: {
     title: string;
     sub: string;
@@ -105,7 +105,11 @@ const cs: Dict = {
     enter: "Vstoupit do aplikace",
     handover: "Předat projekt",
   },
-  footer: { privacy: "Zásady ochrany osobních údajů" },
+  footer: {
+    privacy: "Zásady ochrany osobních údajů",
+    tagline: "Digitální historie pro každou nemovitost.",
+    cookiePrefs: "Předvolby cookies",
+  },
   login: {
     title: "Přihlášení",
     sub: "Zadejte heslo pro vstup do BULO.",
@@ -180,7 +184,11 @@ const sk: Dict = {
     enter: "Vstúpiť do aplikácie",
     handover: "Odovzdať projekt",
   },
-  footer: { privacy: "Zásady ochrany osobných údajov" },
+  footer: {
+    privacy: "Zásady ochrany osobných údajov",
+    tagline: "Digitálna história pre každú nehnuteľnosť.",
+    cookiePrefs: "Predvoľby cookies",
+  },
   login: {
     title: "Prihlásenie",
     sub: "Zadajte heslo pre vstup do BULO.",
@@ -255,7 +263,11 @@ const pl: Dict = {
     enter: "Wejdź do aplikacji",
     handover: "Przekaż projekt",
   },
-  footer: { privacy: "Polityka prywatności" },
+  footer: {
+    privacy: "Polityka prywatności",
+    tagline: "Cyfrowa historia dla każdej nieruchomości.",
+    cookiePrefs: "Ustawienia cookies",
+  },
   login: {
     title: "Logowanie",
     sub: "Wpisz hasło, aby wejść do BULO.",
@@ -330,7 +342,11 @@ const en: Dict = {
     enter: "Enter the app",
     handover: "Hand over a project",
   },
-  footer: { privacy: "Privacy policy" },
+  footer: {
+    privacy: "Privacy policy",
+    tagline: "A digital history for every property.",
+    cookiePrefs: "Cookie preferences",
+  },
   login: {
     title: "Sign in",
     sub: "Enter the password to access BULO.",
@@ -405,7 +421,11 @@ const de: Dict = {
     enter: "Zur App",
     handover: "Projekt übergeben",
   },
-  footer: { privacy: "Datenschutzerklärung" },
+  footer: {
+    privacy: "Datenschutzerklärung",
+    tagline: "Eine digitale Historie für jede Immobilie.",
+    cookiePrefs: "Cookie-Einstellungen",
+  },
   login: {
     title: "Anmeldung",
     sub: "Geben Sie das Passwort ein, um BULO zu betreten.",
