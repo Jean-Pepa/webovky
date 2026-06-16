@@ -17,14 +17,19 @@ export default function HomePage() {
     <div className="bg-[#f5f1e8]">
       {/* ===== HERO ===== */}
       <section className="relative overflow-hidden text-white">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1d5e6c] via-[#16454f] to-[#0d2a31]" />
-        <div
-          className="absolute inset-0 opacity-[0.06]"
-          style={{
-            backgroundImage: "radial-gradient(circle at 1px 1px, #ffffff 1px, transparent 0)",
-            backgroundSize: "22px 22px",
-          }}
-        />
+        {/* Video pozadí */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          aria-hidden
+          className="absolute inset-0 h-full w-full object-cover"
+        >
+          <source src="/hero.mp4" type="video/mp4" />
+        </video>
+        {/* Petrolejový overlay pro čitelnost */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0d2a31]/85 via-[#123c45]/72 to-[#0d2a31]/90" />
 
         <div className="relative">
           {/* NAV */}
