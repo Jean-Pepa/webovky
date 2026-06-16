@@ -18,6 +18,9 @@ function toShareSnapshot(p: Property): Property {
 
 export type Role = "ARCHITECT" | "CLIENT" | "CREATOR";
 
+// Branding architekta — zobrazí se na reportu a sdíleném pasu.
+export type Branding = { studioName?: string; color?: string; tagline?: string };
+
 export type PropertyType = "HOUSE" | "APARTMENT" | "OTHER";
 export type EntryType =
   | "PURCHASE"
@@ -203,11 +206,14 @@ type Store = {
   role: Role | null;
   login: (password: string) => boolean;
   logout: () => void;
+  branding: Branding;
+  setBranding: (b: Branding) => void;
 };
 
 const StoreContext = createContext<Store | null>(null);
 const KEY = "domovni-pas-v1";
 const ROLE_KEY = "bulo-role";
+const BRANDING_KEY = "bulo-branding";
 
 // Demo přihlášení – 3 hesla = 3 role. (Změnit lze tady.)
 const PASSWORDS: Record<string, Role> = {
@@ -221,12 +227,19 @@ const now = () => new Date().toISOString();
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [properties, setProperties] = useState<Property[]>([]);
   const [role, setRole] = useState<Role | null>(null);
+  const [branding, setBrandingState] = useState<Branding>({});
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
       const storedRole = localStorage.getItem(ROLE_KEY) as Role | null;
       if (storedRole) setRole(storedRole);
+    } catch {
+      // ignore
+    }
+    try {
+      const b = localStorage.getItem(BRANDING_KEY);
+      if (b) setBrandingState(JSON.parse(b) as Branding);
     } catch {
       // ignore
     }
@@ -515,6 +528,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const setBranding = useCallback((b: Branding) => {
+    setBrandingState(b);
+    try {
+      localStorage.setItem(BRANDING_KEY, JSON.stringify(b));
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const value: Store = {
     properties,
     hydrated,
@@ -538,6 +560,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     role,
     login,
     logout,
+    branding,
+    setBranding,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

@@ -89,6 +89,10 @@ export default function PropertyDetailPage() {
               Stavební povolení
             </Link>
           )}
+          <Link href={`/nemovitost/${id}/rozpocet`} className="btn-secondary btn-sm">
+            <IconMoney className="h-4 w-4" />
+            Rozpočet
+          </Link>
           {editable && (
             <>
               <Link href={`/nemovitost/${id}/prodej`} className="btn-secondary btn-sm">
