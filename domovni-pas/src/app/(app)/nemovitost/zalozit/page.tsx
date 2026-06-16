@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   useStore,
   type DocCategory,
+  type DocSection,
   type DocumentInput,
   type EntryInput,
   type EntryType,
@@ -32,11 +33,11 @@ const EVENT_ENTRY: Record<string, { type: EntryType; title: string } | null> = {
   HISTORIE: null,
 };
 
-const DOC_SLOTS: { key: string; category: DocCategory; title: string; desc: string }[] = [
-  { key: "kupni", category: "CONTRACT", title: "Kupní smlouva", desc: "Smlouva o převodu nemovitosti" },
-  { key: "penb", category: "ENERGY_LABEL", title: "Energetický štítek (PENB)", desc: "Průkaz energetické náročnosti" },
-  { key: "projekt", category: "PLAN", title: "Projektová dokumentace", desc: "Půdorysy, plány, výkresy" },
-  { key: "revize", category: "CERTIFICATE", title: "Revizní zprávy", desc: "Elektro, plyn, komín…" },
+const DOC_SLOTS: { key: string; category: DocCategory; section: DocSection; title: string; desc: string }[] = [
+  { key: "kupni", category: "CONTRACT", section: "POZEMEK", title: "Kupní smlouva", desc: "Smlouva o převodu nemovitosti" },
+  { key: "penb", category: "ENERGY_LABEL", section: "BUDOVA", title: "Energetický štítek (PENB)", desc: "Průkaz energetické náročnosti" },
+  { key: "projekt", category: "PLAN", section: "NAVRH", title: "Projektová dokumentace", desc: "Půdorysy, plány, výkresy" },
+  { key: "revize", category: "CERTIFICATE", section: "BUDOVA", title: "Revizní zprávy", desc: "Elektro, plyn, komín…" },
 ];
 
 const STEPS = ["Událost", "Nemovitost", "Dokumenty", "Fotky převzetí"];
@@ -67,7 +68,7 @@ export default function WizardPage() {
       const file = docFiles[slot.key];
       if (file) {
         const dataUrl = await fileToDataUrl(file);
-        documents.push({ title: slot.title, category: slot.category, fileName: file.name, dataUrl });
+        documents.push({ title: slot.title, category: slot.category, section: slot.section, fileName: file.name, dataUrl });
       }
     }
 

@@ -23,6 +23,9 @@ export type DocCategory =
   | "INVOICE"
   | "OTHER";
 
+// Fáze/sekce projektu, do které dokument patří
+export type DocSection = "POZEMEK" | "NAVRH" | "REALIZACE" | "BUDOVA";
+
 export type Media = { id: string; name: string; kind: "image" | "file"; dataUrl?: string };
 
 export type Entry = {
@@ -40,6 +43,7 @@ export type DocItem = {
   id: string;
   title: string;
   category: DocCategory;
+  section?: DocSection;
   fileName?: string;
   dataUrl?: string;
 };
@@ -102,6 +106,7 @@ export type EntryInput = {
 export type DocumentInput = {
   title: string;
   category: DocCategory;
+  section?: DocSection;
   fileName?: string;
   dataUrl?: string;
 };
@@ -576,13 +581,29 @@ function seed(): Property[] {
           id: "s-d1",
           title: "Průkaz energetické náročnosti budovy",
           category: "ENERGY_LABEL",
+          section: "BUDOVA",
           fileName: "PENB_Ricany.pdf",
         },
         {
           id: "s-d2",
           title: "Projektová dokumentace – půdorysy",
           category: "PLAN",
+          section: "NAVRH",
           fileName: "Pudorysy.pdf",
+        },
+        {
+          id: "s-d3",
+          title: "Výpis z katastru nemovitostí",
+          category: "OTHER",
+          section: "POZEMEK",
+          fileName: "Vypis_katastr.pdf",
+        },
+        {
+          id: "s-d4",
+          title: "Faktura — rekonstrukce koupelny",
+          category: "INVOICE",
+          section: "REALIZACE",
+          fileName: "Faktura_koupelna.pdf",
         },
       ],
       reminders: [

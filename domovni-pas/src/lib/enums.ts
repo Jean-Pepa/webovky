@@ -46,6 +46,26 @@ export const REMINDER_TYPES: Record<string, string> = {
   OTHER: "Jiné",
 };
 
+// Sekce/fáze projektu pro dokumentaci
+export const DOC_SECTIONS: Record<string, string> = {
+  POZEMEK: "Pozemek",
+  NAVRH: "Návrh",
+  REALIZACE: "Realizace",
+  BUDOVA: "Budova",
+};
+
+export const DOC_SECTION_ORDER = ["POZEMEK", "NAVRH", "REALIZACE", "BUDOVA"] as const;
+
+// Když dokument nemá explicitní sekci, odvodíme ji z kategorie
+export const CATEGORY_TO_SECTION: Record<string, string> = {
+  CONTRACT: "POZEMEK",
+  PLAN: "NAVRH",
+  ENERGY_LABEL: "BUDOVA",
+  CERTIFICATE: "BUDOVA",
+  INVOICE: "REALIZACE",
+  OTHER: "BUDOVA",
+};
+
 // Návrhy místností / oblastí pro vybavení (datalist)
 export const ROOM_SUGGESTIONS = [
   "Kuchyně",

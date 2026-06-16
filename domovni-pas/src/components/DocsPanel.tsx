@@ -3,16 +3,25 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import { useStore, type Property, type DocItem } from "@/lib/store";
+import { useStore, type Property, type DocItem, type DocSection } from "@/lib/store";
 import { canSeeProperty } from "@/lib/access";
-import { DOCUMENT_CATEGORIES } from "@/lib/enums";
+import {
+  DOCUMENT_CATEGORIES,
+  DOC_SECTIONS,
+  DOC_SECTION_ORDER,
+  CATEGORY_TO_SECTION,
+} from "@/lib/enums";
 import { IconClose, IconFile, IconSearch, IconDownload } from "@/components/Icons";
+
+const sectionOf = (doc: DocItem): DocSection =>
+  (doc.section ?? CATEGORY_TO_SECTION[doc.category] ?? "BUDOVA") as DocSection;
 
 export function DocsPanel() {
   const pathname = usePathname();
   const { properties, getProperty, role } = useStore();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [active, setActive] = useState<DocSection>("POZEMEK");
 
   useEffect(() => {
     const handler = () => setOpen(true);
@@ -20,10 +29,11 @@ export function DocsPanel() {
     return () => window.removeEventListener("bulo-open-docs", handler);
   }, []);
 
-  // Zavřít panel při přechodu na jinou stránku (a vyčistit hledání)
+  // Zavřít panel při přechodu na jinou stránku (a vyčistit stav)
   useEffect(() => {
     setOpen(false);
     setQuery("");
+    setActive("POZEMEK");
   }, [pathname]);
 
   // Kontext: jsme v detailu konkrétní nemovitosti?
@@ -74,7 +84,23 @@ export function DocsPanel() {
         </div>
 
         {property ? (
-          <PropertyDocs property={property} onNavigate={() => setOpen(false)} />
+          <>
+            {/* Záložky sekcí projektu */}
+            <div className="flex gap-1 overflow-x-auto border-b border-stone-200 px-3 py-2">
+              {DOC_SECTION_ORDER.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setActive(s)}
+                  className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                    s === active ? "bg-teal-50 text-teal-800" : "text-stone-600 hover:bg-stone-100"
+                  }`}
+                >
+                  {DOC_SECTIONS[s]}
+                </button>
+              ))}
+            </div>
+            <PropertyDocs property={property} section={active} onNavigate={() => setOpen(false)} />
+          </>
         ) : (
           <SearchDocs query={query} setQuery={setQuery} rows={rows} onNavigate={() => setOpen(false)} />
         )}
@@ -83,9 +109,17 @@ export function DocsPanel() {
   );
 }
 
-// Dokumenty konkrétní nemovitosti, seskupené podle kategorie
-function PropertyDocs({ property, onNavigate }: { property: Property; onNavigate: () => void }) {
-  const docs = property.documents;
+// Dokumenty konkrétní nemovitosti pro vybranou sekci
+function PropertyDocs({
+  property,
+  section,
+  onNavigate,
+}: {
+  property: Property;
+  section: DocSection;
+  onNavigate: () => void;
+}) {
+  const docs = property.documents.filter((d) => sectionOf(d) === section);
 
   if (docs.length === 0) {
     return (
@@ -93,32 +127,21 @@ function PropertyDocs({ property, onNavigate }: { property: Property; onNavigate
         <div className="grid h-12 w-12 place-items-center rounded-2xl bg-stone-100 text-stone-400">
           <IconFile className="h-6 w-6" />
         </div>
-        <p className="mt-3 text-sm font-medium text-stone-700">Zatím žádné dokumenty</p>
+        <p className="mt-3 text-sm font-medium text-stone-700">Žádné dokumenty v sekci „{DOC_SECTIONS[section]}"</p>
         <p className="mt-1 text-sm text-stone-500">
-          Dokumenty k této nemovitosti přidáte v jejím detailu.
+          Dokumenty do této sekce přidáte v detailu nemovitosti.
         </p>
       </div>
     );
   }
 
-  const cats = Object.keys(DOCUMENT_CATEGORIES).filter((c) => docs.some((d) => d.category === c));
-
   return (
-    <div className="flex-1 space-y-5 overflow-y-auto p-4">
-      {cats.map((c) => (
-        <div key={c}>
-          <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-stone-400">
-            {DOCUMENT_CATEGORIES[c]}
-          </h3>
-          <ul className="mt-2 space-y-2">
-            {docs
-              .filter((d) => d.category === c)
-              .map((doc) => (
-                <DocRow key={doc.id} doc={doc} property={property} onNavigate={onNavigate} />
-              ))}
-          </ul>
-        </div>
-      ))}
+    <div className="flex-1 overflow-y-auto p-4">
+      <ul className="space-y-2">
+        {docs.map((doc) => (
+          <DocRow key={doc.id} doc={doc} property={property} onNavigate={onNavigate} />
+        ))}
+      </ul>
     </div>
   );
 }

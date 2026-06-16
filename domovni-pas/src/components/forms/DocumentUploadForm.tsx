@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useStore, type DocCategory } from "@/lib/store";
+import { useStore, type DocCategory, type DocSection } from "@/lib/store";
 import { fileToDataUrl } from "@/lib/media";
-import { DOCUMENT_CATEGORIES } from "@/lib/enums";
+import { DOCUMENT_CATEGORIES, DOC_SECTIONS } from "@/lib/enums";
 
 export function DocumentUploadForm({ propertyId }: { propertyId: string }) {
   const { addDocument } = useStore();
@@ -21,6 +21,7 @@ export function DocumentUploadForm({ propertyId }: { propertyId: string }) {
     addDocument(propertyId, {
       title: String(fd.get("title") || "").trim() || file.name,
       category: String(fd.get("category") || "OTHER") as DocCategory,
+      section: String(fd.get("section") || "BUDOVA") as DocSection,
       fileName: file.name,
       dataUrl,
     });
@@ -30,13 +31,22 @@ export function DocumentUploadForm({ propertyId }: { propertyId: string }) {
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      <select name="category" className="input" defaultValue="PLAN">
-        {Object.entries(DOCUMENT_CATEGORIES).map(([v, l]) => (
-          <option key={v} value={v}>
-            {l}
-          </option>
-        ))}
-      </select>
+      <div className="grid grid-cols-2 gap-3">
+        <select name="section" className="input" defaultValue="NAVRH" aria-label="Sekce projektu">
+          {Object.entries(DOC_SECTIONS).map(([v, l]) => (
+            <option key={v} value={v}>
+              {l}
+            </option>
+          ))}
+        </select>
+        <select name="category" className="input" defaultValue="PLAN" aria-label="Kategorie">
+          {Object.entries(DOCUMENT_CATEGORIES).map(([v, l]) => (
+            <option key={v} value={v}>
+              {l}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <input name="title" className="input" placeholder="Název dokumentu (volitelné)" />
 

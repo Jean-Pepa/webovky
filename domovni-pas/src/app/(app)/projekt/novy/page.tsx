@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   useStore,
   type DocCategory,
+  type DocSection,
   type DocumentInput,
   type EntryInput,
   type Media,
@@ -16,11 +17,11 @@ import { ENERGY_CLASSES } from "@/lib/enums";
 import { BackLink } from "@/components/BackLink";
 import { IconFile, IconCamera, IconCheck, IconBuilding } from "@/components/Icons";
 
-const DOC_SLOTS: { key: string; category: DocCategory; title: string; desc: string }[] = [
-  { key: "dsp", category: "PLAN", title: "Projektová dokumentace (DSP)", desc: "Dokumentace pro stavební povolení" },
-  { key: "tz", category: "CERTIFICATE", title: "Technická zpráva", desc: "Popis konstrukcí a řešení" },
-  { key: "situace", category: "PLAN", title: "Situace", desc: "Situační výkres" },
-  { key: "penb", category: "ENERGY_LABEL", title: "Energetický štítek (PENB)", desc: "Průkaz energetické náročnosti" },
+const DOC_SLOTS: { key: string; category: DocCategory; section: DocSection; title: string; desc: string }[] = [
+  { key: "dsp", category: "PLAN", section: "NAVRH", title: "Projektová dokumentace (DSP)", desc: "Dokumentace pro stavební povolení" },
+  { key: "tz", category: "CERTIFICATE", section: "NAVRH", title: "Technická zpráva", desc: "Popis konstrukcí a řešení" },
+  { key: "situace", category: "PLAN", section: "POZEMEK", title: "Situace", desc: "Situační výkres" },
+  { key: "penb", category: "ENERGY_LABEL", section: "BUDOVA", title: "Energetický štítek (PENB)", desc: "Průkaz energetické náročnosti" },
 ];
 
 const STEPS = ["Projektová karta", "Dokumentace", "Fotky", "Dodavatelé"];
@@ -79,7 +80,7 @@ export default function ProjectHandoverPage() {
       const file = docFiles[slot.key];
       if (file) {
         const dataUrl = await fileToDataUrl(file);
-        documents.push({ title: slot.title, category: slot.category, fileName: file.name, dataUrl });
+        documents.push({ title: slot.title, category: slot.category, section: slot.section, fileName: file.name, dataUrl });
       }
     }
 
