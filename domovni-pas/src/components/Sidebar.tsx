@@ -103,11 +103,11 @@ export function Sidebar() {
         {(role === "ARCHITECT" || role === "CREATOR") && (
           <Link
             href="/projekt/novy"
-            title="Předat projekt"
+            title="Přidat projekt"
             className={`w-full px-0 lg:px-4 ${role === "ARCHITECT" ? "btn-primary" : "btn-secondary"}`}
           >
             <IconBuilding className="h-4 w-4 shrink-0" />
-            <span className="hidden lg:inline">Předat projekt</span>
+            <span className="hidden lg:inline">Přidat projekt</span>
           </Link>
         )}
         <button

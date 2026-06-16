@@ -124,7 +124,7 @@ export default function ProjectHandoverPage() {
           <IconBuilding className="h-5 w-5" />
         </span>
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-stone-900">Předat projekt</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-stone-900">Přidat projekt</h1>
           <p className="text-sm text-stone-500">
             Profesionální předání projektu klientovi — místo PDF, ZIP a WeTransferu.
           </p>
