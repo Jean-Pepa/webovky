@@ -156,6 +156,14 @@ export function IconArrowLeft(p: IconProps) {
   );
 }
 
+export function IconArrowRight(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M5 12h14M12 5l7 7-7 7" />
+    </svg>
+  );
+}
+
 export function IconCheck(p: IconProps) {
   return (
     <svg {...base} {...p}>
