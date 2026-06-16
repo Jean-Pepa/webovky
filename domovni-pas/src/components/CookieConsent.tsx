@@ -8,7 +8,16 @@ import { useLang } from "@/lib/i18n";
 const KEY = "bulo-cookies";
 
 // Uvnitř aplikace (po přihlášení) cookie lištu neukazujeme.
-const APP_PREFIXES = ["/prehled", "/nemovitost", "/dokumenty", "/pripominky", "/statistiky", "/projekt"];
+const APP_PREFIXES = [
+  "/prehled",
+  "/nemovitost",
+  "/dokumenty",
+  "/pripominky",
+  "/statistiky",
+  "/projekt",
+  "/kalendar",
+  "/hledat",
+];
 
 export function CookieConsent() {
   const { t } = useLang();

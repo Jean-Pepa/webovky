@@ -1,21 +1,50 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { Loading } from "@/components/Loading";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency, dueStatus } from "@/lib/format";
 import { PROPERTY_TYPES } from "@/lib/enums";
+import { IconDownload, IconBox } from "@/components/Icons";
 
 export default function StatsPage() {
-  const { properties, hydrated, role } = useStore();
+  const { properties, hydrated, role, importProperties } = useStore();
   const router = useRouter();
+  const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (hydrated && role && role !== "CREATOR") router.replace("/prehled");
   }, [hydrated, role, router]);
+
+  function exportData() {
+    const blob = new Blob([JSON.stringify(properties, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bulo-zaloha-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function importData(file: File) {
+    try {
+      const data = JSON.parse(await file.text());
+      if (!Array.isArray(data)) throw new Error("Neplatný formát");
+      if (
+        confirm(
+          `Importovat ${data.length} nemovitostí ze zálohy? Tím nahradíte všechna aktuální data.`,
+        )
+      ) {
+        importProperties(data);
+        alert("Data byla obnovena ze zálohy.");
+      }
+    } catch {
+      alert("Soubor se nepodařilo načíst. Vyberte platnou zálohu BULO (.json).");
+    }
+  }
 
   if (!hydrated) return <Loading />;
   if (role !== "CREATOR") return <Loading label="Přesměrování…" />;
@@ -89,6 +118,37 @@ export default function StatsPage() {
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="card mt-6 p-5">
+        <h2 className="text-sm font-semibold text-stone-900">Data a zálohy</h2>
+        <p className="mt-1 text-sm text-stone-500">
+          Stáhněte si kompletní zálohu všech nemovitostí, nebo data obnovte ze souboru.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button onClick={exportData} className="btn-secondary btn-sm">
+            <IconDownload className="h-4 w-4" />
+            Export dat (JSON)
+          </button>
+          <button onClick={() => fileInput.current?.click()} className="btn-secondary btn-sm">
+            <IconBox className="h-4 w-4" />
+            Obnovit ze zálohy
+          </button>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) importData(f);
+              e.target.value = "";
+            }}
+          />
+        </div>
+        <p className="mt-3 text-xs text-stone-400">
+          Záloha obsahuje i fotky a dokumenty uložené v prohlížeči. Obnova přepíše aktuální data.
+        </p>
       </section>
     </div>
   );

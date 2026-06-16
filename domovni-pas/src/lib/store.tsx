@@ -170,6 +170,7 @@ type Store = {
   ) => string;
   updateProperty: (id: string, data: PropertyInput) => void;
   deleteProperty: (id: string) => void;
+  importProperties: (data: Property[]) => void;
   addEntry: (propertyId: string, data: EntryInput) => void;
   deleteEntry: (propertyId: string, entryId: string) => void;
   addDocument: (propertyId: string, data: DocumentInput) => void;
@@ -304,6 +305,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const deleteProperty = useCallback((id: string) => {
     setProperties((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+
+  // Obnova ze zálohy (správce). Doplní chybějící kolekce u starších záloh.
+  const importProperties = useCallback((data: Property[]) => {
+    setProperties(
+      data.map((p) => ({
+        ...p,
+        entries: p.entries ?? [],
+        documents: p.documents ?? [],
+        reminders: p.reminders ?? [],
+        transfers: p.transfers ?? [],
+        inventory: p.inventory ?? [],
+      })),
+    );
   }, []);
 
   const addEntry = useCallback((propertyId: string, data: EntryInput) => {
@@ -465,6 +480,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     createPropertyFull,
     updateProperty,
     deleteProperty,
+    importProperties,
     addEntry,
     deleteEntry,
     addDocument,

@@ -13,6 +13,8 @@ import {
   IconBuilding,
   IconLogout,
   IconChart,
+  IconShield,
+  IconSearch,
 } from "@/components/Icons";
 
 type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }> };
@@ -20,6 +22,7 @@ type NavItem = { href: string; label: string; icon: React.ComponentType<{ classN
 const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   CLIENT: [
     { href: "/prehled", label: "Moje nemovitosti", icon: IconHome },
+    { href: "/kalendar", label: "Záruky a revize", icon: IconShield },
     { href: "/pripominky", label: "Připomínky", icon: IconCalendar },
     { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
   ],
@@ -29,7 +32,9 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ],
   CREATOR: [
     { href: "/prehled", label: "Přehled", icon: IconHome },
+    { href: "/hledat", label: "Hledat", icon: IconSearch },
     { href: "/statistiky", label: "Statistiky", icon: IconChart },
+    { href: "/kalendar", label: "Kalendář", icon: IconShield },
     { href: "/pripominky", label: "Připomínky", icon: IconCalendar },
     { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
   ],

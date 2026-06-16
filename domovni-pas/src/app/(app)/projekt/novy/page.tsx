@@ -8,6 +8,7 @@ import {
   type DocumentInput,
   type EntryInput,
   type Media,
+  type PropertyType,
 } from "@/lib/store";
 import { fileToMedia, fileToDataUrl } from "@/lib/media";
 import { toDateInputValue } from "@/lib/format";
@@ -24,12 +25,31 @@ const DOC_SLOTS: { key: string; category: DocCategory; title: string; desc: stri
 
 const STEPS = ["Projektová karta", "Dokumentace", "Fotky", "Dodavatelé"];
 
+// Šablony projektů — rychlý start pro architekta (předvyplní kartu a první záznam).
+type Template = {
+  key: string;
+  label: string;
+  type: PropertyType;
+  energyClass?: string;
+  namePrefix?: string;
+  starterEntry?: string;
+};
+
+const TEMPLATES: Template[] = [
+  { key: "novostavba-dum", label: "Novostavba domu", type: "HOUSE", energyClass: "A", namePrefix: "Novostavba ", starterEntry: "Zahájení realizace" },
+  { key: "rekonstrukce-dum", label: "Rekonstrukce domu", type: "HOUSE", energyClass: "C", namePrefix: "Rekonstrukce ", starterEntry: "Zahájení rekonstrukce" },
+  { key: "rekonstrukce-byt", label: "Rekonstrukce bytu", type: "APARTMENT", energyClass: "C", namePrefix: "Rekonstrukce bytu ", starterEntry: "Zahájení rekonstrukce" },
+  { key: "interier", label: "Interiér", type: "APARTMENT", namePrefix: "Interiér ", starterEntry: "Zahájení realizace interiéru" },
+];
+
 export default function ProjectHandoverPage() {
   const { createPropertyFull } = useStore();
   const router = useRouter();
 
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [template, setTemplate] = useState<string | null>(null);
+  const [ptype, setPtype] = useState<PropertyType>("HOUSE");
   const [name, setName] = useState("");
   const [street, setStreet] = useState("");
   const [city, setCity] = useState("");
@@ -43,6 +63,13 @@ export default function ProjectHandoverPage() {
   const [photos, setPhotos] = useState<File[]>([]);
 
   const canNext = step !== 0 || name.trim().length > 0;
+
+  function applyTemplate(tpl: Template) {
+    setTemplate(tpl.key);
+    setPtype(tpl.type);
+    if (tpl.energyClass) setEnergyClass(tpl.energyClass);
+    setName((n) => (n.trim() ? n : (tpl.namePrefix ?? "")));
+  }
 
   async function finish() {
     setSaving(true);
@@ -59,6 +86,10 @@ export default function ProjectHandoverPage() {
     const entries: EntryInput[] = [];
     const today = toDateInputValue(new Date());
     entries.push({ type: "OTHER", title: "Předání projektu architektem", date: today, media: [] });
+    const tpl = TEMPLATES.find((t) => t.key === template);
+    if (tpl?.starterEntry) {
+      entries.push({ type: "RENOVATION", title: tpl.starterEntry, date: today, media: [] });
+    }
     if (photos.length) {
       const media: Media[] = [];
       for (const f of photos) media.push(await fileToMedia(f));
@@ -68,7 +99,7 @@ export default function ProjectHandoverPage() {
     const id = createPropertyFull(
       {
         name: name.trim(),
-        type: "HOUSE",
+        type: ptype,
         street: street.trim() || undefined,
         city: city.trim() || undefined,
         zip: zip.trim() || undefined,
@@ -121,6 +152,27 @@ export default function ProjectHandoverPage() {
       <div className="card mt-6 p-6">
         {step === 0 && (
           <div className="space-y-5">
+            <div>
+              <p className="label">
+                Začněte ze šablony <span className="font-normal text-stone-400">(volitelné)</span>
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl.key}
+                    type="button"
+                    onClick={() => applyTemplate(tpl)}
+                    className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+                      template === tpl.key
+                        ? "bg-teal-700 text-white"
+                        : "border border-stone-200 text-stone-600 hover:bg-stone-50"
+                    }`}
+                  >
+                    {tpl.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <p className="rounded-lg bg-teal-50 px-3 py-2 text-xs text-teal-900">
               V ostré verzi se BULO pokusí kartu vyplnit automaticky z nahrané dokumentace. Teď ji
               vyplňte ručně.

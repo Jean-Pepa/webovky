@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useStore } from "@/lib/store";
+import { useStore, type Property } from "@/lib/store";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Loading } from "@/components/Loading";
 import { IconPlus, IconHome, IconCalendar, IconBuilding } from "@/components/Icons";
@@ -28,6 +28,8 @@ export default function DashboardPage() {
   const isArchitect = r === "ARCHITECT";
   const isCreator = r === "CREATOR";
   const visible = role ? properties.filter((p) => canSeeProperty(p, role)) : [];
+  const waiting = visible.filter((p) => !p.handedOver);
+  const handed = visible.filter((p) => p.handedOver);
 
   const heading = isArchitect ? "Moje projekty" : isCreator ? "Přehled — správce" : "Moje nemovitosti";
   const sub =
@@ -92,6 +94,14 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Pipeline pro architekta */}
+      {isArchitect && visible.length > 0 && (
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:max-w-sm">
+          <StatBox label="Čeká na převzetí" value={String(waiting.length)} />
+          <StatBox label="Předáno klientovi" value={String(handed.length)} />
+        </div>
+      )}
+
       {/* Nadcházející připomínky (majitel / správce) */}
       {upcoming.length > 0 && (
         <section className="card mt-6 p-5">
@@ -150,14 +160,35 @@ export default function DashboardPage() {
             {isArchitect ? "Předat projekt" : "Založit pas"}
           </Link>
         </div>
+      ) : isArchitect ? (
+        <div className="mt-8 space-y-8">
+          <PropertySection title="Čeká na převzetí klientem" items={waiting} />
+          <PropertySection title="Předáno klientovi" items={handed} />
+        </div>
       ) : (
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((p) => (
-            <PropertyCard key={p.id} property={p} showStatus={isArchitect || isCreator} />
+            <PropertyCard key={p.id} property={p} showStatus={isCreator} />
           ))}
         </div>
       )}
     </div>
+  );
+}
+
+function PropertySection({ title, items }: { title: string; items: Property[] }) {
+  if (items.length === 0) return null;
+  return (
+    <section>
+      <h2 className="text-sm font-semibold text-stone-500">
+        {title} <span className="text-stone-400">· {items.length}</span>
+      </h2>
+      <div className="mt-3 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((p) => (
+          <PropertyCard key={p.id} property={p} showStatus />
+        ))}
+      </div>
+    </section>
   );
 }
 
