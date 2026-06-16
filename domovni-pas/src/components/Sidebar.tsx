@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Logo } from "@/components/Logo";
-import { useStore } from "@/lib/store";
+import { useStore, type Role } from "@/lib/store";
 import { ROLE_LABELS, ROLE_INITIALS } from "@/lib/access";
 import {
   IconHome,
@@ -15,13 +15,28 @@ import {
   IconClose,
   IconBuilding,
   IconLogout,
+  IconChart,
 } from "@/components/Icons";
 
-const NAV = [
-  { href: "/prehled", label: "Přehled", icon: IconHome },
-  { href: "/pripominky", label: "Připomínky", icon: IconCalendar },
-  { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
-];
+type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }> };
+
+const NAV_BY_ROLE: Record<Role, NavItem[]> = {
+  CLIENT: [
+    { href: "/prehled", label: "Moje nemovitosti", icon: IconHome },
+    { href: "/pripominky", label: "Připomínky", icon: IconCalendar },
+    { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
+  ],
+  ARCHITECT: [
+    { href: "/prehled", label: "Moje projekty", icon: IconBuilding },
+    { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
+  ],
+  CREATOR: [
+    { href: "/prehled", label: "Přehled", icon: IconHome },
+    { href: "/statistiky", label: "Statistiky", icon: IconChart },
+    { href: "/pripominky", label: "Připomínky", icon: IconCalendar },
+    { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
+  ],
+};
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -30,6 +45,7 @@ export function Sidebar() {
   const [open, setOpen] = useState(false);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const nav = NAV_BY_ROLE[role ?? "CLIENT"];
 
   const inner = (
     <>
@@ -62,7 +78,7 @@ export function Sidebar() {
       </div>
 
       <nav className="mt-5 flex flex-1 flex-col gap-1 px-3">
-        {NAV.map((item) => {
+        {nav.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
           return (
@@ -82,22 +98,26 @@ export function Sidebar() {
       </nav>
 
       <div className="space-y-2 p-3">
-        <Link
-          href="/nemovitost/zalozit"
-          onClick={() => setOpen(false)}
-          className="btn-primary w-full"
-        >
-          <IconPlus className="h-4 w-4" />
-          Založit pas
-        </Link>
-        <Link
-          href="/projekt/novy"
-          onClick={() => setOpen(false)}
-          className="btn-secondary w-full"
-        >
-          <IconBuilding className="h-4 w-4" />
-          Předat projekt
-        </Link>
+        {(role === "CLIENT" || role === "CREATOR") && (
+          <Link
+            href="/nemovitost/zalozit"
+            onClick={() => setOpen(false)}
+            className="btn-primary w-full"
+          >
+            <IconPlus className="h-4 w-4" />
+            Založit pas
+          </Link>
+        )}
+        {(role === "ARCHITECT" || role === "CREATOR") && (
+          <Link
+            href="/projekt/novy"
+            onClick={() => setOpen(false)}
+            className={`w-full ${role === "ARCHITECT" ? "btn-primary" : "btn-secondary"}`}
+          >
+            <IconBuilding className="h-4 w-4" />
+            Předat projekt
+          </Link>
+        )}
       </div>
     </>
   );

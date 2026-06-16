@@ -5,14 +5,26 @@ import { PROPERTY_TYPES } from "@/lib/enums";
 import { addressLine } from "@/lib/format";
 import type { Property } from "@/lib/store";
 
-export function PropertyCard({ property }: { property: Property }) {
+export function PropertyCard({
+  property,
+  showStatus = false,
+}: {
+  property: Property;
+  showStatus?: boolean;
+}) {
   return (
     <Link
       href={`/nemovitost/${property.id}`}
       className="card group flex flex-col p-5 transition hover:border-teal-300 hover:shadow-md"
     >
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Badge color="teal">{PROPERTY_TYPES[property.type]}</Badge>
+        {showStatus &&
+          (property.handedOver ? (
+            <Badge color="amber">Předáno</Badge>
+          ) : (
+            <Badge color="gray">Rozpracováno</Badge>
+          ))}
       </div>
       <h3 className="mt-3 text-lg font-semibold text-stone-900 group-hover:text-teal-800">
         {property.name}
