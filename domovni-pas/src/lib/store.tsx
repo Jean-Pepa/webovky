@@ -645,6 +645,15 @@ function seed(): Property[] {
           media: [],
           createdAt: "2025-03-10",
         },
+        {
+          id: "s-e6",
+          type: "DEFECT",
+          title: "Prosakující odpad pod dřezem",
+          description: "Pod kuchyňským dřezem se objevila vlhkost, nutné prověřit těsnění.",
+          date: "2026-06-05",
+          media: [],
+          createdAt: "2026-06-05",
+        },
       ],
       documents: [],
       reminders: [
@@ -653,7 +662,7 @@ function seed(): Property[] {
       transfers: [],
       inventory: [
         { id: "s-i5", name: "Kuchyňská linka na míru", location: "Kuchyně", price: 120000, warrantyUntil: "2030-03-10" },
-        { id: "s-i6", name: "Indukční deska", location: "Kuchyně", brand: "Bosch", warrantyUntil: "2027-03-10" },
+        { id: "s-i6", name: "Indukční deska", location: "Kuchyně", brand: "Bosch", warrantyUntil: "2026-07-10" },
       ],
       createdAt: "2024-02-01",
       updatedAt: "2025-03-10",
