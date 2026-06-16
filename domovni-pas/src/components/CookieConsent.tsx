@@ -2,12 +2,17 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useLang } from "@/lib/i18n";
 
 const KEY = "bulo-cookies";
 
+// Uvnitř aplikace (po přihlášení) cookie lištu neukazujeme.
+const APP_PREFIXES = ["/prehled", "/nemovitost", "/dokumenty", "/pripominky", "/statistiky", "/projekt"];
+
 export function CookieConsent() {
   const { t } = useLang();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [statistics, setStatistics] = useState(false);
   const [marketing, setMarketing] = useState(false);
@@ -46,6 +51,9 @@ export function CookieConsent() {
     setMarketing(mkt);
     setOpen(false);
   }
+
+  const inApp = APP_PREFIXES.some((p) => pathname.startsWith(p));
+  if (inApp) return null;
 
   const c = t.cookies;
 
