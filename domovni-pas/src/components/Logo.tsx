@@ -1,5 +1,5 @@
 export function Logo({ className = "", light = false }: { className?: string; light?: boolean }) {
-  const ink = light ? "#ffffff" : "#184e5a";
+  const ink = light ? "#ffffff" : "#b5543a";
 
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>

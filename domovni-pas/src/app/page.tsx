@@ -23,7 +23,7 @@ export default function HomePage() {
   const { t } = useLang();
 
   return (
-    <div className="bg-[#f5f1e8]">
+    <div className="bg-[#faf9f7]">
       {/* ===== HERO ===== */}
       <section className="relative overflow-hidden text-white">
         <video
@@ -36,7 +36,7 @@ export default function HomePage() {
         >
           <source src="/hero.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0d2a31]/85 via-[#123c45]/72 to-[#0d2a31]/90" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#2a1d18]/85 via-[#231915]/70 to-[#1b1310]/90" />
 
         <div className="relative">
           <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
@@ -56,7 +56,7 @@ export default function HomePage() {
               <LanguageSwitcher light />
               <Link
                 href="/prihlaseni"
-                className="rounded-lg bg-brass px-4 py-2 text-sm font-medium text-white transition hover:bg-[#a07a40]"
+                className="rounded-lg bg-brass px-4 py-2 text-sm font-medium text-white transition hover:bg-[#9c4732]"
               >
                 {t.nav.enter}
               </Link>
@@ -75,7 +75,7 @@ export default function HomePage() {
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/prihlaseni"
-                className="inline-flex items-center gap-2 rounded-xl bg-brass px-6 py-3.5 text-base font-medium text-white shadow-lg shadow-black/20 transition hover:bg-[#a07a40]"
+                className="inline-flex items-center gap-2 rounded-xl bg-brass px-6 py-3.5 text-base font-medium text-white shadow-lg shadow-black/20 transition hover:bg-[#9c4732]"
               >
                 <IconArrowRight className="h-5 w-5" />
                 {t.hero.enter}
@@ -92,13 +92,13 @@ export default function HomePage() {
               <div className="inline-flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-2.5 ring-1 ring-white/15 backdrop-blur">
                 <span className="flex -space-x-2">
                   {[
-                    ["JN", "bg-[#b58b4b]"],
-                    ["AK", "bg-[#2d7081]"],
+                    ["JN", "bg-[#b5543a]"],
+                    ["AK", "bg-[#b58b4b]"],
                     ["PS", "bg-[#8a6d3b]"],
                   ].map(([txt, c]) => (
                     <span
                       key={txt}
-                      className={`grid h-7 w-7 place-items-center rounded-full text-[10px] font-semibold text-white ring-2 ring-[#16454f] ${c}`}
+                      className={`grid h-7 w-7 place-items-center rounded-full text-[10px] font-semibold text-white ring-2 ring-[#231915] ${c}`}
                     >
                       {txt}
                     </span>
@@ -187,14 +187,14 @@ export default function HomePage() {
       </section>
 
       {/* ===== CTA ===== */}
-      <section className="bg-[#184e5a]">
+      <section className="bg-[#b5543a]">
         <div className="mx-auto max-w-4xl px-6 py-16 text-center text-white">
           <h2 className="font-display text-3xl tracking-tight sm:text-4xl">{t.cta.title}</h2>
-          <p className="mx-auto mt-3 max-w-xl text-white/80">{t.cta.sub}</p>
+          <p className="mx-auto mt-3 max-w-xl text-white/85">{t.cta.sub}</p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/prihlaseni"
-              className="inline-flex items-center gap-2 rounded-xl bg-brass px-6 py-3.5 text-base font-medium text-white shadow-lg shadow-black/20 transition hover:bg-[#a07a40]"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-base font-medium text-[#b5543a] shadow-lg shadow-black/20 transition hover:bg-white/90"
             >
               <IconArrowRight className="h-5 w-5" />
               {t.cta.enter}
@@ -210,7 +210,7 @@ export default function HomePage() {
       </section>
 
       {/* ===== FOOTER ===== */}
-      <footer className="border-t border-stone-200 bg-[#f5f1e8] py-8">
+      <footer className="border-t border-stone-200 bg-[#faf9f7] py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 text-sm text-stone-400 sm:flex-row">
           <Logo />
           <div className="flex items-center gap-4">

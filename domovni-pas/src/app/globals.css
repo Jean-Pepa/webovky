@@ -2,22 +2,22 @@
 
 @theme inline {
   /* Značková paleta BULO */
-  --color-petrol: #184e5a; /* primární – petrolejová */
-  --color-ivory: #f5f1e8; /* sekundární – teplá slonová kost */
-  --color-brass: #b58b4b; /* akcent – mosaz */
+  --color-petrol: #b5543a; /* primární – terakota */
+  --color-ivory: #faf9f7;
+  --color-brass: #b5543a; /* hlavní akcent = primární terakota */
 
-  --color-paper: #f5f1e8; /* pozadí = slonová kost */
-  --color-ink: #1c2b2f;
+  --color-paper: #faf9f7; /* čisté jemné pozadí */
+  --color-ink: #2a211e;
 
-  /* Primární škála (petrolejová) – přemapování "teal-*" v celé appce */
-  --color-teal-50: #eef4f5;
-  --color-teal-100: #d5e6e9;
-  --color-teal-200: #aecdd4;
-  --color-teal-500: #2d7081;
-  --color-teal-600: #235d6b;
-  --color-teal-700: #184e5a;
-  --color-teal-800: #133e48;
-  --color-teal-900: #0f2f37;
+  /* Primární škála (terakota) – přemapování "teal-*" v celé appce */
+  --color-teal-50: #fbf1ed;
+  --color-teal-100: #f6ddd4;
+  --color-teal-200: #eebfb0;
+  --color-teal-500: #c66a50;
+  --color-teal-600: #bd5d43;
+  --color-teal-700: #b5543a;
+  --color-teal-800: #9c4732;
+  --color-teal-900: #7c3626;
 
   /* Akcentní škála (mosaz) – přemapování "amber-*" */
   --color-amber-50: #f4ecdb;
