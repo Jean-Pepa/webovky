@@ -61,8 +61,8 @@ const cs: Dict = {
   nav: { features: "Co umí", how: "Jak to funguje", forWhom: "Pro koho", enter: "Vstoupit do aplikace" },
   hero: {
     label: "BULO.APP",
-    title1: "Digitální pas",
-    title2: "vaší nemovitosti",
+    title1: "Všechno o vašem domě",
+    title2: "na jednom místě",
     subtitle:
       "Dokumentace, opravy, rekonstrukce, vybavení i fotografie. Trvalá historie, která zůstává s nemovitostí po celý její život.",
     enter: "Vstoupit do aplikace",
@@ -71,7 +71,7 @@ const cs: Dict = {
     chip2: "4 329+ domů",
   },
   features: {
-    heading: "Všechno o vašem domě na jednom místě",
+    heading: "Digitální pas vaší nemovitosti",
     sub: "Konec šanonů, ztracených faktur a „kde jen mám ten záruční list“.",
     items: [
       { title: "Přehledná historie", text: "Časová osa všeho — od revize kotle po rekonstrukci koupelny, s fotkami a náklady." },
@@ -140,8 +140,8 @@ const sk: Dict = {
   nav: { features: "Čo dokáže", how: "Ako to funguje", forWhom: "Pre koho", enter: "Vstúpiť do aplikácie" },
   hero: {
     label: "BULO.APP",
-    title1: "Digitálny pas",
-    title2: "vašej nehnuteľnosti",
+    title1: "Všetko o vašom dome",
+    title2: "na jednom mieste",
     subtitle:
       "Dokumentácia, opravy, rekonštrukcie, vybavenie aj fotografie. Trvalá história, ktorá zostáva s nehnuteľnosťou po celý jej život.",
     enter: "Vstúpiť do aplikácie",
@@ -150,7 +150,7 @@ const sk: Dict = {
     chip2: "4 329+ domov",
   },
   features: {
-    heading: "Všetko o vašom dome na jednom mieste",
+    heading: "Digitálny pas vašej nehnuteľnosti",
     sub: "Koniec šanónov, stratených faktúr a „kde mám ten záručný list“.",
     items: [
       { title: "Prehľadná história", text: "Časová os všetkého — od revízie kotla po rekonštrukciu kúpeľne, s fotkami a nákladmi." },
@@ -219,8 +219,8 @@ const pl: Dict = {
   nav: { features: "Co potrafi", how: "Jak to działa", forWhom: "Dla kogo", enter: "Wejdź do aplikacji" },
   hero: {
     label: "BULO.APP",
-    title1: "Cyfrowy paszport",
-    title2: "Twojej nieruchomości",
+    title1: "Wszystko o Twoim domu",
+    title2: "w jednym miejscu",
     subtitle:
       "Dokumentacja, naprawy, remonty, wyposażenie i zdjęcia. Trwała historia, która zostaje z nieruchomością przez całe jej życie.",
     enter: "Wejdź do aplikacji",
@@ -229,7 +229,7 @@ const pl: Dict = {
     chip2: "4 329+ domów",
   },
   features: {
-    heading: "Wszystko o Twoim domu w jednym miejscu",
+    heading: "Cyfrowy paszport Twojej nieruchomości",
     sub: "Koniec segregatorów, zgubionych faktur i „gdzie ja mam tę kartę gwarancyjną“.",
     items: [
       { title: "Przejrzysta historia", text: "Oś czasu wszystkiego — od przeglądu kotła po remont łazienki, ze zdjęciami i kosztami." },
@@ -298,8 +298,8 @@ const en: Dict = {
   nav: { features: "Features", how: "How it works", forWhom: "Who it's for", enter: "Enter the app" },
   hero: {
     label: "BULO.APP",
-    title1: "Digital passport",
-    title2: "for your property",
+    title1: "Everything about your home",
+    title2: "in one place",
     subtitle:
       "Documentation, repairs, renovations, equipment and photos. A lasting history that stays with the property for its whole life.",
     enter: "Enter the app",
@@ -308,7 +308,7 @@ const en: Dict = {
     chip2: "4,329+ homes",
   },
   features: {
-    heading: "Everything about your home in one place",
+    heading: "Digital passport for your property",
     sub: "No more binders, lost invoices and „where did I put that warranty card“.",
     items: [
       { title: "Clear history", text: "A timeline of everything — from a boiler inspection to a bathroom renovation, with photos and costs." },
@@ -377,8 +377,8 @@ const de: Dict = {
   nav: { features: "Funktionen", how: "So funktioniert's", forWhom: "Für wen", enter: "Zur App" },
   hero: {
     label: "BULO.APP",
-    title1: "Digitaler Pass",
-    title2: "Ihrer Immobilie",
+    title1: "Alles über Ihr Haus",
+    title2: "an einem Ort",
     subtitle:
       "Dokumentation, Reparaturen, Renovierungen, Ausstattung und Fotos. Eine bleibende Historie, die der Immobilie ein Leben lang erhalten bleibt.",
     enter: "Zur App",
@@ -387,7 +387,7 @@ const de: Dict = {
     chip2: "4.329+ Häuser",
   },
   features: {
-    heading: "Alles über Ihr Haus an einem Ort",
+    heading: "Digitaler Pass Ihrer Immobilie",
     sub: "Schluss mit Ordnern, verlorenen Rechnungen und „wo ist nur die Garantiekarte“.",
     items: [
       { title: "Übersichtliche Historie", text: "Eine Zeitleiste von allem — von der Kesselprüfung bis zur Badrenovierung, mit Fotos und Kosten." },
