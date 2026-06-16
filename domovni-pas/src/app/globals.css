@@ -53,6 +53,13 @@ a {
   text-decoration: none;
 }
 
+/* Display font (Anton) pro nadpisy homepage */
+.font-display {
+  font-family: "Anton", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
 @layer components {
   /* Tlačítka – každá varianta je samostatná (žádné @apply vlastní třídy) */
   .btn-primary {
