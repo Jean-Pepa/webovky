@@ -78,7 +78,7 @@ export default function DashboardPage() {
               className={isArchitect ? "btn-primary" : "btn-secondary"}
             >
               <IconBuilding className="h-4 w-4" />
-              Předat projekt
+              Přidat projekt
             </Link>
           )}
         </div>
@@ -157,7 +157,7 @@ export default function DashboardPage() {
             className="btn-primary mt-6"
           >
             {isArchitect ? <IconBuilding className="h-4 w-4" /> : <IconPlus className="h-4 w-4" />}
-            {isArchitect ? "Předat projekt" : "Založit pas"}
+            {isArchitect ? "Přidat projekt" : "Založit pas"}
           </Link>
         </div>
       ) : isArchitect ? (
