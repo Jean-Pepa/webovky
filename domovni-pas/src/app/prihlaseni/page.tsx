@@ -34,7 +34,7 @@ export default function LoginPage() {
       >
         <source src="/hero.mp4" type="video/mp4" />
       </video>
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0d2a31]/90 via-[#123c45]/80 to-[#0d2a31]/95" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#2a1d18]/90 via-[#231915]/82 to-[#1b1310]/95" />
 
       <div className="absolute right-4 top-4 z-10">
         <LanguageSwitcher light />
@@ -66,7 +66,7 @@ export default function LoginPage() {
             )}
             <button
               type="submit"
-              className="w-full rounded-lg bg-brass px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#a07a40]"
+              className="w-full rounded-lg bg-brass px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#9c4732]"
             >
               {t.login.button}
             </button>

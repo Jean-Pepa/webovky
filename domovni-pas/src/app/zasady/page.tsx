@@ -6,7 +6,7 @@ export const metadata = { title: "Ochrana osobních údajů — BULO" };
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-[#f5f1e8]">
+    <div className="min-h-screen bg-[#faf9f7]">
       <header className="border-b border-stone-200 bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
           <Link href="/">
