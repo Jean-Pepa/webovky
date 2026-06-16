@@ -14,7 +14,7 @@ import { addressLine, formatCurrency, formatDate } from "@/lib/format";
 
 export default function ReportPage() {
   const { id } = useParams<{ id: string }>();
-  const { getProperty, hydrated } = useStore();
+  const { getProperty, hydrated, branding } = useStore();
   if (!hydrated) return <Loading />;
 
   const property = getProperty(id);
@@ -62,12 +62,28 @@ export default function ReportPage() {
       </div>
 
       <div className="card print-clean p-8">
-        <div className="-mx-8 -mt-8 mb-6 h-1.5 rounded-t-2xl bg-brass" />
+        <div
+          className="-mx-8 -mt-8 mb-6 h-1.5 rounded-t-2xl bg-brass"
+          style={branding.color ? { backgroundColor: branding.color } : undefined}
+        />
         {/* Hlavička */}
         <div className="flex items-start justify-between border-b border-stone-200 pb-5">
-          <Logo />
+          <div>
+            <Logo />
+            {branding.studioName && (
+              <p className="mt-1 text-sm font-semibold" style={{ color: branding.color }}>
+                {branding.studioName}
+              </p>
+            )}
+            {branding.tagline && <p className="text-xs text-stone-400">{branding.tagline}</p>}
+          </div>
           <div className="text-right text-sm text-stone-400">
-            <p className="font-medium text-brass">Historie nemovitosti</p>
+            <p
+              className="font-medium text-brass"
+              style={branding.color ? { color: branding.color } : undefined}
+            >
+              Historie nemovitosti
+            </p>
             <p>Vygenerováno {formatDate(new Date())}</p>
           </div>
         </div>

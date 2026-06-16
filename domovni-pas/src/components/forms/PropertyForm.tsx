@@ -22,6 +22,7 @@ export function PropertyForm({ initial }: { initial?: Property }) {
     if (!name) return;
     const yb = opt("yearBuilt");
     const fa = opt("floorArea");
+    const ba = opt("builtUpArea");
 
     const data: PropertyInput = {
       name,
@@ -38,6 +39,10 @@ export function PropertyForm({ initial }: { initial?: Property }) {
       energyClass: opt("energyClass"),
       architect: opt("architect"),
       contractors: opt("contractors"),
+      designer: opt("designer"),
+      constructionSystem: opt("constructionSystem"),
+      builtUpArea: ba ? Number(ba) : undefined,
+      materials: opt("materials"),
     };
 
     setPending(true);
@@ -151,7 +156,7 @@ export function PropertyForm({ initial }: { initial?: Property }) {
 
       <fieldset className="space-y-4 rounded-xl border border-stone-200 p-4">
         <legend className="px-1 text-sm font-medium text-stone-600">
-          Projektová karta (volitelné)
+          Architektonická karta (volitelné)
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -167,7 +172,7 @@ export function PropertyForm({ initial }: { initial?: Property }) {
           </div>
           <div>
             <label className="label" htmlFor="architect">
-              Architekt
+              Autor projektu (architekt)
             </label>
             <input
               id="architect"
@@ -177,8 +182,31 @@ export function PropertyForm({ initial }: { initial?: Property }) {
             />
           </div>
           <div>
+            <label className="label" htmlFor="designer">
+              Projektant
+            </label>
+            <input
+              id="designer"
+              name="designer"
+              className="input"
+              defaultValue={initial?.designer ?? ""}
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor="constructionSystem">
+              Konstrukční systém
+            </label>
+            <input
+              id="constructionSystem"
+              name="constructionSystem"
+              className="input"
+              defaultValue={initial?.constructionSystem ?? ""}
+              placeholder="Např. zděný, dřevostavba…"
+            />
+          </div>
+          <div>
             <label className="label" htmlFor="floorArea">
-              Plocha (m²)
+              Užitná plocha (m²)
             </label>
             <input
               id="floorArea"
@@ -187,6 +215,19 @@ export function PropertyForm({ initial }: { initial?: Property }) {
               min={0}
               className="input"
               defaultValue={initial?.floorArea ?? ""}
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor="builtUpArea">
+              Zastavěná plocha (m²)
+            </label>
+            <input
+              id="builtUpArea"
+              name="builtUpArea"
+              type="number"
+              min={0}
+              className="input"
+              defaultValue={initial?.builtUpArea ?? ""}
             />
           </div>
           <div>
@@ -207,6 +248,18 @@ export function PropertyForm({ initial }: { initial?: Property }) {
               ))}
             </select>
           </div>
+        </div>
+        <div>
+          <label className="label" htmlFor="materials">
+            Materiály
+          </label>
+          <input
+            id="materials"
+            name="materials"
+            className="input"
+            defaultValue={initial?.materials ?? ""}
+            placeholder="Např. cihla Porotherm, zateplení, betonová krytina…"
+          />
         </div>
         <div>
           <label className="label" htmlFor="contractors">

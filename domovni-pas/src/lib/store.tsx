@@ -13,10 +13,16 @@ function toShareSnapshot(p: Property): Property {
       media: e.media.map((m) => ({ ...m, dataUrl: undefined })),
     })),
     inventory: p.inventory.map((i) => ({ ...i, dataUrl: undefined })),
+    consultations: [], // interní konzultace nesdílíme veřejně
+    bids: [], // nabídky firem jsou interní
+    designs: [], // návrhy (velká média) nesdílíme přes server
   };
 }
 
 export type Role = "ARCHITECT" | "CLIENT" | "CREATOR";
+
+// Branding architekta — zobrazí se na reportu a sdíleném pasu.
+export type Branding = { studioName?: string; color?: string; tagline?: string };
 
 export type PropertyType = "HOUSE" | "APARTMENT" | "OTHER";
 export type EntryType =
@@ -73,10 +79,14 @@ export type Property = {
   yearBuilt?: number;
   description?: string;
   investor?: string;
-  floorArea?: number; // m²
+  floorArea?: number; // m² (užitná plocha)
   energyClass?: string; // A–G
-  architect?: string;
+  architect?: string; // autor projektu
   contractors?: string; // kontakty na dodavatele (řádky)
+  designer?: string; // projektant
+  constructionSystem?: string; // konstrukční systém
+  builtUpArea?: number; // zastavěná plocha m²
+  materials?: string; // hlavní materiály
   createdByRole?: Role; // kdo pas vytvořil
   handedOver?: boolean; // architekt předal klientovi → pro architekta jen ke čtení
   ownerName: string;
@@ -86,6 +96,10 @@ export type Property = {
   reminders: Reminder[];
   transfers: TransferRecord[];
   inventory: InventoryItem[];
+  consultations?: ConsultationNote[];
+  bids?: ContractorBid[];
+  designs?: DesignProposal[];
+  milestones?: ArchMilestone[];
   createdAt: string;
   updatedAt: string;
 };
@@ -105,6 +119,10 @@ export type PropertyInput = {
   energyClass?: string;
   architect?: string;
   contractors?: string;
+  designer?: string;
+  constructionSystem?: string;
+  builtUpArea?: number;
+  materials?: string;
 };
 
 export type EntryInput = {
@@ -148,6 +166,61 @@ export type TransferRecord = {
   toName: string;
   note?: string;
   date: string;
+};
+
+// Průběžné konzultace architekta s klientem (vlákno poznámek/dotazů)
+export type ConsultationStatus = "OPEN" | "WAITING" | "RESOLVED";
+
+export type ConsultationNote = {
+  id: string;
+  authorRole: Role;
+  topic?: string;
+  text: string;
+  status?: ConsultationStatus;
+  createdAt: string;
+};
+
+// Výběr stavební firmy — poptávky a nabídky dodavatelů
+export type BidStatus = "REQUESTED" | "RECEIVED" | "SELECTED" | "REJECTED";
+
+export type ContractorBid = {
+  id: string;
+  company: string;
+  contact?: string;
+  price?: number;
+  durationWeeks?: number;
+  rating?: number; // 1–5
+  note?: string;
+  status: BidStatus;
+  createdAt: string;
+};
+
+export type ContractorBidInput = {
+  company: string;
+  contact?: string;
+  price?: number;
+  durationWeeks?: number;
+  rating?: number;
+  note?: string;
+};
+
+// Návrhy — studie a vizualizace, které architekt průběžně nahrává
+export type DesignProposal = {
+  id: string;
+  title: string;
+  note?: string;
+  media: Media[];
+  authorRole: Role;
+  createdAt: string;
+};
+
+// Architektonická historie — „životopis stavby" (milníky v čase)
+export type ArchMilestone = {
+  id: string;
+  year: number;
+  title: string;
+  note?: string;
+  createdAt: string;
 };
 
 // Vybavení a materiály v domě – „Co je v mém domě" (baterie, kotel, podlaha…)
@@ -198,16 +271,29 @@ type Store = {
   deleteReminder: (propertyId: string, reminderId: string) => void;
   addInventoryItem: (propertyId: string, data: InventoryInput) => void;
   deleteInventoryItem: (propertyId: string, itemId: string) => void;
+  addConsultation: (propertyId: string, data: { topic?: string; text: string }) => void;
+  deleteConsultation: (propertyId: string, noteId: string) => void;
+  setConsultationStatus: (propertyId: string, noteId: string, status: ConsultationStatus) => void;
+  addBid: (propertyId: string, data: ContractorBidInput) => void;
+  deleteBid: (propertyId: string, bidId: string) => void;
+  setBidStatus: (propertyId: string, bidId: string, status: BidStatus) => void;
+  addDesign: (propertyId: string, data: { title: string; note?: string; media: Media[] }) => void;
+  deleteDesign: (propertyId: string, designId: string) => void;
+  addMilestone: (propertyId: string, data: { year: number; title: string; note?: string }) => void;
+  deleteMilestone: (propertyId: string, milestoneId: string) => void;
   transferProperty: (propertyId: string, toName: string, note?: string) => void;
   setShare: (propertyId: string, enabled: boolean) => void;
   role: Role | null;
   login: (password: string) => boolean;
   logout: () => void;
+  branding: Branding;
+  setBranding: (b: Branding) => void;
 };
 
 const StoreContext = createContext<Store | null>(null);
 const KEY = "domovni-pas-v1";
 const ROLE_KEY = "bulo-role";
+const BRANDING_KEY = "bulo-branding";
 
 // Demo přihlášení – 3 hesla = 3 role. (Změnit lze tady.)
 const PASSWORDS: Record<string, Role> = {
@@ -221,12 +307,19 @@ const now = () => new Date().toISOString();
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [properties, setProperties] = useState<Property[]>([]);
   const [role, setRole] = useState<Role | null>(null);
+  const [branding, setBrandingState] = useState<Branding>({});
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
       const storedRole = localStorage.getItem(ROLE_KEY) as Role | null;
       if (storedRole) setRole(storedRole);
+    } catch {
+      // ignore
+    }
+    try {
+      const b = localStorage.getItem(BRANDING_KEY);
+      if (b) setBrandingState(JSON.parse(b) as Branding);
     } catch {
       // ignore
     }
@@ -241,6 +334,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             reminders: p.reminders ?? [],
             transfers: p.transfers ?? [],
             inventory: p.inventory ?? [],
+            consultations: p.consultations ?? [],
+            bids: p.bids ?? [],
+            designs: p.designs ?? [],
+            milestones: p.milestones ?? [],
           })),
         );
       } else {
@@ -306,6 +403,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         reminders: [],
         transfers: [],
         inventory: [],
+        consultations: [],
+        bids: [],
+        designs: [],
+        milestones: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -331,6 +432,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         reminders: [],
         transfers: [],
         inventory: [],
+        consultations: [],
+        bids: [],
+        designs: [],
+        milestones: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -360,6 +465,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         reminders: p.reminders ?? [],
         transfers: p.transfers ?? [],
         inventory: p.inventory ?? [],
+        consultations: p.consultations ?? [],
+        bids: p.bids ?? [],
+        designs: p.designs ?? [],
+        milestones: p.milestones ?? [],
       })),
     );
   }, []);
@@ -463,6 +572,137 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const addConsultation = useCallback(
+    (propertyId: string, data: { topic?: string; text: string }) => {
+      const note: ConsultationNote = {
+        id: newId(),
+        authorRole: role ?? "CLIENT",
+        topic: data.topic,
+        text: data.text,
+        status: "OPEN",
+        createdAt: now(),
+      };
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? { ...p, consultations: [...(p.consultations ?? []), note], updatedAt: now() }
+            : p,
+        ),
+      );
+    },
+    [role],
+  );
+
+  const deleteConsultation = useCallback((propertyId: string, noteId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, consultations: (p.consultations ?? []).filter((c) => c.id !== noteId) }
+          : p,
+      ),
+    );
+  }, []);
+
+  const setConsultationStatus = useCallback(
+    (propertyId: string, noteId: string, status: ConsultationStatus) => {
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? {
+                ...p,
+                consultations: (p.consultations ?? []).map((c) =>
+                  c.id === noteId ? { ...c, status } : c,
+                ),
+              }
+            : p,
+        ),
+      );
+    },
+    [],
+  );
+
+  const addBid = useCallback((propertyId: string, data: ContractorBidInput) => {
+    const bid: ContractorBid = { ...data, id: newId(), status: "RECEIVED", createdAt: now() };
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, bids: [...(p.bids ?? []), bid], updatedAt: now() } : p,
+      ),
+    );
+  }, []);
+
+  const deleteBid = useCallback((propertyId: string, bidId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, bids: (p.bids ?? []).filter((b) => b.id !== bidId) } : p,
+      ),
+    );
+  }, []);
+
+  const setBidStatus = useCallback((propertyId: string, bidId: string, status: BidStatus) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, bids: (p.bids ?? []).map((b) => (b.id === bidId ? { ...b, status } : b)) }
+          : p,
+      ),
+    );
+  }, []);
+
+  const addDesign = useCallback(
+    (propertyId: string, data: { title: string; note?: string; media: Media[] }) => {
+      const design: DesignProposal = {
+        id: newId(),
+        title: data.title,
+        note: data.note,
+        media: data.media,
+        authorRole: role ?? "ARCHITECT",
+        createdAt: now(),
+      };
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? { ...p, designs: [design, ...(p.designs ?? [])], updatedAt: now() }
+            : p,
+        ),
+      );
+    },
+    [role],
+  );
+
+  const deleteDesign = useCallback((propertyId: string, designId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, designs: (p.designs ?? []).filter((d) => d.id !== designId) }
+          : p,
+      ),
+    );
+  }, []);
+
+  const addMilestone = useCallback(
+    (propertyId: string, data: { year: number; title: string; note?: string }) => {
+      const m: ArchMilestone = { ...data, id: newId(), createdAt: now() };
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? { ...p, milestones: [...(p.milestones ?? []), m], updatedAt: now() }
+            : p,
+        ),
+      );
+    },
+    [],
+  );
+
+  const deleteMilestone = useCallback((propertyId: string, milestoneId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, milestones: (p.milestones ?? []).filter((m) => m.id !== milestoneId) }
+          : p,
+      ),
+    );
+  }, []);
+
   // Převod vlastnictví – jádro hodnoty (přenositelnost). V ukázce zaznamená předání
   // a přepíše jméno vlastníka; auditní stopa zůstává v transfers.
   const transferProperty = useCallback((propertyId: string, toName: string, note?: string) => {
@@ -515,6 +755,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const setBranding = useCallback((b: Branding) => {
+    setBrandingState(b);
+    try {
+      localStorage.setItem(BRANDING_KEY, JSON.stringify(b));
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const value: Store = {
     properties,
     hydrated,
@@ -533,11 +782,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteReminder,
     addInventoryItem,
     deleteInventoryItem,
+    addConsultation,
+    deleteConsultation,
+    setConsultationStatus,
+    addBid,
+    deleteBid,
+    setBidStatus,
+    addDesign,
+    deleteDesign,
+    addMilestone,
+    deleteMilestone,
     transferProperty,
     setShare,
     role,
     login,
     logout,
+    branding,
+    setBranding,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
@@ -569,6 +830,10 @@ function seed(): Property[] {
       architect: "Ateliér Kořínek",
       contractors:
         "Stavební firma: Stavby Novák s.r.o. (777 123 456)\nElektro: Jan Dvořák (605 987 654)\nVoda a topení: TermoInstal (775 222 333)",
+      designer: "Ing. Petr Malý (statika)",
+      constructionSystem: "Zděný (Porotherm), železobetonové stropy",
+      builtUpArea: 110,
+      materials: "Cihla Porotherm, minerální zateplení, betonová krytina, dřevěná eurookna",
       ownerName: "Jana Nováková",
       shareEnabled: false,
       createdByRole: "CLIENT",
@@ -655,6 +920,13 @@ function seed(): Property[] {
         { id: "s-i2", name: "Plynový kotel", location: "Kotelna", brand: "Model XYZ", warrantyUntil: "2027-10-12", note: "Servis 2025, další revize 2027" },
         { id: "s-i3", name: "Střešní krytina", location: "Střecha", brand: "Krytina ABC", note: "Montáž 2024" },
         { id: "s-i4", name: "Dřevěná podlaha", location: "Obývací pokoj", brand: "Kährs dub", price: 48000, warrantyUntil: "2030-06-15" },
+      ],
+      milestones: [
+        { id: "m-1", year: 2008, title: "Návrh domu", note: "Studie a projektová dokumentace.", createdAt: "2024-01-01" },
+        { id: "m-2", year: 2009, title: "Realizace stavby", note: "Hrubá stavba a dokončení.", createdAt: "2024-01-01" },
+        { id: "m-3", year: 2018, title: "Výměna plynového kotle", createdAt: "2024-01-01" },
+        { id: "m-4", year: 2024, title: "Rekonstrukce koupelny v patře", createdAt: "2024-01-01" },
+        { id: "m-5", year: 2025, title: "Oprava oplechování střešního okna", createdAt: "2024-01-01" },
       ],
       createdAt: "2024-01-01",
       updatedAt: "2025-11-20",
@@ -779,6 +1051,60 @@ function seed(): Property[] {
       reminders: [],
       transfers: [],
       inventory: [],
+      consultations: [
+        {
+          id: "k-1",
+          authorRole: "ARCHITECT",
+          topic: "Studie — dispozice",
+          text: "Posílám upravenou studii s otevřenou dispozicí přízemí a posunutým schodištěm. Prosím o připomínky.",
+          status: "RESOLVED",
+          createdAt: "2026-02-18",
+        },
+        {
+          id: "k-2",
+          authorRole: "CLIENT",
+          topic: "Studie — dispozice",
+          text: "Děkujeme, vypadá to skvěle. Šlo by zvětšit spíž a přidat okno do koupelny?",
+          status: "RESOLVED",
+          createdAt: "2026-02-21",
+        },
+        {
+          id: "k-3",
+          authorRole: "ARCHITECT",
+          topic: "Materiály fasády",
+          text: "K fasádě navrhuji kombinaci omítky a dřevěného obkladu. Vzorky ukážu na příští schůzce.",
+          status: "WAITING",
+          createdAt: "2026-03-10",
+        },
+      ],
+      bids: [
+        { id: "b-1", company: "Stavby Novák s.r.o.", contact: "777 123 456", price: 9850000, durationWeeks: 52, rating: 4, note: "Reference v okolí, dobrá komunikace.", status: "RECEIVED", createdAt: "2026-03-15" },
+        { id: "b-2", company: "Bau Beroun s.r.o.", contact: "604 222 333", price: 9200000, durationWeeks: 60, rating: 5, note: "Nejlepší cena, delší termín.", status: "SELECTED", createdAt: "2026-03-18" },
+        { id: "b-3", company: "RychláStavba a.s.", contact: "608 999 111", price: 11200000, durationWeeks: 40, rating: 3, note: "Rychlý termín, vyšší cena.", status: "REJECTED", createdAt: "2026-03-20" },
+      ],
+      designs: [
+        {
+          id: "d-1",
+          title: "Studie — přízemí (v2)",
+          note: "Otevřená dispozice s posunutým schodištěm dle konzultace.",
+          authorRole: "ARCHITECT",
+          media: [
+            { id: "dm-1", name: "studie-prizemi.svg", kind: "image", dataUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iMzIwIj48cmVjdCB3aWR0aD0iNDgwIiBoZWlnaHQ9IjMyMCIgZmlsbD0iIzE4NEU1QSIvPjx0ZXh0IHg9IjI0MCIgeT0iMTcwIiBmb250LXNpemU9IjMwIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+U3R1ZGllIC0gcHJpemVtaTwvdGV4dD48L3N2Zz4=" },
+          ],
+          createdAt: "2026-02-18",
+        },
+        {
+          id: "d-2",
+          title: "Vizualizace fasády + řez",
+          note: "Kombinace omítky a dřevěného obkladu, řez A–A.",
+          authorRole: "ARCHITECT",
+          media: [
+            { id: "dm-2", name: "fasada.svg", kind: "image", dataUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iMzIwIj48cmVjdCB3aWR0aD0iNDgwIiBoZWlnaHQ9IjMyMCIgZmlsbD0iI0I1NTQzQSIvPjx0ZXh0IHg9IjI0MCIgeT0iMTcwIiBmb250LXNpemU9IjMwIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+Vml6dWFsaXphY2UgZmFzYWR5PC90ZXh0Pjwvc3ZnPg==" },
+            { id: "dm-3", name: "rez.svg", kind: "image", dataUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iMzIwIj48cmVjdCB3aWR0aD0iNDgwIiBoZWlnaHQ9IjMyMCIgZmlsbD0iIzJGNUQ1MCIvPjx0ZXh0IHg9IjI0MCIgeT0iMTcwIiBmb250LXNpemU9IjMwIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UmV6IEEtQTwvdGV4dD48L3N2Zz4=" },
+          ],
+          createdAt: "2026-03-10",
+        },
+      ],
       createdAt: "2026-01-10",
       updatedAt: "2026-04-15",
     },

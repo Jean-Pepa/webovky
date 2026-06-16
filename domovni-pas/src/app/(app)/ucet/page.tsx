@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { Loading } from "@/components/Loading";
@@ -86,6 +87,9 @@ export default function AccountPage() {
         </button>
       </section>
 
+      {/* Branding studia — jen architekt */}
+      {r === "ARCHITECT" && <BrandingCard />}
+
       {/* Aplikace */}
       <section className="card mt-4 p-5">
         <h2 className="text-sm font-semibold text-stone-900">Aplikace</h2>
@@ -100,5 +104,95 @@ export default function AccountPage() {
         </Link>
       </section>
     </div>
+  );
+}
+
+const BRAND_COLORS = ["#b5543a", "#184E5A", "#2F5D50", "#6B4E2E", "#1f2937"];
+
+function BrandingCard() {
+  const { branding, setBranding } = useStore();
+  const [studioName, setStudioName] = useState(branding.studioName ?? "");
+  const [tagline, setTagline] = useState(branding.tagline ?? "");
+  const [color, setColor] = useState(branding.color ?? "#b5543a");
+  const [saved, setSaved] = useState(false);
+
+  function save() {
+    setBranding({
+      studioName: studioName.trim() || undefined,
+      tagline: tagline.trim() || undefined,
+      color,
+    });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <section className="card mt-4 p-5">
+      <h2 className="text-sm font-semibold text-stone-900">Branding studia</h2>
+      <p className="mt-1 text-sm text-stone-500">
+        Zobrazí se na reportu a sdíleném pasu, který předáte klientovi.
+      </p>
+      <div className="mt-4 space-y-4">
+        <div>
+          <label className="label" htmlFor="studio">Název studia</label>
+          <input
+            id="studio"
+            className="input"
+            value={studioName}
+            onChange={(e) => setStudioName(e.target.value)}
+            placeholder="Např. Ateliér Kořínek"
+          />
+        </div>
+        <div>
+          <label className="label" htmlFor="tagline">Claim (volitelné)</label>
+          <input
+            id="tagline"
+            className="input"
+            value={tagline}
+            onChange={(e) => setTagline(e.target.value)}
+            placeholder="Architektura, která dává smysl"
+          />
+        </div>
+        <div>
+          <label className="label">Barva</label>
+          <div className="flex items-center gap-2">
+            {BRAND_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setColor(c)}
+                aria-label={c}
+                className={`h-8 w-8 rounded-full border-2 transition ${
+                  color === c ? "border-stone-900" : "border-transparent"
+                }`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+            <input
+              type="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="h-8 w-10 cursor-pointer rounded border border-stone-200 bg-white"
+            />
+          </div>
+        </div>
+
+        {/* Náhled hlavičky */}
+        <div className="rounded-xl border border-stone-200 p-4">
+          <div className="h-1.5 w-full rounded-full" style={{ backgroundColor: color }} />
+          <p className="mt-3 text-base font-semibold" style={{ color }}>
+            {studioName || "Název studia"}
+          </p>
+          {tagline && <p className="text-xs text-stone-500">{tagline}</p>}
+          <p className="mt-1 text-[11px] uppercase tracking-wide text-stone-400">
+            Náhled hlavičky reportu / pasu
+          </p>
+        </div>
+
+        <button onClick={save} className="btn-primary btn-sm">
+          {saved ? "Uloženo ✓" : "Uložit branding"}
+        </button>
+      </div>
+    </section>
   );
 }

@@ -66,6 +66,11 @@ export const CATEGORY_TO_SECTION: Record<string, string> = {
   OTHER: "BUDOVA",
 };
 
+// Sekce dokumentu (explicitní, nebo odvozená z kategorie)
+export function documentSection(doc: { section?: string; category: string }): string {
+  return doc.section ?? CATEGORY_TO_SECTION[doc.category] ?? "BUDOVA";
+}
+
 // Návrhy místností / oblastí pro vybavení (datalist)
 export const ROOM_SUGGESTIONS = [
   "Kuchyně",

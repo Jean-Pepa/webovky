@@ -8,10 +8,12 @@ import { Loading } from "@/components/Loading";
 import { BackLink } from "@/components/BackLink";
 import { Badge } from "@/components/ui/Badge";
 import { EntryCard } from "@/components/EntryCard";
-import { DocumentRow } from "@/components/DocumentRow";
-import { DocumentUploadForm } from "@/components/forms/DocumentUploadForm";
 import { ReminderSection } from "@/components/ReminderSection";
 import { InventorySection } from "@/components/InventorySection";
+import { ConsultationSection } from "@/components/ConsultationSection";
+import { DesignSection } from "@/components/DesignSection";
+import { ArchHistorySection } from "@/components/ArchHistorySection";
+import { ProjectDocsSection } from "@/components/ProjectDocsSection";
 import { ProjectCard } from "@/components/ProjectCard";
 import {
   IconPlus,
@@ -23,6 +25,7 @@ import {
   IconBuilding,
   IconTrash,
   IconShield,
+  IconWrench,
 } from "@/components/Icons";
 import { PROPERTY_TYPES } from "@/lib/enums";
 import { addressLine, formatCurrency } from "@/lib/format";
@@ -30,7 +33,7 @@ import { addressLine, formatCurrency } from "@/lib/format";
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { getProperty, hydrated, role, deleteEntry, deleteDocument, deleteProperty } = useStore();
+  const { getProperty, hydrated, role, deleteEntry, deleteProperty } = useStore();
 
   if (!hydrated) return <Loading />;
 
@@ -89,6 +92,16 @@ export default function PropertyDetailPage() {
               Stavební povolení
             </Link>
           )}
+          <Link href={`/nemovitost/${id}/rozpocet`} className="btn-secondary btn-sm">
+            <IconMoney className="h-4 w-4" />
+            Rozpočet
+          </Link>
+          {(role === "ARCHITECT" || role === "CREATOR") && (
+            <Link href={`/nemovitost/${id}/firmy`} className="btn-secondary btn-sm">
+              <IconWrench className="h-4 w-4" />
+              Výběr firmy
+            </Link>
+          )}
           {editable && (
             <>
               <Link href={`/nemovitost/${id}/prodej`} className="btn-secondary btn-sm">
@@ -127,6 +140,12 @@ export default function PropertyDetailPage() {
       </div>
 
       <ProjectCard property={property} className="mt-6" />
+
+      <ArchHistorySection
+        propertyId={id}
+        milestones={property.milestones ?? []}
+        editable={editable}
+      />
 
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -203,36 +222,20 @@ export default function PropertyDetailPage() {
           </section>
 
           <ReminderSection propertyId={id} reminders={property.reminders} editable={editable} />
-
-          <section className="card p-5">
-            <h2 className="text-sm font-semibold text-stone-900">Dokumenty</h2>
-            {property.documents.length > 0 ? (
-              <ul className="mt-1 divide-y divide-stone-100">
-                {property.documents.map((doc) => (
-                  <DocumentRow
-                    key={doc.id}
-                    doc={doc}
-                    onDelete={editable ? () => deleteDocument(id, doc.id) : undefined}
-                  />
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-sm text-stone-500">
-                {editable
-                  ? "Zatím žádné dokumenty. Nahrajte projekt, energetický štítek nebo certifikáty."
-                  : "Zatím žádné dokumenty."}
-              </p>
-            )}
-            {editable && (
-              <div className="mt-4 border-t border-stone-100 pt-4">
-                <DocumentUploadForm propertyId={id} />
-              </div>
-            )}
-          </section>
         </div>
       </div>
 
+      <ProjectDocsSection
+        propertyId={id}
+        documents={property.documents}
+        editable={editable}
+      />
+
+      <DesignSection propertyId={id} designs={property.designs ?? []} editable={editable} />
+
       <InventorySection propertyId={id} inventory={property.inventory} editable={editable} />
+
+      <ConsultationSection propertyId={id} consultations={property.consultations ?? []} />
     </div>
   );
 }

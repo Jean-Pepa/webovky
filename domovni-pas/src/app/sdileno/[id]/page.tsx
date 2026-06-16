@@ -14,7 +14,7 @@ import { addressLine, formatCurrency } from "@/lib/format";
 
 export default function SharedPage() {
   const { id } = useParams<{ id: string }>();
-  const { getProperty, hydrated } = useStore();
+  const { getProperty, hydrated, branding } = useStore();
   const [server, setServer] = useState<Property | null | undefined>(undefined);
 
   // Nejdřív zkusíme server (funguje pro kohokoli); jinak fallback na tento prohlížeč.
@@ -56,11 +56,19 @@ export default function SharedPage() {
 
   return (
     <div className="min-h-screen">
+      <div className="h-1.5 w-full" style={{ backgroundColor: branding.color ?? "#b5543a" }} />
       <header className="border-b border-stone-200 bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
-          <Link href="/">
-            <Logo />
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/">
+              <Logo />
+            </Link>
+            {branding.studioName && (
+              <span className="text-sm font-semibold" style={{ color: branding.color }}>
+                {branding.studioName}
+              </span>
+            )}
+          </div>
           <Badge color="amber">Náhled · jen ke čtení</Badge>
         </div>
       </header>
