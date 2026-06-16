@@ -1,7 +1,20 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { newId } from "./id";
+
+// Sdílený „pas" pro server — bez datových příloh (dataUrl), ať je payload malý.
+function toShareSnapshot(p: Property): Property {
+  return {
+    ...p,
+    documents: p.documents.map((d) => ({ ...d, dataUrl: undefined })),
+    entries: p.entries.map((e) => ({
+      ...e,
+      media: e.media.map((m) => ({ ...m, dataUrl: undefined })),
+    })),
+    inventory: p.inventory.map((i) => ({ ...i, dataUrl: undefined })),
+  };
+}
 
 export type Role = "ARCHITECT" | "CLIENT" | "CREATOR";
 
@@ -23,6 +36,9 @@ export type DocCategory =
   | "INVOICE"
   | "OTHER";
 
+// Fáze/sekce projektu, do které dokument patří
+export type DocSection = "POZEMEK" | "NAVRH" | "REALIZACE" | "BUDOVA";
+
 export type Media = { id: string; name: string; kind: "image" | "file"; dataUrl?: string };
 
 export type Entry = {
@@ -40,6 +56,7 @@ export type DocItem = {
   id: string;
   title: string;
   category: DocCategory;
+  section?: DocSection;
   fileName?: string;
   dataUrl?: string;
 };
@@ -102,6 +119,7 @@ export type EntryInput = {
 export type DocumentInput = {
   title: string;
   category: DocCategory;
+  section?: DocSection;
   fileName?: string;
   dataUrl?: string;
 };
@@ -240,6 +258,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(KEY, JSON.stringify(properties));
     } catch {
       // localStorage může být plný (velké obrázky) – v ukázce ignorujeme
+    }
+  }, [properties, hydrated]);
+
+  // Synchronizace sdílených pasů na server (aby QR/odkaz fungoval pro kohokoli).
+  // Bez nakonfigurovaného backendu API vrátí 503 a tichounce se ignoruje.
+  const publishedRef = useRef<Record<string, string>>({});
+  useEffect(() => {
+    if (!hydrated) return;
+    for (const p of properties) {
+      if (!p.shareEnabled) continue;
+      const json = JSON.stringify(toShareSnapshot(p));
+      if (publishedRef.current[p.id] === json) continue;
+      publishedRef.current[p.id] = json;
+      fetch(`/api/passport/${p.id}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: json,
+      }).catch(() => {});
+    }
+    for (const id of Object.keys(publishedRef.current)) {
+      const prop = properties.find((p) => p.id === id);
+      if (!prop || !prop.shareEnabled) {
+        delete publishedRef.current[id];
+        fetch(`/api/passport/${id}`, { method: "DELETE" }).catch(() => {});
+      }
     }
   }, [properties, hydrated]);
 
@@ -576,13 +619,29 @@ function seed(): Property[] {
           id: "s-d1",
           title: "Průkaz energetické náročnosti budovy",
           category: "ENERGY_LABEL",
+          section: "BUDOVA",
           fileName: "PENB_Ricany.pdf",
         },
         {
           id: "s-d2",
           title: "Projektová dokumentace – půdorysy",
           category: "PLAN",
+          section: "NAVRH",
           fileName: "Pudorysy.pdf",
+        },
+        {
+          id: "s-d3",
+          title: "Výpis z katastru nemovitostí",
+          category: "OTHER",
+          section: "POZEMEK",
+          fileName: "Vypis_katastr.pdf",
+        },
+        {
+          id: "s-d4",
+          title: "Faktura — rekonstrukce koupelny",
+          category: "INVOICE",
+          section: "REALIZACE",
+          fileName: "Faktura_koupelna.pdf",
         },
       ],
       reminders: [
@@ -624,6 +683,15 @@ function seed(): Property[] {
           media: [],
           createdAt: "2025-03-10",
         },
+        {
+          id: "s-e6",
+          type: "DEFECT",
+          title: "Prosakující odpad pod dřezem",
+          description: "Pod kuchyňským dřezem se objevila vlhkost, nutné prověřit těsnění.",
+          date: "2026-06-05",
+          media: [],
+          createdAt: "2026-06-05",
+        },
       ],
       documents: [],
       reminders: [
@@ -632,7 +700,7 @@ function seed(): Property[] {
       transfers: [],
       inventory: [
         { id: "s-i5", name: "Kuchyňská linka na míru", location: "Kuchyně", price: 120000, warrantyUntil: "2030-03-10" },
-        { id: "s-i6", name: "Indukční deska", location: "Kuchyně", brand: "Bosch", warrantyUntil: "2027-03-10" },
+        { id: "s-i6", name: "Indukční deska", location: "Kuchyně", brand: "Bosch", warrantyUntil: "2026-07-10" },
       ],
       createdAt: "2024-02-01",
       updatedAt: "2025-03-10",

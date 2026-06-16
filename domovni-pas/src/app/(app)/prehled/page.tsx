@@ -4,10 +4,9 @@ import Link from "next/link";
 import { useStore, type Property } from "@/lib/store";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Loading } from "@/components/Loading";
-import { IconPlus, IconHome, IconCalendar, IconBuilding } from "@/components/Icons";
-import { dueStatus } from "@/lib/format";
-import { REMINDER_TYPES } from "@/lib/enums";
+import { IconPlus, IconHome, IconBuilding, IconAlert, IconCalendar, IconShield } from "@/components/Icons";
 import { canSeeProperty } from "@/lib/access";
+import { getAttentionItems, ATTENTION_KIND_LABELS, type AttentionKind } from "@/lib/attention";
 
 function plural(n: number) {
   if (n === 1) return "nemovitost";
@@ -41,13 +40,8 @@ export default function DashboardPage() {
         ? "Zatím nemáte žádný projekt."
         : "Zatím tu nic není.";
 
-  // Připomínky řeší majitel/správce, ne architekt
-  const upcoming = isArchitect
-    ? []
-    : visible
-        .flatMap((p) => p.reminders.filter((rem) => !rem.done).map((rem) => ({ r: rem, p })))
-        .sort((a, b) => a.r.dueDate.localeCompare(b.r.dueDate))
-        .slice(0, 6);
+  // Co „hoří" — záruky a revize se hlídají automaticky (architekt neřeší)
+  const attention = isArchitect ? [] : getAttentionItems(visible);
 
   const stats = isCreator
     ? {
@@ -102,40 +96,46 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Nadcházející připomínky (majitel / správce) */}
-      {upcoming.length > 0 && (
+      {/* Vyžaduje pozornost (majitel / správce) */}
+      {attention.length > 0 && (
         <section className="card mt-6 p-5">
           <div className="flex items-center gap-2">
-            <IconCalendar className="h-4 w-4 text-teal-700" />
-            <h2 className="text-sm font-semibold text-stone-900">Nadcházející připomínky</h2>
+            <IconAlert className="h-4 w-4 text-brass" />
+            <h2 className="text-sm font-semibold text-stone-900">Vyžaduje pozornost</h2>
+            <span className="text-xs text-stone-400">· {attention.length}</span>
           </div>
           <ul className="mt-2 divide-y divide-stone-100">
-            {upcoming.map(({ r: rem, p }) => {
-              const st = dueStatus(rem.dueDate);
-              return (
-                <li key={rem.id}>
-                  <Link
-                    href={`/nemovitost/${p.id}`}
-                    className="-mx-1 flex items-center justify-between gap-3 rounded px-1 py-2.5 hover:bg-stone-50"
-                  >
+            {attention.slice(0, 6).map((a) => (
+              <li key={a.id}>
+                <Link
+                  href={`/nemovitost/${a.property.id}`}
+                  className="-mx-1 flex items-center justify-between gap-3 rounded px-1 py-2.5 hover:bg-stone-50"
+                >
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <KindIcon kind={a.kind} overdue={a.severity === "overdue"} />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-stone-800">{rem.title}</p>
+                      <p className="truncate text-sm font-medium text-stone-800">{a.title}</p>
                       <p className="truncate text-xs text-stone-400">
-                        {REMINDER_TYPES[rem.type]} · {p.name}
+                        {ATTENTION_KIND_LABELS[a.kind]} · {a.property.name}
                       </p>
                     </div>
-                    <span
-                      className={`shrink-0 text-xs font-medium ${
-                        st.overdue ? "text-red-600" : st.soon ? "text-amber-600" : "text-stone-500"
-                      }`}
-                    >
-                      {st.label}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
+                  </div>
+                  <span
+                    className={`shrink-0 text-xs font-medium ${
+                      a.severity === "overdue" ? "text-red-600" : "text-amber-600"
+                    }`}
+                  >
+                    {a.label}
+                  </span>
+                </Link>
+              </li>
+            ))}
           </ul>
+          {attention.length > 6 && (
+            <Link href="/kalendar" className="mt-3 inline-block text-sm font-medium text-brass hover:underline">
+              Zobrazit vše →
+            </Link>
+          )}
         </section>
       )}
 
@@ -189,6 +189,16 @@ function PropertySection({ title, items }: { title: string; items: Property[] })
         ))}
       </div>
     </section>
+  );
+}
+
+function KindIcon({ kind, overdue }: { kind: AttentionKind; overdue: boolean }) {
+  const Icon = kind === "warranty" ? IconShield : kind === "defect" ? IconAlert : IconCalendar;
+  const color = overdue ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600";
+  return (
+    <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${color}`}>
+      <Icon className="h-4 w-4" />
+    </span>
   );
 }
 
