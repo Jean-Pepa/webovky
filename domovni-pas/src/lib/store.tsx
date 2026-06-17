@@ -26,7 +26,7 @@ export type Role = "ARCHITECT" | "CLIENT" | "CREATOR";
 // Branding architekta — zobrazí se na reportu a sdíleném pasu.
 export type Branding = { studioName?: string; color?: string; tagline?: string };
 
-export type PropertyType = "HOUSE" | "APARTMENT" | "OTHER";
+export type PropertyType = "HOUSE" | "APARTMENT" | "BUILDING" | "OTHER";
 export type EntryType =
   | "PURCHASE"
   | "HANDOVER"
@@ -350,6 +350,10 @@ const StoreContext = createContext<Store | null>(null);
 const KEY = "domovni-pas-v1";
 const ROLE_KEY = "bulo-role";
 const BRANDING_KEY = "bulo-branding";
+// Verze ukázkových dat – po bumpnutí se jednorázově doplní nově přidané demo budovy
+// (bez mazání dat uživatele; smazané demo se znovu nepřidá).
+const SEED_KEY = "bulo-seed";
+const SEED_VERSION = "2026-06-svj";
 
 // Demo přihlášení – 3 hesla = 3 role. (Změnit lze tady.)
 const PASSWORDS: Record<string, Role> = {
@@ -384,22 +388,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (raw) {
         const parsed = JSON.parse(raw) as Property[];
         // migrace starších dat bez reminders/transfers
-        setProperties(
-          parsed.map((p) => ({
-            ...p,
-            reminders: p.reminders ?? [],
-            transfers: p.transfers ?? [],
-            inventory: p.inventory ?? [],
-            consultations: p.consultations ?? [],
-            bids: p.bids ?? [],
-            designs: p.designs ?? [],
-            milestones: p.milestones ?? [],
-            costs: p.costs ?? [],
-            messages: p.messages ?? [],
-          })),
-        );
+        let loaded: Property[] = parsed.map((p) => ({
+          ...p,
+          reminders: p.reminders ?? [],
+          transfers: p.transfers ?? [],
+          inventory: p.inventory ?? [],
+          consultations: p.consultations ?? [],
+          bids: p.bids ?? [],
+          designs: p.designs ?? [],
+          milestones: p.milestones ?? [],
+          costs: p.costs ?? [],
+          messages: p.messages ?? [],
+        }));
+        // jednorázové doplnění nově přidaných ukázkových budov
+        if (localStorage.getItem(SEED_KEY) !== SEED_VERSION) {
+          const have = new Set(loaded.map((p) => p.id));
+          const missing = seed().filter((s) => s.id.startsWith("demo-") && !have.has(s.id));
+          if (missing.length) loaded = [...missing, ...loaded];
+          localStorage.setItem(SEED_KEY, SEED_VERSION);
+        }
+        setProperties(loaded);
       } else {
         setProperties(seed());
+        localStorage.setItem(SEED_KEY, SEED_VERSION);
       }
     } catch {
       setProperties(seed());
@@ -1319,6 +1330,72 @@ function seed(): Property[] {
       ],
       createdAt: "2026-01-10",
       updatedAt: "2026-04-15",
+    },
+    {
+      id: "demo-svj",
+      name: "Bytový dům — SVJ Jugoslávská 12",
+      type: "BUILDING",
+      street: "Jugoslávská 12",
+      city: "Praha 2",
+      zip: "12000",
+      yearBuilt: 1931,
+      floorArea: 1840,
+      description:
+        "Činžovní dům, 18 bytových jednotek, společná plynová kotelna a výtah. Spravováno výborem SVJ.",
+      ownerName: "SVJ Jugoslávská 12",
+      shareEnabled: false,
+      createdByRole: "CREATOR",
+      handedOver: false,
+      entries: [
+        {
+          id: "s-esvj1",
+          type: "REPAIR",
+          title: "Oprava stoupačky vody (2. NP)",
+          description: "Výměna prasklého kusu stoupačky studené vody, zazdění a malba.",
+          date: "2026-03-12",
+          cost: 18400,
+          media: [],
+          createdAt: "2026-03-12",
+        },
+        {
+          id: "s-esvj2",
+          type: "INSPECTION",
+          title: "Roční revize elektro — společné prostory",
+          description: "Revize elektroinstalace chodeb a sklepů. Bez závad.",
+          date: "2025-09-30",
+          media: [],
+          createdAt: "2025-09-30",
+        },
+      ],
+      documents: [
+        { id: "s-dsvj1", title: "Domovní řád", category: "CONTRACT", section: "BUDOVA" },
+        { id: "s-dsvj2", title: "Revizní zpráva elektro 2025", category: "CERTIFICATE", section: "BUDOVA" },
+      ],
+      reminders: [
+        { id: "s-rsvj1", type: "INSPECTION", title: "Revize výtahu", dueDate: "2026-05-20", note: "Čtvrtletní odborná prohlídka výtahu", done: false },
+        { id: "s-rsvj2", type: "INSPECTION", title: "Revize domovní plynové kotelny", dueDate: "2026-04-10", note: "Roční revize plynového zařízení", done: false },
+        { id: "s-rsvj3", type: "INSPECTION", title: "Kontrola hasicích přístrojů a hydrantů", dueDate: "2026-07-08", done: false },
+        { id: "s-rsvj4", type: "INSPECTION", title: "Revize elektro — společné prostory", dueDate: "2026-09-30", done: false },
+        { id: "s-rsvj5", type: "INSPECTION", title: "Čištění a kontrola komínů", dueDate: "2026-10-01", done: false },
+        { id: "s-rsvj6", type: "INSPECTION", title: "Revize hromosvodu", dueDate: "2026-11-15", done: false },
+      ],
+      transfers: [],
+      inventory: [
+        { id: "s-isvj1", name: "Osobní výtah", location: "Strojovna", brand: "OTIS", warrantyUntil: "2027-04-30" },
+        { id: "s-isvj2", name: "Plynový kotel kaskáda", location: "Domovní kotelna", brand: "Buderus" },
+      ],
+      consultations: [
+        {
+          id: "ksvj-1",
+          authorRole: "CLIENT",
+          topic: "Závada — sklep",
+          text: "Ve sklepní kóji u stoupačky se objevila vlhkost. Můžete prosím prověřit?",
+          status: "OPEN",
+          createdAt: "2026-06-14",
+        },
+      ],
+      createdAt: "2024-09-01",
+      updatedAt: "2026-06-14",
     },
   ];
 }

@@ -3,13 +3,13 @@ import type { Property, Role } from "./store";
 export const ROLE_LABELS: Record<Role, string> = {
   ARCHITECT: "Architekt",
   CLIENT: "Klient / majitel",
-  CREATOR: "Tvůrce (admin)",
+  CREATOR: "Správce / SVJ",
 };
 
 export const ROLE_INITIALS: Record<Role, string> = {
   ARCHITECT: "AR",
   CLIENT: "KL",
-  CREATOR: "TV",
+  CREATOR: "SV",
 };
 
 // Kdo vidí kterou nemovitost
