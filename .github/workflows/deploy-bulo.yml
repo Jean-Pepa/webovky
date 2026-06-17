@@ -1,11 +1,8 @@
 name: Deploy BULO to Vercel
 
+# Auto-deploy na push je vypnutý — produkci nasazuje Vercel Git integrace.
+# Tento workflow zůstává jako ruční záloha (workflow_dispatch).
 on:
-  push:
-    branches: [main]
-    paths:
-      - "domovni-pas/**"
-      - ".github/workflows/deploy-bulo.yml"
   workflow_dispatch: {}
 
 concurrency:
