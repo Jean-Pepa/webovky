@@ -12,10 +12,15 @@ export function PropertyCard({
   property: Property;
   showStatus?: boolean;
 }) {
+  const handedAccent = showStatus && property.handedOver;
   return (
     <Link
       href={`/nemovitost/${property.id}`}
-      className="card group flex flex-col p-5 transition hover:border-teal-300 hover:shadow-md"
+      className={`card group flex flex-col p-5 transition hover:shadow-md ${
+        handedAccent
+          ? "border-emerald-300 ring-1 ring-emerald-200 hover:border-emerald-400"
+          : "hover:border-teal-300"
+      }`}
     >
       <div className="flex flex-wrap items-center gap-2">
         <Badge color="teal">{PROPERTY_TYPES[property.type]}</Badge>

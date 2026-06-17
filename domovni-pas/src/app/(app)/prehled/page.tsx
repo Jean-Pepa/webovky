@@ -107,14 +107,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Pipeline pro architekta */}
-      {isArchitect && visible.length > 0 && (
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:max-w-sm">
-          <StatBox label="Čeká na převzetí" value={String(waiting.length)} />
-          <StatBox label="Předáno klientovi" value={String(handed.length)} />
-        </div>
-      )}
-
       {/* Dotazy a konzultace (architekt / správce) */}
       {consultations.length > 0 && (
         <section className="card mt-6 p-5">
