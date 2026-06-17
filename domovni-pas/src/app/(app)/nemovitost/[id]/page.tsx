@@ -5,15 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { canSeeProperty, canEditProperty } from "@/lib/access";
 import { Loading } from "@/components/Loading";
-import { BackLink } from "@/components/BackLink";
 import { Badge } from "@/components/ui/Badge";
 import { EntryCard } from "@/components/EntryCard";
-import { ReminderSection } from "@/components/ReminderSection";
-import { InventorySection } from "@/components/InventorySection";
-import { ConsultationSection } from "@/components/ConsultationSection";
-import { DesignSection } from "@/components/DesignSection";
 import { ArchHistorySection } from "@/components/ArchHistorySection";
-import { ProjectDocsSection } from "@/components/ProjectDocsSection";
 import { ProjectCard } from "@/components/ProjectCard";
 import {
   IconPlus,
@@ -25,7 +19,6 @@ import {
   IconBuilding,
   IconTrash,
   IconShield,
-  IconWrench,
 } from "@/components/Icons";
 import { PROPERTY_TYPES } from "@/lib/enums";
 import { addressLine, formatCurrency } from "@/lib/format";
@@ -59,10 +52,8 @@ export default function PropertyDetailPage() {
 
   return (
     <div>
-      <BackLink href="/prehled">Zpět na přehled</BackLink>
-
       {!editable && (
-        <div className="mt-4 flex items-start gap-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="flex items-start gap-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
           <IconShield className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
           <p>
             {lockedByHandover
@@ -72,36 +63,18 @@ export default function PropertyDetailPage() {
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Badge color="teal">{PROPERTY_TYPES[property.type]}</Badge>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-900">
-            {property.name}
-          </h1>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-900">{property.name}</h1>
           <p className="mt-1 text-sm text-stone-500">{addressLine(property)}</p>
         </div>
 
         <div className="flex flex-wrap gap-2">
           <Link href={`/nemovitost/${id}/report`} className="btn-primary btn-sm">
             <IconFile className="h-4 w-4" />
-            Vygenerovat report
+            Report
           </Link>
-          {(role === "ARCHITECT" || role === "CREATOR") && (
-            <Link href={`/nemovitost/${id}/povoleni`} className="btn-secondary btn-sm">
-              <IconBuilding className="h-4 w-4" />
-              Stavební povolení
-            </Link>
-          )}
-          <Link href={`/nemovitost/${id}/rozpocet`} className="btn-secondary btn-sm">
-            <IconMoney className="h-4 w-4" />
-            Rozpočet
-          </Link>
-          {(role === "ARCHITECT" || role === "CREATOR") && (
-            <Link href={`/nemovitost/${id}/firmy`} className="btn-secondary btn-sm">
-              <IconWrench className="h-4 w-4" />
-              Výběr firmy
-            </Link>
-          )}
           {editable && (
             <>
               <Link href={`/nemovitost/${id}/prodej`} className="btn-secondary btn-sm">
@@ -141,11 +114,7 @@ export default function PropertyDetailPage() {
 
       <ProjectCard property={property} className="mt-6" />
 
-      <ArchHistorySection
-        propertyId={id}
-        milestones={property.milestones ?? []}
-        editable={editable}
-      />
+      <ArchHistorySection propertyId={id} milestones={property.milestones ?? []} editable={editable} />
 
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -220,22 +189,8 @@ export default function PropertyDetailPage() {
               </button>
             )}
           </section>
-
-          <ReminderSection propertyId={id} reminders={property.reminders} editable={editable} />
         </div>
       </div>
-
-      <ProjectDocsSection
-        propertyId={id}
-        documents={property.documents}
-        editable={editable}
-      />
-
-      <DesignSection propertyId={id} designs={property.designs ?? []} editable={editable} />
-
-      <InventorySection propertyId={id} inventory={property.inventory} editable={editable} />
-
-      <ConsultationSection propertyId={id} consultations={property.consultations ?? []} />
     </div>
   );
 }
