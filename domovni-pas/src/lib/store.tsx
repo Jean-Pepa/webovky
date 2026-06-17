@@ -175,12 +175,20 @@ export type TransferRecord = {
 // Průběžné konzultace architekta s klientem (vlákno poznámek/dotazů)
 export type ConsultationStatus = "OPEN" | "WAITING" | "RESOLVED";
 
+export type ConsultationReply = {
+  id: string;
+  authorRole: Role;
+  text: string;
+  createdAt: string;
+};
+
 export type ConsultationNote = {
   id: string;
   authorRole: Role;
   topic?: string;
   text: string;
   status?: ConsultationStatus;
+  replies?: ConsultationReply[];
   createdAt: string;
 };
 
@@ -317,6 +325,7 @@ type Store = {
   addConsultation: (propertyId: string, data: { topic?: string; text: string }) => void;
   deleteConsultation: (propertyId: string, noteId: string) => void;
   setConsultationStatus: (propertyId: string, noteId: string, status: ConsultationStatus) => void;
+  addConsultationReply: (propertyId: string, noteId: string, text: string) => void;
   addBid: (propertyId: string, data: ContractorBidInput) => void;
   deleteBid: (propertyId: string, bidId: string) => void;
   setBidStatus: (propertyId: string, bidId: string, status: BidStatus) => void;
@@ -718,6 +727,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const addConsultationReply = useCallback(
+    (propertyId: string, noteId: string, text: string) => {
+      const reply: ConsultationReply = {
+        id: newId(),
+        authorRole: role ?? "CLIENT",
+        text,
+        createdAt: now(),
+      };
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? {
+                ...p,
+                consultations: (p.consultations ?? []).map((c) =>
+                  c.id === noteId ? { ...c, replies: [...(c.replies ?? []), reply] } : c,
+                ),
+                updatedAt: now(),
+              }
+            : p,
+        ),
+      );
+    },
+    [role],
+  );
+
   const addBid = useCallback((propertyId: string, data: ContractorBidInput) => {
     const bid: ContractorBid = { ...data, id: newId(), status: "RECEIVED", createdAt: now() };
     setProperties((prev) =>
@@ -930,6 +964,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     addConsultation,
     deleteConsultation,
     setConsultationStatus,
+    addConsultationReply,
     addBid,
     deleteBid,
     setBidStatus,
@@ -1214,6 +1249,10 @@ function seed(): Property[] {
           topic: "Studie — dispozice",
           text: "Posílám upravenou studii s otevřenou dispozicí přízemí a posunutým schodištěm. Prosím o připomínky.",
           status: "RESOLVED",
+          replies: [
+            { id: "kr-1", authorRole: "CLIENT", text: "Super, líbí se nám to. Jen prosím větší spíž.", createdAt: "2026-02-19T08:00:00.000Z" },
+            { id: "kr-2", authorRole: "ARCHITECT", text: "Zapracováno, spíž zvětšena. Děkuji!", createdAt: "2026-02-20T09:30:00.000Z" },
+          ],
           createdAt: "2026-02-18",
         },
         {

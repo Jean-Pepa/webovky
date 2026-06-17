@@ -126,6 +126,21 @@ export function ConsultationSection({
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-stone-700">
                   {c.text}
                 </p>
+
+                {(c.replies?.length ?? 0) > 0 && (
+                  <div className="mt-3 space-y-2.5 border-l-2 border-stone-100 pl-3">
+                    {c.replies!.map((rep) => (
+                      <div key={rep.id}>
+                        <p className="text-xs text-stone-400">
+                          {ROLE_LABELS[rep.authorRole]} · {formatDate(rep.createdAt)}
+                        </p>
+                        <p className="whitespace-pre-wrap text-sm text-stone-700">{rep.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <ReplyForm propertyId={propertyId} noteId={c.id} />
               </li>
             );
           })}
@@ -139,5 +154,32 @@ export function ConsultationSection({
         )
       )}
     </section>
+  );
+}
+
+function ReplyForm({ propertyId, noteId }: { propertyId: string; noteId: string }) {
+  const { addConsultationReply } = useStore();
+  const [text, setText] = useState("");
+
+  function send(e: React.FormEvent) {
+    e.preventDefault();
+    const t = text.trim();
+    if (!t) return;
+    addConsultationReply(propertyId, noteId, t);
+    setText("");
+  }
+
+  return (
+    <form onSubmit={send} className="mt-3 flex gap-2">
+      <input
+        className="input flex-1"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Odpovědět…"
+      />
+      <button type="submit" className="btn-secondary btn-sm shrink-0">
+        Odeslat
+      </button>
+    </form>
   );
 }
