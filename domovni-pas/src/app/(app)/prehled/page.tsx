@@ -1,12 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useStore, type Property, type ConsultationStatus, type ChatMessage } from "@/lib/store";
+import { useState } from "react";
+import { useStore, type Property, type ConsultationStatus, type ConsultationNote } from "@/lib/store";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Loading } from "@/components/Loading";
-import { IconPlus, IconHome, IconBuilding, IconAlert, IconCalendar, IconShield, IconUsers } from "@/components/Icons";
+import {
+  IconPlus,
+  IconHome,
+  IconBuilding,
+  IconAlert,
+  IconCalendar,
+  IconShield,
+  IconUsers,
+  IconChevronDown,
+} from "@/components/Icons";
 import { canSeeProperty, ROLE_LABELS } from "@/lib/access";
 import { getAttentionItems, ATTENTION_KIND_LABELS, type AttentionKind, type AttentionItem } from "@/lib/attention";
+
+type ConsItem = { c: ConsultationNote; p: Property };
+
+function consLastActivity(c: ConsultationNote): string {
+  const times = [c.createdAt, ...(c.replies ?? []).map((r) => r.createdAt)];
+  return times.sort().at(-1) ?? c.createdAt;
+}
+function consLatest(c: ConsultationNote): { authorRole: ConsultationNote["authorRole"]; text: string } {
+  const reps = c.replies ?? [];
+  if (reps.length) return reps[reps.length - 1];
+  return { authorRole: c.authorRole, text: c.text };
+}
 
 const CONS_TEXT: Record<string, string> = {
   OPEN: "text-amber-600",
@@ -59,11 +81,11 @@ export default function DashboardPage() {
   // Co „hoří" — záruky a revize se hlídají automaticky (architekt neřeší)
   const attention = isArchitect ? [] : getAttentionItems(visible);
 
-  // Poslední komunikace (chat) napříč nemovitostmi klienta
-  const recentMessages = !isArchitect
+  // Komunikace = konzultace (sjednoceno), seřazené podle poslední aktivity
+  const recentConsultations: ConsItem[] = !isArchitect
     ? visible
-        .flatMap((p) => (p.messages ?? []).map((m) => ({ m, p })))
-        .sort((a, b) => b.m.createdAt.localeCompare(a.m.createdAt))
+        .flatMap((p) => (p.consultations ?? []).map((c) => ({ c, p })))
+        .sort((a, b) => consLastActivity(b.c).localeCompare(consLastActivity(a.c)))
     : [];
 
   // Otevřené dotazy / konzultace napříč projekty (architekt / správce)
@@ -171,11 +193,11 @@ export default function DashboardPage() {
         </section>
       )}
 
-      {/* Klient: zkrácená pozornost + komunikace vedle sebe */}
+      {/* Klient: pozornost + komunikace (rozbalovací, svítí když je důležité) */}
       {isClient && (
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          <AttentionCard items={attention} limit={4} />
-          <KomunikaceCard items={recentMessages} />
+          <AttentionCard items={attention} limit={6} />
+          <KomunikaceCard items={recentConsultations} />
         </div>
       )}
 
@@ -247,6 +269,18 @@ function KindIcon({ kind, overdue }: { kind: AttentionKind; overdue: boolean }) 
   );
 }
 
+// Svítící „tep" — upozorňuje, že karta obsahuje něco důležitého
+function GlowDot({ color = "amber" }: { color?: "amber" | "teal" | "red" }) {
+  const solid = color === "teal" ? "bg-teal-500" : color === "red" ? "bg-red-500" : "bg-amber-500";
+  const ping = color === "teal" ? "bg-teal-400" : color === "red" ? "bg-red-400" : "bg-amber-400";
+  return (
+    <span className="relative ml-1 flex h-2 w-2">
+      <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${ping} opacity-75`} />
+      <span className={`relative inline-flex h-2 w-2 rounded-full ${solid}`} />
+    </span>
+  );
+}
+
 function AttentionCard({
   items,
   limit = 6,
@@ -256,89 +290,134 @@ function AttentionCard({
   limit?: number;
   className?: string;
 }) {
+  const important = items.some((a) => a.severity === "overdue");
+  const [open, setOpen] = useState(false);
+
   return (
-    <section className={`card p-5 ${className}`}>
-      <div className="flex items-center gap-2">
-        <IconAlert className="h-4 w-4 text-brass" />
+    <section
+      className={`card p-5 transition ${
+        important ? "shadow-md shadow-amber-100 ring-2 ring-amber-300/70" : ""
+      } ${className}`}
+    >
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center gap-2 text-left"
+      >
+        <IconAlert className={`h-4 w-4 ${important ? "text-amber-500" : "text-brass"}`} />
         <h2 className="text-sm font-semibold text-stone-900">Vyžaduje pozornost</h2>
         {items.length > 0 && <span className="text-xs text-stone-400">· {items.length}</span>}
-      </div>
-      {items.length === 0 ? (
-        <p className="mt-2 text-sm text-stone-500">Vše v pořádku — nic nehoří. 🎉</p>
-      ) : (
-        <>
-          <ul className="mt-2 divide-y divide-stone-100">
-            {items.slice(0, limit).map((a) => (
-              <li key={a.id}>
-                <Link
-                  href={`/nemovitost/${a.property.id}`}
-                  className="-mx-1 flex items-center justify-between gap-3 rounded px-1 py-2.5 hover:bg-stone-50"
-                >
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <KindIcon kind={a.kind} overdue={a.severity === "overdue"} />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-stone-800">{a.title}</p>
-                      <p className="truncate text-xs text-stone-400">
-                        {ATTENTION_KIND_LABELS[a.kind]} · {a.property.name}
-                      </p>
-                    </div>
-                  </div>
-                  <span
-                    className={`shrink-0 text-xs font-medium ${
-                      a.severity === "overdue" ? "text-red-600" : "text-amber-600"
-                    }`}
+        {important && <GlowDot color="amber" />}
+        <IconChevronDown
+          className={`ml-auto h-4 w-4 shrink-0 text-stone-400 transition ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open &&
+        (items.length === 0 ? (
+          <p className="mt-3 text-sm text-stone-500">Vše v pořádku — nic nehoří. 🎉</p>
+        ) : (
+          <>
+            <ul className="mt-2 divide-y divide-stone-100">
+              {items.slice(0, limit).map((a) => (
+                <li key={a.id}>
+                  <Link
+                    href={`/nemovitost/${a.property.id}`}
+                    className="-mx-1 flex items-center justify-between gap-3 rounded px-1 py-2.5 hover:bg-stone-50"
                   >
-                    {a.label}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          {items.length > limit && (
-            <Link
-              href="/kalendar"
-              className="mt-3 inline-block text-sm font-medium text-brass hover:underline"
-            >
-              Zobrazit vše →
-            </Link>
-          )}
-        </>
-      )}
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <KindIcon kind={a.kind} overdue={a.severity === "overdue"} />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-stone-800">{a.title}</p>
+                        <p className="truncate text-xs text-stone-400">
+                          {ATTENTION_KIND_LABELS[a.kind]} · {a.property.name}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={`shrink-0 text-xs font-medium ${
+                        a.severity === "overdue" ? "text-red-600" : "text-amber-600"
+                      }`}
+                    >
+                      {a.label}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            {items.length > limit && (
+              <Link
+                href="/kalendar"
+                className="mt-3 inline-block text-sm font-medium text-brass hover:underline"
+              >
+                Zobrazit vše →
+              </Link>
+            )}
+          </>
+        ))}
     </section>
   );
 }
 
-function KomunikaceCard({ items }: { items: { m: ChatMessage; p: Property }[] }) {
+const CONS_STATUS_LABEL: Record<string, string> = {
+  OPEN: "Čeká na architekta",
+  WAITING: "Čeká na klienta",
+  RESOLVED: "Vyřešeno",
+};
+
+function KomunikaceCard({ items }: { items: ConsItem[] }) {
+  const important = items.some(({ c }) => (c.status ?? "OPEN") !== "RESOLVED");
+  const [open, setOpen] = useState(false);
+
   return (
-    <section className="card p-5">
-      <div className="flex items-center gap-2">
-        <IconUsers className="h-4 w-4 text-teal-700" />
+    <section
+      className={`card p-5 transition ${
+        important ? "shadow-md shadow-teal-100 ring-2 ring-teal-300/70" : ""
+      }`}
+    >
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center gap-2 text-left"
+      >
+        <IconUsers className={`h-4 w-4 ${important ? "text-teal-600" : "text-teal-700"}`} />
         <h2 className="text-sm font-semibold text-stone-900">Komunikace</h2>
         {items.length > 0 && <span className="text-xs text-stone-400">· {items.length}</span>}
-      </div>
-      {items.length === 0 ? (
-        <p className="mt-2 text-sm text-stone-500">
-          Zatím žádné zprávy. Napsat můžete v chatu u konkrétní nemovitosti.
-        </p>
-      ) : (
-        <ul className="mt-2 divide-y divide-stone-100">
-          {items.slice(0, 5).map(({ m, p }) => (
-            <li key={m.id}>
-              <Link
-                href={`/nemovitost/${p.id}`}
-                className="-mx-1 block rounded px-1 py-2.5 hover:bg-stone-50"
-              >
-                <p className="truncate text-sm text-stone-800">
-                  <span className="font-medium">{ROLE_LABELS[m.authorRole]}:</span> {m.text}
-                </p>
-                <p className="truncate text-xs text-stone-400">
-                  {p.name} · {fmtMsg(m.createdAt)}
-                </p>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+        {important && <GlowDot color="teal" />}
+        <IconChevronDown
+          className={`ml-auto h-4 w-4 shrink-0 text-stone-400 transition ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open &&
+        (items.length === 0 ? (
+          <p className="mt-3 text-sm text-stone-500">
+            Zatím žádné konzultace. Napsat můžete u konkrétní nemovitosti.
+          </p>
+        ) : (
+          <ul className="mt-2 divide-y divide-stone-100">
+            {items.slice(0, 6).map(({ c, p }) => {
+              const status = c.status ?? "OPEN";
+              const latest = consLatest(c);
+              return (
+                <li key={c.id}>
+                  <Link
+                    href={`/nemovitost/${p.id}/konzultace`}
+                    className="-mx-1 block rounded px-1 py-2.5 hover:bg-stone-50"
+                  >
+                    <p className="truncate text-sm text-stone-800">
+                      <span className="font-medium">{ROLE_LABELS[latest.authorRole]}:</span>{" "}
+                      {latest.text}
+                    </p>
+                    <p className="truncate text-xs text-stone-400">
+                      {c.topic ? `${c.topic} · ` : ""}
+                      {p.name} · {fmtMsg(consLastActivity(c))} ·{" "}
+                      <span className={CONS_TEXT[status]}>{CONS_STATUS_LABEL[status]}</span>
+                    </p>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        ))}
     </section>
   );
 }

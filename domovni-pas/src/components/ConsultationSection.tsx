@@ -23,6 +23,7 @@ export function ConsultationSection({
   const [open, setOpen] = useState(false);
 
   const sorted = [...consultations].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const important = consultations.some((c) => (c.status ?? "OPEN") !== "RESOLVED");
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -39,13 +40,23 @@ export function ConsultationSection({
   }
 
   return (
-    <section className="card mt-8 p-5">
+    <section
+      className={`card mt-8 p-5 transition ${
+        important ? "shadow-md shadow-teal-100 ring-2 ring-teal-300/70" : ""
+      }`}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <IconUsers className="h-4 w-4 text-teal-700" />
+          <IconUsers className={`h-4 w-4 ${important ? "text-teal-600" : "text-teal-700"}`} />
           <h2 className="text-sm font-semibold text-stone-900">Konzultace</h2>
           {consultations.length > 0 && (
             <span className="text-xs text-stone-400">· {consultations.length}</span>
+          )}
+          {important && (
+            <span className="relative ml-1 flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-teal-500" />
+            </span>
           )}
         </div>
         <button onClick={() => setOpen((o) => !o)} className="btn-ghost btn-sm text-teal-700">

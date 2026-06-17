@@ -8,7 +8,7 @@ import { canSeeProperty, canEditProperty } from "@/lib/access";
 import { Loading } from "@/components/Loading";
 import { Badge } from "@/components/ui/Badge";
 import { EntryCard } from "@/components/EntryCard";
-import { ChatSection } from "@/components/ChatSection";
+import { ConsultationSection } from "@/components/ConsultationSection";
 import { ProjectCard } from "@/components/ProjectCard";
 import { QrCode } from "@/components/QrCode";
 import {
@@ -134,7 +134,7 @@ export default function PropertyDetailPage() {
 
       <ProjectCard property={property} className="mt-6" />
 
-      <ChatSection propertyId={id} messages={property.messages ?? []} />
+      <ConsultationSection propertyId={id} consultations={property.consultations ?? []} />
 
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
