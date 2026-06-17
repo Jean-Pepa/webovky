@@ -21,7 +21,12 @@ import {
   IconUsers,
   IconWrench,
   IconArrowLeft,
+  IconMegaphone,
+  IconPhone,
+  IconVote,
+  IconKey,
 } from "@/components/Icons";
+import type { PropertyType } from "@/lib/store";
 
 type NavItem = {
   href: string;
@@ -52,7 +57,23 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ],
 };
 
-function houseNav(id: string, role: Role | null): NavItem[] {
+// Navigace pro bytový dům / SVJ — moduly správy společenství
+function svjNav(id: string): NavItem[] {
+  return [
+    { href: `/nemovitost/${id}`, label: "Přehled domu", icon: IconHome, exact: true },
+    { href: `/nemovitost/${id}/nastenka`, label: "Nástěnka", icon: IconMegaphone },
+    { href: `/nemovitost/${id}/zaruky`, label: "Revize a kontroly", icon: IconShield },
+    { href: `/nemovitost/${id}/konzultace`, label: "Hlášení závad", icon: IconUsers },
+    { href: `/nemovitost/${id}/vlastnici`, label: "Vlastníci a jednotky", icon: IconKey },
+    { href: `/nemovitost/${id}/hlasovani`, label: "Hlasování", icon: IconVote },
+    { href: `/nemovitost/${id}/dokumentace`, label: "Dokumenty", icon: IconFile },
+    { href: `/nemovitost/${id}/kontakty`, label: "Kontakty", icon: IconPhone },
+    { href: `/nemovitost/${id}/rozpocet`, label: "Náklady / fond oprav", icon: IconMoney },
+  ];
+}
+
+function houseNav(id: string, role: Role | null, type?: PropertyType): NavItem[] {
+  if (type === "BUILDING") return svjNav(id);
   const items: NavItem[] = [
     { href: `/nemovitost/${id}`, label: "Přehled domu", icon: IconHome, exact: true },
     { href: `/nemovitost/${id}/zaruky`, label: "Záruky a revize", icon: IconShield },
@@ -72,17 +93,18 @@ function houseNav(id: string, role: Role | null): NavItem[] {
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { role, logout } = useStore();
+  const { role, logout, getProperty } = useStore();
 
   // Jsme v detailu konkrétního domu? Pak je lišta kontextová.
   const m = pathname.match(/^\/nemovitost\/([^/]+)/);
   const houseId = m && !["nova", "zalozit"].includes(m[1]) ? m[1] : null;
   const inHouse = !!houseId;
+  const houseType = houseId ? getProperty(houseId)?.type : undefined;
 
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
-  const nav = inHouse ? houseNav(houseId!, role) : NAV_BY_ROLE[role ?? "CLIENT"];
+  const nav = inHouse ? houseNav(houseId!, role, houseType) : NAV_BY_ROLE[role ?? "CLIENT"];
 
   return (
     <aside className="no-print fixed inset-y-0 left-0 z-30 flex w-16 flex-col border-r border-stone-200 bg-white lg:w-64">

@@ -5,7 +5,7 @@ import { useStore } from "@/lib/store";
 import { canSeeProperty } from "@/lib/access";
 import { Loading } from "@/components/Loading";
 import { PropertySectionHeader, PropertyNotFound } from "@/components/PropertySectionHeader";
-import { ConsultationSection } from "@/components/ConsultationSection";
+import { PollsSection } from "@/components/PollsSection";
 
 export default function Page() {
   const { id } = useParams<{ id: string }>();
@@ -14,12 +14,12 @@ export default function Page() {
   const property = getProperty(id);
   if (!property || (role && !canSeeProperty(property, role))) return <PropertyNotFound />;
 
-  const title = property.type === "BUILDING" ? "Hlášení závad" : "Konzultace";
-
   return (
     <div>
-      <PropertySectionHeader id={id} name={property.name} title={title} />
-      <ConsultationSection propertyId={id} consultations={property.consultations ?? []} title={title} />
+      <PropertySectionHeader id={id} name={property.name} title="Hlasování" />
+      <div className="mt-6">
+        <PollsSection propertyId={id} polls={property.polls ?? []} />
+      </div>
     </div>
   );
 }

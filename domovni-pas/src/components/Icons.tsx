@@ -280,3 +280,38 @@ export function IconPencil(p: IconProps) {
     </svg>
   );
 }
+
+export function IconMegaphone(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M3 11v2a1 1 0 0 0 1 1h2l9 5V5L6 10H4a1 1 0 0 0-1 1z" />
+      <path d="M18 8a4 4 0 0 1 0 8" />
+    </svg>
+  );
+}
+
+export function IconPhone(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M5 4h3l1.5 4-2 1.5a11 11 0 0 0 5 5l1.5-2 4 1.5V19a2 2 0 0 1-2 2A16 16 0 0 1 4 6a2 2 0 0 1 1-2z" />
+    </svg>
+  );
+}
+
+export function IconVote(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M4 12.5 7 9l2 2 6-6 3 3" />
+      <rect x="3" y="16" width="18" height="4" rx="1" />
+    </svg>
+  );
+}
+
+export function IconKey(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <circle cx="8" cy="8" r="4" />
+      <path d="M11 11l9 9M17 17l2-2M14 14l2-2" />
+    </svg>
+  );
+}

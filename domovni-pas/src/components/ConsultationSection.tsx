@@ -15,9 +15,11 @@ const STATE: Record<ConsultationStatus, { label: string; card: string; text: str
 export function ConsultationSection({
   propertyId,
   consultations,
+  title = "Konzultace",
 }: {
   propertyId: string;
   consultations: ConsultationNote[];
+  title?: string;
 }) {
   const { addConsultation, deleteConsultation, setConsultationStatus, role } = useStore();
   const [open, setOpen] = useState(false);
@@ -48,7 +50,7 @@ export function ConsultationSection({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <IconUsers className={`h-4 w-4 ${important ? "text-teal-600" : "text-teal-700"}`} />
-          <h2 className="text-sm font-semibold text-stone-900">Konzultace</h2>
+          <h2 className="text-sm font-semibold text-stone-900">{title}</h2>
           {consultations.length > 0 && (
             <span className="text-xs text-stone-400">· {consultations.length}</span>
           )}

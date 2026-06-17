@@ -18,6 +18,10 @@ function toShareSnapshot(p: Property): Property {
     designs: [], // návrhy (velká média) nesdílíme přes server
     costs: [], // náklady a faktury jsou interní
     messages: [], // chat je interní
+    announcements: [], // nástěnka SVJ je interní
+    units: [], // evidence vlastníků = osobní údaje
+    contacts: [], // kontakty jsou interní
+    polls: [], // hlasování je interní
   };
 }
 
@@ -104,6 +108,11 @@ export type Property = {
   milestones?: ArchMilestone[];
   costs?: CostItem[];
   messages?: ChatMessage[];
+  // SVJ moduly
+  announcements?: Announcement[];
+  units?: Unit[];
+  contacts?: Contact[];
+  polls?: Poll[];
   createdAt: string;
   updatedAt: string;
 };
@@ -294,6 +303,72 @@ export type InventoryInput = {
   dataUrl?: string;
 };
 
+// ── SVJ moduly ──────────────────────────────────────────────────────────────
+
+// Nástěnka — oznámení výboru pro vlastníky
+export type Announcement = {
+  id: string;
+  title: string;
+  text: string;
+  pinned?: boolean;
+  authorRole: Role;
+  createdAt: string;
+};
+export type AnnouncementInput = { title: string; text: string; pinned?: boolean };
+
+// Evidence jednotek a vlastníků
+export type Unit = {
+  id: string;
+  label: string; // č. jednotky, např. „12/3"
+  floor?: string; // patro
+  area?: number; // m²
+  share?: string; // spoluvlastnický podíl, např. „754/10000"
+  ownerName: string;
+  contact?: string; // e-mail / telefon
+};
+export type UnitInput = {
+  label: string;
+  floor?: string;
+  area?: number;
+  share?: string;
+  ownerName: string;
+  contact?: string;
+};
+
+// Kontakty — výbor, správce, dodavatelé
+export type ContactKind = "VYBOR" | "SPRAVCE" | "DODAVATEL";
+export type Contact = {
+  id: string;
+  name: string;
+  kind: ContactKind;
+  position?: string; // funkce / obor (předseda, instalatér…)
+  phone?: string;
+  email?: string;
+  note?: string;
+};
+export type ContactInput = {
+  name: string;
+  kind: ContactKind;
+  position?: string;
+  phone?: string;
+  email?: string;
+  note?: string;
+};
+
+// Hlasování / ankety (per rollam)
+export type PollStatus = "OPEN" | "CLOSED";
+export type PollOption = { id: string; label: string; votes: number };
+export type Poll = {
+  id: string;
+  question: string;
+  note?: string;
+  options: PollOption[];
+  deadline?: string;
+  status: PollStatus;
+  createdAt: string;
+};
+export type PollInput = { question: string; note?: string; options: string[]; deadline?: string };
+
 type Store = {
   properties: Property[];
   hydrated: boolean;
@@ -337,6 +412,17 @@ type Store = {
   deleteCost: (propertyId: string, costId: string) => void;
   addChatMessage: (propertyId: string, text: string) => void;
   deleteChatMessage: (propertyId: string, messageId: string) => void;
+  // SVJ moduly
+  addAnnouncement: (propertyId: string, data: AnnouncementInput) => void;
+  deleteAnnouncement: (propertyId: string, annId: string) => void;
+  addUnit: (propertyId: string, data: UnitInput) => void;
+  deleteUnit: (propertyId: string, unitId: string) => void;
+  addContact: (propertyId: string, data: ContactInput) => void;
+  deleteContact: (propertyId: string, contactId: string) => void;
+  addPoll: (propertyId: string, data: PollInput) => void;
+  deletePoll: (propertyId: string, pollId: string) => void;
+  votePoll: (propertyId: string, pollId: string, optionId: string) => void;
+  setPollStatus: (propertyId: string, pollId: string, status: PollStatus) => void;
   transferProperty: (propertyId: string, toName: string, note?: string) => void;
   setShare: (propertyId: string, enabled: boolean) => void;
   role: Role | null;
@@ -353,7 +439,7 @@ const BRANDING_KEY = "bulo-branding";
 // Verze ukázkových dat – po bumpnutí se jednorázově doplní nově přidané demo budovy
 // (bez mazání dat uživatele; smazané demo se znovu nepřidá).
 const SEED_KEY = "bulo-seed";
-const SEED_VERSION = "2026-06-svj";
+const SEED_VERSION = "2026-06-svj-2";
 
 // Demo přihlášení – 3 hesla = 3 role. (Změnit lze tady.)
 const PASSWORDS: Record<string, Role> = {
@@ -401,12 +487,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           milestones: p.milestones ?? [],
           costs: p.costs ?? [],
           messages: p.messages ?? [],
+          announcements: p.announcements ?? [],
+          units: p.units ?? [],
+          contacts: p.contacts ?? [],
+          polls: p.polls ?? [],
         }));
-        // jednorázové doplnění nově přidaných ukázkových budov
+        // Po bumpnutí verze obnovíme ukázkové (demo-) budovy na aktuální podobu;
+        // vlastní pasy uživatele zůstávají beze změny.
         if (localStorage.getItem(SEED_KEY) !== SEED_VERSION) {
-          const have = new Set(loaded.map((p) => p.id));
-          const missing = seed().filter((s) => s.id.startsWith("demo-") && !have.has(s.id));
-          if (missing.length) loaded = [...missing, ...loaded];
+          const userProps = loaded.filter((p) => !p.id.startsWith("demo-"));
+          const demoProps = seed().filter((s) => s.id.startsWith("demo-"));
+          loaded = [...demoProps, ...userProps];
           localStorage.setItem(SEED_KEY, SEED_VERSION);
         }
         setProperties(loaded);
@@ -901,6 +992,136 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  // ── SVJ moduly ──────────────────────────────────────────────────────────
+  const addAnnouncement = useCallback(
+    (propertyId: string, data: AnnouncementInput) => {
+      const ann: Announcement = {
+        id: newId(),
+        title: data.title,
+        text: data.text,
+        pinned: data.pinned,
+        authorRole: role ?? "CREATOR",
+        createdAt: now(),
+      };
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? { ...p, announcements: [ann, ...(p.announcements ?? [])], updatedAt: now() }
+            : p,
+        ),
+      );
+    },
+    [role],
+  );
+
+  const deleteAnnouncement = useCallback((propertyId: string, annId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, announcements: (p.announcements ?? []).filter((a) => a.id !== annId) }
+          : p,
+      ),
+    );
+  }, []);
+
+  const addUnit = useCallback((propertyId: string, data: UnitInput) => {
+    const unit: Unit = { ...data, id: newId() };
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, units: [...(p.units ?? []), unit], updatedAt: now() } : p,
+      ),
+    );
+  }, []);
+
+  const deleteUnit = useCallback((propertyId: string, unitId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, units: (p.units ?? []).filter((u) => u.id !== unitId) } : p,
+      ),
+    );
+  }, []);
+
+  const addContact = useCallback((propertyId: string, data: ContactInput) => {
+    const contact: Contact = { ...data, id: newId() };
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, contacts: [...(p.contacts ?? []), contact], updatedAt: now() }
+          : p,
+      ),
+    );
+  }, []);
+
+  const deleteContact = useCallback((propertyId: string, contactId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, contacts: (p.contacts ?? []).filter((c) => c.id !== contactId) }
+          : p,
+      ),
+    );
+  }, []);
+
+  const addPoll = useCallback((propertyId: string, data: PollInput) => {
+    const poll: Poll = {
+      id: newId(),
+      question: data.question,
+      note: data.note,
+      deadline: data.deadline,
+      status: "OPEN",
+      options: data.options
+        .map((label) => label.trim())
+        .filter(Boolean)
+        .map((label) => ({ id: newId(), label, votes: 0 })),
+      createdAt: now(),
+    };
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, polls: [poll, ...(p.polls ?? [])], updatedAt: now() } : p,
+      ),
+    );
+  }, []);
+
+  const deletePoll = useCallback((propertyId: string, pollId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, polls: (p.polls ?? []).filter((pl) => pl.id !== pollId) } : p,
+      ),
+    );
+  }, []);
+
+  const votePoll = useCallback((propertyId: string, pollId: string, optionId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? {
+              ...p,
+              polls: (p.polls ?? []).map((pl) =>
+                pl.id === pollId
+                  ? {
+                      ...pl,
+                      options: pl.options.map((o) =>
+                        o.id === optionId ? { ...o, votes: o.votes + 1 } : o,
+                      ),
+                    }
+                  : pl,
+              ),
+            }
+          : p,
+      ),
+    );
+  }, []);
+
+  const setPollStatus = useCallback((propertyId: string, pollId: string, status: PollStatus) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, polls: (p.polls ?? []).map((pl) => (pl.id === pollId ? { ...pl, status } : pl)) }
+          : p,
+      ),
+    );
+  }, []);
+
   // Převod vlastnictví – jádro hodnoty (přenositelnost). V ukázce zaznamená předání
   // a přepíše jméno vlastníka; auditní stopa zůstává v transfers.
   const transferProperty = useCallback((propertyId: string, toName: string, note?: string) => {
@@ -997,6 +1218,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteCost,
     addChatMessage,
     deleteChatMessage,
+    addAnnouncement,
+    deleteAnnouncement,
+    addUnit,
+    deleteUnit,
+    addContact,
+    deleteContact,
+    addPoll,
+    deletePoll,
+    votePoll,
+    setPollStatus,
     transferProperty,
     setShare,
     role,
@@ -1394,6 +1625,51 @@ function seed(): Property[] {
           text: "Ve sklepní kóji u stoupačky se objevila vlhkost. Můžete prosím prověřit?",
           status: "OPEN",
           createdAt: "2026-06-14",
+        },
+      ],
+      announcements: [
+        {
+          id: "asvj-1",
+          title: "Odstávka teplé vody 24. 6.",
+          text: "Z důvodu servisu výměníku bude 24. 6. od 8 do 14 hod. odstávka teplé vody. Děkujeme za pochopení.",
+          pinned: true,
+          authorRole: "CREATOR",
+          createdAt: "2026-06-10",
+        },
+        {
+          id: "asvj-2",
+          title: "Shromáždění vlastníků 3. 7. 2026",
+          text: "Zveme všechny vlastníky na řádné shromáždění ve čtvrtek 3. 7. v 18:00 ve společenské místnosti. Program a podklady najdete v Dokumentech.",
+          authorRole: "CREATOR",
+          createdAt: "2026-06-05",
+        },
+      ],
+      units: [
+        { id: "usvj-1", label: "1/1", floor: "přízemí", area: 64, share: "640/12480", ownerName: "Jan Dvořák" },
+        { id: "usvj-2", label: "2/3", floor: "2. NP", area: 78, share: "780/12480", ownerName: "Marie Veselá", contact: "vesela@email.cz" },
+        { id: "usvj-3", label: "3/5", floor: "3. NP", area: 92, share: "920/12480", ownerName: "Petr Horák" },
+        { id: "usvj-4", label: "4/8", floor: "4. NP", area: 58, share: "580/12480", ownerName: "Eva Králová" },
+      ],
+      contacts: [
+        { id: "csvj-1", name: "Jan Dvořák", kind: "VYBOR", position: "Předseda výboru", phone: "777 100 200", email: "predseda@svj-jugoslavska.cz" },
+        { id: "csvj-2", name: "Marie Veselá", kind: "VYBOR", position: "Místopředsedkyně", phone: "777 100 201" },
+        { id: "csvj-3", name: "SpravByt s.r.o.", kind: "SPRAVCE", position: "Správce domu", phone: "222 333 444", email: "info@spravbyt.cz" },
+        { id: "csvj-4", name: "Výtahy Praha s.r.o.", kind: "DODAVATEL", position: "Servis výtahu", phone: "603 555 111" },
+        { id: "csvj-5", name: "Topení Novák", kind: "DODAVATEL", position: "Plynová kotelna", phone: "604 222 888" },
+      ],
+      polls: [
+        {
+          id: "psvj-1",
+          question: "Schvalujete zateplení dvorní fasády v roce 2027?",
+          note: "Předpokládaný náklad 1,8 mil. Kč z fondu oprav. Hlasování per rollam do 30. 6.",
+          options: [
+            { id: "po-1", label: "Pro", votes: 9 },
+            { id: "po-2", label: "Proti", votes: 2 },
+            { id: "po-3", label: "Zdržuji se", votes: 1 },
+          ],
+          deadline: "2026-06-30",
+          status: "OPEN",
+          createdAt: "2026-06-08",
         },
       ],
       createdAt: "2024-09-01",
