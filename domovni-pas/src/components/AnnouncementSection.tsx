@@ -12,7 +12,8 @@ export function AnnouncementSection({
   propertyId: string;
   announcements: Announcement[];
 }) {
-  const { addAnnouncement, deleteAnnouncement } = useStore();
+  const { addAnnouncement, deleteAnnouncement, role } = useStore();
+  const manage = role === "CREATOR";
   const [open, setOpen] = useState(false);
 
   const sorted = [...announcements].sort((a, b) => {
@@ -41,13 +42,15 @@ export function AnnouncementSection({
             <span className="text-xs text-stone-400">· {announcements.length}</span>
           )}
         </div>
-        <button onClick={() => setOpen((o) => !o)} className="btn-ghost btn-sm text-teal-700">
-          <IconPlus className="h-4 w-4" />
-          Přidat
-        </button>
+        {manage && (
+          <button onClick={() => setOpen((o) => !o)} className="btn-ghost btn-sm text-teal-700">
+            <IconPlus className="h-4 w-4" />
+            Přidat
+          </button>
+        )}
       </div>
 
-      {open && (
+      {open && manage && (
         <form onSubmit={submit} className="mt-3 space-y-2 border-b border-stone-100 pb-4">
           <input name="title" required className="input" placeholder="Nadpis oznámení" />
           <textarea name="text" required className="input min-h-24" placeholder="Text oznámení pro vlastníky…" />
@@ -78,15 +81,17 @@ export function AnnouncementSection({
                   </p>
                   <p className="text-xs text-stone-400">{formatDate(a.createdAt)}</p>
                 </div>
-                <button
-                  onClick={() => {
-                    if (confirm("Smazat oznámení?")) deleteAnnouncement(propertyId, a.id);
-                  }}
-                  className="btn-ghost btn-sm text-stone-400 hover:text-red-600"
-                  aria-label="Smazat"
-                >
-                  <IconTrash className="h-4 w-4" />
-                </button>
+                {manage && (
+                  <button
+                    onClick={() => {
+                      if (confirm("Smazat oznámení?")) deleteAnnouncement(propertyId, a.id);
+                    }}
+                    className="btn-ghost btn-sm text-stone-400 hover:text-red-600"
+                    aria-label="Smazat"
+                  >
+                    <IconTrash className="h-4 w-4" />
+                  </button>
+                )}
               </div>
               <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-stone-700">{a.text}</p>
             </li>
@@ -95,7 +100,9 @@ export function AnnouncementSection({
       ) : (
         !open && (
           <p className="mt-2 text-sm text-stone-500">
-            Zatím žádná oznámení. Napište vlastníkům první vzkaz na nástěnku.
+            {manage
+              ? "Zatím žádná oznámení. Napište vlastníkům první vzkaz na nástěnku."
+              : "Zatím žádná oznámení."}
           </p>
         )
       )}

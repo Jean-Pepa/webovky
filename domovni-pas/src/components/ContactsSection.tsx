@@ -18,7 +18,8 @@ export function ContactsSection({
   propertyId: string;
   contacts: Contact[];
 }) {
-  const { addContact, deleteContact } = useStore();
+  const { addContact, deleteContact, role } = useStore();
+  const manage = role === "CREATOR";
   const [open, setOpen] = useState(false);
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -45,13 +46,15 @@ export function ContactsSection({
           <h2 className="text-sm font-semibold text-stone-900">Kontakty</h2>
           {contacts.length > 0 && <span className="text-xs text-stone-400">· {contacts.length}</span>}
         </div>
-        <button onClick={() => setOpen((o) => !o)} className="btn-ghost btn-sm text-teal-700">
-          <IconPlus className="h-4 w-4" />
-          Přidat
-        </button>
+        {manage && (
+          <button onClick={() => setOpen((o) => !o)} className="btn-ghost btn-sm text-teal-700">
+            <IconPlus className="h-4 w-4" />
+            Přidat
+          </button>
+        )}
       </div>
 
-      {open && (
+      {open && manage && (
         <form onSubmit={submit} className="mt-3 grid gap-2 border-b border-stone-100 pb-4 sm:grid-cols-2">
           <input name="name" required className="input" placeholder="Jméno / firma" />
           <select name="kind" className="input" defaultValue="VYBOR">
@@ -97,15 +100,17 @@ export function ContactsSection({
                             @
                           </a>
                         )}
-                        <button
-                          onClick={() => {
-                            if (confirm("Smazat kontakt?")) deleteContact(propertyId, c.id);
-                          }}
-                          className="text-stone-300 hover:text-red-600"
-                          aria-label="Smazat"
-                        >
-                          <IconTrash className="h-4 w-4" />
-                        </button>
+                        {manage && (
+                          <button
+                            onClick={() => {
+                              if (confirm("Smazat kontakt?")) deleteContact(propertyId, c.id);
+                            }}
+                            className="text-stone-300 hover:text-red-600"
+                            aria-label="Smazat"
+                          >
+                            <IconTrash className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </li>
                   ))}

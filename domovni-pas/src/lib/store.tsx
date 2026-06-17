@@ -22,10 +22,12 @@ function toShareSnapshot(p: Property): Property {
     units: [], // evidence vlastníků = osobní údaje
     contacts: [], // kontakty jsou interní
     polls: [], // hlasování je interní
+    meters: [], // odečty měřidel jsou interní
+    events: [], // kalendář schůzí je interní
   };
 }
 
-export type Role = "ARCHITECT" | "CLIENT" | "CREATOR";
+export type Role = "ARCHITECT" | "CLIENT" | "CREATOR" | "OWNER";
 
 // Branding architekta — zobrazí se na reportu a sdíleném pasu.
 export type Branding = { studioName?: string; color?: string; tagline?: string };
@@ -113,6 +115,8 @@ export type Property = {
   units?: Unit[];
   contacts?: Contact[];
   polls?: Poll[];
+  meters?: Meter[];
+  events?: SvjEvent[];
   createdAt: string;
   updatedAt: string;
 };
@@ -369,6 +373,29 @@ export type Poll = {
 };
 export type PollInput = { question: string; note?: string; options: string[]; deadline?: string };
 
+// Odečty měřidel
+export type MeterReading = { id: string; date: string; value: number };
+export type Meter = {
+  id: string;
+  label: string; // popis (Studená voda – byt 2/3, Plyn kotelna…)
+  kind?: string; // voda / plyn / elektřina / teplo
+  unit?: string; // m³, kWh, GJ
+  serial?: string; // výrobní číslo
+  readings: MeterReading[];
+};
+export type MeterInput = { label: string; kind?: string; unit?: string; serial?: string };
+
+// Kalendář — schůze, shromáždění, termíny
+export type SvjEvent = {
+  id: string;
+  title: string;
+  date: string; // YYYY-MM-DD
+  time?: string;
+  kind?: string; // schůze / shromáždění / termín
+  note?: string;
+};
+export type SvjEventInput = { title: string; date: string; time?: string; kind?: string; note?: string };
+
 type Store = {
   properties: Property[];
   hydrated: boolean;
@@ -423,6 +450,12 @@ type Store = {
   deletePoll: (propertyId: string, pollId: string) => void;
   votePoll: (propertyId: string, pollId: string, optionId: string) => void;
   setPollStatus: (propertyId: string, pollId: string, status: PollStatus) => void;
+  addMeter: (propertyId: string, data: MeterInput) => void;
+  deleteMeter: (propertyId: string, meterId: string) => void;
+  addMeterReading: (propertyId: string, meterId: string, date: string, value: number) => void;
+  deleteMeterReading: (propertyId: string, meterId: string, readingId: string) => void;
+  addEvent: (propertyId: string, data: SvjEventInput) => void;
+  deleteEvent: (propertyId: string, eventId: string) => void;
   transferProperty: (propertyId: string, toName: string, note?: string) => void;
   setShare: (propertyId: string, enabled: boolean) => void;
   role: Role | null;
@@ -439,7 +472,7 @@ const BRANDING_KEY = "bulo-branding";
 // Verze ukázkových dat – po bumpnutí se jednorázově doplní nově přidané demo budovy
 // (bez mazání dat uživatele; smazané demo se znovu nepřidá).
 const SEED_KEY = "bulo-seed";
-const SEED_VERSION = "2026-06-svj-2";
+const SEED_VERSION = "2026-06-svj-3";
 
 // Demo přihlášení – 3 hesla = 3 role. (Změnit lze tady.)
 const PASSWORDS: Record<string, Role> = {
@@ -448,6 +481,8 @@ const PASSWORDS: Record<string, Role> = {
   svj: "CREATOR",
   spravce: "CREATOR",
   tvurce: "CREATOR", // zpětná kompatibilita
+  vlastnik: "OWNER",
+  rezident: "OWNER",
 };
 
 const now = () => new Date().toISOString();
@@ -491,6 +526,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           units: p.units ?? [],
           contacts: p.contacts ?? [],
           polls: p.polls ?? [],
+          meters: p.meters ?? [],
+          events: p.events ?? [],
         }));
         // Po bumpnutí verze obnovíme ukázkové (demo-) budovy na aktuální podobu;
         // vlastní pasy uživatele zůstávají beze změny.
@@ -1122,6 +1159,82 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const addMeter = useCallback((propertyId: string, data: MeterInput) => {
+    const meter: Meter = { ...data, id: newId(), readings: [] };
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, meters: [...(p.meters ?? []), meter], updatedAt: now() } : p,
+      ),
+    );
+  }, []);
+
+  const deleteMeter = useCallback((propertyId: string, meterId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, meters: (p.meters ?? []).filter((m) => m.id !== meterId) } : p,
+      ),
+    );
+  }, []);
+
+  const addMeterReading = useCallback(
+    (propertyId: string, meterId: string, date: string, value: number) => {
+      const reading: MeterReading = { id: newId(), date, value };
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? {
+                ...p,
+                meters: (p.meters ?? []).map((m) =>
+                  m.id === meterId
+                    ? {
+                        ...m,
+                        readings: [...m.readings, reading].sort((a, b) => a.date.localeCompare(b.date)),
+                      }
+                    : m,
+                ),
+                updatedAt: now(),
+              }
+            : p,
+        ),
+      );
+    },
+    [],
+  );
+
+  const deleteMeterReading = useCallback((propertyId: string, meterId: string, readingId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? {
+              ...p,
+              meters: (p.meters ?? []).map((m) =>
+                m.id === meterId
+                  ? { ...m, readings: m.readings.filter((r) => r.id !== readingId) }
+                  : m,
+              ),
+            }
+          : p,
+      ),
+    );
+  }, []);
+
+  const addEvent = useCallback((propertyId: string, data: SvjEventInput) => {
+    const ev: SvjEvent = { ...data, id: newId() };
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, events: [...(p.events ?? []), ev], updatedAt: now() } : p,
+      ),
+    );
+  }, []);
+
+  const deleteEvent = useCallback((propertyId: string, eventId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, events: (p.events ?? []).filter((e) => e.id !== eventId) } : p,
+      ),
+    );
+  }, []);
+
   // Převod vlastnictví – jádro hodnoty (přenositelnost). V ukázce zaznamená předání
   // a přepíše jméno vlastníka; auditní stopa zůstává v transfers.
   const transferProperty = useCallback((propertyId: string, toName: string, note?: string) => {
@@ -1228,6 +1341,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deletePoll,
     votePoll,
     setPollStatus,
+    addMeter,
+    deleteMeter,
+    addMeterReading,
+    deleteMeterReading,
+    addEvent,
+    deleteEvent,
     transferProperty,
     setShare,
     role,
@@ -1671,6 +1790,43 @@ function seed(): Property[] {
           status: "OPEN",
           createdAt: "2026-06-08",
         },
+      ],
+      meters: [
+        {
+          id: "msvj-1",
+          label: "Studená voda — hlavní",
+          kind: "Voda",
+          unit: "m³",
+          serial: "SV-2019-0042",
+          readings: [
+            { id: "mr-1", date: "2025-12-31", value: 1840 },
+            { id: "mr-2", date: "2026-03-31", value: 1968 },
+            { id: "mr-3", date: "2026-06-15", value: 2071 },
+          ],
+        },
+        {
+          id: "msvj-2",
+          label: "Plyn — domovní kotelna",
+          kind: "Plyn",
+          unit: "m³",
+          serial: "PL-552130",
+          readings: [
+            { id: "mr-4", date: "2025-12-31", value: 38450 },
+            { id: "mr-5", date: "2026-06-15", value: 41020 },
+          ],
+        },
+        {
+          id: "msvj-3",
+          label: "Elektřina — společné prostory",
+          kind: "Elektřina",
+          unit: "kWh",
+          readings: [{ id: "mr-6", date: "2026-06-15", value: 7320 }],
+        },
+      ],
+      events: [
+        { id: "esv-1", title: "Shromáždění vlastníků", date: "2026-07-03", time: "18:00", kind: "Shromáždění", note: "Společenská místnost, přízemí" },
+        { id: "esv-2", title: "Odečet vody (čtvrtletní)", date: "2026-09-30", kind: "Termín" },
+        { id: "esv-3", title: "Schůze výboru", date: "2026-06-24", time: "19:00", kind: "Schůze" },
       ],
       createdAt: "2024-09-01",
       updatedAt: "2026-06-14",

@@ -30,6 +30,7 @@ export default function LoginPage() {
     { pw: "architekt", label: "Architekt" },
     { pw: "klient", label: "Klient / majitel" },
     { pw: "svj", label: "Správce / SVJ" },
+    { pw: "vlastnik", label: "Vlastník / rezident" },
   ];
 
   return (
@@ -84,7 +85,7 @@ export default function LoginPage() {
 
           <div className="mt-5 border-t border-white/15 pt-4">
             <p className="text-center text-xs text-white/50">Rychlé demo přihlášení</p>
-            <div className="mt-2 grid grid-cols-3 gap-2">
+            <div className="mt-2 grid grid-cols-2 gap-2">
               {DEMO_ROLES.map((d) => (
                 <button
                   key={d.pw}

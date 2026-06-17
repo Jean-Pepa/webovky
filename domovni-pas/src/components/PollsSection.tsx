@@ -6,7 +6,8 @@ import { formatDate } from "@/lib/format";
 import { IconVote, IconPlus, IconTrash, IconCheck } from "@/components/Icons";
 
 export function PollsSection({ propertyId, polls }: { propertyId: string; polls: Poll[] }) {
-  const { addPoll, deletePoll, votePoll, setPollStatus } = useStore();
+  const { addPoll, deletePoll, votePoll, setPollStatus, role } = useStore();
+  const manage = role === "CREATOR";
   const [open, setOpen] = useState(false);
 
   const sorted = [...polls].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -38,13 +39,15 @@ export function PollsSection({ propertyId, polls }: { propertyId: string; polls:
           <h2 className="text-sm font-semibold text-stone-900">Hlasování</h2>
           {polls.length > 0 && <span className="text-xs text-stone-400">· {polls.length}</span>}
         </div>
-        <button onClick={() => setOpen((o) => !o)} className="btn-ghost btn-sm text-teal-700">
-          <IconPlus className="h-4 w-4" />
-          Nové hlasování
-        </button>
+        {manage && (
+          <button onClick={() => setOpen((o) => !o)} className="btn-ghost btn-sm text-teal-700">
+            <IconPlus className="h-4 w-4" />
+            Nové hlasování
+          </button>
+        )}
       </div>
 
-      {open && (
+      {open && manage && (
         <form onSubmit={submit} className="mt-3 space-y-2 border-b border-stone-100 pb-4">
           <input name="question" required className="input" placeholder="Otázka k hlasování" />
           <textarea name="note" className="input min-h-16" placeholder="Doplňující popis (volitelné)" />
@@ -68,7 +71,9 @@ export function PollsSection({ propertyId, polls }: { propertyId: string; polls:
       {sorted.length === 0 ? (
         !open && (
           <p className="mt-2 text-sm text-stone-500">
-            Zatím žádné hlasování. Vytvořte anketu nebo hlasování per rollam.
+            {manage
+              ? "Zatím žádné hlasování. Vytvořte anketu nebo hlasování per rollam."
+              : "Zatím žádné hlasování."}
           </p>
         )
       ) : (
@@ -86,24 +91,26 @@ export function PollsSection({ propertyId, polls }: { propertyId: string; polls:
                       {poll.deadline ? ` · do ${formatDate(poll.deadline)}` : ""} · {total} hlasů
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <button
-                      onClick={() => setPollStatus(propertyId, poll.id, closed ? "OPEN" : "CLOSED")}
-                      className={closed ? "btn-ghost btn-sm text-teal-700" : "btn-secondary btn-sm"}
-                    >
-                      <IconCheck className="h-4 w-4" />
-                      {closed ? "Otevřít" : "Uzavřít"}
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm("Smazat hlasování?")) deletePoll(propertyId, poll.id);
-                      }}
-                      className="btn-ghost btn-sm text-stone-400 hover:text-red-600"
-                      aria-label="Smazat"
-                    >
-                      <IconTrash className="h-4 w-4" />
-                    </button>
-                  </div>
+                  {manage && (
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <button
+                        onClick={() => setPollStatus(propertyId, poll.id, closed ? "OPEN" : "CLOSED")}
+                        className={closed ? "btn-ghost btn-sm text-teal-700" : "btn-secondary btn-sm"}
+                      >
+                        <IconCheck className="h-4 w-4" />
+                        {closed ? "Otevřít" : "Uzavřít"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm("Smazat hlasování?")) deletePoll(propertyId, poll.id);
+                        }}
+                        className="btn-ghost btn-sm text-stone-400 hover:text-red-600"
+                        aria-label="Smazat"
+                      >
+                        <IconTrash className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
                 {poll.note && <p className="mt-1 text-sm text-stone-600">{poll.note}</p>}
 

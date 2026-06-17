@@ -22,6 +22,7 @@ export function ConsultationSection({
   title?: string;
 }) {
   const { addConsultation, deleteConsultation, setConsultationStatus, role } = useStore();
+  const canManage = role !== "OWNER"; // rezident hlásí a odpovídá, ale neřeší/nemaže
   const [open, setOpen] = useState(false);
 
   const sorted = [...consultations].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -111,28 +112,39 @@ export function ConsultationSection({
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
-                    <button
-                      onClick={() =>
-                        setConsultationStatus(propertyId, c.id, resolved ? "OPEN" : "RESOLVED")
-                      }
-                      className={
-                        resolved
-                          ? "btn-ghost btn-sm text-emerald-600"
-                          : "btn-secondary btn-sm"
-                      }
-                    >
-                      <IconCheck className="h-4 w-4" />
-                      {resolved ? "Vyřešeno" : "Vyřešit"}
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm("Smazat konzultaci?")) deleteConsultation(propertyId, c.id);
-                      }}
-                      className="btn-ghost btn-sm text-stone-400 hover:text-red-600"
-                      aria-label="Smazat"
-                    >
-                      <IconTrash className="h-4 w-4" />
-                    </button>
+                    {canManage ? (
+                      <>
+                        <button
+                          onClick={() =>
+                            setConsultationStatus(propertyId, c.id, resolved ? "OPEN" : "RESOLVED")
+                          }
+                          className={
+                            resolved
+                              ? "btn-ghost btn-sm text-emerald-600"
+                              : "btn-secondary btn-sm"
+                          }
+                        >
+                          <IconCheck className="h-4 w-4" />
+                          {resolved ? "Vyřešeno" : "Vyřešit"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm("Smazat konzultaci?")) deleteConsultation(propertyId, c.id);
+                          }}
+                          className="btn-ghost btn-sm text-stone-400 hover:text-red-600"
+                          aria-label="Smazat"
+                        >
+                          <IconTrash className="h-4 w-4" />
+                        </button>
+                      </>
+                    ) : (
+                      resolved && (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
+                          <IconCheck className="h-4 w-4" />
+                          Vyřešeno
+                        </span>
+                      )
+                    )}
                   </div>
                 </div>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-stone-700">

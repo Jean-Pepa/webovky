@@ -65,17 +65,26 @@ export default function DashboardPage() {
   const r = role ?? "CLIENT";
   const isArchitect = r === "ARCHITECT";
   const isCreator = r === "CREATOR";
+  const isOwner = r === "OWNER";
   const isClient = r === "CLIENT";
   const visible = role ? properties.filter((p) => canSeeProperty(p, role)) : [];
   const waiting = visible.filter((p) => !p.handedOver);
   const handed = visible.filter((p) => p.handedOver);
 
-  const heading = isArchitect ? "Moje projekty" : isCreator ? "Přehled — správce" : "Moje nemovitosti";
+  const heading = isArchitect
+    ? "Moje projekty"
+    : isCreator
+      ? "Přehled — správce"
+      : isOwner
+        ? "Náš dům"
+        : "Moje nemovitosti";
   const sub =
     visible.length > 0
       ? isArchitect
         ? `Máte ${visible.length} ${pluralProjekt(visible.length)}.`
-        : `${isCreator ? "V systému je" : "Spravujete"} ${visible.length} ${plural(visible.length)}.`
+        : isOwner
+          ? "Informace o vašem bytovém domě a SVJ."
+          : `${isCreator ? "V systému je" : "Spravujete"} ${visible.length} ${plural(visible.length)}.`
       : isArchitect
         ? "Zatím nemáte žádný projekt."
         : "Zatím tu nic není.";

@@ -55,25 +55,40 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { href: "/pripominky", label: "Připomínky", icon: IconCalendar },
     { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
   ],
+  OWNER: [
+    { href: "/prehled", label: "Náš dům", icon: IconHome },
+    { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
+  ],
 };
 
-// Navigace pro bytový dům / SVJ — moduly správy společenství
-function svjNav(id: string): NavItem[] {
-  return [
+// Navigace pro bytový dům / SVJ — moduly správy společenství.
+// Výbor/správce (CREATOR) má vše; rezident (OWNER) zúžený výběr.
+function svjNav(id: string, role: Role | null): NavItem[] {
+  const manage = role === "CREATOR";
+  const items: NavItem[] = [
     { href: `/nemovitost/${id}`, label: "Přehled domu", icon: IconHome, exact: true },
     { href: `/nemovitost/${id}/nastenka`, label: "Nástěnka", icon: IconMegaphone },
     { href: `/nemovitost/${id}/zaruky`, label: "Revize a kontroly", icon: IconShield },
     { href: `/nemovitost/${id}/konzultace`, label: "Hlášení závad", icon: IconUsers },
-    { href: `/nemovitost/${id}/vlastnici`, label: "Vlastníci a jednotky", icon: IconKey },
     { href: `/nemovitost/${id}/hlasovani`, label: "Hlasování", icon: IconVote },
+    { href: `/nemovitost/${id}/udalosti`, label: "Kalendář a termíny", icon: IconCalendar },
     { href: `/nemovitost/${id}/dokumentace`, label: "Dokumenty", icon: IconFile },
     { href: `/nemovitost/${id}/kontakty`, label: "Kontakty", icon: IconPhone },
-    { href: `/nemovitost/${id}/rozpocet`, label: "Náklady / fond oprav", icon: IconMoney },
   ];
+  if (manage) {
+    items.splice(4, 0, {
+      href: `/nemovitost/${id}/vlastnici`,
+      label: "Vlastníci a jednotky",
+      icon: IconKey,
+    });
+    items.push({ href: `/nemovitost/${id}/odecty`, label: "Odečty měřidel", icon: IconChart });
+    items.push({ href: `/nemovitost/${id}/rozpocet`, label: "Náklady / fond oprav", icon: IconMoney });
+  }
+  return items;
 }
 
 function houseNav(id: string, role: Role | null, type?: PropertyType): NavItem[] {
-  if (type === "BUILDING") return svjNav(id);
+  if (type === "BUILDING") return svjNav(id, role);
   const items: NavItem[] = [
     { href: `/nemovitost/${id}`, label: "Přehled domu", icon: IconHome, exact: true },
     { href: `/nemovitost/${id}/zaruky`, label: "Záruky a revize", icon: IconShield },

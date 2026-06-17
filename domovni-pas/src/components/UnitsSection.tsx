@@ -5,7 +5,8 @@ import { useStore, type Unit } from "@/lib/store";
 import { IconKey, IconPlus, IconTrash } from "@/components/Icons";
 
 export function UnitsSection({ propertyId, units }: { propertyId: string; units: Unit[] }) {
-  const { addUnit, deleteUnit } = useStore();
+  const { addUnit, deleteUnit, role } = useStore();
+  const manage = role === "CREATOR";
   const [open, setOpen] = useState(false);
 
   const totalArea = units.reduce((s, u) => s + (u.area ?? 0), 0);
@@ -37,13 +38,15 @@ export function UnitsSection({ propertyId, units }: { propertyId: string; units:
           <h2 className="text-sm font-semibold text-stone-900">Vlastníci a jednotky</h2>
           {units.length > 0 && <span className="text-xs text-stone-400">· {units.length}</span>}
         </div>
-        <button onClick={() => setOpen((o) => !o)} className="btn-ghost btn-sm text-teal-700">
-          <IconPlus className="h-4 w-4" />
-          Přidat
-        </button>
+        {manage && (
+          <button onClick={() => setOpen((o) => !o)} className="btn-ghost btn-sm text-teal-700">
+            <IconPlus className="h-4 w-4" />
+            Přidat
+          </button>
+        )}
       </div>
 
-      {open && (
+      {open && manage && (
         <form onSubmit={submit} className="mt-3 grid gap-2 border-b border-stone-100 pb-4 sm:grid-cols-2">
           <input name="label" required className="input" placeholder="Č. jednotky (např. 12/3)" />
           <input name="ownerName" required className="input" placeholder="Vlastník" />
@@ -89,15 +92,17 @@ export function UnitsSection({ propertyId, units }: { propertyId: string; units:
                     <td className="py-2 pr-3 text-right text-stone-700">{u.area ?? "—"}</td>
                     <td className="hidden py-2 pr-3 text-stone-500 sm:table-cell">{u.share ?? "—"}</td>
                     <td className="py-2 text-right">
-                      <button
-                        onClick={() => {
-                          if (confirm("Smazat jednotku?")) deleteUnit(propertyId, u.id);
-                        }}
-                        className="text-stone-300 hover:text-red-600"
-                        aria-label="Smazat"
-                      >
-                        <IconTrash className="h-4 w-4" />
-                      </button>
+                      {manage && (
+                        <button
+                          onClick={() => {
+                            if (confirm("Smazat jednotku?")) deleteUnit(propertyId, u.id);
+                          }}
+                          className="text-stone-300 hover:text-red-600"
+                          aria-label="Smazat"
+                        >
+                          <IconTrash className="h-4 w-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

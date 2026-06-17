@@ -59,7 +59,7 @@ export default function PropertyDetailPage() {
 
   return (
     <div>
-      {!editable && (
+      {!editable && !isBuilding && (
         <div className="flex items-start gap-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
           <IconShield className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
           <p>
