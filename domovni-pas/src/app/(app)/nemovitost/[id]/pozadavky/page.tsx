@@ -5,7 +5,7 @@ import { useStore } from "@/lib/store";
 import { canSeeProperty } from "@/lib/access";
 import { Loading } from "@/components/Loading";
 import { PropertySectionHeader, PropertyNotFound } from "@/components/PropertySectionHeader";
-import { ConsultationSection } from "@/components/ConsultationSection";
+import { ApprovalsSection } from "@/components/ApprovalsSection";
 
 export default function Page() {
   const { id } = useParams<{ id: string }>();
@@ -14,12 +14,12 @@ export default function Page() {
   const property = getProperty(id);
   if (!property || (role && !canSeeProperty(property, role))) return <PropertyNotFound />;
 
-  const title = property.type === "BUILDING" ? "Hlášení a požadavky" : "Konzultace";
-
   return (
     <div>
-      <PropertySectionHeader id={id} name={property.name} title={title} />
-      <ConsultationSection propertyId={id} consultations={property.consultations ?? []} title={title} />
+      <PropertySectionHeader id={id} name={property.name} title="Požadavky ke schválení" />
+      <div className="mt-6">
+        <ApprovalsSection propertyId={id} approvals={property.approvals ?? []} />
+      </div>
     </div>
   );
 }

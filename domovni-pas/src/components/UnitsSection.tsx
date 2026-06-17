@@ -38,7 +38,7 @@ export function UnitsSection({ propertyId, units }: { propertyId: string; units:
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <IconKey className="h-4 w-4 text-teal-700" />
-          <h2 className="text-sm font-semibold text-stone-900">Vlastníci a jednotky</h2>
+          <h2 className="text-sm font-semibold text-stone-900">Jednotky a místnosti</h2>
           {units.length > 0 && <span className="text-xs text-stone-400">· {units.length}</span>}
         </div>
         {manage && (

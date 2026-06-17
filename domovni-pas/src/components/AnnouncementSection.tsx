@@ -9,9 +9,11 @@ import { IconMegaphone, IconPlus, IconTrash } from "@/components/Icons";
 export function AnnouncementSection({
   propertyId,
   announcements,
+  title = "Nástěnka",
 }: {
   propertyId: string;
   announcements: Announcement[];
+  title?: string;
 }) {
   const { addAnnouncement, deleteAnnouncement, role } = useStore();
   const manage = role === "CREATOR";
@@ -43,7 +45,7 @@ export function AnnouncementSection({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <IconMegaphone className="h-4 w-4 text-teal-700" />
-          <h2 className="text-sm font-semibold text-stone-900">Nástěnka</h2>
+          <h2 className="text-sm font-semibold text-stone-900">{title}</h2>
           {announcements.length > 0 && (
             <span className="text-xs text-stone-400">· {announcements.length}</span>
           )}

@@ -16,7 +16,7 @@ export default function Page() {
 
   return (
     <div>
-      <PropertySectionHeader id={id} name={property.name} title="Vlastníci a jednotky" />
+      <PropertySectionHeader id={id} name={property.name} title="Jednotky a místnosti" />
       <div className="mt-6">
         <UnitsSection propertyId={id} units={property.units ?? []} />
       </div>

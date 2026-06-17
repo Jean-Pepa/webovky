@@ -26,6 +26,9 @@ function toShareSnapshot(p: Property): Property {
     events: [], // kalendář schůzí je interní
     svj: undefined, // identita SVJ + fond oprav nesdílíme veřejně
     assemblies: [], // shromáždění jsou interní
+    discussions: [], // diskuze jsou interní
+    gallery: [], // fotogalerie je interní
+    approvals: [], // požadavky ke schválení jsou interní
   };
 }
 
@@ -121,6 +124,9 @@ export type Property = {
   events?: SvjEvent[];
   svj?: SvjInfo;
   assemblies?: Assembly[];
+  discussions?: DiscussionThread[];
+  gallery?: GalleryPhoto[];
+  approvals?: ApprovalRequest[];
   createdAt: string;
   updatedAt: string;
 };
@@ -374,9 +380,11 @@ export type ContactInput = {
 
 // Hlasování / ankety (per rollam)
 export type PollStatus = "OPEN" | "CLOSED";
+export type PollKind = "VOTE" | "SURVEY"; // hlasování (per rollam) vs. anketa
 export type PollOption = { id: string; label: string; votes: number };
 export type Poll = {
   id: string;
+  kind?: PollKind;
   question: string;
   note?: string;
   options: PollOption[];
@@ -384,7 +392,40 @@ export type Poll = {
   status: PollStatus;
   createdAt: string;
 };
-export type PollInput = { question: string; note?: string; options: string[]; deadline?: string };
+export type PollInput = {
+  kind?: PollKind;
+  question: string;
+  note?: string;
+  options: string[];
+  deadline?: string;
+};
+
+// Diskuze
+export type DiscussionPost = { id: string; authorRole: Role; text: string; createdAt: string };
+export type DiscussionThread = {
+  id: string;
+  title: string;
+  authorRole: Role;
+  posts: DiscussionPost[];
+  createdAt: string;
+};
+
+// Fotogalerie
+export type GalleryPhoto = { id: string; dataUrl: string; caption?: string; createdAt: string };
+
+// Požadavky ke schválení
+export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type ApprovalRequest = {
+  id: string;
+  title: string;
+  description?: string;
+  amount?: number;
+  status: ApprovalStatus;
+  authorRole: Role;
+  decisionNote?: string;
+  createdAt: string;
+};
+export type ApprovalInput = { title: string; description?: string; amount?: number };
 
 // Odečty měřidel
 export type MeterReading = { id: string; date: string; value: number };
@@ -509,6 +550,19 @@ type Store = {
     data: Partial<Omit<Assembly, "id" | "createdAt">>,
   ) => void;
   deleteAssembly: (propertyId: string, assemblyId: string) => void;
+  addDiscussionThread: (propertyId: string, title: string, text: string) => void;
+  addDiscussionPost: (propertyId: string, threadId: string, text: string) => void;
+  deleteDiscussionThread: (propertyId: string, threadId: string) => void;
+  addPhoto: (propertyId: string, dataUrl: string, caption?: string) => void;
+  deletePhoto: (propertyId: string, photoId: string) => void;
+  addApproval: (propertyId: string, data: ApprovalInput) => void;
+  setApprovalStatus: (
+    propertyId: string,
+    approvalId: string,
+    status: ApprovalStatus,
+    note?: string,
+  ) => void;
+  deleteApproval: (propertyId: string, approvalId: string) => void;
   transferProperty: (propertyId: string, toName: string, note?: string) => void;
   setShare: (propertyId: string, enabled: boolean) => void;
   role: Role | null;
@@ -525,7 +579,7 @@ const BRANDING_KEY = "bulo-branding";
 // Verze ukázkových dat – po bumpnutí se jednorázově doplní nově přidané demo budovy
 // (bez mazání dat uživatele; smazané demo se znovu nepřidá).
 const SEED_KEY = "bulo-seed";
-const SEED_VERSION = "2026-06-svj-4";
+const SEED_VERSION = "2026-06-svj-5";
 
 // Demo přihlášení – 3 hesla = 3 role. (Změnit lze tady.)
 const PASSWORDS: Record<string, Role> = {
@@ -582,6 +636,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           meters: p.meters ?? [],
           events: p.events ?? [],
           assemblies: p.assemblies ?? [],
+          discussions: p.discussions ?? [],
+          gallery: p.gallery ?? [],
+          approvals: p.approvals ?? [],
         }));
         // Po bumpnutí verze obnovíme ukázkové (demo-) budovy na aktuální podobu;
         // vlastní pasy uživatele zůstávají beze změny.
@@ -1156,6 +1213,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const addPoll = useCallback((propertyId: string, data: PollInput) => {
     const poll: Poll = {
       id: newId(),
+      kind: data.kind ?? "VOTE",
       question: data.question,
       note: data.note,
       deadline: data.deadline,
@@ -1333,6 +1391,135 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  // ── Diskuze ──
+  const addDiscussionThread = useCallback(
+    (propertyId: string, title: string, text: string) => {
+      const author = role ?? "OWNER";
+      const thread: DiscussionThread = {
+        id: newId(),
+        title,
+        authorRole: author,
+        posts: text.trim()
+          ? [{ id: newId(), authorRole: author, text: text.trim(), createdAt: now() }]
+          : [],
+        createdAt: now(),
+      };
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? { ...p, discussions: [thread, ...(p.discussions ?? [])], updatedAt: now() }
+            : p,
+        ),
+      );
+    },
+    [role],
+  );
+
+  const addDiscussionPost = useCallback(
+    (propertyId: string, threadId: string, text: string) => {
+      const post: DiscussionPost = {
+        id: newId(),
+        authorRole: role ?? "OWNER",
+        text,
+        createdAt: now(),
+      };
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? {
+                ...p,
+                discussions: (p.discussions ?? []).map((t) =>
+                  t.id === threadId ? { ...t, posts: [...t.posts, post] } : t,
+                ),
+                updatedAt: now(),
+              }
+            : p,
+        ),
+      );
+    },
+    [role],
+  );
+
+  const deleteDiscussionThread = useCallback((propertyId: string, threadId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, discussions: (p.discussions ?? []).filter((t) => t.id !== threadId) }
+          : p,
+      ),
+    );
+  }, []);
+
+  // ── Fotogalerie ──
+  const addPhoto = useCallback((propertyId: string, dataUrl: string, caption?: string) => {
+    const photo: GalleryPhoto = { id: newId(), dataUrl, caption, createdAt: now() };
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, gallery: [photo, ...(p.gallery ?? [])], updatedAt: now() } : p,
+      ),
+    );
+  }, []);
+
+  const deletePhoto = useCallback((propertyId: string, photoId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, gallery: (p.gallery ?? []).filter((g) => g.id !== photoId) } : p,
+      ),
+    );
+  }, []);
+
+  // ── Požadavky ke schválení ──
+  const addApproval = useCallback(
+    (propertyId: string, data: ApprovalInput) => {
+      const req: ApprovalRequest = {
+        id: newId(),
+        title: data.title,
+        description: data.description,
+        amount: data.amount,
+        status: "PENDING",
+        authorRole: role ?? "OWNER",
+        createdAt: now(),
+      };
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? { ...p, approvals: [req, ...(p.approvals ?? [])], updatedAt: now() }
+            : p,
+        ),
+      );
+    },
+    [role],
+  );
+
+  const setApprovalStatus = useCallback(
+    (propertyId: string, approvalId: string, status: ApprovalStatus, note?: string) => {
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? {
+                ...p,
+                approvals: (p.approvals ?? []).map((a) =>
+                  a.id === approvalId ? { ...a, status, decisionNote: note ?? a.decisionNote } : a,
+                ),
+                updatedAt: now(),
+              }
+            : p,
+        ),
+      );
+    },
+    [],
+  );
+
+  const deleteApproval = useCallback((propertyId: string, approvalId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, approvals: (p.approvals ?? []).filter((a) => a.id !== approvalId) }
+          : p,
+      ),
+    );
+  }, []);
+
   // Převod vlastnictví – jádro hodnoty (přenositelnost). V ukázce zaznamená předání
   // a přepíše jméno vlastníka; auditní stopa zůstává v transfers.
   const transferProperty = useCallback((propertyId: string, toName: string, note?: string) => {
@@ -1449,6 +1636,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     addAssembly,
     updateAssembly,
     deleteAssembly,
+    addDiscussionThread,
+    addDiscussionPost,
+    deleteDiscussionThread,
+    addPhoto,
+    deletePhoto,
+    addApproval,
+    setApprovalStatus,
+    deleteApproval,
     transferProperty,
     setShare,
     role,
@@ -1883,6 +2078,7 @@ function seed(): Property[] {
       polls: [
         {
           id: "psvj-1",
+          kind: "VOTE",
           question: "Schvalujete zateplení dvorní fasády v roce 2027?",
           note: "Předpokládaný náklad 1,8 mil. Kč z fondu oprav. Hlasování per rollam do 30. 6.",
           options: [
@@ -1893,6 +2089,19 @@ function seed(): Property[] {
           deadline: "2026-06-30",
           status: "OPEN",
           createdAt: "2026-06-08",
+        },
+        {
+          id: "psvj-2",
+          kind: "SURVEY",
+          question: "Měl by dům pořídit nabíječku pro elektromobily?",
+          note: "Nezávazná anketa pro zjištění zájmu.",
+          options: [
+            { id: "pa-1", label: "Ano, mám/plánuji EV", votes: 4 },
+            { id: "pa-2", label: "Spíše ano", votes: 3 },
+            { id: "pa-3", label: "Ne", votes: 6 },
+          ],
+          status: "OPEN",
+          createdAt: "2026-06-12",
         },
       ],
       meters: [
@@ -1965,6 +2174,26 @@ function seed(): Property[] {
           status: "DONE",
           createdAt: "2025-06-26",
         },
+      ],
+      discussions: [
+        {
+          id: "disc-1",
+          title: "Kola v kočárkárně",
+          authorRole: "OWNER",
+          posts: [
+            { id: "dp-1", authorRole: "OWNER", text: "Šlo by v kočárkárně udělat víc místa na kola? Je tam přeplněno.", createdAt: "2026-06-09T10:00:00.000Z" },
+            { id: "dp-2", authorRole: "CREATOR", text: "Dobrý nápad, výbor projedná stojany na příští schůzi.", createdAt: "2026-06-09T14:20:00.000Z" },
+          ],
+          createdAt: "2026-06-09",
+        },
+      ],
+      gallery: [
+        { id: "ph-1", caption: "Dvorní fasáda — před rekonstrukcí", createdAt: "2026-05-02", dataUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzhhOWJhNyIvPjx0ZXh0IHg9IjIwMCIgeT0iMTUwIiBmb250LXNpemU9IjIyIiBmaWxsPSIjZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+RmFzYWRhPC90ZXh0Pjwvc3ZnPg==" },
+        { id: "ph-2", caption: "Nová výmalba chodby", createdAt: "2026-04-18", dataUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2I1YTQ4ZiIvPjx0ZXh0IHg9IjIwMCIgeT0iMTUwIiBmb250LXNpemU9IjIyIiBmaWxsPSIjZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+Q2hvZGJhPC90ZXh0Pjwvc3ZnPg==" },
+      ],
+      approvals: [
+        { id: "ap-1", title: "Oprava střešní krytiny", description: "Nabídka firmy Střechy Praha — výměna poškozených tašek nad bytem 4/8.", amount: 64000, status: "PENDING", authorRole: "CREATOR", createdAt: "2026-06-11" },
+        { id: "ap-2", title: "Servis výtahu — roční smlouva", description: "Prodloužení servisní smlouvy s Výtahy Praha s.r.o.", amount: 28000, status: "APPROVED", authorRole: "CREATOR", decisionNote: "Schváleno výborem 5. 6.", createdAt: "2026-06-02" },
       ],
       createdAt: "2024-09-01",
       updatedAt: "2026-06-14",

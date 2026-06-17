@@ -1,16 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { useStore, type Poll } from "@/lib/store";
+import { useStore, type Poll, type PollKind } from "@/lib/store";
 import { formatDate } from "@/lib/format";
 import { IconVote, IconPlus, IconTrash, IconCheck } from "@/components/Icons";
 
-export function PollsSection({ propertyId, polls }: { propertyId: string; polls: Poll[] }) {
+export function PollsSection({
+  propertyId,
+  polls,
+  kind = "VOTE",
+}: {
+  propertyId: string;
+  polls: Poll[];
+  kind?: PollKind;
+}) {
   const { addPoll, deletePoll, votePoll, setPollStatus, role } = useStore();
   const manage = role === "CREATOR";
   const [open, setOpen] = useState(false);
+  const isSurvey = kind === "SURVEY";
+  const word = isSurvey ? "anketu" : "hlasování";
 
-  const sorted = [...polls].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const sorted = [...polls]
+    .filter((p) => (p.kind ?? "VOTE") === kind)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -22,6 +34,7 @@ export function PollsSection({ propertyId, polls }: { propertyId: string; polls:
       .filter(Boolean);
     if (!question || options.length < 2) return;
     addPoll(propertyId, {
+      kind,
       question,
       note: String(fd.get("note") || "").trim() || undefined,
       deadline: String(fd.get("deadline") || "").trim() || undefined,
@@ -36,20 +49,20 @@ export function PollsSection({ propertyId, polls }: { propertyId: string; polls:
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <IconVote className="h-4 w-4 text-teal-700" />
-          <h2 className="text-sm font-semibold text-stone-900">Hlasování</h2>
-          {polls.length > 0 && <span className="text-xs text-stone-400">· {polls.length}</span>}
+          <h2 className="text-sm font-semibold text-stone-900">{isSurvey ? "Ankety" : "Hlasování"}</h2>
+          {sorted.length > 0 && <span className="text-xs text-stone-400">· {sorted.length}</span>}
         </div>
         {manage && (
           <button onClick={() => setOpen((o) => !o)} className="btn-ghost btn-sm text-teal-700">
             <IconPlus className="h-4 w-4" />
-            Nové hlasování
+            {isSurvey ? "Nová anketa" : "Nové hlasování"}
           </button>
         )}
       </div>
 
       {open && manage && (
         <form onSubmit={submit} className="mt-3 space-y-2 border-b border-stone-100 pb-4">
-          <input name="question" required className="input" placeholder="Otázka k hlasování" />
+          <input name="question" required className="input" placeholder={isSurvey ? "Otázka ankety" : "Otázka k hlasování"} />
           <textarea name="note" className="input min-h-16" placeholder="Doplňující popis (volitelné)" />
           <textarea
             name="options"
@@ -63,7 +76,7 @@ export function PollsSection({ propertyId, polls }: { propertyId: string; polls:
             <input name="deadline" type="date" className="input mt-1" />
           </label>
           <button className="btn-secondary w-full" type="submit">
-            Vytvořit hlasování
+            {isSurvey ? "Vytvořit anketu" : "Vytvořit hlasování"}
           </button>
         </form>
       )}
@@ -71,9 +84,7 @@ export function PollsSection({ propertyId, polls }: { propertyId: string; polls:
       {sorted.length === 0 ? (
         !open && (
           <p className="mt-2 text-sm text-stone-500">
-            {manage
-              ? "Zatím žádné hlasování. Vytvořte anketu nebo hlasování per rollam."
-              : "Zatím žádné hlasování."}
+            {manage ? `Zatím nic. Vytvořte ${word}.` : "Zatím nic."}
           </p>
         )
       ) : (

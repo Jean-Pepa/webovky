@@ -25,8 +25,8 @@ import {
   IconVote,
   IconKey,
   IconDownload,
+  IconCheck,
 } from "@/components/Icons";
-import type { PropertyType } from "@/lib/store";
 
 type NavItem = {
   href: string;
@@ -34,6 +34,8 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
   exact?: boolean;
 };
+
+type NavGroup = { title?: string; items: NavItem[] };
 
 const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   CLIENT: [
@@ -59,37 +61,49 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ],
 };
 
-// Navigace pro bytový dům / SVJ — moduly správy společenství.
-// Výbor/správce (CREATOR) má vše; rezident (OWNER) zúžený výběr.
-function svjNav(id: string, role: Role | null): NavItem[] {
+// Navigace pro bytový dům / SVJ — struktura jako v SVJ aplikacích
+// (Nástěnka / Oblíbené / Menu). Výbor (CREATOR) má vše, rezident (OWNER) zúžený výběr.
+function svjGroups(id: string, role: Role | null): NavGroup[] {
   const manage = role === "CREATOR";
-  const items: NavItem[] = [
-    { href: `/nemovitost/${id}`, label: "Přehled domu", icon: IconHome, exact: true },
-    { href: `/nemovitost/${id}/nastenka`, label: "Nástěnka", icon: IconMegaphone },
-    { href: `/nemovitost/${id}/zaruky`, label: "Revize a kontroly", icon: IconShield },
-    { href: `/nemovitost/${id}/konzultace`, label: "Hlášení závad", icon: IconUsers },
-    { href: `/nemovitost/${id}/hlasovani`, label: "Hlasování", icon: IconVote },
-    { href: `/nemovitost/${id}/shromazdeni`, label: "Shromáždění vlastníků", icon: IconUsers },
-    { href: `/nemovitost/${id}/udalosti`, label: "Kalendář a termíny", icon: IconCalendar },
-    { href: `/nemovitost/${id}/dokumentace`, label: "Dokumenty", icon: IconFile },
-    { href: `/nemovitost/${id}/kontakty`, label: "Kontakty", icon: IconPhone },
+  const b = (s: string) => `/nemovitost/${id}${s}`;
+
+  const oblibene: NavItem[] = [
+    { href: b("/sousede"), label: "Vlastníci a sousedé", icon: IconUsers },
+    { href: b("/dokumentace"), label: "Dokumenty", icon: IconFile },
+    { href: b("/kontakty"), label: "Adresář kontaktů", icon: IconPhone },
   ];
-  if (manage) {
-    items.splice(4, 0, {
-      href: `/nemovitost/${id}/vlastnici`,
-      label: "Vlastníci a jednotky",
-      icon: IconKey,
-    });
-    items.push({ href: `/nemovitost/${id}/odecty`, label: "Odečty měřidel", icon: IconChart });
-    items.push({ href: `/nemovitost/${id}/rozpocet`, label: "Náklady / fond oprav", icon: IconMoney });
-    items.push({ href: `/nemovitost/${id}/import`, label: "Import / Export", icon: IconDownload });
-  }
-  items.push({ href: `/nemovitost/${id}/detail`, label: "Detail společenství", icon: IconBuilding });
-  return items;
+
+  const menu: NavItem[] = [
+    { href: b("/udalosti"), label: "Kalendář událostí", icon: IconCalendar },
+    { href: b("/zpravy"), label: "Zprávy", icon: IconMegaphone },
+    ...(manage ? [{ href: b("/vlastnici"), label: "Jednotky a místnosti", icon: IconKey }] : []),
+    { href: b("/konzultace"), label: "Hlášení a požadavky", icon: IconWrench },
+    { href: b("/diskuze"), label: "Diskuze", icon: IconUsers },
+    { href: b("/ankety"), label: "Ankety", icon: IconChart },
+    { href: b("/hlasovani"), label: "Hlasování", icon: IconVote },
+    { href: b("/shromazdeni"), label: "Shromáždění vlastníků", icon: IconUsers },
+    { href: b("/zaruky"), label: "Revize a termíny", icon: IconShield },
+    { href: b("/fotogalerie"), label: "Fotogalerie", icon: IconCamera },
+    { href: b("/pozadavky"), label: "Požadavky ke schválení", icon: IconCheck },
+    { href: b("/detail"), label: "Detail společenství", icon: IconBuilding },
+    { href: b("/poplatky"), label: "Přehled poplatků", icon: IconMoney },
+    ...(manage
+      ? [
+          { href: b("/odecty"), label: "Odečty měřidel", icon: IconChart },
+          { href: b("/rozpocet"), label: "Náklady / fond oprav", icon: IconMoney },
+          { href: b("/import"), label: "Import / Export", icon: IconDownload },
+        ]
+      : []),
+  ];
+
+  return [
+    { items: [{ href: b(""), label: "Nástěnka", icon: IconHome, exact: true }] },
+    { title: "Oblíbené", items: oblibene },
+    { title: "Menu", items: menu },
+  ];
 }
 
-function houseNav(id: string, role: Role | null, type?: PropertyType): NavItem[] {
-  if (type === "BUILDING") return svjNav(id, role);
+function houseNav(id: string, role: Role | null): NavItem[] {
   const items: NavItem[] = [
     { href: `/nemovitost/${id}`, label: "Přehled domu", icon: IconHome, exact: true },
     { href: `/nemovitost/${id}/zaruky`, label: "Záruky a revize", icon: IconShield },
@@ -120,7 +134,11 @@ export function Sidebar() {
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
-  const nav = inHouse ? houseNav(houseId!, role, houseType) : NAV_BY_ROLE[role ?? "CLIENT"];
+  const groups: NavGroup[] = inHouse
+    ? houseType === "BUILDING"
+      ? svjGroups(houseId!, role)
+      : [{ items: houseNav(houseId!, role) }]
+    : [{ items: NAV_BY_ROLE[role ?? "CLIENT"] }];
 
   return (
     <aside className="no-print fixed inset-y-0 left-0 z-30 flex w-16 flex-col border-r border-stone-200 bg-white lg:w-64">
@@ -167,23 +185,34 @@ export function Sidebar() {
 
       {/* Navigace (role nebo dům) */}
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 lg:px-3">
-        {nav.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              title={item.label}
-              className={`flex items-center justify-center gap-3 rounded-lg py-2.5 text-sm font-medium transition lg:justify-start lg:px-3 ${
-                active ? "bg-teal-50 text-teal-800" : "text-stone-600 hover:bg-stone-100"
-              }`}
-            >
-              <Icon className="h-5 w-5 shrink-0" />
-              <span className="hidden lg:inline">{item.label}</span>
-            </Link>
-          );
-        })}
+        {groups.map((g, gi) => (
+          <div key={gi} className={gi > 0 ? "mt-3" : ""}>
+            {g.title && (
+              <p className="hidden px-3 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400 lg:block">
+                {g.title}
+              </p>
+            )}
+            <div className="flex flex-col gap-1">
+              {g.items.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    title={item.label}
+                    className={`flex items-center justify-center gap-3 rounded-lg py-2.5 text-sm font-medium transition lg:justify-start lg:px-3 ${
+                      active ? "bg-teal-50 text-teal-800" : "text-stone-600 hover:bg-stone-100"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    <span className="hidden lg:inline">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* Akce + odhlášení */}
