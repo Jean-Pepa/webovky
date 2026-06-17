@@ -10,6 +10,7 @@ export function UnitsSection({ propertyId, units }: { propertyId: string; units:
   const [open, setOpen] = useState(false);
 
   const totalArea = units.reduce((s, u) => s + (u.area ?? 0), 0);
+  const totalFee = units.reduce((s, u) => s + (u.monthlyFee ?? 0), 0);
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -18,6 +19,7 @@ export function UnitsSection({ propertyId, units }: { propertyId: string; units:
     const ownerName = String(fd.get("ownerName") || "").trim();
     if (!label || !ownerName) return;
     const area = Number(fd.get("area"));
+    const fee = Number(fd.get("monthlyFee"));
     addUnit(propertyId, {
       label,
       ownerName,
@@ -25,6 +27,7 @@ export function UnitsSection({ propertyId, units }: { propertyId: string; units:
       area: Number.isFinite(area) && area > 0 ? area : undefined,
       share: String(fd.get("share") || "").trim() || undefined,
       contact: String(fd.get("contact") || "").trim() || undefined,
+      monthlyFee: Number.isFinite(fee) && fee > 0 ? fee : undefined,
     });
     e.currentTarget.reset();
     setOpen(false);
@@ -54,6 +57,7 @@ export function UnitsSection({ propertyId, units }: { propertyId: string; units:
           <input name="area" type="number" min="0" step="0.1" className="input" placeholder="Plocha m²" />
           <input name="share" className="input" placeholder="Podíl (např. 754/10000)" />
           <input name="contact" className="input" placeholder="Kontakt (e-mail / telefon)" />
+          <input name="monthlyFee" type="number" min="0" step="1" className="input sm:col-span-2" placeholder="Měsíční příspěvek do fondu oprav (Kč)" />
           <button className="btn-secondary sm:col-span-2" type="submit">
             Přidat jednotku
           </button>
@@ -77,6 +81,7 @@ export function UnitsSection({ propertyId, units }: { propertyId: string; units:
                   <th className="hidden py-2 pr-3 font-medium sm:table-cell">Patro</th>
                   <th className="py-2 pr-3 text-right font-medium">m²</th>
                   <th className="hidden py-2 pr-3 font-medium sm:table-cell">Podíl</th>
+                  <th className="hidden py-2 pr-3 text-right font-medium sm:table-cell">Příspěvek</th>
                   <th className="py-2" />
                 </tr>
               </thead>
@@ -91,6 +96,9 @@ export function UnitsSection({ propertyId, units }: { propertyId: string; units:
                     <td className="hidden py-2 pr-3 text-stone-500 sm:table-cell">{u.floor ?? "—"}</td>
                     <td className="py-2 pr-3 text-right text-stone-700">{u.area ?? "—"}</td>
                     <td className="hidden py-2 pr-3 text-stone-500 sm:table-cell">{u.share ?? "—"}</td>
+                    <td className="hidden py-2 pr-3 text-right text-stone-700 sm:table-cell">
+                      {u.monthlyFee ? `${u.monthlyFee.toLocaleString("cs-CZ")} Kč` : "—"}
+                    </td>
                     <td className="py-2 text-right">
                       {manage && (
                         <button
@@ -111,6 +119,7 @@ export function UnitsSection({ propertyId, units }: { propertyId: string; units:
           </div>
           <p className="mt-3 text-xs text-stone-400">
             Celkem {units.length} jednotek{totalArea > 0 ? ` · ${totalArea} m²` : ""}
+            {totalFee > 0 ? ` · ${totalFee.toLocaleString("cs-CZ")} Kč/měs.` : ""}
           </p>
         </>
       )}

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useStore, type Announcement } from "@/lib/store";
+import { useStore, type Announcement, type AnnouncementCategory } from "@/lib/store";
 import { formatDate } from "@/lib/format";
+import { ANN_CAT, ANN_CAT_ORDER } from "@/lib/svj";
 import { IconMegaphone, IconPlus, IconTrash } from "@/components/Icons";
 
 export function AnnouncementSection({
@@ -27,7 +28,12 @@ export function AnnouncementSection({
     const title = String(fd.get("title") || "").trim();
     const text = String(fd.get("text") || "").trim();
     if (!title || !text) return;
-    addAnnouncement(propertyId, { title, text, pinned: fd.get("pinned") === "on" });
+    addAnnouncement(propertyId, {
+      title,
+      text,
+      category: (String(fd.get("category")) as AnnouncementCategory) || "GENERAL",
+      pinned: fd.get("pinned") === "on",
+    });
     e.currentTarget.reset();
     setOpen(false);
   }
@@ -53,6 +59,13 @@ export function AnnouncementSection({
       {open && manage && (
         <form onSubmit={submit} className="mt-3 space-y-2 border-b border-stone-100 pb-4">
           <input name="title" required className="input" placeholder="Nadpis oznámení" />
+          <select name="category" className="input" defaultValue="GENERAL">
+            {ANN_CAT_ORDER.map((c) => (
+              <option key={c} value={c}>
+                {ANN_CAT[c].label}
+              </option>
+            ))}
+          </select>
           <textarea name="text" required className="input min-h-24" placeholder="Text oznámení pro vlastníky…" />
           <label className="flex items-center gap-2 text-sm text-stone-600">
             <input type="checkbox" name="pinned" className="h-4 w-4 accent-teal-700" />
@@ -79,7 +92,14 @@ export function AnnouncementSection({
                     {a.pinned && <span className="mr-1.5 text-amber-600">📌</span>}
                     {a.title}
                   </p>
-                  <p className="text-xs text-stone-400">{formatDate(a.createdAt)}</p>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${ANN_CAT[a.category ?? "GENERAL"].badge}`}
+                    >
+                      {ANN_CAT[a.category ?? "GENERAL"].label}
+                    </span>
+                    <span className="text-xs text-stone-400">{formatDate(a.createdAt)}</span>
+                  </div>
                 </div>
                 {manage && (
                   <button

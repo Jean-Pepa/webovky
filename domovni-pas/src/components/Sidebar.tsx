@@ -72,6 +72,7 @@ function svjNav(id: string, role: Role | null): NavItem[] {
     { href: `/nemovitost/${id}/zaruky`, label: "Revize a kontroly", icon: IconShield },
     { href: `/nemovitost/${id}/konzultace`, label: "Hlášení závad", icon: IconUsers },
     { href: `/nemovitost/${id}/hlasovani`, label: "Hlasování", icon: IconVote },
+    { href: `/nemovitost/${id}/shromazdeni`, label: "Shromáždění vlastníků", icon: IconUsers },
     { href: `/nemovitost/${id}/udalosti`, label: "Kalendář a termíny", icon: IconCalendar },
     { href: `/nemovitost/${id}/dokumentace`, label: "Dokumenty", icon: IconFile },
     { href: `/nemovitost/${id}/kontakty`, label: "Kontakty", icon: IconPhone },
@@ -86,6 +87,7 @@ function svjNav(id: string, role: Role | null): NavItem[] {
     items.push({ href: `/nemovitost/${id}/rozpocet`, label: "Náklady / fond oprav", icon: IconMoney });
     items.push({ href: `/nemovitost/${id}/import`, label: "Import / Export", icon: IconDownload });
   }
+  items.push({ href: `/nemovitost/${id}/detail`, label: "Detail společenství", icon: IconBuilding });
   return items;
 }
 

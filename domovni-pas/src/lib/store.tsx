@@ -24,6 +24,8 @@ function toShareSnapshot(p: Property): Property {
     polls: [], // hlasování je interní
     meters: [], // odečty měřidel jsou interní
     events: [], // kalendář schůzí je interní
+    svj: undefined, // identita SVJ + fond oprav nesdílíme veřejně
+    assemblies: [], // shromáždění jsou interní
   };
 }
 
@@ -117,6 +119,8 @@ export type Property = {
   polls?: Poll[];
   meters?: Meter[];
   events?: SvjEvent[];
+  svj?: SvjInfo;
+  assemblies?: Assembly[];
   createdAt: string;
   updatedAt: string;
 };
@@ -310,15 +314,22 @@ export type InventoryInput = {
 // ── SVJ moduly ──────────────────────────────────────────────────────────────
 
 // Nástěnka — oznámení výboru pro vlastníky
+export type AnnouncementCategory = "GENERAL" | "IMPORTANT" | "INTERNAL" | "MAINTENANCE";
 export type Announcement = {
   id: string;
   title: string;
   text: string;
+  category?: AnnouncementCategory;
   pinned?: boolean;
   authorRole: Role;
   createdAt: string;
 };
-export type AnnouncementInput = { title: string; text: string; pinned?: boolean };
+export type AnnouncementInput = {
+  title: string;
+  text: string;
+  category?: AnnouncementCategory;
+  pinned?: boolean;
+};
 
 // Evidence jednotek a vlastníků
 export type Unit = {
@@ -329,6 +340,7 @@ export type Unit = {
   share?: string; // spoluvlastnický podíl, např. „754/10000"
   ownerName: string;
   contact?: string; // e-mail / telefon
+  monthlyFee?: number; // měsíční příspěvek do fondu oprav / na správu
 };
 export type UnitInput = {
   label: string;
@@ -337,6 +349,7 @@ export type UnitInput = {
   share?: string;
   ownerName: string;
   contact?: string;
+  monthlyFee?: number;
 };
 
 // Kontakty — výbor, správce, dodavatelé
@@ -395,6 +408,38 @@ export type SvjEvent = {
   note?: string;
 };
 export type SvjEventInput = { title: string; date: string; time?: string; kind?: string; note?: string };
+
+// Detail společenství (identita SVJ + fond oprav)
+export type SvjInfo = {
+  ico?: string;
+  sidlo?: string;
+  founded?: string; // datum vzniku / zápisu do rejstříku
+  manager?: string; // správce
+  bankAccount?: string; // číslo účtu (fond oprav)
+  fundBalance?: number; // zůstatek fondu oprav
+  fundNote?: string;
+};
+
+// Shromáždění vlastníků
+export type AssemblyStatus = "PLANNED" | "DONE";
+export type Assembly = {
+  id: string;
+  title: string;
+  date: string;
+  time?: string;
+  location?: string;
+  agenda?: string; // program (po řádcích)
+  minutes?: string; // zápis
+  status: AssemblyStatus;
+  createdAt: string;
+};
+export type AssemblyInput = {
+  title: string;
+  date: string;
+  time?: string;
+  location?: string;
+  agenda?: string;
+};
 
 type Store = {
   properties: Property[];
@@ -456,6 +501,14 @@ type Store = {
   deleteMeterReading: (propertyId: string, meterId: string, readingId: string) => void;
   addEvent: (propertyId: string, data: SvjEventInput) => void;
   deleteEvent: (propertyId: string, eventId: string) => void;
+  setSvjInfo: (propertyId: string, data: SvjInfo) => void;
+  addAssembly: (propertyId: string, data: AssemblyInput) => void;
+  updateAssembly: (
+    propertyId: string,
+    assemblyId: string,
+    data: Partial<Omit<Assembly, "id" | "createdAt">>,
+  ) => void;
+  deleteAssembly: (propertyId: string, assemblyId: string) => void;
   transferProperty: (propertyId: string, toName: string, note?: string) => void;
   setShare: (propertyId: string, enabled: boolean) => void;
   role: Role | null;
@@ -472,7 +525,7 @@ const BRANDING_KEY = "bulo-branding";
 // Verze ukázkových dat – po bumpnutí se jednorázově doplní nově přidané demo budovy
 // (bez mazání dat uživatele; smazané demo se znovu nepřidá).
 const SEED_KEY = "bulo-seed";
-const SEED_VERSION = "2026-06-svj-3";
+const SEED_VERSION = "2026-06-svj-4";
 
 // Demo přihlášení – 3 hesla = 3 role. (Změnit lze tady.)
 const PASSWORDS: Record<string, Role> = {
@@ -528,6 +581,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           polls: p.polls ?? [],
           meters: p.meters ?? [],
           events: p.events ?? [],
+          assemblies: p.assemblies ?? [],
         }));
         // Po bumpnutí verze obnovíme ukázkové (demo-) budovy na aktuální podobu;
         // vlastní pasy uživatele zůstávají beze změny.
@@ -1235,6 +1289,50 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const setSvjInfo = useCallback((propertyId: string, data: SvjInfo) => {
+    setProperties((prev) =>
+      prev.map((p) => (p.id === propertyId ? { ...p, svj: data, updatedAt: now() } : p)),
+    );
+  }, []);
+
+  const addAssembly = useCallback((propertyId: string, data: AssemblyInput) => {
+    const a: Assembly = { ...data, id: newId(), status: "PLANNED", createdAt: now() };
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, assemblies: [a, ...(p.assemblies ?? [])], updatedAt: now() } : p,
+      ),
+    );
+  }, []);
+
+  const updateAssembly = useCallback(
+    (propertyId: string, assemblyId: string, data: Partial<Omit<Assembly, "id" | "createdAt">>) => {
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? {
+                ...p,
+                assemblies: (p.assemblies ?? []).map((a) =>
+                  a.id === assemblyId ? { ...a, ...data } : a,
+                ),
+                updatedAt: now(),
+              }
+            : p,
+        ),
+      );
+    },
+    [],
+  );
+
+  const deleteAssembly = useCallback((propertyId: string, assemblyId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, assemblies: (p.assemblies ?? []).filter((a) => a.id !== assemblyId) }
+          : p,
+      ),
+    );
+  }, []);
+
   // Převod vlastnictví – jádro hodnoty (přenositelnost). V ukázce zaznamená předání
   // a přepíše jméno vlastníka; auditní stopa zůstává v transfers.
   const transferProperty = useCallback((propertyId: string, toName: string, note?: string) => {
@@ -1347,6 +1445,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteMeterReading,
     addEvent,
     deleteEvent,
+    setSvjInfo,
+    addAssembly,
+    updateAssembly,
+    deleteAssembly,
     transferProperty,
     setShare,
     role,
@@ -1751,6 +1853,7 @@ function seed(): Property[] {
           id: "asvj-1",
           title: "Odstávka teplé vody 24. 6.",
           text: "Z důvodu servisu výměníku bude 24. 6. od 8 do 14 hod. odstávka teplé vody. Děkujeme za pochopení.",
+          category: "MAINTENANCE",
           pinned: true,
           authorRole: "CREATOR",
           createdAt: "2026-06-10",
@@ -1759,15 +1862,16 @@ function seed(): Property[] {
           id: "asvj-2",
           title: "Shromáždění vlastníků 3. 7. 2026",
           text: "Zveme všechny vlastníky na řádné shromáždění ve čtvrtek 3. 7. v 18:00 ve společenské místnosti. Program a podklady najdete v Dokumentech.",
+          category: "IMPORTANT",
           authorRole: "CREATOR",
           createdAt: "2026-06-05",
         },
       ],
       units: [
-        { id: "usvj-1", label: "1/1", floor: "přízemí", area: 64, share: "640/12480", ownerName: "Jan Dvořák" },
-        { id: "usvj-2", label: "2/3", floor: "2. NP", area: 78, share: "780/12480", ownerName: "Marie Veselá", contact: "vesela@email.cz" },
-        { id: "usvj-3", label: "3/5", floor: "3. NP", area: 92, share: "920/12480", ownerName: "Petr Horák" },
-        { id: "usvj-4", label: "4/8", floor: "4. NP", area: 58, share: "580/12480", ownerName: "Eva Králová" },
+        { id: "usvj-1", label: "1/1", floor: "přízemí", area: 64, share: "640/12480", ownerName: "Jan Dvořák", monthlyFee: 2400 },
+        { id: "usvj-2", label: "2/3", floor: "2. NP", area: 78, share: "780/12480", ownerName: "Marie Veselá", contact: "vesela@email.cz", monthlyFee: 2900 },
+        { id: "usvj-3", label: "3/5", floor: "3. NP", area: 92, share: "920/12480", ownerName: "Petr Horák", monthlyFee: 3400 },
+        { id: "usvj-4", label: "4/8", floor: "4. NP", area: 58, share: "580/12480", ownerName: "Eva Králová", monthlyFee: 2200 },
       ],
       contacts: [
         { id: "csvj-1", name: "Jan Dvořák", kind: "VYBOR", position: "Předseda výboru", phone: "777 100 200", email: "predseda@svj-jugoslavska.cz" },
@@ -1827,6 +1931,40 @@ function seed(): Property[] {
         { id: "esv-1", title: "Shromáždění vlastníků", date: "2026-07-03", time: "18:00", kind: "Shromáždění", note: "Společenská místnost, přízemí" },
         { id: "esv-2", title: "Odečet vody (čtvrtletní)", date: "2026-09-30", kind: "Termín" },
         { id: "esv-3", title: "Schůze výboru", date: "2026-06-24", time: "19:00", kind: "Schůze" },
+      ],
+      svj: {
+        ico: "26512345",
+        sidlo: "Jugoslávská 12, 120 00 Praha 2",
+        founded: "2007-03-15",
+        manager: "SpravByt s.r.o.",
+        bankAccount: "2200456789/2010",
+        fundBalance: 612000,
+        fundNote: "Fond oprav — stav k 31. 5. 2026",
+      },
+      assemblies: [
+        {
+          id: "asm-1",
+          title: "Řádné shromáždění vlastníků 2026",
+          date: "2026-07-03",
+          time: "18:00",
+          location: "Společenská místnost, přízemí",
+          agenda:
+            "Schválení účetní závěrky 2025\nRozpočet a výše příspěvků 2026\nZateplení dvorní fasády\nVolba člena výboru\nRůzné",
+          status: "PLANNED",
+          createdAt: "2026-06-05",
+        },
+        {
+          id: "asm-2",
+          title: "Shromáždění vlastníků 2025",
+          date: "2025-06-26",
+          time: "18:00",
+          location: "Společenská místnost",
+          agenda: "Účetní závěrka 2024\nPlán oprav\nRůzné",
+          minutes:
+            "Účetní závěrka 2024 schválena (90 % hlasů). Schválen plán oprav stoupaček. Příspěvek do fondu oprav ponechán beze změny.",
+          status: "DONE",
+          createdAt: "2025-06-26",
+        },
       ],
       createdAt: "2024-09-01",
       updatedAt: "2026-06-14",

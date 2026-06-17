@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { Property } from "@/lib/store";
 import { formatDate } from "@/lib/format";
+import { ANN_CAT } from "@/lib/svj";
 import { IconMegaphone, IconPhone, IconKey, IconUsers, IconVote } from "@/components/Icons";
 
 export function SvjBoard({ property }: { property: Property }) {
@@ -49,7 +50,12 @@ export function SvjBoard({ property }: { property: Property }) {
                   {a.title}
                 </p>
                 <p className="mt-0.5 line-clamp-2 text-sm text-stone-600">{a.text}</p>
-                <p className="mt-1 text-xs text-stone-400">{formatDate(a.createdAt)}</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${ANN_CAT[a.category ?? "GENERAL"].badge}`}>
+                    {ANN_CAT[a.category ?? "GENERAL"].label}
+                  </span>
+                  <span className="text-xs text-stone-400">{formatDate(a.createdAt)}</span>
+                </div>
               </li>
             ))}
           </ul>
