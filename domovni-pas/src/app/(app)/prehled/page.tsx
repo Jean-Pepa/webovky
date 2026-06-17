@@ -4,9 +4,16 @@ import Link from "next/link";
 import { useStore, type Property } from "@/lib/store";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Loading } from "@/components/Loading";
-import { IconPlus, IconHome, IconBuilding, IconAlert, IconCalendar, IconShield } from "@/components/Icons";
-import { canSeeProperty } from "@/lib/access";
+import { IconPlus, IconHome, IconBuilding, IconAlert, IconCalendar, IconShield, IconUsers } from "@/components/Icons";
+import { Badge } from "@/components/ui/Badge";
+import { canSeeProperty, ROLE_LABELS } from "@/lib/access";
 import { getAttentionItems, ATTENTION_KIND_LABELS, type AttentionKind } from "@/lib/attention";
+import type { BadgeColor } from "@/lib/enums";
+
+const CONS_STATUS: Record<string, { label: string; color: BadgeColor }> = {
+  OPEN: { label: "Otevřeno", color: "amber" },
+  WAITING: { label: "Čeká na klienta", color: "gray" },
+};
 
 function plural(n: number) {
   if (n === 1) return "nemovitost";
@@ -42,6 +49,18 @@ export default function DashboardPage() {
 
   // Co „hoří" — záruky a revize se hlídají automaticky (architekt neřeší)
   const attention = isArchitect ? [] : getAttentionItems(visible);
+
+  // Otevřené dotazy / konzultace napříč projekty (architekt / správce)
+  const consultations =
+    isArchitect || isCreator
+      ? visible
+          .flatMap((p) => (p.consultations ?? []).map((c) => ({ c, p })))
+          .filter(({ c }) => (c.status ?? "OPEN") !== "RESOLVED")
+          .sort((a, b) => {
+            const rank = (s?: string) => (s === "WAITING" ? 1 : 0);
+            return rank(a.c.status) - rank(b.c.status) || b.c.createdAt.localeCompare(a.c.createdAt);
+          })
+      : [];
 
   const stats = isCreator
     ? {
@@ -94,6 +113,41 @@ export default function DashboardPage() {
           <StatBox label="Čeká na převzetí" value={String(waiting.length)} />
           <StatBox label="Předáno klientovi" value={String(handed.length)} />
         </div>
+      )}
+
+      {/* Dotazy a konzultace (architekt / správce) */}
+      {consultations.length > 0 && (
+        <section className="card mt-6 p-5">
+          <div className="flex items-center gap-2">
+            <IconUsers className="h-4 w-4 text-brass" />
+            <h2 className="text-sm font-semibold text-stone-900">Dotazy a konzultace</h2>
+            <span className="text-xs text-stone-400">· {consultations.length}</span>
+          </div>
+          <ul className="mt-2 divide-y divide-stone-100">
+            {consultations.slice(0, 6).map(({ c, p }) => {
+              const meta = CONS_STATUS[c.status ?? "OPEN"] ?? CONS_STATUS.OPEN;
+              return (
+                <li key={c.id}>
+                  <Link
+                    href={`/nemovitost/${p.id}`}
+                    className="-mx-1 flex items-center justify-between gap-3 rounded px-1 py-2.5 hover:bg-stone-50"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-stone-800">
+                        {c.topic ? `${c.topic}: ` : ""}
+                        {c.text}
+                      </p>
+                      <p className="truncate text-xs text-stone-400">
+                        {ROLE_LABELS[c.authorRole]} · {p.name}
+                      </p>
+                    </div>
+                    <Badge color={meta.color}>{meta.label}</Badge>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
 
       {/* Vyžaduje pozornost (majitel / správce) */}
