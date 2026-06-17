@@ -22,6 +22,16 @@ export default function LoginPage() {
     else setError(true);
   }
 
+  function quick(pw: string) {
+    if (login(pw)) router.push("/prehled");
+  }
+
+  const DEMO_ROLES = [
+    { pw: "architekt", label: "Architekt" },
+    { pw: "klient", label: "Klient / majitel" },
+    { pw: "svj", label: "Správce / SVJ" },
+  ];
+
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 text-white">
       <video
@@ -71,6 +81,22 @@ export default function LoginPage() {
               {t.login.button}
             </button>
           </form>
+
+          <div className="mt-5 border-t border-white/15 pt-4">
+            <p className="text-center text-xs text-white/50">Rychlé demo přihlášení</p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {DEMO_ROLES.map((d) => (
+                <button
+                  key={d.pw}
+                  type="button"
+                  onClick={() => quick(d.pw)}
+                  className="rounded-lg border border-white/20 bg-white/5 px-2 py-2 text-xs font-medium text-white/90 transition hover:bg-white/15"
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
         <p className="mt-4 text-center text-xs text-white/50">
           <Link href="/" className="hover:text-white/80">

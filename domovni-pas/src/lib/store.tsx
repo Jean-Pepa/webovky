@@ -359,7 +359,9 @@ const SEED_VERSION = "2026-06-svj";
 const PASSWORDS: Record<string, Role> = {
   architekt: "ARCHITECT",
   klient: "CLIENT",
-  tvurce: "CREATOR",
+  svj: "CREATOR",
+  spravce: "CREATOR",
+  tvurce: "CREATOR", // zpětná kompatibilita
 };
 
 const now = () => new Date().toISOString();
