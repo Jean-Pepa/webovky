@@ -74,7 +74,7 @@ export default function DashboardPage() {
   const heading = isArchitect
     ? "Moje projekty"
     : isCreator
-      ? "Přehled — správce"
+      ? "Správa SVJ"
       : isOwner
         ? "Náš dům"
         : "Moje nemovitosti";
@@ -84,7 +84,9 @@ export default function DashboardPage() {
         ? `Máte ${visible.length} ${pluralProjekt(visible.length)}.`
         : isOwner
           ? "Informace o vašem bytovém domě a SVJ."
-          : `${isCreator ? "V systému je" : "Spravujete"} ${visible.length} ${plural(visible.length)}.`
+          : isCreator
+            ? `Ve správě máte ${visible.length} ${plural(visible.length)}.`
+            : `Spravujete ${visible.length} ${plural(visible.length)}.`
       : isArchitect
         ? "Zatím nemáte žádný projekt."
         : "Zatím tu nic není.";
@@ -135,14 +137,11 @@ export default function DashboardPage() {
           {(r === "CLIENT" || isCreator) && (
             <Link href="/nemovitost/zalozit" className="btn-primary">
               <IconPlus className="h-4 w-4" />
-              Založit pas
+              {isCreator ? "Přidat dům" : "Založit pas"}
             </Link>
           )}
-          {(isArchitect || isCreator) && (
-            <Link
-              href="/projekt/novy"
-              className={isArchitect ? "btn-primary" : "btn-secondary"}
-            >
+          {isArchitect && (
+            <Link href="/projekt/novy" className="btn-primary">
               <IconBuilding className="h-4 w-4" />
               Přidat projekt
             </Link>

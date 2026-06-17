@@ -29,7 +29,7 @@ export default function LoginPage() {
   const DEMO_ROLES = [
     { pw: "architekt", label: "Architekt" },
     { pw: "klient", label: "Klient / majitel" },
-    { pw: "svj", label: "Správce / SVJ" },
+    { pw: "svj", label: "Správce SVJ" },
     { pw: "vlastnik", label: "Vlastník / rezident" },
   ];
 

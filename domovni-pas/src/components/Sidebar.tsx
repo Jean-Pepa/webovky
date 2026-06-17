@@ -14,7 +14,6 @@ import {
   IconLogout,
   IconChart,
   IconShield,
-  IconSearch,
   IconMoney,
   IconCamera,
   IconBox,
@@ -49,10 +48,8 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
   ],
   CREATOR: [
-    { href: "/prehled", label: "Přehled", icon: IconHome },
-    { href: "/hledat", label: "Hledat", icon: IconSearch },
-    { href: "/statistiky", label: "Statistiky", icon: IconChart },
-    { href: "/kalendar", label: "Kalendář", icon: IconShield },
+    { href: "/prehled", label: "Moje domy", icon: IconHome },
+    { href: "/kalendar", label: "Revize a termíny", icon: IconShield },
     { href: "/pripominky", label: "Připomínky", icon: IconCalendar },
     { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
   ],
@@ -197,12 +194,8 @@ export function Sidebar() {
             <span className="hidden lg:inline">Založit pas</span>
           </Link>
         )}
-        {!inHouse && (role === "ARCHITECT" || role === "CREATOR") && (
-          <Link
-            href="/projekt/novy"
-            title="Přidat projekt"
-            className={`w-full px-0 lg:px-4 ${role === "ARCHITECT" ? "btn-primary" : "btn-secondary"}`}
-          >
+        {!inHouse && role === "ARCHITECT" && (
+          <Link href="/projekt/novy" title="Přidat projekt" className="btn-primary w-full px-0 lg:px-4">
             <IconBuilding className="h-4 w-4 shrink-0" />
             <span className="hidden lg:inline">Přidat projekt</span>
           </Link>
