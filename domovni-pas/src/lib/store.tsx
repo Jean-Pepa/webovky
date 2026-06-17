@@ -16,6 +16,7 @@ function toShareSnapshot(p: Property): Property {
     consultations: [], // interní konzultace nesdílíme veřejně
     bids: [], // nabídky firem jsou interní
     designs: [], // návrhy (velká média) nesdílíme přes server
+    costs: [], // náklady a faktury jsou interní
   };
 }
 
@@ -100,6 +101,7 @@ export type Property = {
   bids?: ContractorBid[];
   designs?: DesignProposal[];
   milestones?: ArchMilestone[];
+  costs?: CostItem[];
   createdAt: string;
   updatedAt: string;
 };
@@ -223,6 +225,31 @@ export type ArchMilestone = {
   createdAt: string;
 };
 
+// Náklad stavby s napojenou fakturou (databáze nákladů)
+export type CostItem = {
+  id: string;
+  title: string;
+  category?: string;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  supplier?: string;
+  invoiceName?: string;
+  invoiceUrl?: string;
+  note?: string;
+  createdAt: string;
+};
+
+export type CostInput = {
+  title: string;
+  category?: string;
+  amount: number;
+  date: string;
+  supplier?: string;
+  invoiceName?: string;
+  invoiceUrl?: string;
+  note?: string;
+};
+
 // Vybavení a materiály v domě – „Co je v mém domě" (baterie, kotel, podlaha…)
 export type InventoryItem = {
   id: string;
@@ -281,6 +308,8 @@ type Store = {
   deleteDesign: (propertyId: string, designId: string) => void;
   addMilestone: (propertyId: string, data: { year: number; title: string; note?: string }) => void;
   deleteMilestone: (propertyId: string, milestoneId: string) => void;
+  addCost: (propertyId: string, data: CostInput) => void;
+  deleteCost: (propertyId: string, costId: string) => void;
   transferProperty: (propertyId: string, toName: string, note?: string) => void;
   setShare: (propertyId: string, enabled: boolean) => void;
   role: Role | null;
@@ -338,6 +367,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             bids: p.bids ?? [],
             designs: p.designs ?? [],
             milestones: p.milestones ?? [],
+            costs: p.costs ?? [],
           })),
         );
       } else {
@@ -407,6 +437,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         bids: [],
         designs: [],
         milestones: [],
+        costs: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -436,6 +467,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         bids: [],
         designs: [],
         milestones: [],
+        costs: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -469,6 +501,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         bids: p.bids ?? [],
         designs: p.designs ?? [],
         milestones: p.milestones ?? [],
+        costs: p.costs ?? [],
       })),
     );
   }, []);
@@ -703,6 +736,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const addCost = useCallback((propertyId: string, data: CostInput) => {
+    const cost: CostItem = { ...data, id: newId(), createdAt: now() };
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, costs: [cost, ...(p.costs ?? [])], updatedAt: now() } : p,
+      ),
+    );
+  }, []);
+
+  const deleteCost = useCallback((propertyId: string, costId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, costs: (p.costs ?? []).filter((c) => c.id !== costId) } : p,
+      ),
+    );
+  }, []);
+
   // Převod vlastnictví – jádro hodnoty (přenositelnost). V ukázce zaznamená předání
   // a přepíše jméno vlastníka; auditní stopa zůstává v transfers.
   const transferProperty = useCallback((propertyId: string, toName: string, note?: string) => {
@@ -792,6 +842,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteDesign,
     addMilestone,
     deleteMilestone,
+    addCost,
+    deleteCost,
     transferProperty,
     setShare,
     role,
@@ -927,6 +979,13 @@ function seed(): Property[] {
         { id: "m-3", year: 2018, title: "Výměna plynového kotle", createdAt: "2024-01-01" },
         { id: "m-4", year: 2024, title: "Rekonstrukce koupelny v patře", createdAt: "2024-01-01" },
         { id: "m-5", year: 2025, title: "Oprava oplechování střešního okna", createdAt: "2024-01-01" },
+      ],
+      costs: [
+        { id: "co-1", title: "Rekonstrukce koupelny — obklady a montáž", category: "PRACE", amount: 124000, date: "2024-06-15", supplier: "KoupelnyPlus s.r.o.", invoiceName: "faktura_koupelna.pdf", invoiceUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MjAiIGhlaWdodD0iNTYwIj48cmVjdCB3aWR0aD0iNDIwIiBoZWlnaHQ9IjU2MCIgZmlsbD0iI2ZmZmZmZiIvPjxyZWN0IHdpZHRoPSI0MjAiIGhlaWdodD0iNzAiIGZpbGw9IiMxODRFNUEiLz48dGV4dCB4PSIyNCIgeT0iNDQiIGZvbnQtc2l6ZT0iMjIiIGZpbGw9IiNmZmZmZmYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5GQUtUVVJBPC90ZXh0Pjx0ZXh0IHg9IjI0IiB5PSIxMjAiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiMzMzMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5SZWtvbnN0cnVrY2Uga291cGVsbnk8L3RleHQ+PHRleHQgeD0iMjQiIHk9IjE2MCIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzc3NyIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiPkRvZGF2YXRlbCAtIHVrYXprb3Z5IGRva2xhZDwvdGV4dD48bGluZSB4MT0iMjQiIHkxPSIyMDAiIHgyPSIzOTYiIHkyPSIyMDAiIHN0cm9rZT0iI2NjYyIvPjx0ZXh0IHg9IjI0IiB5PSIyNDAiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiM1NTUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5Qb2xvemthIC4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uIGNhc3RrYTwvdGV4dD48L3N2Zz4=", createdAt: "2024-06-15" },
+        { id: "co-2", title: "Sprchový kout a baterie", category: "MATERIAL", amount: 38000, date: "2024-06-10", supplier: "Sanita CZ", createdAt: "2024-06-10" },
+        { id: "co-3", title: "Podlahové topení v koupelně", category: "TZB", amount: 27000, date: "2024-06-12", createdAt: "2024-06-12" },
+        { id: "co-4", title: "Oprava oplechování střešního okna", category: "PRACE", amount: 4500, date: "2025-11-20", supplier: "Klempířství Dvořák", invoiceName: "faktura_strecha.pdf", invoiceUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MjAiIGhlaWdodD0iNTYwIj48cmVjdCB3aWR0aD0iNDIwIiBoZWlnaHQ9IjU2MCIgZmlsbD0iI2ZmZmZmZiIvPjxyZWN0IHdpZHRoPSI0MjAiIGhlaWdodD0iNzAiIGZpbGw9IiMxODRFNUEiLz48dGV4dCB4PSIyNCIgeT0iNDQiIGZvbnQtc2l6ZT0iMjIiIGZpbGw9IiNmZmZmZmYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5GQUtUVVJBPC90ZXh0Pjx0ZXh0IHg9IjI0IiB5PSIxMjAiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiMzMzMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5PcHJhdmEgc3RyZWNoeTwvdGV4dD48dGV4dCB4PSIyNCIgeT0iMTYwIiBmb250LXNpemU9IjEzIiBmaWxsPSIjNzc3IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+RG9kYXZhdGVsIC0gdWthemtvdnkgZG9rbGFkPC90ZXh0PjxsaW5lIHgxPSIyNCIgeTE9IjIwMCIgeDI9IjM5NiIgeTI9IjIwMCIgc3Ryb2tlPSIjY2NjIi8+PHRleHQgeD0iMjQiIHk9IjI0MCIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzU1NSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiPlBvbG96a2EgLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4gY2FzdGthPC90ZXh0Pjwvc3ZnPg==", createdAt: "2025-11-20" },
+        { id: "co-5", title: "Revize plynového kotle", category: "OSTATNI", amount: 1800, date: "2025-10-12", supplier: "TermoInstal", createdAt: "2025-10-12" },
       ],
       createdAt: "2024-01-01",
       updatedAt: "2025-11-20",

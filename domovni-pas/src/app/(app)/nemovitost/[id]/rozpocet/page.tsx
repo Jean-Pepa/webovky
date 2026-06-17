@@ -4,33 +4,20 @@ import Link from "next/link";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { canSeeProperty } from "@/lib/access";
+import { canSeeProperty, canEditProperty } from "@/lib/access";
 import { Loading } from "@/components/Loading";
 import { BackLink } from "@/components/BackLink";
 import { PrintButton } from "@/components/ui/PrintButton";
-import { IconMoney, IconBuilding } from "@/components/Icons";
-import { ENTRY_TYPES } from "@/lib/enums";
-import { formatCurrency } from "@/lib/format";
-
-const RATES = [
-  { key: "eko", label: "Ekonomický", perM2: 45000 },
-  { key: "std", label: "Standard", perM2: 60000 },
-  { key: "nad", label: "Nadstandard", perM2: 80000 },
-];
-
-// Orientační rozpad nákladů na hrubou stavbu rodinného domu
-const BREAKDOWN = [
-  { label: "Projektová příprava a povolení", pct: 0.06 },
-  { label: "Hrubá stavba", pct: 0.42 },
-  { label: "Technická zařízení (TZB)", pct: 0.2 },
-  { label: "Dokončovací práce", pct: 0.24 },
-  { label: "Rezerva", pct: 0.08 },
-];
+import { fileToDataUrl } from "@/lib/media";
+import { COST_CATEGORIES } from "@/lib/enums";
+import { formatCurrency, formatDateShort } from "@/lib/format";
+import { IconMoney, IconPlus, IconTrash, IconFile, IconSparkles } from "@/components/Icons";
 
 export default function BudgetPage() {
   const { id } = useParams<{ id: string }>();
-  const { getProperty, hydrated, role } = useStore();
-  const [rateKey, setRateKey] = useState("std");
+  const { getProperty, hydrated, role, addCost, deleteCost } = useStore();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   if (!hydrated) return <Loading />;
 
@@ -46,18 +33,50 @@ export default function BudgetPage() {
     );
   }
 
-  const rate = RATES.find((r) => r.key === rateKey) ?? RATES[1];
-  const area = property.floorArea ?? null;
-  const estimate = area ? area * rate.perM2 : null;
+  const editable = role ? canEditProperty(property, role) : false;
+  const costs = [...(property.costs ?? [])].sort((a, b) => b.date.localeCompare(a.date));
+  const total = costs.reduce((s, c) => s + (c.amount || 0), 0);
+  const withInvoice = costs.filter((c) => c.invoiceUrl || c.invoiceName).length;
 
-  // Skutečné náklady ze záznamů
-  const costByType = new Map<string, number>();
-  for (const e of property.entries) {
-    if (e.cost) costByType.set(e.type, (costByType.get(e.type) ?? 0) + e.cost);
+  // Součty podle kategorie
+  const byCat = new Map<string, number>();
+  for (const c of costs) {
+    const key = c.category || "OSTATNI";
+    byCat.set(key, (byCat.get(key) ?? 0) + (c.amount || 0));
   }
-  const costRows = [...costByType.entries()].sort((a, b) => b[1] - a[1]);
-  const spent = property.entries.reduce((s, e) => s + (e.cost ?? 0), 0);
-  const usedPct = estimate ? Math.min(100, Math.round((spent / estimate) * 100)) : null;
+  const catRows = [...byCat.entries()].sort((a, b) => b[1] - a[1]);
+
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const title = String(fd.get("title") || "").trim();
+    const amount = Number(String(fd.get("amount") || "").replace(/\s/g, ""));
+    const date = String(fd.get("date") || "");
+    if (!title || !amount || !date) return;
+
+    setBusy(true);
+    const file = fd.get("invoice");
+    let invoiceName: string | undefined;
+    let invoiceUrl: string | undefined;
+    if (file instanceof File && file.size > 0) {
+      invoiceName = file.name;
+      invoiceUrl = await fileToDataUrl(file);
+    }
+    addCost(id, {
+      title,
+      category: String(fd.get("category") || "OSTATNI"),
+      amount,
+      date,
+      supplier: String(fd.get("supplier") || "").trim() || undefined,
+      note: String(fd.get("note") || "").trim() || undefined,
+      invoiceName,
+      invoiceUrl,
+    });
+    form.reset();
+    setBusy(false);
+    setOpen(false);
+  }
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -66,109 +85,177 @@ export default function BudgetPage() {
         <PrintButton />
       </div>
 
-      <div className="mt-4 flex items-center gap-2">
-        <span className="grid h-9 w-9 place-items-center rounded-xl bg-teal-50 text-teal-700">
-          <IconMoney className="h-5 w-5" />
-        </span>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-stone-900">
-            Rozpočet stavebních nákladů
-          </h1>
-          <p className="text-sm text-stone-500">{property.name}</p>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-teal-50 text-teal-700">
+            <IconMoney className="h-5 w-5" />
+          </span>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-stone-900">
+              Náklady stavby
+            </h1>
+            <p className="text-sm text-stone-500">{property.name}</p>
+          </div>
         </div>
+        {editable && (
+          <button onClick={() => setOpen((o) => !o)} className="btn-primary btn-sm no-print">
+            <IconPlus className="h-4 w-4" />
+            Přidat náklad
+          </button>
+        )}
       </div>
 
-      {/* Odhad */}
-      <section className="card mt-6 p-5">
-        <h2 className="text-sm font-semibold text-stone-900">Orientační odhad</h2>
-        {area ? (
-          <>
-            <div className="mt-3 flex flex-wrap gap-1.5 no-print">
-              {RATES.map((r) => (
-                <button
-                  key={r.key}
-                  onClick={() => setRateKey(r.key)}
-                  className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-                    r.key === rateKey
-                      ? "bg-teal-700 text-white"
-                      : "border border-stone-200 text-stone-600 hover:bg-stone-50"
-                  }`}
-                >
-                  {r.label}
-                </button>
-              ))}
-            </div>
+      {/* Souhrn */}
+      <div className="mt-6 grid grid-cols-3 gap-3">
+        <Stat label="Celkem" value={formatCurrency(total)} />
+        <Stat label="Položek" value={String(costs.length)} />
+        <Stat label="S fakturou" value={`${withInvoice}/${costs.length}`} />
+      </div>
 
-            <div className="mt-4 rounded-xl bg-stone-50 p-5">
-              <p className="text-xs text-stone-500">
-                {area} m² × {formatCurrency(rate.perM2)}/m² · standard „{rate.label}"
-              </p>
-              <p className="mt-1 text-3xl font-semibold text-stone-900">
-                {formatCurrency(estimate!)}
-              </p>
-            </div>
-
-            <ul className="mt-4 divide-y divide-stone-100">
-              {BREAKDOWN.map((b) => (
-                <li key={b.label} className="flex items-center justify-between py-2.5 text-sm">
-                  <span className="text-stone-600">
-                    {b.label} <span className="text-stone-400">· {Math.round(b.pct * 100)} %</span>
-                  </span>
-                  <span className="font-medium text-stone-800">
-                    {formatCurrency(Math.round(estimate! * b.pct))}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : (
-          <div className="mt-3 flex items-start gap-3 rounded-lg bg-amber-50 p-4 text-sm text-amber-900">
-            <IconBuilding className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-            <p>
-              Pro odhad doplňte <strong>plochu (m²)</strong> v úpravě nemovitosti. Skutečné náklady
-              ze záznamů vidíte níže.
-            </p>
+      {/* Formulář */}
+      {editable && open && (
+        <form onSubmit={submit} className="card mt-4 space-y-3 p-5">
+          <div>
+            <label className="label" htmlFor="title">Co to bylo *</label>
+            <input id="title" name="title" required className="input" placeholder="Např. Rekonstrukce koupelny – obklady" />
           </div>
-        )}
-      </section>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="label" htmlFor="amount">Částka (Kč) *</label>
+              <input id="amount" name="amount" type="number" required className="input" placeholder="124000" />
+            </div>
+            <div>
+              <label className="label" htmlFor="date">Datum *</label>
+              <input id="date" name="date" type="date" required className="input" />
+            </div>
+            <div>
+              <label className="label" htmlFor="category">Kategorie</label>
+              <select id="category" name="category" className="input" defaultValue="PRACE">
+                {Object.entries(COST_CATEGORIES).map(([v, l]) => (
+                  <option key={v} value={v}>{l}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label" htmlFor="supplier">Dodavatel</label>
+              <input id="supplier" name="supplier" className="input" placeholder="Firma / kdo" />
+            </div>
+          </div>
+          <div>
+            <label className="label" htmlFor="invoice">Faktura (PDF / foto)</label>
+            <input
+              id="invoice"
+              name="invoice"
+              type="file"
+              accept="image/*,application/pdf"
+              className="block w-full text-sm text-stone-600 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-teal-700 hover:file:bg-teal-100"
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor="note">Poznámka</label>
+            <input id="note" name="note" className="input" />
+          </div>
+          <button type="submit" className="btn-secondary w-full" disabled={busy}>
+            {busy ? "Ukládám…" : "Uložit náklad"}
+          </button>
+        </form>
+      )}
 
-      {/* Skutečné náklady */}
+      {/* Součty podle kategorie */}
+      {catRows.length > 0 && (
+        <section className="card mt-4 p-5">
+          <h2 className="text-sm font-semibold text-stone-900">Podle kategorie</h2>
+          <ul className="mt-2 divide-y divide-stone-100">
+            {catRows.map(([cat, sum]) => (
+              <li key={cat} className="flex items-center justify-between py-2 text-sm">
+                <span className="text-stone-600">{COST_CATEGORIES[cat] ?? cat}</span>
+                <span className="font-medium text-stone-800">{formatCurrency(sum)}</span>
+              </li>
+            ))}
+            <li className="flex items-center justify-between py-2 text-sm font-semibold">
+              <span className="text-stone-800">Celkem</span>
+              <span className="text-teal-700">{formatCurrency(total)}</span>
+            </li>
+          </ul>
+        </section>
+      )}
+
+      {/* Databáze nákladů */}
       <section className="card mt-4 p-5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-stone-900">Skutečné náklady (ze záznamů)</h2>
-          <span className="text-sm font-semibold text-stone-700">{formatCurrency(spent)}</span>
-        </div>
-
-        {estimate && spent > 0 && (
-          <div className="mt-3">
-            <div className="h-2 w-full overflow-hidden rounded-full bg-stone-100">
-              <div className="h-full rounded-full bg-teal-600" style={{ width: `${usedPct}%` }} />
-            </div>
-            <p className="mt-1.5 text-xs text-stone-500">
-              Vyčerpáno {formatCurrency(spent)} z odhadu {formatCurrency(estimate)} ({usedPct} %).
-            </p>
-          </div>
-        )}
-
-        {costRows.length > 0 ? (
-          <ul className="mt-3 divide-y divide-stone-100">
-            {costRows.map(([type, total]) => (
-              <li key={type} className="flex items-center justify-between py-2.5 text-sm">
-                <span className="text-stone-600">{ENTRY_TYPES[type] ?? type}</span>
-                <span className="font-medium text-stone-800">{formatCurrency(total)}</span>
+        <h2 className="text-sm font-semibold text-stone-900">Databáze nákladů</h2>
+        {costs.length === 0 ? (
+          <p className="mt-2 text-sm text-stone-500">
+            Zatím žádné náklady. Přidávejte jednotlivé položky a připojujte k nim faktury.
+          </p>
+        ) : (
+          <ul className="mt-2 divide-y divide-stone-100">
+            {costs.map((c) => (
+              <li key={c.id} className="flex items-start justify-between gap-3 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-stone-800">{c.title}</p>
+                  <p className="mt-0.5 text-xs text-stone-400">
+                    {formatDateShort(c.date)} · {COST_CATEGORIES[c.category ?? "OSTATNI"] ?? c.category}
+                    {c.supplier ? ` · ${c.supplier}` : ""}
+                  </p>
+                  {(c.invoiceUrl || c.invoiceName) && (
+                    <span className="mt-1 inline-flex items-center gap-1.5 text-xs">
+                      {c.invoiceUrl ? (
+                        <a
+                          href={c.invoiceUrl}
+                          download={c.invoiceName}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 text-teal-700 hover:underline"
+                        >
+                          <IconFile className="h-3.5 w-3.5" />
+                          {c.invoiceName || "Faktura"}
+                        </a>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 text-stone-400">
+                          <IconFile className="h-3.5 w-3.5" />
+                          {c.invoiceName}
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="text-sm font-semibold text-stone-900">{formatCurrency(c.amount)}</span>
+                  {editable && (
+                    <button
+                      onClick={() => {
+                        if (confirm("Smazat náklad?")) deleteCost(id, c.id);
+                      }}
+                      className="btn-ghost btn-sm text-stone-400 hover:text-red-600"
+                      aria-label="Smazat"
+                    >
+                      <IconTrash className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
-        ) : (
-          <p className="mt-2 text-sm text-stone-500">
-            Zatím žádné náklady. Přidávejte je k jednotlivým záznamům (opravy, rekonstrukce…).
-          </p>
         )}
       </section>
 
-      <p className="mt-6 text-center text-xs text-stone-400">
-        Orientační propočet pro představu o nákladech — nenahrazuje položkový rozpočet rozpočtáře.
-      </p>
+      {/* AI připravenost */}
+      <div className="mt-4 flex items-start gap-3 rounded-xl bg-teal-50 p-4 text-sm text-teal-900 no-print">
+        <IconSparkles className="mt-0.5 h-5 w-5 shrink-0 text-teal-700" />
+        <p>
+          <strong>Brzy s AI:</strong> nahrané faktury projde AI, sama z nich vyčte částky, zařadí je
+          do kategorií a vše sečte — stačí připojit API klíč. Databáze nákladů je na to připravená.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="card p-4">
+      <p className="truncate text-lg font-semibold text-stone-900">{value}</p>
+      <p className="mt-0.5 text-xs text-stone-500">{label}</p>
     </div>
   );
 }

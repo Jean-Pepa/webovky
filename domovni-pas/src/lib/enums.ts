@@ -46,6 +46,16 @@ export const REMINDER_TYPES: Record<string, string> = {
   OTHER: "Jiné",
 };
 
+// Kategorie nákladů (rozpočet)
+export const COST_CATEGORIES: Record<string, string> = {
+  MATERIAL: "Materiál",
+  PRACE: "Práce",
+  PROJEKT: "Projekt a povolení",
+  TZB: "Technická zařízení (TZB)",
+  VYBAVENI: "Vybavení",
+  OSTATNI: "Ostatní",
+};
+
 // Sekce/fáze projektu pro dokumentaci
 export const DOC_SECTIONS: Record<string, string> = {
   POZEMEK: "Pozemek",
