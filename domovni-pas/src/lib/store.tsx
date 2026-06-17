@@ -292,8 +292,14 @@ type Store = {
   addEntry: (propertyId: string, data: EntryInput) => void;
   deleteEntry: (propertyId: string, entryId: string) => void;
   addDocument: (propertyId: string, data: DocumentInput) => void;
+  updateDocument: (
+    propertyId: string,
+    docId: string,
+    data: { title: string; category: DocCategory; section?: DocSection },
+  ) => void;
   deleteDocument: (propertyId: string, docId: string) => void;
   addReminder: (propertyId: string, data: ReminderInput) => void;
+  updateReminder: (propertyId: string, reminderId: string, data: ReminderInput) => void;
   toggleReminder: (propertyId: string, reminderId: string) => void;
   deleteReminder: (propertyId: string, reminderId: string) => void;
   addInventoryItem: (propertyId: string, data: InventoryInput) => void;
@@ -538,6 +544,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const updateDocument = useCallback(
+    (
+      propertyId: string,
+      docId: string,
+      data: { title: string; category: DocCategory; section?: DocSection },
+    ) => {
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? {
+                ...p,
+                documents: p.documents.map((d) =>
+                  d.id === docId
+                    ? { ...d, title: data.title, category: data.category, section: data.section }
+                    : d,
+                ),
+                updatedAt: now(),
+              }
+            : p,
+        ),
+      );
+    },
+    [],
+  );
+
   const deleteDocument = useCallback((propertyId: string, docId: string) => {
     setProperties((prev) =>
       prev.map((p) =>
@@ -558,6 +589,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ),
     );
   }, []);
+
+  const updateReminder = useCallback(
+    (propertyId: string, reminderId: string, data: ReminderInput) => {
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? {
+                ...p,
+                reminders: p.reminders.map((r) => (r.id === reminderId ? { ...r, ...data } : r)),
+                updatedAt: now(),
+              }
+            : p,
+        ),
+      );
+    },
+    [],
+  );
 
   const toggleReminder = useCallback((propertyId: string, reminderId: string) => {
     setProperties((prev) =>
@@ -826,8 +874,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     addEntry,
     deleteEntry,
     addDocument,
+    updateDocument,
     deleteDocument,
     addReminder,
+    updateReminder,
     toggleReminder,
     deleteReminder,
     addInventoryItem,

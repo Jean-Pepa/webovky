@@ -271,3 +271,12 @@ export function IconSearch(p: IconProps) {
     </svg>
   );
 }
+
+export function IconPencil(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z" />
+      <path d="m13.5 6.5 3 3" />
+    </svg>
+  );
+}

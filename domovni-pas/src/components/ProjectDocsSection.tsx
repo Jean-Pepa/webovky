@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useStore, type DocItem } from "@/lib/store";
-import { DOC_SECTIONS, DOC_SECTION_ORDER, documentSection } from "@/lib/enums";
+import { useStore, type DocItem, type DocCategory, type DocSection } from "@/lib/store";
+import { DOC_SECTIONS, DOC_SECTION_ORDER, documentSection, DOCUMENT_CATEGORIES } from "@/lib/enums";
 import { DocumentRow } from "@/components/DocumentRow";
 import { DocumentUploadForm } from "@/components/forms/DocumentUploadForm";
 import { IconFile, IconPlus } from "@/components/Icons";
@@ -18,6 +18,7 @@ export function ProjectDocsSection({
 }) {
   const { deleteDocument } = useStore();
   const [open, setOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
 
   return (
     <section className="card mt-8 p-5">
@@ -42,6 +43,7 @@ export function ProjectDocsSection({
           <DocumentUploadForm propertyId={propertyId} />
         </div>
       )}
+      {/* DocEditRow je definovaný níže */}
 
       {documents.length === 0 && !open ? (
         <p className="mt-2 text-sm text-stone-500">
@@ -60,13 +62,23 @@ export function ProjectDocsSection({
                 </h3>
                 {docs.length > 0 ? (
                   <ul className="mt-1 divide-y divide-stone-100">
-                    {docs.map((doc) => (
-                      <DocumentRow
-                        key={doc.id}
-                        doc={doc}
-                        onDelete={editable ? () => deleteDocument(propertyId, doc.id) : undefined}
-                      />
-                    ))}
+                    {docs.map((doc) =>
+                      editId === doc.id ? (
+                        <DocEditRow
+                          key={doc.id}
+                          propertyId={propertyId}
+                          doc={doc}
+                          onDone={() => setEditId(null)}
+                        />
+                      ) : (
+                        <DocumentRow
+                          key={doc.id}
+                          doc={doc}
+                          onEdit={editable ? () => setEditId(doc.id) : undefined}
+                          onDelete={editable ? () => deleteDocument(propertyId, doc.id) : undefined}
+                        />
+                      ),
+                    )}
                   </ul>
                 ) : (
                   <p className="mt-1 text-sm text-stone-400">—</p>
@@ -77,5 +89,50 @@ export function ProjectDocsSection({
         </div>
       )}
     </section>
+  );
+}
+
+function DocEditRow({
+  propertyId,
+  doc,
+  onDone,
+}: {
+  propertyId: string;
+  doc: DocItem;
+  onDone: () => void;
+}) {
+  const { updateDocument } = useStore();
+  const [title, setTitle] = useState(doc.title);
+  const [category, setCategory] = useState<DocCategory>(doc.category);
+  const [section, setSection] = useState<DocSection>(
+    (doc.section ?? "BUDOVA") as DocSection,
+  );
+
+  function save() {
+    if (!title.trim()) return;
+    updateDocument(propertyId, doc.id, { title: title.trim(), category, section });
+    onDone();
+  }
+
+  return (
+    <li className="space-y-2 py-3">
+      <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
+      <div className="grid grid-cols-2 gap-2">
+        <select className="input" value={section} onChange={(e) => setSection(e.target.value as DocSection)}>
+          {Object.entries(DOC_SECTIONS).map(([v, l]) => (
+            <option key={v} value={v}>{l}</option>
+          ))}
+        </select>
+        <select className="input" value={category} onChange={(e) => setCategory(e.target.value as DocCategory)}>
+          {Object.entries(DOCUMENT_CATEGORIES).map(([v, l]) => (
+            <option key={v} value={v}>{l}</option>
+          ))}
+        </select>
+      </div>
+      <div className="flex gap-2">
+        <button onClick={save} className="btn-secondary btn-sm">Uložit</button>
+        <button onClick={onDone} className="btn-ghost btn-sm text-stone-500">Zrušit</button>
+      </div>
+    </li>
   );
 }

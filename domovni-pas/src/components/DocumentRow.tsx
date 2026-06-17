@@ -1,10 +1,18 @@
 "use client";
 
-import { IconFile, IconDownload, IconTrash } from "@/components/Icons";
+import { IconFile, IconDownload, IconTrash, IconPencil } from "@/components/Icons";
 import { DOCUMENT_CATEGORIES } from "@/lib/enums";
 import type { DocItem } from "@/lib/store";
 
-export function DocumentRow({ doc, onDelete }: { doc: DocItem; onDelete?: () => void }) {
+export function DocumentRow({
+  doc,
+  onEdit,
+  onDelete,
+}: {
+  doc: DocItem;
+  onEdit?: () => void;
+  onDelete?: () => void;
+}) {
   return (
     <li className="flex items-center gap-3 py-2.5">
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-stone-100 text-stone-500">
@@ -26,6 +34,15 @@ export function DocumentRow({ doc, onDelete }: { doc: DocItem; onDelete?: () => 
         >
           <IconDownload className="h-4 w-4" />
         </a>
+      )}
+      {onEdit && (
+        <button
+          onClick={onEdit}
+          className="btn-ghost btn-sm text-stone-400 hover:text-teal-700"
+          aria-label="Upravit dokument"
+        >
+          <IconPencil className="h-4 w-4" />
+        </button>
       )}
       {onDelete && (
         <button
