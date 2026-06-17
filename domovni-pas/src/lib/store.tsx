@@ -17,6 +17,7 @@ function toShareSnapshot(p: Property): Property {
     bids: [], // nabídky firem jsou interní
     designs: [], // návrhy (velká média) nesdílíme přes server
     costs: [], // náklady a faktury jsou interní
+    messages: [], // chat je interní
   };
 }
 
@@ -102,6 +103,7 @@ export type Property = {
   designs?: DesignProposal[];
   milestones?: ArchMilestone[];
   costs?: CostItem[];
+  messages?: ChatMessage[];
   createdAt: string;
   updatedAt: string;
 };
@@ -225,6 +227,14 @@ export type ArchMilestone = {
   createdAt: string;
 };
 
+// Chat u nemovitosti — komunikace mezi architektem, klientem a dalšími
+export type ChatMessage = {
+  id: string;
+  authorRole: Role;
+  text: string;
+  createdAt: string;
+};
+
 // Náklad stavby s napojenou fakturou (databáze nákladů)
 export type CostItem = {
   id: string;
@@ -316,6 +326,8 @@ type Store = {
   deleteMilestone: (propertyId: string, milestoneId: string) => void;
   addCost: (propertyId: string, data: CostInput) => void;
   deleteCost: (propertyId: string, costId: string) => void;
+  addChatMessage: (propertyId: string, text: string) => void;
+  deleteChatMessage: (propertyId: string, messageId: string) => void;
   transferProperty: (propertyId: string, toName: string, note?: string) => void;
   setShare: (propertyId: string, enabled: boolean) => void;
   role: Role | null;
@@ -374,6 +386,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             designs: p.designs ?? [],
             milestones: p.milestones ?? [],
             costs: p.costs ?? [],
+            messages: p.messages ?? [],
           })),
         );
       } else {
@@ -444,6 +457,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         designs: [],
         milestones: [],
         costs: [],
+        messages: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -474,6 +488,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         designs: [],
         milestones: [],
         costs: [],
+        messages: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -508,6 +523,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         designs: p.designs ?? [],
         milestones: p.milestones ?? [],
         costs: p.costs ?? [],
+        messages: p.messages ?? [],
       })),
     );
   }, []);
@@ -801,6 +817,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const addChatMessage = useCallback(
+    (propertyId: string, text: string) => {
+      const msg: ChatMessage = {
+        id: newId(),
+        authorRole: role ?? "CLIENT",
+        text,
+        createdAt: now(),
+      };
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? { ...p, messages: [...(p.messages ?? []), msg], updatedAt: now() }
+            : p,
+        ),
+      );
+    },
+    [role],
+  );
+
+  const deleteChatMessage = useCallback((propertyId: string, messageId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? { ...p, messages: (p.messages ?? []).filter((m) => m.id !== messageId) }
+          : p,
+      ),
+    );
+  }, []);
+
   // Převod vlastnictví – jádro hodnoty (přenositelnost). V ukázce zaznamená předání
   // a přepíše jméno vlastníka; auditní stopa zůstává v transfers.
   const transferProperty = useCallback((propertyId: string, toName: string, note?: string) => {
@@ -894,6 +939,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteMilestone,
     addCost,
     deleteCost,
+    addChatMessage,
+    deleteChatMessage,
     transferProperty,
     setShare,
     role,
@@ -1213,6 +1260,11 @@ function seed(): Property[] {
           ],
           createdAt: "2026-03-10",
         },
+      ],
+      messages: [
+        { id: "ch-1", authorRole: "ARCHITECT", text: "Dobrý den, posílám aktualizovanou studii. Mrkněte prosím na dispozici přízemí.", createdAt: "2026-02-18T09:00:00.000Z" },
+        { id: "ch-2", authorRole: "CLIENT", text: "Děkujeme! Vypadá to skvěle, jen bychom chtěli větší spíž.", createdAt: "2026-02-18T12:30:00.000Z" },
+        { id: "ch-3", authorRole: "ARCHITECT", text: "Jasně, spíž zvětším a pošlu novou verzi do pátku.", createdAt: "2026-02-19T08:15:00.000Z" },
       ],
       createdAt: "2026-01-10",
       updatedAt: "2026-04-15",

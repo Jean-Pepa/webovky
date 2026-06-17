@@ -7,7 +7,7 @@ import { canSeeProperty, canEditProperty } from "@/lib/access";
 import { Loading } from "@/components/Loading";
 import { Badge } from "@/components/ui/Badge";
 import { EntryCard } from "@/components/EntryCard";
-import { ArchHistorySection } from "@/components/ArchHistorySection";
+import { ChatSection } from "@/components/ChatSection";
 import { ProjectCard } from "@/components/ProjectCard";
 import {
   IconPlus,
@@ -114,7 +114,7 @@ export default function PropertyDetailPage() {
 
       <ProjectCard property={property} className="mt-6" />
 
-      <ArchHistorySection propertyId={id} milestones={property.milestones ?? []} editable={editable} />
+      <ChatSection propertyId={id} messages={property.messages ?? []} />
 
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
