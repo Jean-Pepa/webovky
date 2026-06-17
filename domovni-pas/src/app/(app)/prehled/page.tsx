@@ -1,18 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useStore, type Property } from "@/lib/store";
+import { useStore, type Property, type ConsultationStatus } from "@/lib/store";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Loading } from "@/components/Loading";
 import { IconPlus, IconHome, IconBuilding, IconAlert, IconCalendar, IconShield, IconUsers } from "@/components/Icons";
-import { Badge } from "@/components/ui/Badge";
 import { canSeeProperty, ROLE_LABELS } from "@/lib/access";
 import { getAttentionItems, ATTENTION_KIND_LABELS, type AttentionKind } from "@/lib/attention";
-import type { BadgeColor } from "@/lib/enums";
 
-const CONS_STATUS: Record<string, { label: string; color: BadgeColor }> = {
-  OPEN: { label: "Otevřeno", color: "amber" },
-  WAITING: { label: "Čeká na klienta", color: "gray" },
+const CONS_TEXT: Record<string, string> = {
+  OPEN: "text-amber-600",
+  WAITING: "text-stone-500",
+  RESOLVED: "text-emerald-600",
 };
 
 function plural(n: number) {
@@ -27,7 +26,7 @@ function pluralProjekt(n: number) {
 }
 
 export default function DashboardPage() {
-  const { properties, hydrated, role } = useStore();
+  const { properties, hydrated, role, setConsultationStatus } = useStore();
   if (!hydrated) return <Loading />;
 
   const r = role ?? "CLIENT";
@@ -116,28 +115,41 @@ export default function DashboardPage() {
             <span className="text-xs text-stone-400">· {consultations.length}</span>
           </div>
           <ul className="mt-2 divide-y divide-stone-100">
-            {consultations.slice(0, 6).map(({ c, p }) => {
-              const meta = CONS_STATUS[c.status ?? "OPEN"] ?? CONS_STATUS.OPEN;
-              return (
-                <li key={c.id}>
-                  <Link
-                    href={`/nemovitost/${p.id}`}
-                    className="-mx-1 flex items-center justify-between gap-3 rounded px-1 py-2.5 hover:bg-stone-50"
+            {consultations.slice(0, 6).map(({ c, p }) => (
+              <li key={c.id} className="flex items-center justify-between gap-3 py-2.5">
+                <Link href={`/nemovitost/${p.id}/konzultace`} className="min-w-0 flex-1 rounded">
+                  <p className="truncate text-sm font-medium text-stone-800 hover:text-teal-800">
+                    {c.topic ? `${c.topic}: ` : ""}
+                    {c.text}
+                  </p>
+                  <p className="truncate text-xs text-stone-400">
+                    {ROLE_LABELS[c.authorRole]} · {p.name}
+                  </p>
+                </Link>
+                <div className="flex shrink-0 items-center gap-2">
+                  <select
+                    value={c.status ?? "OPEN"}
+                    onChange={(e) =>
+                      setConsultationStatus(p.id, c.id, e.target.value as ConsultationStatus)
+                    }
+                    className={`rounded-md border border-stone-200 bg-white px-2 py-1 text-xs font-medium ${
+                      CONS_TEXT[c.status ?? "OPEN"]
+                    }`}
+                    aria-label="Stav dotazu"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-stone-800">
-                        {c.topic ? `${c.topic}: ` : ""}
-                        {c.text}
-                      </p>
-                      <p className="truncate text-xs text-stone-400">
-                        {ROLE_LABELS[c.authorRole]} · {p.name}
-                      </p>
-                    </div>
-                    <Badge color={meta.color}>{meta.label}</Badge>
+                    <option value="OPEN">Otevřeno</option>
+                    <option value="WAITING">Čeká na klienta</option>
+                    <option value="RESOLVED">Vyřešeno</option>
+                  </select>
+                  <Link
+                    href={`/nemovitost/${p.id}/konzultace`}
+                    className="btn-secondary btn-sm whitespace-nowrap"
+                  >
+                    Odpovědět
                   </Link>
-                </li>
-              );
-            })}
+                </div>
+              </li>
+            ))}
           </ul>
         </section>
       )}
