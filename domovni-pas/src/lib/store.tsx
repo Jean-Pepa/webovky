@@ -680,12 +680,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const addConsultation = useCallback(
     (propertyId: string, data: { topic?: string; text: string }) => {
+      const author = role ?? "CLIENT";
       const note: ConsultationNote = {
         id: newId(),
-        authorRole: role ?? "CLIENT",
+        authorRole: author,
         topic: data.topic,
         text: data.text,
-        status: "OPEN",
+        // Stav podle toho, kdo psal: klient → čeká na architekta (OPEN),
+        // architekt/správce → čeká na klienta (WAITING).
+        status: author === "CLIENT" ? "OPEN" : "WAITING",
         createdAt: now(),
       };
       setProperties((prev) =>
@@ -729,19 +732,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const addConsultationReply = useCallback(
     (propertyId: string, noteId: string, text: string) => {
+      const author = role ?? "CLIENT";
       const reply: ConsultationReply = {
         id: newId(),
-        authorRole: role ?? "CLIENT",
+        authorRole: author,
         text,
         createdAt: now(),
       };
+      // Po odpovědi se stav nastaví sám podle toho, kdo odpověděl.
+      const newStatus: ConsultationStatus = author === "CLIENT" ? "OPEN" : "WAITING";
       setProperties((prev) =>
         prev.map((p) =>
           p.id === propertyId
             ? {
                 ...p,
                 consultations: (p.consultations ?? []).map((c) =>
-                  c.id === noteId ? { ...c, replies: [...(c.replies ?? []), reply] } : c,
+                  c.id === noteId
+                    ? { ...c, replies: [...(c.replies ?? []), reply], status: newStatus }
+                    : c,
                 ),
                 updatedAt: now(),
               }

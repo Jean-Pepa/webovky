@@ -4,17 +4,12 @@ import { useState } from "react";
 import { useStore, type ConsultationNote, type ConsultationStatus } from "@/lib/store";
 import { ROLE_LABELS, ROLE_INITIALS } from "@/lib/access";
 import { formatDate } from "@/lib/format";
-import { IconUsers, IconPlus, IconTrash } from "@/components/Icons";
+import { IconUsers, IconPlus, IconTrash, IconCheck } from "@/components/Icons";
 
-const STATUS_TEXT: Record<ConsultationStatus, string> = {
-  OPEN: "text-stone-500",
-  WAITING: "text-amber-600",
-  RESOLVED: "text-emerald-600",
-};
-const STATUS_CARD: Record<ConsultationStatus, string> = {
-  OPEN: "border-stone-200",
-  WAITING: "border-amber-200 bg-amber-50/30",
-  RESOLVED: "border-emerald-200 bg-emerald-50/30",
+const STATE: Record<ConsultationStatus, { label: string; card: string; text: string }> = {
+  OPEN: { label: "Čeká na architekta", card: "border-amber-200 bg-amber-50/40", text: "text-amber-600" },
+  WAITING: { label: "Čeká na klienta", card: "border-blue-200 bg-blue-50/40", text: "text-blue-600" },
+  RESOLVED: { label: "Vyřešeno", card: "border-emerald-200 bg-emerald-50/40", text: "text-emerald-600" },
 };
 
 export function ConsultationSection({
@@ -82,8 +77,10 @@ export function ConsultationSection({
         <ul className="mt-3 space-y-3">
           {sorted.map((c) => {
             const status = c.status ?? "OPEN";
+            const st = STATE[status];
+            const resolved = status === "RESOLVED";
             return (
-              <li key={c.id} className={`rounded-xl border p-3.5 ${STATUS_CARD[status]}`}>
+              <li key={c.id} className={`rounded-xl border p-3.5 ${st.card}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5">
                     <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-teal-700 text-[11px] font-semibold text-white">
@@ -95,23 +92,25 @@ export function ConsultationSection({
                       </p>
                       <p className="text-xs text-stone-400">
                         {formatDate(c.createdAt)}
-                        {c.topic ? ` · ${c.topic}` : ""}
+                        {c.topic ? ` · ${c.topic}` : ""} ·{" "}
+                        <span className={`font-medium ${st.text}`}>{st.label}</span>
                       </p>
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
-                    <select
-                      value={status}
-                      onChange={(e) =>
-                        setConsultationStatus(propertyId, c.id, e.target.value as ConsultationStatus)
+                    <button
+                      onClick={() =>
+                        setConsultationStatus(propertyId, c.id, resolved ? "OPEN" : "RESOLVED")
                       }
-                      className={`rounded-md border border-stone-200 bg-white px-2 py-1 text-xs font-medium ${STATUS_TEXT[status]}`}
-                      aria-label="Stav konzultace"
+                      className={
+                        resolved
+                          ? "btn-ghost btn-sm text-emerald-600"
+                          : "btn-secondary btn-sm"
+                      }
                     >
-                      <option value="OPEN">Otevřeno</option>
-                      <option value="WAITING">Čeká na klienta</option>
-                      <option value="RESOLVED">Vyřešeno</option>
-                    </select>
+                      <IconCheck className="h-4 w-4" />
+                      {resolved ? "Vyřešeno" : "Vyřešit"}
+                    </button>
                     <button
                       onClick={() => {
                         if (confirm("Smazat konzultaci?")) deleteConsultation(propertyId, c.id);
