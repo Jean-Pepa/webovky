@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { canSeeProperty, canEditProperty } from "@/lib/access";
@@ -9,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { EntryCard } from "@/components/EntryCard";
 import { ChatSection } from "@/components/ChatSection";
 import { ProjectCard } from "@/components/ProjectCard";
+import { QrCode } from "@/components/QrCode";
 import {
   IconPlus,
   IconShare,
@@ -27,6 +29,8 @@ export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { getProperty, hydrated, role, deleteEntry, deleteProperty } = useStore();
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
 
   if (!hydrated) return <Loading />;
 
@@ -49,6 +53,7 @@ export default function PropertyDetailPage() {
 
   const entries = [...property.entries].sort((a, b) => b.date.localeCompare(a.date));
   const totalCost = property.entries.reduce((s, e) => s + (e.cost ?? 0), 0);
+  const qrUrl = origin ? `${origin}/q/${id}` : "";
 
   return (
     <div>
@@ -63,38 +68,53 @@ export default function PropertyDetailPage() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
           <Badge color="teal">{PROPERTY_TYPES[property.type]}</Badge>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-900">{property.name}</h1>
           <p className="mt-1 text-sm text-stone-500">{addressLine(property)}</p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Link href={`/nemovitost/${id}/report`} className="btn-primary btn-sm">
-            <IconFile className="h-4 w-4" />
-            Report
-          </Link>
-          {editable && (
-            <>
-              <Link href={`/nemovitost/${id}/prodej`} className="btn-secondary btn-sm">
-                <IconMoney className="h-4 w-4" />
-                Připravit na prodej
-              </Link>
-              <Link href={`/nemovitost/${id}/sdileni`} className="btn-secondary btn-sm">
-                <IconShare className="h-4 w-4" />
-                Sdílet
-              </Link>
-              <Link href={`/nemovitost/${id}/prevod`} className="btn-secondary btn-sm">
-                <IconTransfer className="h-4 w-4" />
-                Převést
-              </Link>
-              <Link href={`/nemovitost/${id}/upravit`} className="btn-ghost btn-sm">
-                Upravit
-              </Link>
-            </>
+        <Link
+          href={`/nemovitost/${id}/qr`}
+          title="QR štítek k domu"
+          className="no-print group shrink-0 text-center"
+        >
+          {qrUrl && (
+            <span className="block transition group-hover:opacity-80">
+              <QrCode value={qrUrl} size={84} />
+            </span>
           )}
-        </div>
+          <span className="mt-1 block text-[11px] font-medium text-stone-400 group-hover:text-teal-700">
+            QR štítek
+          </span>
+        </Link>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link href={`/nemovitost/${id}/report`} className="btn-primary btn-sm">
+          <IconFile className="h-4 w-4" />
+          Report
+        </Link>
+        {editable && (
+          <>
+            <Link href={`/nemovitost/${id}/prodej`} className="btn-secondary btn-sm">
+              <IconMoney className="h-4 w-4" />
+              Připravit na prodej
+            </Link>
+            <Link href={`/nemovitost/${id}/sdileni`} className="btn-secondary btn-sm">
+              <IconShare className="h-4 w-4" />
+              Sdílet
+            </Link>
+            <Link href={`/nemovitost/${id}/prevod`} className="btn-secondary btn-sm">
+              <IconTransfer className="h-4 w-4" />
+              Převést
+            </Link>
+            <Link href={`/nemovitost/${id}/upravit`} className="btn-ghost btn-sm">
+              Upravit
+            </Link>
+          </>
+        )}
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
