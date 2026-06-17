@@ -25,6 +25,7 @@ import {
   IconPhone,
   IconVote,
   IconKey,
+  IconDownload,
 } from "@/components/Icons";
 import type { PropertyType } from "@/lib/store";
 
@@ -83,6 +84,7 @@ function svjNav(id: string, role: Role | null): NavItem[] {
     });
     items.push({ href: `/nemovitost/${id}/odecty`, label: "Odečty měřidel", icon: IconChart });
     items.push({ href: `/nemovitost/${id}/rozpocet`, label: "Náklady / fond oprav", icon: IconMoney });
+    items.push({ href: `/nemovitost/${id}/import`, label: "Import / Export", icon: IconDownload });
   }
   return items;
 }

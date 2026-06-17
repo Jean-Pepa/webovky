@@ -197,3 +197,41 @@ Závisí na nakonfigurovaném Anthropic klíči (scaffold `/api/permit` hotový)
 | SVJ / portfolio | role `CREATOR` → přejmenovat + portfolio dashboard |
 | AI | `/api/permit` scaffold, Anthropic SDK |
 | Cross-device | `/api/passport/[id]` + Upstash scaffold |
+
+---
+
+## 13. SVJ ↔ BULO: připojení (BULO jako system of record)
+
+Existující SVJ aplikace (svjaplikace.cz, SVJsystem…) jsou **provozní vrstva** — řeší,
+jak SVJ funguje *letos*: zprávy/nástěnka, ankety, diskuze, hlasování, shromáždění,
+poplatky, požadavky ke schválení, fotogalerie. Jsou interní pro aktuální výbor a při
+změně dodavatele/výboru data mizí nebo zůstávají rukojmím.
+
+**BULO není další SVJ appka — je paměťová vrstva budovy.** Drží se *aktiva*, přenese se
+na kupujícího jednotky a přežije změnu výboru i SVJ aplikace.
+
+### Co BULO NEklonuje (nechat provozní appce — komoditní, incumbent zdarma)
+Ankety, Diskuze, mechanika Hlasování/Shromáždění, účetnictví poplatků, Požadavky ke
+schválení, Fotogalerie.
+
+### Připojení = 5 míst, kde provozní appka „rodí" data pro trvalý pas
+| Modul provozní SVJ appky | Připojení do BULO |
+|---|---|
+| Revize a termíny | revizní zprávy + doživotní historie na aktivu |
+| Hlášení a požadavky (závady) | po vyřešení = záznam v historii domu (co/kdy/kdo/kolik/záruka) |
+| Dokumenty / adresář kontaktů | trvalý archiv u budovy (stavební dok., PENB, smlouvy, kontakty) |
+| Jednotky a místnosti / vlastníci | sdílený registr jednotek → „pas jednotky" pro prodej |
+| Poplatky / faktury (fond oprav) | kapitálová historie nákladů na aktivum |
+
+### Architektura — 4 konektory
+1. **Import/export** jednotek, vlastníků, kontaktů, dokumentů (CSV/JSON) — bez backendu. ✅ start
+2. **QR terénní zápis** (`/q`) — funguje nezávisle na tom, jakou SVJ appku dům používá. ✅
+3. **Veřejný pas + report + „pas jednotky"** pro kupujícího (`/sdileno`, report, převod). ✅ z velké části
+4. **API / webhooky** (event „revize hotová / závada vyřešena / faktura zaplacena" → zápis do pasu) — Fáze 2 (backend).
+
+### Proč by se SVJ k BULO připojilo
+Přenositelný pas jednotky při prodeji (provozní appka nedá) · dům „se narodí" s daty od
+architekta/developera · QR zápis z terénu · přežije změnu SVJ aplikace i výboru.
+
+**Jednou větou:** SVJ aplikace = *jak se dům řídí letos*; BULO = *co se s domem stalo za
+celý život*.
