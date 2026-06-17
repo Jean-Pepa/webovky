@@ -1,18 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useStore, type Property, type ConsultationStatus } from "@/lib/store";
+import { useStore, type Property, type ConsultationStatus, type ChatMessage } from "@/lib/store";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Loading } from "@/components/Loading";
 import { IconPlus, IconHome, IconBuilding, IconAlert, IconCalendar, IconShield, IconUsers } from "@/components/Icons";
 import { canSeeProperty, ROLE_LABELS } from "@/lib/access";
-import { getAttentionItems, ATTENTION_KIND_LABELS, type AttentionKind } from "@/lib/attention";
+import { getAttentionItems, ATTENTION_KIND_LABELS, type AttentionKind, type AttentionItem } from "@/lib/attention";
 
 const CONS_TEXT: Record<string, string> = {
   OPEN: "text-amber-600",
   WAITING: "text-stone-500",
   RESOLVED: "text-emerald-600",
 };
+
+function fmtMsg(iso: string) {
+  return new Intl.DateTimeFormat("cs-CZ", {
+    day: "numeric",
+    month: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(iso));
+}
 
 function plural(n: number) {
   if (n === 1) return "nemovitost";
@@ -32,6 +41,7 @@ export default function DashboardPage() {
   const r = role ?? "CLIENT";
   const isArchitect = r === "ARCHITECT";
   const isCreator = r === "CREATOR";
+  const isClient = r === "CLIENT";
   const visible = role ? properties.filter((p) => canSeeProperty(p, role)) : [];
   const waiting = visible.filter((p) => !p.handedOver);
   const handed = visible.filter((p) => p.handedOver);
@@ -48,6 +58,13 @@ export default function DashboardPage() {
 
   // Co „hoří" — záruky a revize se hlídají automaticky (architekt neřeší)
   const attention = isArchitect ? [] : getAttentionItems(visible);
+
+  // Poslední komunikace (chat) napříč nemovitostmi klienta
+  const recentMessages = !isArchitect
+    ? visible
+        .flatMap((p) => (p.messages ?? []).map((m) => ({ m, p })))
+        .sort((a, b) => b.m.createdAt.localeCompare(a.m.createdAt))
+    : [];
 
   // Otevřené dotazy / konzultace napříč projekty (architekt / správce)
   const consultations =
@@ -154,47 +171,17 @@ export default function DashboardPage() {
         </section>
       )}
 
-      {/* Vyžaduje pozornost (majitel / správce) */}
-      {attention.length > 0 && (
-        <section className="card mt-6 p-5">
-          <div className="flex items-center gap-2">
-            <IconAlert className="h-4 w-4 text-brass" />
-            <h2 className="text-sm font-semibold text-stone-900">Vyžaduje pozornost</h2>
-            <span className="text-xs text-stone-400">· {attention.length}</span>
-          </div>
-          <ul className="mt-2 divide-y divide-stone-100">
-            {attention.slice(0, 6).map((a) => (
-              <li key={a.id}>
-                <Link
-                  href={`/nemovitost/${a.property.id}`}
-                  className="-mx-1 flex items-center justify-between gap-3 rounded px-1 py-2.5 hover:bg-stone-50"
-                >
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <KindIcon kind={a.kind} overdue={a.severity === "overdue"} />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-stone-800">{a.title}</p>
-                      <p className="truncate text-xs text-stone-400">
-                        {ATTENTION_KIND_LABELS[a.kind]} · {a.property.name}
-                      </p>
-                    </div>
-                  </div>
-                  <span
-                    className={`shrink-0 text-xs font-medium ${
-                      a.severity === "overdue" ? "text-red-600" : "text-amber-600"
-                    }`}
-                  >
-                    {a.label}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          {attention.length > 6 && (
-            <Link href="/kalendar" className="mt-3 inline-block text-sm font-medium text-brass hover:underline">
-              Zobrazit vše →
-            </Link>
-          )}
-        </section>
+      {/* Klient: zkrácená pozornost + komunikace vedle sebe */}
+      {isClient && (
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <AttentionCard items={attention} limit={4} />
+          <KomunikaceCard items={recentMessages} />
+        </div>
+      )}
+
+      {/* Správce: pozornost přes celou šířku */}
+      {isCreator && attention.length > 0 && (
+        <AttentionCard items={attention} limit={6} className="mt-6" />
       )}
 
       {visible.length === 0 ? (
@@ -257,6 +244,102 @@ function KindIcon({ kind, overdue }: { kind: AttentionKind; overdue: boolean }) 
     <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${color}`}>
       <Icon className="h-4 w-4" />
     </span>
+  );
+}
+
+function AttentionCard({
+  items,
+  limit = 6,
+  className = "",
+}: {
+  items: AttentionItem[];
+  limit?: number;
+  className?: string;
+}) {
+  return (
+    <section className={`card p-5 ${className}`}>
+      <div className="flex items-center gap-2">
+        <IconAlert className="h-4 w-4 text-brass" />
+        <h2 className="text-sm font-semibold text-stone-900">Vyžaduje pozornost</h2>
+        {items.length > 0 && <span className="text-xs text-stone-400">· {items.length}</span>}
+      </div>
+      {items.length === 0 ? (
+        <p className="mt-2 text-sm text-stone-500">Vše v pořádku — nic nehoří. 🎉</p>
+      ) : (
+        <>
+          <ul className="mt-2 divide-y divide-stone-100">
+            {items.slice(0, limit).map((a) => (
+              <li key={a.id}>
+                <Link
+                  href={`/nemovitost/${a.property.id}`}
+                  className="-mx-1 flex items-center justify-between gap-3 rounded px-1 py-2.5 hover:bg-stone-50"
+                >
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <KindIcon kind={a.kind} overdue={a.severity === "overdue"} />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-stone-800">{a.title}</p>
+                      <p className="truncate text-xs text-stone-400">
+                        {ATTENTION_KIND_LABELS[a.kind]} · {a.property.name}
+                      </p>
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 text-xs font-medium ${
+                      a.severity === "overdue" ? "text-red-600" : "text-amber-600"
+                    }`}
+                  >
+                    {a.label}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          {items.length > limit && (
+            <Link
+              href="/kalendar"
+              className="mt-3 inline-block text-sm font-medium text-brass hover:underline"
+            >
+              Zobrazit vše →
+            </Link>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+function KomunikaceCard({ items }: { items: { m: ChatMessage; p: Property }[] }) {
+  return (
+    <section className="card p-5">
+      <div className="flex items-center gap-2">
+        <IconUsers className="h-4 w-4 text-teal-700" />
+        <h2 className="text-sm font-semibold text-stone-900">Komunikace</h2>
+        {items.length > 0 && <span className="text-xs text-stone-400">· {items.length}</span>}
+      </div>
+      {items.length === 0 ? (
+        <p className="mt-2 text-sm text-stone-500">
+          Zatím žádné zprávy. Napsat můžete v chatu u konkrétní nemovitosti.
+        </p>
+      ) : (
+        <ul className="mt-2 divide-y divide-stone-100">
+          {items.slice(0, 5).map(({ m, p }) => (
+            <li key={m.id}>
+              <Link
+                href={`/nemovitost/${p.id}`}
+                className="-mx-1 block rounded px-1 py-2.5 hover:bg-stone-50"
+              >
+                <p className="truncate text-sm text-stone-800">
+                  <span className="font-medium">{ROLE_LABELS[m.authorRole]}:</span> {m.text}
+                </p>
+                <p className="truncate text-xs text-stone-400">
+                  {p.name} · {fmtMsg(m.createdAt)}
+                </p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

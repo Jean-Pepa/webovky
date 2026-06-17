@@ -1127,6 +1127,10 @@ function seed(): Property[] {
         { id: "co-4", title: "Oprava oplechování střešního okna", category: "PRACE", amount: 4500, date: "2025-11-20", supplier: "Klempířství Dvořák", invoiceName: "faktura_strecha.pdf", invoiceUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MjAiIGhlaWdodD0iNTYwIj48cmVjdCB3aWR0aD0iNDIwIiBoZWlnaHQ9IjU2MCIgZmlsbD0iI2ZmZmZmZiIvPjxyZWN0IHdpZHRoPSI0MjAiIGhlaWdodD0iNzAiIGZpbGw9IiMxODRFNUEiLz48dGV4dCB4PSIyNCIgeT0iNDQiIGZvbnQtc2l6ZT0iMjIiIGZpbGw9IiNmZmZmZmYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5GQUtUVVJBPC90ZXh0Pjx0ZXh0IHg9IjI0IiB5PSIxMjAiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiMzMzMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5PcHJhdmEgc3RyZWNoeTwvdGV4dD48dGV4dCB4PSIyNCIgeT0iMTYwIiBmb250LXNpemU9IjEzIiBmaWxsPSIjNzc3IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+RG9kYXZhdGVsIC0gdWthemtvdnkgZG9rbGFkPC90ZXh0PjxsaW5lIHgxPSIyNCIgeTE9IjIwMCIgeDI9IjM5NiIgeTI9IjIwMCIgc3Ryb2tlPSIjY2NjIi8+PHRleHQgeD0iMjQiIHk9IjI0MCIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzU1NSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiPlBvbG96a2EgLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4gY2FzdGthPC90ZXh0Pjwvc3ZnPg==", createdAt: "2025-11-20" },
         { id: "co-5", title: "Revize plynového kotle", category: "OSTATNI", amount: 1800, date: "2025-10-12", supplier: "TermoInstal", createdAt: "2025-10-12" },
       ],
+      messages: [
+        { id: "dch-1", authorRole: "ARCHITECT", text: "Dobrý den, roční revize kotle proběhla v pořádku, vyměnil jsem filtr.", createdAt: "2025-10-12T10:05:00.000Z" },
+        { id: "dch-2", authorRole: "CLIENT", text: "Děkujeme moc za info!", createdAt: "2025-10-12T11:20:00.000Z" },
+      ],
       createdAt: "2024-01-01",
       updatedAt: "2025-11-20",
     },
