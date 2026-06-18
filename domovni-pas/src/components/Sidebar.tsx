@@ -56,6 +56,16 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
 };
 
 function houseNav(id: string, role: Role | null): NavItem[] {
+  // Architekt = přispěvatel: jen nahrává data/dokumenty/fotky, nic dalšího nevidí.
+  if (role === "ARCHITECT") {
+    return [
+      { href: `/nemovitost/${id}`, label: "Přehled domu", icon: IconHome, exact: true },
+      { href: `/nemovitost/${id}/dokumentace`, label: "Dokumentace", icon: IconFile },
+      { href: `/nemovitost/${id}/navrhy`, label: "Návrhy", icon: IconSparkles },
+      { href: `/nemovitost/${id}/systemy`, label: "Systémy domu", icon: IconBolt },
+      { href: `/nemovitost/${id}/fotodokumentace`, label: "Fotodokumentace", icon: IconCamera },
+    ];
+  }
   const items: NavItem[] = [
     { href: `/nemovitost/${id}`, label: "Přehled domu", icon: IconHome, exact: true },
     { href: `/nemovitost/${id}/dokumentace`, label: "Dokumentace", icon: IconFile },
@@ -68,7 +78,7 @@ function houseNav(id: string, role: Role | null): NavItem[] {
     { href: `/nemovitost/${id}/navrhy`, label: "Návrhy", icon: IconSparkles },
     { href: `/nemovitost/${id}/konzultace`, label: "Konzultace", icon: IconUsers },
   ];
-  if (role === "ARCHITECT" || role === "CREATOR") {
+  if (role === "CREATOR") {
     items.push({ href: `/nemovitost/${id}/povoleni`, label: "Stavební povolení", icon: IconBuilding });
     items.push({ href: `/nemovitost/${id}/firmy`, label: "Výběr firmy", icon: IconWrench });
   }

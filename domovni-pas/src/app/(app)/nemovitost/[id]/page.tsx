@@ -57,6 +57,8 @@ export default function PropertyDetailPage() {
   const editable = role ? canEditProperty(property, role) : false;
   const canAdd = role ? canContributeToProperty(property, role) : false;
   const lockedByHandover = role === "ARCHITECT" && property.handedOver;
+  // Architekt jen nahrává data/dokumenty/fotky — provozní sekce (komunikace, historie) nevidí.
+  const isArchitect = role === "ARCHITECT";
 
   const entries = [...property.entries].sort((a, b) => b.date.localeCompare(a.date));
   const qrUrl = origin ? `${origin}/q/${id}` : "";
@@ -229,9 +231,12 @@ export default function PropertyDetailPage() {
 
       <ProjectCard property={property} className="mt-8" />
 
-      <ConsultationSection propertyId={id} consultations={property.consultations ?? []} />
+      {!isArchitect && (
+        <ConsultationSection propertyId={id} consultations={property.consultations ?? []} />
+      )}
 
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
+        {!isArchitect && (
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between gap-3">
             <button
@@ -285,8 +290,9 @@ export default function PropertyDetailPage() {
               </ol>
             ))}
         </div>
+        )}
 
-        <div className="space-y-6">
+        <div className={isArchitect ? "lg:col-span-3 space-y-6" : "space-y-6"}>
           <section className="card p-5">
             <h2 className="text-sm font-semibold text-stone-900">Údaje o nemovitosti</h2>
             <dl className="mt-3 space-y-2.5 text-sm">
