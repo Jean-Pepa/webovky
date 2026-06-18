@@ -310,6 +310,14 @@ export type HouseSystemKind =
   | "ventilation"
   | "other";
 export type SystemSpec = { label: string; value: string };
+// Odečet měřidla — hodnota k datu (z fotky přes AI, nebo ručně)
+export type SystemReading = {
+  id: string;
+  date: string; // YYYY-MM-DD
+  value: number;
+  source: "photo" | "manual";
+  note?: string;
+};
 export type HouseSystem = {
   id: string;
   kind: HouseSystemKind;
@@ -317,6 +325,7 @@ export type HouseSystem = {
   specs: SystemSpec[];
   note?: string;
   installedAt?: string; // YYYY-MM
+  readings?: SystemReading[];
   createdAt: string;
 };
 export type HouseSystemInput = {
@@ -370,6 +379,12 @@ type Store = {
   addSystem: (propertyId: string, data: HouseSystemInput) => void;
   updateSystem: (propertyId: string, systemId: string, data: HouseSystemInput) => void;
   deleteSystem: (propertyId: string, systemId: string) => void;
+  addReading: (
+    propertyId: string,
+    systemId: string,
+    data: { date: string; value: number; source: "photo" | "manual"; note?: string },
+  ) => void;
+  deleteReading: (propertyId: string, systemId: string, readingId: string) => void;
   addPhoto: (propertyId: string, data: Omit<HousePhoto, "id" | "createdAt">) => void;
   deletePhoto: (propertyId: string, photoId: string) => void;
   addConsultation: (propertyId: string, data: { topic?: string; text: string }) => void;
@@ -398,7 +413,7 @@ type Store = {
 };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "domovni-pas-v3";
+const KEY = "domovni-pas-v4";
 const ROLE_KEY = "bulo-role-2";
 const BRANDING_KEY = "bulo-branding";
 
@@ -768,6 +783,54 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const addReading = useCallback(
+    (
+      propertyId: string,
+      systemId: string,
+      data: { date: string; value: number; source: "photo" | "manual"; note?: string },
+    ) => {
+      const reading: SystemReading = { ...data, id: newId() };
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? {
+                ...p,
+                systems: (p.systems ?? []).map((s) =>
+                  s.id === systemId
+                    ? {
+                        ...s,
+                        readings: [...(s.readings ?? []), reading].sort((a, b) =>
+                          a.date.localeCompare(b.date),
+                        ),
+                      }
+                    : s,
+                ),
+                updatedAt: now(),
+              }
+            : p,
+        ),
+      );
+    },
+    [],
+  );
+
+  const deleteReading = useCallback((propertyId: string, systemId: string, readingId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId
+          ? {
+              ...p,
+              systems: (p.systems ?? []).map((s) =>
+                s.id === systemId
+                  ? { ...s, readings: (s.readings ?? []).filter((r) => r.id !== readingId) }
+                  : s,
+              ),
+            }
+          : p,
+      ),
+    );
+  }, []);
+
   // ── Fotodokumentace ──
   const addPhoto = useCallback((propertyId: string, data: Omit<HousePhoto, "id" | "createdAt">) => {
     const photo: HousePhoto = { ...data, id: newId(), createdAt: now() };
@@ -1090,6 +1153,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     addSystem,
     updateSystem,
     deleteSystem,
+    addReading,
+    deleteReading,
     addPhoto,
     deletePhoto,
     addConsultation,
@@ -1264,7 +1329,13 @@ function seed(): Property[] {
             { label: "Měnič", value: "SolarEdge SE8K" },
             { label: "Baterie", value: "10 kWh" },
           ],
-          note: "Přetoky do sítě, monitoring přes aplikaci výrobce.", createdAt: "2024-05-10",
+          note: "Přetoky do sítě, monitoring přes aplikaci výrobce.",
+          readings: [
+            { id: "rd-s1", date: "2024-12-31", value: 3200, source: "manual" },
+            { id: "rd-s2", date: "2025-12-31", value: 8100, source: "manual" },
+            { id: "rd-s3", date: "2026-06-15", value: 11200, source: "photo" },
+          ],
+          createdAt: "2024-05-10",
         },
         {
           id: "sys-el", kind: "electricity", name: "Elektroinstalace", installedAt: "2009-03",
@@ -1272,6 +1343,11 @@ function seed(): Property[] {
             { label: "Hlavní jistič", value: "3× 25 A" },
             { label: "Rozvaděč", value: "24 modulů" },
             { label: "Počet okruhů", value: "18" },
+          ],
+          readings: [
+            { id: "rd-e1", date: "2024-12-31", value: 18500, source: "manual" },
+            { id: "rd-e2", date: "2025-12-31", value: 22300, source: "manual" },
+            { id: "rd-e3", date: "2026-06-15", value: 24100, source: "photo" },
           ],
           createdAt: "2024-01-01",
         },
@@ -1281,6 +1357,11 @@ function seed(): Property[] {
             { label: "Přípojka", value: "DN 25" },
             { label: "Materiál rozvodů", value: "PPR" },
             { label: "Hlavní uzávěr", value: "Technická místnost" },
+          ],
+          readings: [
+            { id: "rd-w1", date: "2024-12-31", value: 210, source: "manual" },
+            { id: "rd-w2", date: "2025-12-31", value: 298, source: "manual" },
+            { id: "rd-w3", date: "2026-06-15", value: 331, source: "photo" },
           ],
           createdAt: "2024-01-01",
         },

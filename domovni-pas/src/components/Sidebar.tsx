@@ -60,6 +60,7 @@ function houseNav(id: string, role: Role | null): NavItem[] {
     { href: `/nemovitost/${id}`, label: "Přehled domu", icon: IconHome, exact: true },
     { href: `/nemovitost/${id}/dokumentace`, label: "Dokumentace", icon: IconFile },
     { href: `/nemovitost/${id}/systemy`, label: "Systémy domu", icon: IconBolt },
+    { href: `/nemovitost/${id}/odecty`, label: "Odečty měřidel", icon: IconChart },
     { href: `/nemovitost/${id}/fotodokumentace`, label: "Fotodokumentace", icon: IconCamera },
     { href: `/nemovitost/${id}/vybaveni`, label: "Vybavení", icon: IconBox },
     { href: `/nemovitost/${id}/zaruky`, label: "Záruky a revize", icon: IconShield },

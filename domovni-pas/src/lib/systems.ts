@@ -57,3 +57,19 @@ export function parseSpecs(text: string): SystemSpec[] {
 export function specsToText(specs: SystemSpec[]): string {
   return specs.map((s) => (s.value ? `${s.label}: ${s.value}` : s.label)).join("\n");
 }
+
+// Jednotka odečtu podle typu systému
+export function systemUnit(kind: HouseSystemKind): string {
+  switch (kind) {
+    case "solar":
+    case "electricity":
+      return "kWh";
+    case "water":
+    case "gas":
+      return "m³";
+    case "heating":
+      return "GJ";
+    default:
+      return "";
+  }
+}
