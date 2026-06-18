@@ -18,6 +18,7 @@ function toShareSnapshot(p: Property): Property {
     designs: [], // návrhy (velká média) nesdílíme přes server
     costs: [], // náklady a faktury jsou interní
     messages: [], // chat je interní
+    photos: [], // fotodokumentace je interní (média nesdílíme přes server)
   };
 }
 
@@ -104,6 +105,8 @@ export type Property = {
   milestones?: ArchMilestone[];
   costs?: CostItem[];
   messages?: ChatMessage[];
+  systems?: HouseSystem[];
+  photos?: HousePhoto[];
   createdAt: string;
   updatedAt: string;
 };
@@ -294,6 +297,44 @@ export type InventoryInput = {
   dataUrl?: string;
 };
 
+// Systémy domu — solár, elektřina, voda, topení… (parametry + as-built média)
+export type HouseSystemKind =
+  | "solar"
+  | "electricity"
+  | "water"
+  | "heating"
+  | "ventilation"
+  | "other";
+export type SystemSpec = { label: string; value: string };
+export type HouseSystem = {
+  id: string;
+  kind: HouseSystemKind;
+  name: string;
+  specs: SystemSpec[];
+  note?: string;
+  installedAt?: string; // YYYY-MM
+  createdAt: string;
+};
+export type HouseSystemInput = {
+  kind: HouseSystemKind;
+  name: string;
+  specs: SystemSpec[];
+  note?: string;
+  installedAt?: string;
+};
+
+// Fotodokumentace — fotky/videa (as-built „kudy se vedla elektrika"), volitelně k systému/místnosti
+export type HousePhoto = {
+  id: string;
+  kind: "photo" | "video";
+  dataUrl?: string;
+  fileName?: string;
+  caption?: string;
+  room?: string;
+  systemId?: string;
+  createdAt: string;
+};
+
 type Store = {
   properties: Property[];
   hydrated: boolean;
@@ -322,6 +363,11 @@ type Store = {
   deleteReminder: (propertyId: string, reminderId: string) => void;
   addInventoryItem: (propertyId: string, data: InventoryInput) => void;
   deleteInventoryItem: (propertyId: string, itemId: string) => void;
+  addSystem: (propertyId: string, data: HouseSystemInput) => void;
+  updateSystem: (propertyId: string, systemId: string, data: HouseSystemInput) => void;
+  deleteSystem: (propertyId: string, systemId: string) => void;
+  addPhoto: (propertyId: string, data: Omit<HousePhoto, "id" | "createdAt">) => void;
+  deletePhoto: (propertyId: string, photoId: string) => void;
   addConsultation: (propertyId: string, data: { topic?: string; text: string }) => void;
   deleteConsultation: (propertyId: string, noteId: string) => void;
   setConsultationStatus: (propertyId: string, noteId: string, status: ConsultationStatus) => void;
@@ -348,7 +394,7 @@ type Store = {
 };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "domovni-pas-v2";
+const KEY = "domovni-pas-v3";
 const ROLE_KEY = "bulo-role-2";
 const BRANDING_KEY = "bulo-branding";
 
@@ -397,6 +443,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             milestones: p.milestones ?? [],
             costs: p.costs ?? [],
             messages: p.messages ?? [],
+            systems: p.systems ?? [],
+            photos: p.photos ?? [],
           })),
         );
       } else {
@@ -675,6 +723,61 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         p.id === propertyId
           ? { ...p, inventory: p.inventory.filter((i) => i.id !== itemId) }
           : p,
+      ),
+    );
+  }, []);
+
+  // ── Systémy domu ──
+  const addSystem = useCallback((propertyId: string, data: HouseSystemInput) => {
+    const sys: HouseSystem = { ...data, id: newId(), createdAt: now() };
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, systems: [...(p.systems ?? []), sys], updatedAt: now() } : p,
+      ),
+    );
+  }, []);
+
+  const updateSystem = useCallback(
+    (propertyId: string, systemId: string, data: HouseSystemInput) => {
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? {
+                ...p,
+                systems: (p.systems ?? []).map((s) =>
+                  s.id === systemId ? { ...s, ...data } : s,
+                ),
+                updatedAt: now(),
+              }
+            : p,
+        ),
+      );
+    },
+    [],
+  );
+
+  const deleteSystem = useCallback((propertyId: string, systemId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, systems: (p.systems ?? []).filter((s) => s.id !== systemId) } : p,
+      ),
+    );
+  }, []);
+
+  // ── Fotodokumentace ──
+  const addPhoto = useCallback((propertyId: string, data: Omit<HousePhoto, "id" | "createdAt">) => {
+    const photo: HousePhoto = { ...data, id: newId(), createdAt: now() };
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, photos: [photo, ...(p.photos ?? [])], updatedAt: now() } : p,
+      ),
+    );
+  }, []);
+
+  const deletePhoto = useCallback((propertyId: string, photoId: string) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, photos: (p.photos ?? []).filter((ph) => ph.id !== photoId) } : p,
       ),
     );
   }, []);
@@ -980,6 +1083,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteReminder,
     addInventoryItem,
     deleteInventoryItem,
+    addSystem,
+    updateSystem,
+    deleteSystem,
+    addPhoto,
+    deletePhoto,
     addConsultation,
     deleteConsultation,
     setConsultationStatus,
@@ -1142,6 +1250,52 @@ function seed(): Property[] {
       messages: [
         { id: "dch-1", authorRole: "ARCHITECT", text: "Dobrý den, roční revize kotle proběhla v pořádku, vyměnil jsem filtr.", createdAt: "2025-10-12T10:05:00.000Z" },
         { id: "dch-2", authorRole: "CLIENT", text: "Děkujeme moc za info!", createdAt: "2025-10-12T11:20:00.000Z" },
+      ],
+      systems: [
+        {
+          id: "sys-solar", kind: "solar", name: "Fotovoltaika (FVE)", installedAt: "2024-05",
+          specs: [
+            { label: "Výkon", value: "8 kWp" },
+            { label: "Panely", value: "20× 400 Wp" },
+            { label: "Měnič", value: "SolarEdge SE8K" },
+            { label: "Baterie", value: "10 kWh" },
+          ],
+          note: "Přetoky do sítě, monitoring přes aplikaci výrobce.", createdAt: "2024-05-10",
+        },
+        {
+          id: "sys-el", kind: "electricity", name: "Elektroinstalace", installedAt: "2009-03",
+          specs: [
+            { label: "Hlavní jistič", value: "3× 25 A" },
+            { label: "Rozvaděč", value: "24 modulů" },
+            { label: "Počet okruhů", value: "18" },
+          ],
+          createdAt: "2024-01-01",
+        },
+        {
+          id: "sys-water", kind: "water", name: "Vodovod a rozvody", installedAt: "2009-03",
+          specs: [
+            { label: "Přípojka", value: "DN 25" },
+            { label: "Materiál rozvodů", value: "PPR" },
+            { label: "Hlavní uzávěr", value: "Technická místnost" },
+          ],
+          createdAt: "2024-01-01",
+        },
+        {
+          id: "sys-heat", kind: "heating", name: "Tepelné čerpadlo", installedAt: "2018-09",
+          specs: [
+            { label: "Typ", value: "Vzduch–voda" },
+            { label: "Výkon", value: "9 kW" },
+            { label: "Značka", value: "NIBE" },
+            { label: "Distribuce", value: "Podlahové topení" },
+          ],
+          note: "Roční servis, příští revize 2027.", createdAt: "2024-01-01",
+        },
+      ],
+      photos: [
+        { id: "ph-1", kind: "photo", room: "Kuchyně", systemId: "sys-el", caption: "Vedení elektřiny ve stěně před omítkou", createdAt: "2009-03-15", dataUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2I1NTQzYSIvPjx0ZXh0IHg9IjIwMCIgeT0iMTU4IiBmb250LXNpemU9IjIyIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+RWxla3RyaWthLWt1Y2h5bmU8L3RleHQ+PC9zdmc+" },
+        { id: "ph-2", kind: "photo", room: "Koupelna", systemId: "sys-water", caption: "Rozvody vody pod obklady", createdAt: "2024-06-08", dataUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzJmNWQ1MCIvPjx0ZXh0IHg9IjIwMCIgeT0iMTU4IiBmb250LXNpemU9IjIyIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+Vm9kYS1rb3VwZWxuYTwvdGV4dD48L3N2Zz4=" },
+        { id: "ph-3", kind: "photo", room: "Střecha", systemId: "sys-solar", caption: "Uložení FV panelů a kabeláž", createdAt: "2024-05-10", dataUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2M5OGExYSIvPjx0ZXh0IHg9IjIwMCIgeT0iMTU4IiBmb250LXNpemU9IjIyIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+RlZFLXN0cmVjaGE8L3RleHQ+PC9zdmc+" },
+        { id: "ph-4", kind: "photo", room: "Obývací pokoj", systemId: "sys-heat", caption: "Podlahové topení před zalitím", createdAt: "2018-09-20", dataUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzRhNmI4YSIvPjx0ZXh0IHg9IjIwMCIgeT0iMTU4IiBmb250LXNpemU9IjIyIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+VG9wZW5pLXJvenZvZHk8L3RleHQ+PC9zdmc+" },
       ],
       createdAt: "2024-01-01",
       updatedAt: "2025-11-20",

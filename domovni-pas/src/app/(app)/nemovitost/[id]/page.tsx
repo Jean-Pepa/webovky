@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { EntryCard } from "@/components/EntryCard";
 import { ConsultationSection } from "@/components/ConsultationSection";
 import { ProjectCard } from "@/components/ProjectCard";
+import { SystemCard } from "@/components/SystemsSection";
 import { QrCode } from "@/components/QrCode";
 import {
   IconPlus,
@@ -21,9 +22,12 @@ import {
   IconBuilding,
   IconTrash,
   IconShield,
+  IconBolt,
+  IconCamera,
+  IconArrowRight,
 } from "@/components/Icons";
 import { PROPERTY_TYPES } from "@/lib/enums";
-import { addressLine, formatCurrency } from "@/lib/format";
+import { addressLine } from "@/lib/format";
 
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -52,8 +56,9 @@ export default function PropertyDetailPage() {
   const lockedByHandover = role === "ARCHITECT" && property.handedOver;
 
   const entries = [...property.entries].sort((a, b) => b.date.localeCompare(a.date));
-  const totalCost = property.entries.reduce((s, e) => s + (e.cost ?? 0), 0);
   const qrUrl = origin ? `${origin}/q/${id}` : "";
+  const systems = property.systems ?? [];
+  const photos = property.photos ?? [];
 
   return (
     <div>
@@ -118,13 +123,9 @@ export default function PropertyDetailPage() {
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat icon={<IconCalendar className="h-4 w-4" />} label="Záznamů" value={String(property.entries.length)} />
         <Stat icon={<IconFile className="h-4 w-4" />} label="Dokumentů" value={String(property.documents.length)} />
-        <Stat
-          icon={<IconMoney className="h-4 w-4" />}
-          label="Náklady celkem"
-          value={totalCost > 0 ? formatCurrency(totalCost) : "—"}
-        />
+        <Stat icon={<IconBolt className="h-4 w-4" />} label="Systémů" value={String(systems.length)} />
+        <Stat icon={<IconCamera className="h-4 w-4" />} label="Fotek" value={String(photos.length)} />
         <Stat
           icon={<IconBuilding className="h-4 w-4" />}
           label="Rok výstavby"
@@ -132,7 +133,98 @@ export default function PropertyDetailPage() {
         />
       </div>
 
-      <ProjectCard property={property} className="mt-6" />
+      {/* Dokumentace — páteř pasu */}
+      <Link
+        href={`/nemovitost/${id}/dokumentace`}
+        className="card mt-6 flex items-center justify-between gap-4 p-5 transition hover:border-teal-300"
+      >
+        <div className="flex items-center gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-teal-50 text-teal-700">
+            <IconFile className="h-6 w-6" />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-stone-900">Dokumentace</p>
+            <p className="text-sm text-stone-500">
+              Půdorysy, 3D model, certifikáty a smlouvy
+              {property.documents.length > 0 ? ` · ${property.documents.length}` : ""}
+            </p>
+          </div>
+        </div>
+        <IconArrowRight className="h-5 w-5 shrink-0 text-stone-400" />
+      </Link>
+
+      {/* Systémy domu */}
+      <section className="mt-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-stone-900">Systémy domu</h2>
+          <Link href={`/nemovitost/${id}/systemy`} className="text-sm font-medium text-teal-700 hover:underline">
+            {editable ? "Spravovat →" : "Vše →"}
+          </Link>
+        </div>
+        {systems.length === 0 ? (
+          <div className="card mt-3 px-6 py-8 text-center text-sm text-stone-500">
+            Zatím žádné systémy.{" "}
+            {editable && (
+              <Link href={`/nemovitost/${id}/systemy`} className="font-medium text-teal-700 hover:underline">
+                Přidat solár, elektřinu, vodu, topení →
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {systems.map((s) => (
+              <SystemCard
+                key={s.id}
+                system={s}
+                propertyId={id}
+                photoCount={photos.filter((p) => p.systemId === s.id).length}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Fotodokumentace */}
+      <section className="mt-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-stone-900">Fotodokumentace</h2>
+          <Link href={`/nemovitost/${id}/fotodokumentace`} className="text-sm font-medium text-teal-700 hover:underline">
+            Vše →
+          </Link>
+        </div>
+        {photos.length === 0 ? (
+          <div className="card mt-3 px-6 py-8 text-center text-sm text-stone-500">
+            Zatím žádné fotky.{" "}
+            {editable && (
+              <Link href={`/nemovitost/${id}/fotodokumentace`} className="font-medium text-teal-700 hover:underline">
+                Nafotit skryté rozvody →
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
+            {photos.slice(0, 8).map((ph) => (
+              <Link
+                key={ph.id}
+                href={`/nemovitost/${id}/fotodokumentace`}
+                className="card overflow-hidden p-0 transition hover:border-teal-300"
+              >
+                <div className="aspect-[4/3] w-full bg-stone-100">
+                  {ph.kind === "video" ? (
+                    // eslint-disable-next-line jsx-a11y/media-has-caption
+                    <video src={ph.dataUrl} className="h-full w-full object-cover" />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={ph.dataUrl} alt={ph.caption ?? ""} className="h-full w-full object-cover" />
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <ProjectCard property={property} className="mt-8" />
 
       <ConsultationSection propertyId={id} consultations={property.consultations ?? []} />
 

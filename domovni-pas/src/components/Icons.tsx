@@ -280,3 +280,37 @@ export function IconPencil(p: IconProps) {
     </svg>
   );
 }
+
+export function IconSun(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4" />
+    </svg>
+  );
+}
+
+export function IconBolt(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" />
+    </svg>
+  );
+}
+
+export function IconDrop(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" />
+    </svg>
+  );
+}
+
+export function IconThermo(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M10 13.5V5a2 2 0 1 1 4 0v8.5a4 4 0 1 1-4 0z" />
+      <path d="M12 9v6.5" />
+    </svg>
+  );
+}

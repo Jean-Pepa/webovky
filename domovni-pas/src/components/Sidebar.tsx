@@ -22,6 +22,8 @@ import {
   IconUsers,
   IconWrench,
   IconArrowLeft,
+  IconBolt,
+  IconSparkles,
 } from "@/components/Icons";
 
 type NavItem = {
@@ -56,11 +58,13 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
 function houseNav(id: string, role: Role | null): NavItem[] {
   const items: NavItem[] = [
     { href: `/nemovitost/${id}`, label: "Přehled domu", icon: IconHome, exact: true },
+    { href: `/nemovitost/${id}/dokumentace`, label: "Dokumentace", icon: IconFile },
+    { href: `/nemovitost/${id}/systemy`, label: "Systémy domu", icon: IconBolt },
+    { href: `/nemovitost/${id}/fotodokumentace`, label: "Fotodokumentace", icon: IconCamera },
+    { href: `/nemovitost/${id}/vybaveni`, label: "Vybavení", icon: IconBox },
     { href: `/nemovitost/${id}/zaruky`, label: "Záruky a revize", icon: IconShield },
     { href: `/nemovitost/${id}/rozpocet`, label: "Náklady", icon: IconMoney },
-    { href: `/nemovitost/${id}/dokumentace`, label: "Dokumentace", icon: IconFile },
-    { href: `/nemovitost/${id}/navrhy`, label: "Návrhy", icon: IconCamera },
-    { href: `/nemovitost/${id}/vybaveni`, label: "Vybavení", icon: IconBox },
+    { href: `/nemovitost/${id}/navrhy`, label: "Návrhy", icon: IconSparkles },
     { href: `/nemovitost/${id}/konzultace`, label: "Konzultace", icon: IconUsers },
   ];
   if (role === "ARCHITECT" || role === "CREATOR") {
