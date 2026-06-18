@@ -14,18 +14,13 @@ import {
   IconLogout,
   IconChart,
   IconShield,
+  IconSearch,
   IconMoney,
   IconCamera,
   IconBox,
   IconUsers,
   IconWrench,
   IconArrowLeft,
-  IconMegaphone,
-  IconPhone,
-  IconVote,
-  IconKey,
-  IconDownload,
-  IconCheck,
 } from "@/components/Icons";
 
 type NavItem = {
@@ -34,8 +29,6 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
   exact?: boolean;
 };
-
-type NavGroup = { title?: string; items: NavItem[] };
 
 const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   CLIENT: [
@@ -50,58 +43,14 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
   ],
   CREATOR: [
-    { href: "/prehled", label: "Moje domy", icon: IconHome },
-    { href: "/kalendar", label: "Revize a termíny", icon: IconShield },
+    { href: "/prehled", label: "Přehled", icon: IconHome },
+    { href: "/hledat", label: "Hledat", icon: IconSearch },
+    { href: "/statistiky", label: "Statistiky", icon: IconChart },
+    { href: "/kalendar", label: "Kalendář", icon: IconShield },
     { href: "/pripominky", label: "Připomínky", icon: IconCalendar },
     { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
   ],
-  OWNER: [
-    { href: "/prehled", label: "Náš dům", icon: IconHome },
-    { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
-  ],
 };
-
-// Navigace pro bytový dům / SVJ — struktura jako v SVJ aplikacích
-// (Nástěnka / Oblíbené / Menu). Výbor (CREATOR) má vše, rezident (OWNER) zúžený výběr.
-function svjGroups(id: string, role: Role | null): NavGroup[] {
-  const manage = role === "CREATOR";
-  const b = (s: string) => `/nemovitost/${id}${s}`;
-
-  const oblibene: NavItem[] = [
-    { href: b("/sousede"), label: "Vlastníci a sousedé", icon: IconUsers },
-    { href: b("/dokumentace"), label: "Dokumenty", icon: IconFile },
-    { href: b("/kontakty"), label: "Adresář kontaktů", icon: IconPhone },
-  ];
-
-  const menu: NavItem[] = [
-    { href: b("/udalosti"), label: "Kalendář událostí", icon: IconCalendar },
-    { href: b("/zpravy"), label: "Zprávy", icon: IconMegaphone },
-    ...(manage ? [{ href: b("/vlastnici"), label: "Jednotky a místnosti", icon: IconKey }] : []),
-    { href: b("/konzultace"), label: "Hlášení a požadavky", icon: IconWrench },
-    { href: b("/diskuze"), label: "Diskuze", icon: IconUsers },
-    { href: b("/ankety"), label: "Ankety", icon: IconChart },
-    { href: b("/hlasovani"), label: "Hlasování", icon: IconVote },
-    { href: b("/shromazdeni"), label: "Shromáždění vlastníků", icon: IconUsers },
-    { href: b("/zaruky"), label: "Revize a termíny", icon: IconShield },
-    { href: b("/fotogalerie"), label: "Fotogalerie", icon: IconCamera },
-    { href: b("/pozadavky"), label: "Požadavky ke schválení", icon: IconCheck },
-    { href: b("/detail"), label: "Detail společenství", icon: IconBuilding },
-    { href: b("/poplatky"), label: "Přehled poplatků", icon: IconMoney },
-    ...(manage
-      ? [
-          { href: b("/odecty"), label: "Odečty měřidel", icon: IconChart },
-          { href: b("/rozpocet"), label: "Náklady / fond oprav", icon: IconMoney },
-          { href: b("/import"), label: "Import / Export", icon: IconDownload },
-        ]
-      : []),
-  ];
-
-  return [
-    { items: [{ href: b(""), label: "Nástěnka", icon: IconHome, exact: true }] },
-    { title: "Oblíbené", items: oblibene },
-    { title: "Menu", items: menu },
-  ];
-}
 
 function houseNav(id: string, role: Role | null): NavItem[] {
   const items: NavItem[] = [
@@ -123,22 +72,17 @@ function houseNav(id: string, role: Role | null): NavItem[] {
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { role, logout, getProperty } = useStore();
+  const { role, logout } = useStore();
 
   // Jsme v detailu konkrétního domu? Pak je lišta kontextová.
   const m = pathname.match(/^\/nemovitost\/([^/]+)/);
   const houseId = m && !["nova", "zalozit"].includes(m[1]) ? m[1] : null;
   const inHouse = !!houseId;
-  const houseType = houseId ? getProperty(houseId)?.type : undefined;
 
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
-  const groups: NavGroup[] = inHouse
-    ? houseType === "BUILDING"
-      ? svjGroups(houseId!, role)
-      : [{ items: houseNav(houseId!, role) }]
-    : [{ items: NAV_BY_ROLE[role ?? "CLIENT"] }];
+  const nav = inHouse ? houseNav(houseId!, role) : NAV_BY_ROLE[role ?? "CLIENT"];
 
   return (
     <aside className="no-print fixed inset-y-0 left-0 z-30 flex w-16 flex-col border-r border-stone-200 bg-white lg:w-64">
@@ -185,34 +129,23 @@ export function Sidebar() {
 
       {/* Navigace (role nebo dům) */}
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 lg:px-3">
-        {groups.map((g, gi) => (
-          <div key={gi} className={gi > 0 ? "mt-3" : ""}>
-            {g.title && (
-              <p className="hidden px-3 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400 lg:block">
-                {g.title}
-              </p>
-            )}
-            <div className="flex flex-col gap-1">
-              {g.items.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    title={item.label}
-                    className={`flex items-center justify-center gap-3 rounded-lg py-2.5 text-sm font-medium transition lg:justify-start lg:px-3 ${
-                      active ? "bg-teal-50 text-teal-800" : "text-stone-600 hover:bg-stone-100"
-                    }`}
-                  >
-                    <Icon className="h-5 w-5 shrink-0" />
-                    <span className="hidden lg:inline">{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+        {nav.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              title={item.label}
+              className={`flex items-center justify-center gap-3 rounded-lg py-2.5 text-sm font-medium transition lg:justify-start lg:px-3 ${
+                active ? "bg-teal-50 text-teal-800" : "text-stone-600 hover:bg-stone-100"
+              }`}
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              <span className="hidden lg:inline">{item.label}</span>
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Akce + odhlášení */}
@@ -223,8 +156,12 @@ export function Sidebar() {
             <span className="hidden lg:inline">Založit pas</span>
           </Link>
         )}
-        {!inHouse && role === "ARCHITECT" && (
-          <Link href="/projekt/novy" title="Přidat projekt" className="btn-primary w-full px-0 lg:px-4">
+        {!inHouse && (role === "ARCHITECT" || role === "CREATOR") && (
+          <Link
+            href="/projekt/novy"
+            title="Přidat projekt"
+            className={`w-full px-0 lg:px-4 ${role === "ARCHITECT" ? "btn-primary" : "btn-secondary"}`}
+          >
             <IconBuilding className="h-4 w-4 shrink-0" />
             <span className="hidden lg:inline">Přidat projekt</span>
           </Link>

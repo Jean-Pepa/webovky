@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/Badge";
 import { EntryCard } from "@/components/EntryCard";
 import { ConsultationSection } from "@/components/ConsultationSection";
 import { ProjectCard } from "@/components/ProjectCard";
-import { SvjBoard } from "@/components/SvjBoard";
 import { QrCode } from "@/components/QrCode";
 import {
   IconPlus,
@@ -55,11 +54,10 @@ export default function PropertyDetailPage() {
   const entries = [...property.entries].sort((a, b) => b.date.localeCompare(a.date));
   const totalCost = property.entries.reduce((s, e) => s + (e.cost ?? 0), 0);
   const qrUrl = origin ? `${origin}/q/${id}` : "";
-  const isBuilding = property.type === "BUILDING";
 
   return (
     <div>
-      {!editable && !isBuilding && (
+      {!editable && (
         <div className="flex items-start gap-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
           <IconShield className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
           <p>
@@ -134,17 +132,9 @@ export default function PropertyDetailPage() {
         />
       </div>
 
-      {isBuilding ? (
-        <SvjBoard property={property} />
-      ) : (
-        <ProjectCard property={property} className="mt-6" />
-      )}
+      <ProjectCard property={property} className="mt-6" />
 
-      <ConsultationSection
-        propertyId={id}
-        consultations={property.consultations ?? []}
-        title={isBuilding ? "Hlášení závad" : undefined}
-      />
+      <ConsultationSection propertyId={id} consultations={property.consultations ?? []} />
 
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">

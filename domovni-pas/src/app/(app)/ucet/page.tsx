@@ -11,8 +11,7 @@ import { IconLogout, IconDownload, IconShield, IconArrowRight } from "@/componen
 const ROLE_DESC: Record<string, string> = {
   ARCHITECT: "Vidíte a spravujete své projekty a předáváte je klientům.",
   CLIENT: "Spravujete své nemovitosti, dokumenty, záruky a revize.",
-  CREATOR: "Správce SVJ — spravujete svůj bytový dům: revize, nástěnku, hlasování, jednotky i dokumenty (plná editace).",
-  OWNER: "Vlastník / rezident — klasický účet SVJ: vidíte dům, hlásíte závady a hlasujete.",
+  CREATOR: "Správce systému — vidíte všechny nemovitosti, statistiky a data.",
 };
 
 export default function AccountPage() {

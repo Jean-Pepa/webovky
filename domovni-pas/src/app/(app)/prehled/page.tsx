@@ -17,8 +17,6 @@ import {
 } from "@/components/Icons";
 import { canSeeProperty, ROLE_LABELS } from "@/lib/access";
 import { getAttentionItems, ATTENTION_KIND_LABELS, type AttentionKind, type AttentionItem } from "@/lib/attention";
-import { dueStatus, formatDate, addressLine } from "@/lib/format";
-import { PROPERTY_TYPES } from "@/lib/enums";
 
 type ConsItem = { c: ConsultationNote; p: Property };
 
@@ -65,28 +63,17 @@ export default function DashboardPage() {
   const r = role ?? "CLIENT";
   const isArchitect = r === "ARCHITECT";
   const isCreator = r === "CREATOR";
-  const isOwner = r === "OWNER";
   const isClient = r === "CLIENT";
   const visible = role ? properties.filter((p) => canSeeProperty(p, role)) : [];
   const waiting = visible.filter((p) => !p.handedOver);
   const handed = visible.filter((p) => p.handedOver);
 
-  const heading = isArchitect
-    ? "Moje projekty"
-    : isCreator
-      ? "Správa SVJ"
-      : isOwner
-        ? "Náš dům"
-        : "Moje nemovitosti";
+  const heading = isArchitect ? "Moje projekty" : isCreator ? "Přehled — správce" : "Moje nemovitosti";
   const sub =
     visible.length > 0
       ? isArchitect
         ? `Máte ${visible.length} ${pluralProjekt(visible.length)}.`
-        : isOwner
-          ? "Informace o vašem bytovém domě a SVJ."
-          : isCreator
-            ? `Ve správě máte ${visible.length} ${plural(visible.length)}.`
-            : `Spravujete ${visible.length} ${plural(visible.length)}.`
+        : `${isCreator ? "V systému je" : "Spravujete"} ${visible.length} ${plural(visible.length)}.`
       : isArchitect
         ? "Zatím nemáte žádný projekt."
         : "Zatím tu nic není.";
@@ -113,16 +100,12 @@ export default function DashboardPage() {
           })
       : [];
 
-  // Portfolio revizí napříč budovami (správce / SVJ)
-  const inspReminders = isCreator
-    ? visible.flatMap((p) => p.reminders.filter((r) => !r.done && r.type === "INSPECTION"))
-    : [];
   const stats = isCreator
     ? {
-        budovy: visible.length,
-        revizePoTerminu: inspReminders.filter((r) => dueStatus(r.dueDate).overdue).length,
-        revizePlanovane: inspReminders.filter((r) => !dueStatus(r.dueDate).overdue).length,
-        dokumenty: visible.reduce((s, p) => s + p.documents.length, 0),
+        total: visible.length,
+        handed: visible.filter((p) => p.handedOver).length,
+        byArchitect: visible.filter((p) => p.createdByRole === "ARCHITECT").length,
+        byClient: visible.filter((p) => (p.createdByRole ?? "CLIENT") === "CLIENT").length,
       }
     : null;
 
@@ -137,11 +120,14 @@ export default function DashboardPage() {
           {(r === "CLIENT" || isCreator) && (
             <Link href="/nemovitost/zalozit" className="btn-primary">
               <IconPlus className="h-4 w-4" />
-              {isCreator ? "Přidat dům" : "Založit pas"}
+              Založit pas
             </Link>
           )}
-          {isArchitect && (
-            <Link href="/projekt/novy" className="btn-primary">
+          {(isArchitect || isCreator) && (
+            <Link
+              href="/projekt/novy"
+              className={isArchitect ? "btn-primary" : "btn-secondary"}
+            >
               <IconBuilding className="h-4 w-4" />
               Přidat projekt
             </Link>
@@ -149,13 +135,13 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Portfolio revizí pro správce / SVJ */}
+      {/* Statistiky pro správce */}
       {stats && (
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatBox label="Budovy" value={String(stats.budovy)} />
-          <StatBox label="Revize po termínu" value={String(stats.revizePoTerminu)} accent={stats.revizePoTerminu > 0 ? "red" : undefined} />
-          <StatBox label="Plánované revize" value={String(stats.revizePlanovane)} />
-          <StatBox label="Dokumentů celkem" value={String(stats.dokumenty)} />
+          <StatBox label="Nemovitostí celkem" value={String(stats.total)} />
+          <StatBox label="Předáno klientovi" value={String(stats.handed)} />
+          <StatBox label="Od architektů" value={String(stats.byArchitect)} />
+          <StatBox label="Od majitelů" value={String(stats.byClient)} />
         </div>
       )}
 
@@ -246,8 +232,6 @@ export default function DashboardPage() {
           <PropertySection title="Čeká na převzetí klientem" items={waiting} />
           <PropertySection title="Předáno klientovi" items={handed} />
         </div>
-      ) : isCreator ? (
-        <PortfolioList items={visible} />
       ) : (
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((p) => (
@@ -438,88 +422,11 @@ function KomunikaceCard({ items }: { items: ConsItem[] }) {
   );
 }
 
-function StatBox({ label, value, accent }: { label: string; value: string; accent?: "red" }) {
+function StatBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="card p-4">
-      <p className={`text-2xl font-semibold ${accent === "red" ? "text-red-600" : "text-stone-900"}`}>
-        {value}
-      </p>
+      <p className="text-2xl font-semibold text-stone-900">{value}</p>
       <p className="mt-0.5 text-xs text-stone-500">{label}</p>
     </div>
-  );
-}
-
-// Stav revizí budovy: kolik je po termínu a kdy je nejbližší nadcházející
-function revizeStatus(p: Property): { overdue: number; next?: string; nextSoon: boolean } {
-  const insp = p.reminders.filter((r) => !r.done && r.type === "INSPECTION");
-  let overdue = 0;
-  const upcoming: string[] = [];
-  for (const r of insp) {
-    if (dueStatus(r.dueDate).overdue) overdue++;
-    else upcoming.push(r.dueDate);
-  }
-  upcoming.sort();
-  const next = upcoming[0];
-  return { overdue, next, nextSoon: next ? dueStatus(next).soon : false };
-}
-
-function revizePlural(n: number) {
-  if (n === 1) return "revize";
-  if (n >= 2 && n <= 4) return "revize";
-  return "revizí";
-}
-
-function RevizeChip({ p }: { p: Property }) {
-  const rv = revizeStatus(p);
-  if (rv.overdue > 0)
-    return (
-      <span className="shrink-0 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600">
-        {rv.overdue} {revizePlural(rv.overdue)} po termínu
-      </span>
-    );
-  if (rv.next)
-    return (
-      <span
-        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
-          rv.nextSoon ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"
-        }`}
-      >
-        Další revize {formatDate(rv.next)}
-      </span>
-    );
-  return (
-    <span className="shrink-0 rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-500">
-      Bez plánovaných revizí
-    </span>
-  );
-}
-
-function PortfolioList({ items }: { items: Property[] }) {
-  return (
-    <section className="mt-8">
-      <h2 className="text-sm font-semibold text-stone-500">
-        Budovy v portfoliu <span className="text-stone-400">· {items.length}</span>
-      </h2>
-      <div className="mt-3 overflow-hidden rounded-xl border border-stone-200 bg-white">
-        <ul className="divide-y divide-stone-100">
-          {items.map((p) => (
-            <li key={p.id}>
-              <Link
-                href={`/nemovitost/${p.id}`}
-                className="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-stone-50"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-stone-900">{p.name}</p>
-                  <p className="truncate text-xs text-stone-400">
-                    {PROPERTY_TYPES[p.type]} · {addressLine(p)}
-                  </p>
-                </div>
-                <RevizeChip p={p} />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
   );
 }

@@ -3,7 +3,6 @@
 export const PROPERTY_TYPES: Record<string, string> = {
   HOUSE: "Dům",
   APARTMENT: "Byt",
-  BUILDING: "Bytový dům",
   OTHER: "Jiné",
 };
 
