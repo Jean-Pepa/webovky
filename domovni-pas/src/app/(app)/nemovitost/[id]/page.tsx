@@ -25,6 +25,7 @@ import {
   IconBolt,
   IconCamera,
   IconArrowRight,
+  IconChevronDown,
 } from "@/components/Icons";
 import { PROPERTY_TYPES } from "@/lib/enums";
 import { addressLine } from "@/lib/format";
@@ -34,6 +35,7 @@ export default function PropertyDetailPage() {
   const router = useRouter();
   const { getProperty, hydrated, role, deleteEntry, deleteProperty } = useStore();
   const [origin, setOrigin] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
   useEffect(() => setOrigin(window.location.origin), []);
 
   if (!hydrated) return <Loading />;
@@ -230,8 +232,19 @@ export default function PropertyDetailPage() {
 
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-stone-900">Historie</h2>
+          <div className="flex items-center justify-between gap-3">
+            <button
+              onClick={() => setHistoryOpen((o) => !o)}
+              className="flex items-center gap-2 text-left"
+            >
+              <h2 className="text-lg font-semibold text-stone-900">Historie</h2>
+              {entries.length > 0 && (
+                <span className="text-sm text-stone-400">· {entries.length}</span>
+              )}
+              <IconChevronDown
+                className={`h-4 w-4 shrink-0 text-stone-400 transition ${historyOpen ? "rotate-180" : ""}`}
+              />
+            </button>
             {editable && (
               <Link href={`/nemovitost/${id}/zaznam/novy`} className="btn-primary btn-sm">
                 <IconPlus className="h-4 w-4" />
@@ -240,35 +253,36 @@ export default function PropertyDetailPage() {
             )}
           </div>
 
-          {entries.length === 0 ? (
-            <div className="card mt-4 flex flex-col items-center px-6 py-12 text-center">
-              <div className="grid h-12 w-12 place-items-center rounded-xl bg-teal-50 text-teal-700">
-                <IconCalendar className="h-6 w-6" />
+          {historyOpen &&
+            (entries.length === 0 ? (
+              <div className="card mt-4 flex flex-col items-center px-6 py-12 text-center">
+                <div className="grid h-12 w-12 place-items-center rounded-xl bg-teal-50 text-teal-700">
+                  <IconCalendar className="h-6 w-6" />
+                </div>
+                <p className="mt-4 text-sm font-medium text-stone-800">Zatím žádný záznam</p>
+                {editable && (
+                  <>
+                    <p className="mt-1 max-w-xs text-sm text-stone-500">
+                      Přidejte první událost — opravu, revizi, závadu nebo rekonstrukci.
+                    </p>
+                    <Link href={`/nemovitost/${id}/zaznam/novy`} className="btn-primary btn-sm mt-5">
+                      <IconPlus className="h-4 w-4" />
+                      Přidat záznam
+                    </Link>
+                  </>
+                )}
               </div>
-              <p className="mt-4 text-sm font-medium text-stone-800">Zatím žádný záznam</p>
-              {editable && (
-                <>
-                  <p className="mt-1 max-w-xs text-sm text-stone-500">
-                    Přidejte první událost — opravu, revizi, závadu nebo rekonstrukci.
-                  </p>
-                  <Link href={`/nemovitost/${id}/zaznam/novy`} className="btn-primary btn-sm mt-5">
-                    <IconPlus className="h-4 w-4" />
-                    Přidat záznam
-                  </Link>
-                </>
-              )}
-            </div>
-          ) : (
-            <ol className="mt-5 space-y-5 border-l-2 border-stone-200 pl-7">
-              {entries.map((entry) => (
-                <EntryCard
-                  key={entry.id}
-                  entry={entry}
-                  onDelete={editable ? () => deleteEntry(id, entry.id) : undefined}
-                />
-              ))}
-            </ol>
-          )}
+            ) : (
+              <ol className="mt-5 space-y-5 border-l-2 border-stone-200 pl-7">
+                {entries.map((entry) => (
+                  <EntryCard
+                    key={entry.id}
+                    entry={entry}
+                    onDelete={editable ? () => deleteEntry(id, entry.id) : undefined}
+                  />
+                ))}
+              </ol>
+            ))}
         </div>
 
         <div className="space-y-6">
