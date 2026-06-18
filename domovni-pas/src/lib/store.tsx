@@ -341,6 +341,7 @@ type Store = {
   setShare: (propertyId: string, enabled: boolean) => void;
   role: Role | null;
   login: (password: string) => boolean;
+  applyRole: (role: Role) => void;
   logout: () => void;
   branding: Branding;
   setBranding: (b: Branding) => void;
@@ -931,6 +932,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return true;
   }, []);
 
+  // Nastaví roli zvenčí (po přihlášení přes Supabase).
+  const applyRole = useCallback((r: Role) => {
+    setRole(r);
+    try {
+      localStorage.setItem(ROLE_KEY, r);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const logout = useCallback(() => {
     setRole(null);
     try {
@@ -988,6 +999,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setShare,
     role,
     login,
+    applyRole,
     logout,
     branding,
     setBranding,

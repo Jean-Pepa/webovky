@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { useStore, type Role } from "@/lib/store";
 import { ROLE_LABELS, ROLE_INITIALS } from "@/lib/access";
+import { signOut } from "@/lib/auth";
 import {
   IconHome,
   IconCalendar,
@@ -167,7 +168,8 @@ export function Sidebar() {
           </Link>
         )}
         <button
-          onClick={() => {
+          onClick={async () => {
+            await signOut();
             logout();
             router.push("/");
           }}
