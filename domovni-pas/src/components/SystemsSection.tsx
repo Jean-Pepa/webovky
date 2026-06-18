@@ -11,13 +11,16 @@ export function SystemsSection({
   systems,
   photos = [],
   editable = true,
+  canAdd,
 }: {
   propertyId: string;
   systems: HouseSystem[];
   photos?: HousePhoto[];
   editable?: boolean;
+  canAdd?: boolean;
 }) {
   const { addSystem, updateSystem, deleteSystem } = useStore();
+  const add = canAdd ?? editable;
   // null = zavřeno, "new" = nový, jinak id upravovaného
   const [mode, setMode] = useState<string | null>(null);
 
@@ -47,7 +50,7 @@ export function SystemsSection({
           <h2 className="text-lg font-semibold text-stone-900">Systémy domu</h2>
           <p className="text-sm text-stone-500">Solár, elektřina, voda, topení — parametry a doklady.</p>
         </div>
-        {editable && mode === null && (
+        {add && mode === null && (
           <button onClick={() => setMode("new")} className="btn-primary btn-sm">
             <IconPlus className="h-4 w-4" />
             Přidat systém
@@ -55,7 +58,7 @@ export function SystemsSection({
         )}
       </div>
 
-      {editable && mode !== null && (
+      {add && mode !== null && (
         <form onSubmit={submit} className="card mt-4 space-y-2 p-4">
           <div className="grid gap-2 sm:grid-cols-2">
             <select name="kind" defaultValue={editing?.kind ?? "solar"} className="input">

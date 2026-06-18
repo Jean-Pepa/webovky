@@ -81,6 +81,18 @@ export function documentSection(doc: { section?: string; category: string }): st
   return doc.section ?? CATEGORY_TO_SECTION[doc.category] ?? "BUDOVA";
 }
 
+// Automatické zařazení dokumentu podle názvu souboru (architekt nahraje → roztřídí se).
+export function guessDocCategory(fileName: string): string {
+  const n = fileName.toLowerCase();
+  if (/penb|energ|štítek|stitek/.test(n)) return "ENERGY_LABEL";
+  if (/smlouv|contract/.test(n)) return "CONTRACT";
+  if (/faktur|invoice|účtenka|uctenka|paragon|doklad/.test(n)) return "INVOICE";
+  if (/reviz|certifik|protokol|atest|zpráva|zprava/.test(n)) return "CERTIFICATE";
+  if (/půdorys|pudorys|plán|plan|výkres|vykres|řez|rez|pohled|situac|projekt|\.dwg|\.dxf|\.ifc/.test(n))
+    return "PLAN";
+  return "OTHER";
+}
+
 // Návrhy místností / oblastí pro vybavení (datalist)
 export const ROOM_SUGGESTIONS = [
   "Kuchyně",

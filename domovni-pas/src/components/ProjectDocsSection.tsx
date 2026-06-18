@@ -11,12 +11,15 @@ export function ProjectDocsSection({
   propertyId,
   documents,
   editable = true,
+  canAdd,
 }: {
   propertyId: string;
   documents: DocItem[];
   editable?: boolean;
+  canAdd?: boolean;
 }) {
   const { deleteDocument } = useStore();
+  const add = canAdd ?? editable;
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
 
@@ -30,7 +33,7 @@ export function ProjectDocsSection({
             <span className="text-xs text-stone-400">· {documents.length}</span>
           )}
         </div>
-        {editable && (
+        {add && (
           <button onClick={() => setOpen((o) => !o)} className="btn-ghost btn-sm text-teal-700">
             <IconPlus className="h-4 w-4" />
             Nahrát dokument
@@ -38,7 +41,7 @@ export function ProjectDocsSection({
         )}
       </div>
 
-      {editable && open && (
+      {add && open && (
         <div className="mt-3 border-b border-stone-100 pb-4">
           <DocumentUploadForm propertyId={propertyId} />
         </div>
@@ -47,7 +50,7 @@ export function ProjectDocsSection({
 
       {documents.length === 0 && !open ? (
         <p className="mt-2 text-sm text-stone-500">
-          {editable
+          {add
             ? "Zatím žádné dokumenty. Nahrajte výkresy, studie, stavební povolení, technické zprávy nebo vizualizace."
             : "Zatím žádná dokumentace."}
         </p>

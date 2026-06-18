@@ -303,6 +303,10 @@ export type HouseSystemKind =
   | "electricity"
   | "water"
   | "heating"
+  | "gas"
+  | "sewage"
+  | "networks"
+  | "smart"
   | "ventilation"
   | "other";
 export type SystemSpec = { label: string; value: string };

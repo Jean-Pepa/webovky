@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { canSeeProperty, canEditProperty } from "@/lib/access";
+import { canSeeProperty, canEditProperty, canContributeToProperty } from "@/lib/access";
 import { Loading } from "@/components/Loading";
 import { Badge } from "@/components/ui/Badge";
 import { EntryCard } from "@/components/EntryCard";
@@ -55,6 +55,7 @@ export default function PropertyDetailPage() {
   }
 
   const editable = role ? canEditProperty(property, role) : false;
+  const canAdd = role ? canContributeToProperty(property, role) : false;
   const lockedByHandover = role === "ARCHITECT" && property.handedOver;
 
   const entries = [...property.entries].sort((a, b) => b.date.localeCompare(a.date));
@@ -245,7 +246,7 @@ export default function PropertyDetailPage() {
                 className={`h-4 w-4 shrink-0 text-stone-400 transition ${historyOpen ? "rotate-180" : ""}`}
               />
             </button>
-            {editable && (
+            {canAdd && (
               <Link href={`/nemovitost/${id}/zaznam/novy`} className="btn-primary btn-sm">
                 <IconPlus className="h-4 w-4" />
                 Přidat záznam
@@ -260,7 +261,7 @@ export default function PropertyDetailPage() {
                   <IconCalendar className="h-6 w-6" />
                 </div>
                 <p className="mt-4 text-sm font-medium text-stone-800">Zatím žádný záznam</p>
-                {editable && (
+                {canAdd && (
                   <>
                     <p className="mt-1 max-w-xs text-sm text-stone-500">
                       Přidejte první událost — opravu, revizi, závadu nebo rekonstrukci.

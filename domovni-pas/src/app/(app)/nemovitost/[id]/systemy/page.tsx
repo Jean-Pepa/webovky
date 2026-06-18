@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { canSeeProperty, canEditProperty } from "@/lib/access";
+import { canSeeProperty, canEditProperty, canContributeToProperty } from "@/lib/access";
 import { Loading } from "@/components/Loading";
 import { PropertySectionHeader, PropertyNotFound } from "@/components/PropertySectionHeader";
 import { SystemsSection } from "@/components/SystemsSection";
@@ -14,6 +14,7 @@ export default function Page() {
   const property = getProperty(id);
   if (!property || (role && !canSeeProperty(property, role))) return <PropertyNotFound />;
   const editable = role ? canEditProperty(property, role) : false;
+  const canAdd = role ? canContributeToProperty(property, role) : false;
 
   return (
     <div>
@@ -24,6 +25,7 @@ export default function Page() {
           systems={property.systems ?? []}
           photos={property.photos ?? []}
           editable={editable}
+          canAdd={canAdd}
         />
       </div>
     </div>

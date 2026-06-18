@@ -11,13 +11,16 @@ export function PhotoGallery({
   photos,
   systems,
   editable = true,
+  canAdd,
 }: {
   propertyId: string;
   photos: HousePhoto[];
   systems: HouseSystem[];
   editable?: boolean;
+  canAdd?: boolean;
 }) {
   const { addPhoto, deletePhoto } = useStore();
+  const add = canAdd ?? editable;
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<string>("all");
   const [busy, setBusy] = useState(false);
@@ -58,7 +61,7 @@ export function PhotoGallery({
           <h2 className="text-lg font-semibold text-stone-900">Fotodokumentace</h2>
           <p className="text-sm text-stone-500">As-built fotky a videa — „kudy se vedla elektřina, voda…".</p>
         </div>
-        {editable && (
+        {add && (
           <button onClick={() => setOpen((o) => !o)} className="btn-primary btn-sm">
             <IconPlus className="h-4 w-4" />
             Přidat
@@ -66,7 +69,7 @@ export function PhotoGallery({
         )}
       </div>
 
-      {editable && open && (
+      {add && open && (
         <form onSubmit={submit} className="card mt-4 space-y-2 p-4">
           <input name="file" type="file" accept="image/*,video/*" capture="environment" required className="block w-full text-sm text-stone-600 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-teal-700" />
           <input name="caption" className="input" placeholder="Popis (např. Vedení elektřiny ve stěně)" />

@@ -314,3 +314,29 @@ export function IconThermo(p: IconProps) {
     </svg>
   );
 }
+
+export function IconFlame(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M12 3c1 3-2 4-2 7a2 2 0 0 0 4 0c2 2 3 3.5 3 6a5 5 0 0 1-10 0c0-4 3-6 5-13z" />
+    </svg>
+  );
+}
+
+export function IconWifi(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M2 8.5a16 16 0 0 1 20 0M5 12a11 11 0 0 1 14 0M8 15.3a6 6 0 0 1 8 0" />
+      <circle cx="12" cy="19" r="0.6" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function IconCpu(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <rect x="7" y="7" width="10" height="10" rx="1.5" />
+      <path d="M10 2v3M14 2v3M10 19v3M14 19v3M2 10h3M2 14h3M19 10h3M19 14h3" />
+    </svg>
+  );
+}
