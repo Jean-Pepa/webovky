@@ -36,6 +36,7 @@ type NavItem = {
 const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   CLIENT: [
     { href: "/prehled", label: "Moje nemovitosti", icon: IconHome },
+    { href: "/domy", label: "Domy (cloud)", icon: IconBuilding },
     { href: "/kalendar", label: "Záruky a revize", icon: IconShield },
     { href: "/statistiky", label: "Statistiky", icon: IconChart },
     { href: "/pripominky", label: "Připomínky", icon: IconCalendar },
