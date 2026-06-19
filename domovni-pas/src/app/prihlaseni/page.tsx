@@ -12,10 +12,11 @@ import { signInEmail, signUpEmail, fetchMyRole } from "@/lib/auth";
 // Rychlé přihlášení číslem (pro vývoj). Účet se při prvním použití sám založí.
 const DEV_ACCOUNTS: Record<
   string,
-  { email: string; password: string; role: "architect" | "client"; name: string }
+  { email: string; password: string; role: "architect" | "client" | "developer"; name: string }
 > = {
-  "1": { email: "dev1@bulo.app", password: "bulo-dev-123", role: "architect", name: "Developer (architekt)" },
+  "1": { email: "dev1@bulo.app", password: "bulo-dev-123", role: "architect", name: "Architekt" },
   "2": { email: "klient2@bulo.app", password: "bulo-dev-123", role: "client", name: "Klient" },
+  "3": { email: "developer3@bulo.app", password: "bulo-dev-123", role: "developer", name: "Developer" },
 };
 
 export default function LoginPage() {
@@ -94,15 +95,16 @@ export default function LoginPage() {
       {supa ? (
         <>
           <form onSubmit={submitSupa} className="mt-5 space-y-3">
-            <input name="email" type="text" autoFocus required placeholder="E-mail — nebo 1 (architekt) / 2 (klient)" className={AUTH_FIELD} onChange={() => setError(null)} />
+            <input name="email" type="text" autoFocus required placeholder="E-mail — nebo 1 / 2 / 3 (rychlé přihlášení)" className={AUTH_FIELD} onChange={() => setError(null)} />
             <input name="password" type="password" placeholder="Heslo (u 1 / 2 nech prázdné)" className={AUTH_FIELD} onChange={() => setError(null)} />
             {error && <p className="rounded-lg bg-red-500/20 px-3 py-2 text-sm text-red-100">{error}</p>}
             <button type="submit" disabled={busy} className="w-full rounded-lg bg-brass px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#9c4732] disabled:opacity-50">
               {busy ? "Přihlašuji…" : "Přihlásit se"}
             </button>
             <p className="text-center text-xs text-white/50">
-              Rychlé přihlášení: napiš <span className="font-semibold text-white/80">1</span> (developer/architekt) nebo{" "}
-              <span className="font-semibold text-white/80">2</span> (klient) a dej Přihlásit.
+              Rychlé přihlášení: <span className="font-semibold text-white/80">1</span> architekt ·{" "}
+              <span className="font-semibold text-white/80">2</span> klient ·{" "}
+              <span className="font-semibold text-white/80">3</span> developer
             </p>
           </form>
           <p className="mt-4 text-center text-sm text-white/70">

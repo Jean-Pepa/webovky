@@ -2,11 +2,13 @@ import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Role } from "@/lib/store";
 
-export type AccountRole = "client" | "architect";
+export type AccountRole = "client" | "architect" | "developer";
 
-// client/architect (DB) → Role aplikace
+// role z DB → Role aplikace
 function toAppRole(r?: string | null): Role {
-  return r === "architect" ? "ARCHITECT" : "CLIENT";
+  if (r === "architect") return "ARCHITECT";
+  if (r === "developer") return "DEVELOPER";
+  return "CLIENT";
 }
 
 export async function signUpEmail(

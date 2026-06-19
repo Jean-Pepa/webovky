@@ -22,7 +22,7 @@ function toShareSnapshot(p: Property): Property {
   };
 }
 
-export type Role = "ARCHITECT" | "CLIENT" | "CREATOR";
+export type Role = "ARCHITECT" | "CLIENT" | "CREATOR" | "DEVELOPER";
 
 // Branding architekta — zobrazí se na reportu a sdíleném pasu.
 export type Branding = { studioName?: string; color?: string; tagline?: string };
@@ -421,6 +421,7 @@ const BRANDING_KEY = "bulo-branding";
 const PASSWORDS: Record<string, Role> = {
   architekt: "ARCHITECT",
   klient: "CLIENT",
+  developer: "DEVELOPER",
   tvurce: "CREATOR",
 };
 

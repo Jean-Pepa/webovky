@@ -2,14 +2,32 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { listMyHouses, createHouse, type DbHouse } from "@/lib/db/houses";
+import {
+  listMyHouses,
+  createHouse,
+  claimHouse,
+  getMe,
+  type DbHouse,
+  type Me,
+} from "@/lib/db/houses";
+import { useStore } from "@/lib/store";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { PROPERTY_TYPES } from "@/lib/enums";
 import { Loading } from "@/components/Loading";
-import { IconPlus, IconHome } from "@/components/Icons";
+import { IconPlus, IconHome, IconBuilding, IconTransfer } from "@/components/Icons";
+
+const STATUS_LABEL: Record<string, string> = {
+  draft: "Rozpracováno",
+  handed_over: "Předáno – čeká na převzetí",
+  active: "Aktivní",
+};
 
 export function CloudHouses() {
   const configured = isSupabaseConfigured();
+  const { role } = useStore();
+  const isPro = role === "ARCHITECT" || role === "DEVELOPER";
+
+  const [me, setMe] = useState<Me | null>(null);
   const [houses, setHouses] = useState<DbHouse[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -18,7 +36,9 @@ export function CloudHouses() {
   async function load() {
     setError(null);
     try {
-      setHouses(await listMyHouses());
+      const [m, hs] = await Promise.all([getMe(), listMyHouses()]);
+      setMe(m);
+      setHouses(hs);
     } catch (e) {
       setHouses([]);
       setError(e instanceof Error ? e.message : "Nepodařilo se načíst domy.");
@@ -46,6 +66,7 @@ export function CloudHouses() {
         city: String(fd.get("city") || "").trim() || null,
         zip: String(fd.get("zip") || "").trim() || null,
         year_built: Number.isFinite(yb) && yb > 0 ? yb : null,
+        status: isPro ? "draft" : "active",
       });
       form.reset();
       setOpen(false);
@@ -56,6 +77,16 @@ export function CloudHouses() {
     setBusy(false);
   }
 
+  async function claim(id: string) {
+    setError(null);
+    try {
+      await claimHouse(id);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Převzetí selhalo.");
+    }
+  }
+
   if (!configured) {
     return (
       <div className="card p-6 text-sm text-stone-600">
@@ -64,22 +95,35 @@ export function CloudHouses() {
     );
   }
 
+  const all = houses ?? [];
+  const myId = me?.id;
+  const myEmail = me?.email;
+  const toClaim = all.filter((h) => h.owner_email && h.owner_email === myEmail && h.owner_id !== myId);
+  const owned = all.filter((h) => h.owner_id === myId);
+  const projects = all.filter((h) => h.created_by === myId); // profík: vše, co jsem založil
+
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-stone-900">Moje domy (cloud)</h1>
-          <p className="mt-1 text-sm text-stone-500">Uloženo v databázi — dostupné odkudkoli.</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-stone-900">
+            {isPro ? "Projekty (cloud)" : "Moje domy (cloud)"}
+          </h1>
+          <p className="mt-1 text-sm text-stone-500">
+            {isPro
+              ? "Založte dům, nahrajte data a předejte klientovi."
+              : "Uloženo v databázi — dostupné odkudkoli."}
+          </p>
         </div>
         <button onClick={() => setOpen((o) => !o)} className="btn-primary">
           <IconPlus className="h-4 w-4" />
-          Založit dům
+          {isPro ? "Nový projekt" : "Založit dům"}
         </button>
       </div>
 
       {open && (
         <form onSubmit={submit} className="card mt-5 grid gap-2 p-5 sm:grid-cols-2">
-          <input name="name" required className="input sm:col-span-2" placeholder="Název (např. Náš dům v Říčanech)" />
+          <input name="name" required className="input sm:col-span-2" placeholder="Název" />
           <select name="type" defaultValue="HOUSE" className="input">
             {Object.entries(PROPERTY_TYPES).map(([v, l]) => (
               <option key={v} value={v}>
@@ -97,43 +141,101 @@ export function CloudHouses() {
         </form>
       )}
 
-      {error && (
-        <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-      )}
+      {error && <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
       {houses === null ? (
         <Loading />
-      ) : houses.length === 0 ? (
-        <div className="card mt-6 flex flex-col items-center px-6 py-16 text-center">
-          <div className="grid h-16 w-16 place-items-center rounded-2xl bg-teal-50 text-teal-700">
-            <IconHome className="h-8 w-8" />
-          </div>
-          <p className="mt-5 text-lg font-semibold text-stone-900">Zatím žádný dům v cloudu</p>
-          <p className="mt-2 max-w-sm text-sm text-stone-500">
-            Založ první dům — uloží se do databáze a zůstane dostupný i po obnovení a na jiném zařízení.
-          </p>
-          <button onClick={() => setOpen(true)} className="btn-primary mt-6">
-            <IconPlus className="h-4 w-4" />
-            Založit dům
-          </button>
-        </div>
       ) : (
-        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {houses.map((h) => (
-            <Link
-              key={h.id}
-              href={`/dum/${h.id}`}
-              className="card group flex flex-col p-5 transition hover:border-teal-300 hover:shadow-md"
-            >
-              <h3 className="text-lg font-semibold text-stone-900 group-hover:text-teal-800">{h.name}</h3>
-              <p className="mt-1 text-sm text-stone-500">
-                {PROPERTY_TYPES[h.type] ?? h.type}
-                {h.city ? ` · ${[h.street, h.city].filter(Boolean).join(", ")}` : ""}
-              </p>
-            </Link>
-          ))}
+        <div className="mt-6 space-y-8">
+          {/* K převzetí (příjemce) */}
+          {toClaim.length > 0 && (
+            <section>
+              <h2 className="text-sm font-semibold text-stone-500">Předané vám k převzetí · {toClaim.length}</h2>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {toClaim.map((h) => (
+                  <div key={h.id} className="card border-amber-300 p-5 ring-1 ring-amber-200">
+                    <h3 className="text-lg font-semibold text-stone-900">{h.name}</h3>
+                    <p className="mt-1 text-sm text-stone-500">{PROPERTY_TYPES[h.type] ?? h.type}</p>
+                    <button onClick={() => claim(h.id)} className="btn-primary btn-sm mt-4 w-full">
+                      <IconTransfer className="h-4 w-4" />
+                      Převzít dům
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {isPro ? (
+            <Section
+              title="Moje projekty"
+              items={projects}
+              myId={myId}
+              empty="Zatím žádný projekt. Založte nový a předejte ho klientovi."
+            />
+          ) : (
+            <Section
+              title="Moje domy"
+              items={owned}
+              myId={myId}
+              empty="Zatím žádný dům v cloudu. Založte první."
+              icon
+            />
+          )}
         </div>
       )}
     </div>
+  );
+}
+
+function Section({
+  title,
+  items,
+  myId,
+  empty,
+  icon,
+}: {
+  title: string;
+  items: DbHouse[];
+  myId?: string;
+  empty: string;
+  icon?: boolean;
+}) {
+  return (
+    <section>
+      <h2 className="text-sm font-semibold text-stone-500">
+        {title} <span className="text-stone-400">· {items.length}</span>
+      </h2>
+      {items.length === 0 ? (
+        <div className="card mt-3 flex flex-col items-center px-6 py-12 text-center">
+          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-teal-50 text-teal-700">
+            {icon ? <IconHome className="h-7 w-7" /> : <IconBuilding className="h-7 w-7" />}
+          </div>
+          <p className="mt-4 max-w-sm text-sm text-stone-500">{empty}</p>
+        </div>
+      ) : (
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((h) => {
+            const handedAway = h.created_by === myId && h.owner_id !== myId;
+            return (
+              <Link
+                key={h.id}
+                href={`/dum/${h.id}`}
+                className="card group flex flex-col p-5 transition hover:border-teal-300 hover:shadow-md"
+              >
+                <h3 className="text-lg font-semibold text-stone-900 group-hover:text-teal-800">{h.name}</h3>
+                <p className="mt-1 text-sm text-stone-500">
+                  {PROPERTY_TYPES[h.type] ?? h.type}
+                  {h.city ? ` · ${[h.street, h.city].filter(Boolean).join(", ")}` : ""}
+                </p>
+                <span className="mt-3 inline-block w-fit rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600">
+                  {handedAway ? "Předáno klientovi" : STATUS_LABEL[h.status] ?? h.status}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }

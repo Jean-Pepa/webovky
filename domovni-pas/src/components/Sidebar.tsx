@@ -44,10 +44,16 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ],
   ARCHITECT: [
     { href: "/prehled", label: "Moje projekty", icon: IconBuilding },
+    { href: "/domy", label: "Projekty (cloud)", icon: IconHome },
+    { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
+  ],
+  DEVELOPER: [
+    { href: "/domy", label: "Projekty (cloud)", icon: IconBuilding },
     { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
   ],
   CREATOR: [
     { href: "/prehled", label: "Přehled", icon: IconHome },
+    { href: "/domy", label: "Domy (cloud)", icon: IconBuilding },
     { href: "/hledat", label: "Hledat", icon: IconSearch },
     { href: "/statistiky", label: "Statistiky", icon: IconChart },
     { href: "/kalendar", label: "Kalendář", icon: IconShield },

@@ -73,6 +73,7 @@ export default function RegisterPage() {
           <select name="role" defaultValue="client" className={`${AUTH_FIELD} text-stone-900`}>
             <option value="client">Jsem majitel / klient</option>
             <option value="architect">Jsem architekt</option>
+            <option value="developer">Jsem developer / stavební firma</option>
           </select>
           {error && <p className="rounded-lg bg-red-500/20 px-3 py-2 text-sm text-red-100">{error}</p>}
           <button

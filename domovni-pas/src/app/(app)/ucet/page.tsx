@@ -9,9 +9,10 @@ import { ROLE_LABELS, ROLE_INITIALS, canSeeProperty } from "@/lib/access";
 import { IconLogout, IconDownload, IconShield, IconArrowRight } from "@/components/Icons";
 
 const ROLE_DESC: Record<string, string> = {
-  ARCHITECT: "Vidíte a spravujete své projekty a předáváte je klientům.",
-  CLIENT: "Spravujete své nemovitosti, dokumenty, záruky a revize.",
+  ARCHITECT: "Nahráváte data, dokumenty a fotky do projektů a předáváte je klientům.",
+  CLIENT: "Spravujete své nemovitosti, dokumenty, záruky a revize; přebíráte předané domy.",
   CREATOR: "Správce systému — vidíte všechny nemovitosti, statistiky a data.",
+  DEVELOPER: "Stavební firma — během výstavby plníte data a předáváte hotové byty/domy klientům.",
 };
 
 export default function AccountPage() {
