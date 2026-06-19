@@ -1,0 +1,11 @@
+# Backend kostra – stačí pro běh appky v demo i ostrém režimu (bez modelu).
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+
+# --- Až budeš zapojovat skutečný model (Cesta B, Apache licence) odkomentuj: ---
+# onnxruntime>=1.18        # běh modelu (na Macu používá CoreML/Neural Engine), licence MIT
+# pillow>=10.0             # načítání/úprava obrázků
+# numpy>=1.26
+# sahi>=0.11               # dlaždicová inference pro husté/malé objekty, licence MIT
+# rfdetr                   # trénink/inference RF-DETR (Apache-2.0) – jen pokud trénuješ tady

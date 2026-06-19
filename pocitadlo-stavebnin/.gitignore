@@ -1,0 +1,12 @@
+# Backend runtime
+backend/uploads/
+backend/data.db
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Modely (váhy nepatří do gitu)
+*.onnx
+*.pt
+*.mlpackage/

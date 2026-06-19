@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f1620" />
+  <title>Počítadlo stavebnin</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Stavebniny" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Horní lišta -->
+  <header class="topbar">
+    <span class="logo">🧱</span>
+    <h1>Počítadlo stavebnin</h1>
+    <button id="settingsBtn" class="icon-btn" aria-label="Nastavení">⚙️</button>
+  </header>
+
+  <!-- ===== OBRAZOVKA: SPOČÍTAT ===== -->
+  <main id="view-count" class="view active">
+
+    <!-- Výběr materiálu -->
+    <label class="field">
+      <span class="field-label">Materiál</span>
+      <select id="materialSelect">
+        <option value="auto">Automaticky (vše)</option>
+        <option value="cihly">Cihly</option>
+        <option value="pytle">Pytle (cement/malta)</option>
+        <option value="tyce">Tyče / armatura</option>
+        <option value="desky">Desky / překližky</option>
+        <option value="trubky">Trubky / profily</option>
+      </select>
+    </label>
+
+    <!-- Náhled fotky / placeholder -->
+    <div id="dropZone" class="photo-zone">
+      <img id="preview" class="preview" alt="Náhled fotky" hidden />
+      <div id="placeholder" class="placeholder">
+        <div class="placeholder-icon">📷</div>
+        <p>Vyfoť nebo nahraj fotku materiálu</p>
+      </div>
+    </div>
+
+    <!-- Skryté vstupy pro fotoaparát a galerii -->
+    <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden />
+    <input id="galleryInput" type="file" accept="image/*" hidden />
+
+    <!-- Tlačítka pro pořízení fotky -->
+    <div class="btn-row">
+      <button id="cameraBtn" class="btn btn-primary">📸 Vyfotit</button>
+      <button id="galleryBtn" class="btn btn-secondary">🖼️ Z galerie</button>
+    </div>
+
+    <!-- Hlavní akce -->
+    <button id="countBtn" class="btn btn-accent btn-big" disabled>Spočítat</button>
+
+    <!-- Výsledek -->
+    <section id="result" class="result-card" hidden>
+      <div class="result-total">
+        <span id="resultTotal" class="result-total-num">0</span>
+        <span class="result-total-label">kusů celkem</span>
+      </div>
+      <ul id="resultList" class="result-list"></ul>
+      <p id="resultMeta" class="result-meta"></p>
+      <div class="btn-row">
+        <button id="saveBtn" class="btn btn-primary">💾 Uložit do databáze</button>
+        <button id="againBtn" class="btn btn-secondary">↺ Nová fotka</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== OBRAZOVKA: HISTORIE ===== -->
+  <main id="view-history" class="view">
+    <h2 class="view-title">Historie</h2>
+    <div id="historyEmpty" class="empty">Zatím tu nic není. Spočítej první fotku 👷</div>
+    <ul id="historyList" class="history-list"></ul>
+  </main>
+
+  <!-- Spodní navigace (jako u nativní appky) -->
+  <nav class="tabbar">
+    <button class="tab active" data-view="count">
+      <span class="tab-icon">➕</span><span>Spočítat</span>
+    </button>
+    <button class="tab" data-view="history">
+      <span class="tab-icon">📋</span><span>Historie</span>
+    </button>
+  </nav>
+
+  <!-- Dialog nastavení -->
+  <dialog id="settingsDialog" class="dialog">
+    <h3>Nastavení</h3>
+    <label class="field">
+      <span class="field-label">Adresa serveru (API)</span>
+      <input id="apiBaseInput" type="text" placeholder="např. http://192.168.0.10:8000" />
+      <small class="hint">Prázdné = demo režim (model neběží, počty jsou ukázkové).</small>
+    </label>
+    <div class="btn-row">
+      <button id="saveSettingsBtn" class="btn btn-primary">Uložit</button>
+      <button id="closeSettingsBtn" class="btn btn-secondary">Zavřít</button>
+    </div>
+  </dialog>
+
+  <!-- Toast / hláška -->
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
