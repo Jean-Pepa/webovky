@@ -15,6 +15,8 @@ import {
 import { PROPERTY_TYPES } from "@/lib/enums";
 import { Loading } from "@/components/Loading";
 import { Badge } from "@/components/ui/Badge";
+import { CloudDocuments } from "@/components/cloud/CloudDocuments";
+import { CloudPhotos } from "@/components/cloud/CloudPhotos";
 import { IconArrowLeft, IconTrash, IconTransfer, IconShield } from "@/components/Icons";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -68,6 +70,7 @@ export default function Page() {
   const canHandover = isCreator && house.owner_id === myId; // ještě nepředáno/nepřevzato
   const canClaim = !!house.owner_email && house.owner_email === myEmail && house.owner_id !== myId;
   const readOnly = !isOwner; // tvůrce po převzetí klientem
+  const canEditFiles = isOwner || isCreator; // vlastník i tvůrce (profík) mohou nahrávat
   const address = [house.street, house.zip, house.city].filter(Boolean).join(", ");
 
   async function handover(e: React.FormEvent<HTMLFormElement>) {
@@ -184,10 +187,8 @@ export default function Page() {
         </section>
       )}
 
-      <div className="mt-6 rounded-xl bg-teal-50 px-4 py-3 text-sm text-teal-800">
-        Dokumenty a fotky sem přidáme v dalším kroku — jakmile je nahrajete, předají se s domem
-        automaticky (jsou navázané na tento dům).
-      </div>
+      <CloudDocuments houseId={id} canEdit={canEditFiles} />
+      <CloudPhotos houseId={id} canEdit={canEditFiles} />
 
       {isOwner && (
         <button
