@@ -79,7 +79,32 @@ def init_db():
 init_db()
 
 
-# ---------- Model (zatím placeholder) ----------
+# ---------- Model ----------
+CONF_THRESHOLD = float(os.environ.get("CONF_THRESHOLD", "0.4"))
+MODEL_WEIGHTS = os.environ.get("MODEL_WEIGHTS", str(BASE_DIR / "model.pth"))
+_model = None
+_model_loaded = False
+
+
+def _get_model():
+    """Líně načte RF-DETR (Apache) z vah, jen jednou. Bez vah → None (demo režim)."""
+    global _model, _model_loaded
+    if _model_loaded:
+        return _model
+    _model_loaded = True
+    try:
+        if not os.path.exists(MODEL_WEIGHTS):
+            print(f"[model] Vahy {MODEL_WEIGHTS} nenalezeny -> DEMO rezim.")
+            return None
+        from rfdetr import RFDETRBase  # licence Apache-2.0
+        _model = RFDETRBase(pretrain_weights=MODEL_WEIGHTS)
+        print(f"[model] Nacten RF-DETR z {MODEL_WEIGHTS}.")
+    except Exception as e:
+        print(f"[model] Model se nepodarilo nacist ({e}) -> DEMO rezim.")
+        _model = None
+    return _model
+
+
 def run_model(image_path: str, material: str) -> dict:
     """
     TODO: SEM se zapojí skutečný model.
@@ -101,14 +126,31 @@ def run_model(image_path: str, material: str) -> dict:
     Pro husté/naskládané materiály doplň SAHI (knihovna `sahi`, licence MIT)
     a počítej viditelnou vrstvu – viz analýza projektu.
     """
-    # --- Dočasná ukázka, ať appka běží end-to-end ---
-    classes = ["cihly", "pytle", "tyce"] if material == "auto" else [material]
-    items = [
-        {"class": MATERIAL_LABELS.get(c, c), "count": random.randint(5, 45)}
-        for c in classes
-    ]
-    total = sum(i["count"] for i in items)
-    return {"total": total, "items": items, "demo": True}
+    model = _get_model()
+    if model is None:
+        # --- DEMO fallback (dokud nemáš natrénované váhy model.pth) ---
+        classes = ["cihly", "pytle", "tyce"] if material == "auto" else [material]
+        items = [
+            {"class": MATERIAL_LABELS.get(c, c), "count": random.randint(5, 45)}
+            for c in classes
+        ]
+        return {"total": sum(i["count"] for i in items), "items": items, "demo": True}
+
+    # --- REÁLNÁ inference (RF-DETR) ---
+    import numpy as np
+    det = model.predict(image_path, threshold=CONF_THRESHOLD)  # supervision Detections
+    class_ids = np.array(getattr(det, "class_id", []) if getattr(det, "class_id", None) is not None else []).tolist()
+    if len(set(class_ids)) <= 1:
+        # jeden druh materiálu -> celkový počet = počet boxů
+        label = MATERIAL_LABELS.get(material, "Desky / překližky")
+        n = len(det)
+        return {"total": n, "items": [{"class": label, "count": n}], "demo": False}
+    # více tříd najednou
+    counts = {}
+    for cid in class_ids:
+        counts[cid] = counts.get(cid, 0) + 1
+    items = [{"class": f"třída {cid}", "count": n} for cid, n in sorted(counts.items())]
+    return {"total": sum(counts.values()), "items": items, "demo": False}
 
 
 # ---------- API ----------
