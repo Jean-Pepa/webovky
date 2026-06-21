@@ -12,7 +12,15 @@ import { DOCUMENT_CATEGORIES } from "@/lib/enums";
 import { formatDate } from "@/lib/format";
 import { IconFile, IconPlus, IconTrash, IconDownload } from "@/components/Icons";
 
-export function CloudDocuments({ houseId, canEdit }: { houseId: string; canEdit: boolean }) {
+export function CloudDocuments({
+  houseId,
+  canEdit,
+  onCount,
+}: {
+  houseId: string;
+  canEdit: boolean;
+  onCount?: (n: number) => void;
+}) {
   const [docs, setDocs] = useState<DbDocument[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -21,7 +29,9 @@ export function CloudDocuments({ houseId, canEdit }: { houseId: string; canEdit:
   async function load() {
     setError(null);
     try {
-      setDocs(await listDocuments(houseId));
+      const list = await listDocuments(houseId);
+      setDocs(list);
+      onCount?.(list.length);
     } catch (e) {
       setDocs([]);
       setError(e instanceof Error ? e.message : "Načtení dokumentů selhalo.");

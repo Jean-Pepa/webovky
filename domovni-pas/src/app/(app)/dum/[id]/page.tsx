@@ -17,7 +17,15 @@ import { Loading } from "@/components/Loading";
 import { Badge } from "@/components/ui/Badge";
 import { CloudDocuments } from "@/components/cloud/CloudDocuments";
 import { CloudPhotos } from "@/components/cloud/CloudPhotos";
-import { IconArrowLeft, IconTrash, IconTransfer, IconShield } from "@/components/Icons";
+import {
+  IconArrowLeft,
+  IconTrash,
+  IconTransfer,
+  IconShield,
+  IconFile,
+  IconCamera,
+  IconBuilding,
+} from "@/components/Icons";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Rozpracováno",
@@ -32,6 +40,8 @@ export default function Page() {
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [docCount, setDocCount] = useState<number | null>(null);
+  const [photoCount, setPhotoCount] = useState<number | null>(null);
 
   async function load() {
     setError(null);
@@ -73,6 +83,14 @@ export default function Page() {
   const canEditFiles = isOwner || isCreator; // vlastník i tvůrce (profík) mohou nahrávat
   const address = [house.street, house.zip, house.city].filter(Boolean).join(", ");
 
+  const roleLabel = canClaim
+    ? "K převzetí"
+    : isOwner
+      ? "Vlastník"
+      : isCreator
+        ? "Předáno"
+        : "Host";
+
   async function handover(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -111,18 +129,21 @@ export default function Page() {
         Zpět na domy
       </Link>
 
-      <div className="mt-2">
-        <Badge color="teal">{PROPERTY_TYPES[house.type] ?? house.type}</Badge>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-900">{house.name}</h1>
-        {address && <p className="mt-1 text-sm text-stone-500">{address}</p>}
-        <span className="mt-2 inline-block rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600">
+      {/* Hlavička */}
+      <div className="mt-3 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <Badge color="teal">{PROPERTY_TYPES[house.type] ?? house.type}</Badge>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-900">{house.name}</h1>
+          {address && <p className="mt-1 text-sm text-stone-500">{address}</p>}
+        </div>
+        <span className="shrink-0 rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
           {STATUS_LABEL[house.status] ?? house.status}
         </span>
       </div>
 
       {error && <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-      {readOnly && (
+      {readOnly && !canClaim && (
         <div className="mt-4 flex items-start gap-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
           <IconShield className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
           <p>Tento dům jste předali klientovi — máte ho jen ke čtení.</p>
@@ -131,39 +152,51 @@ export default function Page() {
 
       {/* Příjemce: převzetí */}
       {canClaim && (
-        <section className="card mt-6 border-amber-300 p-5 ring-1 ring-amber-200">
-          <h2 className="text-sm font-semibold text-stone-900">Tento dům vám byl předán</h2>
-          <p className="mt-1 text-sm text-stone-600">
-            Po převzetí se stanete vlastníkem a získáte všechna data, dokumenty i fotky.
-          </p>
-          <button onClick={claim} disabled={busy} className="btn-primary btn-sm mt-3 disabled:opacity-50">
-            <IconTransfer className="h-4 w-4" />
-            {busy ? "Přebírám…" : "Převzít dům"}
-          </button>
+        <section className="card mt-4 border-amber-300 p-5 ring-1 ring-amber-200">
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700">
+              <IconTransfer className="h-6 w-6" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-stone-900">Tento dům vám byl předán</h2>
+              <p className="mt-1 text-sm text-stone-600">
+                Po převzetí se stanete vlastníkem a získáte všechna data, dokumenty i fotky.
+              </p>
+              <button onClick={claim} disabled={busy} className="btn-primary btn-sm mt-3 disabled:opacity-50">
+                <IconTransfer className="h-4 w-4" />
+                {busy ? "Přebírám…" : "Převzít dům"}
+              </button>
+            </div>
+          </div>
         </section>
       )}
 
-      <section className="card mt-6 p-5">
-        <h2 className="text-sm font-semibold text-stone-900">Údaje o domě</h2>
-        <dl className="mt-3 space-y-2.5 text-sm">
-          <Row label="Typ" value={PROPERTY_TYPES[house.type] ?? house.type} />
-          {address && <Row label="Adresa" value={address} />}
-          {house.year_built && <Row label="Rok výstavby" value={String(house.year_built)} />}
-          {house.owner_email && <Row label="Předáno na e-mail" value={house.owner_email} />}
-        </dl>
-        {house.description && (
-          <p className="mt-3 border-t border-stone-100 pt-3 text-sm leading-relaxed text-stone-600">
-            {house.description}
-          </p>
-        )}
-      </section>
+      {/* Statistiky */}
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat
+          icon={<IconFile className="h-4 w-4" />}
+          label="Dokumentů"
+          value={docCount === null ? "—" : String(docCount)}
+        />
+        <Stat
+          icon={<IconCamera className="h-4 w-4" />}
+          label="Fotek a videí"
+          value={photoCount === null ? "—" : String(photoCount)}
+        />
+        <Stat
+          icon={<IconBuilding className="h-4 w-4" />}
+          label="Rok výstavby"
+          value={house.year_built ? String(house.year_built) : "—"}
+        />
+        <Stat icon={<IconShield className="h-4 w-4" />} label="Vaše role" value={roleLabel} />
+      </div>
 
       {/* Profík: předání klientovi */}
       {canHandover && (
         <section className="card mt-6 p-5">
           <h2 className="text-sm font-semibold text-stone-900">Předat klientovi</h2>
           <p className="mt-1 text-sm text-stone-600">
-            Zadejte e-mail klienta. Až se s ním přihlásí, uvidí dům a klikne „Převzít" — stane se vlastníkem.
+            Zadejte e-mail klienta. Až se s ním přihlásí, uvidí dům a klikne „Převzít“ — stane se vlastníkem.
           </p>
           <form onSubmit={handover} className="mt-3 flex flex-wrap gap-2">
             <input
@@ -187,26 +220,54 @@ export default function Page() {
         </section>
       )}
 
-      <CloudDocuments houseId={id} canEdit={canEditFiles} />
-      <CloudPhotos houseId={id} canEdit={canEditFiles} />
+      <CloudDocuments houseId={id} canEdit={canEditFiles} onCount={setDocCount} />
+      <CloudPhotos houseId={id} canEdit={canEditFiles} onCount={setPhotoCount} />
 
-      {isOwner && (
-        <button
-          onClick={async () => {
-            if (!confirm("Opravdu smazat tento dům z cloudu?")) return;
-            try {
-              await deleteHouse(house.id);
-              router.push("/domy");
-            } catch (e) {
-              setError(e instanceof Error ? e.message : "Smazání selhalo.");
-            }
-          }}
-          className="btn-danger btn-sm mt-6"
-        >
-          <IconTrash className="h-4 w-4" />
-          Smazat dům
-        </button>
-      )}
+      {/* Údaje o domě */}
+      <section className="card mt-6 p-5">
+        <h2 className="text-sm font-semibold text-stone-900">Údaje o domě</h2>
+        <dl className="mt-3 space-y-2.5 text-sm">
+          <Row label="Typ" value={PROPERTY_TYPES[house.type] ?? house.type} />
+          {address && <Row label="Adresa" value={address} />}
+          {house.year_built && <Row label="Rok výstavby" value={String(house.year_built)} />}
+          {house.owner_email && <Row label="Předáno na e-mail" value={house.owner_email} />}
+          <Row label="Stav" value={STATUS_LABEL[house.status] ?? house.status} />
+        </dl>
+        {house.description && (
+          <p className="mt-3 border-t border-stone-100 pt-3 text-sm leading-relaxed text-stone-600">
+            {house.description}
+          </p>
+        )}
+        {isOwner && (
+          <button
+            onClick={async () => {
+              if (!confirm("Opravdu smazat tento dům z cloudu?")) return;
+              try {
+                await deleteHouse(house.id);
+                router.push("/domy");
+              } catch (e) {
+                setError(e instanceof Error ? e.message : "Smazání selhalo.");
+              }
+            }}
+            className="btn-danger btn-sm mt-4 w-full"
+          >
+            <IconTrash className="h-4 w-4" />
+            Smazat dům
+          </button>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="card p-4">
+      <div className="flex items-center gap-1.5 text-xs text-stone-400">
+        {icon}
+        {label}
+      </div>
+      <p className="mt-1 text-lg font-semibold text-stone-900">{value}</p>
     </div>
   );
 }

@@ -11,7 +11,15 @@ import {
 import { formatDate } from "@/lib/format";
 import { IconCamera, IconPlus, IconTrash } from "@/components/Icons";
 
-export function CloudPhotos({ houseId, canEdit }: { houseId: string; canEdit: boolean }) {
+export function CloudPhotos({
+  houseId,
+  canEdit,
+  onCount,
+}: {
+  houseId: string;
+  canEdit: boolean;
+  onCount?: (n: number) => void;
+}) {
   const [items, setItems] = useState<DbMedia[] | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +31,7 @@ export function CloudPhotos({ houseId, canEdit }: { houseId: string; canEdit: bo
     try {
       const list = await listMedia(houseId);
       setItems(list);
+      onCount?.(list.length);
       setUrls(await signedMediaUrls(list.map((m) => m.storage_path)));
     } catch (e) {
       setItems([]);
