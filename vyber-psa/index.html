@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Výběr psa — srovnání 5 plemen</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#171f29; --panel2:#1d2733; --line:#2a3744;
+    --txt:#e7edf3; --muted:#9fb0c0; --accent:#4ea1ff; --good:#46d39a;
+    --warn:#ffcb5c; --bad:#ff6b6b; --chip:#243240;
+    --toller:#d9743b; --sheltie:#b9883f; --dachs:#7d5a3c; --aussie:#5e7bbf; --kooiker:#e0913f;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.55;}
+  a{color:var(--accent)}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 18px 80px}
+  header.hero{padding:46px 18px 28px;background:
+    radial-gradient(1200px 400px at 70% -10%,rgba(78,161,255,.18),transparent),
+    radial-gradient(900px 380px at 10% 0%,rgba(224,145,63,.12),transparent);
+    border-bottom:1px solid var(--line)}
+  .hero h1{font-size:clamp(1.7rem,4vw,2.6rem);margin:0 0 8px;letter-spacing:-.5px}
+  .hero p{color:var(--muted);max-width:760px;margin:6px 0;font-size:1.04rem}
+  .tag{display:inline-block;background:var(--chip);border:1px solid var(--line);
+    padding:3px 10px;border-radius:99px;font-size:.82rem;color:var(--muted);margin:4px 6px 0 0}
+  nav.toc{position:sticky;top:0;z-index:30;background:rgba(15,20,25,.92);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:10px 18px}
+  nav.toc .inner{max-width:1100px;margin:0 auto;display:flex;gap:6px;flex-wrap:wrap}
+  nav.toc a{font-size:.85rem;color:var(--muted);text-decoration:none;padding:5px 11px;
+    border-radius:8px;border:1px solid transparent;white-space:nowrap}
+  nav.toc a:hover{background:var(--panel2);color:var(--txt);border-color:var(--line)}
+  section{margin-top:46px;scroll-margin-top:64px}
+  h2{font-size:1.5rem;margin:0 0 6px;letter-spacing:-.3px}
+  h2 .num{color:var(--accent);font-weight:700;margin-right:8px}
+  .lead{color:var(--muted);margin:0 0 18px;max-width:820px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+  .callout{border-left:3px solid var(--accent);background:var(--panel2);
+    padding:14px 16px;border-radius:0 12px 12px 0;margin:14px 0;color:#d6e2ee}
+  .callout.warn{border-color:var(--warn)} .callout.good{border-color:var(--good)}
+
+  /* SIZE CHART */
+  .chartScroll{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:
+    linear-gradient(180deg,#121a23,#0e151c);padding:6px}
+  .legendRow{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-size:.86rem;color:var(--muted)}
+  .legendRow b{color:var(--txt)}
+  .swatch{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:middle}
+
+  /* TABLE */
+  .tableScroll{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
+  table{border-collapse:collapse;width:100%;min-width:760px;font-size:.9rem}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  thead th{background:var(--panel2);position:sticky;top:0;font-weight:600}
+  tbody th{background:var(--panel);font-weight:600;white-space:nowrap}
+  tr:hover td{background:rgba(78,161,255,.05)}
+  .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.78rem;font-weight:600}
+  .p-good{background:rgba(70,211,154,.16);color:var(--good)}
+  .p-warn{background:rgba(255,203,92,.16);color:var(--warn)}
+  .p-bad{background:rgba(255,107,107,.16);color:var(--bad)}
+  .dots{letter-spacing:2px;font-size:.8rem}
+
+  /* CARDS */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    display:flex;flex-direction:column}
+  .card .top{padding:16px 18px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:12px}
+  .card .top .mini{width:54px;height:42px;flex:0 0 auto}
+  .card h3{margin:0;font-size:1.12rem}
+  .card .sub{color:var(--muted);font-size:.82rem;margin-top:2px}
+  .card .body{padding:14px 18px;flex:1}
+  .kv{display:flex;justify-content:space-between;gap:10px;font-size:.85rem;
+    padding:5px 0;border-bottom:1px dashed var(--line)}
+  .kv:last-child{border-bottom:none}
+  .kv .k{color:var(--muted)}
+  .prosCons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;font-size:.84rem}
+  .prosCons ul{margin:6px 0 0;padding-left:16px} .prosCons li{margin:3px 0}
+  .prosCons .h{font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.5px}
+  .pc-pro .h{color:var(--good)} .pc-con .h{color:var(--bad)}
+  .fitNote{margin-top:12px;background:var(--panel2);border-radius:10px;padding:10px 12px;font-size:.86rem}
+  .fitNote b{color:var(--accent)}
+
+  /* QUIZ */
+  .quiz{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+  .q{margin:0 0 18px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+  .q:last-of-type{border-bottom:none}
+  .q .qt{font-weight:600;margin-bottom:9px}
+  .q .qt .qn{color:var(--accent);margin-right:7px}
+  .opts{display:flex;flex-wrap:wrap;gap:8px}
+  .opt{cursor:pointer;border:1px solid var(--line);background:var(--panel2);
+    padding:8px 13px;border-radius:10px;font-size:.88rem;color:var(--txt);
+    transition:.12s;user-select:none}
+  .opt:hover{border-color:var(--accent)}
+  .opt.sel{background:rgba(78,161,255,.18);border-color:var(--accent);color:#fff}
+  .results{margin-top:8px;position:sticky;bottom:0}
+  .resCard{background:linear-gradient(180deg,#16212c,#121a22);border:1px solid var(--line);
+    border-radius:16px;padding:18px}
+  .resRow{display:flex;align-items:center;gap:12px;margin:9px 0}
+  .resRow .nm{width:200px;flex:0 0 auto;font-size:.92rem}
+  .resRow .nm small{color:var(--muted);display:block;font-size:.76rem}
+  .bar{flex:1;height:18px;background:var(--panel2);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+  .bar > span{display:block;height:100%;border-radius:99px;transition:width .5s ease}
+  .resRow .sc{width:46px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem}
+  .rank1{outline:2px solid var(--good);outline-offset:3px;border-radius:12px;padding:6px}
+  .btnRow{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .btn{background:var(--accent);color:#06121f;border:none;font-weight:600;padding:9px 16px;
+    border-radius:10px;cursor:pointer;font-size:.9rem}
+  .btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+
+  .src{font-size:.82rem;color:var(--muted)}
+  .src ul{columns:2;column-gap:26px;padding-left:18px}
+  @media(max-width:640px){.src ul{columns:1}.prosCons{grid-template-columns:1fr}.resRow .nm{width:130px}}
+  footer{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:.82rem}
+  .disc{font-size:.8rem;color:var(--muted);margin-top:10px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap" style="padding-bottom:0">
+    <h1>🐕 Který pes? Srovnání 5 plemen na míru tobě</h1>
+    <p>Rozhodovací podklad pro výběr mezi <b>tollerem</b>, <b>sheltií</b>, <b>trpasličím jezevčíkem</b>,
+       <b>miniaturním americkým ovčákem</b> a <b>kooikerem</b> — s důrazem na <b>cestování</b> a <b>život v bytě</b>.</p>
+    <div style="margin-top:6px">
+      <span class="tag">📍 Byt Brno → Praha (6–10 let)</span>
+      <span class="tag">🏡 Víkendy: dům + zahrada</span>
+      <span class="tag">✈️ Auto + letadlo (kabina) + MHD</span>
+      <span class="tag">🎓 Zkušenost: labradoři + sheltie v rodině</span>
+      <span class="tag">🐾 Pes s tebou v práci (nízká samota)</span>
+      <span class="tag">⚡ Střední aktivita (~1 h/den)</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc"><div class="inner">
+  <a href="#velikost">📏 Velikost</a>
+  <a href="#tabulka">📊 Srovnání</a>
+  <a href="#karty">🃏 Plemena</a>
+  <a href="#cestovani">✈️ Cestování</a>
+  <a href="#dotaznik">📝 Dotazník</a>
+  <a href="#doporuceni">⭐ Doporučení</a>
+  <a href="#zdroje">📚 Zdroje</a>
+</div></nav>
+
+<div class="wrap">
+
+  <!-- VELIKOST -->
+  <section id="velikost">
+    <h2><span class="num">1</span>Jak jsou velcí? Vedle člověka (175 cm)</h2>
+    <p class="lead">Siluety jsou <b>ve stejném měřítku</b> jako postava člověka vysokého 175 cm.
+       Přerušovaná čára ukazuje výšku <b>kolen (~50 cm)</b> a <b>poloviny lýtka (~25 cm)</b>.
+       Všech pět psů ti sahá <b>maximálně ke kolenům</b> — toller je největší, trpasličí jezevčík sotva ke kotníkům.</p>
+    <div class="chartScroll">
+      <svg id="sizeChart" viewBox="0 0 1480 660" width="1480" height="660" role="img"
+           aria-label="Porovnání velikosti psů vedle člověka"></svg>
+    </div>
+    <div class="legendRow" id="sizeLegend"></div>
+    <p class="disc">Pozn.: výška v kohoutku = standardní míra (vrchol ramen). Siluety jsou stylizované,
+       ale rozměry (výška i délka těla) jsou v měřítku podle plemenných standardů FCI/AKC.</p>
+  </section>
+
+  <!-- TABULKA -->
+  <section id="tabulka">
+    <h2><span class="num">2</span>Srovnávací tabulka</h2>
+    <p class="lead">Hodnocení 1–5 teček: u <b>energie, štěkotu, línání, péče a samoty</b> znamená více teček
+       „více/náročnější"; u <b>výcvik, byt, prvopes</b> znamená více teček „lepší/snazší".</p>
+    <div class="tableScroll"><table id="compareTable"></table></div>
+  </section>
+
+  <!-- KARTY -->
+  <section id="karty">
+    <h2><span class="num">3</span>Karty plemen</h2>
+    <p class="lead">Detail ke každému plemeni — silné a slabé stránky a poznámka, jak sedí přímo tobě.</p>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <!-- CESTOVANI -->
+  <section id="cestovani">
+    <h2><span class="num">4</span>Cestování: realita letadlové kabiny</h2>
+    <p class="lead">Do <b>kabiny</b> většina aerolinek pustí psa jen do cca <b>8 kg včetně přepravky</b>
+       (měkká taška ~40×30×20 cm). To je nejtvrdší filtr celého výběru.</p>
+    <div class="chartScroll" style="padding:16px">
+      <svg id="weightChart" viewBox="0 0 900 320" width="900" height="320"
+           role="img" aria-label="Hmotnost plemen vs. limit kabiny"></svg>
+    </div>
+    <div class="callout warn"><b>Závěr pro tebe:</b> Pokud má být <b>let v kabině běžná věc</b>, spolehlivě ji
+      splňuje <b>jen trpasličí / králičí jezevčík</b>. Malá fenka sheltie nebo malý kooiker se občas „vejdou"
+      těsně pod limit, ale je to nejisté kus od kusu a aerolinka od aerolinky. Toller a (většinou) mini ovčák
+      = jen nákladový prostor (cargo).</div>
+    <div class="cards" id="travelCards" style="margin-top:8px"></div>
+    <div class="callout"><b>Tip do auta a MHD:</b> všech pět zvládá auto výborně. U <b>jezevčíka</b> ale platí
+      <b>žádné skákání z auta/gauče</b> a používat <b>rampičku</b> kvůli zádům (IVDD). U dvojitě osrstěných
+      (toller, sheltie, mini ovčák) pozor na <b>horko</b> v autě i v cargu.</div>
+  </section>
+
+  <!-- DOTAZNIK -->
+  <section id="dotaznik">
+    <h2><span class="num">5</span>Dotazník: spočítej si svého psa</h2>
+    <p class="lead">Klikni na odpovědi — žebříček se přepočítává <b>živě</b>. Předvyplnil jsem ho podle toho,
+       co jsi mi řekl; klidně to měň a sleduj, jak se pořadí hýbe. Hlavně otázka o letadle dokáže výsledkem
+       pořádně zatřást.</p>
+    <div class="quiz">
+      <div id="questions"></div>
+      <div class="results">
+        <div class="resCard">
+          <div style="font-weight:600;margin-bottom:6px">📈 Tvůj žebříček shody</div>
+          <div id="resultBars"></div>
+          <div class="btnRow">
+            <button class="btn" id="resetBtn">↺ Předvyplnit mými odpověďmi</button>
+            <button class="btn ghost" id="clearBtn">Vymazat vše</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="disc">Skóre je orientační pomůcka, ne věda — váhy jsem nastavil podle povahy plemen a tvého
+      zadání. Ber to jako „kompas", ne jako rozsudek.</p>
+  </section>
+
+  <!-- DOPORUCENI -->
+  <section id="doporuceni">
+    <h2><span class="num">6</span>Moje doporučení na míru tobě</h2>
+    <p class="lead">Shrnutí vážené tvým profilem: byt 6–10 let, pes s tebou v práci, střední aktivita,
+       chuť učit povely, zkušenost se sheltií v rodině a přání <b>kombinovaného cestování včetně letadla</b>.</p>
+
+    <div class="callout"><b>Klíčový rozcestník:</b> všechno stojí na jediné otázce —
+      <b>je let v kabině pro tebe podmínka, nebo bonus?</b> Podle toho se mění vítěz.</div>
+
+    <div class="panel" style="margin-bottom:14px">
+      <h3 style="margin:0 0 6px">Větev A — „Létání v kabině je podmínka"</h3>
+      <p class="lead" style="margin-bottom:10px">Pak je volba skoro jednoznačná.</p>
+      <div class="kv"><span class="k">🥇 1. místo</span><span><b>Trpasličí / králičí jezevčík</b> — jediný, co se spolehlivě vejde do kabiny. Malý, charakterní, cestovatel. Daň: tvrdohlavost při výcviku povelů a <b>obsesivní ochrana zad</b> (žádné skákání, rampy všude).</span></div>
+      <div class="kv"><span class="k">🥈 2.</span><span><b>Malá fenka sheltie</b> — znáš plemeno, skvěle se učí; ale do kabiny jen ty nejmenší kusy a <b>hodně štěká</b> (sousedi v bytě).</span></div>
+    </div>
+
+    <div class="panel">
+      <h3 style="margin:0 0 6px">Větev B — „Letadlo je bonus, většinou auto + MHD"</h3>
+      <p class="lead" style="margin-bottom:10px">Pak se otevírají univerzálnější psi do bytu se střední aktivitou.</p>
+      <div class="kv"><span class="k">🥇 1. místo</span><span><b>Kooikerhondje</b> — nejlepší celkový kompromis pro tvůj profil: velikost do bytu (38 cm / ~10 kg), <b>střední energie</b> přesně na tvůj čas, <b>nízký štěkot</b>, učenlivý, nízká separační úzkost (a stejně bude s tebou v práci). Mínus: <b>do kabiny většinou ne</b>, v ČR vzácnější a dražší, nutné zdravotní testy (ENM!).</span></div>
+      <div class="kv"><span class="k">🥈 2.</span><span><b>Sheltie</b> — znáš ho, radost ho cvičit; hlídej <b>štěkot</b> v bytě a péči o srst.</span></div>
+      <div class="kv"><span class="k">🥉 3.</span><span><b>Trpasličí jezevčík</b> — pořád skvělý cestovatel a do bytu sedí; výcvik povelů náročnější, řeš záda.</span></div>
+      <div class="kv"><span class="k">4.</span><span><b>Mini americký ovčák</b> — geniálně cvičitelný sportovec, ale energie a pasení jsou na tvůj „~1 h denně” spíš moc a do kabiny ne.</span></div>
+      <div class="kv"><span class="k">5.</span><span><b>Toller</b> — báječný pes, ale chce <b>2 h+ pohybu a práci</b> denně; na byt + střední aktivitu + „Toller scream” je to mismatch. Skvělý, až budeš mít dům a víc času.</span></div>
+    </div>
+
+    <div class="callout good" style="margin-top:16px"><b>Můj tip:</b> Jestli letadlo není „must", jdi do
+      <b>kooikera</b> — pro tvůj život (byt, pes v práci, střední aktivita, chuť cvičit) je to nejčistší shoda.
+      Jestli chceš s ním <b>opravdu běžně lítat v kabině</b>, jdi do <b>trpasličího/králičího jezevčíka</b> a smiř
+      se s prací na výcviku a ochranou zad. <b>Sheltie</b> je rozumná „známá" třetí cesta, hlavně kvůli štěkotu
+      do bytu zvaž socializaci a trénink klidu od štěněte.</div>
+
+    <div class="callout warn"><b>Ať vybereš cokoli — řeš chovatele, ne barvu:</b> u <b>kooikera</b> trvej na testech
+      ENM / polymyozitida / vWD; u <b>sheltie a mini ovčáka</b> na <b>MDR1</b> (citlivost na běžné léky/odčervení!) +
+      oči/CEA; u <b>jezevčíka</b> řeš váhu a záda (IVDD); u <b>tollera</b> Addison, štítnou žlázu a oči (PRA).</div>
+  </section>
+
+  <!-- ZDROJE -->
+  <section id="zdroje">
+    <h2><span class="num">7</span>Zdroje &amp; chovatelské kluby (ČR)</h2>
+    <div class="panel src">
+      <p><b>Plemenné standardy a zdraví:</b></p>
+      <ul>
+        <li><a href="https://www.fci.be/en/nomenclature/NOVA-SCOTIA-DUCK-TOLLING-RETRIEVER-312.html">FCI — Toller (312)</a></li>
+        <li><a href="https://www.fci.be/Nomenclature/Standards/088g01-en.pdf">FCI — Sheltie (88)</a></li>
+        <li><a href="https://www.fci.be/nomenclature/Standards/148g04-en.pdf">FCI — Jezevčík (148)</a></li>
+        <li><a href="https://www.fci.be/Nomenclature/Standards/367g01-en.pdf">FCI — Mini americký ovčák (367)</a></li>
+        <li><a href="https://www.fci.be/en/nomenclature/NEDERLANDSE-KOOIKERHONDJE-314.html">FCI — Kooiker (314)</a></li>
+        <li><a href="https://www.stanleycoren.com/smartest-dog-breeds/">Coren — inteligence plemen</a></li>
+        <li><a href="https://www.vetlens.com/breeds/dogs/dachshund">IVDD u jezevčíků (Vetlens)</a></li>
+        <li><a href="https://www.americanshetlandsheepdogassociation.org/health-considerations/">MDR1 &amp; zdraví sheltie (ASSA)</a></li>
+        <li><a href="https://vgl.ucdavis.edu/panel/miniature-american-shepherd-panel">MDR1 panel — mini ovčák (UC Davis)</a></li>
+        <li><a href="https://www.pets4homes.co.uk/pet-advice/kooikerhondje-hereditary-health-and-health-testing.html">Dědičné nemoci kooikera</a></li>
+        <li><a href="https://www.travelnuity.com/ivdd-dog-travel/">Cestování s jezevčíkem &amp; IVDD</a></li>
+      </ul>
+      <p style="margin-top:14px"><b>České chovatelské kluby:</b></p>
+      <ul>
+        <li>Toller — <a href="https://toller-klub.cz/">Toller Klub CZ</a>, <a href="https://kchls.cz/">KCHLS</a>, <a href="https://www.retriever-klub.cz/">Retriever Klub CZ</a></li>
+        <li>Sheltie — <a href="https://www.collie-sheltie-club.cz/">KCHCS</a>, <a href="https://www.sheltie.cz/">sheltie.cz</a></li>
+        <li>Jezevčík — <a href="https://kchj2.webnode.cz/">Klub chovatelů jezevčíků ČR</a></li>
+        <li>Mini am. ovčák — pod <a href="https://www.cmku.cz/">ČMKU (MAO)</a>, testy <a href="https://www.genomia.cz/en/breed/mini-am-shepherd/">Genomia</a></li>
+        <li>Kooiker — <a href="https://www.kooikerhondje.info/">kooikerhondje.info</a></li>
+      </ul>
+      <p class="disc">Ceny jsou orientační (reálné nabídky ČMKU chovatelů, 2025/26) — vždy ověř přímo u chovatele.
+        Tohle je rozhodovací pomůcka, ne náhrada za osobní setkání s plemenem a poradu s chovatelem/veterinářem.</p>
+    </div>
+  </section>
+
+  <footer>
+    Vytvořeno jako osobní rozhodovací podklad • data dle FCI/AKC standardů a plemenných klubů •
+    <span id="dateSpan"></span>
+  </footer>
+</div>
+
+<script>
+/* ====================== DATA ====================== */
+const BREEDS = [
+  {
+    key:"toller", color:"var(--toller)",
+    name:"Nova Scotia retrívr (Toller)", short:"Toller",
+    withersCm:48, withersTxt:"43–53 cm", weightKg:20, weightTxt:"17–23 kg", lengthCm:70,
+    sizeClass:"Střední", ears:"erect", tail:"plume",
+    energy:5, shedding:4, barking:4, training:5, grooming:3, alone:4, apartment:2, firstTimer:2,
+    cabin:"no", cabinTxt:"Ne (cargo)",
+    lifespan:"12–14 let", priceCz:"30 000–50 000 Kč",
+    club:"Toller Klub CZ / KCHLS / Retriever Klub CZ",
+    health:"Addisonova choroba, autoimunita, štítná žláza, PRA",
+    pros:["Chytrý, učenlivý „myslící retrívr”","Sportovní, nadšený parťák","Milý a oddaný rodině","Bezúdržbová „wash-and-wear” srst"],
+    cons:["Hodně energie — chce 2 h+ denně","„Toller scream” — pronikavý jekot","Citlivý, do bytu náročný","Více autoimunitních chorob"],
+    fit:"Tvoje ~1 h denně a byt jsou pro tollera spíš málo — rozkvete u domu a aktivního pána se sportem. Skvělý pes, ale na tvůj současný režim mismatch."
+  },
+  {
+    key:"sheltie", color:"var(--sheltie)",
+    name:"Shetlandský ovčák (Sheltie)", short:"Sheltie",
+    withersCm:36, withersTxt:"33–37 cm", weightKg:8, weightTxt:"5–10 kg", lengthCm:58,
+    sizeClass:"Malý", ears:"semi", tail:"plume",
+    energy:4, shedding:5, barking:5, training:5, grooming:4, alone:2, apartment:3, firstTimer:4,
+    cabin:"maybe", cabinTxt:"Někdy (malá fena)",
+    lifespan:"12–14 let", priceCz:"20 000–35 000 Kč",
+    club:"KCHCS (collie-sheltie-club.cz), sheltie.cz",
+    health:"MDR1 (citlivost na léky!), CEA, epilepsie, štítná žláza",
+    pros:["Výjimečně chytrý (#6 dle Corena)","Radost ho cvičit — povely letí","Znáš ho z rodiny přítelkyně","Kompaktní velikost do bytu"],
+    cons:["Hodně štěká — riziko v bytě/sousedi","Náročná dlouhá srst, silně líná","Vyšší separační úzkost","MDR1 — pozor na běžná odčervení/léky"],
+    fit:"Velká výhoda: plemeno znáš a budeš ho milovat cvičit. Hlavní brzda je štěkot v bytě a sousedé — řeš trénink klidu a socializaci od štěněte. Malá fenka se občas vejde i do kabiny."
+  },
+  {
+    key:"dachs", color:"var(--dachs)",
+    name:"Trpasličí / králičí jezevčík", short:"Mini jezevčík",
+    withersCm:16, withersTxt:"11–18 cm", weightKg:5, weightTxt:"2,5–5,5 kg", lengthCm:42,
+    sizeClass:"Mini", ears:"drop", tail:"straight",
+    energy:3, shedding:2, barking:4, training:2, grooming:2, alone:3, apartment:5, firstTimer:3,
+    cabin:"yes", cabinTxt:"ANO — nejlepší",
+    lifespan:"12–16 let", priceCz:"15 000–25 000 Kč",
+    club:"Klub chovatelů jezevčíků ČR",
+    health:"IVDD (páteř!) — ~1 ze 4; obezita, pately, zuby",
+    pros:["Jediný spolehlivě do letadlové kabiny","Malý, snadné cestování (MHD, auto)","Charakterní, statečný společník","Nižší nároky na pohyb, dlouhověký"],
+    cons:["Tvrdohlavý — výcvik povelů náročný","IVDD: žádné skákání, rampy nutné","Umí dost štěkat/hlídat","Hůř se učí na čistotnost"],
+    fit:"Pro tvoje cestování (letadlo + MHD + auto) ideál — jediný, co se spolehlivě vejde do kabiny. Daň: trpělivý pozitivní výcvik (umíněnec) a obsesivní ochrana zad (rampy, nenosit za skákání). Hladkosrstý = nejmíň péče."
+  },
+  {
+    key:"aussie", color:"var(--aussie)",
+    name:"Mini americký ovčák (MAO)", short:"Mini am. ovčák",
+    withersCm:40, withersTxt:"33–46 cm", weightKg:13, weightTxt:"8–20 kg", lengthCm:55,
+    sizeClass:"Malý–střední", ears:"semi", tail:"natural",
+    energy:5, shedding:4, barking:4, training:5, grooming:3, alone:2, apartment:3, firstTimer:2,
+    cabin:"no", cabinTxt:"Ne (cargo)",
+    lifespan:"12–13 let", priceCz:"35 000–50 000 Kč",
+    club:"pod ČMKU (MAO); testy Genomia",
+    health:"MDR1 (léky!), PRA, CEA, kyčle, pately",
+    pros:["Mimořádně chytrý, sportovec","Učenlivý — perfektní na triky/poslušnost","Oddaný, menší než aussie","Skvělý do auta (rozený cestovatel)"],
+    cons:["Velká energie + pasení (kouše do pat)","Potřebuje práci hlavou, jinak ničí","Hodně štěká, separační úzkost","Do kabiny prakticky ne; MDR1"],
+    fit:"Geniálně cvičitelný, kdybys chtěl psí sport. Ale jeho energie a pasecí pud jsou na „~1 h denně” v bytě spíš moc a do kabiny se nevejde. Pro tebe spíš až s víc časem a domem."
+  },
+  {
+    key:"kooiker", color:"var(--kooiker)",
+    name:"Kooikerhondje", short:"Kooiker",
+    withersCm:38, withersTxt:"36–41 cm", weightKg:10, weightTxt:"9–11 kg", lengthCm:58,
+    sizeClass:"Malý–střední", ears:"drop", tail:"plume",
+    energy:3, shedding:3, barking:2, training:4, grooming:3, alone:4, apartment:5, firstTimer:5,
+    cabin:"maybe", cabinTxt:"Spíš ne (přes limit)",
+    lifespan:"12–15 let", priceCz:"40 000–49 000 Kč",
+    club:"kooikerhondje.info (pod KCHLS)",
+    health:"ENM (Kooiker paralýza), polymyozitida, vWD — testovat!",
+    pros:["Nejlepší kompromis velikost/aktivita","Nízký štěkot — ideál do bytu","Nízká separační úzkost, vyrovnaný","Učenlivý, dlouhověký, samočisticí srst"],
+    cons:["Do kabiny většinou ne (9–11 kg)","V ČR vzácnější — čekačky","Dražší pořízení","Nutné zdravotní testy (malý genofond)"],
+    fit:"Pro tvůj profil (byt, pes v práci, střední aktivita, chuť cvičit, nízká tolerance štěkotu sousedy) nejčistší shoda. Jediné velké „ale” je letadlo (spíš cargo) a horší dostupnost v ČR."
+  }
+];
+
+const DATE = new Date().toLocaleDateString('cs-CZ',{year:'numeric',month:'long'});
+document.getElementById('dateSpan').textContent = DATE;
+
+/* ====================== SIZE CHART ====================== */
+(function(){
+  const svg = document.getElementById('sizeChart');
+  if(!svg) return;
+  const NS="http://www.w3.org/2000/svg";
+  const PX=2.9;                 // px per cm
+  const groundY=600, topPad=20;
+  const humanCm=175;
+  // human silhouette (front), centered at x=78
+  const hcx=78;
+  function add(el){svg.appendChild(el);return el;}
+  function rect(x,y,w,h,fill,rx){const r=document.createElementNS(NS,'rect');
+    r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',w);r.setAttribute('height',h);
+    r.setAttribute('fill',fill);if(rx){r.setAttribute('rx',rx);}return add(r);}
+  function line(x1,y1,x2,y2,stroke,dash){const l=document.createElementNS(NS,'line');
+    l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+    l.setAttribute('stroke',stroke);if(dash)l.setAttribute('stroke-dasharray',dash);return add(l);}
+  function text(x,y,str,opts){opts=opts||{};const t=document.createElementNS(NS,'text');
+    t.setAttribute('x',x);t.setAttribute('y',y);t.setAttribute('fill',opts.fill||'#9fb0c0');
+    t.setAttribute('font-size',opts.size||13);t.setAttribute('font-family','system-ui,sans-serif');
+    if(opts.anchor)t.setAttribute('text-anchor',opts.anchor);
+    if(opts.weight)t.setAttribute('font-weight',opts.weight);t.textContent=str;return add(t);}
+  function path(d,fill){const p=document.createElementNS(NS,'path');p.setAttribute('d',d);
+    p.setAttribute('fill',fill);return add(p);}
+
+  // ground
+  line(20,groundY,1460,groundY,'#3a4a59');
+  // reference height lines (knee ~50cm, mid-shin ~25cm)
+  [["Výška kolen ~50 cm",50],["Polovina lýtka ~25 cm",25]].forEach(([lbl,cm])=>{
+    const y=groundY-cm*PX;
+    line(60,y,1460,y,'rgba(78,161,255,.45)','5 6');
+    text(1455,y-5,lbl,{anchor:'end',fill:'rgba(120,180,255,.85)',size:11});
+  });
+
+  // ----- HUMAN (front silhouette, 175cm) -----
+  const hCol='#52647a';
+  const hScale=PX;
+  function hy(cm){return groundY-cm*hScale;}    // cm from ground -> y
+  // legs
+  rect(hcx-15, hy(86), 12, 86*hScale, hCol, 6);
+  rect(hcx+3,  hy(86), 12, 86*hScale, hCol, 6);
+  // feet
+  rect(hcx-17, groundY-6, 17, 6, hCol, 2);
+  rect(hcx+1,  groundY-6, 17, 6, hCol, 2);
+  // torso (trapezoid-ish)
+  path(`M${hcx-17},${hy(150)} L${hcx+17},${hy(150)} L${hcx+15},${hy(118)} L${hcx+16},${hy(88)} L${hcx-16},${hy(88)} L${hcx-15},${hy(118)} Z`, hCol);
+  // arms
+  rect(hcx-25, hy(148), 9, 60*hScale, hCol, 5);
+  rect(hcx+16, hy(148), 9, 60*hScale, hCol, 5);
+  // neck
+  rect(hcx-5, hy(158), 10, 8*hScale, hCol, 2);
+  // head
+  const head=document.createElementNS(NS,'ellipse');
+  head.setAttribute('cx',hcx);head.setAttribute('cy',hy(168));
+  head.setAttribute('rx',12);head.setAttribute('ry',14);head.setAttribute('fill',hCol);add(head);
+  text(hcx,hy(175)-8,'Člověk 175 cm',{anchor:'middle',fill:'#cdd9e6',size:12,weight:600});
+
+  // ----- DOGS -----
+  // normalized silhouette (facing right) in a 240 x 150 box, ground at y=150
+  const DOG = "M40,52 C36,43 41,30 54,30 C84,24 116,25 146,23 C160,22 170,20 180,19 "
+    + "C186,13 195,9 205,11 C214,12 218,17 220,24 C230,26 238,32 242,42 C244,49 236,51 230,49 "
+    + "C220,46 211,48 205,52 C198,56 194,64 192,77 L192,140 C192,147 181,147 181,140 L180,93 "
+    + "C159,98 137,98 117,95 C116,113 114,128 113,140 C113,147 102,147 102,140 L101,91 "
+    + "C84,89 66,86 54,79 C50,99 47,121 46,140 C46,147 35,147 35,140 L34,73 C28,67 28,58 40,52 Z";
+  const DOG_W=240, DOG_H=150;
+
+  function drawDog(cx, breed){
+    const wPx=breed.withersCm*PX;
+    const lPx=breed.lengthCm*PX;
+    const x0=cx-lPx/2;
+    const y0=groundY-wPx;
+    const g=document.createElementNS(NS,'g');
+    g.setAttribute('transform',`translate(${x0},${y0}) scale(${lPx/DOG_W},${wPx/DOG_H})`);
+    const p=document.createElementNS(NS,'path');
+    p.setAttribute('d',DOG);p.setAttribute('fill',breed.color);
+    g.appendChild(p);
+    svg.appendChild(g);
+    // labels
+    text(cx, groundY+22, breed.short, {anchor:'middle',fill:'#e7edf3',size:13,weight:600});
+    text(cx, groundY+39, breed.withersTxt+' · '+breed.weightTxt, {anchor:'middle',fill:'#9fb0c0',size:11});
+  }
+
+  // layout dogs left-to-right, biggest first for visual flow
+  const order=["toller","aussie","kooiker","sheltie","dachs"].map(k=>BREEDS.find(b=>b.key===k));
+  let x=235;
+  order.forEach((b,i)=>{
+    const colW=Math.max(b.lengthCm*PX,150)+58;
+    drawDog(x+colW/2, b);
+    x+=colW;
+  });
+
+  // legend
+  const leg=document.getElementById('sizeLegend');
+  BREEDS.forEach(b=>{
+    const s=document.createElement('span');
+    s.innerHTML=`<span class="swatch" style="background:${b.color}"></span><b>${b.short}</b> — kohoutek ${b.withersTxt}`;
+    leg.appendChild(s);
+  });
+})();
+
+/* ====================== WEIGHT CHART (cabin) ====================== */
+(function(){
+  const svg=document.getElementById('weightChart');
+  if(!svg) return;
+  const NS="http://www.w3.org/2000/svg";
+  const L=170, R=860, top=20, rowH=46;
+  const maxKg=24;
+  function xOf(kg){return L+(kg/maxKg)*(R-L);}
+  function el(tag,attrs){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);svg.appendChild(e);return e;}
+  function txt(x,y,s,o){o=o||{};const t=el('text',{x,y,'font-size':o.size||12,'font-family':'system-ui,sans-serif','fill':o.fill||'#9fb0c0'});if(o.anchor)t.setAttribute('text-anchor',o.anchor);if(o.weight)t.setAttribute('font-weight',o.weight);t.textContent=s;return t;}
+  // cabin limit zone (~8kg)
+  el('rect',{x:L,y:top,width:xOf(8)-L,height:5*rowH+6,fill:'rgba(70,211,154,.10)'});
+  el('line',{x1:xOf(8),y1:top-4,x2:xOf(8),y2:top+5*rowH+2,stroke:'var(--good)','stroke-dasharray':'5 5','stroke-width':2});
+  txt(xOf(8)+6, top+10, 'limit kabiny ~8 kg', {fill:'#46d39a',size:11,weight:600});
+  // axis ticks
+  [0,4,8,12,16,20,24].forEach(k=>{txt(xOf(k),top+5*rowH+26,k+' kg',{anchor:'middle',size:10});});
+  const order=[...BREEDS].sort((a,b)=>a.weightKg-b.weightKg);
+  // weight ranges (min,max) for bars
+  const ranges={toller:[17,23],sheltie:[5,10],dachs:[2.5,5.5],aussie:[8,20],kooiker:[9,11]};
+  order.forEach((b,i)=>{
+    const y=top+i*rowH;
+    txt(L-12,y+rowH/2+4,b.short,{anchor:'end',fill:'#e7edf3',size:12,weight:600});
+    const [mn,mx]=ranges[b.key];
+    el('rect',{x:xOf(mn),y:y+10,width:Math.max(xOf(mx)-xOf(mn),3),height:18,rx:9,fill:b.color,opacity:.92});
+    const fits=b.cabin;
+    const tag = fits==='yes'?'✓ vejde se':fits==='maybe'?'△ hraničně':'✗ jen cargo';
+    const col = fits==='yes'?'#46d39a':fits==='maybe'?'#ffcb5c':'#ff6b6b';
+    txt(xOf(mx)+8,y+rowH/2+4,`${mn}–${mx} kg · ${tag}`,{fill:col,size:11,weight:600});
+  });
+})();
+
+/* ====================== COMPARE TABLE ====================== */
+(function(){
+  const t=document.getElementById('compareTable');
+  if(!t)return;
+  function dots(n,invert){ // invert: lower is better visually but we just show level
+    let s='';for(let i=0;i<5;i++)s+= i<n?'●':'○';return `<span class="dots" style="color:${n>=4?'var(--accent)':'var(--muted)'}">${s}</span>`;}
+  function cabinPill(b){
+    const m={yes:['p-good','ANO'],maybe:['p-warn','hraničně'],no:['p-bad','cargo']};
+    const [c,l]=m[b.cabin];return `<span class="pill ${c}">${l}</span>`;}
+  const rows=[
+    ['Velikost (kohoutek)', b=>b.withersTxt],
+    ['Hmotnost', b=>b.weightTxt],
+    ['Do kabiny letadla', b=>cabinPill(b)],
+    ['Energie / pohyb', b=>dots(b.energy)],
+    ['Štěkavost', b=>dots(b.barking)],
+    ['Línání', b=>dots(b.shedding)],
+    ['Péče o srst', b=>dots(b.grooming)],
+    ['Snáší samotu', b=>dots(b.alone)],
+    ['Cvičitelnost', b=>dots(b.training)],
+    ['Vhodný do bytu', b=>dots(b.apartment)],
+    ['Pro prvopsa', b=>dots(b.firstTimer)],
+    ['Dožití', b=>b.lifespan],
+    ['Hlavní zdraví', b=>`<span style="font-size:.82rem">${b.health}</span>`],
+    ['Cena v ČR', b=>`<b>${b.priceCz}</b>`],
+  ];
+  let html='<thead><tr><th>Kritérium</th>';
+  BREEDS.forEach(b=>html+=`<th style="color:${b.color}">${b.short}</th>`);
+  html+='</tr></thead><tbody>';
+  rows.forEach(([label,fn])=>{
+    html+=`<tr><th>${label}</th>`;
+    BREEDS.forEach(b=>html+=`<td>${fn(b)}</td>`);
+    html+='</tr>';
+  });
+  html+='</tbody>';
+  t.innerHTML=html;
+})();
+
+/* ====================== CARDS ====================== */
+(function(){
+  const wrap=document.getElementById('cards');
+  if(!wrap)return;
+  const miniDog="M40,52 C36,43 41,30 54,30 C84,24 116,25 146,23 C160,22 170,20 180,19 C186,13 195,9 205,11 C214,12 218,17 220,24 C230,26 238,32 242,42 C244,49 236,51 230,49 C220,46 211,48 205,52 C198,56 194,64 192,77 L192,140 C192,147 181,147 181,140 L180,93 C159,98 137,98 117,95 C116,113 114,128 113,140 C113,147 102,147 102,140 L101,91 C84,89 66,86 54,79 C50,99 47,121 46,140 C46,147 35,147 35,140 L34,73 C28,67 28,58 40,52 Z";
+  BREEDS.forEach(b=>{
+    const c=document.createElement('div');c.className='card';
+    c.innerHTML=`
+      <div class="top">
+        <svg class="mini" viewBox="0 0 240 150"><path d="${miniDog}" fill="${b.color}"/></svg>
+        <div><h3>${b.short}</h3><div class="sub">${b.name} · ${b.sizeClass}</div></div>
+      </div>
+      <div class="body">
+        <div class="kv"><span class="k">Kohoutek / váha</span><span>${b.withersTxt} · ${b.weightTxt}</span></div>
+        <div class="kv"><span class="k">Do kabiny</span><span>${b.cabinTxt}</span></div>
+        <div class="kv"><span class="k">Energie</span><span>${'●'.repeat(b.energy)+'○'.repeat(5-b.energy)}</span></div>
+        <div class="kv"><span class="k">Cvičitelnost</span><span>${'●'.repeat(b.training)+'○'.repeat(5-b.training)}</span></div>
+        <div class="kv"><span class="k">Štěkavost</span><span>${'●'.repeat(b.barking)+'○'.repeat(5-b.barking)}</span></div>
+        <div class="kv"><span class="k">Dožití</span><span>${b.lifespan}</span></div>
+        <div class="kv"><span class="k">Cena ČR</span><span><b>${b.priceCz}</b></span></div>
+        <div class="prosCons">
+          <div class="pc-pro"><div class="h">Plus</div><ul>${b.pros.map(p=>`<li>${p}</li>`).join('')}</ul></div>
+          <div class="pc-con"><div class="h">Mínus</div><ul>${b.cons.map(p=>`<li>${p}</li>`).join('')}</ul></div>
+        </div>
+        <div class="fitNote"><b>Pro tebe:</b> ${b.fit}</div>
+      </div>`;
+    wrap.appendChild(c);
+  });
+})();
+
+/* ====================== TRAVEL CARDS ====================== */
+(function(){
+  const wrap=document.getElementById('travelCards');
+  if(!wrap)return;
+  const tnotes={
+    toller:"17–23 kg → jen cargo. Dvojitá srst = pozor na horko v cargu, leť v chladnu. V autě výborný.",
+    sheltie:"Jen nejmenší fenka do kabiny (kus od kusu). MDR1 omezuje sedativa — řeš s veterinářem. Auto OK.",
+    dachs:"✓ Vejde se do kabiny. Přepravka musí umožnit ležet rovně (záda!). Nikdy neskákat — rampy, nosit.",
+    aussie:"Prakticky jen cargo (8–20 kg). Rozený cestovatel do auta. MDR1 — pozor na odčervení/léky.",
+    kooiker:"9–11 kg → většinou těsně nad limit, spíš cargo. V autě a na výletech skvělý, bez omezení."
+  };
+  BREEDS.forEach(b=>{
+    const col=b.cabin==='yes'?'var(--good)':b.cabin==='maybe'?'var(--warn)':'var(--bad)';
+    const c=document.createElement('div');c.className='card';
+    c.innerHTML=`<div class="body" style="padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <b style="color:${b.color}">${b.short}</b>
+        <span class="pill ${b.cabin==='yes'?'p-good':b.cabin==='maybe'?'p-warn':'p-bad'}">${b.cabinTxt}</span>
+      </div>
+      <div style="font-size:.86rem;color:var(--muted);margin-top:8px">${tnotes[b.key]}</div>
+    </div>`;
+    wrap.appendChild(c);
+  });
+})();
+
+/* ====================== QUIZ ====================== */
+(function(){
+  const QUESTIONS=[
+    {id:"plane", q:"Jak důležité je s ním létat v kabině?", def:1, opts:[
+      {t:"Podmínka — chci běžně do kabiny", w:{dachs:6,sheltie:1,kooiker:-2,aussie:-4,toller:-5}},
+      {t:"Bonus, ne nutnost", w:{dachs:2,sheltie:0,kooiker:0,aussie:0,toller:0}},
+      {t:"Neřeším, hlavně auto/MHD", w:{dachs:0,sheltie:1,kooiker:1,aussie:1,toller:1}},
+    ]},
+    {id:"home", q:"Kde budeš s psem žít většinu času?", def:1, opts:[
+      {t:"Byt bez zahrady", w:{dachs:2,kooiker:2,sheltie:1,aussie:-1,toller:-3}},
+      {t:"Byt, ale hodně venku (park/řeka)", w:{dachs:1,kooiker:2,sheltie:1,aussie:0,toller:-1}},
+      {t:"Dům se zahradou", w:{dachs:0,kooiker:0,sheltie:0,aussie:2,toller:2}},
+    ]},
+    {id:"active", q:"Kolik času denně reálně na pohyb a aktivitu?", def:1, opts:[
+      {t:"Do 30 min", w:{dachs:2,kooiker:1,sheltie:-1,aussie:-3,toller:-4}},
+      {t:"Cca 1 hodina", w:{dachs:1,kooiker:2,sheltie:2,aussie:0,toller:-1}},
+      {t:"2 hodiny a víc / sport", w:{dachs:-1,kooiker:1,sheltie:2,aussie:3,toller:4}},
+    ]},
+    {id:"bark", q:"Jak moc ti (a sousedům) vadí štěkot?", def:1, opts:[
+      {t:"Hodně — tencí sousedé", w:{kooiker:2,toller:-1,aussie:-2,dachs:-2,sheltie:-3}},
+      {t:"Trochu — zvládnu trénink", w:{kooiker:1,sheltie:-1,dachs:0,aussie:0,toller:0}},
+      {t:"Nevadí mi", w:{sheltie:1,dachs:1,aussie:1,toller:1,kooiker:0}},
+    ]},
+    {id:"groom", q:"Kolik péče o srst / línání zvládneš?", def:1, opts:[
+      {t:"Chci minimum", w:{dachs:2,kooiker:1,toller:-1,aussie:-1,sheltie:-2}},
+      {t:"Střední — občas kartáč", w:{kooiker:1,dachs:0,toller:0,aussie:0,sheltie:0}},
+      {t:"Nevadí mi denně kartáčovat", w:{sheltie:2,toller:1,aussie:1,kooiker:0,dachs:0}},
+    ]},
+    {id:"train", q:"Jak moc tě baví výcvik a triky?", def:1, opts:[
+      {t:"Stačí základní povely", w:{dachs:1,kooiker:0,toller:0,sheltie:0,aussie:-1}},
+      {t:"Rád pravidelně cvičím", w:{kooiker:1,sheltie:1,aussie:1,toller:1,dachs:-1}},
+      {t:"Chci hodně — poslušnost/sport", w:{sheltie:3,aussie:3,toller:2,kooiker:1,dachs:-2}},
+    ]},
+    {id:"alone", q:"Kolik bude pes denně sám?", def:0, opts:[
+      {t:"Skoro pořád se mnou (i v práci)", w:{toller:1,sheltie:1,aussie:1,kooiker:1,dachs:1}},
+      {t:"Pár hodin denně", w:{kooiker:1,dachs:0,sheltie:-1,toller:-1,aussie:-1}},
+      {t:"6+ hodin sám", w:{kooiker:-1,dachs:-2,toller:-3,sheltie:-3,aussie:-3}},
+    ]},
+    {id:"exp", q:"Tvoje zkušenost se psy?", def:1, opts:[
+      {t:"První pes", w:{kooiker:2,dachs:1,sheltie:0,aussie:-2,toller:-2}},
+      {t:"Už jsem psa měl/a", w:{kooiker:1,sheltie:1,dachs:0,aussie:0,toller:0}},
+      {t:"Hodně zkušený/á", w:{toller:2,aussie:2,sheltie:1,kooiker:0,dachs:0}},
+    ]},
+    {id:"avail", q:"Dostupnost a cena štěněte?", def:0, opts:[
+      {t:"Chci snadno dostupné a levnější", w:{dachs:2,sheltie:2,aussie:0,toller:0,kooiker:-2}},
+      {t:"Počkám si a připlatím za to pravé", w:{kooiker:2,toller:1,aussie:1,sheltie:0,dachs:0}},
+    ]},
+    {id:"social", q:"Bude kolem hodně lidí, dětí a jiných psů (víkendy u rodiny)?", def:0, opts:[
+      {t:"Ano, hodně sociální prostředí", w:{kooiker:1,sheltie:1,toller:1,aussie:0,dachs:-1}},
+      {t:"Spíš klidná domácnost", w:{dachs:1,kooiker:0,sheltie:0,toller:0,aussie:0}},
+    ]},
+  ];
+
+  const qWrap=document.getElementById('questions');
+  const state={};
+  QUESTIONS.forEach((q,qi)=>{
+    state[q.id]=q.def;
+    const d=document.createElement('div');d.className='q';
+    d.innerHTML=`<div class="qt"><span class="qn">${qi+1}.</span>${q.q}</div>`;
+    const opts=document.createElement('div');opts.className='opts';
+    q.opts.forEach((o,oi)=>{
+      const b=document.createElement('div');b.className='opt'+(oi===q.def?' sel':'');
+      b.textContent=o.t;
+      b.onclick=()=>{
+        state[q.id]=oi;
+        [...opts.children].forEach((c,ci)=>c.classList.toggle('sel',ci===oi));
+        render();
+      };
+      opts.appendChild(b);
+    });
+    d.appendChild(opts);qWrap.appendChild(d);
+  });
+
+  const barsWrap=document.getElementById('resultBars');
+  function compute(){
+    const sc={toller:0,sheltie:0,dachs:0,aussie:0,kooiker:0};
+    QUESTIONS.forEach(q=>{
+      const sel=state[q.id];
+      if(sel==null)return;
+      const w=q.opts[sel].w;
+      for(const k in w)sc[k]+=w[k];
+    });
+    return sc;
+  }
+  function render(){
+    const sc=compute();
+    // normalize to 0..100 for display
+    const vals=Object.values(sc);
+    const min=Math.min(...vals), max=Math.max(...vals);
+    const span=(max-min)||1;
+    const ranked=BREEDS.map(b=>({b,raw:sc[b.key],pct:Math.round(((sc[b.key]-min)/span)*100)}))
+      .sort((a,c)=>c.raw-a.raw);
+    barsWrap.innerHTML='';
+    ranked.forEach((r,i)=>{
+      const row=document.createElement('div');
+      row.className='resRow'+(i===0?' rank1':'');
+      row.innerHTML=`
+        <div class="nm">${i===0?'🏆 ':''}<b style="color:${r.b.color}">${r.b.short}</b>
+          <small>${r.b.cabinTxt} · ${r.b.weightTxt}</small></div>
+        <div class="bar"><span style="width:${Math.max(r.pct,4)}%;background:${r.b.color}"></span></div>
+        <div class="sc">${r.raw>0?'+':''}${r.raw}</div>`;
+      barsWrap.appendChild(row);
+    });
+  }
+
+  document.getElementById('resetBtn').onclick=()=>{
+    QUESTIONS.forEach((q,qi)=>{
+      state[q.id]=q.def;
+      const optsEl=qWrap.children[qi].querySelector('.opts');
+      [...optsEl.children].forEach((c,ci)=>c.classList.toggle('sel',ci===q.def));
+    });
+    render();
+  };
+  document.getElementById('clearBtn').onclick=()=>{
+    QUESTIONS.forEach((q,qi)=>{
+      state[q.id]=null;
+      const optsEl=qWrap.children[qi].querySelector('.opts');
+      [...optsEl.children].forEach(c=>c.classList.remove('sel'));
+    });
+    render();
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>
