@@ -1,15 +1,34 @@
 # Dispoziční studie rodinného domu — 2D půdorysy
 
-Složka obsahuje dvě varianty návrhu (85 m² zastavěné plochy, 2 NP):
+Složka obsahuje tři varianty návrhu (85 m² zastavěné plochy, 2 NP):
 
 | Varianta | Soubory | Popis |
 |----------|---------|-------|
-| **A — řadový dům / TROJDOMEK** (aktuální) | `trojdomek.svg` / `.png`, `generate_rowhouse.py` | 3 spojené jednotky 8,5 × 10,0 m, **parkování venku** (stání + strom), ekonomické řešení |
-| B — samostatný dům s garáží | `pudorys.svg` / `.png`, `generate_plan.py` | volně stojící dům 10,0 × 8,5 m s integrovanou garáží |
+| **A — TROJDOMEK s garáží** (aktuální) | `trojdomek-garaz.svg` / `.png`, `generate_rowhouse_garage.py` | 3 spojené jednotky 8,5 × 10,0 m, **garáž pro 1 auto v přízemí** každé jednotky |
+| B — TROJDOMEK, parkování venku | `trojdomek.svg` / `.png`, `generate_rowhouse.py` | 3 spojené jednotky 8,5 × 10,0 m, **venkovní stání** (bez garáže), prostornější dispozice |
+| C — samostatný dům s garáží | `pudorys.svg` / `.png`, `generate_plan.py` | volně stojící dům 10,0 × 8,5 m s integrovanou garáží |
 
 ---
 
-## Varianta A — Řadový dům (trojdomek)
+## Varianta A — Trojdomek s garáží v přízemí
+
+Řadový dům (3 jednotky) s **integrovanou garáží pro 1 automobil** v přízemí každé
+jednotky, schodiště je za garáží, obytná část vlevo a vzadu (k zahradě).
+
+**Přízemí (1. NP):** obývací pokoj s kuchyní a jídelnou 24,2 · garáž 18,4 (vrata 2,5 m,
+ČSN 73 6058) · schodiště 7,0 · zádveří 5,9 · technická místnost 5,7 · WC 1,7 m².
+
+**Patro (2. NP):** ložnice 19,4 (nad garáží) · pokoj 14,9 · pokoj 8,5 · koupelna s WC 8,7
+· chodba 7,5 · schodiště 7,0 m².
+
+> **Pozn. k ekonomice/normám:** čelo 8,5 m s vnitřní garáží je prostorově hraniční —
+> garáž ubírá ~40 % šířky přízemí, takže obytná část i pokoje v patře jsou kompaktnější.
+> Pro komfortnější (a stále úsporné) řešení je vhodnější buď **čelo ~10 m**, nebo
+> **venkovní stání** místo garáže (viz varianta B).
+
+---
+
+## Varianta B — Trojdomek s venkovním stáním
 
 Ekonomický typ zástavby: tři jednotky v řadě spojené **mezibytovými (akustickými)
 stěnami** → menší plocha fasády, nižší tepelné ztráty i náklady, jednoduchý
@@ -31,7 +50,7 @@ minimum chodeb, dvouramenné schodiště. Krajní jednotky mohou mít navíc okn
 
 ---
 
-## Varianta B — Samostatný dům 10,0 × 8,5 m s garáží
+## Varianta C — Samostatný dům 10,0 × 8,5 m s garáží
 
 Dispoziční studie (2D půdorys) rodinného domu o půdorysném rozměru **10,0 × 8,5 m**
 (zastavěná plocha 85 m²), dvoupodlažní, s **integrovanou garáží pro 1 osobní automobil**.
