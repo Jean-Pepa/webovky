@@ -1,0 +1,12 @@
+# Claude Agent SDK – jádro agenta (čte/edituje soubory, spouští příkazy)
+claude-agent-sdk>=0.1.0
+
+# Lokální přepis řeči (Whisper) – rychlá implementace, dobrá čeština
+faster-whisper>=1.1.0
+
+# Nahrávání z mikrofonu
+sounddevice>=0.4.6
+numpy>=1.24
+
+# Načítání konfigurace z .env
+python-dotenv>=1.0.1

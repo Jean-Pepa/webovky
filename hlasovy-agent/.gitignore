@@ -1,0 +1,14 @@
+# skutečná konfigurace s klíčem (NIKDY necommitovat)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# logy konverzací
+logs/
+
+# stažené modely Whisperu (cache)
+models/
