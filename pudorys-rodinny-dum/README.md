@@ -1,4 +1,37 @@
-# Půdorys rodinného domu 10,0 × 8,5 m — dvoupodlažní s garáží
+# Dispoziční studie rodinného domu — 2D půdorysy
+
+Složka obsahuje dvě varianty návrhu (85 m² zastavěné plochy, 2 NP):
+
+| Varianta | Soubory | Popis |
+|----------|---------|-------|
+| **A — řadový dům / TROJDOMEK** (aktuální) | `trojdomek.svg` / `.png`, `generate_rowhouse.py` | 3 spojené jednotky 8,5 × 10,0 m, **parkování venku** (stání + strom), ekonomické řešení |
+| B — samostatný dům s garáží | `pudorys.svg` / `.png`, `generate_plan.py` | volně stojící dům 10,0 × 8,5 m s integrovanou garáží |
+
+---
+
+## Varianta A — Řadový dům (trojdomek)
+
+Ekonomický typ zástavby: tři jednotky v řadě spojené **mezibytovými (akustickými)
+stěnami** → menší plocha fasády, nižší tepelné ztráty i náklady, jednoduchý
+kompaktní tvar. Parkování je řešeno **venkovním stáním (2,7 × 5,0 m) + stromem
+před každým domem** (bez nákladné vnitřní garáže). Okna jsou pouze do ulice a na
+zahradu, mezibytové stěny jsou bez otvorů.
+
+Jedna jednotka **8,5 m (čelo) × 10,0 m (hloubka) = 85 m²**, dvoupodlažní.
+
+**Přízemí (1. NP):** obývací pokoj s kuchyní a jídelnou (28 m², prosklení na
+zahradu) · zádveří · chodba · technická místnost · pracovna · spíž · WC · schodiště.
+
+**Patro (2. NP):** ložnice (17,8 m²) · 2 pokoje (13,0 a 8,7 m²) · koupelna s WC ·
+šatna · chodba · schodiště.
+
+Dispozice je „úsporná": jedna instalační šachta (kuchyně → koupelna nad sebou),
+minimum chodeb, dvouramenné schodiště. Krajní jednotky mohou mít navíc okna ve
+štítu; řešená (prostřední) jednotka má okna jen do ulice a zahrady.
+
+---
+
+## Varianta B — Samostatný dům 10,0 × 8,5 m s garáží
 
 Dispoziční studie (2D půdorys) rodinného domu o půdorysném rozměru **10,0 × 8,5 m**
 (zastavěná plocha 85 m²), dvoupodlažní, s **integrovanou garáží pro 1 osobní automobil**.
