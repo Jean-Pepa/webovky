@@ -40,7 +40,10 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
       <header className="sticky top-0 z-20 border-b border-ink/10 bg-paper/85 backdrop-blur">
         <div className="relative mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
           <Logo href="/zazemi" />
-          <span className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 font-display text-2xl font-bold tracking-tight text-marigold-600 md:block">
+          <span
+            className="pointer-events-none absolute left-1/2 top-1/2 hidden origin-center font-display text-2xl font-bold tracking-tight text-marigold-600 md:block"
+            style={{ transform: "translate(-50%, -50%) scaleX(3)" }}
+          >
             MAŘENA
           </span>
           <div className="ml-auto flex items-center gap-2">
