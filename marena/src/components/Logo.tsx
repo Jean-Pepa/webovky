@@ -1,23 +1,45 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // Logo se načítá z REÁLNÉHO souboru (oficiální logo FA, beze změny). Vlož ho do
-// /public jako logo-fa.svg (ideálně) nebo logo-fa.png. Dokud tam není, ukáže se
-// jen náhradní značka. Na tmavém podkladu (light) je logo v bílém poli, ať je vidět.
+// /public jako logo-fa.svg (ideálně) nebo logo-fa.png. Soubor se zkouší načíst
+// až v prohlížeči — dokud tam není, ukáže se čistá náhradní značka (žádný
+// rozbitý obrázek). Na tmavém podkladu (light) je logo v bílém poli.
 const SOURCES = ["/logo-fa.svg", "/logo-fa.png"];
 
 export function Logo({ href = "/", light = false }: { href?: string; light?: boolean }) {
-  const [idx, setIdx] = useState(0);
-  const failed = idx >= SOURCES.length;
+  const [src, setSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      for (const s of SOURCES) {
+        const ok = await new Promise<boolean>((res) => {
+          const im = new Image();
+          im.onload = () => res(true);
+          im.onerror = () => res(false);
+          im.src = s;
+        });
+        if (cancelled) return;
+        if (ok) {
+          setSrc(s);
+          return;
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <Link href={href} className="inline-flex items-center" aria-label="Mařena — Fakulta architektury VUT">
-      {!failed ? (
+      {src ? (
         <span className={light ? "inline-flex rounded-md bg-white p-1.5" : "inline-flex"}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img key={SOURCES[idx]} src={SOURCES[idx]} alt="Fakulta architektury VUT" onError={() => setIdx((i) => i + 1)} className="h-7 w-auto" />
+          <img src={src} alt="Fakulta architektury VUT" className="h-7 w-auto" />
         </span>
       ) : (
         <FallbackMark light={light} />
@@ -26,7 +48,7 @@ export function Logo({ href = "/", light = false }: { href?: string; light?: boo
   );
 }
 
-// Pouze nouzová značka, dokud není dodán oficiální soubor loga.
+// Náhradní značka, dokud není dodán oficiální soubor loga.
 function FallbackMark({ light }: { light: boolean }) {
   const ink = light ? "#ffffff" : "#161616";
   const paper = light ? "#161616" : "#ffffff";

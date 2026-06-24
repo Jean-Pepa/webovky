@@ -35,7 +35,7 @@ export default function Home() {
             <a href={IG_URL} target="_blank" rel="noreferrer" className="btn-primary">
               Instagram
             </a>
-            <Link href="/prihlaseni" className="rounded-full px-3 py-2 text-sm font-medium text-white/80 transition hover:text-white">
+            <Link href="/prihlaseni" className="rounded-full px-3 py-2 text-sm font-medium text-white transition hover:opacity-80">
               Organizátoři
             </Link>
           </nav>
@@ -49,13 +49,13 @@ export default function Home() {
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_rgba(0,0,0,0.45)_0%,_transparent_65%)]" />
 
         <div className="mx-auto w-full max-w-3xl px-4 pt-24 text-center [text-shadow:0_2px_20px_rgba(0,0,0,0.55)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/85">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
             Fakulta architektury VUT · studentský festival
           </p>
           <h1 className="mt-3 font-display text-6xl font-bold leading-[0.95] tracking-tight text-white sm:text-7xl md:text-8xl">
             MAŘENA
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg text-white/90">
+          <p className="mx-auto mt-5 max-w-2xl text-lg text-white">
             Týden, na který do konce školy nezapomeneš. Přednášky, bar na dvoře, party večery, velký
             průvod městem a křest prváků na Flédě.
           </p>
