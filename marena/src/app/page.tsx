@@ -26,8 +26,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* NAV */}
-      <header className="absolute inset-x-0 top-0 z-20">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5">
+      <header className="absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/55 via-black/25 to-transparent pb-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 [text-shadow:0_1px_10px_rgba(0,0,0,0.45)]">
           <span className="[&_*]:text-white">
             <Logo light />
           </span>
@@ -45,10 +45,11 @@ export default function Home() {
       {/* HERO */}
       <section className="relative isolate flex min-h-[90vh] items-center justify-center overflow-hidden">
         <Photo src="/photos/hero.jpg" alt="Mařena — průvod městem" label="hero foto — průvod / dvůr Mařeny" className="absolute inset-0 -z-10 h-full w-full" />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/55 via-black/45 to-black/80" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/65 via-black/55 to-black/85" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_rgba(0,0,0,0.45)_0%,_transparent_65%)]" />
 
-        <div className="mx-auto w-full max-w-3xl px-4 pt-24 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/75">
+        <div className="mx-auto w-full max-w-3xl px-4 pt-24 text-center [text-shadow:0_2px_20px_rgba(0,0,0,0.55)]">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/85">
             Fakulta architektury VUT · studentský festival
           </p>
           <h1 className="mt-3 font-display text-6xl font-bold leading-[0.95] tracking-tight text-white sm:text-7xl md:text-8xl">
@@ -102,7 +103,7 @@ export default function Home() {
         <article className="relative mt-5 overflow-hidden rounded-3xl">
           <Photo src="/photos/finale.jpg" alt="Křest na Flédě — koncert" label="finále — koncert na Flédě (přidej /photos/finale.jpg)" className="h-80 w-full md:h-[28rem]" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10" />
-          <div className="absolute inset-x-0 bottom-0 p-6 md:p-10">
+          <div className="absolute inset-x-0 bottom-0 p-6 md:p-10 [text-shadow:0_2px_16px_rgba(0,0,0,0.6)]">
             <span className="inline-flex items-center gap-1 rounded-full bg-marigold-600 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
               Velké finále
             </span>
@@ -122,7 +123,7 @@ export default function Home() {
         <Photo src="/photos/letters.jpg" alt="Nápis MAŘENA před Fakultou architektury VUT" label="MAŘENA před fakultou" className="absolute inset-0 h-full w-full" imgClass="object-bottom" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/15 to-transparent" />
         <div className="relative mx-auto flex h-full max-w-6xl items-start px-4 pt-8">
-          <p className="max-w-2xl font-display text-2xl font-semibold tracking-tight text-white md:text-4xl">
+          <p className="max-w-2xl font-display text-2xl font-semibold tracking-tight text-white md:text-4xl [text-shadow:0_2px_18px_rgba(0,0,0,0.65)]">
             Celá fakulta se na týden promění v jeden velký festival.
           </p>
         </div>
