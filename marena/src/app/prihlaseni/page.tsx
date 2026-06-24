@@ -42,10 +42,6 @@ export default function LoginPage() {
         </div>
         <div className="rounded-3xl bg-white/10 p-7 text-white ring-1 ring-white/15 backdrop-blur-md">
           <h1 className="font-display text-2xl font-semibold">Vstup do zázemí</h1>
-          <p className="mt-1 text-sm text-white/70">
-            Heslo je podle ročníku — <strong className="text-white">marena2026</strong>, marena2027…
-            Nový ročník (a jeho heslo) zakládá správce. Uvnitř si jen řekneš jméno a vybereš roli.
-          </p>
           <form onSubmit={submit} className="mt-5 space-y-3">
             <input
               name="password"
