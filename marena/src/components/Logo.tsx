@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 // /public jako logo-fa.svg (ideálně) nebo logo-fa.png. Soubor se zkouší načíst
 // až v prohlížeči — dokud tam není, ukáže se čistá náhradní značka (žádný
 // rozbitý obrázek). Na tmavém podkladu (light) je logo v bílém poli.
-const SOURCES = ["/logo-fa.svg", "/logo-fa.png"];
+const SOURCES = ["/logo-fa.svg", "/logo-fa.png", "/photos/logo-fa.svg", "/photos/logo-fa.png"];
 
 export function Logo({ href = "/", light = false }: { href?: string; light?: boolean }) {
   const [src, setSrc] = useState<string | null>(null);
