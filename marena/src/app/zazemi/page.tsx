@@ -98,7 +98,7 @@ export default function NastenkaPage() {
               return (
                 <article key={p.id} className={`card p-4 ${p.pinned ? "ring-1 ring-marigold-300" : ""}`}>
                   <div className="mb-1 flex items-center gap-2 text-xs text-ink-soft">
-                    {p.pinned && <span className="chip bg-marigold-100 text-marigold-800">📌 Připnuto</span>}
+                    {p.pinned && <span className="chip bg-marigold-600 text-white">📌 Připnuto</span>}
                     {role && (
                       <span className="chip">
                         {role.emoji} {role.name}

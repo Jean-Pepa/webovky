@@ -379,7 +379,7 @@ function FinanceRow({ item, yearId }: { item: FinanceItem; yearId: string }) {
       <td className="px-3 py-3">
         <button
           onClick={() => dispatch({ type: "toggleFinancePaid", yearId, financeId: item.id })}
-          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${item.paid ? "bg-leaf/12 text-leaf-700 hover:bg-leaf/20" : "bg-marigold-100 text-marigold-800 hover:bg-marigold-200"}`}
+          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${item.paid ? "bg-leaf/12 text-leaf-700 hover:bg-leaf/20" : "bg-marigold-600 text-white hover:bg-marigold-700"}`}
           title="Přepnout stav"
         >
           {item.paid ? "Zaplaceno" : "Čeká"}

@@ -17,7 +17,7 @@ export function Logo({ href = "/", light = false }: { href?: string; light?: boo
       {!failed ? (
         <span className={light ? "inline-flex rounded-md bg-white p-1.5" : "inline-flex"}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={SOURCES[idx]} alt="Fakulta architektury VUT" onError={() => setIdx((i) => i + 1)} className="h-7 w-auto" />
+          <img key={SOURCES[idx]} src={SOURCES[idx]} alt="Fakulta architektury VUT" onError={() => setIdx((i) => i + 1)} className="h-7 w-auto" />
         </span>
       ) : (
         <FallbackMark light={light} />

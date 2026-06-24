@@ -188,7 +188,7 @@ export default function TymPage() {
             {year.members.map((m) => (
               <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3">
                 <span className="font-semibold">{m.name}</span>
-                {m.name === me && <span className="chip bg-marigold-100 text-marigold-800">to jsi ty</span>}
+                {m.name === me && <span className="chip bg-marigold-600 text-white">to jsi ty</span>}
                 <span className="flex flex-wrap gap-1">
                   {m.roleIds.map((id) => {
                     const role = roleById(id);
