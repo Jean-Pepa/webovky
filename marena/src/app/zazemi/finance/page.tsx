@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, todayISO } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
+import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
@@ -30,8 +32,11 @@ function parseAmount(s: string): number {
   return Number.isFinite(n) ? Math.round(n) : 0;
 }
 
+// Funkci „Ekonom / Finance" v roles.ts má id `ekonom`.
+const EKONOM_ROLE = "ekonom";
+
 export default function FinancePage() {
-  const { currentYear, dispatch } = useStore();
+  const { currentYear, me, dispatch } = useStore();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("vse");
   const [catFilter, setCatFilter] = useState<string>("");
@@ -93,9 +98,15 @@ export default function FinancePage() {
 
   if (!year) return null;
 
+  // Finance smí upravovat jen ten, kdo drží funkci Ekonom / Finance.
+  // Dokud funkci nikdo nemá, necháme to otevřené, ať se dá vůbec začít.
+  const ekonomove = year.members.filter((m) => m.roleIds.includes(EKONOM_ROLE));
+  const jaJsemEkonom = year.members.some((m) => m.name === me && m.roleIds.includes(EKONOM_ROLE));
+  const canEdit = jaJsemEkonom || ekonomove.length === 0;
+
   async function add() {
     const amt = parseAmount(amount);
-    if (!label.trim() || amt <= 0 || !year) return;
+    if (!label.trim() || amt <= 0 || !year || !canEdit) return;
     await dispatch({ type: "addFinance", yearId: year.id, kind, label, amount: amt, category: category || undefined, who: who || undefined, paid, date: date || undefined });
     setLabel("");
     setAmount("");
@@ -118,10 +129,33 @@ export default function FinancePage() {
           <h1 className="font-display text-2xl font-semibold tracking-tight">Finance — {year.label}</h1>
           <p className="text-sm text-ink-soft">Pokladní kniha: vklady, příjmy a výdaje. Účtenky a vyúčtování na jednom místě.</p>
         </div>
-        <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
-          {open ? "Zavřít" : "+ Přidat položku"}
-        </button>
+        {canEdit && (
+          <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
+            {open ? "Zavřít" : "+ Přidat položku"}
+          </button>
+        )}
       </div>
+
+      {/* Kdo smí finance upravovat */}
+      {!canEdit ? (
+        <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
+          <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            Finance může upravovat jen <strong>Ekonom / Finance</strong>
+            {ekonomove.length > 0 && <> ({ekonomove.map((m) => m.name).join(", ")})</>}. Ty máš jen náhled.
+          </span>
+        </div>
+      ) : (
+        ekonomove.length === 0 && (
+          <div className="flex items-start gap-2 rounded-2xl border border-ink/10 bg-paper2 px-4 py-3 text-sm text-ink-soft">
+            <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              Funkci <strong>Ekonom / Finance</strong> zatím nikdo nedrží, takže může zapisovat každý. Vezmi si ji v sekci{" "}
+              <Link href="/zazemi/tym" className="font-medium text-marigold-700 underline">Tým &amp; role</Link>, ať mají finance jasného správce.
+            </span>
+          </div>
+        )
+      )}
 
       {/* Souhrn */}
       <div className="grid gap-3 sm:grid-cols-3">
@@ -210,7 +244,7 @@ export default function FinancePage() {
               </thead>
               <tbody>
                 {rows.map((f) => (
-                  <FinanceRow key={f.id} item={f} yearId={year.id} />
+                  <FinanceRow key={f.id} item={f} yearId={year.id} canEdit={canEdit} />
                 ))}
               </tbody>
             </table>
@@ -258,7 +292,7 @@ function SummaryCard({ label, value, sub, tone }: { label: string; value: number
   );
 }
 
-function FinanceRow({ item, yearId }: { item: FinanceItem; yearId: string }) {
+function FinanceRow({ item, yearId, canEdit }: { item: FinanceItem; yearId: string; canEdit: boolean }) {
   const { dispatch } = useStore();
   const [edit, setEdit] = useState(false);
   const [label, setLabel] = useState(item.label);
@@ -306,7 +340,7 @@ function FinanceRow({ item, yearId }: { item: FinanceItem; yearId: string }) {
           <span className="font-medium">{item.label}</span>
         </div>
         {item.note && <p className="mt-0.5 pl-8 text-xs text-ink-soft">{item.note}</p>}
-        <div className="pl-8"><ReceiptControl item={item} yearId={yearId} /></div>
+        <div className="pl-8"><ReceiptControl item={item} yearId={yearId} canEdit={canEdit} /></div>
       </td>
       <td className="px-3 py-3">{item.category ? <span className="chip">{item.category}</span> : <span className="text-ink-soft/50">—</span>}</td>
       <td className="px-3 py-3 text-ink-soft">{item.who || "—"}</td>
@@ -316,26 +350,34 @@ function FinanceRow({ item, yearId }: { item: FinanceItem; yearId: string }) {
         {fmtCZK(item.amount)}
       </td>
       <td className="px-3 py-3">
-        <button
-          onClick={() => dispatch({ type: "toggleFinancePaid", yearId, financeId: item.id })}
-          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${item.paid ? "bg-leaf/12 text-leaf-700 hover:bg-leaf/20" : "bg-marigold-600 text-white hover:bg-marigold-700"}`}
-          title="Přepnout stav"
-        >
-          {item.paid ? "Zaplaceno" : "Čeká"}
-        </button>
+        {canEdit ? (
+          <button
+            onClick={() => dispatch({ type: "toggleFinancePaid", yearId, financeId: item.id })}
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${item.paid ? "bg-leaf/12 text-leaf-700 hover:bg-leaf/20" : "bg-marigold-600 text-white hover:bg-marigold-700"}`}
+            title="Přepnout stav"
+          >
+            {item.paid ? "Zaplaceno" : "Čeká"}
+          </button>
+        ) : (
+          <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${item.paid ? "bg-leaf/12 text-leaf-700" : "bg-marigold-600 text-white"}`}>
+            {item.paid ? "Zaplaceno" : "Čeká"}
+          </span>
+        )}
       </td>
       <td className="px-3 py-3">
-        <div className="flex items-center justify-end gap-1">
-          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>Upravit</button>
-          <DeleteButton onConfirm={() => dispatch({ type: "removeFinance", yearId, financeId: item.id })} />
-        </div>
+        {canEdit && (
+          <div className="flex items-center justify-end gap-1">
+            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>Upravit</button>
+            <DeleteButton onConfirm={() => dispatch({ type: "removeFinance", yearId, financeId: item.id })} />
+          </div>
+        )}
       </td>
     </tr>
   );
 }
 
 // Účtenka jako foto: nahrání (zmenší se), zobrazení a smazání.
-function ReceiptControl({ item, yearId }: { item: FinanceItem; yearId: string }) {
+function ReceiptControl({ item, yearId, canEdit }: { item: FinanceItem; yearId: string; canEdit: boolean }) {
   const { configured, dispatch } = useStore();
   const [busy, setBusy] = useState(false);
   const [viewing, setViewing] = useState<string | null>(null);
@@ -379,13 +421,17 @@ function ReceiptControl({ item, yearId }: { item: FinanceItem; yearId: string })
           <button onClick={view} className="inline-flex items-center gap-1 rounded-full bg-leaf/12 px-2 py-0.5 font-medium text-leaf-700 hover:bg-leaf/20">
             📎 Účtenka
           </button>
-          <button onClick={remove} className="text-ink-soft/60 hover:text-red-600" title="Odebrat účtenku">✕</button>
+          {canEdit && (
+            <button onClick={remove} className="text-ink-soft/60 hover:text-red-600" title="Odebrat účtenku">✕</button>
+          )}
         </>
       ) : (
-        <label className="inline-flex cursor-pointer items-center gap-1 text-ink-soft/70 hover:text-ink">
-          📎 {busy ? "Nahrávám…" : "Přidat účtenku"}
-          <input type="file" accept="image/*" className="hidden" onChange={onFile} disabled={busy} />
-        </label>
+        canEdit && (
+          <label className="inline-flex cursor-pointer items-center gap-1 text-ink-soft/70 hover:text-ink">
+            📎 {busy ? "Nahrávám…" : "Přidat účtenku"}
+            <input type="file" accept="image/*" className="hidden" onChange={onFile} disabled={busy} />
+          </label>
+        )
       )}
       {err && <span className="text-red-600">nepovedlo se</span>}
 
