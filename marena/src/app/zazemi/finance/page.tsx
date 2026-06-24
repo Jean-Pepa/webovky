@@ -1,13 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, todayISO } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
-import { isAdmin } from "@/lib/admin";
+import { isAdmin, ADMIN_NAME } from "@/lib/admin";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
 import type { FinanceItem, FinanceKind } from "@/lib/types";
@@ -34,7 +33,6 @@ function parseAmount(s: string): number {
 }
 
 // Funkci „Ekonom / Finance" v roles.ts má id `ekonom`.
-const EKONOM_ROLE = "ekonom";
 
 export default function FinancePage() {
   const { currentYear, me, dispatch } = useStore();
@@ -99,12 +97,8 @@ export default function FinancePage() {
 
   if (!year) return null;
 
-  // Finance smí upravovat jen ten, kdo drží funkci Ekonom / Finance.
-  // Dokud funkci nikdo nemá, necháme to otevřené, ať se dá vůbec začít.
-  const ekonomove = year.members.filter((m) => m.roleIds.includes(EKONOM_ROLE));
-  const jaJsemEkonom = year.members.some((m) => m.name === me && m.roleIds.includes(EKONOM_ROLE));
-  // Správce (Pan_Vyskočil) má kontrolu nad vším — finance smí upravovat vždy.
-  const canEdit = isAdmin(me) || jaJsemEkonom || ekonomove.length === 0;
+  // Finance smí upravovat jen správce (Pan_Vyskočil). Ostatní mají jen náhled.
+  const canEdit = isAdmin(me);
 
   async function add() {
     const amt = parseAmount(amount);
@@ -137,25 +131,14 @@ export default function FinancePage() {
         )}
       </div>
 
-      {/* Kdo smí finance upravovat */}
-      {!canEdit ? (
+      {/* Finance může upravovat jen správce */}
+      {!canEdit && (
         <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
           <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            Finance může upravovat jen <strong>Ekonom / Finance</strong>
-            {ekonomove.length > 0 && <> ({ekonomove.map((m) => m.name).join(", ")})</>}. Ty máš jen náhled.
+            Finance může upravovat jen správce (<strong>{ADMIN_NAME}</strong>). Ty máš jen náhled.
           </span>
         </div>
-      ) : (
-        ekonomove.length === 0 && (
-          <div className="flex items-start gap-2 rounded-2xl border border-ink/10 bg-paper2 px-4 py-3 text-sm text-ink-soft">
-            <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>
-              Funkci <strong>Ekonom / Finance</strong> zatím nikdo nedrží, takže může zapisovat každý. Vezmi si ji v sekci{" "}
-              <Link href="/zazemi/tym" className="font-medium text-marigold-700 underline">Tým &amp; role</Link>, ať mají finance jasného správce.
-            </span>
-          </div>
-        )
       )}
 
       {/* Souhrn */}
