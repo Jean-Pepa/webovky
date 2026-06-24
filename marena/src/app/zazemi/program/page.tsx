@@ -11,6 +11,7 @@ const CAT_META: Record<string, string> = {
   DJs: "🎧",
   Workshopy: "🛠️",
   Moderátor: "🎙️",
+  Sponzoři: "🤝",
   Ostatní: "📍",
 };
 const CAT_ORDER = Object.keys(CAT_META);
