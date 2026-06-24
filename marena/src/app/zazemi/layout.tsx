@@ -147,7 +147,6 @@ function IdentityGate() {
             if (name.trim()) setMe(name.trim());
           }}
         >
-          {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
           <input className="input text-center" placeholder="Tvoje jméno / přezdívka" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
           <button className="btn-primary" type="submit">
             Vstoupit do zázemí

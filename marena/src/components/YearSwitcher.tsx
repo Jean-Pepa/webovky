@@ -42,7 +42,6 @@ export function YearSwitcher() {
             onChange={(e) => setNewYear(e.target.value)}
             className="w-20 rounded-full border border-ink/15 px-3 py-1.5 text-sm"
             placeholder="2026"
-            // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus
           />
           <button className="btn-primary px-3 py-1.5 text-xs" onClick={add}>
