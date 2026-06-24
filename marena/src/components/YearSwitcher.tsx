@@ -37,7 +37,7 @@ export function YearSwitcher() {
       </select>
 
       {adding ? (
-        <span className="flex items-center gap-2 rounded-2xl border border-ink/15 bg-white px-2.5 py-1.5">
+        <span className="flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-2 rounded-2xl border border-ink/15 bg-white px-2.5 py-1.5">
           <input
             value={newYear}
             onChange={(e) => setNewYear(e.target.value)}

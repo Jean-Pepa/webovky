@@ -33,8 +33,8 @@ export default function Home() {
             <Logo light />
           </span>
           <nav className="flex items-center gap-2">
-            <a href={IG_URL} target="_blank" rel="noreferrer" className="btn-primary">
-              <Icon name="instagram" className="h-4 w-4" /> Instagram
+            <a href={IG_URL} target="_blank" rel="noreferrer" className="btn-primary" aria-label="Instagram">
+              <Icon name="instagram" className="h-4 w-4" /> <span className="hidden sm:inline">Instagram</span>
             </a>
             <Link href="/prihlaseni" className="rounded-full px-3 py-2 text-sm font-medium text-white transition hover:opacity-80">
               Organizátoři
@@ -53,7 +53,7 @@ export default function Home() {
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
             Fakulta architektury VUT · studentský festival
           </p>
-          <h1 className="mt-3 font-display text-6xl font-bold leading-[0.95] sm:text-7xl md:text-8xl" style={{ letterSpacing: "0.2em" }}>
+          <h1 className="mt-3 font-display text-5xl font-bold leading-[0.95] tracking-[0.12em] sm:text-7xl sm:tracking-[0.2em] md:text-8xl">
             {"MAŘENA".split("").map((ch, i) => (
               <span key={i} className="marena-letter" style={{ animationDelay: `${i * -0.06}s` }}>
                 {ch}
