@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { isAdmin } from "@/lib/admin";
 import { activeYearId } from "@/lib/years";
@@ -8,52 +8,100 @@ import { Modal } from "@/components/Modal";
 import { DeleteButton } from "@/components/DeleteButton";
 import type { Year } from "@/lib/types";
 
-// Přepínač ročníků — každý rok Mařeny je samostatný. Nový ročník může převzít
-// kontakty a program z aktuálního (hladké předání mezi týmy).
+// Přepínač ročníků — vlastní rozbalovací menu. Správce (Pan_Vyskočil) má u každého
+// ročníku Upravit a Smazat a vespod založení nového ročníku.
 export function YearSwitcher() {
-  const { db, currentYear, me, setCurrentYearId } = useStore();
+  const { db, currentYear, me, setCurrentYearId, dispatch } = useStore();
+  const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [settings, setSettings] = useState(false);
+  const [editYear, setEditYear] = useState<Year | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Zavřít menu při kliknutí mimo.
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
 
   if (!db) return null;
   const admin = isAdmin(me);
   const activeId = activeYearId(db);
 
+  async function deleteYear(y: Year) {
+    const remaining = db!.years.filter((x) => x.id !== y.id);
+    await dispatch({ type: "deleteYear", yearId: y.id });
+    if (currentYear?.id === y.id && remaining[0]) setCurrentYearId(remaining[0].id);
+  }
+
   return (
-    <div className="flex items-center gap-2">
-      <select
-        value={currentYear?.id ?? ""}
-        onChange={(e) => setCurrentYearId(e.target.value)}
-        className="rounded-full border border-ink/15 bg-white px-3 py-1.5 text-sm font-semibold text-ink outline-none focus:border-marigold-500"
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex items-center gap-1.5 rounded-full border border-ink/15 bg-white px-3 py-1.5 text-sm font-semibold text-ink transition hover:bg-paper2"
         aria-label="Vybrat ročník"
+        aria-expanded={open}
       >
-        {db.years.map((y) => (
-          <option key={y.id} value={y.id}>
-            {y.label}
-            {y.id !== activeId ? " 🔒" : ""}
-          </option>
-        ))}
-      </select>
+        {currentYear?.label ?? "Ročník"}
+        <span className="text-xs text-ink-soft">▾</span>
+      </button>
 
-      {admin && currentYear && (
-        <button
-          className="btn-ghost px-2 py-1.5 text-sm"
-          onClick={() => setSettings(true)}
-          title="Nastavení ročníku (přejmenovat, téma, datum, smazat)"
-          aria-label="Nastavení ročníku"
-        >
-          ⚙
-        </button>
-      )}
-
-      {admin && (
-        <button className="btn-ghost px-2.5 py-1.5 text-sm" onClick={() => setAdding(true)} title="Založit nový ročník">
-          + ročník
-        </button>
+      {open && (
+        <div className="absolute right-0 z-40 mt-1 w-72 rounded-2xl border border-ink/10 bg-white p-1.5 shadow-xl">
+          <ul className="max-h-72 space-y-0.5 overflow-y-auto">
+            {db.years.map((y) => {
+              const isCurrent = y.id === currentYear?.id;
+              const locked = y.id !== activeId;
+              return (
+                <li key={y.id} className="flex flex-wrap items-center gap-1">
+                  <button
+                    onClick={() => {
+                      setCurrentYearId(y.id);
+                      setOpen(false);
+                    }}
+                    className={`min-w-0 flex-1 truncate rounded-xl px-3 py-2 text-left text-sm font-medium transition ${
+                      isCurrent ? "bg-marigold-50 text-marigold-700" : "text-ink hover:bg-paper2"
+                    }`}
+                  >
+                    {y.label} {locked && <span title="uzamčený ročník">🔒</span>}
+                  </button>
+                  {admin && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setEditYear(y);
+                          setOpen(false);
+                        }}
+                        className="rounded-lg px-2 py-1 text-xs font-medium text-ink-soft transition hover:bg-paper2 hover:text-ink"
+                      >
+                        Upravit
+                      </button>
+                      {db.years.length > 1 && <DeleteButton onConfirm={() => deleteYear(y)} />}
+                    </>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          {admin && (
+            <button
+              onClick={() => {
+                setAdding(true);
+                setOpen(false);
+              }}
+              className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-marigold-700 transition hover:bg-marigold-50"
+            >
+              + Nový ročník
+            </button>
+          )}
+        </div>
       )}
 
       {adding && <NewYearModal onClose={() => setAdding(false)} />}
-      {settings && currentYear && <YearSettingsModal year={currentYear} onClose={() => setSettings(false)} />}
+      {editYear && <YearSettingsModal year={editYear} onClose={() => setEditYear(null)} />}
     </div>
   );
 }
@@ -106,14 +154,12 @@ function NewYearModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// Nastavení ročníku — jen pro správce (Pan_Vyskočil): přejmenovat, téma, datum
-// Flédy a smazání celého ročníku (nevratné).
+// Úprava ročníku — jen pro správce: přejmenovat, téma, datum Flédy.
 function YearSettingsModal({ year, onClose }: { year: Year; onClose: () => void }) {
-  const { db, dispatch, setCurrentYearId } = useStore();
+  const { dispatch } = useStore();
   const [label, setLabel] = useState(year.label);
   const [theme, setTheme] = useState(year.theme ?? "");
   const [fledaDate, setFledaDate] = useState(year.fledaDate ?? "");
-  const canDelete = (db?.years.length ?? 0) > 1;
 
   async function save() {
     await dispatch({
@@ -124,15 +170,8 @@ function YearSettingsModal({ year, onClose }: { year: Year; onClose: () => void 
     onClose();
   }
 
-  async function del() {
-    const remaining = (db?.years ?? []).filter((y) => y.id !== year.id);
-    await dispatch({ type: "deleteYear", yearId: year.id });
-    if (remaining[0]) setCurrentYearId(remaining[0].id);
-    onClose();
-  }
-
   return (
-    <Modal open onClose={onClose} title={`Nastavení ročníku — ${year.label}`}>
+    <Modal open onClose={onClose} title={`Upravit ročník — ${year.label}`}>
       <div className="space-y-3">
         <div>
           <label className="label">Název ročníku</label>
@@ -153,18 +192,6 @@ function YearSettingsModal({ year, onClose }: { year: Year; onClose: () => void 
           <button className="btn-ghost" onClick={onClose}>
             Zrušit
           </button>
-        </div>
-
-        <div className="mt-2 rounded-xl border border-red-200 bg-red-50 p-3">
-          <p className="text-xs font-semibold text-red-700">Nebezpečná zóna</p>
-          <p className="mt-0.5 text-xs text-red-700/80">Smazání ročníku je nevratné — zmizí celý jeho obsah (tým, nástěnka, finance…).</p>
-          <div className="mt-2">
-            {canDelete ? (
-              <DeleteButton label="Smazat tento ročník" onConfirm={del} />
-            ) : (
-              <p className="text-xs text-ink-soft">Poslední ročník nelze smazat.</p>
-            )}
-          </div>
         </div>
       </div>
     </Modal>

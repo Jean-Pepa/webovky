@@ -82,8 +82,7 @@ export default function KalendarPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Kalendář — {year.label}</h1>
-        <p className="text-sm text-ink-soft">Termíny, deadliny, schůzky, přednášky, průvod i Fléda. Vícedenní akce zadáš jako „od–do“.</p>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Kalendář</h1>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">

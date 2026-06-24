@@ -128,8 +128,7 @@ export default function FinancePage() {
       </datalist>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Finance — {year.label}</h1>
-          <p className="text-sm text-ink-soft">Pokladní kniha: vklady, příjmy a výdaje. Účtenky a vyúčtování na jednom místě.</p>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">Finance</h1>
         </div>
         {canEdit && (
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>

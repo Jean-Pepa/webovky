@@ -61,10 +61,7 @@ export default function NastenkaPage() {
       <div className="space-y-5">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <h1 className="font-display text-2xl font-semibold">Nástěnka — {year.label}</h1>
-            <p className="text-sm text-ink-soft">
-              {year.theme ? `Téma: ${year.theme}` : "Důležité info od ostatních na jednom místě."}
-            </p>
+            <h1 className="font-display text-2xl font-semibold">Nástěnka</h1>
           </div>
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
             {open ? "Zavřít" : "+ Přidat info"}
