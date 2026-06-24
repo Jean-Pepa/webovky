@@ -107,6 +107,19 @@ export interface FinanceItem {
   createdAt: string;
 }
 
+// Kuchyně — nahrané fotky a soubory (nákupní seznamy, menu na vaření, recepty…).
+export interface KitchenFile {
+  id: string;
+  label: string; // popis (např. „Nákup Makro – sobota", „Menu úterý")
+  category: string; // "Nákupy" | "Menu" | "Ostatní"
+  blobId: string; // ID uloženého souboru (foto/soubor se ukládá zvlášť, ne v hlavní DB)
+  fileKind: "image" | "file";
+  fileName?: string; // původní název (u ne-obrázků)
+  note?: string;
+  author: string;
+  createdAt: string;
+}
+
 // Pozvánka do programu — koho oslovit (přednášející, kapely) a stav domlouvání.
 export type Interest = "nevim" | "ceka" | "ano" | "ne";
 
@@ -141,6 +154,7 @@ export interface Year {
   finances?: FinanceItem[]; // pokladní kniha — příjmy a výdaje
   shifts?: Shift[]; // provoz — rozpis směn, na které se lidi přihlašují
   invites?: Invite[]; // program — koho oslovit (přednášející, kapely)
+  kitchen?: KitchenFile[]; // kuchyně — nahrané fotky/soubory (nákupy, menu…)
   createdAt: string;
 }
 

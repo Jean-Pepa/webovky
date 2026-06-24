@@ -33,6 +33,16 @@ export async function compressImage(file: File, maxDim = 1280, quality = 0.6): P
   return canvas.toDataURL("image/jpeg", quality);
 }
 
+// Načte libovolný soubor jako data URL (base64) — pro ne-obrázky (PDF, …).
+export function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result));
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
 export async function saveReceipt(id: string, dataUrl: string, configured: boolean): Promise<boolean> {
   if (configured) {
     const res = await fetch(`/api/receipt/${id}`, {

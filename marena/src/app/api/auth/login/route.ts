@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { AUTH_COOKIE, authToken, correctPassword } from "@/lib/auth";
+import { AUTH_COOKIE, authToken, isValidPassword } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const password = String(body?.password ?? "");
-  if (password !== correctPassword()) {
+  if (!isValidPassword(password)) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
   const jar = await cookies();

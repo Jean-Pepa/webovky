@@ -240,6 +240,22 @@ function renderContacts(y: Year): string {
     .join("");
 }
 
+function renderKitchen(y: Year): string {
+  const files = y.kitchen ?? [];
+  if (!files.length) return "";
+  return `<table>
+    <tr><th>Kategorie</th><th>Popis</th><th>Soubor</th><th>Kdo</th><th>Datum</th></tr>
+    ${files
+      .map(
+        (k) =>
+          `<tr><td>${esc(k.category)}</td><td>${esc(k.label)}</td><td>${esc(
+            k.fileKind === "image" ? "foto" : k.fileName || "soubor",
+          )}</td><td>${esc(k.author)}</td><td>${esc(fmtDate(k.createdAt))}</td></tr>`,
+      )
+      .join("")}
+  </table>`;
+}
+
 function renderYear(y: Year): string {
   return `<section class="year">
     <h1>${esc(y.label)}</h1>
@@ -251,6 +267,7 @@ function renderYear(y: Year): string {
     ${section("Program (přednášející, kapely)", renderProgram(y))}
     ${section("Úkoly", renderTasks(y))}
     ${section("Provoz a směny", renderShifts(y))}
+    ${section("Kuchyně (nahrané fotky a soubory)", renderKitchen(y))}
     ${section("Finance", renderFinance(y))}
     ${section("Kontakty", renderContacts(y))}
   </section>`;

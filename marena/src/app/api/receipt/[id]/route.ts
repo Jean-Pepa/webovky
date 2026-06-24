@@ -23,7 +23,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (!(await isAuthed())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const body = await req.json().catch(() => null);
   const dataUrl = body?.dataUrl;
-  if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:image")) {
+  // Účtenky jsou obrázky, kuchyně může mít i jiné soubory (PDF…) — bereme libovolný data: URL.
+  if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:")) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
   await redis.set(receiptKey(id), dataUrl);

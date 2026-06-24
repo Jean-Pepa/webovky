@@ -1,18 +1,22 @@
 import { cookies } from "next/headers";
 import { createHash } from "crypto";
+import { isYearPassword } from "./years";
 
-// Sdílené jednoduché heslo do zázemí. Bez účtů — jen jedno heslo pro celý tým.
-// Nastav přes proměnnou prostředí MARENA_PASSWORD (jinak výchozí "marena").
-export function correctPassword(): string {
-  return process.env.MARENA_PASSWORD || "marena";
+// Hesla do zázemí: pro každý ročník jedno — „marena2026" … „marena2050".
+// Volitelně lze přes MARENA_PASSWORD nastavit ještě další (master) heslo.
+export function isValidPassword(pw: string): boolean {
+  const p = (pw || "").trim();
+  if (process.env.MARENA_PASSWORD && p.toLowerCase() === process.env.MARENA_PASSWORD.toLowerCase()) return true;
+  return isYearPassword(p);
 }
 
 export const AUTH_COOKIE = "marena_auth";
 
-// Do cookie neukládáme heslo, ale jeho odvozený token (hash). Cookie tak
-// neobsahuje znovupoužitelné heslo v plaintextu.
+// Do cookie neukládáme heslo, ale stabilní odvozený token (hash). Token je
+// stejný pro všechna platná hesla — cookie znamená jen „přihlášen do zázemí".
 export function authToken(): string {
-  return createHash("sha256").update(`marena:v1:${correctPassword()}`).digest("hex");
+  const secret = process.env.MARENA_PASSWORD || "marena-zazemi";
+  return createHash("sha256").update(`marena:auth:v2:${secret}`).digest("hex");
 }
 
 export async function isAuthed(): Promise<boolean> {

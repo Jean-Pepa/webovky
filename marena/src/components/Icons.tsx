@@ -25,7 +25,9 @@ export type IconName =
   | "instagram"
   | "download"
   | "menu"
-  | "close";
+  | "close"
+  | "image"
+  | "file";
 
 const PATHS: Record<IconName, ReactNode> = {
   board: (
@@ -167,6 +169,19 @@ const PATHS: Record<IconName, ReactNode> = {
   ),
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
   close: <path d="M6 6l12 12M18 6 6 18" />,
+  image: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="8.5" cy="9.5" r="1.5" />
+      <path d="m4 17 4.5-4.5 3 3L15 11l5 5" />
+    </>
+  ),
+  file: (
+    <>
+      <path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+      <path d="M14 3v4h4" />
+    </>
+  ),
 };
 
 export function Icon({ name, className = "h-4 w-4" }: { name: IconName; className?: string }) {

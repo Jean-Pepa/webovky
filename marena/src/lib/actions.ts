@@ -46,7 +46,9 @@ export type Action =
   | { type: "removeShift"; yearId: string; shiftId: string }
   | { type: "addInvite"; yearId: string; category: string; name: string; link?: string; priority?: number }
   | { type: "updateInvite"; yearId: string; inviteId: string; patch: Partial<Pick<Invite, "category" | "name" | "link" | "priority" | "contacted" | "interest" | "availability" | "price" | "confirmedDate" | "note">> }
-  | { type: "removeInvite"; yearId: string; inviteId: string };
+  | { type: "removeInvite"; yearId: string; inviteId: string }
+  | { type: "addKitchenFile"; yearId: string; label: string; category: string; blobId: string; fileKind: "image" | "file"; fileName?: string; note?: string; author: string }
+  | { type: "removeKitchenFile"; yearId: string; fileId: string };
 
 function now(): string {
   return new Date().toISOString();
@@ -317,6 +319,27 @@ export function applyAction(db: DB, a: Action): DB {
       }));
     case "removeInvite":
       return mapYear(db, a.yearId, (y) => ({ ...y, invites: (y.invites ?? []).filter((i) => i.id !== a.inviteId) }));
+
+    case "addKitchenFile":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        kitchen: [
+          {
+            id: uid("k_"),
+            label: a.label.trim() || a.fileName?.trim() || "Bez názvu",
+            category: a.category.trim() || "Ostatní",
+            blobId: a.blobId,
+            fileKind: a.fileKind,
+            fileName: a.fileName?.trim() || undefined,
+            note: a.note?.trim() || undefined,
+            author: a.author.trim() || "Anonym",
+            createdAt: now(),
+          },
+          ...(y.kitchen ?? []),
+        ],
+      }));
+    case "removeKitchenFile":
+      return mapYear(db, a.yearId, (y) => ({ ...y, kitchen: (y.kitchen ?? []).filter((k) => k.id !== a.fileId) }));
 
     default:
       return db;
