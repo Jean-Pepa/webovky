@@ -6,7 +6,8 @@ import { DeleteButton } from "@/components/DeleteButton";
 import type { LinkItem } from "@/lib/types";
 
 // Doporučené pořadí složek; cokoliv navíc se zařadí za ně, prázdné jako „Ostatní".
-const FOLDER_ORDER = ["Fakulta", "Město a úřady", "Klub Fléda", "Dodavatelé", "Sponzoři", "Kapely a DJs", "Tiskárny", "Interní", "Ostatní"];
+// Sponzoři jsou hlavní → nahoře.
+const FOLDER_ORDER = ["Sponzoři", "Fakulta", "Město a úřady", "Klub Fléda", "Dodavatelé", "Kapely a DJs", "Tiskárny", "Interní", "Ostatní"];
 
 function slug(s: string): string {
   return "f-" + s.toLowerCase().replace(/[^a-z0-9]+/gi, "-");
@@ -99,18 +100,24 @@ export default function KontaktyPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_220px]">
           {/* Hlavní obsah — složky pod sebou */}
           <div className="order-2 space-y-8 lg:order-1">
-            {folders.map(([name, items]) => (
+            {folders.map(([name, items]) => {
+              const isSponsor = name === "Sponzoři";
+              return (
               <section key={name} id={slug(name)} className="scroll-mt-28">
                 <div className="mb-3 flex items-center gap-2">
-                  <span className="text-lg">📁</span>
-                  <h2 className="font-display text-lg font-semibold">{name}</h2>
+                  <h2 className={`font-display text-lg font-semibold ${isSponsor ? "text-marigold-700" : ""}`}>{name}</h2>
+                  {isSponsor && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-marigold-600 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+                      ★ Hlavní
+                    </span>
+                  )}
                   <span className="chip">{items.length}</span>
                 </div>
                 <ul className="grid gap-3 sm:grid-cols-2">
                   {items.map((l) => {
                     const href = hrefFor(l.value);
                     return (
-                      <li key={l.id} className="card flex flex-col p-4">
+                      <li key={l.id} className={`card flex flex-col p-4 ${isSponsor ? "ring-1 ring-marigold-300" : ""}`}>
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="font-display text-base font-semibold">{l.label}</h3>
                           <DeleteButton onConfirm={() => dispatch({ type: "removeLink", yearId: year.id, linkId: l.id })} />
@@ -128,19 +135,29 @@ export default function KontaktyPage() {
                   })}
                 </ul>
               </section>
-            ))}
+              );
+            })}
           </div>
 
           {/* Pravá navigace — složky odshora dolů */}
           <aside className="order-1 lg:order-2">
             <nav className="sticky top-28 space-y-1">
               <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-soft">Složky</p>
-              {folders.map(([name, items]) => (
-                <a key={name} href={`#${slug(name)}`} className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-ink-soft transition hover:bg-paper2 hover:text-ink">
-                  <span className="truncate">📁 {name}</span>
-                  <span className="ml-2 shrink-0 rounded-full bg-paper2 px-2 text-xs">{items.length}</span>
-                </a>
-              ))}
+              {folders.map(([name, items]) => {
+                const isSponsor = name === "Sponzoři";
+                return (
+                  <a
+                    key={name}
+                    href={`#${slug(name)}`}
+                    className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm transition ${
+                      isSponsor ? "font-semibold text-marigold-700 hover:bg-marigold-50" : "text-ink-soft hover:bg-paper2 hover:text-ink"
+                    }`}
+                  >
+                    <span className="truncate">{isSponsor ? "★ " : ""}{name}</span>
+                    <span className={`ml-2 shrink-0 rounded-full px-2 text-xs ${isSponsor ? "bg-marigold-600 text-white" : "bg-paper2"}`}>{items.length}</span>
+                  </a>
+                );
+              })}
             </nav>
           </aside>
         </div>
