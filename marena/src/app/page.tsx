@@ -59,14 +59,14 @@ export default function Home() {
             Týden, na který do konce školy nezapomeneš. Přednášky, bar na dvoře, party večery, velký
             průvod městem a křest prváků na Flédě.
           </p>
-          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-marigold-600 px-4 py-1.5 text-sm font-semibold text-white">
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-marigold-600 px-4 py-1.5 text-sm font-semibold text-white [text-shadow:none]">
             🐣 Jsi prvák? Tohle je tvůj vstup do života na fakultě.
           </div>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <a href={IG_URL} target="_blank" rel="noreferrer" className="btn-primary px-6 py-3 text-base">
+            <a href={IG_URL} target="_blank" rel="noreferrer" className="btn-primary px-6 py-3 text-base text-white [text-shadow:none]">
               Sleduj nás na Instagramu →
             </a>
-            <a href="#co-te-ceka" className="rounded-full border border-white/30 px-6 py-3 text-base font-medium text-white transition hover:bg-white/10">
+            <a href="#co-te-ceka" className="rounded-full border border-white/60 bg-black/25 px-6 py-3 text-base font-semibold text-white [text-shadow:none] transition hover:bg-black/40">
               Co tě čeká ↓
             </a>
           </div>
