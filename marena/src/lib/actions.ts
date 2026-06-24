@@ -1,7 +1,7 @@
 // Čistý reducer nad DB. Stejná logika běží na serveru (Redis) i v prohlížeči
 // (localStorage demo režim) — proto je bezstavová a deterministická až na uid().
 
-import type { DB, Year, EventKind } from "./types";
+import type { DB, Year, EventKind, FinanceKind } from "./types";
 import { uid } from "./id";
 
 export type Action =
@@ -24,7 +24,11 @@ export type Action =
   | { type: "toggleTask"; yearId: string; taskId: string }
   | { type: "removeTask"; yearId: string; taskId: string }
   | { type: "addLink"; yearId: string; label: string; value: string; note?: string }
-  | { type: "removeLink"; yearId: string; linkId: string };
+  | { type: "removeLink"; yearId: string; linkId: string }
+  | { type: "addFinance"; yearId: string; kind: FinanceKind; label: string; amount: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string }
+  | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string } }
+  | { type: "toggleFinancePaid"; yearId: string; financeId: string }
+  | { type: "removeFinance"; yearId: string; financeId: string };
 
 function now(): string {
   return new Date().toISOString();
@@ -170,6 +174,42 @@ export function applyAction(db: DB, a: Action): DB {
       }));
     case "removeLink":
       return mapYear(db, a.yearId, (y) => ({ ...y, links: (y.links ?? []).filter((l) => l.id !== a.linkId) }));
+
+    case "addFinance":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        finances: [
+          ...(y.finances ?? []),
+          {
+            id: uid("f_"),
+            kind: a.kind,
+            label: a.label.trim(),
+            amount: Number.isFinite(a.amount) ? Math.round(a.amount) : 0,
+            category: a.category?.trim() || undefined,
+            who: a.who?.trim() || undefined,
+            paid: a.paid ?? true,
+            date: a.date || undefined,
+            note: a.note?.trim() || undefined,
+            createdAt: now(),
+          },
+        ],
+      }));
+    case "updateFinance":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        finances: (y.finances ?? []).map((f) =>
+          f.id === a.financeId
+            ? { ...f, ...a.patch, amount: a.patch.amount !== undefined ? Math.round(a.patch.amount) : f.amount }
+            : f,
+        ),
+      }));
+    case "toggleFinancePaid":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        finances: (y.finances ?? []).map((f) => (f.id === a.financeId ? { ...f, paid: !f.paid } : f)),
+      }));
+    case "removeFinance":
+      return mapYear(db, a.yearId, (y) => ({ ...y, finances: (y.finances ?? []).filter((f) => f.id !== a.financeId) }));
 
     default:
       return db;

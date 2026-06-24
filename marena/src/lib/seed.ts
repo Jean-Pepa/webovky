@@ -61,6 +61,10 @@ export function seedDB(): DB {
           { id: "seed_l3", label: "Fléda", value: "studentský klub — křest prváků", note: "Zamluvit co nejdřív, pronájem cca 30–35 000.", createdAt: t },
           { id: "seed_l4", label: "AlienPay (p. Vostal)", value: "generátor QR kódů pro platby na baru", note: "Ochotný nasdílet — stačí kontaktovat.", createdAt: t },
         ],
+        finances: [
+          { id: "seed_f1", kind: "prijem", label: "Třídní vklad (vzor)", amount: 1500, category: "vklad", who: "Petra", paid: true, createdAt: t },
+          { id: "seed_f2", kind: "vydaj", label: "Pronájem Flédy (vzor)", amount: 32000, category: "Fléda", paid: false, createdAt: t },
+        ],
       },
     ],
   };

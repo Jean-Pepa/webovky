@@ -1,43 +1,47 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* Značková paleta Mařeny — podzimní festival, oranžové vesty, fakulta architektury */
-  --color-paper: #fbf6ec; /* krémové pozadí */
-  --color-paper2: #f3e9d6; /* teplejší papír */
-  --color-ink: #241a13; /* hlavní text */
-  --color-ink-soft: #5b4a3c;
+  /* ---- Mařena · čistý „Apple" vzhled --------------------------------- */
+  /* Neutrální základ (světle šedá / bílá / téměř černá) + jeden teplý akcent */
 
-  /* Primární — marigold / oranžová (vesty organizátorů) */
-  --color-marigold-50: #fef3e6;
-  --color-marigold-100: #fce0c2;
-  --color-marigold-200: #f9c189;
-  --color-marigold-300: #f5a14f;
-  --color-marigold-400: #f08a2b;
-  --color-marigold-500: #e8701a;
-  --color-marigold-600: #d65d12;
-  --color-marigold-700: #b14a12;
-  --color-marigold-800: #8c3b13;
-  --color-marigold-900: #6f3214;
+  --color-paper: #f5f5f7; /* systémová světle šedá (pozadí) */
+  --color-paper2: #ececef; /* o stupínek tmavší (výplně, hover, chipy) */
+  --color-ink: #1d1d1f; /* hlavní text (Apple ink) */
+  --color-ink-soft: #6e6e73; /* sekundární text */
 
-  /* Akcent — vínová / švestková */
-  --color-plum-50: #f7ecf1;
-  --color-plum-100: #eccfdc;
-  --color-plum-200: #d99cb6;
-  --color-plum-400: #a8466f;
-  --color-plum-500: #8d3458;
-  --color-plum-600: #732a48;
-  --color-plum-700: #5b2139;
-  --color-plum-800: #45192c;
-  --color-plum-900: #321321;
+  /* Akcent — kultivovaná oranžová (identita Mařeny, ale střídmě) */
+  --color-marigold-50: #fff4ee;
+  --color-marigold-100: #ffe5d6;
+  --color-marigold-200: #ffc7a8;
+  --color-marigold-300: #ffa472;
+  --color-marigold-400: #fb8347;
+  --color-marigold-500: #f56a23;
+  --color-marigold-600: #e15a14; /* primární akce */
+  --color-marigold-700: #bd4a10;
+  --color-marigold-800: #973c12;
+  --color-marigold-900: #7c3413;
 
-  /* Doplňky */
-  --color-leaf: #5c7a3a; /* zeleň (tečky, výplně) */
-  --color-leaf-700: #3f5524; /* tmavší zeleň pro text na světlém tintu (kontrast AA) */
-  --color-sky: #2f6f86; /* modrá pro klid */
+  /* „plum" přemapováno na neutrální grafit — tmavé plochy à la Apple */
+  --color-plum-50: #f2f2f4;
+  --color-plum-100: #e6e6ea;
+  --color-plum-200: #c9c9d1;
+  --color-plum-400: #48484c;
+  --color-plum-500: #353538;
+  --color-plum-600: #29292b;
+  --color-plum-700: #1d1d1f;
+  --color-plum-800: #161617;
+  --color-plum-900: #0e0e0f;
 
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --font-display: "Fraunces", "Inter", ui-serif, Georgia, serif;
+  /* Doplňkové (kategorie v kalendáři) — systémové barvy */
+  --color-leaf: #30a14e; /* zeleň */
+  --color-leaf-700: #1f7a36; /* tmavší pro text na světlém tintu (AA) */
+  --color-sky: #0071e3; /* Apple modrá */
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Segoe UI", Roboto, "Helvetica Neue", "Inter", Arial, sans-serif;
+  --font-display: var(--font-sans);
+
+  --radius-app: 18px;
 }
 
 * {
@@ -46,6 +50,7 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -53,7 +58,9 @@ body {
   background: var(--color-paper);
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  letter-spacing: -0.011em;
 }
 
 a {
@@ -61,53 +68,53 @@ a {
   text-decoration: none;
 }
 
+/* Výrazné nadpisy — systémový font, tučnější, sevřené prostrkání (styl Apple) */
 .font-display {
   font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.022em;
 }
 
-/* Jemná zrnitá / papírová textura na pozadí sekcí */
+/* Ponecháno kvůli kompatibilitě — čistý vzhled = bez textury */
 .paper-grain {
-  background-image:
-    radial-gradient(circle at 1px 1px, rgba(36, 26, 19, 0.05) 1px, transparent 0);
-  background-size: 22px 22px;
+  background-image: none;
 }
 
 @layer components {
   .btn-primary {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-marigold-600
-      px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-marigold-700
-      disabled:cursor-not-allowed disabled:opacity-60;
+      px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-marigold-700
+      active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-secondary {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border
-      border-ink/15 bg-white px-5 py-2.5 text-sm font-semibold text-ink transition-colors
-      hover:bg-paper2 disabled:cursor-not-allowed disabled:opacity-60;
+      border-black/10 bg-white px-5 py-2.5 text-sm font-medium text-ink transition-all
+      hover:bg-paper2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-ghost {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full px-4 py-2
-      text-sm font-medium text-ink-soft transition-colors hover:bg-black/5
-      disabled:cursor-not-allowed disabled:opacity-60;
+      text-sm font-medium text-ink-soft transition-colors hover:bg-black/[0.04] hover:text-ink
+      disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-danger {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full px-3 py-1.5
-      text-sm font-medium text-plum-700 transition-colors hover:bg-plum-50
-      disabled:cursor-not-allowed disabled:opacity-60;
+      text-sm font-medium text-red-600 transition-colors hover:bg-red-50
+      disabled:cursor-not-allowed disabled:opacity-50;
   }
   .card {
-    @apply rounded-2xl border border-ink/10 bg-white shadow-sm;
+    @apply rounded-3xl border border-black/[0.06] bg-white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 8px 24px rgba(0, 0, 0, 0.04);
   }
   .input {
-    @apply w-full rounded-xl border border-ink/15 bg-white px-3.5 py-2.5 text-sm text-ink
-      outline-none transition placeholder:text-ink-soft/50 focus:border-marigold-500
-      focus:ring-2 focus:ring-marigold-500/25;
+    @apply w-full rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-sm text-ink
+      outline-none transition placeholder:text-ink-soft/50 focus:border-marigold-400
+      focus:ring-4 focus:ring-marigold-500/15;
   }
   .label {
-    @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-ink-soft;
+    @apply mb-1 block text-xs font-medium text-ink-soft;
   }
   .chip {
-    @apply inline-flex items-center gap-1 rounded-full border border-ink/10 bg-paper2 px-2.5 py-1
-      text-xs font-medium text-ink-soft;
+    @apply inline-flex items-center gap-1 rounded-full bg-paper2 px-2.5 py-1 text-xs font-medium
+      text-ink-soft;
   }
 }

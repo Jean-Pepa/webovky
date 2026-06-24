@@ -74,6 +74,21 @@ export interface LinkItem {
   createdAt: string;
 }
 
+export type FinanceKind = "prijem" | "vydaj"; // příjem / výdaj
+
+export interface FinanceItem {
+  id: string;
+  kind: FinanceKind;
+  label: string; // popis (např. "Třídní vklad — Petra", "Pronájem Flédy")
+  amount: number; // částka v Kč
+  category?: string; // vklad, bar, lístky, výzdoba, přednášející, merch, sponzoring…
+  who?: string; // kdo zaplatil / od koho / komu
+  paid: boolean; // zaplaceno / proplaceno
+  date?: string; // ISO datum
+  note?: string;
+  createdAt: string;
+}
+
 export interface Year {
   id: string; // např. "2025"
   label: string; // "Mařena 2025"
@@ -85,6 +100,7 @@ export interface Year {
   events: CalEvent[];
   tasks: Task[];
   links?: LinkItem[]; // důležité kontakty a odkazy (volitelné kvůli zpětné kompatibilitě)
+  finances?: FinanceItem[]; // pokladní kniha — příjmy a výdaje
   createdAt: string;
 }
 

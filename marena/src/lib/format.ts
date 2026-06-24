@@ -28,6 +28,14 @@ export function fmtRelative(iso: string): string {
   return fmtDate(iso);
 }
 
+// Částka v Kč s mezerou jako oddělovačem tisíců (např. "1 500 Kč").
+export function fmtCZK(amount: number): string {
+  const sign = amount < 0 ? "−" : "";
+  const abs = Math.abs(Math.round(amount));
+  const grouped = abs.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return `${sign}${grouped} Kč`;
+}
+
 export function todayISO(): string {
   // Lokální datum (ne UTC), ať sedí s mřížkou kalendáře sestavenou z lokálního času.
   const d = new Date();

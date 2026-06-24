@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { ROLES, roleById } from "@/lib/roles";
-import { fmtRelative, fmtDayShort, todayISO } from "@/lib/format";
+import { fmtRelative, fmtDayShort, todayISO, fmtCZK } from "@/lib/format";
 import { KINDS } from "@/lib/kinds";
 import { DeleteButton } from "@/components/DeleteButton";
 
@@ -34,6 +34,9 @@ export default function NastenkaPage() {
 
   const openPolls = year?.polls.filter((p) => !p.closed).length ?? 0;
   const myTasks = year?.tasks.filter((t) => !t.done && (t.assignee === me || !t.assignee)).length ?? 0;
+
+  const bilance = (year?.finances ?? []).reduce((s, f) => s + (f.kind === "prijem" ? f.amount : -f.amount), 0);
+  const hasFinance = (year?.finances ?? []).length > 0;
 
   if (!year) return null;
 
@@ -122,6 +125,19 @@ export default function NastenkaPage() {
 
       <aside className="space-y-4">
         <WidgetLinks openPolls={openPolls} myTasks={myTasks} />
+        {hasFinance && (
+          <Link href="/zazemi/finance" className="card block p-4 transition hover:border-black/10">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-base font-semibold">💰 Bilance</h2>
+              <span className="text-xs font-medium text-marigold-700">detail →</span>
+            </div>
+            <p className={`mt-1 font-display text-2xl font-semibold tracking-tight ${bilance >= 0 ? "text-leaf-700" : "text-red-600"}`}>
+              {bilance >= 0 ? "+" : "−"}
+              {fmtCZK(Math.abs(bilance))}
+            </p>
+            <p className="text-xs text-ink-soft">příjmy minus výdaje</p>
+          </Link>
+        )}
         <div className="card p-4">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-display text-base font-semibold">📅 Nejbližší termíny</h2>

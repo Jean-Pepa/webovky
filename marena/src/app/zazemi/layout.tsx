@@ -14,6 +14,7 @@ const NAV = [
   { href: "/zazemi/kalendar", label: "Kalendář", emoji: "📅" },
   { href: "/zazemi/tym", label: "Tým & role", emoji: "🧑‍🤝‍🧑" },
   { href: "/zazemi/ukoly", label: "Úkoly", emoji: "✅" },
+  { href: "/zazemi/finance", label: "Finance", emoji: "💰" },
   { href: "/zazemi/kontakty", label: "Kontakty", emoji: "📇" },
 ];
 

@@ -51,10 +51,7 @@ export default function Home() {
           </div>
 
           <div className="relative grid place-items-center">
-            <div className="absolute h-72 w-72 rounded-full bg-marigold-200/50 blur-3xl" />
-            <div className="relative">
-              <Mascot size={300} wave />
-            </div>
+            <Mascot size={300} wave />
           </div>
         </div>
       </section>
