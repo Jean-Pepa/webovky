@@ -7,6 +7,8 @@ import { ROLES, roleById } from "@/lib/roles";
 import { fmtRelative, fmtDayShort, todayISO, fmtCZK } from "@/lib/format";
 import { KINDS } from "@/lib/kinds";
 import { DeleteButton } from "@/components/DeleteButton";
+import { Onboarding } from "@/components/Onboarding";
+import { Icon } from "@/components/Icons";
 
 export default function NastenkaPage() {
   const { currentYear, me, dispatch } = useStore();
@@ -52,7 +54,9 @@ export default function NastenkaPage() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+    <div className="space-y-6">
+      <Onboarding />
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="space-y-5">
         <div className="flex items-end justify-between gap-3">
           <div>
@@ -193,6 +197,7 @@ export default function NastenkaPage() {
           )}
         </div>
       </aside>
+      </div>
     </div>
   );
 }
@@ -201,16 +206,19 @@ function WidgetLinks({ openPolls, myTasks, myShifts }: { openPolls: number; myTa
   return (
     <div className="grid grid-cols-3 gap-3">
       <Link href="/zazemi/hlasovani" className="card p-3 transition hover:border-marigold-300">
-        <div className="text-2xl font-bold text-marigold-700">{openPolls}</div>
-        <div className="text-xs text-ink-soft">anket 🗳️</div>
+        <Icon name="vote" className="h-4 w-4 text-marigold-600" />
+        <div className="mt-1 text-2xl font-bold text-marigold-700">{openPolls}</div>
+        <div className="text-xs text-ink-soft">anket</div>
       </Link>
       <Link href="/zazemi/ukoly" className="card p-3 transition hover:border-marigold-300">
-        <div className="text-2xl font-bold text-plum-600">{myTasks}</div>
-        <div className="text-xs text-ink-soft">úkolů ✅</div>
+        <Icon name="tasks" className="h-4 w-4 text-plum-600" />
+        <div className="mt-1 text-2xl font-bold text-plum-600">{myTasks}</div>
+        <div className="text-xs text-ink-soft">úkolů</div>
       </Link>
       <Link href="/zazemi/provoz" className="card p-3 transition hover:border-marigold-300">
-        <div className="text-2xl font-bold text-marigold-700">{myShifts}</div>
-        <div className="text-xs text-ink-soft">směn 🛠️</div>
+        <Icon name="ops" className="h-4 w-4 text-marigold-600" />
+        <div className="mt-1 text-2xl font-bold text-marigold-700">{myShifts}</div>
+        <div className="text-xs text-ink-soft">směn</div>
       </Link>
     </div>
   );

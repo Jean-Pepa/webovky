@@ -7,17 +7,18 @@ import { useStore } from "@/lib/store";
 import { Logo } from "@/components/Logo";
 import { Loading } from "@/components/Loading";
 import { YearSwitcher } from "@/components/YearSwitcher";
+import { Icon, type IconName } from "@/components/Icons";
 
-const NAV = [
-  { href: "/zazemi", label: "Nástěnka", emoji: "📌" },
-  { href: "/zazemi/hlasovani", label: "Hlasování", emoji: "🗳️" },
-  { href: "/zazemi/kalendar", label: "Kalendář", emoji: "📅" },
-  { href: "/zazemi/program", label: "Program", emoji: "🎤" },
-  { href: "/zazemi/tym", label: "Tým & role", emoji: "🧑‍🤝‍🧑" },
-  { href: "/zazemi/ukoly", label: "Úkoly", emoji: "✅" },
-  { href: "/zazemi/provoz", label: "Provoz & směny", emoji: "🛠️" },
-  { href: "/zazemi/finance", label: "Finance", emoji: "💰" },
-  { href: "/zazemi/kontakty", label: "Kontakty", emoji: "📇" },
+const NAV: { href: string; label: string; icon: IconName }[] = [
+  { href: "/zazemi", label: "Nástěnka", icon: "board" },
+  { href: "/zazemi/hlasovani", label: "Hlasování", icon: "vote" },
+  { href: "/zazemi/kalendar", label: "Kalendář", icon: "calendar" },
+  { href: "/zazemi/program", label: "Program", icon: "mic" },
+  { href: "/zazemi/tym", label: "Tým & role", icon: "users" },
+  { href: "/zazemi/ukoly", label: "Úkoly", icon: "tasks" },
+  { href: "/zazemi/provoz", label: "Provoz & směny", icon: "ops" },
+  { href: "/zazemi/finance", label: "Finance", icon: "finance" },
+  { href: "/zazemi/kontakty", label: "Kontakty", icon: "contacts" },
 ];
 
 export default function ZazemiLayout({ children }: { children: React.ReactNode }) {
@@ -50,28 +51,28 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               <Link
                 key={n.href}
                 href={n.href}
-                className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
                   active ? "bg-marigold-600 text-white" : "text-ink-soft hover:bg-black/5"
                 }`}
               >
-                <span aria-hidden>{n.emoji}</span> {n.label}
+                <Icon name={n.icon} className="h-4 w-4" /> {n.label}
               </Link>
             );
           })}
           <Link
             href="/zazemi/almanach"
-            className="ml-auto whitespace-nowrap rounded-full bg-marigold-600 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-marigold-700"
+            className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-marigold-600 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-marigold-700"
           >
-            📖 Almanach
+            <Icon name="book" className="h-4 w-4" /> Almanach
           </Link>
           <button
             onClick={async () => {
               await logout();
               router.replace("/");
             }}
-            className="whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium text-ink-soft hover:bg-black/5"
+            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium text-ink-soft hover:bg-black/5"
           >
-            Odhlásit
+            <Icon name="logout" className="h-4 w-4" /> Odhlásit
           </button>
         </nav>
       </header>

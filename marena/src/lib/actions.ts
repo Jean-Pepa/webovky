@@ -17,7 +17,7 @@ export function defaultRoleTasks(createdAt: string): Task[] {
 }
 
 export type Action =
-  | { type: "createYear"; id: string; label?: string; theme?: string; fledaDate?: string }
+  | { type: "createYear"; id: string; label?: string; theme?: string; fledaDate?: string; copyFromYearId?: string }
   | { type: "updateYear"; yearId: string; patch: Partial<Pick<Year, "label" | "theme" | "fledaDate" | "plannedPeople" | "deposit">> }
   | { type: "deleteYear"; yearId: string }
   | { type: "addMember"; yearId: string; name: string; roleIds: string[]; email?: string; phone?: string; contact?: string; note?: string }
@@ -62,20 +62,36 @@ export function applyAction(db: DB, a: Action): DB {
     case "createYear": {
       if (db.years.some((y) => y.id === a.id)) return db;
       const t = now();
+      // Předání mezi ročníky: kontakty se přenášejí celé, program jen jako
+      // shortlist se zresetovaným stavem domlouvání (nový tým začne načisto).
+      const src = a.copyFromYearId ? db.years.find((y) => y.id === a.copyFromYearId) : undefined;
+      const links = (src?.links ?? []).map((l) => ({ ...l, id: uid("l_"), createdAt: t }));
+      const invites = (src?.invites ?? []).map((i) => ({
+        id: uid("i_"),
+        category: i.category,
+        name: i.name,
+        link: i.link,
+        priority: i.priority,
+        contacted: false,
+        interest: "nevim" as const,
+        createdAt: t,
+      }));
       const year: Year = {
         id: a.id,
         label: a.label?.trim() || `Mařena ${a.id}`,
         theme: a.theme?.trim() || undefined,
         fledaDate: a.fledaDate || undefined,
-        plannedPeople: 30,
-        deposit: 1500,
+        plannedPeople: src?.plannedPeople ?? 30,
+        deposit: src?.deposit ?? 1500,
         members: [],
         posts: [],
         polls: [],
         events: [],
         tasks: defaultRoleTasks(t), // úkoly rozdané dopředu na role
-        links: [],
+        links,
         finances: [],
+        shifts: [],
+        invites,
         createdAt: t,
       };
       return { ...db, years: [year, ...db.years] };
