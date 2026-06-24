@@ -2,103 +2,179 @@
 
 import { useState } from "react";
 import { useStore } from "@/lib/store";
-import { ROLES, roleById } from "@/lib/roles";
+import { ROLES, roleById, type Role } from "@/lib/roles";
 import { DeleteButton } from "@/components/DeleteButton";
+import { Modal } from "@/components/Modal";
 
 export default function TymPage() {
-  const { currentYear, me, dispatch } = useStore();
+  const { currentYear, me, setMe, dispatch } = useStore();
   const [openRole, setOpenRole] = useState<string | null>(null);
-  const year = currentYear;
-  if (!year) return null;
+  // Profilový modal: buď "vezmi si roli X" (roleToAdd), nebo jen úprava profilu.
+  const [modal, setModal] = useState<{ roleToAdd?: string } | null>(null);
+
+  const current = currentYear;
+  if (!current) return null;
+  const year = current; // typ Year (zachová zúžení i ve vnořených funkcích)
 
   const myMember = year.members.find((m) => m.name === me);
-
-  async function toggleRoleForMe(roleId: string) {
-    if (!year) return;
-    if (myMember) {
-      const has = myMember.roleIds.includes(roleId);
-      const roleIds = has ? myMember.roleIds.filter((r) => r !== roleId) : [...myMember.roleIds, roleId];
-      await dispatch({ type: "updateMember", yearId: year.id, memberId: myMember.id, patch: { roleIds } });
-    } else {
-      await dispatch({ type: "addMember", yearId: year.id, name: me, roleIds: [roleId] });
-    }
-  }
+  const mineRoles = ROLES.filter((r) => myMember?.roleIds.includes(r.id));
+  const otherRoles = ROLES.filter((r) => !myMember?.roleIds.includes(r.id));
 
   const takenBy = (roleId: string) => year.members.filter((m) => m.roleIds.includes(roleId));
+
+  // Odebrání role je přímé; přidání projde modálem na doplnění kontaktu.
+  async function removeRoleFromMe(roleId: string) {
+    if (!myMember) return;
+    await dispatch({
+      type: "updateMember",
+      yearId: year.id,
+      memberId: myMember.id,
+      patch: { roleIds: myMember.roleIds.filter((r) => r !== roleId) },
+    });
+  }
+
+  async function saveProfile(data: { name: string; email: string; phone: string; roleToAdd?: string }) {
+    const finalName = data.name.trim() || me;
+    const existing = year.members.find((m) => m.name === me);
+    if (existing) {
+      const roleIds =
+        data.roleToAdd && !existing.roleIds.includes(data.roleToAdd) ? [...existing.roleIds, data.roleToAdd] : existing.roleIds;
+      await dispatch({
+        type: "updateMember",
+        yearId: year.id,
+        memberId: existing.id,
+        patch: { name: finalName, email: data.email, phone: data.phone, roleIds },
+      });
+    } else {
+      await dispatch({
+        type: "addMember",
+        yearId: year.id,
+        name: finalName,
+        roleIds: data.roleToAdd ? [data.roleToAdd] : [],
+        email: data.email,
+        phone: data.phone,
+      });
+    }
+    if (finalName !== me) setMe(finalName);
+    setModal(null);
+  }
+
+  function RoleCard({ r }: { r: Role }) {
+    const people = takenBy(r.id);
+    const mine = myMember?.roleIds.includes(r.id);
+    const open = openRole === r.id;
+    return (
+      <div className={`card p-4 ${mine ? "ring-2 ring-marigold-400" : ""}`}>
+        <div className="flex items-start gap-3">
+          <span className="text-2xl">{r.emoji}</span>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-display text-base font-semibold">{r.name}</h3>
+            <p className="text-sm text-ink-soft">{r.short}</p>
+          </div>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {people.length === 0 ? (
+            <span className="text-xs text-ink-soft/70">Zatím nikdo</span>
+          ) : (
+            people.map((p) => (
+              <span key={p.id} className="chip">
+                {p.name}
+              </span>
+            ))
+          )}
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          {mine ? (
+            <button className="btn-secondary" onClick={() => removeRoleFromMe(r.id)}>
+              Odebrat ze mě
+            </button>
+          ) : (
+            <button className="btn-primary" onClick={() => setModal({ roleToAdd: r.id })}>
+              Vzít si
+            </button>
+          )}
+          <button className="btn-ghost" onClick={() => setOpenRole(open ? null : r.id)}>
+            {open ? "Skrýt úkoly" : "Co to obnáší"}
+          </button>
+        </div>
+        {open && (
+          <ul className="mt-3 space-y-1.5 border-t border-black/[0.06] pt-3 text-sm text-ink-soft">
+            {r.duties.map((d, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="text-marigold-600">•</span>
+                <span>{d}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-2xl font-semibold">Tým &amp; role — {year.label}</h1>
-        <p className="text-sm text-ink-soft">
-          Vyber si svůj post (klidně víc). Posty a co obnášejí jsou vybrané podle manuálu.
-        </p>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Tým &amp; role — {year.label}</h1>
+        <p className="text-sm text-ink-soft">Vyber si svůj post (klidně víc). Posty a co obnášejí jsou vybrané podle manuálu.</p>
       </div>
 
       {/* Já v týmu */}
       <section className="card p-5">
-        <h2 className="mb-3 font-display text-lg font-semibold">Já v týmu</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-lg font-semibold">Já v týmu</h2>
+          <button className="btn-secondary" onClick={() => setModal({})}>
+            {myMember ? "Upravit profil" : "Vyplnit profil"}
+          </button>
+        </div>
         {myMember ? (
-          <MyMember />
-        ) : (
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-ink-soft">Ještě nejsi v týmu. Přidej se a vyber roli níže.</p>
-            <button className="btn-primary" onClick={() => dispatch({ type: "addMember", yearId: year.id, name: me, roleIds: [] })}>
-              Přidat se jako {me}
-            </button>
+          <div className="mt-3">
+            <p className="font-semibold">{myMember.name}</p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {myMember.roleIds.length === 0 ? (
+                <span className="text-sm text-ink-soft">Zatím bez role — vyber si níže.</span>
+              ) : (
+                myMember.roleIds.map((id) => {
+                  const role = roleById(id);
+                  return role ? (
+                    <span key={id} className="chip">
+                      {role.emoji} {role.name}
+                    </span>
+                  ) : null;
+                })
+              )}
+            </div>
+            {(myMember.email || myMember.phone) && (
+              <p className="mt-2 text-sm text-ink-soft">
+                {myMember.email && <span>✉️ {myMember.email}</span>}
+                {myMember.email && myMember.phone && <span> · </span>}
+                {myMember.phone && <span>📞 {myMember.phone}</span>}
+              </p>
+            )}
           </div>
+        ) : (
+          <p className="mt-2 text-sm text-ink-soft">Ještě nejsi v týmu. Vyber si roli níže — vyskočí okno na doplnění kontaktu.</p>
         )}
       </section>
 
-      {/* Posty / role */}
+      {/* Moje funkce nahoře */}
+      {mineRoles.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="font-display text-lg font-semibold">Moje funkce</h2>
+          <div className="grid gap-3 md:grid-cols-2">
+            {mineRoles.map((r) => (
+              <RoleCard key={r.id} r={r} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Ostatní posty */}
       <section className="space-y-3">
-        <h2 className="font-display text-lg font-semibold">Posty a co obnášejí</h2>
+        <h2 className="font-display text-lg font-semibold">{mineRoles.length > 0 ? "Další posty" : "Posty a co obnášejí"}</h2>
         <div className="grid gap-3 md:grid-cols-2">
-          {ROLES.map((r) => {
-            const people = takenBy(r.id);
-            const mine = myMember?.roleIds.includes(r.id);
-            const open = openRole === r.id;
-            return (
-              <div key={r.id} className={`card p-4 ${mine ? "ring-1 ring-marigold-300" : ""}`}>
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">{r.emoji}</span>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-display text-base font-semibold">{r.name}</h3>
-                    <p className="text-sm text-ink-soft">{r.short}</p>
-                  </div>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  {people.length === 0 ? (
-                    <span className="text-xs text-ink-soft">Zatím nikdo</span>
-                  ) : (
-                    people.map((p) => (
-                      <span key={p.id} className="chip">
-                        {p.name}
-                      </span>
-                    ))
-                  )}
-                </div>
-                <div className="mt-3 flex items-center gap-2">
-                  <button className={mine ? "btn-secondary" : "btn-primary"} onClick={() => toggleRoleForMe(r.id)}>
-                    {mine ? "Odebrat ze mě" : "Vzít si"}
-                  </button>
-                  <button className="btn-ghost" onClick={() => setOpenRole(open ? null : r.id)}>
-                    {open ? "Skrýt úkoly" : "Co to obnáší"}
-                  </button>
-                </div>
-                {open && (
-                  <ul className="mt-3 space-y-1.5 border-t border-ink/10 pt-3 text-sm text-ink-soft">
-                    {r.duties.map((d, i) => (
-                      <li key={i} className="flex gap-2">
-                        <span className="text-marigold-600">•</span>
-                        <span>{d}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
+          {otherRoles.map((r) => (
+            <RoleCard key={r.id} r={r} />
+          ))}
         </div>
       </section>
 
@@ -108,9 +184,9 @@ export default function TymPage() {
         {year.members.length === 0 ? (
           <p className="text-sm text-ink-soft">Zatím nikdo. Buď první!</p>
         ) : (
-          <ul className="divide-y divide-ink/10">
+          <ul className="divide-y divide-black/[0.06]">
             {year.members.map((m) => (
-              <li key={m.id} className="flex flex-wrap items-center gap-3 py-3">
+              <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3">
                 <span className="font-semibold">{m.name}</span>
                 {m.name === me && <span className="chip bg-marigold-100 text-marigold-800">to jsi ty</span>}
                 <span className="flex flex-wrap gap-1">
@@ -123,7 +199,11 @@ export default function TymPage() {
                     ) : null;
                   })}
                 </span>
-                {m.contact && <span className="text-xs text-ink-soft">· {m.contact}</span>}
+                {(m.email || m.phone || m.contact) && (
+                  <span className="text-xs text-ink-soft">
+                    {[m.email, m.phone, m.contact].filter(Boolean).join(" · ")}
+                  </span>
+                )}
                 <span className="ml-auto">
                   <DeleteButton label="Odebrat" onConfirm={() => dispatch({ type: "removeMember", yearId: year.id, memberId: m.id })} />
                 </span>
@@ -132,56 +212,84 @@ export default function TymPage() {
           </ul>
         )}
       </section>
+
+      <ProfileModal
+        open={modal !== null}
+        roleToAdd={modal?.roleToAdd}
+        initial={{ name: myMember?.name ?? me, email: myMember?.email ?? "", phone: myMember?.phone ?? "" }}
+        onClose={() => setModal(null)}
+        onSave={saveProfile}
+      />
     </div>
   );
 }
 
-// Detail mojí karty s editací kontaktu/poznámky.
-function MyMember() {
-  const { currentYear, me, dispatch } = useStore();
-  const year = currentYear!;
-  const m = year.members.find((x) => x.name === me)!;
-  const [edit, setEdit] = useState(false);
-  const [contact, setContact] = useState(m.contact ?? "");
-  const [note, setNote] = useState(m.note ?? "");
+function ProfileModal({
+  open,
+  roleToAdd,
+  initial,
+  onClose,
+  onSave,
+}: {
+  open: boolean;
+  roleToAdd?: string;
+  initial: { name: string; email: string; phone: string };
+  onClose: () => void;
+  onSave: (d: { name: string; email: string; phone: string; roleToAdd?: string }) => void;
+}) {
+  const role = roleById(roleToAdd);
+  return (
+    <Modal open={open} onClose={onClose} title={role ? `Bereš si roli: ${role.emoji} ${role.name}` : "Můj profil"}>
+      <ProfileForm key={`${open}-${roleToAdd ?? "profile"}`} initial={initial} roleToAdd={roleToAdd} onSave={onSave} onClose={onClose} />
+    </Modal>
+  );
+}
+
+function ProfileForm({
+  initial,
+  roleToAdd,
+  onSave,
+  onClose,
+}: {
+  initial: { name: string; email: string; phone: string };
+  roleToAdd?: string;
+  onSave: (d: { name: string; email: string; phone: string; roleToAdd?: string }) => void;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState(initial.name);
+  const [email, setEmail] = useState(initial.email);
+  const [phone, setPhone] = useState(initial.phone);
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="font-semibold">{m.name}</span>
-        {m.roleIds.length === 0 ? (
-          <span className="text-sm text-ink-soft">— zatím bez role, vyber si níže</span>
-        ) : (
-          m.roleIds.map((id) => {
-            const role = roleById(id);
-            return role ? (
-              <span key={id} className="chip">
-                {role.emoji} {role.name}
-              </span>
-            ) : null;
-          })
-        )}
-        <button className="btn-ghost ml-auto" onClick={() => setEdit((v) => !v)}>
-          {edit ? "Zavřít" : "Upravit kontakt"}
+    <form
+      className="space-y-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        onSave({ name, email, phone, roleToAdd });
+      }}
+    >
+      <p className="text-sm text-ink-soft">Doplň prosím jméno, e-mail a telefon, ať tě ostatní v týmu zastihnou.</p>
+      <div>
+        <label className="label">Jméno</label>
+        <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Tvoje jméno" autoFocus />
+      </div>
+      <div>
+        <label className="label">E-mail</label>
+        <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ty@email.cz" />
+      </div>
+      <div>
+        <label className="label">Telefon</label>
+        <input className="input" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+420…" />
+      </div>
+      <div className="flex items-center gap-2 pt-1">
+        <button type="submit" className="btn-primary flex-1">
+          {roleToAdd ? "Vzít si roli" : "Uložit"}
+        </button>
+        <button type="button" className="btn-ghost" onClick={onClose}>
+          Zrušit
         </button>
       </div>
-      {m.contact && !edit && <p className="mt-1 text-sm text-ink-soft">📞 {m.contact}</p>}
-      {m.note && !edit && <p className="text-sm text-ink-soft">📝 {m.note}</p>}
-      {edit && (
-        <div className="mt-3 space-y-2">
-          <input className="input" placeholder="Kontakt (instagram / telefon / e-mail)" value={contact} onChange={(e) => setContact(e.target.value)} />
-          <input className="input" placeholder="Poznámka (např. co můžu vzít, kdy mám čas)" value={note} onChange={(e) => setNote(e.target.value)} />
-          <button
-            className="btn-primary"
-            onClick={async () => {
-              await dispatch({ type: "updateMember", yearId: year.id, memberId: m.id, patch: { contact, note } });
-              setEdit(false);
-            }}
-          >
-            Uložit
-          </button>
-        </div>
-      )}
-    </div>
+    </form>
   );
 }

@@ -5,7 +5,9 @@ export interface Member {
   id: string;
   name: string;
   roleIds: string[]; // posty/funkce, které si člověk vybral (viz lib/roles.ts)
-  contact?: string; // instagram / telefon / e-mail — dobrovolné
+  email?: string;
+  phone?: string;
+  contact?: string; // starší pole (instagram apod.) — kvůli zpětné kompatibilitě
   note?: string;
   createdAt: string;
 }
@@ -47,7 +49,8 @@ export type EventKind =
 
 export interface CalEvent {
   id: string;
-  date: string; // ISO "YYYY-MM-DD"
+  date: string; // ISO "YYYY-MM-DD" — začátek (od)
+  endDate?: string; // ISO — konec (do); vícedenní událost
   time?: string; // "17:00"
   title: string;
   kind: EventKind;
@@ -70,6 +73,7 @@ export interface LinkItem {
   id: string;
   label: string; // např. "Soňa Lisoňová", "Fléda", "AlienPay"
   value: string; // odkaz, e-mail, telefon nebo libovolný text
+  folder?: string; // složka/kategorie (Fakulta, Úřady, Fléda, Dodavatelé, Sponzoři…)
   note?: string;
   createdAt: string;
 }
@@ -94,6 +98,8 @@ export interface Year {
   label: string; // "Mařena 2025"
   theme?: string; // téma ročníku
   fledaDate?: string; // termín průvodu / Flédy (ISO)
+  plannedPeople?: number; // plánovaný počet účastníků (pro kalkulaci financí)
+  deposit?: number; // třídní vklad na osobu (Kč)
   members: Member[];
   posts: Post[];
   polls: Poll[];

@@ -1,15 +1,27 @@
 // Čistý reducer nad DB. Stejná logika běží na serveru (Redis) i v prohlížeči
 // (localStorage demo režim) — proto je bezstavová a deterministická až na uid().
 
-import type { DB, Year, EventKind, FinanceKind } from "./types";
+import type { DB, Year, EventKind, FinanceKind, Task } from "./types";
 import { uid } from "./id";
+import { ROLE_TASKS } from "./roleTasks";
+
+// Vygeneruje výchozí úkoly „rozdané" na jednotlivé role (z manuálu).
+export function defaultRoleTasks(createdAt: string): Task[] {
+  const out: Task[] = [];
+  for (const [roleId, titles] of Object.entries(ROLE_TASKS)) {
+    for (const title of titles) {
+      out.push({ id: uid("t_"), title, roleId, done: false, createdAt });
+    }
+  }
+  return out;
+}
 
 export type Action =
   | { type: "createYear"; id: string; label?: string; theme?: string; fledaDate?: string }
-  | { type: "updateYear"; yearId: string; patch: Partial<Pick<Year, "label" | "theme" | "fledaDate">> }
+  | { type: "updateYear"; yearId: string; patch: Partial<Pick<Year, "label" | "theme" | "fledaDate" | "plannedPeople" | "deposit">> }
   | { type: "deleteYear"; yearId: string }
-  | { type: "addMember"; yearId: string; name: string; roleIds: string[]; contact?: string; note?: string }
-  | { type: "updateMember"; yearId: string; memberId: string; patch: { name?: string; roleIds?: string[]; contact?: string; note?: string } }
+  | { type: "addMember"; yearId: string; name: string; roleIds: string[]; email?: string; phone?: string; contact?: string; note?: string }
+  | { type: "updateMember"; yearId: string; memberId: string; patch: { name?: string; roleIds?: string[]; email?: string; phone?: string; contact?: string; note?: string } }
   | { type: "removeMember"; yearId: string; memberId: string }
   | { type: "addPost"; yearId: string; author: string; roleId?: string; title: string; body: string; pinned?: boolean }
   | { type: "togglePin"; yearId: string; postId: string }
@@ -18,12 +30,12 @@ export type Action =
   | { type: "vote"; yearId: string; pollId: string; optionId: string; voter: string }
   | { type: "closePoll"; yearId: string; pollId: string }
   | { type: "removePoll"; yearId: string; pollId: string }
-  | { type: "addEvent"; yearId: string; date: string; time?: string; title: string; kind: EventKind; note?: string; author: string }
+  | { type: "addEvent"; yearId: string; date: string; endDate?: string; time?: string; title: string; kind: EventKind; note?: string; author: string }
   | { type: "removeEvent"; yearId: string; eventId: string }
   | { type: "addTask"; yearId: string; title: string; roleId?: string; assignee?: string; due?: string }
   | { type: "toggleTask"; yearId: string; taskId: string }
   | { type: "removeTask"; yearId: string; taskId: string }
-  | { type: "addLink"; yearId: string; label: string; value: string; note?: string }
+  | { type: "addLink"; yearId: string; label: string; value: string; folder?: string; note?: string }
   | { type: "removeLink"; yearId: string; linkId: string }
   | { type: "addFinance"; yearId: string; kind: FinanceKind; label: string; amount: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string }
   | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string } }
@@ -43,17 +55,22 @@ export function applyAction(db: DB, a: Action): DB {
   switch (a.type) {
     case "createYear": {
       if (db.years.some((y) => y.id === a.id)) return db;
+      const t = now();
       const year: Year = {
         id: a.id,
         label: a.label?.trim() || `Mařena ${a.id}`,
         theme: a.theme?.trim() || undefined,
         fledaDate: a.fledaDate || undefined,
+        plannedPeople: 30,
+        deposit: 1500,
         members: [],
         posts: [],
         polls: [],
         events: [],
-        tasks: [],
-        createdAt: now(),
+        tasks: defaultRoleTasks(t), // úkoly rozdané dopředu na role
+        links: [],
+        finances: [],
+        createdAt: t,
       };
       return { ...db, years: [year, ...db.years] };
     }
@@ -67,7 +84,16 @@ export function applyAction(db: DB, a: Action): DB {
         ...y,
         members: [
           ...y.members,
-          { id: uid("m_"), name: a.name.trim(), roleIds: a.roleIds, contact: a.contact?.trim() || undefined, note: a.note?.trim() || undefined, createdAt: now() },
+          {
+            id: uid("m_"),
+            name: a.name.trim(),
+            roleIds: a.roleIds,
+            email: a.email?.trim() || undefined,
+            phone: a.phone?.trim() || undefined,
+            contact: a.contact?.trim() || undefined,
+            note: a.note?.trim() || undefined,
+            createdAt: now(),
+          },
         ],
       }));
     case "updateMember":
@@ -142,7 +168,7 @@ export function applyAction(db: DB, a: Action): DB {
         ...y,
         events: [
           ...y.events,
-          { id: uid("e_"), date: a.date, time: a.time || undefined, title: a.title.trim(), kind: a.kind, note: a.note?.trim() || undefined, author: a.author.trim() || "Anonym", createdAt: now() },
+          { id: uid("e_"), date: a.date, endDate: a.endDate && a.endDate > a.date ? a.endDate : undefined, time: a.time || undefined, title: a.title.trim(), kind: a.kind, note: a.note?.trim() || undefined, author: a.author.trim() || "Anonym", createdAt: now() },
         ],
       }));
     case "removeEvent":
@@ -169,7 +195,7 @@ export function applyAction(db: DB, a: Action): DB {
         ...y,
         links: [
           ...(y.links ?? []),
-          { id: uid("l_"), label: a.label.trim(), value: a.value.trim(), note: a.note?.trim() || undefined, createdAt: now() },
+          { id: uid("l_"), label: a.label.trim(), value: a.value.trim(), folder: a.folder?.trim() || undefined, note: a.note?.trim() || undefined, createdAt: now() },
         ],
       }));
     case "removeLink":

@@ -1,7 +1,8 @@
 import type { DB } from "./types";
+import { defaultRoleTasks } from "./actions";
 
-// Výchozí stav při prvním spuštění. Jeden rozjetý ročník s pár startovacími
-// úkoly, milníky z manuálu a uvítací nástěnkou — ať background není prázdný.
+// Výchozí stav při prvním spuštění. Jeden rozjetý ročník s úkoly rozdanými na
+// role, milníky z manuálu, kontakty ve složkách a uvítací nástěnkou.
 export function seedDB(): DB {
   const year = new Date().getFullYear();
   const id = String(year);
@@ -13,6 +14,8 @@ export function seedDB(): DB {
         label: `Mařena ${id}`,
         theme: undefined,
         fledaDate: undefined,
+        plannedPeople: 30,
+        deposit: 1500,
         createdAt: t,
         members: [],
         posts: [
@@ -49,17 +52,14 @@ export function seedDB(): DB {
           { id: "seed_e2", date: `${year}-08-15`, title: "Průvod: povolení min. 30 dní předem (odbor dopravy)", kind: "pruvod", author: "Mařena", createdAt: t },
           { id: "seed_e3", date: `${year}-09-10`, title: "Spustit merch eshop (prvních pár dní školy)", kind: "deadline", author: "Mařena", createdAt: t },
         ],
-        tasks: [
-          { id: "seed_t1", title: "Založit společný účet a vybrat třídní vklad", roleId: "ekonom", done: false, createdAt: t },
-          { id: "seed_t2", title: "Domluvit se Soňou termín a co fakulta zaplatí", roleId: "fakulta", done: false, createdAt: t },
-          { id: "seed_t3", title: "Obeslat první kapely a přednášející", roleId: "kapelnik", done: false, createdAt: t },
-          { id: "seed_t4", title: "Vybrat téma ročníku, ať se může dělat grafika", roleId: "grafik", done: false, createdAt: t },
-        ],
+        tasks: defaultRoleTasks(t),
         links: [
-          { id: "seed_l1", label: "Soňa Lisoňová (fakulta)", value: "klíčová spojka — technika, zvukař, banner", note: "Ozvat se až bude datum a nahozený program.", createdAt: t },
-          { id: "seed_l2", label: "Odbor dopravy — pí Lenka Polánková", value: "Měnínská 4", note: "Povolení průvodu, min. 30 dní předem.", createdAt: t },
-          { id: "seed_l3", label: "Fléda", value: "studentský klub — křest prváků", note: "Zamluvit co nejdřív, pronájem cca 30–35 000.", createdAt: t },
-          { id: "seed_l4", label: "AlienPay (p. Vostal)", value: "generátor QR kódů pro platby na baru", note: "Ochotný nasdílet — stačí kontaktovat.", createdAt: t },
+          { id: "seed_l1", label: "Soňa Lisoňová", value: "sona.lisonova@fa.vut.cz", folder: "Fakulta", note: "Klíčová spojka — technika, zvukař, banner. Ozvat se až bude datum a program.", createdAt: t },
+          { id: "seed_l2", label: "Vrátnice FA", value: "—", folder: "Fakulta", note: "Hlásit příjezdy externistů, otevření do půlnoci.", createdAt: t },
+          { id: "seed_l3", label: "Odbor dopravy — pí Lenka Polánková", value: "Měnínská 4, Brno", folder: "Město a úřady", note: "Povolení průvodu, min. 30 dní předem.", createdAt: t },
+          { id: "seed_l4", label: "Fléda", value: "https://www.fleda.cz", folder: "Klub Fléda", note: "Zamluvit co nejdřív, pronájem cca 30–35 000.", createdAt: t },
+          { id: "seed_l5", label: "AlienPay (p. Vostal)", value: "generátor QR kódů na platby", folder: "Dodavatelé", note: "Ochotný nasdílet — stačí kontaktovat.", createdAt: t },
+          { id: "seed_l6", label: "The Roses", value: "kafe — sponzorský dar", folder: "Sponzoři", note: "Chtějí sponzorovat i další ročník.", createdAt: t },
         ],
         finances: [
           { id: "seed_f1", kind: "prijem", label: "Třídní vklad (vzor)", amount: 1500, category: "vklad", who: "Petra", paid: true, createdAt: t },

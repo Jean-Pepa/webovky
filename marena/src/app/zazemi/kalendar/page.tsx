@@ -14,6 +14,22 @@ function iso(y: number, m: number, d: number): string {
   return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 
+// Vyjmenuje všechny dny v rozsahu od–do (včetně), s pojistkou proti nekonečnu.
+function enumerateDates(start: string, end: string): string[] {
+  const s = new Date(`${start}T00:00:00`);
+  const e = new Date(`${end}T00:00:00`);
+  if (isNaN(s.getTime()) || isNaN(e.getTime()) || e < s) return [start];
+  const out: string[] = [];
+  const cur = new Date(s);
+  let guard = 0;
+  while (cur <= e && guard < 366) {
+    out.push(iso(cur.getFullYear(), cur.getMonth(), cur.getDate()));
+    cur.setDate(cur.getDate() + 1);
+    guard++;
+  }
+  return out;
+}
+
 export default function KalendarPage() {
   const { currentYear, dispatch } = useStore();
   const now = new Date();
@@ -23,10 +39,14 @@ export default function KalendarPage() {
 
   const year = currentYear;
 
+  // Mapa den → události. Vícedenní (od–do) se zařadí do každého dne rozsahu.
   const byDate = useMemo(() => {
     const map: Record<string, CalEvent[]> = {};
     year?.events.forEach((e) => {
-      (map[e.date] ||= []).push(e);
+      const days = e.endDate && e.endDate > e.date ? enumerateDates(e.date, e.endDate) : [e.date];
+      days.forEach((day) => {
+        (map[day] ||= []).push(e);
+      });
     });
     return map;
   }, [year]);
@@ -61,8 +81,8 @@ export default function KalendarPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-semibold">Kalendář — {year.label}</h1>
-        <p className="text-sm text-ink-soft">Termíny, deadliny, schůzky, přednášky, průvod i Fléda na jednom místě.</p>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Kalendář — {year.label}</h1>
+        <p className="text-sm text-ink-soft">Termíny, deadliny, schůzky, přednášky, průvod i Fléda. Vícedenní akce zadáš jako „od–do“.</p>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
@@ -88,24 +108,29 @@ export default function KalendarPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-ink-soft">
+          <div className="grid grid-cols-7 gap-1.5 text-center text-xs font-semibold text-ink-soft">
             {DOW.map((d) => (
               <div key={d} className="py-1">{d}</div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-1.5">
             {cells.map((d, i) => {
               if (d === null) return <div key={i} />;
               const date = iso(vy, vm, d);
               const evs = byDate[date] || [];
               const isToday = date === todayISO();
               const isSel = date === selected;
+              const tint = evs[0] ? KINDS[evs[0].kind].cell : "";
               return (
                 <button
                   key={i}
                   onClick={() => setSelected(date)}
-                  className={`min-h-16 rounded-lg border p-1 text-left transition ${
-                    isSel ? "border-marigold-400 bg-marigold-50" : "border-ink/10 bg-white hover:bg-paper2"
+                  className={`min-h-[68px] rounded-xl border p-1.5 text-left transition ${
+                    isSel
+                      ? "border-marigold-500 bg-marigold-50 ring-2 ring-marigold-300"
+                      : evs.length
+                        ? `border-black/10 ${tint} hover:ring-1 hover:ring-black/15`
+                        : "border-black/[0.05] bg-white hover:bg-paper2"
                   }`}
                 >
                   <div className={`text-xs font-semibold ${isToday ? "inline-grid h-5 w-5 place-items-center rounded-full bg-marigold-600 text-white" : "text-ink"}`}>
@@ -113,7 +138,7 @@ export default function KalendarPage() {
                   </div>
                   <div className="mt-1 space-y-0.5">
                     {evs.slice(0, 2).map((e) => (
-                      <div key={e.id} className="flex items-center gap-1 truncate text-[10px] text-ink-soft">
+                      <div key={e.id} className="flex items-center gap-1 truncate text-[10px] font-medium text-ink/80">
                         <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${KINDS[e.kind].dot}`} />
                         <span className="truncate">{e.title}</span>
                       </div>
@@ -125,7 +150,7 @@ export default function KalendarPage() {
             })}
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2 border-t border-ink/10 pt-3">
+          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 border-t border-black/[0.06] pt-3">
             {KIND_ORDER.map((k) => (
               <span key={k} className="flex items-center gap-1 text-xs text-ink-soft">
                 <span className={`h-2 w-2 rounded-full ${KINDS[k].dot}`} /> {KINDS[k].label}
@@ -144,8 +169,9 @@ export default function KalendarPage() {
               <ul className="mt-2 space-y-2">
                 {selectedEvents.map((e) => {
                   const k = KINDS[e.kind];
+                  const isRange = e.endDate && e.endDate > e.date;
                   return (
-                    <li key={e.id} className="rounded-xl border border-ink/10 p-3">
+                    <li key={e.id} className="rounded-xl border border-black/[0.06] p-3">
                       <div className="flex items-center gap-2">
                         <span className={`chip ${k.chip}`}>{k.emoji} {k.label}</span>
                         {e.time && <span className="text-xs font-semibold text-ink">{e.time}</span>}
@@ -154,6 +180,9 @@ export default function KalendarPage() {
                         </span>
                       </div>
                       <p className="mt-1 text-sm font-medium">{e.title}</p>
+                      {isRange && (
+                        <p className="text-xs text-marigold-700">📆 {fmtDate(e.date)} – {fmtDate(e.endDate!)}</p>
+                      )}
                       {e.note && <p className="text-xs text-ink-soft">{e.note}</p>}
                       <p className="mt-1 text-[11px] text-ink-soft">přidal {e.author}</p>
                     </li>
@@ -175,34 +204,50 @@ function AddEvent({ date, yearId }: { date: string; yearId: string }) {
   const [time, setTime] = useState("");
   const [kind, setKind] = useState<EventKind>("schuzka");
   const [note, setNote] = useState("");
-  // Formulář se remountuje při změně dne (key={selected}), takže datum stačí
-  // inicializovat z propu — žádný setState během renderu.
+  // Formulář se remountuje při změně dne (key={selected}), datum jde z propu.
   const [d, setD] = useState(date);
+  const [dEnd, setDEnd] = useState("");
 
   return (
     <div className="card space-y-2 p-4">
       <h3 className="font-display text-base font-semibold">+ Přidat událost</h3>
       <input className="input" placeholder="Co se děje?" value={title} onChange={(e) => setTitle(e.target.value)} />
-      <div className="flex gap-2">
-        <input type="date" className="input" value={d} onChange={(e) => setD(e.target.value)} />
-        <input type="time" className="input" value={time} onChange={(e) => setTime(e.target.value)} />
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="label">Od</label>
+          <input type="date" className="input" value={d} onChange={(e) => setD(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Do (nepovinné)</label>
+          <input type="date" className="input" value={dEnd} min={d} onChange={(e) => setDEnd(e.target.value)} />
+        </div>
       </div>
-      <select className="input" value={kind} onChange={(e) => setKind(e.target.value as EventKind)}>
-        {KIND_ORDER.map((k) => (
-          <option key={k} value={k}>
-            {KINDS[k].emoji} {KINDS[k].label}
-          </option>
-        ))}
-      </select>
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="label">Čas (nepovinné)</label>
+          <input type="time" className="input" value={time} onChange={(e) => setTime(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Druh</label>
+          <select className="input" value={kind} onChange={(e) => setKind(e.target.value as EventKind)}>
+            {KIND_ORDER.map((k) => (
+              <option key={k} value={k}>
+                {KINDS[k].emoji} {KINDS[k].label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
       <input className="input" placeholder="Poznámka (nepovinné)" value={note} onChange={(e) => setNote(e.target.value)} />
       <button
         className="btn-primary w-full"
         onClick={async () => {
           if (!title.trim()) return;
-          await dispatch({ type: "addEvent", yearId, date: d, time: time || undefined, title, kind, note, author: me });
+          await dispatch({ type: "addEvent", yearId, date: d, endDate: dEnd || undefined, time: time || undefined, title, kind, note, author: me });
           setTitle("");
           setTime("");
           setNote("");
+          setDEnd("");
         }}
       >
         Přidat do kalendáře

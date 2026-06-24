@@ -18,15 +18,18 @@ export default function UkolyPage() {
 
   const year = currentYear;
 
+  // Moje role v tomto ročníku — úkoly těchto rolí beru jako „moje".
+  const myRoleIds = useMemo(() => year?.members.find((m) => m.name === me)?.roleIds ?? [], [year, me]);
+
   const tasks = useMemo(() => {
     if (!year) return [];
     return year.tasks.filter((t) => {
-      if (filter === "moje") return !t.done && t.assignee === me;
+      if (filter === "moje") return !t.done && (t.assignee === me || (!!t.roleId && myRoleIds.includes(t.roleId)));
       if (filter === "nehotove") return !t.done;
       if (filter === "hotove") return t.done;
       return true;
     });
-  }, [year, filter, me]);
+  }, [year, filter, me, myRoleIds]);
 
   // seskupení podle role
   const grouped = useMemo(() => {
