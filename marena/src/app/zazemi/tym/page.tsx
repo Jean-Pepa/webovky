@@ -73,7 +73,7 @@ export default function TymPage() {
               <h3 className="font-display text-base font-semibold">{r.name}</h3>
               {taken ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-marigold-600 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
-                  <span className="h-1.5 w-1.5 rounded-full bg-white" /> Obsazeno
+                  <span className="h-1.5 w-1.5 rounded-full bg-white" /> Obsazeno{people.length > 1 ? ` · ${people.length}` : ""}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 rounded-full bg-leaf/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-leaf-700">
@@ -124,13 +124,12 @@ export default function TymPage() {
             <button className="btn-secondary" onClick={() => removeRoleFromMe(r.id)}>
               Uvolnit funkci
             </button>
-          ) : taken ? (
-            <button className="btn-secondary cursor-not-allowed opacity-60" disabled title="Funkce je obsazená — uvolní ji jen ten, kdo ji drží.">
-              Obsazeno
-            </button>
           ) : (
-            <button className="btn-primary" onClick={() => setModal({ roleToAdd: r.id })}>
-              Vzít si
+            <button
+              className={taken ? "btn-secondary" : "btn-primary"}
+              onClick={() => setModal({ roleToAdd: r.id })}
+            >
+              {taken ? "Přidat se taky" : "Vzít si"}
             </button>
           )}
           <button className="btn-ghost" onClick={() => setOpenRole(open ? null : r.id)}>
