@@ -99,6 +99,25 @@
   background-image: none;
 }
 
+/* Blikající barevný nadpis MAŘENA — písmena prosvítají různými barvami. */
+@keyframes marena-blink {
+  0%, 15% { color: #ff3b30; }
+  16%, 31% { color: #ff9f0a; }
+  32%, 47% { color: #ffd60a; }
+  48%, 63% { color: #30d158; }
+  64%, 79% { color: #0a84ff; }
+  80%, 100% { color: #bf5af2; }
+}
+.marena-letter {
+  color: #ffffff;
+  animation: marena-blink 2.4s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marena-letter {
+    animation: none;
+  }
+}
+
 @layer components {
   .btn-primary {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-marigold-600

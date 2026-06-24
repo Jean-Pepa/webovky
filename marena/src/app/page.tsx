@@ -53,15 +53,8 @@ export default function Home() {
             Fakulta architektury VUT · studentský festival
           </p>
           <h1 className="mt-3 font-display text-6xl font-bold leading-[0.95] sm:text-7xl md:text-8xl" style={{ letterSpacing: "0.2em" }}>
-            {([
-              ["M", "#ff3b30"],
-              ["A", "#ff9f0a"],
-              ["Ř", "#ffd60a"],
-              ["E", "#30d158"],
-              ["N", "#0a84ff"],
-              ["A", "#bf5af2"],
-            ] as const).map(([ch, color], i) => (
-              <span key={i} style={{ color }}>
+            {"MAŘENA".split("").map((ch, i) => (
+              <span key={i} className="marena-letter" style={{ animationDelay: `${i * -0.4}s` }}>
                 {ch}
               </span>
             ))}
