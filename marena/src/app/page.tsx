@@ -55,7 +55,7 @@ export default function Home() {
           </p>
           <h1 className="mt-3 font-display text-6xl font-bold leading-[0.95] sm:text-7xl md:text-8xl" style={{ letterSpacing: "0.2em" }}>
             {"MAŘENA".split("").map((ch, i) => (
-              <span key={i} className="marena-letter" style={{ animationDelay: `${i * -0.4}s` }}>
+              <span key={i} className="marena-letter" style={{ animationDelay: `${i * -0.06}s` }}>
                 {ch}
               </span>
             ))}
