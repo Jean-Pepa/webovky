@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { KINDS, KIND_ORDER } from "@/lib/kinds";
 import { fmtDate, todayISO } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
+import { Modal } from "@/components/Modal";
 import { isAdmin } from "@/lib/admin";
 import type { CalEvent, EventKind } from "@/lib/types";
 
@@ -37,6 +38,7 @@ export default function KalendarPage() {
   const [vy, setVy] = useState(now.getFullYear());
   const [vm, setVm] = useState(now.getMonth());
   const [selected, setSelected] = useState(todayISO());
+  const [editing, setEditing] = useState<CalEvent | null>(null);
 
   const year = currentYear;
 
@@ -176,7 +178,10 @@ export default function KalendarPage() {
                         <span className={`chip ${k.chip}`}>{k.emoji} {k.label}</span>
                         {e.time && <span className="text-xs font-semibold text-ink">{e.time}</span>}
                         {(isAdmin(me) || e.author === me) && (
-                          <span className="ml-auto">
+                          <span className="ml-auto flex items-center gap-1">
+                            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEditing(e)}>
+                              Upravit
+                            </button>
                             <DeleteButton onConfirm={() => dispatch({ type: "removeEvent", yearId: year.id, eventId: e.id })} />
                           </span>
                         )}
@@ -196,7 +201,74 @@ export default function KalendarPage() {
           <AddEvent key={selected} date={selected} yearId={year.id} />
         </div>
       </div>
+
+      {editing && <EditEventModal event={editing} yearId={year.id} onClose={() => setEditing(null)} />}
     </div>
+  );
+}
+
+// Úprava existující události — vyskakovací okno.
+function EditEventModal({ event, yearId, onClose }: { event: CalEvent; yearId: string; onClose: () => void }) {
+  const { dispatch } = useStore();
+  const [title, setTitle] = useState(event.title);
+  const [d, setD] = useState(event.date);
+  const [dEnd, setDEnd] = useState(event.endDate ?? "");
+  const [time, setTime] = useState(event.time ?? "");
+  const [kind, setKind] = useState<EventKind>(event.kind);
+  const [note, setNote] = useState(event.note ?? "");
+
+  async function save() {
+    if (!title.trim()) return;
+    await dispatch({
+      type: "updateEvent",
+      yearId,
+      eventId: event.id,
+      patch: { title, date: d, endDate: dEnd || undefined, time: time || undefined, kind, note },
+    });
+    onClose();
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Upravit událost">
+      <div className="space-y-2">
+        <input className="input" placeholder="Co se děje?" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="label">Od</label>
+            <input type="date" className="input" value={d} onChange={(e) => setD(e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Do (nepovinné)</label>
+            <input type="date" className="input" value={dEnd} min={d} onChange={(e) => setDEnd(e.target.value)} />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="label">Čas (nepovinné)</label>
+            <input type="time" className="input" value={time} onChange={(e) => setTime(e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Druh</label>
+            <select className="input" value={kind} onChange={(e) => setKind(e.target.value as EventKind)}>
+              {KIND_ORDER.map((k) => (
+                <option key={k} value={k}>
+                  {KINDS[k].emoji} {KINDS[k].label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <input className="input" placeholder="Poznámka (nepovinné)" value={note} onChange={(e) => setNote(e.target.value)} />
+        <div className="flex items-center gap-2 pt-1">
+          <button className="btn-primary flex-1" onClick={save}>
+            Uložit
+          </button>
+          <button className="btn-ghost" onClick={onClose}>
+            Zrušit
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
