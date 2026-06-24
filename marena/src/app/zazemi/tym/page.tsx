@@ -130,12 +130,14 @@ export default function TymPage() {
           )}
         </div>
 
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           {editable &&
             (mine ? (
               <button className="btn-secondary" onClick={() => removeRoleFromMe(r.id)}>
                 Uvolnit funkci
               </button>
+            ) : r.id === "ekonom" && !admin ? (
+              <span className="text-xs text-ink-soft">🔒 Tuto funkci přiděluje jen správce (Pan_Vyskočil).</span>
             ) : (
               <button
                 className={taken ? "btn-secondary" : "btn-primary"}
