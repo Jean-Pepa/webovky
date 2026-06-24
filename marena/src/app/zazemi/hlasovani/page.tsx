@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { fmtRelative } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
+import { isAdmin } from "@/lib/admin";
 import type { Poll } from "@/lib/types";
 
 export default function HlasovaniPage() {
@@ -170,7 +171,9 @@ function PollCard({ poll, yearId, me }: { poll: Poll; yearId: string; me: string
           <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "closePoll", yearId, pollId: poll.id })}>
             {poll.closed ? "Otevřít" : "Uzavřít"}
           </button>
-          <DeleteButton onConfirm={() => dispatch({ type: "removePoll", yearId, pollId: poll.id })} />
+          {(isAdmin(me) || poll.author === me) && (
+            <DeleteButton onConfirm={() => dispatch({ type: "removePoll", yearId, pollId: poll.id })} />
+          )}
         </span>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { KINDS, KIND_ORDER } from "@/lib/kinds";
 import { fmtDate, todayISO } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
+import { isAdmin } from "@/lib/admin";
 import type { CalEvent, EventKind } from "@/lib/types";
 
 const MONTH_NAMES = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
@@ -31,7 +32,7 @@ function enumerateDates(start: string, end: string): string[] {
 }
 
 export default function KalendarPage() {
-  const { currentYear, dispatch } = useStore();
+  const { currentYear, me, dispatch } = useStore();
   const now = new Date();
   const [vy, setVy] = useState(now.getFullYear());
   const [vm, setVm] = useState(now.getMonth());
@@ -175,9 +176,11 @@ export default function KalendarPage() {
                       <div className="flex items-center gap-2">
                         <span className={`chip ${k.chip}`}>{k.emoji} {k.label}</span>
                         {e.time && <span className="text-xs font-semibold text-ink">{e.time}</span>}
-                        <span className="ml-auto">
-                          <DeleteButton onConfirm={() => dispatch({ type: "removeEvent", yearId: year.id, eventId: e.id })} />
-                        </span>
+                        {(isAdmin(me) || e.author === me) && (
+                          <span className="ml-auto">
+                            <DeleteButton onConfirm={() => dispatch({ type: "removeEvent", yearId: year.id, eventId: e.id })} />
+                          </span>
+                        )}
                       </div>
                       <p className="mt-1 text-sm font-medium">{e.title}</p>
                       {isRange && (

@@ -9,6 +9,7 @@ import { KINDS } from "@/lib/kinds";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Onboarding } from "@/components/Onboarding";
 import { Icon } from "@/components/Icons";
+import { isAdmin } from "@/lib/admin";
 
 export default function NastenkaPage() {
   const { currentYear, me, dispatch } = useStore();
@@ -119,7 +120,9 @@ export default function NastenkaPage() {
                     <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "togglePin", yearId: year.id, postId: p.id })}>
                       {p.pinned ? "Odepnout" : "Připnout"}
                     </button>
-                    <DeleteButton onConfirm={() => dispatch({ type: "removePost", yearId: year.id, postId: p.id })} />
+                    {(isAdmin(me) || p.author === me) && (
+                      <DeleteButton onConfirm={() => dispatch({ type: "removePost", yearId: year.id, postId: p.id })} />
+                    )}
                   </div>
                 </article>
               );
