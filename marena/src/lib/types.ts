@@ -66,6 +66,14 @@ export interface Task {
   createdAt: string;
 }
 
+export interface LinkItem {
+  id: string;
+  label: string; // např. "Soňa Lisoňová", "Fléda", "AlienPay"
+  value: string; // odkaz, e-mail, telefon nebo libovolný text
+  note?: string;
+  createdAt: string;
+}
+
 export interface Year {
   id: string; // např. "2025"
   label: string; // "Mařena 2025"
@@ -76,6 +84,7 @@ export interface Year {
   polls: Poll[];
   events: CalEvent[];
   tasks: Task[];
+  links?: LinkItem[]; // důležité kontakty a odkazy (volitelné kvůli zpětné kompatibilitě)
   createdAt: string;
 }
 

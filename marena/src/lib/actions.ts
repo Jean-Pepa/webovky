@@ -22,7 +22,9 @@ export type Action =
   | { type: "removeEvent"; yearId: string; eventId: string }
   | { type: "addTask"; yearId: string; title: string; roleId?: string; assignee?: string; due?: string }
   | { type: "toggleTask"; yearId: string; taskId: string }
-  | { type: "removeTask"; yearId: string; taskId: string };
+  | { type: "removeTask"; yearId: string; taskId: string }
+  | { type: "addLink"; yearId: string; label: string; value: string; note?: string }
+  | { type: "removeLink"; yearId: string; linkId: string };
 
 function now(): string {
   return new Date().toISOString();
@@ -157,6 +159,17 @@ export function applyAction(db: DB, a: Action): DB {
       }));
     case "removeTask":
       return mapYear(db, a.yearId, (y) => ({ ...y, tasks: y.tasks.filter((t) => t.id !== a.taskId) }));
+
+    case "addLink":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        links: [
+          ...(y.links ?? []),
+          { id: uid("l_"), label: a.label.trim(), value: a.value.trim(), note: a.note?.trim() || undefined, createdAt: now() },
+        ],
+      }));
+    case "removeLink":
+      return mapYear(db, a.yearId, (y) => ({ ...y, links: (y.links ?? []).filter((l) => l.id !== a.linkId) }));
 
     default:
       return db;

@@ -55,6 +55,12 @@ export function seedDB(): DB {
           { id: "seed_t3", title: "Obeslat první kapely a přednášející", roleId: "kapelnik", done: false, createdAt: t },
           { id: "seed_t4", title: "Vybrat téma ročníku, ať se může dělat grafika", roleId: "grafik", done: false, createdAt: t },
         ],
+        links: [
+          { id: "seed_l1", label: "Soňa Lisoňová (fakulta)", value: "klíčová spojka — technika, zvukař, banner", note: "Ozvat se až bude datum a nahozený program.", createdAt: t },
+          { id: "seed_l2", label: "Odbor dopravy — pí Lenka Polánková", value: "Měnínská 4", note: "Povolení průvodu, min. 30 dní předem.", createdAt: t },
+          { id: "seed_l3", label: "Fléda", value: "studentský klub — křest prváků", note: "Zamluvit co nejdřív, pronájem cca 30–35 000.", createdAt: t },
+          { id: "seed_l4", label: "AlienPay (p. Vostal)", value: "generátor QR kódů pro platby na baru", note: "Ochotný nasdílet — stačí kontaktovat.", createdAt: t },
+        ],
       },
     ],
   };
