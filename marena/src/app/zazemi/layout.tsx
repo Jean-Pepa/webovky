@@ -22,7 +22,7 @@ const NAV: { href: string; label: string; icon: IconName }[] = [
 ];
 
 export default function ZazemiLayout({ children }: { children: React.ReactNode }) {
-  const { ready, authed, me, configured, logout, syncError, dismissSyncError } = useStore();
+  const { ready, authed, me, logout, syncError, dismissSyncError } = useStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -37,8 +37,11 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-ink/10 bg-paper/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+        <div className="relative mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
           <Logo href="/zazemi" />
+          <span className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 font-display text-2xl font-bold tracking-tight text-marigold-600 md:block">
+            MAŘENA
+          </span>
           <div className="ml-auto flex items-center gap-2">
             <YearSwitcher />
             <MeBadge />
@@ -76,13 +79,6 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           </button>
         </nav>
       </header>
-
-      {!configured && (
-        <div className="border-b border-marigold-700 bg-marigold-600 px-4 py-2 text-center text-xs font-medium text-white">
-          Demo režim — data se ukládají jen v tomto prohlížeči. Pro sdílené zázemí nastavte úložiště
-          (Upstash Redis / Vercel KV). Viz README.
-        </div>
-      )}
 
       {syncError && (
         <div className="flex items-center justify-center gap-3 border-b border-red-200 bg-red-50 px-4 py-2 text-center text-xs text-red-700">
