@@ -168,9 +168,11 @@ function PollCard({ poll, yearId, me }: { poll: Poll; yearId: string; me: string
           </span>
         )}
         <span className="ml-auto flex items-center gap-2">
-          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "closePoll", yearId, pollId: poll.id })}>
-            {poll.closed ? "Otevřít" : "Uzavřít"}
-          </button>
+          {isAdmin(me) && (
+            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "closePoll", yearId, pollId: poll.id })}>
+              {poll.closed ? "Otevřít" : "Uzavřít"}
+            </button>
+          )}
           {(isAdmin(me) || poll.author === me) && (
             <DeleteButton onConfirm={() => dispatch({ type: "removePoll", yearId, pollId: poll.id })} />
           )}

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
-import { Logo } from "@/components/Logo";
 import { Loading } from "@/components/Loading";
 import { YearSwitcher } from "@/components/YearSwitcher";
 import { Icon, type IconName } from "@/components/Icons";
@@ -47,18 +46,14 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-ink/10 bg-paper/85 backdrop-blur">
-        <div className="relative mx-auto flex max-w-6xl items-center gap-x-4 gap-y-2 px-4 py-3">
-          <Logo href="/zazemi" />
-          <span
-            className="pointer-events-none absolute left-1/2 top-1/2 hidden origin-center font-display text-2xl font-bold tracking-tight md:block"
-            style={{ transform: "translate(-50%, -50%) scaleX(3)" }}
-          >
+        <div className="mx-auto flex max-w-6xl items-center gap-x-4 gap-y-2 px-4 py-3">
+          <Link href="/zazemi" aria-label="Mařena — zázemí" className="font-display text-2xl font-bold tracking-[0.06em] sm:text-3xl">
             {"MAŘENA".split("").map((ch, i) => (
               <span key={i} className="marena-letter" style={{ animationDelay: `${i * -0.06}s` }}>
                 {ch}
               </span>
             ))}
-          </span>
+          </Link>
           {/* Desktop: přepínač ročníku + jméno */}
           <div className="ml-auto hidden items-center gap-2 md:flex">
             <YearSwitcher />
