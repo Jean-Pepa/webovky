@@ -7,7 +7,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
-import type { FinanceItem, FinanceKind, Year } from "@/lib/types";
+import type { FinanceItem, FinanceKind } from "@/lib/types";
 
 const CATEGORIES = [
   "vklad",
@@ -130,9 +130,6 @@ export default function FinancePage() {
         <SummaryCard label="Bilance" value={totals.bilance} sub={`v kase ${fmtCZK(totals.kasa)} · otevřené ${fmtCZK(totals.otevreno)}`} tone="bilance" />
       </div>
 
-      {/* Celková kalkulace */}
-      <CalcCard key={year.id} year={year} items={items} bilance={totals.bilance} />
-
       {/* Přidat */}
       {open && (
         <div className="card space-y-3 p-4">
@@ -244,68 +241,6 @@ export default function FinancePage() {
 
 function itemsOpen(items: FinanceItem[], kind: FinanceKind): number {
   return items.filter((i) => i.kind === kind && !i.paid).reduce((s, i) => s + i.amount, 0);
-}
-
-// Celková kalkulace — počet lidí × vklad, vybrané vklady, bilance a co vyjde na osobu.
-function CalcCard({ year, items, bilance }: { year: Year; items: FinanceItem[]; bilance: number }) {
-  const { dispatch } = useStore();
-  const [people, setPeople] = useState(String(year.plannedPeople ?? 30));
-  const [deposit, setDeposit] = useState(String(year.deposit ?? 1500));
-
-  const peopleN = Math.max(0, parseInt(people, 10) || 0);
-  const depositN = Math.max(0, parseInt(deposit, 10) || 0);
-  const ocekavane = peopleN * depositN;
-  const vybrano = items
-    .filter((i) => i.kind === "prijem" && (i.category || "").toLowerCase() === "vklad" && i.paid)
-    .reduce((s, i) => s + i.amount, 0);
-  const zbyva = Math.max(0, ocekavane - vybrano);
-  const naOsobu = peopleN ? Math.round(bilance / peopleN) : 0;
-
-  function persist() {
-    dispatch({ type: "updateYear", yearId: year.id, patch: { plannedPeople: peopleN, deposit: depositN } });
-  }
-
-  return (
-    <div className="card p-5">
-      <h2 className="mb-3 font-display text-base font-semibold">🧮 Celková kalkulace</h2>
-      <div className="flex flex-wrap items-end gap-4">
-        <div>
-          <label className="label">Počet lidí</label>
-          <input className="input w-28" inputMode="numeric" value={people} onChange={(e) => setPeople(e.target.value)} onBlur={persist} />
-        </div>
-        <div>
-          <label className="label">Vklad na osobu</label>
-          <input className="input w-32" inputMode="numeric" value={deposit} onChange={(e) => setDeposit(e.target.value)} onBlur={persist} />
-        </div>
-      </div>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Očekávané vklady" value={fmtCZK(ocekavane)} hint={`${peopleN} × ${fmtCZK(depositN)}`} />
-        <Stat label="Vybrané vklady" value={fmtCZK(vybrano)} hint={zbyva > 0 ? `zbývá vybrat ${fmtCZK(zbyva)}` : "vybráno vše 🎉"} tone="leaf" />
-        <Stat label="Bilance festivalu" value={`${bilance >= 0 ? "+" : "−"}${fmtCZK(Math.abs(bilance))}`} hint="příjmy − výdaje" tone={bilance >= 0 ? "leaf" : "red"} />
-        <Stat
-          label={bilance >= 0 ? "Vrátí se na osobu" : "Doplatí na osobu"}
-          value={fmtCZK(Math.abs(naOsobu))}
-          hint={bilance >= 0 ? "z výdělku" : "pokud se nevydělá"}
-          tone={bilance >= 0 ? "leaf" : "red"}
-        />
-      </div>
-      <p className="mt-3 text-xs text-ink-soft">
-        Vklad slouží jako polštář — pokud festival vydělá, vrací se zpět. Vybrané vklady počítáme z příjmů s kategorií „vklad“, které jsou označené jako zaplacené.
-      </p>
-    </div>
-  );
-}
-
-function Stat({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "leaf" | "red" }) {
-  const color = tone === "leaf" ? "text-leaf-700" : tone === "red" ? "text-red-600" : "text-ink";
-  return (
-    <div className="rounded-2xl bg-paper2/60 p-3">
-      <p className="text-xs font-medium text-ink-soft">{label}</p>
-      <p className={`mt-0.5 font-display text-lg font-semibold tracking-tight ${color}`}>{value}</p>
-      {hint && <p className="text-[11px] text-ink-soft">{hint}</p>}
-    </div>
-  );
 }
 
 function SummaryCard({ label, value, sub, tone }: { label: string; value: number; sub: string; tone: "prijem" | "vydaj" | "bilance" }) {
