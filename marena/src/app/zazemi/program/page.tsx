@@ -73,8 +73,7 @@ export default function ProgramPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Program — {year.label}</h1>
-          <p className="text-sm text-ink-soft">Koho oslovit (přednášející, kapely…) a jak daleko je domlouvání.</p>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">Program</h1>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Přidat do programu"}

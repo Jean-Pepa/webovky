@@ -51,8 +51,6 @@ export default function ProvozPage() {
   const year = currentYear;
   const shifts = useMemo(() => year?.shifts ?? [], [year]);
 
-  const myCount = useMemo(() => shifts.filter((s) => s.people.includes(me)).length, [shifts, me]);
-
   const groups = useMemo(() => {
     const filtered = shifts.filter((s) => {
       if (filter === "moje") return s.people.includes(me);
@@ -100,11 +98,7 @@ export default function ProvozPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Provoz &amp; směny — {year.label}</h1>
-          <p className="text-sm text-ink-soft">
-            Bar, vaření, nákupy, úklid… Klikni na „Přihlásit se“ a tvoje jméno se přidá automaticky.
-            {myCount > 0 && <span className="ml-1 font-medium text-ink">Máš {myCount} {myCount === 1 ? "směnu" : myCount < 5 ? "směny" : "směn"}.</span>}
-          </p>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">Provoz &amp; směny</h1>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Přidat směnu"}

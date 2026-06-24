@@ -77,10 +77,7 @@ export default function KuchynePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Kuchyně — {year.label}</h1>
-        <p className="text-sm text-ink-soft">
-          Fotky a soubory pro vaření: nákupní seznamy, denní menu, recepty. Nahraj foto (zmenší se) i soubor (např. PDF menu).
-        </p>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Kuchyně</h1>
       </div>
 
       {/* Nahrání */}
