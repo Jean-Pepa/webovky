@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { Photo } from "@/components/Photo";
+import { Icon, type IconName } from "@/components/Icons";
 
 // ⬇️ Až budete mít účet, stačí změnit tenhle jeden řádek na svůj Instagram.
 const IG_URL = "https://instagram.com/marena_favut";
 const IG_HANDLE = "@marena_favut";
 
-const LINEUP = [
-  { photo: "/photos/prednasky.jpg", emoji: "🎓", title: "Přednášky", text: "Špičkoví hosté z architektury a designu — i ze zahraničí. Inspirace, jakou v rozvrhu nenajdeš." },
-  { photo: "/photos/obedy.jpg", emoji: "🍲", title: "Obědy na dvoře", text: "Každý den teplý oběd (a ráno snídaně) přímo na dvoře fakulty. Najíš se a potkáš všechny." },
-  { photo: "/photos/bar.jpg", emoji: "🍺", title: "Bar na dvoře", text: "Srdce festivalu. Pivo, limo, drinky a parta — celý den i večer na jednom místě." },
-  { photo: "/photos/party.jpg", emoji: "🎶", title: "Party večery", text: "Kapely a DJs na dvoře a v Arše. Hraje se, dokud noční klid dovolí (a pak ještě chvíli)." },
-  { photo: "/photos/vyzdoba.jpg", emoji: "🎨", title: "Vyzdobená škola", text: "Celá fakulta se na týden promění do tématu — chodby, dvůr i aula. Hravě a originálně." },
-  { photo: "/photos/pruvod.jpg", emoji: "🚩", title: "Průvod městem", text: "Legendární průvod centrem Brna s maskotem v čele. Prváci ho nesou až na Flédu." },
+const LINEUP: { photo: string; icon: IconName; title: string; text: string }[] = [
+  { photo: "/photos/prednasky.jpg", icon: "lecture", title: "Přednášky", text: "Špičkoví hosté z architektury a designu — i ze zahraničí. Inspirace, jakou v rozvrhu nenajdeš." },
+  { photo: "/photos/obedy.jpg", icon: "food", title: "Obědy na dvoře", text: "Každý den teplý oběd (a ráno snídaně) přímo na dvoře fakulty. Najíš se a potkáš všechny." },
+  { photo: "/photos/bar.jpg", icon: "beer", title: "Bar na dvoře", text: "Srdce festivalu. Pivo, limo, drinky a parta — celý den i večer na jednom místě." },
+  { photo: "/photos/party.jpg", icon: "music", title: "Party večery", text: "Kapely a DJs na dvoře a v Arše. Hraje se, dokud noční klid dovolí (a pak ještě chvíli)." },
+  { photo: "/photos/vyzdoba.jpg", icon: "palette", title: "Vyzdobená škola", text: "Celá fakulta se na týden promění do tématu — chodby, dvůr i aula. Hravě a originálně." },
+  { photo: "/photos/pruvod.jpg", icon: "flag", title: "Průvod městem", text: "Legendární průvod centrem Brna s maskotem v čele. Prváci ho nesou až na Flédu." },
 ];
 
 const STEPS = [
@@ -33,7 +34,7 @@ export default function Home() {
           </span>
           <nav className="flex items-center gap-2">
             <a href={IG_URL} target="_blank" rel="noreferrer" className="btn-primary">
-              Instagram
+              <Icon name="instagram" className="h-4 w-4" /> Instagram
             </a>
             <Link href="/prihlaseni" className="rounded-full px-3 py-2 text-sm font-medium text-white transition hover:opacity-80">
               Organizátoři
@@ -93,8 +94,10 @@ export default function Home() {
             <article key={item.title} className="group card overflow-hidden">
               <Photo src={item.photo} alt={item.title} label={`foto — ${item.title}`} className="aspect-[4/3] w-full" />
               <div className="p-5">
-                <h3 className="font-display text-lg font-semibold">
-                  <span className="mr-1">{item.emoji}</span>
+                <h3 className="flex items-center gap-2.5 font-display text-lg font-semibold">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-marigold-50 text-marigold-700">
+                    <Icon name={item.icon} className="h-5 w-5" />
+                  </span>
                   {item.title}
                 </h3>
                 <p className="mt-1 text-sm text-ink-soft">{item.text}</p>
@@ -111,8 +114,8 @@ export default function Home() {
             <span className="inline-flex items-center gap-1 rounded-full bg-marigold-600 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
               Velké finále
             </span>
-            <h3 className="mt-3 font-display text-3xl font-bold tracking-tight text-white md:text-5xl">
-              🌟 Křest na Flédě
+            <h3 className="mt-3 flex items-center gap-3 font-display text-3xl font-bold tracking-tight text-white md:text-5xl">
+              <Icon name="star" className="h-8 w-8 md:h-10 md:w-10" /> Křest na Flédě
             </h3>
             <p className="mt-2 max-w-2xl text-white/90 md:text-lg">
               Vyvrcholení celého týdne — průvod dorazí do klubu Fléda, kde se pasují prváci a hraje se
@@ -152,14 +155,16 @@ export default function Home() {
       {/* INSTAGRAM CTA */}
       <section className="bg-plum-700 text-white">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-4 py-16 text-center md:py-20">
-          <span className="text-4xl">📲</span>
+          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-white/10 text-white ring-1 ring-white/15">
+            <Icon name="instagram" className="h-9 w-9" />
+          </span>
           <h2 className="font-display text-4xl font-bold tracking-tight">Všechno ostatní najdeš na Instagramu</h2>
           <p className="max-w-xl text-white/75">
             Program na každý den, novinky, medailonky hostů, fotky a story z celého týdne. Dej follow,
             ať ti nic neunikne — tam se to celé děje.
           </p>
           <a href={IG_URL} target="_blank" rel="noreferrer" className="btn-primary px-7 py-3.5 text-base">
-            {IG_HANDLE} →
+            <Icon name="instagram" className="h-5 w-5" /> {IG_HANDLE}
           </a>
         </div>
       </section>

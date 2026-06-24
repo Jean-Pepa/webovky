@@ -14,7 +14,15 @@ export type IconName =
   | "book"
   | "logout"
   | "plus"
-  | "spark";
+  | "spark"
+  | "lecture"
+  | "food"
+  | "beer"
+  | "music"
+  | "palette"
+  | "flag"
+  | "star"
+  | "instagram";
 
 const PATHS: Record<IconName, ReactNode> = {
   board: (
@@ -95,6 +103,56 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M12 3v4M12 17v4M3 12h4M17 12h4" />
       <path d="m6.3 6.3 2.5 2.5M15.2 15.2l2.5 2.5M17.7 6.3l-2.5 2.5M8.8 15.2l-2.5 2.5" />
+    </>
+  ),
+  lecture: (
+    <>
+      <rect x="3" y="4" width="18" height="11" rx="2" />
+      <path d="M7 8h8M7 11h5" />
+      <path d="M12 15v3M8.5 21l3.5-3 3.5 3" />
+    </>
+  ),
+  food: (
+    <>
+      <path d="M3.5 11.5h17a8.5 8.5 0 0 1-17 0Z" />
+      <path d="M3 11.5h18" />
+      <path d="M9 3.5c-.6 1 .6 2 0 3M13 3.5c-.6 1 .6 2 0 3" />
+    </>
+  ),
+  beer: (
+    <>
+      <path d="M7 7h8v12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2Z" />
+      <path d="M15 10h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2" />
+      <path d="M10 10.5v7M12 10.5v7" />
+    </>
+  ),
+  music: (
+    <>
+      <path d="M9 17.5V6l9-1.8v11.3" />
+      <circle cx="7" cy="17.5" r="2" />
+      <circle cx="16" cy="15.5" r="2" />
+    </>
+  ),
+  palette: (
+    <>
+      <path d="M12 3.5C7 3.5 3.5 7 3.5 11.5c0 4 3 7 7 7 1 0 1.6-.85 1.4-1.7-.2-.85.4-1.5 1.25-1.45L15 15.4a4 4 0 0 0 4-4c0-4.4-3.1-7.9-7-7.9Z" />
+      <circle cx="8" cy="11" r="1" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="8.2" r="1" fill="currentColor" stroke="none" />
+      <circle cx="15.5" cy="11" r="1" fill="currentColor" stroke="none" />
+    </>
+  ),
+  flag: (
+    <>
+      <path d="M5.5 21V3.5" />
+      <path d="M5.5 4.5h11l-2.2 3.2 2.2 3.2h-11" />
+    </>
+  ),
+  star: <path d="M12 3.6l2.5 5 5.5.8-4 3.9.95 5.5L12 16.2l-4.9 2.6.95-5.5-4-3.9 5.5-.8z" />,
+  instagram: (
+    <>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
+      <circle cx="12" cy="12" r="3.8" />
+      <circle cx="16.8" cy="7.2" r="1.05" fill="currentColor" stroke="none" />
     </>
   ),
 };
