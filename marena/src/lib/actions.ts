@@ -40,7 +40,10 @@ export type Action =
   | { type: "addFinance"; yearId: string; kind: FinanceKind; label: string; amount: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string }
   | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string } }
   | { type: "toggleFinancePaid"; yearId: string; financeId: string }
-  | { type: "removeFinance"; yearId: string; financeId: string };
+  | { type: "removeFinance"; yearId: string; financeId: string }
+  | { type: "addShift"; yearId: string; area: string; title?: string; date?: string; from?: string; to?: string; capacity?: number; note?: string }
+  | { type: "signShift"; yearId: string; shiftId: string; name: string }
+  | { type: "removeShift"; yearId: string; shiftId: string };
 
 function now(): string {
   return new Date().toISOString();
@@ -236,6 +239,40 @@ export function applyAction(db: DB, a: Action): DB {
       }));
     case "removeFinance":
       return mapYear(db, a.yearId, (y) => ({ ...y, finances: (y.finances ?? []).filter((f) => f.id !== a.financeId) }));
+
+    case "addShift":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        shifts: [
+          ...(y.shifts ?? []),
+          {
+            id: uid("s_"),
+            area: a.area.trim() || "Ostatní",
+            title: a.title?.trim() || undefined,
+            date: a.date || undefined,
+            from: a.from || undefined,
+            to: a.to || undefined,
+            capacity: a.capacity && a.capacity > 0 ? Math.round(a.capacity) : 0,
+            people: [],
+            note: a.note?.trim() || undefined,
+            createdAt: now(),
+          },
+        ],
+      }));
+    case "signShift":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        shifts: (y.shifts ?? []).map((s) => {
+          if (s.id !== a.shiftId) return s;
+          const name = a.name.trim() || "Anonym";
+          if (s.people.includes(name)) return { ...s, people: s.people.filter((p) => p !== name) };
+          // plno → nepřidávat (kapacita 0 = neomezeně)
+          if (s.capacity > 0 && s.people.length >= s.capacity) return s;
+          return { ...s, people: [...s.people, name] };
+        }),
+      }));
+    case "removeShift":
+      return mapYear(db, a.yearId, (y) => ({ ...y, shifts: (y.shifts ?? []).filter((s) => s.id !== a.shiftId) }));
 
     default:
       return db;

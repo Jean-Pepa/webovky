@@ -65,6 +65,13 @@ export function seedDB(): DB {
           { id: "seed_f1", kind: "prijem", label: "Třídní vklad (vzor)", amount: 1500, category: "vklad", who: "Petra", paid: true, createdAt: t },
           { id: "seed_f2", kind: "vydaj", label: "Pronájem Flédy (vzor)", amount: 32000, category: "Fléda", paid: false, createdAt: t },
         ],
+        shifts: [
+          { id: "seed_s1", area: "Bar", title: "Výčep – odpoledne", from: "14:00", to: "18:00", capacity: 3, people: [], createdAt: t },
+          { id: "seed_s2", area: "Bar", title: "Výčep – večer", from: "18:00", to: "23:00", capacity: 3, people: [], createdAt: t },
+          { id: "seed_s3", area: "Kuchyně", title: "Oběd – vaření", from: "08:00", to: "13:00", capacity: 4, people: [], createdAt: t },
+          { id: "seed_s4", area: "Nákupy", title: "Velký nákup v Makru (nutné auto)", capacity: 2, people: [], note: "Sepsat seznam předem.", createdAt: t },
+          { id: "seed_s5", area: "Úklid", title: "Zametení dvora na konci dne", from: "23:00", capacity: 3, people: [], createdAt: t },
+        ],
       },
     ],
   };

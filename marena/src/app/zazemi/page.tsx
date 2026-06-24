@@ -34,6 +34,7 @@ export default function NastenkaPage() {
 
   const openPolls = year?.polls.filter((p) => !p.closed).length ?? 0;
   const myTasks = year?.tasks.filter((t) => !t.done && (t.assignee === me || !t.assignee)).length ?? 0;
+  const myShifts = (year?.shifts ?? []).filter((s) => s.people.includes(me)).length;
 
   const bilance = (year?.finances ?? []).reduce((s, f) => s + (f.kind === "prijem" ? f.amount : -f.amount), 0);
   const hasFinance = (year?.finances ?? []).length > 0;
@@ -124,7 +125,7 @@ export default function NastenkaPage() {
       </div>
 
       <aside className="space-y-4">
-        <WidgetLinks openPolls={openPolls} myTasks={myTasks} />
+        <WidgetLinks openPolls={openPolls} myTasks={myTasks} myShifts={myShifts} />
         {hasFinance && (
           <Link href="/zazemi/finance" className="card block p-4 transition hover:border-black/10">
             <div className="flex items-center justify-between">
@@ -196,16 +197,20 @@ export default function NastenkaPage() {
   );
 }
 
-function WidgetLinks({ openPolls, myTasks }: { openPolls: number; myTasks: number }) {
+function WidgetLinks({ openPolls, myTasks, myShifts }: { openPolls: number; myTasks: number; myShifts: number }) {
   return (
-    <div className="grid grid-cols-2 gap-3">
-      <Link href="/zazemi/hlasovani" className="card p-4 transition hover:border-marigold-300">
+    <div className="grid grid-cols-3 gap-3">
+      <Link href="/zazemi/hlasovani" className="card p-3 transition hover:border-marigold-300">
         <div className="text-2xl font-bold text-marigold-700">{openPolls}</div>
-        <div className="text-xs text-ink-soft">otevřených anket 🗳️</div>
+        <div className="text-xs text-ink-soft">anket 🗳️</div>
       </Link>
-      <Link href="/zazemi/ukoly" className="card p-4 transition hover:border-marigold-300">
+      <Link href="/zazemi/ukoly" className="card p-3 transition hover:border-marigold-300">
         <div className="text-2xl font-bold text-plum-600">{myTasks}</div>
-        <div className="text-xs text-ink-soft">úkolů pro mě ✅</div>
+        <div className="text-xs text-ink-soft">úkolů ✅</div>
+      </Link>
+      <Link href="/zazemi/provoz" className="card p-3 transition hover:border-marigold-300">
+        <div className="text-2xl font-bold text-marigold-700">{myShifts}</div>
+        <div className="text-xs text-ink-soft">směn 🛠️</div>
       </Link>
     </div>
   );

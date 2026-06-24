@@ -78,6 +78,19 @@ export interface LinkItem {
   createdAt: string;
 }
 
+export interface Shift {
+  id: string;
+  area: string; // Bar, Kuchyně, Nákupy, Úklid, Stavění… (oblast provozu)
+  title?: string; // konkrétní úkol (např. „Výčep", „Oběd – guláš", „Nákup Makro")
+  date?: string; // ISO datum
+  from?: string; // čas od
+  to?: string; // čas do
+  capacity: number; // kolik lidí je potřeba (0 = neomezeně)
+  people: string[]; // přihlášená jména
+  note?: string;
+  createdAt: string;
+}
+
 export type FinanceKind = "prijem" | "vydaj"; // příjem / výdaj
 
 export interface FinanceItem {
@@ -107,6 +120,7 @@ export interface Year {
   tasks: Task[];
   links?: LinkItem[]; // důležité kontakty a odkazy (volitelné kvůli zpětné kompatibilitě)
   finances?: FinanceItem[]; // pokladní kniha — příjmy a výdaje
+  shifts?: Shift[]; // provoz — rozpis směn, na které se lidi přihlašují
   createdAt: string;
 }
 
