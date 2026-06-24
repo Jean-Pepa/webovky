@@ -39,7 +39,7 @@ export function Logo({ href = "/", light = false }: { href?: string; light?: boo
       {src ? (
         <span className={light ? "inline-flex rounded-md bg-white p-1.5" : "inline-flex"}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt="Fakulta architektury VUT" className="h-7 w-auto" />
+          <img src={src} alt="Fakulta architektury VUT" className="h-[1.5cm] w-auto" />
         </span>
       ) : (
         <FallbackMark light={light} />
@@ -53,7 +53,7 @@ function FallbackMark({ light }: { light: boolean }) {
   const ink = light ? "#ffffff" : "#161616";
   const paper = light ? "#161616" : "#ffffff";
   return (
-    <svg width="56" height="28" viewBox="0 0 48 24" fill="none" role="img" aria-hidden>
+    <svg viewBox="0 0 48 24" fill="none" role="img" aria-hidden className="h-[1.5cm] w-auto">
       <rect x="0" y="1" width="22" height="22" rx="1.5" fill={ink} />
       <g fill={paper}>
         <rect x="4.5" y="5" width="13" height="3.4" rx="0.4" />
