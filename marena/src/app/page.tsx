@@ -1,144 +1,148 @@
 import Link from "next/link";
-import { Mascot } from "@/components/Mascot";
 import { Logo } from "@/components/Logo";
-import { ROLES } from "@/lib/roles";
+import { Photo } from "@/components/Photo";
 
-const WEEK = [
-  { emoji: "🎓", title: "Přednášky", text: "Hosté z praxe i ze zahraničí, klasika ve velké aule. Max 2–3 denně od 17:00." },
-  { emoji: "🎭", title: "Program", text: "Workshopy, dílny, promítání, Vlaštovkiáda, Formát 400 a fašák." },
-  { emoji: "🍺", title: "Bar na dvoře", text: "Společný hub festivalu — pivo, jídlo, merch i lístky na jednom místě." },
-  { emoji: "🎸", title: "Večery", text: "Kapely a DJs na dvoře a v Arše, dokud to noční klid dovolí." },
-  { emoji: "🚩", title: "Průvod městem", text: "Poslední den. Maskota nesou prváci, zastávky u významných staveb." },
-  { emoji: "🌟", title: "Křest na Flédě", text: "Velký finiš — pasování prváků a koncert do brzkých ranních hodin." },
+// ⬇️ Až budete mít účet, stačí změnit tenhle jeden řádek na svůj Instagram.
+const IG_URL = "https://instagram.com/marena_favut";
+const IG_HANDLE = "@marena_favut";
+
+const LINEUP = [
+  { photo: "/photos/prednasky.jpg", emoji: "🎓", title: "Přednášky", text: "Špičkoví hosté z architektury a designu — i ze zahraničí. Inspirace, jakou v rozvrhu nenajdeš." },
+  { photo: "/photos/obedy.jpg", emoji: "🍲", title: "Obědy na dvoře", text: "Každý den teplý oběd (a ráno snídaně) přímo na dvoře fakulty. Najíš se a potkáš všechny." },
+  { photo: "/photos/bar.jpg", emoji: "🍺", title: "Bar na dvoře", text: "Srdce festivalu. Pivo, limo, drinky a parta — celý den i večer na jednom místě." },
+  { photo: "/photos/party.jpg", emoji: "🎶", title: "Party večery", text: "Kapely a DJs na dvoře a v Arše. Hraje se, dokud noční klid dovolí (a pak ještě chvíli)." },
+  { photo: "/photos/pruvod.jpg", emoji: "🚩", title: "Průvod městem", text: "Legendární průvod centrem Brna s maskotem v čele. Prváci ho nesou až na Flédu." },
+  { photo: "/photos/krest.jpg", emoji: "🌟", title: "Křest na Flédě", text: "Velkolepé zakončení v klubu Fléda — pasování prváků a koncert do brzkého rána." },
+];
+
+const STEPS = [
+  { day: "Přes den", text: "Přednášky, workshopy, obědy a bar na dvoře" },
+  { day: "Večer", text: "Kapely, DJs a party na dvoře i v Arše" },
+  { day: "Poslední den", text: "Průvod městem v pytlích, s maskotem" },
+  { day: "Finále", text: "Křest prváků na Flédě až do rána" },
 ];
 
 export default function Home() {
   return (
-    <div className="min-h-screen">
-      {/* Hlavička */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5">
-        <Logo />
-        <nav className="flex items-center gap-1">
-          <Link href="/almanach" className="btn-ghost">📖 Almanach</Link>
-          <Link href="/prihlaseni" className="btn-primary">Vstoupit do zázemí</Link>
-        </nav>
+    <div className="min-h-screen bg-white">
+      {/* NAV */}
+      <header className="absolute inset-x-0 top-0 z-20">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5">
+          <span className="[&_*]:text-white">
+            <Logo light />
+          </span>
+          <nav className="flex items-center gap-2">
+            <a href={IG_URL} target="_blank" rel="noreferrer" className="btn-primary">
+              Instagram
+            </a>
+            <Link href="/prihlaseni" className="rounded-full px-3 py-2 text-sm font-medium text-white/80 transition hover:text-white">
+              Organizátoři
+            </Link>
+          </nav>
+        </div>
       </header>
 
       {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div className="paper-grain absolute inset-0 -z-10 opacity-60" />
-        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-14 pt-6 md:grid-cols-2 md:pt-12">
-          <div>
-            <span className="chip bg-marigold-100 text-marigold-800">studentský festival · fakulta architektury</span>
-            <h1 className="mt-4 font-display text-5xl font-bold leading-[1.05] tracking-tight md:text-6xl">
-              Mařena
-            </h1>
-            <p className="mt-4 max-w-md text-lg text-ink-soft">
-              Nejlepší, nejšílenější a nejnáročnější studentská akce na fakultě. Týden přednášek,
-              programu a baru na dvoře, zakončený průvodem městem a křtem prváků na Flédě.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/prihlaseni" className="btn-primary px-6 py-3 text-base">
-                Vstoupit do zázemí →
-              </Link>
-              <Link href="/almanach" className="btn-secondary px-6 py-3 text-base">
-                Přečíst almanach
-              </Link>
-            </div>
-            <p className="mt-4 font-display text-sm italic text-plum-600">
-              „Kolik Mařeny je dost Mařeny? Mařeny není nikdy dost.“
-            </p>
-          </div>
+      <section className="relative isolate flex min-h-[88vh] items-center">
+        <Photo src="/photos/hero.jpg" alt="Mařena na dvoře fakulty architektury" label="hero foto — dvůr / party Mařeny" className="absolute inset-0 -z-10 h-full w-full" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/90 via-black/60 to-black/45" />
 
-          <div className="relative grid place-items-center">
-            <Mascot size={300} wave />
+        <div className="mx-auto w-full max-w-6xl px-4 pt-24">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/70">
+            Fakulta architektury VUT · studentský festival
+          </p>
+          <h1 className="mt-3 font-display text-6xl font-bold leading-[0.95] tracking-tight text-white sm:text-7xl md:text-8xl">
+            MAŘENA
+          </h1>
+          <p className="mt-5 max-w-xl text-lg text-white/85">
+            Týden, na který do konce školy nezapomeneš. Přednášky, bar na dvoře, party večery, velký
+            průvod městem a křest prváků na Flédě.
+          </p>
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-marigold-600 px-4 py-1.5 text-sm font-semibold text-white">
+            🐣 Jsi prvák? Tohle je tvůj vstup do života na fakultě.
+          </div>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <a href={IG_URL} target="_blank" rel="noreferrer" className="btn-primary px-6 py-3 text-base">
+              Sleduj nás na Instagramu →
+            </a>
+            <a href="#co-te-ceka" className="rounded-full border border-white/30 px-6 py-3 text-base font-medium text-white transition hover:bg-white/10">
+              Co tě čeká ↓
+            </a>
           </div>
         </div>
       </section>
 
-      {/* CO JE MAŘENA */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-5xl px-4 py-14">
-          <h2 className="font-display text-3xl font-semibold">Co je Mařena?</h2>
-          <div className="mt-4 grid gap-6 text-ink-soft md:grid-cols-2">
-            <p>
-              Mařena je studentský festival pořádaný a organizovaný čistě studenty — fakulta ho jen
-              zastřešuje. Trvá zhruba 7–10 dní, nejčastěji na přelomu září a října, kdy je ještě teplo.
-              Škola se na týden promění: zóny ozdobené do společného tématu, přednášky hostů, workshopy,
-              koncerty a velký bar na dvoře.
-            </p>
-            <p>
-              Vyvrcholením je <strong className="text-ink">průvod městem</strong> s maskotem v čele, který
-              prváci donesou až do klubu <strong className="text-ink">Fléda</strong>, kde proběhne tradiční
-              křest prvního ročníku. Je to půl roku příprav, stovky e-mailů a spousta práce — ale taky
-              obrovská sranda a nejlepší vzpomínka na školu.
-            </p>
-          </div>
+      {/* CO TĚ ČEKÁ */}
+      <section id="co-te-ceka" className="mx-auto max-w-6xl scroll-mt-8 px-4 py-16 md:py-20">
+        <div className="max-w-2xl">
+          <p className="text-sm font-semibold uppercase tracking-wide text-marigold-700">Na co se těšit</p>
+          <h2 className="mt-2 font-display text-4xl font-bold tracking-tight">Co tě na Mařeně čeká</h2>
+          <p className="mt-3 text-ink-soft">
+            Mařena je týdenní (cca 7–10 dní) festival na přelomu září a října. Celá fakulta ožije —
+            a ty jsi u toho. Tady je, na co se můžeš těšit:
+          </p>
         </div>
-      </section>
 
-      {/* TÝDEN */}
-      <section className="mx-auto max-w-6xl px-4 py-14">
-        <h2 className="font-display text-3xl font-semibold">Jak vypadá týden Mařeny</h2>
-        <p className="mt-1 text-ink-soft">Od příprav až po pasování na Flédě.</p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {WEEK.map((w, i) => (
-            <div key={w.title} className="card p-5 transition hover:-translate-y-0.5 hover:shadow-md">
-              <div className="flex items-center gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-paper2 text-2xl">{w.emoji}</span>
-                <span className="text-xs font-semibold uppercase tracking-wide text-marigold-700">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {LINEUP.map((item) => (
+            <article key={item.title} className="group card overflow-hidden">
+              <Photo src={item.photo} alt={item.title} label={`foto — ${item.title}`} className="aspect-[4/3] w-full" />
+              <div className="p-5">
+                <h3 className="font-display text-lg font-semibold">
+                  <span className="mr-1">{item.emoji}</span>
+                  {item.title}
+                </h3>
+                <p className="mt-1 text-sm text-ink-soft">{item.text}</p>
               </div>
-              <h3 className="mt-3 font-display text-lg font-semibold">{w.title}</h3>
-              <p className="mt-1 text-sm text-ink-soft">{w.text}</p>
-            </div>
+            </article>
           ))}
         </div>
       </section>
 
-      {/* POSTY */}
-      <section className="bg-plum-700 text-white">
-        <div className="mx-auto max-w-6xl px-4 py-14">
-          <h2 className="font-display text-3xl font-semibold">Každý má svůj post</h2>
-          <p className="mt-1 max-w-2xl text-white/70">
-            Organizace stojí na rolích vybraných podle manuálu. V zázemí si svůj post vybereš a uvidíš,
-            co obnáší — od financí přes výzdobu až po průvod a Flédu.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-2">
-            {ROLES.map((r) => (
-              <span key={r.id} className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-2 text-sm ring-1 ring-white/15">
-                <span>{r.emoji}</span>
-                {r.name}
-              </span>
+      {/* JAK TO PROBÍHÁ */}
+      <section className="bg-paper">
+        <div className="mx-auto max-w-6xl px-4 py-16">
+          <h2 className="font-display text-3xl font-bold tracking-tight">Jak týden probíhá</h2>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {STEPS.map((s, i) => (
+              <div key={s.day} className="relative rounded-3xl border border-black/[0.06] bg-white p-5">
+                <div className="font-display text-3xl font-bold text-marigold-600">{i + 1}</div>
+                <p className="mt-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">{s.day}</p>
+                <p className="mt-1 text-[15px]">{s.text}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ALMANACH CTA */}
-      <section className="mx-auto max-w-6xl px-4 py-16">
-        <div className="card flex flex-col items-center gap-4 bg-gradient-to-br from-marigold-50 to-paper2 p-10 text-center">
-          <span className="text-4xl">📖</span>
-          <h2 className="font-display text-3xl font-semibold">Almanach Mařeny</h2>
-          <p className="max-w-2xl text-ink-soft">
-            Veškerá nasbíraná moudrost dvou ročníků v jednom dokumentu — příprava, fakulta, finance,
-            propagace, výzdoba, průvod, Fléda i upřímné rady, co dělat jinak. Předávej dál.
+      {/* INSTAGRAM CTA */}
+      <section className="bg-plum-700 text-white">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-4 py-16 text-center md:py-20">
+          <span className="text-4xl">📲</span>
+          <h2 className="font-display text-4xl font-bold tracking-tight">Všechno ostatní najdeš na Instagramu</h2>
+          <p className="max-w-xl text-white/75">
+            Program na každý den, novinky, medailonky hostů, fotky a story z celého týdne. Dej follow,
+            ať ti nic neunikne — tam se to celé děje.
           </p>
-          <Link href="/almanach" className="btn-primary px-6 py-3 text-base">
-            Otevřít almanach →
-          </Link>
+          <a href={IG_URL} target="_blank" rel="noreferrer" className="btn-primary px-7 py-3.5 text-base">
+            {IG_HANDLE} →
+          </a>
         </div>
       </section>
 
-      {/* PATIČKA */}
-      <footer className="border-t border-ink/10 bg-white">
+      {/* FOOTER */}
+      <footer className="border-t border-black/10 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-8 text-sm text-ink-soft">
           <Logo />
-          <p>Studentská akce · organizují studenti · Mařeny není nikdy dost 🧡</p>
-          <Link href="/prihlaseni" className="font-medium text-marigold-700 hover:underline">
-            Vstup do zázemí →
-          </Link>
+          <p>Studentská akce Fakulty architektury VUT · organizují studenti</p>
+          <div className="flex items-center gap-4">
+            <a href={IG_URL} target="_blank" rel="noreferrer" className="font-medium text-marigold-700 hover:underline">
+              Instagram
+            </a>
+            <Link href="/prihlaseni" className="hover:text-ink">
+              Organizátoři →
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

@@ -9,17 +9,17 @@
   --color-ink: #1d1d1f; /* hlavní text (Apple ink) */
   --color-ink-soft: #6e6e73; /* sekundární text */
 
-  /* Akcent — kultivovaná oranžová (identita Mařeny, ale střídmě) */
-  --color-marigold-50: #fff4ee;
-  --color-marigold-100: #ffe5d6;
-  --color-marigold-200: #ffc7a8;
-  --color-marigold-300: #ffa472;
-  --color-marigold-400: #fb8347;
-  --color-marigold-500: #f56a23;
-  --color-marigold-600: #e15a14; /* primární akce */
-  --color-marigold-700: #bd4a10;
-  --color-marigold-800: #973c12;
-  --color-marigold-900: #7c3413;
+  /* Akcent — VUT / FA VUT červená (token „marigold" zůstává kvůli kompatibilitě) */
+  --color-marigold-50: #fdeef1;
+  --color-marigold-100: #fbd8de;
+  --color-marigold-200: #f4adb8;
+  --color-marigold-300: #ec7d8e;
+  --color-marigold-400: #e3495f;
+  --color-marigold-500: #d51f3c;
+  --color-marigold-600: #c20e2c; /* primární akce — VUT červená */
+  --color-marigold-700: #a10a24;
+  --color-marigold-800: #82091e;
+  --color-marigold-900: #6a0a1a;
 
   /* „plum" přemapováno na neutrální grafit — tmavé plochy à la Apple */
   --color-plum-50: #f2f2f4;

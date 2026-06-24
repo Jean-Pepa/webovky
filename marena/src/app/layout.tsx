@@ -3,9 +3,9 @@ import "./globals.css";
 import { StoreProvider } from "@/lib/store";
 
 export const metadata: Metadata = {
-  title: "Mařena — zázemí studentského festivalu",
+  title: "Mařena — studentský festival Fakulty architektury VUT",
   description:
-    "Domovská stránka a organizační zázemí Mařeny — nejlepší, nejšílenější a nejnáročnější studentské akce na fakultě architektury. Role, nástěnka, hlasování, kalendář a almanach na jednom místě.",
+    "Mařena je týdenní studentský festival na Fakultě architektury VUT v Brně. Přednášky, bar na dvoře, party večery, průvod městem a křest prváků na Flédě. Sleduj nás na Instagramu.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

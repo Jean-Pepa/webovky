@@ -57,8 +57,10 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             );
           })}
           <Link
-            href="/almanach"
-            className="ml-auto whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium text-plum-700 hover:bg-plum-50"
+            href="/zazemi/almanach"
+            className={`ml-auto whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+              pathname === "/zazemi/almanach" ? "bg-marigold-600 text-white" : "text-marigold-700 hover:bg-marigold-50"
+            }`}
           >
             📖 Almanach
           </Link>
