@@ -11,6 +11,7 @@ const LINEUP = [
   { photo: "/photos/obedy.jpg", emoji: "🍲", title: "Obědy na dvoře", text: "Každý den teplý oběd (a ráno snídaně) přímo na dvoře fakulty. Najíš se a potkáš všechny." },
   { photo: "/photos/bar.jpg", emoji: "🍺", title: "Bar na dvoře", text: "Srdce festivalu. Pivo, limo, drinky a parta — celý den i večer na jednom místě." },
   { photo: "/photos/party.jpg", emoji: "🎶", title: "Party večery", text: "Kapely a DJs na dvoře a v Arše. Hraje se, dokud noční klid dovolí (a pak ještě chvíli)." },
+  { photo: "/photos/vyzdoba.jpg", emoji: "🎨", title: "Vyzdobená škola", text: "Celá fakulta se na týden promění do tématu — chodby, dvůr i aula. Hravě a originálně." },
   { photo: "/photos/pruvod.jpg", emoji: "🚩", title: "Průvod městem", text: "Legendární průvod centrem Brna s maskotem v čele. Prváci ho nesou až na Flédu." },
   { photo: "/photos/krest.jpg", emoji: "🌟", title: "Křest na Flédě", text: "Velkolepé zakončení v klubu Fléda — pasování prváků a koncert do brzkého rána." },
 ];
@@ -96,6 +97,17 @@ export default function Home() {
               </div>
             </article>
           ))}
+        </div>
+      </section>
+
+      {/* MAŘENA BAND */}
+      <section className="relative h-64 md:h-80">
+        <Photo src="/photos/letters.jpg" alt="Nápis MAŘENA před Fakultou architektury VUT" label="MAŘENA před fakultou" className="absolute inset-0 h-full w-full" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/15" />
+        <div className="relative mx-auto flex h-full max-w-6xl items-end px-4 pb-8">
+          <p className="max-w-2xl font-display text-2xl font-semibold tracking-tight text-white md:text-4xl">
+            Celá fakulta se na týden promění v jeden velký festival.
+          </p>
         </div>
       </section>
 
