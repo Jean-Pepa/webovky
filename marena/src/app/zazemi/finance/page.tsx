@@ -7,6 +7,7 @@ import { fmtCZK, fmtDate, todayISO } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
+import { isAdmin } from "@/lib/admin";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
 import type { FinanceItem, FinanceKind } from "@/lib/types";
@@ -102,7 +103,8 @@ export default function FinancePage() {
   // Dokud funkci nikdo nemá, necháme to otevřené, ať se dá vůbec začít.
   const ekonomove = year.members.filter((m) => m.roleIds.includes(EKONOM_ROLE));
   const jaJsemEkonom = year.members.some((m) => m.name === me && m.roleIds.includes(EKONOM_ROLE));
-  const canEdit = jaJsemEkonom || ekonomove.length === 0;
+  // Správce (Pan_Vyskočil) má kontrolu nad vším — finance smí upravovat vždy.
+  const canEdit = isAdmin(me) || jaJsemEkonom || ekonomove.length === 0;
 
   async function add() {
     const amt = parseAmount(amount);

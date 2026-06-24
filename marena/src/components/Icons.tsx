@@ -22,7 +22,8 @@ export type IconName =
   | "palette"
   | "flag"
   | "star"
-  | "instagram";
+  | "instagram"
+  | "download";
 
 const PATHS: Record<IconName, ReactNode> = {
   board: (
@@ -153,6 +154,13 @@ const PATHS: Record<IconName, ReactNode> = {
       <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
       <circle cx="12" cy="12" r="3.8" />
       <circle cx="16.8" cy="7.2" r="1.05" fill="currentColor" stroke="none" />
+    </>
+  ),
+  download: (
+    <>
+      <path d="M12 3v11" />
+      <path d="m7.5 10 4.5 4.5L16.5 10" />
+      <path d="M5 20h14" />
     </>
   ),
 };

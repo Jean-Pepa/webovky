@@ -8,6 +8,8 @@ import { Logo } from "@/components/Logo";
 import { Loading } from "@/components/Loading";
 import { YearSwitcher } from "@/components/YearSwitcher";
 import { Icon, type IconName } from "@/components/Icons";
+import { isAdmin } from "@/lib/admin";
+import { downloadArchive } from "@/lib/export";
 
 const NAV: { href: string; label: string; icon: IconName }[] = [
   { href: "/zazemi", label: "Nástěnka", icon: "board" },
@@ -22,7 +24,7 @@ const NAV: { href: string; label: string; icon: IconName }[] = [
 ];
 
 export default function ZazemiLayout({ children }: { children: React.ReactNode }) {
-  const { ready, authed, me, logout, syncError, dismissSyncError } = useStore();
+  const { ready, authed, me, logout, syncError, dismissSyncError, db } = useStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -75,6 +77,15 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           >
             <Icon name="book" className="h-4 w-4" /> Almanach
           </Link>
+          {isAdmin(me) && db && (
+            <button
+              onClick={() => downloadArchive(db)}
+              title="Stáhnout kompletní archiv všech ročníků do PDF (pro úschovu na další roky)"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-ink px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ink/90"
+            >
+              <Icon name="download" className="h-4 w-4" /> Stáhnout vše
+            </button>
+          )}
           <button
             onClick={async () => {
               await logout();
