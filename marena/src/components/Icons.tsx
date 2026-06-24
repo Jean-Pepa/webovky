@@ -27,7 +27,8 @@ export type IconName =
   | "menu"
   | "close"
   | "image"
-  | "file";
+  | "file"
+  | "globe";
 
 const PATHS: Record<IconName, ReactNode> = {
   board: (
@@ -180,6 +181,13 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
       <path d="M14 3v4h4" />
+    </>
+  ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3c2.5 2.4 3.8 5.6 3.8 9s-1.3 6.6-3.8 9c-2.5-2.4-3.8-5.6-3.8-9s1.3-6.6 3.8-9Z" />
     </>
   ),
 };
