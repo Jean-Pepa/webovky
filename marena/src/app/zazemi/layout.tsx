@@ -24,7 +24,7 @@ const NAV: { href: string; label: string; icon: IconName }[] = [
 ];
 
 export default function ZazemiLayout({ children }: { children: React.ReactNode }) {
-  const { ready, authed, me, logout, syncError, dismissSyncError, db } = useStore();
+  const { ready, authed, me, logout, syncError, dismissSyncError, db, currentYear, canEditCurrentYear } = useStore();
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -164,6 +164,13 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           </div>
         )}
       </header>
+
+      {currentYear && !canEditCurrentYear && (
+        <div className="flex items-center justify-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs font-medium text-amber-800">
+          <Icon name="book" className="h-4 w-4 shrink-0" />
+          <span>🔒 {currentYear.label} je uzamčený ročník — jde jen prohlížet. Měnit lze jen aktuální (nejnovější) ročník.</span>
+        </div>
+      )}
 
       {syncError && (
         <div className="flex items-center justify-center gap-3 border-b border-red-200 bg-red-50 px-4 py-2 text-center text-xs text-red-700">

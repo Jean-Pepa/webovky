@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { DB, Year } from "./types";
 import { applyAction, type Action } from "./actions";
 import { seedDB } from "./seed";
+import { isYearEditable } from "./years";
 
 type Mode = "loading" | "server" | "local";
 
@@ -20,6 +21,7 @@ interface StoreState {
 
 interface StoreApi extends StoreState {
   currentYear: Year | null;
+  canEditCurrentYear: boolean; // smím měnit aktuálně vybraný ročník? (starší jsou zamčené)
   login: (password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   setMe: (name: string) => void;
@@ -71,6 +73,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     syncError: null,
   });
   const modeRef = useRef<Mode>("loading");
+  // Vždy aktuální stav (kvůli kontrole zámku uvnitř memoizovaného dispatch).
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  });
 
   // Načtení identity z localStorage + zjištění režimu (server/local) z API.
   useEffect(() => {
@@ -146,6 +153,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const dispatch = useCallback(async (action: Action) => {
+    // Zámek starších ročníků: měnit jde jen aktuální ročník (správce vždy).
+    const yearId = (action as { yearId?: string }).yearId;
+    if (yearId && !isYearEditable(stateRef.current.db, yearId, stateRef.current.me)) {
+      setState((s) => ({
+        ...s,
+        syncError: "Tento ročník je uzamčený — jde ho jen prohlížet. Měnit lze jen aktuální (nejnovější) ročník.",
+      }));
+      return;
+    }
     if (modeRef.current === "server") {
       const res = await fetch("/api/db", {
         method: "POST",
@@ -186,9 +202,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return state.db.years.find((y) => y.id === state.currentYearId) ?? state.db.years[0] ?? null;
   }, [state.db, state.currentYearId]);
 
+  const canEditCurrentYear = isYearEditable(state.db, currentYear?.id ?? null, state.me);
+
   const value: StoreApi = {
     ...state,
     currentYear,
+    canEditCurrentYear,
     login,
     logout,
     setMe,

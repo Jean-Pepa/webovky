@@ -6,16 +6,22 @@ import { ROLES, roleById, type Role } from "@/lib/roles";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
 import { Icon } from "@/components/Icons";
+import { isAdmin } from "@/lib/admin";
+import type { Member } from "@/lib/types";
 
 export default function TymPage() {
-  const { currentYear, me, setMe, dispatch } = useStore();
+  const { currentYear, me, setMe, dispatch, canEditCurrentYear } = useStore();
   const [openRole, setOpenRole] = useState<string | null>(null);
   // Profilový modal: buď "vezmi si roli X" (roleToAdd), nebo jen úprava profilu.
   const [modal, setModal] = useState<{ roleToAdd?: string } | null>(null);
+  // Správce (Pan_Vyskočil) může upravit libovolného člena.
+  const [editMember, setEditMember] = useState<Member | null>(null);
 
   const current = currentYear;
   if (!current) return null;
   const year = current; // typ Year (zachová zúžení i ve vnořených funkcích)
+  const editable = canEditCurrentYear; // starší (zamčený) ročník = jen ke čtení
+  const admin = isAdmin(me);
 
   const myMember = year.members.find((m) => m.name === me);
   const mineRoles = ROLES.filter((r) => myMember?.roleIds.includes(r.id));
@@ -125,18 +131,19 @@ export default function TymPage() {
         </div>
 
         <div className="mt-3 flex items-center gap-2">
-          {mine ? (
-            <button className="btn-secondary" onClick={() => removeRoleFromMe(r.id)}>
-              Uvolnit funkci
-            </button>
-          ) : (
-            <button
-              className={taken ? "btn-secondary" : "btn-primary"}
-              onClick={() => setModal({ roleToAdd: r.id })}
-            >
-              {taken ? "Přidat se taky" : "Vzít si"}
-            </button>
-          )}
+          {editable &&
+            (mine ? (
+              <button className="btn-secondary" onClick={() => removeRoleFromMe(r.id)}>
+                Uvolnit funkci
+              </button>
+            ) : (
+              <button
+                className={taken ? "btn-secondary" : "btn-primary"}
+                onClick={() => setModal({ roleToAdd: r.id })}
+              >
+                {taken ? "Přidat se taky" : "Vzít si"}
+              </button>
+            ))}
           <button className="btn-ghost" onClick={() => setOpenRole(open ? null : r.id)}>
             {open ? "Skrýt úkoly" : "Co to obnáší"}
           </button>
@@ -156,7 +163,7 @@ export default function TymPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight">Tým &amp; role — {year.label}</h1>
@@ -171,100 +178,127 @@ export default function TymPage() {
         </div>
       </div>
 
-      {/* Já v týmu */}
-      <section className="card p-5">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="font-display text-lg font-semibold">Já v týmu</h2>
-          <button className="btn-secondary" onClick={() => setModal({})}>
-            {myMember ? "Upravit profil" : "Vyplnit profil"}
-          </button>
-        </div>
-        {myMember ? (
-          <div className="mt-3">
-            <p className="font-semibold">{myMember.name}</p>
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              {myMember.roleIds.length === 0 ? (
-                <span className="text-sm text-ink-soft">Zatím bez role — vyber si níže.</span>
-              ) : (
-                myMember.roleIds.map((id) => {
-                  const role = roleById(id);
-                  return role ? (
-                    <span key={id} className="chip">
-                      {role.emoji} {role.name}
-                    </span>
-                  ) : null;
-                })
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        {/* Vlevo: můj profil + funkce */}
+        <div className="space-y-8">
+          {/* Já v týmu */}
+          <section className="card p-5">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-display text-lg font-semibold">Já v týmu</h2>
+              {editable && (
+                <button className="btn-secondary" onClick={() => setModal({})}>
+                  {myMember ? "Upravit profil" : "Vyplnit profil"}
+                </button>
               )}
             </div>
-            {(myMember.email || myMember.phone) && (
-              <p className="mt-2 text-sm text-ink-soft">
-                {myMember.email && <span>✉️ {myMember.email}</span>}
-                {myMember.email && myMember.phone && <span> · </span>}
-                {myMember.phone && <span>📞 {myMember.phone}</span>}
-              </p>
-            )}
-          </div>
-        ) : (
-          <p className="mt-2 text-sm text-ink-soft">Ještě nejsi v týmu. Vyber si roli níže — vyskočí okno na doplnění kontaktu.</p>
-        )}
-      </section>
-
-      {/* Moje funkce nahoře */}
-      {mineRoles.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="font-display text-lg font-semibold">Moje funkce</h2>
-          <div className="grid gap-3 md:grid-cols-2">
-            {mineRoles.map((r) => (
-              <RoleCard key={r.id} r={r} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Ostatní posty */}
-      <section className="space-y-3">
-        <h2 className="font-display text-lg font-semibold">{mineRoles.length > 0 ? "Další posty" : "Posty a co obnášejí"}</h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          {otherRoles.map((r) => (
-            <RoleCard key={r.id} r={r} />
-          ))}
-        </div>
-      </section>
-
-      {/* Celý roster */}
-      <section className="card p-5">
-        <h2 className="mb-3 font-display text-lg font-semibold">Celý tým ({year.members.length})</h2>
-        {year.members.length === 0 ? (
-          <p className="text-sm text-ink-soft">Zatím nikdo. Buď první!</p>
-        ) : (
-          <ul className="divide-y divide-black/[0.06]">
-            {year.members.map((m) => (
-              <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3">
-                <span className="font-semibold">{m.name}</span>
-                {m.name === me && <span className="chip bg-marigold-600 text-white">to jsi ty</span>}
-                <span className="flex flex-wrap gap-1">
-                  {m.roleIds.map((id) => {
-                    const role = roleById(id);
-                    return role ? (
-                      <span key={id} className="chip">
-                        {role.emoji} {role.name}
-                      </span>
-                    ) : null;
-                  })}
-                </span>
-                {(m.email || m.phone || m.contact) && (
-                  <span className="text-xs text-ink-soft">
-                    {[m.email, m.phone, m.contact].filter(Boolean).join(" · ")}
-                  </span>
+            {myMember ? (
+              <div className="mt-3">
+                <p className="font-semibold">{myMember.name}</p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {myMember.roleIds.length === 0 ? (
+                    <span className="text-sm text-ink-soft">Zatím bez role — vyber si níže.</span>
+                  ) : (
+                    myMember.roleIds.map((id) => {
+                      const role = roleById(id);
+                      return role ? (
+                        <span key={id} className="chip">
+                          {role.emoji} {role.name}
+                        </span>
+                      ) : null;
+                    })
+                  )}
+                </div>
+                {(myMember.email || myMember.phone) && (
+                  <p className="mt-2 text-sm text-ink-soft">
+                    {myMember.email && <span>✉️ {myMember.email}</span>}
+                    {myMember.email && myMember.phone && <span> · </span>}
+                    {myMember.phone && <span>📞 {myMember.phone}</span>}
+                  </p>
                 )}
-                <span className="ml-auto">
-                  <DeleteButton label="Odebrat" onConfirm={() => dispatch({ type: "removeMember", yearId: year.id, memberId: m.id })} />
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-ink-soft">Ještě nejsi v týmu. Vyber si roli níže — vyskočí okno na doplnění kontaktu.</p>
+            )}
+          </section>
+
+          {/* Moje funkce nahoře */}
+          {mineRoles.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="font-display text-lg font-semibold">Moje funkce</h2>
+              <div className="grid gap-3 md:grid-cols-2">
+                {mineRoles.map((r) => (
+                  <RoleCard key={r.id} r={r} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Ostatní posty */}
+          <section className="space-y-3">
+            <h2 className="font-display text-lg font-semibold">{mineRoles.length > 0 ? "Další posty" : "Posty a co obnášejí"}</h2>
+            <div className="grid gap-3 md:grid-cols-2">
+              {otherRoles.map((r) => (
+                <RoleCard key={r.id} r={r} />
+              ))}
+            </div>
+          </section>
+        </div>
+
+        {/* Vpravo: seznam všech přihlášených + jejich role */}
+        <aside className="h-fit lg:sticky lg:top-4">
+          <section className="card p-4">
+            <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
+              <Icon name="users" className="h-5 w-5 text-marigold-600" /> Přihlášení ({year.members.length})
+            </h2>
+            {year.members.length === 0 ? (
+              <p className="text-sm text-ink-soft">Zatím nikdo. Buď první!</p>
+            ) : (
+              <ul className="space-y-2.5">
+                {year.members.map((m) => (
+                  <li key={m.id} className="rounded-xl border border-black/[0.06] bg-white p-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="flex flex-wrap items-center gap-1.5 font-semibold">
+                          {m.name}
+                          {m.name === me && <span className="chip bg-marigold-600 text-white">ty</span>}
+                        </p>
+                        {(m.email || m.phone) && (
+                          <p className="mt-0.5 break-words text-xs text-ink-soft">{[m.phone, m.email].filter(Boolean).join(" · ")}</p>
+                        )}
+                      </div>
+                      {admin && (
+                        <div className="flex shrink-0 items-center gap-1">
+                          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEditMember(m)} title="Upravit člena">
+                            Upravit
+                          </button>
+                          <DeleteButton onConfirm={() => dispatch({ type: "removeMember", yearId: year.id, memberId: m.id })} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {m.roleIds.length === 0 ? (
+                        <span className="text-xs text-ink-soft/60">bez role</span>
+                      ) : (
+                        m.roleIds.map((id) => {
+                          const role = roleById(id);
+                          return role ? (
+                            <span key={id} className="chip">
+                              {role.emoji} {role.name}
+                            </span>
+                          ) : null;
+                        })
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {!admin && (
+              <p className="mt-3 text-[11px] text-ink-soft/60">Upravovat a mazat lidi v seznamu může jen správce.</p>
+            )}
+          </section>
+        </aside>
+      </div>
 
       <ProfileModal
         open={modal !== null}
@@ -273,7 +307,79 @@ export default function TymPage() {
         onClose={() => setModal(null)}
         onSave={saveProfile}
       />
+
+      {editMember && <AdminEditMemberModal member={editMember} yearId={year.id} onClose={() => setEditMember(null)} />}
     </div>
+  );
+}
+
+// Správce (Pan_Vyskočil) může upravit jméno, kontakt i funkce libovolného člena.
+function AdminEditMemberModal({ member, yearId, onClose }: { member: Member; yearId: string; onClose: () => void }) {
+  const { dispatch } = useStore();
+  const [name, setName] = useState(member.name);
+  const [email, setEmail] = useState(member.email ?? "");
+  const [phone, setPhone] = useState(member.phone ?? "");
+  const [roleIds, setRoleIds] = useState<string[]>(member.roleIds);
+
+  function toggleRole(id: string) {
+    setRoleIds((arr) => (arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]));
+  }
+
+  async function save() {
+    await dispatch({
+      type: "updateMember",
+      yearId,
+      memberId: member.id,
+      patch: { name: name.trim() || member.name, email, phone, roleIds },
+    });
+    onClose();
+  }
+
+  return (
+    <Modal open onClose={onClose} title={`Upravit: ${member.name}`}>
+      <div className="space-y-3">
+        <div>
+          <label className="label">Jméno</label>
+          <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+        </div>
+        <div>
+          <label className="label">E-mail</label>
+          <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ty@email.cz" />
+        </div>
+        <div>
+          <label className="label">Telefon</label>
+          <input className="input" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+420…" />
+        </div>
+        <div>
+          <label className="label">Funkce (klikni pro přidání/odebrání)</label>
+          <div className="flex flex-wrap gap-1.5">
+            {ROLES.map((r) => {
+              const on = roleIds.includes(r.id);
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => toggleRole(r.id)}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                    on ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"
+                  }`}
+                >
+                  {r.emoji} {r.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 pt-1">
+          <button className="btn-primary flex-1" onClick={save}>
+            Uložit
+          </button>
+          <button className="btn-ghost" onClick={onClose}>
+            Zrušit
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 

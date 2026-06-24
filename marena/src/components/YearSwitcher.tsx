@@ -2,16 +2,20 @@
 
 import { useState } from "react";
 import { useStore } from "@/lib/store";
+import { isAdmin } from "@/lib/admin";
+import { activeYearId } from "@/lib/years";
 
 // Přepínač ročníků — každý rok Mařeny je samostatný. Nový ročník může převzít
 // kontakty a program z aktuálního (hladké předání mezi týmy).
 export function YearSwitcher() {
-  const { db, currentYear, setCurrentYearId, dispatch } = useStore();
+  const { db, currentYear, me, setCurrentYearId, dispatch } = useStore();
   const [adding, setAdding] = useState(false);
   const [newYear, setNewYear] = useState(String(new Date().getFullYear() + 1));
   const [carry, setCarry] = useState(true);
 
   if (!db) return null;
+  const admin = isAdmin(me);
+  const activeId = activeYearId(db);
 
   async function add() {
     const id = newYear.trim();
@@ -32,11 +36,12 @@ export function YearSwitcher() {
         {db.years.map((y) => (
           <option key={y.id} value={y.id}>
             {y.label}
+            {y.id !== activeId ? " 🔒" : ""}
           </option>
         ))}
       </select>
 
-      {adding ? (
+      {!admin ? null : adding ? (
         <span className="flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-2 rounded-2xl border border-ink/15 bg-white px-2.5 py-1.5">
           <input
             value={newYear}
