@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { fmtRelative } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
+import { Icon } from "@/components/Icons";
 import type { Poll } from "@/lib/types";
 
 export default function HlasovaniPage() {
@@ -106,12 +107,16 @@ function PollCard({ poll, yearId, me }: { poll: Poll; yearId: string; me: string
   const maxVotes = Math.max(1, ...poll.options.map((o) => o.voters.length));
 
   return (
-    <div className={`card p-5 ${poll.closed ? "opacity-80" : ""}`}>
+    <div className={`card p-5 ${poll.closed ? "bg-leaf/[0.04] ring-2 ring-leaf" : ""}`}>
       <div className="mb-1 flex items-center gap-2 text-xs text-ink-soft">
         <span>{poll.author}</span>
         <span>· {fmtRelative(poll.createdAt)}</span>
         {poll.multi && <span className="chip">vícevýběr</span>}
-        {poll.closed && <span className="chip bg-plum-100 text-plum-700">uzavřeno</span>}
+        {poll.closed && (
+          <span className="badge-closed-glow inline-flex items-center gap-1 rounded-full bg-leaf px-2.5 py-0.5 text-xs font-semibold text-white">
+            <Icon name="tasks" className="h-3.5 w-3.5" /> uzavřeno
+          </span>
+        )}
       </div>
       <h3 className="font-display text-lg font-semibold">{poll.question}</h3>
 

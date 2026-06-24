@@ -138,6 +138,25 @@
   }
 }
 
+/* Uzavřená anketa = splněno: odznak „uzavřeno" zeleně pulzuje (svítí). */
+@keyframes marena-glow-green {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(48, 161, 78, 0.4), 0 0 8px rgba(48, 161, 78, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(48, 161, 78, 0.7), 0 0 18px rgba(48, 161, 78, 0.6);
+  }
+}
+.badge-closed-glow {
+  animation: marena-glow-green 1.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .badge-closed-glow {
+    animation: none;
+    box-shadow: 0 0 0 1px rgba(48, 161, 78, 0.6);
+  }
+}
+
 @layer components {
   .btn-primary {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-marigold-600
