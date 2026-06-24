@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { ROLES, roleById, type Role } from "@/lib/roles";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
+import { Icon } from "@/components/Icons";
 
 export default function TymPage() {
   const { currentYear, me, setMe, dispatch } = useStore();
@@ -72,12 +73,16 @@ export default function TymPage() {
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-display text-base font-semibold">{r.name}</h3>
               {taken ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-marigold-600 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
-                  <span className="h-1.5 w-1.5 rounded-full bg-white" /> Obsazeno{people.length > 1 ? ` · ${people.length}` : ""}
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-marigold-600 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+                  <Icon name="users" className="h-3.5 w-3.5" />
+                  <span className="text-xs leading-none">{people.length}</span>
+                  <span className="opacity-85">· Obsazeno</span>
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 rounded-full bg-leaf/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-leaf-700">
-                  <span className="h-1.5 w-1.5 rounded-full bg-leaf" /> Volné
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-leaf-700">
+                  <Icon name="users" className="h-3.5 w-3.5" />
+                  <span className="text-xs leading-none">0</span>
+                  <span className="opacity-85">· Volné</span>
                 </span>
               )}
             </div>
