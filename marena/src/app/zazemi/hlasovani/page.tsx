@@ -93,6 +93,13 @@ export default function HlasovaniPage() {
   );
 }
 
+// Správné české skloňování: 1 člověk hlasoval / 2–4 lidé hlasovali / 5+ lidí hlasovalo.
+function votersWord(n: number): string {
+  if (n === 1) return "člověk hlasoval";
+  if (n >= 2 && n <= 4) return "lidé hlasovali";
+  return "lidí hlasovalo";
+}
+
 function PollCard({ poll, yearId, me }: { poll: Poll; yearId: string; me: string }) {
   const { dispatch } = useStore();
   const totalVoters = new Set(poll.options.flatMap((o) => o.voters)).size;
@@ -143,8 +150,17 @@ function PollCard({ poll, yearId, me }: { poll: Poll; yearId: string; me: string
         })}
       </div>
 
-      <div className="mt-3 flex items-center gap-2 text-xs text-ink-soft">
-        <span>Hlasovalo {totalVoters} lidí</span>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {totalVoters === 0 ? (
+          <span className="inline-flex items-center rounded-full bg-paper2 px-4 py-2 text-sm font-medium text-ink-soft">
+            Zatím nikdo nehlasoval
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-2.5 rounded-full bg-marigold-600 px-4 py-2 text-white shadow-sm">
+            <span className="font-display text-3xl font-bold leading-none tracking-tight">{totalVoters}</span>
+            <span className="text-sm font-semibold leading-tight">{votersWord(totalVoters)}</span>
+          </span>
+        )}
         <span className="ml-auto flex items-center gap-2">
           <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "closePoll", yearId, pollId: poll.id })}>
             {poll.closed ? "Otevřít" : "Uzavřít"}
