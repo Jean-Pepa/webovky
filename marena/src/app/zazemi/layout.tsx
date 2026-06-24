@@ -40,10 +40,14 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
         <div className="relative mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
           <Logo href="/zazemi" />
           <span
-            className="pointer-events-none absolute left-1/2 top-1/2 hidden origin-center font-display text-2xl font-bold tracking-tight text-marigold-600 md:block"
+            className="pointer-events-none absolute left-1/2 top-1/2 hidden origin-center font-display text-2xl font-bold tracking-tight md:block"
             style={{ transform: "translate(-50%, -50%) scaleX(3)" }}
           >
-            MAŘENA
+            {"MAŘENA".split("").map((ch, i) => (
+              <span key={i} className="marena-letter" style={{ animationDelay: `${i * -0.06}s` }}>
+                {ch}
+              </span>
+            ))}
           </span>
           <div className="ml-auto flex items-center gap-2">
             <YearSwitcher />
