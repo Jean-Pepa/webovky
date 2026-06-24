@@ -17,7 +17,7 @@ const NAV = [
 ];
 
 export default function ZazemiLayout({ children }: { children: React.ReactNode }) {
-  const { ready, authed, me, configured, logout } = useStore();
+  const { ready, authed, me, configured, logout, syncError, dismissSyncError } = useStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -76,6 +76,15 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
         <div className="border-b border-marigold-200 bg-marigold-50 px-4 py-2 text-center text-xs text-marigold-800">
           Demo režim — data se ukládají jen v tomto prohlížeči. Pro sdílené zázemí nastavte úložiště
           (Upstash Redis / Vercel KV). Viz README.
+        </div>
+      )}
+
+      {syncError && (
+        <div className="flex items-center justify-center gap-3 border-b border-red-200 bg-red-50 px-4 py-2 text-center text-xs text-red-700">
+          <span>⚠️ {syncError}</span>
+          <button onClick={dismissSyncError} className="font-semibold underline">
+            skrýt
+          </button>
         </div>
       )}
 

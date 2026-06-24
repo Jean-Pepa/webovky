@@ -55,7 +55,12 @@ export default function HlasovaniPage() {
                   onChange={(e) => setOptions((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))}
                 />
                 {options.length > 2 && (
-                  <button className="btn-ghost px-2" onClick={() => setOptions((arr) => arr.filter((_, j) => j !== i))}>
+                  <button
+                    className="btn-ghost px-2"
+                    aria-label={`Odebrat možnost ${i + 1}`}
+                    title="Odebrat možnost"
+                    onClick={() => setOptions((arr) => arr.filter((_, j) => j !== i))}
+                  >
                     ✕
                   </button>
                 )}

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { AUTH_COOKIE, correctPassword } from "@/lib/auth";
+import { AUTH_COOKIE, authToken, correctPassword } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,8 +12,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
   const jar = await cookies();
-  jar.set(AUTH_COOKIE, password, {
+  jar.set(AUTH_COOKIE, authToken(), {
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 120, // ~4 měsíce, ať se nemusí pořád přihlašovat

@@ -31,7 +31,8 @@
   --color-plum-900: #321321;
 
   /* Doplňky */
-  --color-leaf: #5c7a3a; /* zeleň */
+  --color-leaf: #5c7a3a; /* zeleň (tečky, výplně) */
+  --color-leaf-700: #3f5524; /* tmavší zeleň pro text na světlém tintu (kontrast AA) */
   --color-sky: #2f6f86; /* modrá pro klid */
 
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,

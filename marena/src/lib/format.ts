@@ -29,5 +29,7 @@ export function fmtRelative(iso: string): string {
 }
 
 export function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  // Lokální datum (ne UTC), ať sedí s mřížkou kalendáře sestavenou z lokálního času.
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }

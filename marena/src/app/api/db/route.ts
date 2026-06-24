@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { readDB, writeDB, isConfigured } from "@/lib/server-db";
-import { applyAction, type Action } from "@/lib/actions";
+import { readDB, applyActionAtomic, isConfigured } from "@/lib/server-db";
+import type { Action } from "@/lib/actions";
 import { isAuthed } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -14,7 +14,7 @@ export async function GET() {
   return NextResponse.json({ db });
 }
 
-// POST — aplikuje jednu akci a vrátí aktualizovanou DB (read-modify-write).
+// POST — atomicky aplikuje jednu akci (optimistický zámek) a vrátí novou DB.
 export async function POST(req: Request) {
   if (!isConfigured()) return NextResponse.json({ error: "not_configured" }, { status: 503 });
   if (!(await isAuthed())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -24,10 +24,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 
-  const current = await readDB();
-  if (!current) return NextResponse.json({ error: "not_configured" }, { status: 503 });
-
-  const next = applyAction(current, action);
-  await writeDB(next);
+  const next = await applyActionAtomic(action);
+  if (!next) return NextResponse.json({ error: "conflict" }, { status: 409 });
   return NextResponse.json({ db: next });
 }

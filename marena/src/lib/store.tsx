@@ -15,6 +15,7 @@ interface StoreState {
   db: DB | null;
   me: string; // moje jméno (identita bez účtu)
   currentYearId: string | null;
+  syncError: string | null; // chyba uložení na server (ať se data neztrácí tiše)
 }
 
 interface StoreApi extends StoreState {
@@ -24,6 +25,7 @@ interface StoreApi extends StoreState {
   setMe: (name: string) => void;
   setCurrentYearId: (id: string) => void;
   dispatch: (action: Action) => Promise<void>;
+  dismissSyncError: () => void;
 }
 
 const LS_ME = "marena_me";
@@ -66,6 +68,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     db: null,
     me: "",
     currentYearId: null,
+    syncError: null,
   });
   const modeRef = useRef<Mode>("loading");
 
@@ -151,11 +154,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }).catch(() => null);
       if (res && res.ok) {
         const { db } = (await res.json()) as { db: DB };
-        setState((s) => ({ ...s, db, currentYearId: pickYear(db, s.currentYearId) }));
+        setState((s) => ({ ...s, db, syncError: null, currentYearId: pickYear(db, s.currentYearId) }));
         return;
       }
-      // fall-through na lokální při chybě serveru
+      if (res && res.status === 401) {
+        // session vypršela → odhlásit; layout přesměruje na /prihlaseni
+        setState((s) => ({ ...s, authed: false, syncError: null }));
+        return;
+      }
+      // Chyba serveru (síť / 5xx / konflikt). NEaplikovat tiše lokálně —
+      // to by změnu nikdy nedostalo na server a po reloadu by zmizela.
+      setState((s) => ({
+        ...s,
+        syncError: "Změnu se nepodařilo uložit na server. Zkontroluj připojení a zkus to znovu.",
+      }));
+      return;
     }
+    // lokální (demo) režim — ukládáme do localStorage tohoto prohlížeče
     setState((s) => {
       if (!s.db) return s;
       const db = applyAction(s.db, action);
@@ -163,6 +178,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       return { ...s, db, currentYearId: pickYear(db, s.currentYearId) };
     });
   }, []);
+
+  const dismissSyncError = useCallback(() => setState((s) => ({ ...s, syncError: null })), []);
 
   const currentYear = useMemo(() => {
     if (!state.db) return null;
@@ -177,6 +194,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setMe,
     setCurrentYearId,
     dispatch,
+    dismissSyncError,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
