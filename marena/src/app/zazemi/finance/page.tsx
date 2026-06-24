@@ -4,6 +4,9 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, todayISO } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
+import { Modal } from "@/components/Modal";
+import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
+import { uid } from "@/lib/id";
 import type { FinanceItem, FinanceKind, Year } from "@/lib/types";
 
 const CATEGORIES = [
@@ -368,6 +371,7 @@ function FinanceRow({ item, yearId }: { item: FinanceItem; yearId: string }) {
           <span className="font-medium">{item.label}</span>
         </div>
         {item.note && <p className="mt-0.5 pl-8 text-xs text-ink-soft">{item.note}</p>}
+        <div className="pl-8"><ReceiptControl item={item} yearId={yearId} /></div>
       </td>
       <td className="px-3 py-3">{item.category ? <span className="chip">{item.category}</span> : <span className="text-ink-soft/50">—</span>}</td>
       <td className="px-3 py-3 text-ink-soft">{item.who || "—"}</td>
@@ -392,5 +396,73 @@ function FinanceRow({ item, yearId }: { item: FinanceItem; yearId: string }) {
         </div>
       </td>
     </tr>
+  );
+}
+
+// Účtenka jako foto: nahrání (zmenší se), zobrazení a smazání.
+function ReceiptControl({ item, yearId }: { item: FinanceItem; yearId: string }) {
+  const { configured, dispatch } = useStore();
+  const [busy, setBusy] = useState(false);
+  const [viewing, setViewing] = useState<string | null>(null);
+  const [err, setErr] = useState(false);
+
+  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setBusy(true);
+    setErr(false);
+    try {
+      const dataUrl = await compressImage(file);
+      const id = item.receiptId || uid("rc_");
+      const ok = await saveReceipt(id, dataUrl, configured);
+      if (ok) await dispatch({ type: "updateFinance", yearId, financeId: item.id, patch: { receiptId: id } });
+      else setErr(true);
+    } catch {
+      setErr(true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function view() {
+    if (!item.receiptId) return;
+    const url = await loadReceipt(item.receiptId, configured);
+    if (url) setViewing(url);
+    else setErr(true);
+  }
+
+  async function remove() {
+    if (item.receiptId) await deleteReceipt(item.receiptId, configured);
+    await dispatch({ type: "updateFinance", yearId, financeId: item.id, patch: { receiptId: "" } });
+  }
+
+  return (
+    <div className="mt-1 flex items-center gap-2 text-xs">
+      {item.receiptId ? (
+        <>
+          <button onClick={view} className="inline-flex items-center gap-1 rounded-full bg-leaf/12 px-2 py-0.5 font-medium text-leaf-700 hover:bg-leaf/20">
+            📎 Účtenka
+          </button>
+          <button onClick={remove} className="text-ink-soft/60 hover:text-red-600" title="Odebrat účtenku">✕</button>
+        </>
+      ) : (
+        <label className="inline-flex cursor-pointer items-center gap-1 text-ink-soft/70 hover:text-ink">
+          📎 {busy ? "Nahrávám…" : "Přidat účtenku"}
+          <input type="file" accept="image/*" className="hidden" onChange={onFile} disabled={busy} />
+        </label>
+      )}
+      {err && <span className="text-red-600">nepovedlo se</span>}
+
+      <Modal open={viewing !== null} onClose={() => setViewing(null)} title="Účtenka">
+        {viewing && (
+          <div className="space-y-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={viewing} alt="Účtenka" className="max-h-[70vh] w-full rounded-xl object-contain" />
+            <a href={viewing} target="_blank" rel="noreferrer" className="btn-secondary w-full">Otevřít v plné velikosti</a>
+          </div>
+        )}
+      </Modal>
+    </div>
   );
 }

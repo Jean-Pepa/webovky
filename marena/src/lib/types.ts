@@ -103,6 +103,25 @@ export interface FinanceItem {
   paid: boolean; // zaplaceno / proplaceno
   date?: string; // ISO datum
   note?: string;
+  receiptId?: string; // ID nahrané účtenky (foto se ukládá zvlášť, ne v hlavní DB)
+  createdAt: string;
+}
+
+// Pozvánka do programu — koho oslovit (přednášející, kapely) a stav domlouvání.
+export type Interest = "nevim" | "ceka" | "ano" | "ne";
+
+export interface Invite {
+  id: string;
+  category: string; // "Přednášky", "Kapely", "DJs", "Workshopy"…
+  name: string; // Kdo?
+  link?: string; // Odkaz
+  priority?: number; // priorita č.
+  contacted: boolean; // napsali jsme mu/jí?
+  interest: Interest; // má zájem?
+  availability?: string; // kdy může?
+  price?: string; // kolik za to chce peněz?
+  confirmedDate?: string; // finálně potvrzené datum
+  note?: string;
   createdAt: string;
 }
 
@@ -121,6 +140,7 @@ export interface Year {
   links?: LinkItem[]; // důležité kontakty a odkazy (volitelné kvůli zpětné kompatibilitě)
   finances?: FinanceItem[]; // pokladní kniha — příjmy a výdaje
   shifts?: Shift[]; // provoz — rozpis směn, na které se lidi přihlašují
+  invites?: Invite[]; // program — koho oslovit (přednášející, kapely)
   createdAt: string;
 }
 

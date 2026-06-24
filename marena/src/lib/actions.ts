@@ -1,7 +1,7 @@
 // Čistý reducer nad DB. Stejná logika běží na serveru (Redis) i v prohlížeči
 // (localStorage demo režim) — proto je bezstavová a deterministická až na uid().
 
-import type { DB, Year, EventKind, FinanceKind, Task } from "./types";
+import type { DB, Year, EventKind, FinanceKind, Task, Invite } from "./types";
 import { uid } from "./id";
 import { ROLE_TASKS } from "./roleTasks";
 
@@ -38,12 +38,15 @@ export type Action =
   | { type: "addLink"; yearId: string; label: string; value: string; folder?: string; note?: string }
   | { type: "removeLink"; yearId: string; linkId: string }
   | { type: "addFinance"; yearId: string; kind: FinanceKind; label: string; amount: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string }
-  | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string } }
+  | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string; receiptId?: string } }
   | { type: "toggleFinancePaid"; yearId: string; financeId: string }
   | { type: "removeFinance"; yearId: string; financeId: string }
   | { type: "addShift"; yearId: string; area: string; title?: string; date?: string; from?: string; to?: string; capacity?: number; note?: string }
   | { type: "signShift"; yearId: string; shiftId: string; name: string }
-  | { type: "removeShift"; yearId: string; shiftId: string };
+  | { type: "removeShift"; yearId: string; shiftId: string }
+  | { type: "addInvite"; yearId: string; category: string; name: string; link?: string; priority?: number }
+  | { type: "updateInvite"; yearId: string; inviteId: string; patch: Partial<Pick<Invite, "category" | "name" | "link" | "priority" | "contacted" | "interest" | "availability" | "price" | "confirmedDate" | "note">> }
+  | { type: "removeInvite"; yearId: string; inviteId: string };
 
 function now(): string {
   return new Date().toISOString();
@@ -273,6 +276,31 @@ export function applyAction(db: DB, a: Action): DB {
       }));
     case "removeShift":
       return mapYear(db, a.yearId, (y) => ({ ...y, shifts: (y.shifts ?? []).filter((s) => s.id !== a.shiftId) }));
+
+    case "addInvite":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        invites: [
+          ...(y.invites ?? []),
+          {
+            id: uid("i_"),
+            category: a.category.trim() || "Ostatní",
+            name: a.name.trim(),
+            link: a.link?.trim() || undefined,
+            priority: a.priority && a.priority > 0 ? Math.round(a.priority) : undefined,
+            contacted: false,
+            interest: "nevim",
+            createdAt: now(),
+          },
+        ],
+      }));
+    case "updateInvite":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        invites: (y.invites ?? []).map((i) => (i.id === a.inviteId ? { ...i, ...a.patch } : i)),
+      }));
+    case "removeInvite":
+      return mapYear(db, a.yearId, (y) => ({ ...y, invites: (y.invites ?? []).filter((i) => i.id !== a.inviteId) }));
 
     default:
       return db;

@@ -72,7 +72,46 @@ export function seedDB(): DB {
           { id: "seed_s4", area: "Nákupy", title: "Velký nákup v Makru (nutné auto)", capacity: 2, people: [], note: "Sepsat seznam předem.", createdAt: t },
           { id: "seed_s5", area: "Úklid", title: "Zametení dvora na konci dne", from: "23:00", capacity: 3, people: [], createdAt: t },
         ],
+        invites: invite("Přednášky", [
+          ["Čierne Diery", "https://ciernediery.sk/"],
+          ["Matúš Vallo", "https://www.instagram.com/matus.vallo/"],
+          ["Městem na kole", "https://mestemnakole.cz/"],
+          ["Henkai architekti", "https://www.henkai.cz/"],
+          ["TŘI.ČTRNÁCT", "https://tri.ctrnact.com/"],
+          ["Štěpán Flekna", "https://www.instagram.com/stepanflekna/"],
+          ["U/U studio", "https://uustudio.cz/"],
+          ["Nesehnutí", ""],
+          ["Grau architects", "https://grau.sk/work"],
+          ["Kateřina Šedá", "https://www.katerinaseda.cz/"],
+        ], t).concat(
+          invite("Kapely", [
+            ["Hopsen Clark", "https://www.instagram.com/hopsenclark/"],
+            ["Moře Kuřat", "https://www.instagram.com/more_kurat/"],
+            ["Hlavonožec", ""],
+            ["Dušan Vlk", ""],
+            ["Eduv syn", ""],
+            ["Obligatne", ""],
+            ["Mat213", ""],
+            ["Whyohwhy", ""],
+            ["Ragdoll", "https://www.instagram.com/ragdoll.mfs/"],
+            ["Treska Jednoskvrnitá", "https://www.instagram.com/treska_jednoskvrnna/"],
+          ], t),
+        ),
       },
     ],
   };
+}
+
+// Pomocník na vytvoření seznamu pozvánek do programu (s prioritou dle pořadí).
+function invite(category: string, rows: [string, string][], t: string): import("./types").Invite[] {
+  return rows.map(([name, link], idx) => ({
+    id: `seed_inv_${category}_${idx}`,
+    category,
+    name,
+    link: link || undefined,
+    priority: idx + 1,
+    contacted: false,
+    interest: "nevim" as const,
+    createdAt: t,
+  }));
 }

@@ -10,3 +10,7 @@ export function getRedis(): Redis | null {
 }
 
 export const DB_KEY = "marena:db";
+
+// Účtenky (fotky) se ukládají mimo hlavní DB — každá pod vlastním klíčem,
+// ať se velký base64 obrázek nepřepisuje při každé akci.
+export const receiptKey = (id: string) => `marena:receipt:${id}`;
