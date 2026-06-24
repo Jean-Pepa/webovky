@@ -44,7 +44,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             <MeBadge />
           </div>
         </div>
-        <nav className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-3 pb-2">
+        <nav className="mx-auto flex max-w-6xl flex-wrap gap-1 px-3 pb-2">
           {NAV.map((n) => {
             const active = pathname === n.href;
             return (
@@ -78,7 +78,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
       </header>
 
       {!configured && (
-        <div className="border-b border-marigold-200 bg-marigold-50 px-4 py-2 text-center text-xs text-marigold-800">
+        <div className="border-b border-marigold-700 bg-marigold-600 px-4 py-2 text-center text-xs font-medium text-white">
           Demo režim — data se ukládají jen v tomto prohlížeči. Pro sdílené zázemí nastavte úložiště
           (Upstash Redis / Vercel KV). Viz README.
         </div>
