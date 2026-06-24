@@ -27,6 +27,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const { ready, authed, me, logout, syncError, dismissSyncError, db } = useStore();
   const router = useRouter();
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (ready && !authed) router.replace("/prihlaseni");
@@ -36,10 +37,16 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   if (!authed) return <Loading label="Přesměrování na přihlášení…" />;
   if (!me) return <IdentityGate />;
 
+  async function doLogout() {
+    setMenuOpen(false);
+    await logout();
+    router.replace("/");
+  }
+
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-ink/10 bg-paper/85 backdrop-blur">
-        <div className="relative mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+        <div className="relative mx-auto flex max-w-6xl items-center gap-x-4 gap-y-2 px-4 py-3">
           <Logo href="/zazemi" />
           <span
             className="pointer-events-none absolute left-1/2 top-1/2 hidden origin-center font-display text-2xl font-bold tracking-tight md:block"
@@ -51,12 +58,24 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               </span>
             ))}
           </span>
-          <div className="ml-auto flex items-center gap-2">
+          {/* Desktop: přepínač ročníku + jméno */}
+          <div className="ml-auto hidden items-center gap-2 md:flex">
             <YearSwitcher />
             <MeBadge />
           </div>
+          {/* Mobil: hamburger */}
+          <button
+            className="ml-auto inline-flex items-center justify-center rounded-full p-2 text-ink-soft hover:bg-black/5 md:hidden"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label={menuOpen ? "Zavřít menu" : "Otevřít menu"}
+            aria-expanded={menuOpen}
+          >
+            <Icon name={menuOpen ? "close" : "menu"} className="h-6 w-6" />
+          </button>
         </div>
-        <nav className="mx-auto flex max-w-6xl flex-wrap gap-1 px-3 pb-2">
+
+        {/* Desktopová navigace */}
+        <nav className="mx-auto hidden max-w-6xl flex-wrap gap-1 px-3 pb-2 md:flex">
           {NAV.map((n) => {
             const active = pathname === n.href;
             return (
@@ -87,15 +106,63 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             </button>
           )}
           <button
-            onClick={async () => {
-              await logout();
-              router.replace("/");
-            }}
+            onClick={doLogout}
             className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium text-ink-soft hover:bg-black/5"
           >
             <Icon name="logout" className="h-4 w-4" /> Odhlásit
           </button>
         </nav>
+
+        {/* Mobilní menu (rozbalovací) */}
+        {menuOpen && (
+          <div className="max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-ink/10 bg-paper/95 px-3 py-3 md:hidden">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <YearSwitcher />
+              <MeBadge />
+            </div>
+            <nav className="flex flex-col gap-1">
+              {NAV.map((n) => {
+                const active = pathname === n.href;
+                return (
+                  <Link
+                    key={n.href}
+                    href={n.href}
+                    onClick={() => setMenuOpen(false)}
+                    className={`inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-medium transition-colors ${
+                      active ? "bg-marigold-600 text-white" : "text-ink hover:bg-black/5"
+                    }`}
+                  >
+                    <Icon name={n.icon} className="h-5 w-5" /> {n.label}
+                  </Link>
+                );
+              })}
+              <Link
+                href="/zazemi/almanach"
+                onClick={() => setMenuOpen(false)}
+                className="inline-flex items-center gap-2.5 rounded-xl bg-marigold-600 px-3 py-2.5 text-[15px] font-medium text-white"
+              >
+                <Icon name="book" className="h-5 w-5" /> Almanach
+              </Link>
+              {isAdmin(me) && db && (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    downloadArchive(db);
+                  }}
+                  className="inline-flex items-center gap-2.5 rounded-xl bg-ink px-3 py-2.5 text-left text-[15px] font-medium text-white"
+                >
+                  <Icon name="download" className="h-5 w-5" /> Stáhnout vše
+                </button>
+              )}
+              <button
+                onClick={doLogout}
+                className="inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[15px] font-medium text-ink-soft hover:bg-black/5"
+              >
+                <Icon name="logout" className="h-5 w-5" /> Odhlásit
+              </button>
+            </nav>
+          </div>
+        )}
       </header>
 
       {syncError && (
