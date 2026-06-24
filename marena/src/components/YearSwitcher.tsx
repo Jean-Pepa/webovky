@@ -45,11 +45,15 @@ export function YearSwitcher() {
         <span className="flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-2 rounded-2xl border border-ink/15 bg-white px-2.5 py-1.5">
           <input
             value={newYear}
-            onChange={(e) => setNewYear(e.target.value)}
+            onChange={(e) => setNewYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
             className="w-16 rounded-full border border-ink/15 px-2.5 py-1 text-sm"
-            placeholder="2026"
+            placeholder="2027"
+            inputMode="numeric"
             autoFocus
           />
+          <span className="text-xs text-ink-soft">
+            heslo bude <strong className="text-marigold-700">marena{newYear || "…"}</strong>
+          </span>
           <label className="flex items-center gap-1 text-xs text-ink-soft" title="Přenese kontakty a seznam programu (stav domlouvání se vynuluje)">
             <input type="checkbox" checked={carry} onChange={(e) => setCarry(e.target.checked)} className="accent-marigold-600" />
             převzít kontakty a program

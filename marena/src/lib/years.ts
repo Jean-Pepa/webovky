@@ -18,17 +18,17 @@ export function isYearEditable(db: DB | null, yearId: string | null | undefined,
   return yearId === activeYearId(db); // jinak jen nejnovější ročník
 }
 
-// Hesla podle ročníku: marena2026 … marena2050. Každé heslo přihlásí do zázemí
-// a otevře (případně založí) svůj ročník. (Klientsky bezpečné — bez server kódu.)
+// Heslo ke každému ročníku je „marena" + rok (marena2026, marena2027, …) — bez
+// horní hranice (do nekonečna). Heslo na rok ale platí teprve, až správce ten
+// ročník založí (kontroluje se na serveru). (Klientsky bezpečné — bez server kódu.)
 export const PASSWORD_MIN_YEAR = 2026;
-export const PASSWORD_MAX_YEAR = 2050;
 
 // Z hesla „marenaYYYY" vrátí ročník (string), jinak null.
 export function yearFromPassword(pw: string): string | null {
   const m = /^marena\s*(\d{4})$/.exec((pw || "").trim().toLowerCase());
   if (!m) return null;
   const y = parseInt(m[1], 10);
-  if (y >= PASSWORD_MIN_YEAR && y <= PASSWORD_MAX_YEAR) return String(y);
+  if (y >= PASSWORD_MIN_YEAR) return String(y);
   return null;
 }
 

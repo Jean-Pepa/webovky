@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { DB, Year } from "./types";
 import { applyAction, type Action } from "./actions";
 import { seedDB } from "./seed";
-import { isYearEditable, activeYearId, yearFromPassword } from "./years";
+import { isYearEditable, yearFromPassword } from "./years";
 
 type Mode = "loading" | "server" | "local";
 
@@ -117,19 +117,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }).catch(() => null);
     if (!res || !res.ok) return false;
 
-    // Heslo „marenaYYYY" → otevři (a když chybí, založ) ten ročník.
+    // Heslo „marenaYYYY" → po přihlášení otevři ten ročník (zakládá ho ale jen
+    // správce přes „+ ročník", tady se na něj jen přepneme, když existuje).
     const wantedYear = yearFromPassword(password);
 
     // Po přihlášení zjisti režim a načti data.
     try {
       const dbRes = await fetch("/api/db", { cache: "no-store" });
       if (dbRes.ok) {
-        let db = ((await dbRes.json()) as { db: DB }).db;
+        const db = ((await dbRes.json()) as { db: DB }).db;
         modeRef.current = "server";
-        if (wantedYear && !db.years.some((y) => y.id === wantedYear)) {
-          const created = await createYearOnServer(db, wantedYear);
-          if (created) db = created;
-        }
         const yearId = wantedYear && db.years.some((y) => y.id === wantedYear) ? wantedYear : pickYear(db, null);
         if (yearId) localStorage.setItem(LS_YEAR, yearId);
         setState((s) => ({ ...s, mode: "server", configured: true, authed: true, db, currentYearId: yearId }));
@@ -138,14 +135,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* ignore → lokální režim níže */
     }
-    let localDb = loadLocalDB();
+    const localDb = loadLocalDB();
     localStorage.setItem(LS_AUTH, "1");
     modeRef.current = "local";
-    if (wantedYear && !localDb.years.some((y) => y.id === wantedYear)) {
-      const newest = activeYearId(localDb);
-      localDb = applyAction(localDb, { type: "createYear", id: wantedYear, label: `Mařena ${wantedYear}`, copyFromYearId: newest ?? undefined });
-      saveLocalDB(localDb);
-    }
     const localYearId = wantedYear && localDb.years.some((y) => y.id === wantedYear) ? wantedYear : pickYear(localDb, null);
     if (localYearId) localStorage.setItem(LS_YEAR, localYearId);
     setState((s) => ({ ...s, mode: "local", configured: false, authed: true, db: localDb, currentYearId: localYearId }));
@@ -238,19 +230,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 function pickYear(db: DB, preferred: string | null): string | null {
   if (preferred && db.years.some((y) => y.id === preferred)) return preferred;
   return db.years[0]?.id ?? null;
-}
-
-// Založí na serveru nový ročník (s převzetím kontaktů a programu z posledního).
-async function createYearOnServer(db: DB, yearId: string): Promise<DB | null> {
-  const newest = activeYearId(db);
-  const action: Action = { type: "createYear", id: yearId, label: `Mařena ${yearId}`, copyFromYearId: newest ?? undefined };
-  const res = await fetch("/api/db", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(action),
-  }).catch(() => null);
-  if (res && res.ok) return ((await res.json()) as { db: DB }).db;
-  return null;
 }
 
 export function useStore(): StoreApi {
