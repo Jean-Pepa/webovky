@@ -22,8 +22,7 @@ const NAV: { href: string; label: string; icon: IconName }[] = [
 ];
 
 export default function ZazemiLayout({ children }: { children: React.ReactNode }) {
-  const { ready, authed, me, logout, syncError, dismissSyncError, currentYear } = useStore();
-  const memberCount = currentYear?.members.length ?? 0;
+  const { ready, authed, me, logout, syncError, dismissSyncError } = useStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -66,31 +65,21 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               </Link>
             );
           })}
-          <div className="ml-auto flex items-start gap-1">
-            <div className="flex flex-col items-center gap-1">
-              <Link
-                href="/zazemi/almanach"
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-marigold-600 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-marigold-700"
-              >
-                <Icon name="book" className="h-4 w-4" /> Almanach
-              </Link>
-              <span
-                className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-ink-soft"
-                title="Kolik lidí je zapsaných v týmu"
-              >
-                <Icon name="users" className="h-3.5 w-3.5" /> {memberCount} zapsáno
-              </span>
-            </div>
-            <button
-              onClick={async () => {
-                await logout();
-                router.replace("/");
-              }}
-              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium text-ink-soft hover:bg-black/5"
-            >
-              <Icon name="logout" className="h-4 w-4" /> Odhlásit
-            </button>
-          </div>
+          <Link
+            href="/zazemi/almanach"
+            className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-marigold-600 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-marigold-700"
+          >
+            <Icon name="book" className="h-4 w-4" /> Almanach
+          </Link>
+          <button
+            onClick={async () => {
+              await logout();
+              router.replace("/");
+            }}
+            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium text-ink-soft hover:bg-black/5"
+          >
+            <Icon name="logout" className="h-4 w-4" /> Odhlásit
+          </button>
         </nav>
       </header>
 

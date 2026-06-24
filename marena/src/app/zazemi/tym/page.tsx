@@ -157,9 +157,18 @@ export default function TymPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Tým &amp; role — {year.label}</h1>
-        <p className="text-sm text-ink-soft">Vyber si svůj post (klidně víc). Posty a co obnášejí jsou vybrané podle manuálu.</p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">Tým &amp; role — {year.label}</h1>
+          <p className="text-sm text-ink-soft">Vyber si svůj post (klidně víc). Posty a co obnášejí jsou vybrané podle manuálu.</p>
+        </div>
+        <div className="flex items-center gap-3 rounded-2xl bg-marigold-600 px-5 py-3 text-white shadow-sm">
+          <Icon name="users" className="h-8 w-8 shrink-0" />
+          <div className="leading-none">
+            <div className="font-display text-4xl font-bold tracking-tight">{year.members.length}</div>
+            <div className="mt-1 text-xs font-medium uppercase tracking-wide text-white/85">zapsáno v týmu</div>
+          </div>
+        </div>
       </div>
 
       {/* Já v týmu */}
