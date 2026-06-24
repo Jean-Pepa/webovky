@@ -13,7 +13,6 @@ const LINEUP = [
   { photo: "/photos/party.jpg", emoji: "🎶", title: "Party večery", text: "Kapely a DJs na dvoře a v Arše. Hraje se, dokud noční klid dovolí (a pak ještě chvíli)." },
   { photo: "/photos/vyzdoba.jpg", emoji: "🎨", title: "Vyzdobená škola", text: "Celá fakulta se na týden promění do tématu — chodby, dvůr i aula. Hravě a originálně." },
   { photo: "/photos/pruvod.jpg", emoji: "🚩", title: "Průvod městem", text: "Legendární průvod centrem Brna s maskotem v čele. Prváci ho nesou až na Flédu." },
-  { photo: "/photos/krest.jpg", emoji: "🌟", title: "Křest na Flédě", text: "Velkolepé zakončení v klubu Fléda — pasování prváků a koncert do brzkého rána." },
 ];
 
 const STEPS = [
@@ -44,25 +43,25 @@ export default function Home() {
       </header>
 
       {/* HERO */}
-      <section className="relative isolate flex min-h-[88vh] items-center">
-        <Photo src="/photos/hero.jpg" alt="Mařena na dvoře fakulty architektury" label="hero foto — dvůr / party Mařeny" className="absolute inset-0 -z-10 h-full w-full" />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/90 via-black/60 to-black/45" />
+      <section className="relative isolate flex min-h-[90vh] items-center justify-center overflow-hidden">
+        <Photo src="/photos/hero.jpg" alt="Mařena — průvod městem" label="hero foto — průvod / dvůr Mařeny" className="absolute inset-0 -z-10 h-full w-full" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/55 via-black/45 to-black/80" />
 
-        <div className="mx-auto w-full max-w-6xl px-4 pt-24">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/70">
+        <div className="mx-auto w-full max-w-3xl px-4 pt-24 text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/75">
             Fakulta architektury VUT · studentský festival
           </p>
           <h1 className="mt-3 font-display text-6xl font-bold leading-[0.95] tracking-tight text-white sm:text-7xl md:text-8xl">
             MAŘENA
           </h1>
-          <p className="mt-5 max-w-xl text-lg text-white/85">
+          <p className="mx-auto mt-5 max-w-2xl text-lg text-white/90">
             Týden, na který do konce školy nezapomeneš. Přednášky, bar na dvoře, party večery, velký
             průvod městem a křest prváků na Flédě.
           </p>
           <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-marigold-600 px-4 py-1.5 text-sm font-semibold text-white">
             🐣 Jsi prvák? Tohle je tvůj vstup do života na fakultě.
           </div>
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
             <a href={IG_URL} target="_blank" rel="noreferrer" className="btn-primary px-6 py-3 text-base">
               Sleduj nás na Instagramu →
             </a>
@@ -98,13 +97,31 @@ export default function Home() {
             </article>
           ))}
         </div>
+
+        {/* FINÁLE — křest na Flédě (přes celou šířku) */}
+        <article className="relative mt-5 overflow-hidden rounded-3xl">
+          <Photo src="/photos/finale.jpg" alt="Křest na Flédě — koncert" label="finále — koncert na Flédě (přidej /photos/finale.jpg)" className="h-80 w-full md:h-[28rem]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10" />
+          <div className="absolute inset-x-0 bottom-0 p-6 md:p-10">
+            <span className="inline-flex items-center gap-1 rounded-full bg-marigold-600 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+              Velké finále
+            </span>
+            <h3 className="mt-3 font-display text-3xl font-bold tracking-tight text-white md:text-5xl">
+              🌟 Křest na Flédě
+            </h3>
+            <p className="mt-2 max-w-2xl text-white/90 md:text-lg">
+              Vyvrcholení celého týdne — průvod dorazí do klubu Fléda, kde se pasují prváci a hraje se
+              koncert do brzkého rána. Tady to celé vrcholí.
+            </p>
+          </div>
+        </article>
       </section>
 
       {/* MAŘENA BAND */}
-      <section className="relative h-64 md:h-80">
-        <Photo src="/photos/letters.jpg" alt="Nápis MAŘENA před Fakultou architektury VUT" label="MAŘENA před fakultou" className="absolute inset-0 h-full w-full" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/15" />
-        <div className="relative mx-auto flex h-full max-w-6xl items-end px-4 pb-8">
+      <section className="relative h-[26rem] md:h-[34rem]">
+        <Photo src="/photos/letters.jpg" alt="Nápis MAŘENA před Fakultou architektury VUT" label="MAŘENA před fakultou" className="absolute inset-0 h-full w-full" imgClass="object-bottom" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/15 to-transparent" />
+        <div className="relative mx-auto flex h-full max-w-6xl items-start px-4 pt-8">
           <p className="max-w-2xl font-display text-2xl font-semibold tracking-tight text-white md:text-4xl">
             Celá fakulta se na týden promění v jeden velký festival.
           </p>
