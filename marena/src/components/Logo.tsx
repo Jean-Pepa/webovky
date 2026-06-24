@@ -37,7 +37,7 @@ export function Logo({ href = "/", light = false }: { href?: string; light?: boo
   return (
     <Link href={href} className="inline-flex items-center" aria-label="Mařena — Fakulta architektury VUT">
       {src ? (
-        <span className={light ? "inline-flex rounded-md bg-white p-1.5" : "inline-flex"}>
+        <span className="inline-flex">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={src} alt="Fakulta architektury VUT" className="h-[1.5cm] w-auto" />
         </span>

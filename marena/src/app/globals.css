@@ -58,28 +58,33 @@
   font-display: swap;
 }
 
-* {
-  box-sizing: border-box;
-}
+/* Základní resety patří do @layer base, jinak (jako nezavrstvené) přebíjejí
+   Tailwind utility — kvůli tomu `a { color: inherit }` přebíjelo text-white na
+   odkazech (tlačítka vypadala tmavá místo bílá). */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
 
-html {
-  scroll-behavior: smooth;
-  -webkit-text-size-adjust: 100%;
-}
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
 
-body {
-  font-family: var(--font-sans);
-  background: var(--color-paper);
-  color: var(--color-ink);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  letter-spacing: -0.011em;
-}
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.011em;
+  }
 
-a {
-  color: inherit;
-  text-decoration: none;
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
 
 /* Výrazné nadpisy — systémový font, tučnější, sevřené prostrkání (styl Apple) */
