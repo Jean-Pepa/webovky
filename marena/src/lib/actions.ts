@@ -31,6 +31,7 @@ export type Action =
   | { type: "closePoll"; yearId: string; pollId: string }
   | { type: "removePoll"; yearId: string; pollId: string }
   | { type: "addEvent"; yearId: string; date: string; endDate?: string; time?: string; title: string; kind: EventKind; note?: string; author: string }
+  | { type: "updateEvent"; yearId: string; eventId: string; patch: { title?: string; date?: string; endDate?: string; time?: string; kind?: EventKind; note?: string } }
   | { type: "removeEvent"; yearId: string; eventId: string }
   | { type: "addTask"; yearId: string; title: string; roleId?: string; assignee?: string; due?: string }
   | { type: "toggleTask"; yearId: string; taskId: string }
@@ -194,6 +195,23 @@ export function applyAction(db: DB, a: Action): DB {
           ...y.events,
           { id: uid("e_"), date: a.date, endDate: a.endDate && a.endDate > a.date ? a.endDate : undefined, time: a.time || undefined, title: a.title.trim(), kind: a.kind, note: a.note?.trim() || undefined, author: a.author.trim() || "Anonym", createdAt: now() },
         ],
+      }));
+    case "updateEvent":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        events: y.events.map((e) => {
+          if (e.id !== a.eventId) return e;
+          const date = a.patch.date ?? e.date;
+          return {
+            ...e,
+            title: (a.patch.title ?? e.title).trim() || e.title,
+            date,
+            endDate: a.patch.endDate && a.patch.endDate > date ? a.patch.endDate : undefined,
+            time: a.patch.time || undefined,
+            kind: a.patch.kind ?? e.kind,
+            note: a.patch.note?.trim() || undefined,
+          };
+        }),
       }));
     case "removeEvent":
       return mapYear(db, a.yearId, (y) => ({ ...y, events: y.events.filter((e) => e.id !== a.eventId) }));
