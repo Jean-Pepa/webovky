@@ -6,7 +6,7 @@ import { fmtCZK, fmtDate, todayISO } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
-import { isAdmin, ADMIN_NAME } from "@/lib/admin";
+import { isAdmin } from "@/lib/admin";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
 import type { FinanceItem, FinanceKind } from "@/lib/types";
@@ -135,9 +135,7 @@ export default function FinancePage() {
       {!canEdit && (
         <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
           <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>
-            Finance může upravovat jen správce (<strong>{ADMIN_NAME}</strong>). Ty máš jen náhled.
-          </span>
+          <span>Finance může upravovat jen správce. Ty máš jen náhled.</span>
         </div>
       )}
 
