@@ -118,6 +118,26 @@
   }
 }
 
+/* Obsazená funkce v týmu — jemně „svítí", ať je na první pohled vidět, že je
+   plno (zabraná, dokud ji držitel sám neuvolní). */
+@keyframes marena-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 1.5px rgba(194, 14, 44, 0.3), 0 0 16px rgba(194, 14, 44, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 0 1.5px rgba(194, 14, 44, 0.5), 0 0 26px rgba(194, 14, 44, 0.36);
+  }
+}
+.role-taken {
+  animation: marena-glow 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .role-taken {
+    animation: none;
+    box-shadow: 0 0 0 1.5px rgba(194, 14, 44, 0.45);
+  }
+}
+
 @layer components {
   .btn-primary {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-marigold-600

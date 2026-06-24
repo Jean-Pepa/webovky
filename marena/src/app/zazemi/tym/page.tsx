@@ -61,32 +61,72 @@ export default function TymPage() {
 
   function RoleCard({ r }: { r: Role }) {
     const people = takenBy(r.id);
-    const mine = myMember?.roleIds.includes(r.id);
+    const taken = people.length > 0;
+    const mine = myMember?.roleIds.includes(r.id) ?? false;
     const open = openRole === r.id;
     return (
-      <div className={`card p-4 ${mine ? "ring-2 ring-marigold-400" : ""}`}>
+      <div className={`card p-4 transition ${taken ? "role-taken bg-marigold-50/50" : ""}`}>
         <div className="flex items-start gap-3">
           <span className="text-2xl">{r.emoji}</span>
           <div className="min-w-0 flex-1">
-            <h3 className="font-display text-base font-semibold">{r.name}</h3>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-display text-base font-semibold">{r.name}</h3>
+              {taken ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-marigold-600 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+                  <span className="h-1.5 w-1.5 rounded-full bg-white" /> Obsazeno
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-leaf/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-leaf-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-leaf" /> Volné
+                </span>
+              )}
+            </div>
             <p className="text-sm text-ink-soft">{r.short}</p>
           </div>
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          {people.length === 0 ? (
-            <span className="text-xs text-ink-soft/70">Zatím nikdo</span>
+
+        {/* Kdo funkci drží + kontakt (jméno, telefon, e-mail) */}
+        <div className="mt-3">
+          {!taken ? (
+            <p className="text-xs text-ink-soft/70">Zatím nikdo — můžeš si ji vzít.</p>
           ) : (
-            people.map((p) => (
-              <span key={p.id} className="chip">
-                {p.name}
-              </span>
-            ))
+            <ul className="space-y-2">
+              {people.map((p) => (
+                <li key={p.id} className="rounded-xl bg-white/80 p-2.5 ring-1 ring-black/[0.05]">
+                  <p className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+                    <span>👤 {p.name}</span>
+                    {p.name === me && <span className="chip bg-marigold-600 text-white">to jsi ty</span>}
+                  </p>
+                  {(p.phone || p.email) ? (
+                    <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
+                      {p.phone && (
+                        <a href={`tel:${p.phone}`} className="hover:text-marigold-700">
+                          📞 {p.phone}
+                        </a>
+                      )}
+                      {p.email && (
+                        <a href={`mailto:${p.email}`} className="hover:text-marigold-700">
+                          ✉️ {p.email}
+                        </a>
+                      )}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-xs text-ink-soft/70">Bez kontaktu — doplň v profilu.</p>
+                  )}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
+
         <div className="mt-3 flex items-center gap-2">
           {mine ? (
             <button className="btn-secondary" onClick={() => removeRoleFromMe(r.id)}>
-              Odebrat ze mě
+              Uvolnit funkci
+            </button>
+          ) : taken ? (
+            <button className="btn-secondary cursor-not-allowed opacity-60" disabled title="Funkce je obsazená — uvolní ji jen ten, kdo ji drží.">
+              Obsazeno
             </button>
           ) : (
             <button className="btn-primary" onClick={() => setModal({ roleToAdd: r.id })}>
