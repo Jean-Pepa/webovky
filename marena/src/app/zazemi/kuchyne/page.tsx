@@ -221,7 +221,7 @@ function KitchenCard({ item, yearId, editable }: { item: KitchenFile; yearId: st
         {viewing && (
           <div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={viewing} alt={item.label} className="max-h-[78vh] w-full rounded-xl object-contain" />
+            <img src={viewing} alt={item.label} className="max-h-[64vh] w-full rounded-xl object-contain" />
             <div className="mt-3 flex justify-center">
               <button
                 onClick={() => setViewing(null)}

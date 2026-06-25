@@ -505,7 +505,7 @@ function ReceiptControl({ item, yearId, canEdit }: { item: FinanceItem; yearId: 
         {viewing && (
           <div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={viewing} alt="Účtenka" className="max-h-[78vh] w-full rounded-xl object-contain" />
+            <img src={viewing} alt="Účtenka" className="max-h-[64vh] w-full rounded-xl object-contain" />
             <div className="mt-3 flex justify-center">
               <button
                 onClick={() => setViewing(null)}
