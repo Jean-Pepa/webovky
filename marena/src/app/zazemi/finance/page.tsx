@@ -100,6 +100,11 @@ export default function FinancePage() {
     () => items.filter((f) => f.category === "merch" && f.kind === "prijem").reduce((s, f) => s + f.amount, 0),
     [items],
   );
+  // Kolik jsme do merche vložili (výdaje) a kolik se vrátilo (příjmy).
+  const merchExpense = useMemo(
+    () => items.filter((f) => f.category === "merch" && f.kind === "vydaj").reduce((s, f) => s + f.amount, 0),
+    [items],
+  );
   const merchItems = useMemo(
     () => items.filter((f) => f.category === "merch").sort((a, b) => (b.date || b.createdAt).localeCompare(a.date || a.createdAt)),
     [items],
@@ -202,10 +207,16 @@ export default function FinancePage() {
       {/* Merch — samostatně (tržby/výdaje z kategorie merch) */}
       {merchItems.length > 0 && (
         <section className="card p-4">
-          <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+          <h2 className="mb-3 flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
             🛍️ Merch
-            <span className="rounded-full bg-marigold-600 px-2.5 py-0.5 text-sm font-bold text-white">{fmtCZK(merchTotal)}</span>
-            <span className="text-sm font-normal text-ink-soft">tržba</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-sm">
+              <span className="text-xs font-normal text-ink-soft">vloženo</span>
+              <span className="font-bold text-ink">−{fmtCZK(merchExpense)}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf/12 px-2.5 py-0.5 text-sm">
+              <span className="text-xs font-normal text-leaf-700">zpátky</span>
+              <span className="font-bold text-leaf-700">+{fmtCZK(merchTotal)}</span>
+            </span>
           </h2>
           <Collapsible peekClass="max-h-[150px]" expandable={merchItems.length > 2} total={merchItems.length}>
             <div className="space-y-2">
