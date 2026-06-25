@@ -99,18 +99,18 @@
   background-image: none;
 }
 
-/* Blikající barevný nadpis MAŘENA — písmena prosvítají různými barvami. */
+/* Blikající nadpis MAŘENA — „Matrix" zelené odstíny, extrémně rychlý flicker. */
 @keyframes marena-blink {
-  0%, 15% { color: #ff3b30; }
-  16%, 31% { color: #ff9f0a; }
-  32%, 47% { color: #ffd60a; }
-  48%, 63% { color: #30d158; }
-  64%, 79% { color: #0a84ff; }
-  80%, 100% { color: #bf5af2; }
+  0%, 16% { color: #00ff41; }
+  17%, 33% { color: #008f11; }
+  34%, 50% { color: #39ff14; }
+  51%, 67% { color: #00b300; }
+  68%, 84% { color: #2eff5e; }
+  85%, 100% { color: #007a0f; }
 }
 .marena-letter {
-  color: #c20e2c; /* záložní barva (když animace neběží) — čitelná na světlém i tmavém */
-  animation: marena-blink 0.35s steps(1, end) infinite;
+  color: #008f11; /* záložní matrix zelená (když animace neběží) */
+  animation: marena-blink 0.16s steps(1, end) infinite;
 }
 @media (prefers-reduced-motion: reduce) {
   .marena-letter {
