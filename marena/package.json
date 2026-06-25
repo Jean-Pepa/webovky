@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "e2e": "node e2e/smoke.mjs"
   },
   "dependencies": {
     "@upstash/redis": "^1.38.0",
@@ -21,6 +22,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "playwright-core": "^1.61.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
