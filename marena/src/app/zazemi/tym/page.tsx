@@ -140,28 +140,36 @@ export default function TymPage() {
   // Řádek v pravém přehledu (seskupeno po rolích): vedoucí / pomocník / bez role.
   function RosterPerson({ m, variant }: { m: Member; variant: "lead" | "helper" | "none" }) {
     const isLead = variant === "lead";
+    const marker = variant === "lead" ? "👑" : variant === "helper" ? "↳" : "👤";
     return (
       <div className={`rounded-lg p-2 ${isLead ? "border border-red-400 bg-white" : "bg-white/70 ring-1 ring-black/[0.05]"}`}>
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
-              <span>{variant === "lead" ? "👑" : variant === "helper" ? "↳" : "👤"}</span>
-              <span className="break-words">{m.name}</span>
-              {m.name === me && <span className="chip bg-marigold-600 text-white">ty</span>}
+        <div className="flex items-start gap-1.5">
+          <span className="shrink-0 text-sm">{marker}</span>
+          <div className="min-w-0 flex-1">
+            <p className="flex items-center gap-1.5 text-sm font-semibold">
+              <span className="truncate">{m.name}</span>
+              {m.name === me && <span className="chip shrink-0 bg-marigold-600 text-white">ty</span>}
             </p>
-            {(m.email || m.phone) && (
-              <p className="mt-0.5 break-words text-xs text-ink-soft">{[m.phone, m.email].filter(Boolean).join(" · ")}</p>
+            {m.phone && (
+              <a href={`tel:${m.phone}`} className="block truncate text-xs text-ink-soft hover:text-marigold-700">
+                📞 {m.phone}
+              </a>
+            )}
+            {m.email && (
+              <a href={`mailto:${m.email}`} className="block truncate text-xs text-ink-soft hover:text-marigold-700">
+                ✉️ {m.email}
+              </a>
             )}
           </div>
-          {admin && (
-            <div className="flex shrink-0 items-center gap-1">
-              <button className="btn-ghost px-1.5 py-0.5 text-[11px]" onClick={() => setEditMember(m)} title="Upravit člena">
-                Upravit
-              </button>
-              <DeleteButton onConfirm={() => dispatch({ type: "removeMember", yearId: year.id, memberId: m.id })} />
-            </div>
-          )}
         </div>
+        {admin && (
+          <div className="mt-1.5 flex items-center justify-end gap-1">
+            <button className="btn-ghost px-1.5 py-0.5 text-[11px]" onClick={() => setEditMember(m)} title="Upravit člena">
+              Upravit
+            </button>
+            <DeleteButton onConfirm={() => dispatch({ type: "removeMember", yearId: year.id, memberId: m.id })} />
+          </div>
+        )}
       </div>
     );
   }
