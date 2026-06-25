@@ -48,7 +48,6 @@ export default function FinancePage() {
   const { currentYear, me, dispatch } = useStore();
   const [open, setOpen] = useState(false);
   const [kasaOpen, setKasaOpen] = useState(false);
-  const [kasyExpanded, setKasyExpanded] = useState(false);
   const [filter, setFilter] = useState<Filter>("vse");
   const [catFilter, setCatFilter] = useState<string>("");
 
@@ -99,6 +98,10 @@ export default function FinancePage() {
   // Merch — kolik už merch vydělal (příjmy z kategorie „merch", hlavně z vyřízených objednávek).
   const merchTotal = useMemo(
     () => items.filter((f) => f.category === "merch" && f.kind === "prijem").reduce((s, f) => s + f.amount, 0),
+    [items],
+  );
+  const merchItems = useMemo(
+    () => items.filter((f) => f.category === "merch").sort((a, b) => (b.date || b.createdAt).localeCompare(a.date || a.createdAt)),
     [items],
   );
 
@@ -183,34 +186,42 @@ export default function FinancePage() {
           {(year.cashboxes?.length ?? 0) === 0 ? (
             <p className="text-sm text-ink-soft">Zatím žádná kasa. Klikni nahoře na tlačítko + Kasa.</p>
           ) : (
-            (() => {
-              const boxes = [...(year.cashboxes ?? [])].sort((a, b) => b.openedAt.localeCompare(a.openedAt));
-              const collapsible = boxes.length > 1;
-              return (
-                <>
-                  <div className="relative">
-                    <div className={`space-y-2 ${collapsible && !kasyExpanded ? "max-h-[150px] overflow-hidden" : ""}`}>
-                      {boxes.map((c) => (
-                        <CashboxCard key={c.id} box={c} yearId={year.id} canEdit={canEdit} />
-                      ))}
-                    </div>
-                    {collapsible && !kasyExpanded && (
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-white to-transparent" />
-                    )}
-                  </div>
-                  {collapsible && (
-                    <button
-                      onClick={() => setKasyExpanded((v) => !v)}
-                      className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl py-1.5 text-sm font-medium text-ink-soft transition hover:bg-black/[0.04]"
-                    >
-                      {kasyExpanded ? "Sbalit" : `Zobrazit další kasy (${boxes.length - 1})`}
-                      <Icon name="chevron" className={`h-4 w-4 transition-transform ${kasyExpanded ? "rotate-180" : ""}`} />
-                    </button>
-                  )}
-                </>
-              );
-            })()
+            <Collapsible peekClass="max-h-[150px]" expandable={(year.cashboxes?.length ?? 0) > 1} total={year.cashboxes?.length ?? 0}>
+              <div className="space-y-2">
+                {[...(year.cashboxes ?? [])]
+                  .sort((a, b) => b.openedAt.localeCompare(a.openedAt))
+                  .map((c) => (
+                    <CashboxCard key={c.id} box={c} yearId={year.id} canEdit={canEdit} />
+                  ))}
+              </div>
+            </Collapsible>
           )}
+        </section>
+      )}
+
+      {/* Merch — samostatně (tržby/výdaje z kategorie merch) */}
+      {merchItems.length > 0 && (
+        <section className="card p-4">
+          <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+            🛍️ Merch
+            <span className="rounded-full bg-marigold-600 px-2.5 py-0.5 text-sm font-bold text-white">{fmtCZK(merchTotal)}</span>
+            <span className="text-sm font-normal text-ink-soft">tržba</span>
+          </h2>
+          <Collapsible peekClass="max-h-[150px]" expandable={merchItems.length > 2} total={merchItems.length}>
+            <div className="space-y-2">
+              {merchItems.map((f) => (
+                <div key={f.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 rounded-xl border border-black/[0.05] bg-paper2/40 px-3 py-2 text-sm">
+                  <span className="font-semibold">{f.label}</span>
+                  {f.note && <span className="text-xs text-ink-soft">· {f.note}</span>}
+                  <span className="text-xs text-ink-soft/70">{fmtDate(f.date || f.createdAt)}</span>
+                  <span className={`ml-auto font-display font-bold ${f.kind === "prijem" ? "text-leaf-700" : "text-ink"}`}>
+                    {f.kind === "prijem" ? "+" : "−"}
+                    {fmtCZK(f.amount)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Collapsible>
         </section>
       )}
 
@@ -293,26 +304,28 @@ export default function FinancePage() {
         </div>
       ) : (
         <div className="card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-black/[0.06] text-left text-xs font-medium uppercase tracking-wide text-ink-soft">
-                  <th className="px-4 py-3">Popis</th>
-                  <th className="px-3 py-3">Kategorie</th>
-                  <th className="px-3 py-3">Kdo</th>
-                  <th className="px-3 py-3">Datum</th>
-                  <th className="px-3 py-3 text-right">Částka</th>
-                  <th className="px-3 py-3">Stav</th>
-                  <th className="px-3 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((f) => (
-                  <FinanceRow key={f.id} item={f} yearId={year.id} canEdit={canEdit} />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Collapsible peekClass="max-h-[260px]" expandable={rows.length > 2} total={rows.length}>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-black/[0.06] text-left text-xs font-medium uppercase tracking-wide text-ink-soft">
+                    <th className="px-4 py-3">Popis</th>
+                    <th className="px-3 py-3">Kategorie</th>
+                    <th className="px-3 py-3">Kdo</th>
+                    <th className="px-3 py-3">Datum</th>
+                    <th className="px-3 py-3 text-right">Částka</th>
+                    <th className="px-3 py-3">Stav</th>
+                    <th className="px-3 py-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((f) => (
+                    <FinanceRow key={f.id} item={f} yearId={year.id} canEdit={canEdit} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Collapsible>
         </div>
       )}
 
@@ -697,5 +710,36 @@ function NewKasaModal({ open, yearId, onClose }: { open: boolean; yearId: string
         </div>
       </div>
     </Modal>
+  );
+}
+
+// Sbalovací obal: ukáže jen „peek" (kousek) a tlačítkem se šipkou rozbalí celé.
+function Collapsible({
+  peekClass,
+  expandable,
+  total,
+  children,
+}: {
+  peekClass: string;
+  expandable: boolean;
+  total: number;
+  children: React.ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  if (!expandable) return <>{children}</>;
+  return (
+    <>
+      <div className="relative">
+        <div className={expanded ? "" : `${peekClass} overflow-hidden`}>{children}</div>
+        {!expanded && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-white to-transparent" />}
+      </div>
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl py-1.5 text-sm font-medium text-ink-soft transition hover:bg-black/[0.04]"
+      >
+        {expanded ? "Sbalit" : `Zobrazit vše (${total})`}
+        <Icon name="chevron" className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+      </button>
+    </>
   );
 }
