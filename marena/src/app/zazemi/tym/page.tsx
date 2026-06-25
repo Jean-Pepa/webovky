@@ -279,7 +279,7 @@ export default function TymPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className={`grid gap-6 ${admin ? "lg:grid-cols-[1fr_320px_200px]" : "lg:grid-cols-[1fr_320px]"}`}>
         {/* Vlevo: můj profil + funkce */}
         <div className="space-y-8">
           {/* Já v týmu */}
@@ -399,6 +399,28 @@ export default function TymPage() {
             )}
           </section>
         </aside>
+
+        {/* Jen pro správce: čistý seznam jmen pod sebou */}
+        {admin && (
+          <aside className="h-fit lg:sticky lg:top-4">
+            <section className="card p-4">
+              <h2 className="mb-3 font-display text-base font-semibold">Jména ({year.members.length})</h2>
+              {year.members.length === 0 ? (
+                <p className="text-sm text-ink-soft">Zatím nikdo.</p>
+              ) : (
+                <ul className="space-y-1">
+                  {[...year.members]
+                    .sort((a, b) => a.name.localeCompare(b.name, "cs"))
+                    .map((m) => (
+                      <li key={m.id} className="truncate text-sm">
+                        {m.name}
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </section>
+          </aside>
+        )}
       </div>
 
       <ProfileModal
