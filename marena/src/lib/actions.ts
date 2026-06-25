@@ -1,7 +1,7 @@
 // Čistý reducer nad DB. Stejná logika běží na serveru (Redis) i v prohlížeči
 // (localStorage demo režim) — proto je bezstavová a deterministická až na uid().
 
-import type { DB, Year, EventKind, FinanceKind, Task, Invite } from "./types";
+import type { DB, Year, Member, EventKind, FinanceKind, Task, Invite, MerchOrderItem } from "./types";
 import { uid } from "./id";
 import { ROLE_TASKS } from "./roleTasks";
 
@@ -23,6 +23,9 @@ export type Action =
   | { type: "addMember"; yearId: string; name: string; roleIds: string[]; email?: string; phone?: string; contact?: string; note?: string }
   | { type: "updateMember"; yearId: string; memberId: string; patch: { name?: string; roleIds?: string[]; email?: string; phone?: string; contact?: string; note?: string } }
   | { type: "removeMember"; yearId: string; memberId: string }
+  // Vzít si roli (vytvoří/upraví člena a přidá roli). asLead / první držitel = vedoucí.
+  | { type: "takeRole"; yearId: string; memberId?: string; name: string; email?: string; phone?: string; roleId: string; asLead: boolean }
+  | { type: "setRoleLead"; yearId: string; roleId: string; memberId: string }
   | { type: "addPost"; yearId: string; author: string; roleId?: string; title: string; body: string; pinned?: boolean }
   | { type: "togglePin"; yearId: string; postId: string }
   | { type: "removePost"; yearId: string; postId: string }
@@ -52,6 +55,12 @@ export type Action =
   | { type: "removeInvite"; yearId: string; inviteId: string }
   | { type: "addKitchenFile"; yearId: string; label: string; category: string; blobId: string; fileKind: "image" | "file"; fileName?: string; note?: string; author: string }
   | { type: "removeKitchenFile"; yearId: string; fileId: string }
+  // Merch — nabídka produktů (správce / role merch) a objednávky (veřejná stránka).
+  | { type: "addMerchProduct"; yearId: string; name: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; note?: string }
+  | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; note?: string } }
+  | { type: "removeMerchProduct"; yearId: string; productId: string }
+  | { type: "addMerchOrder"; yearId: string; name: string; phone?: string; email?: string; items: MerchOrderItem[]; note?: string }
+  | { type: "removeMerchOrder"; yearId: string; orderId: string }
   // Uvolnění místa: smaže všechny fotky/účtenky ročníku (reference v DB; samotné
   // bloby maže klient zvlášť). Texty (finance, popisy) zůstávají.
   | { type: "clearYearMedia"; yearId: string };
@@ -60,9 +69,38 @@ function now(): string {
   return new Date().toISOString();
 }
 
+// Očistí seznam textů (velikosti, barvy) — ořízne a vyhodí prázdné; prázdný → undefined.
+function cleanList(arr?: string[]): string[] | undefined {
+  if (!arr) return undefined;
+  const out = arr.map((s) => s.trim()).filter(Boolean);
+  return out.length ? out : undefined;
+}
+
 // Vrátí novou DB s aplikovanou změnou na daný ročník.
 function mapYear(db: DB, yearId: string, fn: (y: Year) => Year): DB {
   return { ...db, years: db.years.map((y) => (y.id === yearId ? fn(y) : y)) };
+}
+
+// Udrží mapu vedoucích rolí v konzistenci: zahodí neplatné (drží roli nedrží),
+// a každé obsazené roli bez vedoucího doplní vedoucího = nejdřív zapsaný člen.
+function normalizeLeads(y: Year): Year {
+  const leads: Record<string, string> = { ...(y.roleLeads ?? {}) };
+  const holdersByRole = new Map<string, Member[]>();
+  for (const m of y.members) {
+    for (const rid of m.roleIds) {
+      const arr = holdersByRole.get(rid) ?? [];
+      arr.push(m);
+      holdersByRole.set(rid, arr);
+    }
+  }
+  for (const rid of Object.keys(leads)) {
+    const holders = holdersByRole.get(rid);
+    if (!holders || !holders.some((h) => h.id === leads[rid])) delete leads[rid];
+  }
+  for (const [rid, holders] of holdersByRole) {
+    if (!leads[rid]) leads[rid] = [...holders].sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0].id;
+  }
+  return { ...y, roleLeads: leads };
 }
 
 export function applyAction(db: DB, a: Action): DB {
@@ -110,29 +148,66 @@ export function applyAction(db: DB, a: Action): DB {
       return { ...db, years: db.years.filter((y) => y.id !== a.yearId) };
 
     case "addMember":
-      return mapYear(db, a.yearId, (y) => ({
-        ...y,
-        members: [
-          ...y.members,
-          {
-            id: uid("m_"),
-            name: a.name.trim(),
-            roleIds: a.roleIds,
-            email: a.email?.trim() || undefined,
-            phone: a.phone?.trim() || undefined,
-            contact: a.contact?.trim() || undefined,
-            note: a.note?.trim() || undefined,
-            createdAt: now(),
-          },
-        ],
-      }));
+      return mapYear(db, a.yearId, (y) =>
+        normalizeLeads({
+          ...y,
+          members: [
+            ...y.members,
+            {
+              id: uid("m_"),
+              name: a.name.trim(),
+              roleIds: a.roleIds,
+              email: a.email?.trim() || undefined,
+              phone: a.phone?.trim() || undefined,
+              contact: a.contact?.trim() || undefined,
+              note: a.note?.trim() || undefined,
+              createdAt: now(),
+            },
+          ],
+        }),
+      );
     case "updateMember":
-      return mapYear(db, a.yearId, (y) => ({
-        ...y,
-        members: y.members.map((m) => (m.id === a.memberId ? { ...m, ...a.patch } : m)),
-      }));
+      return mapYear(db, a.yearId, (y) =>
+        normalizeLeads({
+          ...y,
+          members: y.members.map((m) => (m.id === a.memberId ? { ...m, ...a.patch } : m)),
+        }),
+      );
     case "removeMember":
-      return mapYear(db, a.yearId, (y) => ({ ...y, members: y.members.filter((m) => m.id !== a.memberId) }));
+      return mapYear(db, a.yearId, (y) => normalizeLeads({ ...y, members: y.members.filter((m) => m.id !== a.memberId) }));
+    case "takeRole":
+      return mapYear(db, a.yearId, (y) => {
+        const name = a.name.trim();
+        const wasEmpty = !y.members.some((m) => m.roleIds.includes(a.roleId));
+        let members = y.members;
+        const target = a.memberId ? members.find((m) => m.id === a.memberId) : members.find((m) => m.name === name);
+        let memberId: string;
+        if (target) {
+          memberId = target.id;
+          members = members.map((m) =>
+            m.id === target.id
+              ? {
+                  ...m,
+                  name: name || m.name,
+                  email: a.email?.trim() || m.email,
+                  phone: a.phone?.trim() || m.phone,
+                  roleIds: m.roleIds.includes(a.roleId) ? m.roleIds : [...m.roleIds, a.roleId],
+                }
+              : m,
+          );
+        } else {
+          memberId = uid("m_");
+          members = [
+            ...members,
+            { id: memberId, name: name || "Anonym", roleIds: [a.roleId], email: a.email?.trim() || undefined, phone: a.phone?.trim() || undefined, createdAt: now() },
+          ];
+        }
+        const leads = { ...(y.roleLeads ?? {}) };
+        if (a.asLead || wasEmpty) leads[a.roleId] = memberId; // první držitel nebo výslovná volba = vedoucí
+        return normalizeLeads({ ...y, members, roleLeads: leads });
+      });
+    case "setRoleLead":
+      return mapYear(db, a.yearId, (y) => normalizeLeads({ ...y, roleLeads: { ...(y.roleLeads ?? {}), [a.roleId]: a.memberId } }));
 
     case "addPost":
       return mapYear(db, a.yearId, (y) => ({
@@ -398,6 +473,67 @@ export function applyAction(db: DB, a: Action): DB {
         finances: (y.finances ?? []).map((f) => ({ ...f, receiptId: undefined, receiptIds: undefined })),
         kitchen: [],
       }));
+
+    case "addMerchProduct":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        merch: [
+          ...(y.merch ?? []),
+          {
+            id: uid("mp_"),
+            name: a.name.trim() || "Bez názvu",
+            price: Number.isFinite(a.price) ? a.price : undefined,
+            blobId: a.blobId,
+            sizes: cleanList(a.sizes),
+            colors: cleanList(a.colors),
+            note: a.note?.trim() || undefined,
+            createdAt: now(),
+          },
+        ],
+      }));
+    case "updateMerchProduct":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        merch: (y.merch ?? []).map((p) => {
+          if (p.id !== a.productId) return p;
+          const q = a.patch;
+          return {
+            ...p,
+            ...q,
+            name: q.name !== undefined ? q.name.trim() || p.name : p.name,
+            price: "price" in q ? (Number.isFinite(q.price) ? q.price : undefined) : p.price,
+            sizes: "sizes" in q ? cleanList(q.sizes) : p.sizes,
+            colors: "colors" in q ? cleanList(q.colors) : p.colors,
+            note: "note" in q ? q.note?.trim() || undefined : p.note,
+          };
+        }),
+      }));
+    case "removeMerchProduct":
+      return mapYear(db, a.yearId, (y) => ({ ...y, merch: (y.merch ?? []).filter((p) => p.id !== a.productId) }));
+    case "addMerchOrder":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        merchOrders: [
+          {
+            id: uid("mo_"),
+            name: a.name.trim() || "—",
+            phone: a.phone?.trim() || undefined,
+            email: a.email?.trim() || undefined,
+            items: (a.items ?? []).map((it) => ({
+              productId: it.productId,
+              name: it.name,
+              size: it.size?.trim() || undefined,
+              color: it.color?.trim() || undefined,
+              qty: Math.max(1, Math.round(it.qty || 1)),
+            })),
+            note: a.note?.trim() || undefined,
+            createdAt: now(),
+          },
+          ...(y.merchOrders ?? []),
+        ],
+      }));
+    case "removeMerchOrder":
+      return mapYear(db, a.yearId, (y) => ({ ...y, merchOrders: (y.merchOrders ?? []).filter((o) => o.id !== a.orderId) }));
 
     default:
       return db;

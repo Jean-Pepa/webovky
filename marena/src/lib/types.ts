@@ -140,6 +140,36 @@ export interface Invite {
   createdAt: string;
 }
 
+// Merch — nabídka (produkty s fotkou) a objednávky z veřejné stránky (QR).
+export interface MerchProduct {
+  id: string;
+  name: string; // např. „Tričko Mařena 2026", „Mikina", „Plátěnka"
+  price?: number; // cena v Kč
+  blobId?: string; // foto produktu (ukládá se zvlášť, ne v hlavní DB)
+  sizes?: string[]; // nabízené velikosti (S, M, L…) — zadává správce / role merch
+  colors?: string[]; // nabízené barvy
+  note?: string; // další detaily (materiál apod.)
+  createdAt: string;
+}
+
+export interface MerchOrderItem {
+  productId: string;
+  name: string; // název produktu v době objednávky
+  size?: string; // zvolená velikost
+  color?: string; // zvolená barva
+  qty: number;
+}
+
+export interface MerchOrder {
+  id: string;
+  name: string; // jméno objednávajícího
+  phone?: string;
+  email?: string;
+  items: MerchOrderItem[]; // co si chce koupit z nabídky
+  note?: string; // poznámka (velikost apod.)
+  createdAt: string;
+}
+
 export interface Year {
   id: string; // např. "2025"
   label: string; // "Mařena 2025"
@@ -148,6 +178,7 @@ export interface Year {
   plannedPeople?: number; // plánovaný počet účastníků (pro kalkulaci financí)
   deposit?: number; // třídní vklad na osobu (Kč)
   members: Member[];
+  roleLeads?: Record<string, string>; // roleId → memberId vedoucího (první = vedoucí, ostatní pomocníci)
   posts: Post[];
   polls: Poll[];
   events: CalEvent[];
@@ -157,6 +188,8 @@ export interface Year {
   shifts?: Shift[]; // provoz — rozpis směn, na které se lidi přihlašují
   invites?: Invite[]; // program — koho oslovit (přednášející, kapely)
   kitchen?: KitchenFile[]; // kuchyně — nahrané fotky/soubory (nákupy, menu…)
+  merch?: MerchProduct[]; // merch — nabídka produktů (fotky)
+  merchOrders?: MerchOrder[]; // merch — objednávky z veřejné stránky (QR)
   createdAt: string;
 }
 

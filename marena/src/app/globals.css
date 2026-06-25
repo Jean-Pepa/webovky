@@ -118,6 +118,22 @@
   }
 }
 
+/* Skákající odkaz na merch — nápis se zvětšuje a zmenšuje, ať je vidět. */
+@keyframes merch-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.14); }
+}
+.merch-pulse {
+  animation: merch-pulse 1.05s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .merch-pulse {
+    animation: none;
+  }
+}
+
 /* Obsazená funkce v týmu — jemně „svítí", ať je na první pohled vidět, že je
    plno (zabraná, dokud ji držitel sám neuvolní). */
 @keyframes marena-glow {

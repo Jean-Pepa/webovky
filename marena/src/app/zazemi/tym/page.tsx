@@ -29,7 +29,16 @@ export default function TymPage() {
 
   const takenBy = (roleId: string) => year.members.filter((m) => m.roleIds.includes(roleId));
 
-  // Odebrání role je přímé; přidání projde modálem na doplnění kontaktu.
+  // Vedoucí role = výslovně určený (roleLeads), jinak nejdřív zapsaný držitel.
+  const leadIdOf = (roleId: string): string | undefined => {
+    const holders = takenBy(roleId);
+    if (!holders.length) return undefined;
+    const explicit = year.roleLeads?.[roleId];
+    if (explicit && holders.some((h) => h.id === explicit)) return explicit;
+    return [...holders].sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0].id;
+  };
+
+  // Odebrání role je přímé; přidání projde modálem jen u nového člověka.
   async function removeRoleFromMe(roleId: string) {
     if (!myMember) return;
     await dispatch({
@@ -40,30 +49,121 @@ export default function TymPage() {
     });
   }
 
-  async function saveProfile(data: { name: string; email: string; phone: string; roleToAdd?: string }) {
+  // Kdo už má účet, přidá si další roli na jeden klik (bez vyplňování kontaktu).
+  async function takeRoleDirect(roleId: string) {
+    if (!myMember) return;
+    await dispatch({
+      type: "takeRole",
+      yearId: year.id,
+      memberId: myMember.id,
+      name: myMember.name,
+      email: myMember.email ?? "",
+      phone: myMember.phone ?? "",
+      roleId,
+      asLead: false,
+    });
+  }
+
+  async function saveProfile(data: { name: string; email: string; phone: string; roleToAdd?: string; asLead?: boolean }) {
     const finalName = data.name.trim() || me;
-    const existing = year.members.find((m) => m.name === me);
-    if (existing) {
-      const roleIds =
-        data.roleToAdd && !existing.roleIds.includes(data.roleToAdd) ? [...existing.roleIds, data.roleToAdd] : existing.roleIds;
+    if (data.roleToAdd) {
+      // Braní role: jeden atomický krok (vytvoří/upraví člena, přidá roli, určí vedoucího).
       await dispatch({
-        type: "updateMember",
+        type: "takeRole",
         yearId: year.id,
-        memberId: existing.id,
-        patch: { name: finalName, email: data.email, phone: data.phone, roleIds },
-      });
-    } else {
-      await dispatch({
-        type: "addMember",
-        yearId: year.id,
+        memberId: myMember?.id,
         name: finalName,
-        roleIds: data.roleToAdd ? [data.roleToAdd] : [],
         email: data.email,
         phone: data.phone,
+        roleId: data.roleToAdd,
+        asLead: !!data.asLead,
       });
+    } else {
+      const existing = year.members.find((m) => m.name === me);
+      if (existing) {
+        await dispatch({
+          type: "updateMember",
+          yearId: year.id,
+          memberId: existing.id,
+          patch: { name: finalName, email: data.email, phone: data.phone },
+        });
+      } else {
+        await dispatch({ type: "addMember", yearId: year.id, name: finalName, roleIds: [], email: data.email, phone: data.phone });
+      }
     }
     if (finalName !== me) setMe(finalName);
     setModal(null);
+  }
+
+  function PersonRow({ p, roleId, variant }: { p: Member; roleId: string; variant: "lead" | "helper" }) {
+    const isLead = variant === "lead";
+    return (
+      <div className={`rounded-xl p-2.5 ${isLead ? "border-2 border-red-500 bg-white" : "bg-white/70 ring-1 ring-black/[0.05]"}`}>
+        <p className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+          <span>{isLead ? "👑" : "↳"}</span>
+          <span>{p.name}</span>
+          {isLead ? (
+            <span className="chip bg-red-500 text-white">vedoucí</span>
+          ) : (
+            <span className="chip">pomocník</span>
+          )}
+          {p.name === me && <span className="chip bg-marigold-600 text-white">to jsi ty</span>}
+        </p>
+        {(p.phone || p.email) ? (
+          <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
+            {p.phone && (
+              <a href={`tel:${p.phone}`} className="hover:text-marigold-700">
+                📞 {p.phone}
+              </a>
+            )}
+            {p.email && (
+              <a href={`mailto:${p.email}`} className="hover:text-marigold-700">
+                ✉️ {p.email}
+              </a>
+            )}
+          </p>
+        ) : (
+          <p className="mt-1 text-xs text-ink-soft/70">Bez kontaktu — doplň v profilu.</p>
+        )}
+        {admin && !isLead && editable && (
+          <button
+            className="btn-ghost mt-1.5 px-2 py-0.5 text-[11px]"
+            onClick={() => dispatch({ type: "setRoleLead", yearId: year.id, roleId, memberId: p.id })}
+          >
+            👑 Udělat vedoucím
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // Řádek v pravém přehledu (seskupeno po rolích): vedoucí / pomocník / bez role.
+  function RosterPerson({ m, variant }: { m: Member; variant: "lead" | "helper" | "none" }) {
+    const isLead = variant === "lead";
+    return (
+      <div className={`rounded-lg p-2 ${isLead ? "border border-red-400 bg-white" : "bg-white/70 ring-1 ring-black/[0.05]"}`}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+              <span>{variant === "lead" ? "👑" : variant === "helper" ? "↳" : "👤"}</span>
+              <span className="break-words">{m.name}</span>
+              {m.name === me && <span className="chip bg-marigold-600 text-white">ty</span>}
+            </p>
+            {(m.email || m.phone) && (
+              <p className="mt-0.5 break-words text-xs text-ink-soft">{[m.phone, m.email].filter(Boolean).join(" · ")}</p>
+            )}
+          </div>
+          {admin && (
+            <div className="flex shrink-0 items-center gap-1">
+              <button className="btn-ghost px-1.5 py-0.5 text-[11px]" onClick={() => setEditMember(m)} title="Upravit člena">
+                Upravit
+              </button>
+              <DeleteButton onConfirm={() => dispatch({ type: "removeMember", yearId: year.id, memberId: m.id })} />
+            </div>
+          )}
+        </div>
+      </div>
+    );
   }
 
   function RoleCard({ r }: { r: Role }) {
@@ -96,37 +196,28 @@ export default function TymPage() {
           </div>
         </div>
 
-        {/* Kdo funkci drží + kontakt (jméno, telefon, e-mail) */}
+        {/* Kdo funkci drží — vedoucí (červený rámeček) + odsazení pomocníci */}
         <div className="mt-3">
           {!taken ? (
-            <p className="text-xs text-ink-soft/70">Zatím nikdo — můžeš si ji vzít.</p>
+            <p className="text-xs text-ink-soft/70">Zatím nikdo — můžeš si ji vzít a stát se vedoucím.</p>
           ) : (
-            <ul className="space-y-2">
-              {people.map((p) => (
-                <li key={p.id} className="rounded-xl bg-white/80 p-2.5 ring-1 ring-black/[0.05]">
-                  <p className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
-                    <span>👤 {p.name}</span>
-                    {p.name === me && <span className="chip bg-marigold-600 text-white">to jsi ty</span>}
-                  </p>
-                  {(p.phone || p.email) ? (
-                    <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
-                      {p.phone && (
-                        <a href={`tel:${p.phone}`} className="hover:text-marigold-700">
-                          📞 {p.phone}
-                        </a>
-                      )}
-                      {p.email && (
-                        <a href={`mailto:${p.email}`} className="hover:text-marigold-700">
-                          ✉️ {p.email}
-                        </a>
-                      )}
-                    </p>
-                  ) : (
-                    <p className="mt-1 text-xs text-ink-soft/70">Bez kontaktu — doplň v profilu.</p>
+            (() => {
+              const leadId = leadIdOf(r.id);
+              const lead = people.find((p) => p.id === leadId);
+              const helpers = people.filter((p) => p.id !== leadId);
+              return (
+                <div className="space-y-2">
+                  {lead && <PersonRow p={lead} roleId={r.id} variant="lead" />}
+                  {helpers.length > 0 && (
+                    <div className="ml-3 space-y-2 border-l-2 border-marigold-300 pl-3">
+                      {helpers.map((p) => (
+                        <PersonRow key={p.id} p={p} roleId={r.id} variant="helper" />
+                      ))}
+                    </div>
                   )}
-                </li>
-              ))}
-            </ul>
+                </div>
+              );
+            })()
           )}
         </div>
 
@@ -141,7 +232,7 @@ export default function TymPage() {
             ) : (
               <button
                 className={taken ? "btn-secondary" : "btn-primary"}
-                onClick={() => setModal({ roleToAdd: r.id })}
+                onClick={() => (myMember ? takeRoleDirect(r.id) : setModal({ roleToAdd: r.id }))}
               >
                 {taken ? "Přidat se taky" : "Vzít si"}
               </button>
@@ -254,45 +345,45 @@ export default function TymPage() {
             {year.members.length === 0 ? (
               <p className="text-sm text-ink-soft">Zatím nikdo. Buď první!</p>
             ) : (
-              <ul className="space-y-2.5">
-                {year.members.map((m) => (
-                  <li key={m.id} className="rounded-xl border border-black/[0.06] bg-white p-2.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="flex flex-wrap items-center gap-1.5 font-semibold">
-                          {m.name}
-                          {m.name === me && <span className="chip bg-marigold-600 text-white">ty</span>}
-                        </p>
-                        {(m.email || m.phone) && (
-                          <p className="mt-0.5 break-words text-xs text-ink-soft">{[m.phone, m.email].filter(Boolean).join(" · ")}</p>
+              <div className="space-y-4">
+                {ROLES.filter((r) => takenBy(r.id).length > 0).map((r) => {
+                  const holders = takenBy(r.id);
+                  const leadId = leadIdOf(r.id);
+                  const lead = holders.find((h) => h.id === leadId);
+                  const helpers = holders.filter((h) => h.id !== leadId);
+                  return (
+                    <div key={r.id}>
+                      <h3 className="mb-1.5 flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+                        <span>{r.emoji}</span> {r.name}
+                        <span className="chip">{holders.length}</span>
+                      </h3>
+                      <div className="space-y-1.5">
+                        {lead && <RosterPerson m={lead} variant="lead" />}
+                        {helpers.length > 0 && (
+                          <div className="ml-3 space-y-1.5 border-l-2 border-marigold-300 pl-3">
+                            {helpers.map((h) => (
+                              <RosterPerson key={h.id} m={h} variant="helper" />
+                            ))}
+                          </div>
                         )}
                       </div>
-                      {admin && (
-                        <div className="flex shrink-0 items-center gap-1">
-                          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEditMember(m)} title="Upravit člena">
-                            Upravit
-                          </button>
-                          <DeleteButton onConfirm={() => dispatch({ type: "removeMember", yearId: year.id, memberId: m.id })} />
-                        </div>
-                      )}
                     </div>
-                    <div className="mt-1.5 flex flex-wrap gap-1">
-                      {m.roleIds.length === 0 ? (
-                        <span className="text-xs text-ink-soft/60">bez role</span>
-                      ) : (
-                        m.roleIds.map((id) => {
-                          const role = roleById(id);
-                          return role ? (
-                            <span key={id} className="chip">
-                              {role.emoji} {role.name}
-                            </span>
-                          ) : null;
-                        })
-                      )}
+                  );
+                })}
+
+                {year.members.filter((m) => m.roleIds.length === 0).length > 0 && (
+                  <div>
+                    <h3 className="mb-1.5 text-sm font-semibold text-ink-soft">Bez role</h3>
+                    <div className="space-y-1.5">
+                      {year.members
+                        .filter((m) => m.roleIds.length === 0)
+                        .map((m) => (
+                          <RosterPerson key={m.id} m={m} variant="none" />
+                        ))}
                     </div>
-                  </li>
-                ))}
-              </ul>
+                  </div>
+                )}
+              </div>
             )}
             {!admin && (
               <p className="mt-3 text-[11px] text-ink-soft/60">Upravovat a mazat lidi v seznamu může jen správce.</p>
@@ -304,6 +395,9 @@ export default function TymPage() {
       <ProfileModal
         open={modal !== null}
         roleToAdd={modal?.roleToAdd}
+        roleEmpty={modal?.roleToAdd ? takenBy(modal.roleToAdd).length === 0 : true}
+        canChooseLead={modal?.roleToAdd ? takenBy(modal.roleToAdd).length === 0 || admin : false}
+        currentLeadName={modal?.roleToAdd ? year.members.find((m) => m.id === leadIdOf(modal.roleToAdd!))?.name : undefined}
         initial={{ name: myMember?.name ?? me, email: myMember?.email ?? "", phone: myMember?.phone ?? "" }}
         onClose={() => setModal(null)}
         onSave={saveProfile}
@@ -387,20 +481,35 @@ function AdminEditMemberModal({ member, yearId, onClose }: { member: Member; yea
 function ProfileModal({
   open,
   roleToAdd,
+  roleEmpty,
+  canChooseLead,
+  currentLeadName,
   initial,
   onClose,
   onSave,
 }: {
   open: boolean;
   roleToAdd?: string;
+  roleEmpty: boolean;
+  canChooseLead: boolean;
+  currentLeadName?: string;
   initial: { name: string; email: string; phone: string };
   onClose: () => void;
-  onSave: (d: { name: string; email: string; phone: string; roleToAdd?: string }) => void;
+  onSave: (d: { name: string; email: string; phone: string; roleToAdd?: string; asLead?: boolean }) => void;
 }) {
   const role = roleById(roleToAdd);
   return (
     <Modal open={open} onClose={onClose} title={role ? `Bereš si roli: ${role.emoji} ${role.name}` : "Můj profil"}>
-      <ProfileForm key={`${open}-${roleToAdd ?? "profile"}`} initial={initial} roleToAdd={roleToAdd} onSave={onSave} onClose={onClose} />
+      <ProfileForm
+        key={`${open}-${roleToAdd ?? "profile"}`}
+        initial={initial}
+        roleToAdd={roleToAdd}
+        roleEmpty={roleEmpty}
+        canChooseLead={canChooseLead}
+        currentLeadName={currentLeadName}
+        onSave={onSave}
+        onClose={onClose}
+      />
     </Modal>
   );
 }
@@ -408,17 +517,25 @@ function ProfileModal({
 function ProfileForm({
   initial,
   roleToAdd,
+  roleEmpty,
+  canChooseLead,
+  currentLeadName,
   onSave,
   onClose,
 }: {
   initial: { name: string; email: string; phone: string };
   roleToAdd?: string;
-  onSave: (d: { name: string; email: string; phone: string; roleToAdd?: string }) => void;
+  roleEmpty: boolean;
+  canChooseLead: boolean;
+  currentLeadName?: string;
+  onSave: (d: { name: string; email: string; phone: string; roleToAdd?: string; asLead?: boolean }) => void;
   onClose: () => void;
 }) {
   const [name, setName] = useState(initial.name);
   const [email, setEmail] = useState(initial.email);
   const [phone, setPhone] = useState(initial.phone);
+  // Volně obsazená funkce → výchozí vedoucí; jinak výchozí pomocník.
+  const [asLead, setAsLead] = useState(roleEmpty);
 
   return (
     <form
@@ -426,7 +543,8 @@ function ProfileForm({
       onSubmit={(e) => {
         e.preventDefault();
         if (!name.trim()) return;
-        onSave({ name, email, phone, roleToAdd });
+        // Vedoucího smí zvolit jen když je funkce volná, nebo je to správce.
+        onSave({ name, email, phone, roleToAdd, asLead: canChooseLead ? asLead : false });
       }}
     >
       <p className="text-sm text-ink-soft">Doplň prosím jméno, e-mail a telefon, ať tě ostatní v týmu zastihnou.</p>
@@ -442,6 +560,45 @@ function ProfileForm({
         <label className="label">Telefon</label>
         <input className="input" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+420…" />
       </div>
+
+      {roleToAdd &&
+        (canChooseLead ? (
+          <div>
+            <label className="label">Tvoje pozice ve funkci</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setAsLead(true)}
+                className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition ${
+                  asLead ? "bg-red-500 text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"
+                }`}
+              >
+                👑 Vedoucí
+              </button>
+              <button
+                type="button"
+                onClick={() => setAsLead(false)}
+                className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition ${
+                  !asLead ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"
+                }`}
+              >
+                Pomocník
+              </button>
+            </div>
+            <p className="mt-1.5 text-xs text-ink-soft">
+              {roleEmpty
+                ? "Tuto funkci zatím nikdo nedrží — můžeš se stát jejím vedoucím."
+                : asLead
+                  ? `Jako správce převezmeš vedení${currentLeadName ? ` po: ${currentLeadName}` : ""}.`
+                  : `Vedoucí${currentLeadName ? `: ${currentLeadName}` : ""}. Přidáš se jako pomocník.`}
+            </p>
+          </div>
+        ) : (
+          <p className="rounded-xl bg-paper2 px-3 py-2 text-xs text-ink-soft">
+            🔒 Vedoucí{currentLeadName ? `: ${currentLeadName}` : " už je obsazený"}. Přidáš se jako <strong>pomocník</strong> — vedení může změnit jen správce.
+          </p>
+        ))}
+
       <div className="flex items-center gap-2 pt-1">
         <button type="submit" className="btn-primary flex-1">
           {roleToAdd ? "Vzít si roli" : "Uložit"}

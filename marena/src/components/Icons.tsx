@@ -28,7 +28,9 @@ export type IconName =
   | "close"
   | "image"
   | "file"
-  | "globe";
+  | "globe"
+  | "merch"
+  | "cart";
 
 const PATHS: Record<IconName, ReactNode> = {
   board: (
@@ -188,6 +190,16 @@ const PATHS: Record<IconName, ReactNode> = {
       <circle cx="12" cy="12" r="9" />
       <path d="M3 12h18" />
       <path d="M12 3c2.5 2.4 3.8 5.6 3.8 9s-1.3 6.6-3.8 9c-2.5-2.4-3.8-5.6-3.8-9s1.3-6.6 3.8-9Z" />
+    </>
+  ),
+  merch: (
+    <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23Z" />
+  ),
+  cart: (
+    <>
+      <circle cx="9" cy="20" r="1.4" />
+      <circle cx="18" cy="20" r="1.4" />
+      <path d="M2.5 3h2.2l2.2 11.2a1.6 1.6 0 0 0 1.6 1.3h8.4a1.6 1.6 0 0 0 1.6-1.3L21 6.5H6" />
     </>
   ),
 };
