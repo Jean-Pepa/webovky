@@ -38,7 +38,10 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
 
   if (!ready) return <Loading />;
   if (!authed) return <Loading label="Přesměrování na přihlášení…" />;
-  if (!me) return <IdentityGate />;
+  // Žádné jméno, nebo přihlášený člověk bez záznamu v týmu (kromě správce) →
+  // vyžádej kontakt a přidej ho do seznamu „bez role".
+  const myMember = currentYear?.members.find((m) => sameName(m.name, me));
+  if (!me || (currentYear && canEditCurrentYear && !isAdmin(me) && !myMember)) return <IdentityGate />;
 
   const showMerch = canSeeMerch(currentYear, me);
 
@@ -255,8 +258,8 @@ function MeBadge() {
 // vyžádáme jméno + e-mail + telefon a založíme člena — ať se u rolí vyplní samo.
 // Pokud jméno už v týmu existuje (i z dřívějška), kontakt se předvyplní.
 function IdentityGate() {
-  const { setMe, currentYear, canEditCurrentYear, dispatch } = useStore();
-  const [name, setName] = useState("");
+  const { setMe, me, currentYear, canEditCurrentYear, dispatch } = useStore();
+  const [name, setName] = useState(me); // předvyplň jméno, když už je člověk přihlášený
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [err, setErr] = useState<string | null>(null);
