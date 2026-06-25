@@ -9,6 +9,7 @@ import { YearSwitcher } from "@/components/YearSwitcher";
 import { Icon, type IconName } from "@/components/Icons";
 import { isAdmin } from "@/lib/admin";
 import { canSeeMerch } from "@/lib/merch";
+import { sameName } from "@/lib/names";
 import { ArchiveModal } from "@/components/ArchiveModal";
 
 const NAV: { href: string; label: string; icon: IconName }[] = [
@@ -263,11 +264,11 @@ function IdentityGate() {
   // Ať automatické předvyplnění nepřepisuje to, co už člověk sám napsal.
   const touched = useRef({ email: false, phone: false });
 
-  const matched = currentYear?.members.find((m) => m.name === name.trim());
+  const matched = currentYear?.members.find((m) => sameName(m.name, name));
 
   function onNameChange(v: string) {
     setName(v);
-    const member = currentYear?.members.find((m) => m.name === v.trim());
+    const member = currentYear?.members.find((m) => sameName(m.name, v));
     if (member) {
       if (!touched.current.email && member.email) setEmail(member.email);
       if (!touched.current.phone && member.phone) setPhone(member.phone);
@@ -283,7 +284,7 @@ function IdentityGate() {
     setBusy(true);
     // Založ (nebo doplň) člena s kontaktem v aktuálním ročníku.
     if (currentYear && canEditCurrentYear) {
-      const existing = currentYear.members.find((m) => m.name === n);
+      const existing = currentYear.members.find((m) => sameName(m.name, n));
       if (existing) {
         await dispatch({ type: "updateMember", yearId: currentYear.id, memberId: existing.id, patch: { email: email.trim(), phone: phone.trim() } });
       } else {
