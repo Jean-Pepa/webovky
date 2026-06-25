@@ -109,6 +109,19 @@ export interface FinanceItem {
   createdAt: string;
 }
 
+// Denní kasa na hotovost — ráno se vloží základ (na vracení), večer se spočítá
+// stav; rozdíl (tržba) se automaticky zapíše do financí.
+export interface Cashbox {
+  id: string;
+  label?: string; // např. „Bar", „úterý"
+  opening: number; // ranní vklad (Kč)
+  openedAt: string; // ISO – kdy se kasa otevřela
+  closing?: number; // večerní stav kasy (Kč)
+  closedAt?: string; // ISO – kdy se uzavřela
+  financeId?: string; // navázaná finanční položka (tržba)
+  createdAt: string;
+}
+
 // Kuchyně — nahrané fotky a soubory (nákupní seznamy, menu na vaření, recepty…).
 export interface KitchenFile {
   id: string;
@@ -188,6 +201,7 @@ export interface Year {
   tasks: Task[];
   links?: LinkItem[]; // důležité kontakty a odkazy (volitelné kvůli zpětné kompatibilitě)
   finances?: FinanceItem[]; // pokladní kniha — příjmy a výdaje
+  cashboxes?: Cashbox[]; // denní kasy na hotovost (ráno vklad → večer tržba)
   shifts?: Shift[]; // provoz — rozpis směn, na které se lidi přihlašují
   invites?: Invite[]; // program — koho oslovit (přednášející, kapely)
   kitchen?: KitchenFile[]; // kuchyně — nahrané fotky/soubory (nákupy, menu…)

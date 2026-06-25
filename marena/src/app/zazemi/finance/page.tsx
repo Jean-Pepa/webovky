@@ -2,17 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
-import { fmtCZK, fmtDate, todayISO } from "@/lib/format";
+import { fmtCZK, fmtDate, fmtDateTime, todayISO } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { isAdmin } from "@/lib/admin";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
-import type { FinanceItem, FinanceKind } from "@/lib/types";
+import type { FinanceItem, FinanceKind, Cashbox } from "@/lib/types";
 
 const CATEGORIES = [
   "vklad",
+  "kasa",
   "bar",
   "lístky",
   "výzdoba",
@@ -46,6 +47,7 @@ function receiptsOf(item: FinanceItem): string[] {
 export default function FinancePage() {
   const { currentYear, me, dispatch } = useStore();
   const [open, setOpen] = useState(false);
+  const [kasaOpen, setKasaOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("vse");
   const [catFilter, setCatFilter] = useState<string>("");
 
@@ -138,9 +140,14 @@ export default function FinancePage() {
           <h1 className="font-display text-2xl font-semibold tracking-tight">Finance</h1>
         </div>
         {canEdit && (
-          <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
-            {open ? "Zavřít" : "+ Přidat položku"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button className="btn-secondary" onClick={() => setKasaOpen(true)}>
+              + Kasa
+            </button>
+            <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
+              {open ? "Zavřít" : "+ Přidat položku"}
+            </button>
+          </div>
         )}
       </div>
 
@@ -158,6 +165,29 @@ export default function FinancePage() {
         <SummaryCard label="Výdaje" value={totals.vydaje} sub={`zaplaceno ${fmtCZK(totals.vydaje - itemsOpen(items, "vydaj"))}`} tone="vydaj" />
         <SummaryCard label="Bilance" value={totals.bilance} sub={`v kase ${fmtCZK(totals.kasa)} · otevřené ${fmtCZK(totals.otevreno)}`} tone="bilance" />
       </div>
+
+      {/* Denní kasy */}
+      {((year.cashboxes?.length ?? 0) > 0 || canEdit) && (
+        <section className="card p-4">
+          <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold">🧰 Denní kasy</h2>
+          <p className="mb-3 text-xs text-ink-soft">
+            Ráno zapiš vklad (na vracení), večer doplň stav v kase — tržba (večer − ráno) se sama zapíše do financí.
+          </p>
+          {(year.cashboxes?.length ?? 0) === 0 ? (
+            <p className="text-sm text-ink-soft">Zatím žádná kasa. Klikni nahoře na tlačítko + Kasa.</p>
+          ) : (
+            <div className="space-y-2">
+              {[...(year.cashboxes ?? [])]
+                .sort((a, b) => b.openedAt.localeCompare(a.openedAt))
+                .map((c) => (
+                  <CashboxCard key={c.id} box={c} yearId={year.id} canEdit={canEdit} />
+                ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      <NewKasaModal open={kasaOpen} yearId={year.id} onClose={() => setKasaOpen(false)} />
 
       {/* Přidat */}
       {open && (
@@ -519,5 +549,116 @@ function ReceiptControl({ item, yearId, canEdit }: { item: FinanceItem; yearId: 
         )}
       </Modal>
     </div>
+  );
+}
+
+// Denní kasa: ráno vklad → večer stav; tržba se po uzavření zapíše do financí.
+function CashboxCard({ box, yearId, canEdit }: { box: Cashbox; yearId: string; canEdit: boolean }) {
+  const { dispatch } = useStore();
+  const [closeVal, setCloseVal] = useState("");
+  const closed = !!box.closedAt;
+  const trzba = closed && box.closing != null ? box.closing - box.opening : null;
+
+  function close() {
+    const n = parseAmount(closeVal);
+    if (closeVal.trim() === "" || !Number.isFinite(n)) return;
+    dispatch({ type: "closeCashbox", yearId, cashboxId: box.id, closing: n });
+    setCloseVal("");
+  }
+
+  return (
+    <div className={`rounded-2xl border p-3 ${closed ? "border-leaf/30 bg-leaf/[0.05]" : "border-amber-200 bg-amber-50"}`}>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="flex flex-wrap items-center gap-1.5 font-semibold">
+            Kasa{box.label ? ` — ${box.label}` : ""}
+            {closed ? (
+              <span className="chip bg-leaf/15 text-leaf-700">uzavřeno</span>
+            ) : (
+              <span className="chip bg-amber-100 text-amber-800">otevřeno</span>
+            )}
+          </p>
+          <p className="text-xs text-ink-soft">
+            Ráno {fmtCZK(box.opening)} · {fmtDateTime(box.openedAt)}
+            {closed && box.closing != null && ` → Večer ${fmtCZK(box.closing)} · ${fmtDateTime(box.closedAt!)}`}
+          </p>
+        </div>
+        {canEdit && <DeleteButton onConfirm={() => dispatch({ type: "removeCashbox", yearId, cashboxId: box.id })} />}
+      </div>
+
+      {closed ? (
+        trzba != null && (
+          <p className="mt-1.5 text-sm">
+            Tržba: <span className={`font-display font-bold ${trzba >= 0 ? "text-leaf-700" : "text-red-600"}`}>{fmtCZK(trzba)}</span>
+            <span className="ml-2 text-xs text-ink-soft">✓ zapsáno do financí</span>
+          </p>
+        )
+      ) : canEdit ? (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <input
+            className="input w-44"
+            inputMode="numeric"
+            placeholder="Večer v kase (Kč)"
+            value={closeVal}
+            onChange={(e) => setCloseVal(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && close()}
+          />
+          <button className="btn-primary" onClick={close} disabled={!closeVal.trim()}>
+            Uzavřít a zapsat tržbu
+          </button>
+        </div>
+      ) : (
+        <p className="mt-1 text-xs text-ink-soft">Kasa je otevřená.</p>
+      )}
+    </div>
+  );
+}
+
+function NewKasaModal({ open, yearId, onClose }: { open: boolean; yearId: string; onClose: () => void }) {
+  const { dispatch } = useStore();
+  const [label, setLabel] = useState("");
+  const [opening, setOpening] = useState("");
+
+  function create() {
+    const n = parseAmount(opening);
+    if (n <= 0) return;
+    dispatch({ type: "openCashbox", yearId, label: label.trim() || undefined, opening: n });
+    setLabel("");
+    setOpening("");
+    onClose();
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Nová kasa — ranní vklad">
+      <div className="space-y-3">
+        <p className="text-sm text-ink-soft">
+          Zapiš ranní vklad do kasy (základ na vracení). Večer pak u kasy doplníš stav a tržba se sama zapíše do financí.
+        </p>
+        <div>
+          <label className="label">Označení (nepovinné)</label>
+          <input className="input" placeholder="např. Bar, úterý" value={label} onChange={(e) => setLabel(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Ranní vklad (Kč)</label>
+          <input
+            className="input"
+            inputMode="numeric"
+            placeholder="např. 2000"
+            value={opening}
+            onChange={(e) => setOpening(e.target.value)}
+            autoFocus
+            onKeyDown={(e) => e.key === "Enter" && create()}
+          />
+        </div>
+        <div className="flex items-center gap-2 pt-1">
+          <button className="btn-primary flex-1" onClick={create} disabled={!opening.trim()}>
+            Otevřít kasu
+          </button>
+          <button className="btn-ghost" onClick={onClose}>
+            Zrušit
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }

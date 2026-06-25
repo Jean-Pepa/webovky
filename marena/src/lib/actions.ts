@@ -44,6 +44,9 @@ export type Action =
   | { type: "addLink"; yearId: string; label: string; value: string; folder?: string; note?: string }
   | { type: "removeLink"; yearId: string; linkId: string }
   | { type: "addFinance"; yearId: string; kind: FinanceKind; label: string; amount: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string }
+  | { type: "openCashbox"; yearId: string; label?: string; opening: number }
+  | { type: "closeCashbox"; yearId: string; cashboxId: string; closing: number }
+  | { type: "removeCashbox"; yearId: string; cashboxId: string }
   | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string; receiptId?: string; receiptIds?: string[] } }
   | { type: "toggleFinancePaid"; yearId: string; financeId: string }
   | { type: "removeFinance"; yearId: string; financeId: string }
@@ -69,6 +72,13 @@ export type Action =
 
 function now(): string {
   return new Date().toISOString();
+}
+
+// "HH:MM" z ISO časového razítka.
+function hhmm(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
 // Očistí seznam textů (velikosti, barvy) — ořízne a vyhodí prázdné; prázdný → undefined.
@@ -381,6 +391,51 @@ export function applyAction(db: DB, a: Action): DB {
       }));
     case "removeFinance":
       return mapYear(db, a.yearId, (y) => ({ ...y, finances: (y.finances ?? []).filter((f) => f.id !== a.financeId) }));
+
+    case "openCashbox":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        cashboxes: [
+          { id: uid("cb_"), label: a.label?.trim() || undefined, opening: Math.round(a.opening), openedAt: now(), createdAt: now() },
+          ...(y.cashboxes ?? []),
+        ],
+      }));
+    case "closeCashbox":
+      return mapYear(db, a.yearId, (y) => {
+        const box = (y.cashboxes ?? []).find((c) => c.id === a.cashboxId);
+        if (!box || box.closedAt) return y; // neexistuje nebo už uzavřená
+        const closing = Math.round(a.closing);
+        const trzba = closing - box.opening; // tržba = večer − ráno
+        const closedAt = now();
+        const day = box.openedAt.slice(0, 10); // YYYY-MM-DD
+        const financeId = uid("f_");
+        const lbl = box.label ? ` — ${box.label}` : "";
+        const fin = {
+          id: financeId,
+          kind: (trzba >= 0 ? "prijem" : "vydaj") as FinanceKind,
+          label: `Kasa${lbl}`,
+          amount: Math.abs(trzba),
+          category: "kasa",
+          paid: true,
+          date: day,
+          note: `Kasa${box.label ? " " + box.label : ""}: ráno ${box.opening} Kč (${hhmm(box.openedAt)}) → večer ${closing} Kč (${hhmm(closedAt)}); tržba ${trzba} Kč`,
+          createdAt: now(),
+        };
+        return {
+          ...y,
+          cashboxes: (y.cashboxes ?? []).map((c) => (c.id === a.cashboxId ? { ...c, closing, closedAt, financeId } : c)),
+          finances: [fin, ...(y.finances ?? [])],
+        };
+      });
+    case "removeCashbox":
+      return mapYear(db, a.yearId, (y) => {
+        const box = (y.cashboxes ?? []).find((c) => c.id === a.cashboxId);
+        return {
+          ...y,
+          cashboxes: (y.cashboxes ?? []).filter((c) => c.id !== a.cashboxId),
+          finances: box?.financeId ? (y.finances ?? []).filter((f) => f.id !== box.financeId) : y.finances,
+        };
+      });
 
     case "addShift":
       return mapYear(db, a.yearId, (y) => ({
