@@ -138,10 +138,10 @@
    plno (zabraná, dokud ji držitel sám neuvolní). */
 @keyframes marena-glow {
   0%, 100% {
-    box-shadow: 0 0 0 1.5px rgba(194, 14, 44, 0.3), 0 0 16px rgba(194, 14, 44, 0.18);
+    box-shadow: 0 0 0 1.5px rgba(48, 161, 78, 0.3), 0 0 16px rgba(48, 161, 78, 0.18);
   }
   50% {
-    box-shadow: 0 0 0 1.5px rgba(194, 14, 44, 0.5), 0 0 26px rgba(194, 14, 44, 0.36);
+    box-shadow: 0 0 0 1.5px rgba(48, 161, 78, 0.5), 0 0 26px rgba(48, 161, 78, 0.36);
   }
 }
 .role-taken {
@@ -150,7 +150,7 @@
 @media (prefers-reduced-motion: reduce) {
   .role-taken {
     animation: none;
-    box-shadow: 0 0 0 1.5px rgba(194, 14, 44, 0.45);
+    box-shadow: 0 0 0 1.5px rgba(48, 161, 78, 0.45);
   }
 }
 
