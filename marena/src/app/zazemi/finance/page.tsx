@@ -286,16 +286,19 @@ export default function FinancePage() {
             {l}
           </button>
         ))}
-        {/* Samostatné tlačítko + počítadlo pro Merch */}
-        <button
-          onClick={() => setCatFilter((c) => (c === "merch" ? "" : "merch"))}
-          className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
-            catFilter === "merch" ? "bg-marigold-600 text-white" : "bg-marigold-50 text-marigold-800 ring-1 ring-marigold-200 hover:bg-marigold-100"
-          }`}
-          title="Zobrazit jen merch — tržba z vyřízených objednávek"
-        >
-          🛍️ Merch · {fmtCZK(merchTotal)}
-        </button>
+        {/* Záložky pro kategorie merch a kasa — stejný vzhled jako ostatní */}
+        {([
+          ["merch", "Merch"],
+          ["kasa", "Kasy"],
+        ] as [string, string][]).map(([cat, l]) => (
+          <button
+            key={cat}
+            onClick={() => setCatFilter((c) => (c === cat ? "" : cat))}
+            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${catFilter === cat ? "bg-ink text-white" : "bg-white text-ink-soft ring-1 ring-black/10 hover:bg-paper2"}`}
+          >
+            {l}
+          </button>
+        ))}
         {byCategory.length > 0 && (
           <select className="ml-auto rounded-full border border-black/10 bg-white px-3 py-1.5 text-sm text-ink-soft" value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
             <option value="">Všechny kategorie</option>
