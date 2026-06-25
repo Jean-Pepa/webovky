@@ -38,7 +38,7 @@ export default function TymPage() {
     return [...holders].sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0].id;
   };
 
-  // Odebrání role je přímé; přidání projde modálem na doplnění kontaktu.
+  // Odebrání role je přímé; přidání projde modálem jen u nového člověka.
   async function removeRoleFromMe(roleId: string) {
     if (!myMember) return;
     await dispatch({
@@ -46,6 +46,21 @@ export default function TymPage() {
       yearId: year.id,
       memberId: myMember.id,
       patch: { roleIds: myMember.roleIds.filter((r) => r !== roleId) },
+    });
+  }
+
+  // Kdo už má účet, přidá si další roli na jeden klik (bez vyplňování kontaktu).
+  async function takeRoleDirect(roleId: string) {
+    if (!myMember) return;
+    await dispatch({
+      type: "takeRole",
+      yearId: year.id,
+      memberId: myMember.id,
+      name: myMember.name,
+      email: myMember.email ?? "",
+      phone: myMember.phone ?? "",
+      roleId,
+      asLead: false,
     });
   }
 
@@ -217,7 +232,7 @@ export default function TymPage() {
             ) : (
               <button
                 className={taken ? "btn-secondary" : "btn-primary"}
-                onClick={() => setModal({ roleToAdd: r.id })}
+                onClick={() => (myMember ? takeRoleDirect(r.id) : setModal({ roleToAdd: r.id }))}
               >
                 {taken ? "Přidat se taky" : "Vzít si"}
               </button>
