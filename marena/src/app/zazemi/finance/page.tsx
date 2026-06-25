@@ -127,6 +127,10 @@ export default function FinancePage() {
   // Finance smí upravovat jen správce (Pan_Vyskočil). Ostatní mají jen náhled.
   const canEdit = isAdmin(me);
 
+  // Kasy: kolik se ráno vložilo (vklady) a kolik se vydělalo (tržba z uzavřených).
+  const kasaOpenings = (year.cashboxes ?? []).reduce((s, c) => s + c.opening, 0);
+  const kasaTrzba = (year.cashboxes ?? []).reduce((s, c) => s + (c.closedAt && c.closing != null ? c.closing - c.opening : 0), 0);
+
   async function add() {
     const num = parseAmount(amount);
     if (!label.trim() || num <= 0 || !year || !canEdit) return;
@@ -184,7 +188,21 @@ export default function FinancePage() {
       {/* Denní kasy */}
       {((year.cashboxes?.length ?? 0) > 0 || canEdit) && (
         <section className="card p-4">
-          <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold">🧰 Denní kasy</h2>
+          <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+            🧰 Denní kasy
+            {(year.cashboxes?.length ?? 0) > 0 && (
+              <>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-sm">
+                  <span className="text-xs font-normal text-ink-soft">vloženo</span>
+                  <span className="font-bold text-ink">{fmtCZK(kasaOpenings)}</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf/12 px-2.5 py-0.5 text-sm">
+                  <span className="text-xs font-normal text-leaf-700">tržba</span>
+                  <span className="font-bold text-leaf-700">+{fmtCZK(kasaTrzba)}</span>
+                </span>
+              </>
+            )}
+          </h2>
           <p className="mb-3 text-xs text-ink-soft">
             Ráno zapiš vklad (na vracení), večer doplň stav v kase — tržba (večer − ráno) se sama zapíše do financí.
           </p>
