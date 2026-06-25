@@ -355,6 +355,7 @@ export default function TymPage() {
         open={modal !== null}
         roleToAdd={modal?.roleToAdd}
         roleEmpty={modal?.roleToAdd ? takenBy(modal.roleToAdd).length === 0 : true}
+        canChooseLead={modal?.roleToAdd ? takenBy(modal.roleToAdd).length === 0 || admin : false}
         currentLeadName={modal?.roleToAdd ? year.members.find((m) => m.id === leadIdOf(modal.roleToAdd!))?.name : undefined}
         initial={{ name: myMember?.name ?? me, email: myMember?.email ?? "", phone: myMember?.phone ?? "" }}
         onClose={() => setModal(null)}
@@ -440,6 +441,7 @@ function ProfileModal({
   open,
   roleToAdd,
   roleEmpty,
+  canChooseLead,
   currentLeadName,
   initial,
   onClose,
@@ -448,6 +450,7 @@ function ProfileModal({
   open: boolean;
   roleToAdd?: string;
   roleEmpty: boolean;
+  canChooseLead: boolean;
   currentLeadName?: string;
   initial: { name: string; email: string; phone: string };
   onClose: () => void;
@@ -461,6 +464,7 @@ function ProfileModal({
         initial={initial}
         roleToAdd={roleToAdd}
         roleEmpty={roleEmpty}
+        canChooseLead={canChooseLead}
         currentLeadName={currentLeadName}
         onSave={onSave}
         onClose={onClose}
@@ -473,6 +477,7 @@ function ProfileForm({
   initial,
   roleToAdd,
   roleEmpty,
+  canChooseLead,
   currentLeadName,
   onSave,
   onClose,
@@ -480,6 +485,7 @@ function ProfileForm({
   initial: { name: string; email: string; phone: string };
   roleToAdd?: string;
   roleEmpty: boolean;
+  canChooseLead: boolean;
   currentLeadName?: string;
   onSave: (d: { name: string; email: string; phone: string; roleToAdd?: string; asLead?: boolean }) => void;
   onClose: () => void;
@@ -496,7 +502,8 @@ function ProfileForm({
       onSubmit={(e) => {
         e.preventDefault();
         if (!name.trim()) return;
-        onSave({ name, email, phone, roleToAdd, asLead });
+        // Vedoucího smí zvolit jen když je funkce volná, nebo je to správce.
+        onSave({ name, email, phone, roleToAdd, asLead: canChooseLead ? asLead : false });
       }}
     >
       <p className="text-sm text-ink-soft">Doplň prosím jméno, e-mail a telefon, ať tě ostatní v týmu zastihnou.</p>
@@ -513,38 +520,43 @@ function ProfileForm({
         <input className="input" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+420…" />
       </div>
 
-      {roleToAdd && (
-        <div>
-          <label className="label">Tvoje pozice ve funkci</label>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setAsLead(true)}
-              className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition ${
-                asLead ? "bg-red-500 text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"
-              }`}
-            >
-              👑 Vedoucí
-            </button>
-            <button
-              type="button"
-              onClick={() => setAsLead(false)}
-              className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition ${
-                !asLead ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"
-              }`}
-            >
-              Pomocník
-            </button>
+      {roleToAdd &&
+        (canChooseLead ? (
+          <div>
+            <label className="label">Tvoje pozice ve funkci</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setAsLead(true)}
+                className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition ${
+                  asLead ? "bg-red-500 text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"
+                }`}
+              >
+                👑 Vedoucí
+              </button>
+              <button
+                type="button"
+                onClick={() => setAsLead(false)}
+                className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition ${
+                  !asLead ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"
+                }`}
+              >
+                Pomocník
+              </button>
+            </div>
+            <p className="mt-1.5 text-xs text-ink-soft">
+              {roleEmpty
+                ? "Tuto funkci zatím nikdo nedrží — můžeš se stát jejím vedoucím."
+                : asLead
+                  ? `Jako správce převezmeš vedení${currentLeadName ? ` po: ${currentLeadName}` : ""}.`
+                  : `Vedoucí${currentLeadName ? `: ${currentLeadName}` : ""}. Přidáš se jako pomocník.`}
+            </p>
           </div>
-          <p className="mt-1.5 text-xs text-ink-soft">
-            {roleEmpty
-              ? "Tuto funkci zatím nikdo nedrží — můžeš se stát jejím vedoucím."
-              : asLead
-                ? `Převezmeš vedení${currentLeadName ? ` po: ${currentLeadName}` : ""}.`
-                : `Vedoucí${currentLeadName ? `: ${currentLeadName}` : ""}. Přidáš se jako pomocník.`}
+        ) : (
+          <p className="rounded-xl bg-paper2 px-3 py-2 text-xs text-ink-soft">
+            🔒 Vedoucí{currentLeadName ? `: ${currentLeadName}` : " už je obsazený"}. Přidáš se jako <strong>pomocník</strong> — vedení může změnit jen správce.
           </p>
-        </div>
-      )}
+        ))}
 
       <div className="flex items-center gap-2 pt-1">
         <button type="submit" className="btn-primary flex-1">
