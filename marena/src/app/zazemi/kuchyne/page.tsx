@@ -8,6 +8,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, readFileAsDataUrl, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { fmtDate } from "@/lib/format";
 import { uid } from "@/lib/id";
+import { isAdmin } from "@/lib/admin";
 import type { KitchenFile } from "@/lib/types";
 
 const CATS = ["Nákupy", "Menu", "Ostatní"];
@@ -147,10 +148,23 @@ export default function KuchynePage() {
 }
 
 function KitchenCard({ item, yearId, editable }: { item: KitchenFile; yearId: string; editable: boolean }) {
-  const { configured, dispatch } = useStore();
+  const { configured, dispatch, me } = useStore();
+  const admin = isAdmin(me);
   const [viewing, setViewing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(false);
+
+  async function download() {
+    setBusy(true);
+    setErr(false);
+    const url = await loadReceipt(item.blobId, configured);
+    setBusy(false);
+    if (!url) { setErr(true); return; }
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = item.fileName || `${item.label || "foto"}.jpg`;
+    a.click();
+  }
 
   async function open() {
     setBusy(true);
@@ -191,22 +205,22 @@ function KitchenCard({ item, yearId, editable }: { item: KitchenFile; yearId: st
         </div>
         {editable && <DeleteButton onConfirm={remove} />}
       </div>
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         <button className="btn-secondary px-3 py-1.5 text-xs" onClick={open} disabled={busy}>
           {busy ? "Načítám…" : item.fileKind === "image" ? "Zobrazit foto" : "Stáhnout soubor"}
         </button>
+        {admin && item.fileKind === "image" && (
+          <button className="btn-ghost px-2.5 py-1.5 text-xs" onClick={download} disabled={busy} title="Stáhnout foto">
+            <Icon name="download" className="h-4 w-4" /> Stáhnout
+          </button>
+        )}
         {err && <span className="text-xs text-red-600">nepovedlo se</span>}
       </div>
 
       <Modal open={viewing !== null} onClose={() => setViewing(null)} title={item.label}>
         {viewing && (
-          <div className="space-y-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={viewing} alt={item.label} className="max-h-[70vh] w-full rounded-xl object-contain" />
-            <a href={viewing} target="_blank" rel="noreferrer" className="btn-secondary w-full">
-              Otevřít v plné velikosti
-            </a>
-          </div>
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={viewing} alt={item.label} className="max-h-[78vh] w-full rounded-xl object-contain" />
         )}
       </Modal>
     </div>
