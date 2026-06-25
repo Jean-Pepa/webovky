@@ -48,6 +48,7 @@ export default function FinancePage() {
   const { currentYear, me, dispatch } = useStore();
   const [open, setOpen] = useState(false);
   const [kasaOpen, setKasaOpen] = useState(false);
+  const [kasyExpanded, setKasyExpanded] = useState(false);
   const [filter, setFilter] = useState<Filter>("vse");
   const [catFilter, setCatFilter] = useState<string>("");
 
@@ -182,13 +183,33 @@ export default function FinancePage() {
           {(year.cashboxes?.length ?? 0) === 0 ? (
             <p className="text-sm text-ink-soft">Zatím žádná kasa. Klikni nahoře na tlačítko + Kasa.</p>
           ) : (
-            <div className="space-y-2">
-              {[...(year.cashboxes ?? [])]
-                .sort((a, b) => b.openedAt.localeCompare(a.openedAt))
-                .map((c) => (
-                  <CashboxCard key={c.id} box={c} yearId={year.id} canEdit={canEdit} />
-                ))}
-            </div>
+            (() => {
+              const boxes = [...(year.cashboxes ?? [])].sort((a, b) => b.openedAt.localeCompare(a.openedAt));
+              const collapsible = boxes.length > 1;
+              return (
+                <>
+                  <div className="relative">
+                    <div className={`space-y-2 ${collapsible && !kasyExpanded ? "max-h-[150px] overflow-hidden" : ""}`}>
+                      {boxes.map((c) => (
+                        <CashboxCard key={c.id} box={c} yearId={year.id} canEdit={canEdit} />
+                      ))}
+                    </div>
+                    {collapsible && !kasyExpanded && (
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-white to-transparent" />
+                    )}
+                  </div>
+                  {collapsible && (
+                    <button
+                      onClick={() => setKasyExpanded((v) => !v)}
+                      className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl py-1.5 text-sm font-medium text-ink-soft transition hover:bg-black/[0.04]"
+                    >
+                      {kasyExpanded ? "Sbalit" : `Zobrazit další kasy (${boxes.length - 1})`}
+                      <Icon name="chevron" className={`h-4 w-4 transition-transform ${kasyExpanded ? "rotate-180" : ""}`} />
+                    </button>
+                  )}
+                </>
+              );
+            })()
           )}
         </section>
       )}

@@ -30,7 +30,8 @@ export type IconName =
   | "file"
   | "globe"
   | "merch"
-  | "cart";
+  | "cart"
+  | "chevron";
 
 const PATHS: Record<IconName, ReactNode> = {
   board: (
@@ -202,6 +203,7 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M2.5 3h2.2l2.2 11.2a1.6 1.6 0 0 0 1.6 1.3h8.4a1.6 1.6 0 0 0 1.6-1.3L21 6.5H6" />
     </>
   ),
+  chevron: <path d="m6 9 6 6 6-6" />,
 };
 
 export function Icon({ name, className = "h-4 w-4" }: { name: IconName; className?: string }) {
