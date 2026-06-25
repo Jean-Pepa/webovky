@@ -111,8 +111,8 @@ export default function NastenkaPage() {
                       {p.author} · {fmtRelative(p.createdAt)}
                     </span>
                   </div>
-                  <h3 className="font-display text-lg font-semibold">{p.title}</h3>
-                  {p.body && <p className="mt-1 whitespace-pre-wrap text-sm text-ink-soft">{p.body}</p>}
+                  <h3 className="break-words font-display text-lg font-semibold">{p.title}</h3>
+                  {p.body && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-ink-soft">{p.body}</p>}
                   <div className="mt-2 flex items-center gap-2">
                     <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "togglePin", yearId: year.id, postId: p.id })}>
                       {p.pinned ? "Odepnout" : "Připnout"}

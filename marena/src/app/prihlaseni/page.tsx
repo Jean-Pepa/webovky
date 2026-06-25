@@ -49,7 +49,7 @@ export default function LoginPage() {
               required
               placeholder="Heslo do zázemí"
               onChange={() => setError(false)}
-              className="w-full rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 text-sm text-white placeholder:text-white/50 outline-none transition focus:border-marigold-300 focus:ring-2 focus:ring-marigold-300/30"
+              className="w-full rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 text-base text-white placeholder:text-white/50 outline-none transition focus:border-marigold-300 focus:ring-2 focus:ring-marigold-300/30 sm:text-sm"
               autoFocus
             />
             {error && (

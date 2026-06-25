@@ -111,14 +111,14 @@ export default function TymPage() {
           {sameName(p.name, me) && <span className="chip bg-leaf text-white">to jsi ty</span>}
         </p>
         {(p.phone || p.email) ? (
-          <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
+          <p className="mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
             {p.phone && (
               <a href={`tel:${p.phone}`} className="hover:text-marigold-700">
                 📞 {p.phone}
               </a>
             )}
             {p.email && (
-              <a href={`mailto:${p.email}`} className="hover:text-marigold-700">
+              <a href={`mailto:${p.email}`} className="min-w-0 break-all hover:text-marigold-700">
                 ✉️ {p.email}
               </a>
             )}
@@ -272,7 +272,7 @@ export default function TymPage() {
 
       <div className={`grid gap-6 ${admin ? "lg:grid-cols-[1fr_320px_200px]" : "lg:grid-cols-[1fr_320px]"}`}>
         {/* Vlevo: můj profil + funkce */}
-        <div className="space-y-8">
+        <div className="min-w-0 space-y-8">
           {/* Já v týmu */}
           <section className="card p-5">
             <div className="flex items-center justify-between gap-3">
@@ -284,8 +284,8 @@ export default function TymPage() {
               )}
             </div>
             {myMember ? (
-              <div className="mt-3">
-                <p className="font-semibold">{myMember.name}</p>
+              <div className="mt-3 min-w-0">
+                <p className="break-words font-semibold">{myMember.name}</p>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {myMember.roleIds.length === 0 ? (
                     <span className="text-sm text-ink-soft">Zatím bez role — vyber si níže.</span>
@@ -301,7 +301,7 @@ export default function TymPage() {
                   )}
                 </div>
                 {(myMember.email || myMember.phone) && (
-                  <p className="mt-2 text-sm text-ink-soft">
+                  <p className="mt-2 break-words text-sm text-ink-soft">
                     {myMember.email && <span>✉️ {myMember.email}</span>}
                     {myMember.email && myMember.phone && <span> · </span>}
                     {myMember.phone && <span>📞 {myMember.phone}</span>}
@@ -337,7 +337,7 @@ export default function TymPage() {
         </div>
 
         {/* Vpravo: počítadlo + seznam všech přihlášených + jejich role */}
-        <aside className="h-fit space-y-4 lg:sticky lg:top-4">
+        <aside className="h-fit min-w-0 space-y-4 lg:sticky lg:top-4">
           <div className="flex items-center gap-3 rounded-2xl bg-marigold-600 px-5 py-3 text-white shadow-sm">
             <Icon name="users" className="h-8 w-8 shrink-0" />
             <div className="leading-none">
@@ -400,7 +400,7 @@ export default function TymPage() {
 
         {/* Jen pro správce: čistý seznam jmen pod sebou */}
         {admin && (
-          <aside className="h-fit lg:sticky lg:top-4">
+          <aside className="h-fit min-w-0 lg:sticky lg:top-4">
             <section className="card p-4">
               <h2 className="mb-3 font-display text-base font-semibold">Jména ({year.members.length})</h2>
               {year.members.length === 0 ? (
