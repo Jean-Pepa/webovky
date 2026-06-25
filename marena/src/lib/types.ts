@@ -174,6 +174,7 @@ export interface Year {
   plannedPeople?: number; // plánovaný počet účastníků (pro kalkulaci financí)
   deposit?: number; // třídní vklad na osobu (Kč)
   members: Member[];
+  roleLeads?: Record<string, string>; // roleId → memberId vedoucího (první = vedoucí, ostatní pomocníci)
   posts: Post[];
   polls: Poll[];
   events: CalEvent[];
