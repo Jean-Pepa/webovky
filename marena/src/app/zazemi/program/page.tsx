@@ -108,7 +108,14 @@ export default function ProgramPage() {
                 <span className="chip">{items.length}</span>
               </h2>
               <div className="card overflow-hidden">
-                <div className="overflow-x-auto">
+                {/* Mobil: karty */}
+                <div className="divide-y divide-black/[0.06] md:hidden">
+                  {items.map((i) => (
+                    <InviteCard key={i.id} invite={i} yearId={year.id} />
+                  ))}
+                </div>
+                {/* Desktop: tabulka */}
+                <div className="hidden overflow-x-auto md:block">
                   <table className="w-full min-w-[820px] border-collapse text-sm">
                     <thead>
                       <tr className="border-b border-black/[0.06] text-left text-xs font-medium uppercase tracking-wide text-ink-soft">
@@ -138,7 +145,8 @@ export default function ProgramPage() {
   );
 }
 
-function InviteRow({ invite, yearId }: { invite: Invite; yearId: string }) {
+// Sdílený stav pozvánky — používá řádek tabulky (desktop) i karta (mobil).
+function useInviteRow(invite: Invite, yearId: string) {
   const { dispatch } = useStore();
   const [edit, setEdit] = useState(false);
   const [name, setName] = useState(invite.name);
@@ -169,6 +177,74 @@ function InviteRow({ invite, yearId }: { invite: Invite; yearId: string }) {
     });
     setEdit(false);
   }
+
+  return { dispatch, edit, setEdit, name, setName, link, setLink, priority, setPriority, availability, setAvailability, price, setPrice, confirmedDate, setConfirmedDate, cycleInterest, save };
+}
+
+// Mobilní karta jedné pozvánky (na úzkém displeji místo tabulky).
+function InviteCard({ invite, yearId }: { invite: Invite; yearId: string }) {
+  const s = useInviteRow(invite, yearId);
+  const im = INTEREST_META[invite.interest];
+
+  if (s.edit) {
+    return (
+      <div className="space-y-2 bg-paper2/40 p-3">
+        <input className="input" value={s.name} onChange={(e) => s.setName(e.target.value)} placeholder="Jméno" />
+        <input className="input" value={s.link} onChange={(e) => s.setLink(e.target.value)} placeholder="Odkaz" />
+        <div className="grid grid-cols-2 gap-2">
+          <input className="input" inputMode="numeric" value={s.priority} onChange={(e) => s.setPriority(e.target.value)} placeholder="Priorita č." />
+          <input className="input" value={s.price} onChange={(e) => s.setPrice(e.target.value)} placeholder="Cena" />
+          <input className="input" value={s.availability} onChange={(e) => s.setAvailability(e.target.value)} placeholder="Kdy může" />
+          <input className="input" value={s.confirmedDate} onChange={(e) => s.setConfirmedDate(e.target.value)} placeholder="Potvrzeno" />
+        </div>
+        <div className="flex gap-2 pt-0.5">
+          <button className="btn-primary flex-1 py-2 text-sm" onClick={s.save}>Uložit</button>
+          <button className="btn-ghost py-2 text-sm" onClick={() => s.setEdit(false)}>Zrušit</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-3">
+      <div className="flex items-start gap-2">
+        {invite.priority != null && <span className="chip shrink-0">{invite.priority}</span>}
+        <div className="min-w-0 flex-1">
+          <span className="font-medium">{invite.name}</span>
+          {invite.link && (
+            <a href={invite.link.startsWith("http") ? invite.link : `https://${invite.link}`} target="_blank" rel="noreferrer" className="ml-2 text-xs font-medium text-marigold-700 hover:underline">
+              odkaz ↗
+            </a>
+          )}
+          <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
+            {invite.availability && <span>🗓 {invite.availability}</span>}
+            {invite.price && <span>💰 {invite.price}</span>}
+            {invite.confirmedDate && <span className="font-medium text-leaf-700">✓ {invite.confirmedDate}</span>}
+          </div>
+        </div>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => s.dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { contacted: !invite.contacted } })}
+          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${invite.contacted ? "bg-leaf/15 text-leaf-700" : "bg-paper2 text-ink-soft"}`}
+        >
+          {invite.contacted ? "Osloveno ✓" : "Neosloveno"}
+        </button>
+        <button onClick={s.cycleInterest} className={`rounded-full px-2.5 py-1 text-xs font-medium ${im.cls}`}>
+          {im.label}
+        </button>
+        <div className="ml-auto flex items-center gap-1">
+          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => s.setEdit(true)}>Upravit</button>
+          <DeleteButton onConfirm={() => s.dispatch({ type: "removeInvite", yearId, inviteId: invite.id })} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InviteRow({ invite, yearId }: { invite: Invite; yearId: string }) {
+  const { dispatch, edit, setEdit, name, setName, link, setLink, priority, setPriority, availability, setAvailability, price, setPrice, confirmedDate, setConfirmedDate, cycleInterest, save } =
+    useInviteRow(invite, yearId);
 
   if (edit) {
     return (

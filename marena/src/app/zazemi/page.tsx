@@ -58,7 +58,7 @@ export default function NastenkaPage() {
     <div className="space-y-6">
       <Onboarding />
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-      <div className="space-y-5">
+      <div className="min-w-0 space-y-5">
         <div className="flex items-end justify-between gap-3">
           <div>
             <h1 className="font-display text-2xl font-semibold">Nástěnka</h1>
@@ -128,7 +128,7 @@ export default function NastenkaPage() {
         )}
       </div>
 
-      <aside className="space-y-4">
+      <aside className="min-w-0 space-y-4">
         <WidgetLinks openPolls={openPolls} myTasks={myTasks} myShifts={myShifts} />
         {hasFinance && (
           <Link href="/zazemi/finance" className="card block p-4 transition hover:border-black/10">
