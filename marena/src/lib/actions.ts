@@ -61,6 +61,7 @@ export type Action =
   | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; note?: string } }
   | { type: "removeMerchProduct"; yearId: string; productId: string }
   | { type: "addMerchOrder"; yearId: string; name: string; phone?: string; email?: string; items: MerchOrderItem[]; note?: string }
+  | { type: "toggleMerchOrderDone"; yearId: string; orderId: string }
   | { type: "removeMerchOrder"; yearId: string; orderId: string }
   // Uvolnění místa: smaže všechny fotky/účtenky ročníku (reference v DB; samotné
   // bloby maže klient zvlášť). Texty (finance, popisy) zůstávají.
@@ -528,10 +529,16 @@ export function applyAction(db: DB, a: Action): DB {
               qty: Math.max(1, Math.round(it.qty || 1)),
             })),
             note: a.note?.trim() || undefined,
+            done: false,
             createdAt: now(),
           },
           ...(y.merchOrders ?? []),
         ],
+      }));
+    case "toggleMerchOrderDone":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        merchOrders: (y.merchOrders ?? []).map((o) => (o.id === a.orderId ? { ...o, done: !o.done } : o)),
       }));
     case "removeMerchOrder":
       return mapYear(db, a.yearId, (y) => ({ ...y, merchOrders: (y.merchOrders ?? []).filter((o) => o.id !== a.orderId) }));

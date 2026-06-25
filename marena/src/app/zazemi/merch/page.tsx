@@ -9,6 +9,7 @@ import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/re
 import { fmtCZK, fmtDate } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { canSeeMerch } from "@/lib/merch";
+import { isAdmin } from "@/lib/admin";
 import type { MerchProduct, MerchOrder } from "@/lib/types";
 
 export default function MerchPage() {
@@ -16,11 +17,13 @@ export default function MerchPage() {
   const year = currentYear;
   if (!year) return null;
 
-  // Merch vidí každý; spravovat (přidávat/měnit/mazat) může jen role Merch a správce.
+  // Merch vidí každý; spravovat (přidávat/měnit) může role Merch a správce, mazat objednávky jen správce.
   const canManage = canSeeMerch(year, me) && canEditCurrentYear;
+  const canDeleteOrders = isAdmin(me) && canEditCurrentYear;
 
   const products = year.merch ?? [];
   const orders = [...(year.merchOrders ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const pending = orders.filter((o) => !o.done).length;
 
   return (
     <div className="space-y-6">
@@ -61,8 +64,14 @@ export default function MerchPage() {
       {/* Objednávky + QR */}
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         <section className="space-y-3">
-          <h2 className="font-display text-lg font-semibold">
-            Objednávky <span className="text-sm font-normal text-ink-soft">({orders.length})</span>
+          <h2 className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+            Objednávky
+            <span className="grid h-8 min-w-8 place-items-center rounded-full bg-marigold-600 px-2.5 font-display text-base font-bold text-white">
+              {orders.length}
+            </span>
+            {pending > 0 && (
+              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">{pending} čeká</span>
+            )}
           </h2>
           {orders.length === 0 ? (
             <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
@@ -71,7 +80,7 @@ export default function MerchPage() {
           ) : (
             <div className="space-y-2">
               {orders.map((o) => (
-                <OrderRow key={o.id} order={o} yearId={year.id} canManage={canManage} />
+                <OrderRow key={o.id} order={o} yearId={year.id} canManage={canManage} canDelete={canDeleteOrders} />
               ))}
             </div>
           )}
@@ -316,41 +325,62 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
   );
 }
 
-function OrderRow({ order, yearId, canManage }: { order: MerchOrder; yearId: string; canManage: boolean }) {
+function OrderRow({
+  order,
+  yearId,
+  canManage,
+  canDelete,
+}: {
+  order: MerchOrder;
+  yearId: string;
+  canManage: boolean;
+  canDelete: boolean;
+}) {
   const { dispatch } = useStore();
+  const itemsText = order.items
+    .map((it) => `${it.qty}× ${it.name}${[it.size, it.color].filter(Boolean).length ? ` (${[it.size, it.color].filter(Boolean).join(" · ")})` : ""}`)
+    .join(", ");
+
   return (
-    <div className="card p-3">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="font-semibold">{order.name}</p>
-          <p className="text-xs text-ink-soft">{fmtDate(order.createdAt)}</p>
-        </div>
-        {canManage && <DeleteButton onConfirm={() => dispatch({ type: "removeMerchOrder", yearId, orderId: order.id })} />}
-      </div>
-      <div className="mt-1.5 flex flex-wrap gap-1.5">
-        {order.items.map((it, i) => {
-          const variant = [it.size, it.color].filter(Boolean).join(" · ");
-          return (
-            <span key={i} className="chip">
-              {it.qty}× {it.name}
-              {variant && <span className="text-ink-soft"> · {variant}</span>}
-            </span>
-          );
-        })}
-      </div>
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        {order.phone && (
-          <a href={`tel:${order.phone}`} className="text-ink-soft hover:text-ink">
-            📞 {order.phone}
-          </a>
+    <div className={`card flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 ${order.done ? "bg-leaf/[0.06]" : ""}`}>
+      <span className="font-semibold">{order.name}</span>
+      <span className="text-ink-soft">·</span>
+      <span className="text-sm">{itemsText}</span>
+      {order.phone && (
+        <a href={`tel:${order.phone}`} className="text-xs text-ink-soft hover:text-ink">
+          📞 {order.phone}
+        </a>
+      )}
+      {order.email && (
+        <a href={`mailto:${order.email}`} className="text-xs text-ink-soft hover:text-ink">
+          ✉️ {order.email}
+        </a>
+      )}
+      {order.note && <span className="text-xs text-ink-soft">pozn.: {order.note}</span>}
+      <span className="text-xs text-ink-soft/70">{fmtDate(order.createdAt)}</span>
+
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        {canManage ? (
+          <button
+            onClick={() => dispatch({ type: "toggleMerchOrderDone", yearId, orderId: order.id })}
+            className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+              order.done ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+            }`}
+            title="Přepnout stav"
+          >
+            {order.done ? "✓ Vyřízeno" : "⏳ Čeká"}
+          </button>
+        ) : (
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+              order.done ? "bg-leaf/15 text-leaf-700" : "bg-amber-100 text-amber-800"
+            }`}
+          >
+            {order.done ? "✓ Vyřízeno" : "⏳ Čeká"}
+          </span>
         )}
-        {order.email && (
-          <a href={`mailto:${order.email}`} className="text-ink-soft hover:text-ink">
-            ✉️ {order.email}
-          </a>
-        )}
+        {canDelete && <DeleteButton onConfirm={() => dispatch({ type: "removeMerchOrder", yearId, orderId: order.id })} />}
       </div>
-      {order.note && <p className="mt-1 text-xs text-ink-soft">Pozn.: {order.note}</p>}
     </div>
   );
 }

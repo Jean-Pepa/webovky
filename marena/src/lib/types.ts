@@ -167,6 +167,7 @@ export interface MerchOrder {
   email?: string;
   items: MerchOrderItem[]; // co si chce koupit z nabídky
   note?: string; // poznámka (velikost apod.)
+  done?: boolean; // vyřízeno (true) / čeká (false/undefined)
   createdAt: string;
 }
 
