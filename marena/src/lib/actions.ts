@@ -49,7 +49,10 @@ export type Action =
   | { type: "updateInvite"; yearId: string; inviteId: string; patch: Partial<Pick<Invite, "category" | "name" | "link" | "priority" | "contacted" | "interest" | "availability" | "price" | "confirmedDate" | "note">> }
   | { type: "removeInvite"; yearId: string; inviteId: string }
   | { type: "addKitchenFile"; yearId: string; label: string; category: string; blobId: string; fileKind: "image" | "file"; fileName?: string; note?: string; author: string }
-  | { type: "removeKitchenFile"; yearId: string; fileId: string };
+  | { type: "removeKitchenFile"; yearId: string; fileId: string }
+  // Uvolnění místa: smaže všechny fotky/účtenky ročníku (reference v DB; samotné
+  // bloby maže klient zvlášť). Texty (finance, popisy) zůstávají.
+  | { type: "clearYearMedia"; yearId: string };
 
 function now(): string {
   return new Date().toISOString();
@@ -364,6 +367,12 @@ export function applyAction(db: DB, a: Action): DB {
       }));
     case "removeKitchenFile":
       return mapYear(db, a.yearId, (y) => ({ ...y, kitchen: (y.kitchen ?? []).filter((k) => k.id !== a.fileId) }));
+    case "clearYearMedia":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        finances: (y.finances ?? []).map((f) => ({ ...f, receiptId: undefined, receiptIds: undefined })),
+        kitchen: [],
+      }));
 
     default:
       return db;
