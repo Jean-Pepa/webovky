@@ -97,13 +97,15 @@ export interface FinanceItem {
   id: string;
   kind: FinanceKind;
   label: string; // popis (např. "Třídní vklad — Petra", "Pronájem Flédy")
-  amount: number; // částka v Kč
+  amount: number; // částka v Kč — VŽDY s DPH (reálná hotovost), počítá se z ní bilance
+  net?: number; // částka bez DPH (jen když bylo zadáno „bez DPH"); amount = net × 1,21
   category?: string; // vklad, bar, lístky, výzdoba, přednášející, merch, sponzoring…
   who?: string; // kdo zaplatil / od koho / komu
   paid: boolean; // zaplaceno / proplaceno
   date?: string; // ISO datum
   note?: string;
-  receiptId?: string; // ID nahrané účtenky (foto se ukládá zvlášť, ne v hlavní DB)
+  receiptId?: string; // starší pole (jedna účtenka) — kvůli zpětné kompatibilitě
+  receiptIds?: string[]; // víc účtenek (fotky) — ukládají se zvlášť, ne v hlavní DB
   createdAt: string;
 }
 

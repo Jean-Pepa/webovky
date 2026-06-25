@@ -38,8 +38,8 @@ export type Action =
   | { type: "removeTask"; yearId: string; taskId: string }
   | { type: "addLink"; yearId: string; label: string; value: string; folder?: string; note?: string }
   | { type: "removeLink"; yearId: string; linkId: string }
-  | { type: "addFinance"; yearId: string; kind: FinanceKind; label: string; amount: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string }
-  | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string; receiptId?: string } }
+  | { type: "addFinance"; yearId: string; kind: FinanceKind; label: string; amount: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string }
+  | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string; receiptId?: string; receiptIds?: string[] } }
   | { type: "toggleFinancePaid"; yearId: string; financeId: string }
   | { type: "removeFinance"; yearId: string; financeId: string }
   | { type: "addShift"; yearId: string; area: string; title?: string; date?: string; from?: string; to?: string; capacity?: number; note?: string }
@@ -49,7 +49,10 @@ export type Action =
   | { type: "updateInvite"; yearId: string; inviteId: string; patch: Partial<Pick<Invite, "category" | "name" | "link" | "priority" | "contacted" | "interest" | "availability" | "price" | "confirmedDate" | "note">> }
   | { type: "removeInvite"; yearId: string; inviteId: string }
   | { type: "addKitchenFile"; yearId: string; label: string; category: string; blobId: string; fileKind: "image" | "file"; fileName?: string; note?: string; author: string }
-  | { type: "removeKitchenFile"; yearId: string; fileId: string };
+  | { type: "removeKitchenFile"; yearId: string; fileId: string }
+  // Uvolnění místa: smaže všechny fotky/účtenky ročníku (reference v DB; samotné
+  // bloby maže klient zvlášť). Texty (finance, popisy) zůstávají.
+  | { type: "clearYearMedia"; yearId: string };
 
 function now(): string {
   return new Date().toISOString();
@@ -253,6 +256,7 @@ export function applyAction(db: DB, a: Action): DB {
             kind: a.kind,
             label: a.label.trim(),
             amount: Number.isFinite(a.amount) ? Math.round(a.amount) : 0,
+            net: a.net != null && Number.isFinite(a.net) ? Math.round(a.net) : undefined,
             category: a.category?.trim() || undefined,
             who: a.who?.trim() || undefined,
             paid: a.paid ?? true,
@@ -265,11 +269,16 @@ export function applyAction(db: DB, a: Action): DB {
     case "updateFinance":
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        finances: (y.finances ?? []).map((f) =>
-          f.id === a.financeId
-            ? { ...f, ...a.patch, amount: a.patch.amount !== undefined ? Math.round(a.patch.amount) : f.amount }
-            : f,
-        ),
+        finances: (y.finances ?? []).map((f) => {
+          if (f.id !== a.financeId) return f;
+          const p = a.patch;
+          return {
+            ...f,
+            ...p,
+            amount: p.amount !== undefined ? Math.round(p.amount) : f.amount,
+            net: "net" in p ? (p.net != null ? Math.round(p.net) : undefined) : f.net,
+          };
+        }),
       }));
     case "toggleFinancePaid":
       return mapYear(db, a.yearId, (y) => ({
@@ -358,6 +367,12 @@ export function applyAction(db: DB, a: Action): DB {
       }));
     case "removeKitchenFile":
       return mapYear(db, a.yearId, (y) => ({ ...y, kitchen: (y.kitchen ?? []).filter((k) => k.id !== a.fileId) }));
+    case "clearYearMedia":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        finances: (y.finances ?? []).map((f) => ({ ...f, receiptId: undefined, receiptIds: undefined })),
+        kitchen: [],
+      }));
 
     default:
       return db;

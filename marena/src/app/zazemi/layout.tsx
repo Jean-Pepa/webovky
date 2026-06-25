@@ -8,7 +8,7 @@ import { Loading } from "@/components/Loading";
 import { YearSwitcher } from "@/components/YearSwitcher";
 import { Icon, type IconName } from "@/components/Icons";
 import { isAdmin } from "@/lib/admin";
-import { downloadArchive } from "@/lib/export";
+import { ArchiveModal } from "@/components/ArchiveModal";
 
 const NAV: { href: string; label: string; icon: IconName }[] = [
   { href: "/zazemi", label: "Nástěnka", icon: "board" },
@@ -28,6 +28,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
 
   useEffect(() => {
     if (ready && !authed) router.replace("/prihlaseni");
@@ -101,8 +102,8 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           </Link>
           {isAdmin(me) && db && (
             <button
-              onClick={() => downloadArchive(db)}
-              title="Stáhnout kompletní archiv všech ročníků do PDF (pro úschovu na další roky)"
+              onClick={() => setArchiveOpen(true)}
+              title="Stáhnout archiv (PDF / ZIP fotek) a uvolnit místo na další roky"
               className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-ink px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ink/90"
             >
               <Icon name="download" className="h-4 w-4" /> Stáhnout vše
@@ -150,7 +151,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                 <button
                   onClick={() => {
                     setMenuOpen(false);
-                    downloadArchive(db);
+                    setArchiveOpen(true);
                   }}
                   className="inline-flex items-center gap-2.5 rounded-xl bg-ink px-3 py-2.5 text-left text-[15px] font-medium text-white"
                 >
@@ -167,6 +168,8 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           </div>
         )}
       </header>
+
+      {isAdmin(me) && <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />}
 
       {currentYear && !canEditCurrentYear && (
         <div className="flex items-center justify-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs font-medium text-amber-800">

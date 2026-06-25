@@ -32,7 +32,16 @@ function parseAmount(s: string): number {
   return Number.isFinite(n) ? Math.round(n) : 0;
 }
 
-// Funkci „Ekonom / Finance" v roles.ts má id `ekonom`.
+// DPH 21 % (ČR). „s DPH" = reálná hotovost (amount). „bez DPH" = net.
+const DPH_RATE = 0.21;
+const grossFromNet = (net: number) => Math.round(net * (1 + DPH_RATE));
+const netFromGross = (gross: number) => Math.round(gross / (1 + DPH_RATE));
+type VatMode = "incl" | "none"; // s DPH / bez DPH
+
+function receiptsOf(item: FinanceItem): string[] {
+  if (item.receiptIds && item.receiptIds.length) return item.receiptIds;
+  return item.receiptId ? [item.receiptId] : [];
+}
 
 export default function FinancePage() {
   const { currentYear, me, dispatch } = useStore();
@@ -47,6 +56,7 @@ export default function FinancePage() {
   const [who, setWho] = useState("");
   const [date, setDate] = useState(todayISO());
   const [paid, setPaid] = useState(true);
+  const [vatMode, setVatMode] = useState<VatMode>("incl");
 
   const year = currentYear;
 
@@ -101,15 +111,18 @@ export default function FinancePage() {
   const canEdit = isAdmin(me);
 
   async function add() {
-    const amt = parseAmount(amount);
-    if (!label.trim() || amt <= 0 || !year || !canEdit) return;
-    await dispatch({ type: "addFinance", yearId: year.id, kind, label, amount: amt, category: category || undefined, who: who || undefined, paid, date: date || undefined });
+    const num = parseAmount(amount);
+    if (!label.trim() || num <= 0 || !year || !canEdit) return;
+    const gross = vatMode === "none" ? grossFromNet(num) : num;
+    const net = vatMode === "none" ? num : undefined;
+    await dispatch({ type: "addFinance", yearId: year.id, kind, label, amount: gross, net, category: category || undefined, who: who || undefined, paid, date: date || undefined });
     setLabel("");
     setAmount("");
     setCategory("");
     setWho("");
     setPaid(true);
     setKind("vydaj");
+    setVatMode("incl");
     setOpen(false);
   }
 
@@ -159,10 +172,12 @@ export default function FinancePage() {
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             <input className="input sm:col-span-2" placeholder="Popis (např. Pronájem Flédy, Třídní vklad — Petra)" value={label} onChange={(e) => setLabel(e.target.value)} />
-            <input className="input" inputMode="numeric" placeholder="Částka (Kč)" value={amount} onChange={(e) => setAmount(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
+            <div className="sm:col-span-2">
+              <AmountField value={amount} setValue={setAmount} vatMode={vatMode} setVatMode={setVatMode} onEnter={add} />
+            </div>
             <input className="input" list="fin-cats" placeholder="Kategorie" value={category} onChange={(e) => setCategory(e.target.value)} />
             <input className="input" placeholder="Kdo / od koho (nepovinné)" value={who} onChange={(e) => setWho(e.target.value)} />
-            <input type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} />
+            <input type="date" className="input sm:col-span-2" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 text-sm text-ink-soft">
@@ -278,17 +293,21 @@ function FinanceRow({ item, yearId, canEdit }: { item: FinanceItem; yearId: stri
   const { dispatch } = useStore();
   const [edit, setEdit] = useState(false);
   const [label, setLabel] = useState(item.label);
-  const [amount, setAmount] = useState(String(item.amount));
+  const [vatMode, setVatMode] = useState<VatMode>(item.net != null ? "none" : "incl");
+  const [amount, setAmount] = useState(String(item.net != null ? item.net : item.amount));
   const [category, setCategory] = useState(item.category ?? "");
   const [who, setWho] = useState(item.who ?? "");
   const [date, setDate] = useState(item.date ?? "");
 
   async function save() {
+    const num = parseAmount(amount);
+    const gross = vatMode === "none" ? grossFromNet(num) : num;
+    const net = vatMode === "none" ? num : undefined;
     await dispatch({
       type: "updateFinance",
       yearId,
       financeId: item.id,
-      patch: { label: label.trim() || item.label, amount: parseAmount(amount), category: category.trim() || undefined, who: who.trim() || undefined, date: date || undefined },
+      patch: { label: label.trim() || item.label, amount: gross, net, category: category.trim() || undefined, who: who.trim() || undefined, date: date || undefined },
     });
     setEdit(false);
   }
@@ -300,7 +319,7 @@ function FinanceRow({ item, yearId, canEdit }: { item: FinanceItem; yearId: stri
         <td className="px-3 py-2"><input className="input" list="fin-cats" value={category} onChange={(e) => setCategory(e.target.value)} /></td>
         <td className="px-3 py-2"><input className="input" value={who} onChange={(e) => setWho(e.target.value)} /></td>
         <td className="px-3 py-2"><input type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} /></td>
-        <td className="px-3 py-2"><input className="input text-right" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} /></td>
+        <td className="px-3 py-2"><AmountField value={amount} setValue={setAmount} vatMode={vatMode} setVatMode={setVatMode} /></td>
         <td className="px-3 py-2" colSpan={2}>
           <div className="flex gap-1">
             <button className="btn-primary px-3 py-1.5 text-xs" onClick={save}>Uložit</button>
@@ -327,9 +346,12 @@ function FinanceRow({ item, yearId, canEdit }: { item: FinanceItem; yearId: stri
       <td className="px-3 py-3">{item.category ? <span className="chip">{item.category}</span> : <span className="text-ink-soft/50">—</span>}</td>
       <td className="px-3 py-3 text-ink-soft">{item.who || "—"}</td>
       <td className="px-3 py-3 whitespace-nowrap text-ink-soft">{item.date ? fmtDate(item.date) : "—"}</td>
-      <td className={`px-3 py-3 text-right font-semibold whitespace-nowrap ${isPrijem ? "text-leaf-700" : "text-ink"}`}>
-        {isPrijem ? "+" : "−"}
-        {fmtCZK(item.amount)}
+      <td className="px-3 py-3 text-right whitespace-nowrap">
+        <div className={`font-semibold ${isPrijem ? "text-leaf-700" : "text-ink"}`}>
+          {isPrijem ? "+" : "−"}
+          {fmtCZK(item.amount)}
+        </div>
+        {item.net != null && <div className="text-[11px] font-normal text-ink-soft">bez DPH {fmtCZK(item.net)}</div>}
       </td>
       <td className="px-3 py-3">
         {canEdit ? (
@@ -358,9 +380,60 @@ function FinanceRow({ item, yearId, canEdit }: { item: FinanceItem; yearId: stri
   );
 }
 
-// Účtenka jako foto: nahrání (zmenší se), zobrazení a smazání.
+// Pole pro částku s přepínačem DPH (bez DPH / s DPH) + živý přepočet.
+function AmountField({
+  value,
+  setValue,
+  vatMode,
+  setVatMode,
+  onEnter,
+}: {
+  value: string;
+  setValue: (v: string) => void;
+  vatMode: VatMode;
+  setVatMode: (m: VatMode) => void;
+  onEnter?: () => void;
+}) {
+  const num = parseAmount(value);
+  const gross = vatMode === "none" ? grossFromNet(num) : num;
+  function switchMode(m: VatMode) {
+    if (m === vatMode) return;
+    if (num > 0) setValue(String(m === "none" ? netFromGross(num) : grossFromNet(num)));
+    setVatMode(m);
+  }
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          className="input min-w-[120px] flex-1"
+          inputMode="numeric"
+          placeholder={vatMode === "none" ? "Částka bez DPH (Kč)" : "Částka (Kč)"}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && onEnter?.()}
+        />
+        <div className="inline-flex shrink-0 rounded-full bg-paper2 p-0.5 text-xs">
+          <button type="button" onClick={() => switchMode("none")} className={`rounded-full px-2.5 py-1.5 font-medium transition ${vatMode === "none" ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}>
+            bez DPH
+          </button>
+          <button type="button" onClick={() => switchMode("incl")} className={`rounded-full px-2.5 py-1.5 font-medium transition ${vatMode === "incl" ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}>
+            s DPH
+          </button>
+        </div>
+      </div>
+      {vatMode === "none" && num > 0 && (
+        <p className="mt-1 text-xs text-ink-soft">
+          = <strong className="text-ink">{fmtCZK(gross)}</strong> s DPH (21 %)
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Účtenky jako fotky: víc účtenek na položku, zobrazení, stažení (správce) a smazání.
 function ReceiptControl({ item, yearId, canEdit }: { item: FinanceItem; yearId: string; canEdit: boolean }) {
   const { configured, dispatch } = useStore();
+  const list = receiptsOf(item);
   const [busy, setBusy] = useState(false);
   const [viewing, setViewing] = useState<string | null>(null);
   const [err, setErr] = useState(false);
@@ -373,9 +446,9 @@ function ReceiptControl({ item, yearId, canEdit }: { item: FinanceItem; yearId: 
     setErr(false);
     try {
       const dataUrl = await compressImage(file);
-      const id = item.receiptId || uid("rc_");
+      const id = uid("rc_");
       const ok = await saveReceipt(id, dataUrl, configured);
-      if (ok) await dispatch({ type: "updateFinance", yearId, financeId: item.id, patch: { receiptId: id } });
+      if (ok) await dispatch({ type: "updateFinance", yearId, financeId: item.id, patch: { receiptIds: [...list, id], receiptId: undefined } });
       else setErr(true);
     } catch {
       setErr(true);
@@ -383,46 +456,65 @@ function ReceiptControl({ item, yearId, canEdit }: { item: FinanceItem; yearId: 
       setBusy(false);
     }
   }
-
-  async function view() {
-    if (!item.receiptId) return;
-    const url = await loadReceipt(item.receiptId, configured);
+  async function view(id: string) {
+    const url = await loadReceipt(id, configured);
     if (url) setViewing(url);
     else setErr(true);
   }
-
-  async function remove() {
-    if (item.receiptId) await deleteReceipt(item.receiptId, configured);
-    await dispatch({ type: "updateFinance", yearId, financeId: item.id, patch: { receiptId: "" } });
+  async function download(id: string) {
+    const url = await loadReceipt(id, configured);
+    if (!url) { setErr(true); return; }
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${item.label || "uctenka"}.jpg`;
+    a.click();
+  }
+  async function remove(id: string) {
+    await deleteReceipt(id, configured);
+    await dispatch({ type: "updateFinance", yearId, financeId: item.id, patch: { receiptIds: list.filter((x) => x !== id), receiptId: undefined } });
   }
 
   return (
-    <div className="mt-1 flex items-center gap-2 text-xs">
-      {item.receiptId ? (
-        <>
-          <button onClick={view} className="inline-flex items-center gap-1 rounded-full bg-leaf/12 px-2 py-0.5 font-medium text-leaf-700 hover:bg-leaf/20">
-            📎 Účtenka
+    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+      {list.map((id, i) => (
+        <span key={id} className="inline-flex items-center gap-1.5 rounded-full bg-leaf/12 px-2 py-0.5 text-leaf-700">
+          <button onClick={() => view(id)} className="font-medium hover:underline">
+            📎 Účtenka{list.length > 1 ? ` ${i + 1}` : ""}
           </button>
           {canEdit && (
-            <button onClick={remove} className="text-ink-soft/60 hover:text-red-600" title="Odebrat účtenku">✕</button>
+            <button onClick={() => download(id)} title="Stáhnout účtenku" className="hover:text-ink">
+              <Icon name="download" className="h-3.5 w-3.5" />
+            </button>
           )}
-        </>
-      ) : (
-        canEdit && (
-          <label className="inline-flex cursor-pointer items-center gap-1 text-ink-soft/70 hover:text-ink">
-            📎 {busy ? "Nahrávám…" : "Přidat účtenku"}
-            <input type="file" accept="image/*" className="hidden" onChange={onFile} disabled={busy} />
-          </label>
-        )
+          {canEdit && (
+            <button onClick={() => remove(id)} title="Odebrat účtenku" className="hover:text-red-600">
+              ✕
+            </button>
+          )}
+        </span>
+      ))}
+      {canEdit && (
+        <label className="inline-flex cursor-pointer items-center gap-1 text-ink-soft/70 hover:text-ink">
+          📎 {busy ? "Nahrávám…" : list.length ? "Přidat další" : "Přidat účtenku"}
+          <input type="file" accept="image/*" className="hidden" onChange={onFile} disabled={busy} />
+        </label>
       )}
       {err && <span className="text-red-600">nepovedlo se</span>}
 
       <Modal open={viewing !== null} onClose={() => setViewing(null)} title="Účtenka">
         {viewing && (
-          <div className="space-y-3">
+          <div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={viewing} alt="Účtenka" className="max-h-[70vh] w-full rounded-xl object-contain" />
-            <a href={viewing} target="_blank" rel="noreferrer" className="btn-secondary w-full">Otevřít v plné velikosti</a>
+            <img src={viewing} alt="Účtenka" className="max-h-[64vh] w-full rounded-xl object-contain" />
+            <div className="mt-3 flex justify-center">
+              <button
+                onClick={() => setViewing(null)}
+                aria-label="Zavřít"
+                className="grid h-11 w-11 place-items-center rounded-full bg-black/5 text-ink-soft transition hover:bg-black/10 hover:text-ink"
+              >
+                <Icon name="close" className="h-6 w-6" />
+              </button>
+            </div>
           </div>
         )}
       </Modal>
