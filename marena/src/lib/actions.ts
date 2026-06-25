@@ -57,8 +57,8 @@ export type Action =
   | { type: "addKitchenFile"; yearId: string; label: string; category: string; blobId: string; fileKind: "image" | "file"; fileName?: string; note?: string; author: string }
   | { type: "removeKitchenFile"; yearId: string; fileId: string }
   // Merch — nabídka produktů (správce / role merch) a objednávky (veřejná stránka).
-  | { type: "addMerchProduct"; yearId: string; name: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; note?: string }
-  | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; note?: string } }
+  | { type: "addMerchProduct"; yearId: string; name: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; note?: string }
+  | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; note?: string } }
   | { type: "removeMerchProduct"; yearId: string; productId: string }
   | { type: "addMerchOrder"; yearId: string; name: string; phone?: string; email?: string; items: MerchOrderItem[]; note?: string }
   | { type: "toggleMerchOrderDone"; yearId: string; orderId: string }
@@ -488,6 +488,7 @@ export function applyAction(db: DB, a: Action): DB {
             blobId: a.blobId,
             sizes: cleanList(a.sizes),
             colors: cleanList(a.colors),
+            stock: Number.isFinite(a.stock) ? a.stock : undefined,
             note: a.note?.trim() || undefined,
             createdAt: now(),
           },
@@ -506,6 +507,7 @@ export function applyAction(db: DB, a: Action): DB {
             price: "price" in q ? (Number.isFinite(q.price) ? q.price : undefined) : p.price,
             sizes: "sizes" in q ? cleanList(q.sizes) : p.sizes,
             colors: "colors" in q ? cleanList(q.colors) : p.colors,
+            stock: "stock" in q ? (Number.isFinite(q.stock) ? q.stock : undefined) : p.stock,
             note: "note" in q ? q.note?.trim() || undefined : p.note,
           };
         }),

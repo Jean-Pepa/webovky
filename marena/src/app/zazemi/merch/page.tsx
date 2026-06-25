@@ -136,6 +136,9 @@ export default function MerchPage() {
             </dl>
           </div>
 
+          {/* Sklad — kolik máme / prodáno / zbývá */}
+          <InventoryCard products={products} orders={orders} yearId={year.id} canManage={canManage} />
+
           <QrCard yearId={year.id} />
         </aside>
       </div>
@@ -319,10 +322,12 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
   const [price, setPrice] = useState(product.price != null ? String(product.price) : "");
   const [sizes, setSizes] = useState((product.sizes ?? []).join(", "));
   const [colors, setColors] = useState((product.colors ?? []).join(", "));
+  const [stock, setStock] = useState(product.stock != null ? String(product.stock) : "");
   const [note, setNote] = useState(product.note ?? "");
 
   async function save() {
     const priceNum = parseInt(price.replace(/\s/g, ""), 10);
+    const stockNum = parseInt(stock.replace(/\s/g, ""), 10);
     await dispatch({
       type: "updateMerchProduct",
       yearId,
@@ -332,6 +337,7 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
         price: Number.isFinite(priceNum) ? priceNum : undefined,
         sizes: parseList(sizes),
         colors: parseList(colors),
+        stock: Number.isFinite(stockNum) ? stockNum : undefined,
         note,
       },
     });
@@ -356,6 +362,10 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
         <div>
           <label className="label">Barvy (přes čárku)</label>
           <input className="input" placeholder="černá, bílá" value={colors} onChange={(e) => setColors(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Skladem (ks) — prázdné = neomezeně</label>
+          <input className="input" inputMode="numeric" placeholder="např. 50" value={stock} onChange={(e) => setStock(e.target.value)} />
         </div>
         <div>
           <label className="label">Poznámka</label>
@@ -440,6 +450,83 @@ function OrderRow({
         {total > 0 && <span className="ml-auto font-display font-bold text-ink">{fmtCZK(total)}</span>}
       </div>
     </div>
+  );
+}
+
+function InventoryCard({
+  products,
+  orders,
+  yearId,
+  canManage,
+}: {
+  products: MerchProduct[];
+  orders: MerchOrder[];
+  yearId: string;
+  canManage: boolean;
+}) {
+  const soldByProduct = new Map<string, number>();
+  for (const o of orders) for (const it of o.items) soldByProduct.set(it.productId, (soldByProduct.get(it.productId) ?? 0) + it.qty);
+
+  return (
+    <div className="card p-4">
+      <h2 className="mb-2 font-display text-lg font-semibold">Skladem</h2>
+      {products.length === 0 ? (
+        <p className="text-sm text-ink-soft">Zatím žádný merch.</p>
+      ) : (
+        <ul className="space-y-2.5">
+          {products.map((p) => {
+            const sold = soldByProduct.get(p.id) ?? 0;
+            const remaining = p.stock != null ? p.stock - sold : null;
+            const soldOut = remaining != null && remaining <= 0;
+            return (
+              <li key={p.id} className="border-b border-black/[0.05] pb-2 last:border-0 last:pb-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate text-sm font-medium">{p.name}</span>
+                  {soldOut ? (
+                    <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">Vyprodáno</span>
+                  ) : remaining != null ? (
+                    <span className="shrink-0 rounded-full bg-leaf/15 px-2 py-0.5 text-[11px] font-semibold text-leaf-700">zbývá {remaining}</span>
+                  ) : null}
+                </div>
+                <div className="mt-1 flex items-center gap-2 text-xs text-ink-soft">
+                  {canManage ? (
+                    <span className="flex items-center gap-1">
+                      skladem <StockInput product={p} yearId={yearId} />
+                    </span>
+                  ) : (
+                    <span>skladem: {p.stock ?? "—"}</span>
+                  )}
+                  <span>· prodáno: {sold}</span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {canManage && (
+        <p className="mt-2 text-[11px] text-ink-soft/70">Prázdné = neomezeně. Když zbývá 0, na webu se ukáže Vyprodáno.</p>
+      )}
+    </div>
+  );
+}
+
+function StockInput({ product, yearId }: { product: MerchProduct; yearId: string }) {
+  const { dispatch } = useStore();
+  const [val, setVal] = useState(product.stock != null ? String(product.stock) : "");
+  function save() {
+    const n = parseInt(val.replace(/\s/g, ""), 10);
+    dispatch({ type: "updateMerchProduct", yearId, productId: product.id, patch: { stock: Number.isFinite(n) ? n : undefined } });
+  }
+  return (
+    <input
+      className="w-16 rounded-lg border border-black/10 bg-white px-2 py-1 text-xs"
+      inputMode="numeric"
+      value={val}
+      onChange={(e) => setVal(e.target.value)}
+      onBlur={save}
+      onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+      placeholder="ks"
+    />
   );
 }
 

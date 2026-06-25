@@ -14,11 +14,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ yearId:
   const year = db.years.find((y) => y.id === yearId);
   if (!year) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
+  // Kolik kusů je už objednáno (na produkt) — kvůli „vyprodáno".
+  const soldByProduct = new Map<string, number>();
+  for (const o of year.merchOrders ?? []) {
+    for (const it of o.items) soldByProduct.set(it.productId, (soldByProduct.get(it.productId) ?? 0) + it.qty);
+  }
+
   const redis = getRedis();
   const products = await Promise.all(
     (year.merch ?? []).map(async (p) => {
       let image: string | null = null;
       if (p.blobId && redis) image = (await redis.get(receiptKey(p.blobId))) as string | null;
+      const sold = soldByProduct.get(p.id) ?? 0;
       return {
         id: p.id,
         name: p.name,
@@ -26,6 +33,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ yearId:
         sizes: p.sizes ?? [],
         colors: p.colors ?? [],
         note: p.note ?? null,
+        soldOut: p.stock != null && p.stock - sold <= 0,
         image,
       };
     }),
