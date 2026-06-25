@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
@@ -252,6 +252,7 @@ function MeBadge() {
 
 // Když je člověk přihlášený, ale ještě nezadal jméno. Hned při prvním vstupu
 // vyžádáme jméno + e-mail + telefon a založíme člena — ať se u rolí vyplní samo.
+// Pokud jméno už v týmu existuje (i z dřívějška), kontakt se předvyplní.
 function IdentityGate() {
   const { setMe, currentYear, canEditCurrentYear, dispatch } = useStore();
   const [name, setName] = useState("");
@@ -259,6 +260,19 @@ function IdentityGate() {
   const [phone, setPhone] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Ať automatické předvyplnění nepřepisuje to, co už člověk sám napsal.
+  const touched = useRef({ email: false, phone: false });
+
+  const matched = currentYear?.members.find((m) => m.name === name.trim());
+
+  function onNameChange(v: string) {
+    setName(v);
+    const member = currentYear?.members.find((m) => m.name === v.trim());
+    if (member) {
+      if (!touched.current.email && member.email) setEmail(member.email);
+      if (!touched.current.phone && member.phone) setPhone(member.phone);
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -288,9 +302,28 @@ function IdentityGate() {
           Vyplň jméno, e-mail a telefon — ať tě ostatní v týmu zastihnou. U rolí se ti to pak doplní samo.
         </p>
         <form className="mt-4 flex flex-col gap-2" onSubmit={submit}>
-          <input className="input" placeholder="Jméno a příjmení" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-          <input className="input" type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <input className="input" type="tel" placeholder="Telefon (+420…)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <input className="input" placeholder="Jméno a příjmení" value={name} onChange={(e) => onNameChange(e.target.value)} autoFocus />
+          <input
+            className="input"
+            type="email"
+            placeholder="E-mail"
+            value={email}
+            onChange={(e) => {
+              touched.current.email = true;
+              setEmail(e.target.value);
+            }}
+          />
+          <input
+            className="input"
+            type="tel"
+            placeholder="Telefon (+420…)"
+            value={phone}
+            onChange={(e) => {
+              touched.current.phone = true;
+              setPhone(e.target.value);
+            }}
+          />
+          {matched && <p className="text-xs text-leaf-700">👋 Vítej zpátky, {matched.name}! Kontakt jsme ti předvyplnili.</p>}
           {err && <p className="text-sm text-red-600">{err}</p>}
           <button className="btn-primary mt-1" type="submit" disabled={busy}>
             {busy ? "Ukládám…" : "Vstoupit do zázemí"}
