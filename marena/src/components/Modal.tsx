@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Icon } from "@/components/Icons";
 
 // Jednoduchý modální dialog — overlay + karta, zavírá se Esc i klikem mimo.
 // Vykresluje se přes portál do <body>, aby se vždy vycentroval na celou
@@ -41,14 +40,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
       >
-        <button
-          onClick={onClose}
-          aria-label="Zavřít"
-          className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-black/5 text-ink-soft shadow-sm transition hover:bg-black/10 hover:text-ink"
-        >
-          <Icon name="close" className="h-5 w-5" />
-        </button>
-        {title && <h2 className="mb-4 pr-10 font-display text-lg font-semibold tracking-tight">{title}</h2>}
+        {title && <h2 className="mb-4 font-display text-lg font-semibold tracking-tight">{title}</h2>}
         {children}
       </div>
     </div>,

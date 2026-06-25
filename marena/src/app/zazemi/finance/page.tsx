@@ -503,8 +503,19 @@ function ReceiptControl({ item, yearId, canEdit }: { item: FinanceItem; yearId: 
 
       <Modal open={viewing !== null} onClose={() => setViewing(null)} title="Účtenka">
         {viewing && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={viewing} alt="Účtenka" className="max-h-[78vh] w-full rounded-xl object-contain" />
+          <div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={viewing} alt="Účtenka" className="max-h-[78vh] w-full rounded-xl object-contain" />
+            <div className="mt-3 flex justify-center">
+              <button
+                onClick={() => setViewing(null)}
+                aria-label="Zavřít"
+                className="grid h-11 w-11 place-items-center rounded-full bg-black/5 text-ink-soft transition hover:bg-black/10 hover:text-ink"
+              >
+                <Icon name="close" className="h-6 w-6" />
+              </button>
+            </div>
+          </div>
         )}
       </Modal>
     </div>
