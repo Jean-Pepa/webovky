@@ -7,8 +7,8 @@ import { Photo } from "@/components/Photo";
 import { Icon, type IconName } from "@/components/Icons";
 
 // ⬇️ Až budete mít účet, stačí změnit tenhle jeden řádek na svůj Instagram.
-const IG_URL = "https://instagram.com/marena_favut";
-const IG_HANDLE = "@marena_favut";
+const IG_URL = "https://www.instagram.com/marena2k25";
+const IG_HANDLE = "@marena2k25";
 
 type Lang = "cs" | "en" | "de";
 const LANGS: Lang[] = ["cs", "en", "de"];
