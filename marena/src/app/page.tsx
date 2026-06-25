@@ -30,6 +30,7 @@ interface Strings {
   heroBadge: string;
   ctaInsta: string;
   ctaScroll: string;
+  merchCta: string;
   whatsKicker: string;
   whatsTitle: string;
   whatsIntro: string;
@@ -55,6 +56,7 @@ const STRINGS: Record<Lang, Strings> = {
     heroBadge: "🐣 Jsi prvák? Tohle je tvůj vstup do života na fakultě.",
     ctaInsta: "Sleduj nás na Instagramu →",
     ctaScroll: "Co tě čeká ↓",
+    merchCta: "🛍️ Kup si merch Mařeny →",
     whatsKicker: "Na co se těšit",
     whatsTitle: "Co tě na Mařeně čeká",
     whatsIntro:
@@ -93,6 +95,7 @@ const STRINGS: Record<Lang, Strings> = {
     heroBadge: "🐣 A freshman? This is your start to life at the faculty.",
     ctaInsta: "Follow us on Instagram →",
     ctaScroll: "What's in store ↓",
+    merchCta: "🛍️ Get the Mařena merch →",
     whatsKicker: "What to look forward to",
     whatsTitle: "What awaits you at Mařena",
     whatsIntro:
@@ -131,6 +134,7 @@ const STRINGS: Record<Lang, Strings> = {
     heroBadge: "🐣 Erstsemester? Das ist dein Einstieg ins Leben an der Fakultät.",
     ctaInsta: "Folge uns auf Instagram →",
     ctaScroll: "Was dich erwartet ↓",
+    merchCta: "🛍️ Hol dir den Mařena-Merch →",
     whatsKicker: "Worauf du dich freuen kannst",
     whatsTitle: "Was dich bei Mařena erwartet",
     whatsIntro:
@@ -244,6 +248,16 @@ export default function Home() {
             <a href="#co-te-ceka" className="rounded-full border border-white/60 bg-black/25 px-6 py-3 text-base font-semibold text-white [text-shadow:none] transition hover:bg-black/40">
               {t.ctaScroll}
             </a>
+          </div>
+
+          {/* Velký skákající odkaz na merch */}
+          <div className="mt-9">
+            <Link
+              href="/merch"
+              className="merch-pulse inline-block rounded-full bg-marigold-600 px-8 py-4 font-display text-2xl font-extrabold text-white shadow-2xl ring-2 ring-white/40 [text-shadow:none] hover:bg-marigold-700 sm:text-3xl"
+            >
+              {t.merchCta}
+            </Link>
           </div>
         </div>
       </section>
