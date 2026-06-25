@@ -95,6 +95,12 @@ export default function FinancePage() {
     return [...map.entries()].sort((a, b) => b[1].prijem + b[1].vydaj - (a[1].prijem + a[1].vydaj));
   }, [items]);
 
+  // Merch — kolik už merch vydělal (příjmy z kategorie „merch", hlavně z vyřízených objednávek).
+  const merchTotal = useMemo(
+    () => items.filter((f) => f.category === "merch" && f.kind === "prijem").reduce((s, f) => s + f.amount, 0),
+    [items],
+  );
+
   const rows = useMemo(() => {
     return items
       .filter((f) => {
@@ -237,6 +243,16 @@ export default function FinancePage() {
             {l}
           </button>
         ))}
+        {/* Samostatné tlačítko + počítadlo pro Merch */}
+        <button
+          onClick={() => setCatFilter((c) => (c === "merch" ? "" : "merch"))}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
+            catFilter === "merch" ? "bg-marigold-600 text-white" : "bg-marigold-50 text-marigold-800 ring-1 ring-marigold-200 hover:bg-marigold-100"
+          }`}
+          title="Zobrazit jen merch — tržba z vyřízených objednávek"
+        >
+          🛍️ Merch · {fmtCZK(merchTotal)}
+        </button>
         {byCategory.length > 0 && (
           <select className="ml-auto rounded-full border border-black/10 bg-white px-3 py-1.5 text-sm text-ink-soft" value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
             <option value="">Všechny kategorie</option>

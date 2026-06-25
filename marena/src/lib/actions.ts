@@ -594,12 +594,52 @@ export function applyAction(db: DB, a: Action): DB {
         ],
       }));
     case "toggleMerchOrderDone":
-      return mapYear(db, a.yearId, (y) => ({
-        ...y,
-        merchOrders: (y.merchOrders ?? []).map((o) => (o.id === a.orderId ? { ...o, done: !o.done } : o)),
-      }));
+      return mapYear(db, a.yearId, (y) => {
+        const order = (y.merchOrders ?? []).find((o) => o.id === a.orderId);
+        if (!order) return y;
+        if (!order.done) {
+          // vyřízeno → zapiš tržbu objednávky jako příjem do financí
+          const total = order.items.reduce((sum, it) => {
+            const price = it.price ?? (y.merch ?? []).find((p) => p.id === it.productId)?.price ?? 0;
+            return sum + price * it.qty;
+          }, 0);
+          const financeId = uid("f_");
+          const itemsText = order.items
+            .map((it) => `${it.qty}× ${it.name}${[it.size, it.color].filter(Boolean).length ? ` (${[it.size, it.color].filter(Boolean).join(" · ")})` : ""}`)
+            .join(", ");
+          const fin = {
+            id: financeId,
+            kind: "prijem" as FinanceKind,
+            label: `Merch — ${order.name}`,
+            amount: total,
+            category: "merch",
+            paid: true,
+            date: order.createdAt.slice(0, 10),
+            note: itemsText,
+            createdAt: now(),
+          };
+          return {
+            ...y,
+            merchOrders: (y.merchOrders ?? []).map((o) => (o.id === a.orderId ? { ...o, done: true, financeId } : o)),
+            finances: [fin, ...(y.finances ?? [])],
+          };
+        }
+        // zpět na „čeká" → odeber navázaný příjem
+        return {
+          ...y,
+          merchOrders: (y.merchOrders ?? []).map((o) => (o.id === a.orderId ? { ...o, done: false, financeId: undefined } : o)),
+          finances: order.financeId ? (y.finances ?? []).filter((f) => f.id !== order.financeId) : y.finances,
+        };
+      });
     case "removeMerchOrder":
-      return mapYear(db, a.yearId, (y) => ({ ...y, merchOrders: (y.merchOrders ?? []).filter((o) => o.id !== a.orderId) }));
+      return mapYear(db, a.yearId, (y) => {
+        const order = (y.merchOrders ?? []).find((o) => o.id === a.orderId);
+        return {
+          ...y,
+          merchOrders: (y.merchOrders ?? []).filter((o) => o.id !== a.orderId),
+          finances: order?.financeId ? (y.finances ?? []).filter((f) => f.id !== order.financeId) : y.finances,
+        };
+      });
 
     default:
       return db;
