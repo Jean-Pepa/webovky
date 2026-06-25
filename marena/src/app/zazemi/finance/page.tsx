@@ -289,6 +289,8 @@ export default function FinancePage() {
       )}
 
       {/* Filtr */}
+      <div className="space-y-2">
+      <h2 className="font-display text-lg font-semibold">Všechny finance</h2>
       <div className="flex flex-wrap items-center gap-2">
         {([
           ["vse", "Vše"],
@@ -327,6 +329,7 @@ export default function FinancePage() {
             ))}
           </select>
         )}
+      </div>
       </div>
 
       {/* Tabulka */}
