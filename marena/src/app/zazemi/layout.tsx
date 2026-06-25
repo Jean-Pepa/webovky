@@ -250,28 +250,50 @@ function MeBadge() {
   );
 }
 
-// Když je člověk přihlášený, ale ještě nezadal jméno (identita bez účtu).
+// Když je člověk přihlášený, ale ještě nezadal jméno. Hned při prvním vstupu
+// vyžádáme jméno + e-mail + telefon a založíme člena — ať se u rolí vyplní samo.
 function IdentityGate() {
-  const { setMe } = useStore();
+  const { setMe, currentYear, canEditCurrentYear, dispatch } = useStore();
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const n = name.trim();
+    if (!n) return setErr("Vyplň jméno.");
+    if (!email.trim()) return setErr("Vyplň e-mail.");
+    if (!phone.trim()) return setErr("Vyplň telefon.");
+    setBusy(true);
+    // Založ (nebo doplň) člena s kontaktem v aktuálním ročníku.
+    if (currentYear && canEditCurrentYear) {
+      const existing = currentYear.members.find((m) => m.name === n);
+      if (existing) {
+        await dispatch({ type: "updateMember", yearId: currentYear.id, memberId: existing.id, patch: { email: email.trim(), phone: phone.trim() } });
+      } else {
+        await dispatch({ type: "addMember", yearId: currentYear.id, name: n, roleIds: [], email: email.trim(), phone: phone.trim() });
+      }
+    }
+    setMe(n);
+  }
+
   return (
     <div className="grid min-h-screen place-items-center px-4">
-      <div className="card w-full max-w-sm p-7 text-center">
+      <div className="card w-full max-w-sm p-7">
         <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-marigold-100 text-2xl">👋</div>
-        <h1 className="font-display text-xl font-semibold">Jak ti říkáme?</h1>
-        <p className="mt-1 text-sm text-ink-soft">
-          Žádné účty — jen jméno, ať ostatní ví, kdo co píše, hlasuje a domlouvá.
+        <h1 className="text-center font-display text-xl font-semibold">Vítej v týmu Mařeny</h1>
+        <p className="mt-1 text-center text-sm text-ink-soft">
+          Vyplň jméno, e-mail a telefon — ať tě ostatní v týmu zastihnou. U rolí se ti to pak doplní samo.
         </p>
-        <form
-          className="mt-4 flex flex-col gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (name.trim()) setMe(name.trim());
-          }}
-        >
-          <input className="input text-center" placeholder="Tvoje jméno / přezdívka" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-          <button className="btn-primary" type="submit">
-            Vstoupit do zázemí
+        <form className="mt-4 flex flex-col gap-2" onSubmit={submit}>
+          <input className="input" placeholder="Jméno a příjmení" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          <input className="input" type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input className="input" type="tel" placeholder="Telefon (+420…)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          {err && <p className="text-sm text-red-600">{err}</p>}
+          <button className="btn-primary mt-1" type="submit" disabled={busy}>
+            {busy ? "Ukládám…" : "Vstoupit do zázemí"}
           </button>
         </form>
       </div>
