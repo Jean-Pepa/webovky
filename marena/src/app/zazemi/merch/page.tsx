@@ -16,21 +16,8 @@ export default function MerchPage() {
   const year = currentYear;
   if (!year) return null;
 
-  if (!canSeeMerch(year, me)) {
-    return (
-      <div className="mx-auto max-w-md">
-        <div className="card p-8 text-center">
-          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-paper2">
-            <Icon name="merch" className="h-6 w-6 text-ink-soft" />
-          </div>
-          <h1 className="font-display text-xl font-semibold">Merch</h1>
-          <p className="mt-1 text-sm text-ink-soft">
-            Tato sekce je jen pro správce a člověka s rolí <strong>Merch</strong>. Roli si přiřadíš v sekci Tým a role.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Merch vidí každý; spravovat (přidávat/měnit/mazat) může jen role Merch a správce.
+  const canManage = canSeeMerch(year, me) && canEditCurrentYear;
 
   const products = year.merch ?? [];
   const orders = [...(year.merchOrders ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -39,27 +26,33 @@ export default function MerchPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-semibold tracking-tight">Merch</h1>
-        <p className="text-sm text-ink-soft">Nahraj fotky nabídky, sdílej QR kód a sleduj objednávky.</p>
+        <p className="text-sm text-ink-soft">
+          {canManage ? "Nahraj fotky nabídky, sdílej QR kód a sleduj objednávky." : "Nabídka merche a QR kód k objednání."}
+        </p>
       </div>
 
       {/* Nabídka (fotky merche) */}
       <section className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Nabídka</h2>
-        {canEditCurrentYear ? (
+        {canManage ? (
           <AddProduct yearId={year.id} />
-        ) : (
+        ) : canSeeMerch(year, me) ? (
           <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             🔒 Tento ročník je uzamčený — nabídku jde jen prohlížet.
+          </p>
+        ) : (
+          <p className="rounded-2xl border border-black/10 bg-paper2 px-4 py-3 text-sm text-ink-soft">
+            Prohlížíš nabídku. Spravovat ji může jen role <strong>Merch</strong> a správce.
           </p>
         )}
         {products.length === 0 ? (
           <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
-            Zatím žádný merch. Nahraj první kousek.
+            {canManage ? "Zatím žádný merch. Nahraj první kousek." : "Zatím tu není žádný merch."}
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((p) => (
-              <ProductCard key={p.id} product={p} yearId={year.id} editable={canEditCurrentYear} />
+              <ProductCard key={p.id} product={p} yearId={year.id} editable={canManage} />
             ))}
           </div>
         )}
@@ -78,7 +71,7 @@ export default function MerchPage() {
           ) : (
             <div className="space-y-2">
               {orders.map((o) => (
-                <OrderRow key={o.id} order={o} yearId={year.id} />
+                <OrderRow key={o.id} order={o} yearId={year.id} canManage={canManage} />
               ))}
             </div>
           )}
@@ -323,7 +316,7 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
   );
 }
 
-function OrderRow({ order, yearId }: { order: MerchOrder; yearId: string }) {
+function OrderRow({ order, yearId, canManage }: { order: MerchOrder; yearId: string; canManage: boolean }) {
   const { dispatch } = useStore();
   return (
     <div className="card p-3">
@@ -332,7 +325,7 @@ function OrderRow({ order, yearId }: { order: MerchOrder; yearId: string }) {
           <p className="font-semibold">{order.name}</p>
           <p className="text-xs text-ink-soft">{fmtDate(order.createdAt)}</p>
         </div>
-        <DeleteButton onConfirm={() => dispatch({ type: "removeMerchOrder", yearId, orderId: order.id })} />
+        {canManage && <DeleteButton onConfirm={() => dispatch({ type: "removeMerchOrder", yearId, orderId: order.id })} />}
       </div>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {order.items.map((it, i) => {

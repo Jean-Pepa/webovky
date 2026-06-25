@@ -8,7 +8,6 @@ import { Loading } from "@/components/Loading";
 import { YearSwitcher } from "@/components/YearSwitcher";
 import { Icon, type IconName } from "@/components/Icons";
 import { isAdmin } from "@/lib/admin";
-import { canSeeMerch } from "@/lib/merch";
 import { sameName } from "@/lib/names";
 import { ArchiveModal } from "@/components/ArchiveModal";
 
@@ -44,7 +43,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const incompleteContact = !!myMember && (!myMember.email?.trim() || !myMember.phone?.trim());
   if (!me || (currentYear && canEditCurrentYear && !isAdmin(me) && (!myMember || incompleteContact))) return <IdentityGate />;
 
-  const showMerch = canSeeMerch(currentYear, me);
+  const showMerch = true; // Merch záložku vidí každý (spravovat může jen role Merch + správce)
 
   async function doLogout() {
     setMenuOpen(false);
