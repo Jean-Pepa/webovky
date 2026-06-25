@@ -266,17 +266,8 @@ export default function TymPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Tým &amp; role</h1>
-        </div>
-        <div className="flex items-center gap-3 rounded-2xl bg-marigold-600 px-5 py-3 text-white shadow-sm">
-          <Icon name="users" className="h-8 w-8 shrink-0" />
-          <div className="leading-none">
-            <div className="font-display text-4xl font-bold tracking-tight">{year.members.length}</div>
-            <div className="mt-1 text-xs font-medium uppercase tracking-wide text-white/85">zapsáno v týmu</div>
-          </div>
-        </div>
+      <div>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Tým &amp; role</h1>
       </div>
 
       <div className={`grid gap-6 ${admin ? "lg:grid-cols-[1fr_320px_200px]" : "lg:grid-cols-[1fr_320px]"}`}>
@@ -345,8 +336,15 @@ export default function TymPage() {
           </section>
         </div>
 
-        {/* Vpravo: seznam všech přihlášených + jejich role */}
-        <aside className="h-fit lg:sticky lg:top-4">
+        {/* Vpravo: počítadlo + seznam všech přihlášených + jejich role */}
+        <aside className="h-fit space-y-4 lg:sticky lg:top-4">
+          <div className="flex items-center gap-3 rounded-2xl bg-marigold-600 px-5 py-3 text-white shadow-sm">
+            <Icon name="users" className="h-8 w-8 shrink-0" />
+            <div className="leading-none">
+              <div className="font-display text-4xl font-bold tracking-tight">{year.members.length}</div>
+              <div className="mt-1 text-xs font-medium uppercase tracking-wide text-white/85">zapsáno v týmu</div>
+            </div>
+          </div>
           <section className="card p-4">
             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
               <Icon name="users" className="h-5 w-5 text-marigold-600" /> Přihlášení ({year.members.length})
