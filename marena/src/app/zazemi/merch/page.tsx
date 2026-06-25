@@ -6,7 +6,7 @@ import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
-import { fmtCZK, fmtDate } from "@/lib/format";
+import { fmtCZK, fmtDateTime } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { canSeeMerch } from "@/lib/merch";
 import { isAdmin } from "@/lib/admin";
@@ -393,45 +393,51 @@ function OrderRow({
     .join(", ");
 
   return (
-    <div className={`card flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 ${order.done ? "bg-leaf/[0.06]" : ""}`}>
-      <span className="font-semibold">{order.name}</span>
-      <span className="text-ink-soft">·</span>
-      <span className="text-sm">{itemsText}</span>
-      {order.phone && (
-        <a href={`tel:${order.phone}`} className="text-xs text-ink-soft hover:text-ink">
-          📞 {order.phone}
-        </a>
-      )}
-      {order.email && (
-        <a href={`mailto:${order.email}`} className="text-xs text-ink-soft hover:text-ink">
-          ✉️ {order.email}
-        </a>
-      )}
-      {order.note && <span className="text-xs text-ink-soft">pozn.: {order.note}</span>}
-      <span className="text-xs text-ink-soft/70">{fmtDate(order.createdAt)}</span>
-
-      <div className="ml-auto flex shrink-0 items-center gap-2">
-        {total > 0 && <span className="font-display font-bold text-ink">{fmtCZK(total)}</span>}
-        {canManage ? (
-          <button
-            onClick={() => dispatch({ type: "toggleMerchOrderDone", yearId, orderId: order.id })}
-            className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
-              order.done ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-amber-100 text-amber-800 hover:bg-amber-200"
-            }`}
-            title="Přepnout stav"
-          >
-            {order.done ? "✓ Vyřízeno" : "⏳ Čeká"}
-          </button>
-        ) : (
-          <span
-            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-              order.done ? "bg-leaf/15 text-leaf-700" : "bg-amber-100 text-amber-800"
-            }`}
-          >
-            {order.done ? "✓ Vyřízeno" : "⏳ Čeká"}
-          </span>
+    <div className={`card px-3 py-2 ${order.done ? "bg-leaf/[0.06]" : ""}`}>
+      {/* Řádek 1: jméno · telefon · e-mail · datum a čas · stav · smazat */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="font-semibold">{order.name}</span>
+        {order.phone && (
+          <a href={`tel:${order.phone}`} className="text-xs text-ink-soft hover:text-ink">
+            📞 {order.phone}
+          </a>
         )}
-        {canDelete && <DeleteButton onConfirm={() => dispatch({ type: "removeMerchOrder", yearId, orderId: order.id })} />}
+        {order.email && (
+          <a href={`mailto:${order.email}`} className="text-xs text-ink-soft hover:text-ink">
+            ✉️ {order.email}
+          </a>
+        )}
+        <span className="text-xs text-ink-soft/70">{fmtDateTime(order.createdAt)}</span>
+
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {canManage ? (
+            <button
+              onClick={() => dispatch({ type: "toggleMerchOrderDone", yearId, orderId: order.id })}
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+                order.done ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+              }`}
+              title="Přepnout stav"
+            >
+              {order.done ? "✓ Vyřízeno" : "⏳ Čeká"}
+            </button>
+          ) : (
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                order.done ? "bg-leaf/15 text-leaf-700" : "bg-amber-100 text-amber-800"
+              }`}
+            >
+              {order.done ? "✓ Vyřízeno" : "⏳ Čeká"}
+            </span>
+          )}
+          {canDelete && <DeleteButton onConfirm={() => dispatch({ type: "removeMerchOrder", yearId, orderId: order.id })} />}
+        </div>
+      </div>
+
+      {/* Řádek 2: jaký merch a jeho počet (+ poznámka a cena) */}
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-black/[0.05] pt-1 text-sm">
+        <span>{itemsText}</span>
+        {order.note && <span className="text-xs text-ink-soft">· pozn.: {order.note}</span>}
+        {total > 0 && <span className="ml-auto font-display font-bold text-ink">{fmtCZK(total)}</span>}
       </div>
     </div>
   );
