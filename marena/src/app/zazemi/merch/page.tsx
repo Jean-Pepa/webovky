@@ -37,6 +37,9 @@ export default function MerchPage() {
   const totalQty = orders.reduce((s, o) => s + o.items.reduce((q, it) => q + it.qty, 0), 0);
   const revenue = orders.reduce((s, o) => s + orderTotal(o, products), 0);
   const doneRevenue = orders.filter((o) => o.done).reduce((s, o) => s + orderTotal(o, products), 0);
+  // Prodáno na produkt — pro „skladem / zbývá" přímo u karty.
+  const soldByProduct = new Map<string, number>();
+  for (const o of orders) for (const it of o.items) soldByProduct.set(it.productId, (soldByProduct.get(it.productId) ?? 0) + it.qty);
 
   return (
     <div className="space-y-6">
@@ -71,7 +74,7 @@ export default function MerchPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((p) => (
-              <ProductCard key={p.id} product={p} yearId={year.id} editable={canManage} />
+              <ProductCard key={p.id} product={p} yearId={year.id} editable={canManage} sold={soldByProduct.get(p.id) ?? 0} />
             ))}
           </div>
         )}
@@ -135,9 +138,6 @@ export default function MerchPage() {
               </div>
             </dl>
           </div>
-
-          {/* Sklad — kolik máme / prodáno / zbývá */}
-          <InventoryCard products={products} orders={orders} yearId={year.id} canManage={canManage} />
 
           <QrCard yearId={year.id} />
         </aside>
@@ -230,8 +230,10 @@ function AddProduct({ yearId }: { yearId: string }) {
   );
 }
 
-function ProductCard({ product, yearId, editable }: { product: MerchProduct; yearId: string; editable: boolean }) {
+function ProductCard({ product, yearId, editable, sold }: { product: MerchProduct; yearId: string; editable: boolean; sold: number }) {
   const { dispatch, configured } = useStore();
+  const remaining = product.stock != null ? product.stock - sold : null;
+  const soldOut = remaining != null && remaining <= 0;
   const [img, setImg] = useState<string | null>(null);
   const [viewing, setViewing] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -291,6 +293,25 @@ function ProductCard({ product, yearId, editable }: { product: MerchProduct; yea
           </div>
         )}
         {product.note && <p className="mt-1 text-xs text-ink-soft">{product.note}</p>}
+
+        {/* Sklad přímo u produktu: nastavení + prodáno/zbývá/vyprodáno */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-black/[0.05] pt-2 text-xs text-ink-soft">
+          {editable ? (
+            <span className="flex items-center gap-1">
+              Skladem <StockInput product={product} yearId={yearId} />
+            </span>
+          ) : product.stock != null ? (
+            <span>Skladem: {product.stock}</span>
+          ) : (
+            <span>Skladem: neomezeně</span>
+          )}
+          <span>prodáno: {sold}</span>
+          {soldOut ? (
+            <span className="rounded-full bg-red-100 px-2 py-0.5 font-bold text-red-700">Vyprodáno</span>
+          ) : remaining != null ? (
+            <span className="rounded-full bg-leaf/15 px-2 py-0.5 font-semibold text-leaf-700">zbývá {remaining}</span>
+          ) : null}
+        </div>
       </div>
 
       {editing && <EditProductModal product={product} yearId={yearId} onClose={() => setEditing(false)} />}
@@ -449,63 +470,6 @@ function OrderRow({
         {order.note && <span className="text-xs text-ink-soft">· pozn.: {order.note}</span>}
         {total > 0 && <span className="ml-auto font-display font-bold text-ink">{fmtCZK(total)}</span>}
       </div>
-    </div>
-  );
-}
-
-function InventoryCard({
-  products,
-  orders,
-  yearId,
-  canManage,
-}: {
-  products: MerchProduct[];
-  orders: MerchOrder[];
-  yearId: string;
-  canManage: boolean;
-}) {
-  const soldByProduct = new Map<string, number>();
-  for (const o of orders) for (const it of o.items) soldByProduct.set(it.productId, (soldByProduct.get(it.productId) ?? 0) + it.qty);
-
-  return (
-    <div className="card p-4">
-      <h2 className="mb-2 font-display text-lg font-semibold">Skladem</h2>
-      {products.length === 0 ? (
-        <p className="text-sm text-ink-soft">Zatím žádný merch.</p>
-      ) : (
-        <ul className="space-y-2.5">
-          {products.map((p) => {
-            const sold = soldByProduct.get(p.id) ?? 0;
-            const remaining = p.stock != null ? p.stock - sold : null;
-            const soldOut = remaining != null && remaining <= 0;
-            return (
-              <li key={p.id} className="border-b border-black/[0.05] pb-2 last:border-0 last:pb-0">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="min-w-0 truncate text-sm font-medium">{p.name}</span>
-                  {soldOut ? (
-                    <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">Vyprodáno</span>
-                  ) : remaining != null ? (
-                    <span className="shrink-0 rounded-full bg-leaf/15 px-2 py-0.5 text-[11px] font-semibold text-leaf-700">zbývá {remaining}</span>
-                  ) : null}
-                </div>
-                <div className="mt-1 flex items-center gap-2 text-xs text-ink-soft">
-                  {canManage ? (
-                    <span className="flex items-center gap-1">
-                      skladem <StockInput product={p} yearId={yearId} />
-                    </span>
-                  ) : (
-                    <span>skladem: {p.stock ?? "—"}</span>
-                  )}
-                  <span>· prodáno: {sold}</span>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      {canManage && (
-        <p className="mt-2 text-[11px] text-ink-soft/70">Prázdné = neomezeně. Když zbývá 0, na webu se ukáže Vyprodáno.</p>
-      )}
     </div>
   );
 }
