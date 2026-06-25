@@ -38,10 +38,11 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
 
   if (!ready) return <Loading />;
   if (!authed) return <Loading label="Přesměrování na přihlášení…" />;
-  // Žádné jméno, nebo přihlášený člověk bez záznamu v týmu (kromě správce) →
-  // vyžádej kontakt a přidej ho do seznamu „bez role".
+  // Bez kompletního záznamu (jméno + e-mail + telefon) se do týmu nevstoupí.
+  // Platí pro nové, smazané i členy s neúplným kontaktem (kromě správce).
   const myMember = currentYear?.members.find((m) => sameName(m.name, me));
-  if (!me || (currentYear && canEditCurrentYear && !isAdmin(me) && !myMember)) return <IdentityGate />;
+  const incompleteContact = !!myMember && (!myMember.email?.trim() || !myMember.phone?.trim());
+  if (!me || (currentYear && canEditCurrentYear && !isAdmin(me) && (!myMember || incompleteContact))) return <IdentityGate />;
 
   const showMerch = canSeeMerch(currentYear, me);
 
@@ -260,8 +261,9 @@ function MeBadge() {
 function IdentityGate() {
   const { setMe, me, currentYear, canEditCurrentYear, dispatch } = useStore();
   const [name, setName] = useState(me); // předvyplň jméno, když už je člověk přihlášený
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  // Předvyplň i kontakt z existujícího (byť neúplného) záznamu.
+  const [email, setEmail] = useState(() => currentYear?.members.find((m) => sameName(m.name, me))?.email ?? "");
+  const [phone, setPhone] = useState(() => currentYear?.members.find((m) => sameName(m.name, me))?.phone ?? "");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   // Ať automatické předvyplnění nepřepisuje to, co už člověk sám napsal.
