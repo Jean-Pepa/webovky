@@ -1,7 +1,7 @@
 // Čistý reducer nad DB. Stejná logika běží na serveru (Redis) i v prohlížeči
 // (localStorage demo režim) — proto je bezstavová a deterministická až na uid().
 
-import type { DB, Year, EventKind, FinanceKind, Task, Invite } from "./types";
+import type { DB, Year, EventKind, FinanceKind, Task, Invite, MerchOrderItem } from "./types";
 import { uid } from "./id";
 import { ROLE_TASKS } from "./roleTasks";
 
@@ -52,6 +52,12 @@ export type Action =
   | { type: "removeInvite"; yearId: string; inviteId: string }
   | { type: "addKitchenFile"; yearId: string; label: string; category: string; blobId: string; fileKind: "image" | "file"; fileName?: string; note?: string; author: string }
   | { type: "removeKitchenFile"; yearId: string; fileId: string }
+  // Merch — nabídka produktů (správce / role merch) a objednávky (veřejná stránka).
+  | { type: "addMerchProduct"; yearId: string; name: string; price?: number; blobId?: string; note?: string }
+  | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; blobId?: string; note?: string } }
+  | { type: "removeMerchProduct"; yearId: string; productId: string }
+  | { type: "addMerchOrder"; yearId: string; name: string; phone?: string; email?: string; items: MerchOrderItem[]; note?: string }
+  | { type: "removeMerchOrder"; yearId: string; orderId: string }
   // Uvolnění místa: smaže všechny fotky/účtenky ročníku (reference v DB; samotné
   // bloby maže klient zvlášť). Texty (finance, popisy) zůstávají.
   | { type: "clearYearMedia"; yearId: string };
@@ -398,6 +404,57 @@ export function applyAction(db: DB, a: Action): DB {
         finances: (y.finances ?? []).map((f) => ({ ...f, receiptId: undefined, receiptIds: undefined })),
         kitchen: [],
       }));
+
+    case "addMerchProduct":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        merch: [
+          ...(y.merch ?? []),
+          {
+            id: uid("mp_"),
+            name: a.name.trim() || "Bez názvu",
+            price: Number.isFinite(a.price) ? a.price : undefined,
+            blobId: a.blobId,
+            note: a.note?.trim() || undefined,
+            createdAt: now(),
+          },
+        ],
+      }));
+    case "updateMerchProduct":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        merch: (y.merch ?? []).map((p) => {
+          if (p.id !== a.productId) return p;
+          const q = a.patch;
+          return {
+            ...p,
+            ...q,
+            name: q.name !== undefined ? q.name.trim() || p.name : p.name,
+            price: "price" in q ? (Number.isFinite(q.price) ? q.price : undefined) : p.price,
+            note: "note" in q ? q.note?.trim() || undefined : p.note,
+          };
+        }),
+      }));
+    case "removeMerchProduct":
+      return mapYear(db, a.yearId, (y) => ({ ...y, merch: (y.merch ?? []).filter((p) => p.id !== a.productId) }));
+    case "addMerchOrder":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        merchOrders: [
+          {
+            id: uid("mo_"),
+            name: a.name.trim() || "—",
+            phone: a.phone?.trim() || undefined,
+            email: a.email?.trim() || undefined,
+            items: (a.items ?? []).map((it) => ({ productId: it.productId, name: it.name, qty: Math.max(1, Math.round(it.qty || 1)) })),
+            note: a.note?.trim() || undefined,
+            createdAt: now(),
+          },
+          ...(y.merchOrders ?? []),
+        ],
+      }));
+    case "removeMerchOrder":
+      return mapYear(db, a.yearId, (y) => ({ ...y, merchOrders: (y.merchOrders ?? []).filter((o) => o.id !== a.orderId) }));
 
     default:
       return db;

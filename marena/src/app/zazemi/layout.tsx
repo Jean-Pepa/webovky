@@ -8,6 +8,7 @@ import { Loading } from "@/components/Loading";
 import { YearSwitcher } from "@/components/YearSwitcher";
 import { Icon, type IconName } from "@/components/Icons";
 import { isAdmin } from "@/lib/admin";
+import { canSeeMerch } from "@/lib/merch";
 import { ArchiveModal } from "@/components/ArchiveModal";
 
 const NAV: { href: string; label: string; icon: IconName }[] = [
@@ -37,6 +38,8 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   if (!ready) return <Loading />;
   if (!authed) return <Loading label="Přesměrování na přihlášení…" />;
   if (!me) return <IdentityGate />;
+
+  const showMerch = canSeeMerch(currentYear, me);
 
   async function doLogout() {
     setMenuOpen(false);
@@ -94,6 +97,16 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               </Link>
             );
           })}
+          {showMerch && (
+            <Link
+              href="/zazemi/merch"
+              className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                pathname === "/zazemi/merch" ? "bg-marigold-600 text-white" : "text-ink-soft hover:bg-black/5"
+              }`}
+            >
+              <Icon name="merch" className="h-4 w-4" /> Merch
+            </Link>
+          )}
           <Link
             href="/zazemi/almanach"
             className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-marigold-600 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-marigold-700"
@@ -140,6 +153,17 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   </Link>
                 );
               })}
+              {showMerch && (
+                <Link
+                  href="/zazemi/merch"
+                  onClick={() => setMenuOpen(false)}
+                  className={`inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-medium transition-colors ${
+                    pathname === "/zazemi/merch" ? "bg-marigold-600 text-white" : "text-ink hover:bg-black/5"
+                  }`}
+                >
+                  <Icon name="merch" className="h-5 w-5" /> Merch
+                </Link>
+              )}
               <Link
                 href="/zazemi/almanach"
                 onClick={() => setMenuOpen(false)}
