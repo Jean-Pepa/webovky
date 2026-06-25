@@ -92,10 +92,15 @@ export default function MerchPage() {
   );
 }
 
+// "S, M, L" → ["S","M","L"]
+const parseList = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean);
+
 function AddProduct({ yearId }: { yearId: string }) {
   const { dispatch, configured } = useStore();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [sizes, setSizes] = useState("");
+  const [colors, setColors] = useState("");
   const [note, setNote] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -127,10 +132,14 @@ function AddProduct({ yearId }: { yearId: string }) {
         name,
         price: Number.isFinite(priceNum) ? priceNum : undefined,
         blobId,
+        sizes: parseList(sizes),
+        colors: parseList(colors),
         note,
       });
       setName("");
       setPrice("");
+      setSizes("");
+      setColors("");
       setNote("");
       setFile(null);
     } catch {
@@ -146,7 +155,11 @@ function AddProduct({ yearId }: { yearId: string }) {
         <input className="input" placeholder="Název (např. Tričko Mařena 2026)" value={name} onChange={(e) => setName(e.target.value)} />
         <input className="input" inputMode="numeric" placeholder="Cena (Kč)" value={price} onChange={(e) => setPrice(e.target.value)} />
       </div>
-      <input className="input" placeholder="Poznámka (velikosti, barvy…)" value={note} onChange={(e) => setNote(e.target.value)} />
+      <div className="grid gap-2 sm:grid-cols-2">
+        <input className="input" placeholder="Velikosti přes čárku (S, M, L, XL)" value={sizes} onChange={(e) => setSizes(e.target.value)} />
+        <input className="input" placeholder="Barvy přes čárku (černá, bílá)" value={colors} onChange={(e) => setColors(e.target.value)} />
+      </div>
+      <input className="input" placeholder="Poznámka (materiál apod. — nepovinné)" value={note} onChange={(e) => setNote(e.target.value)} />
       <div className="flex flex-wrap items-center gap-3">
         <label className="btn-secondary cursor-pointer">
           <Icon name="image" className="h-4 w-4" />
@@ -167,6 +180,7 @@ function ProductCard({ product, yearId, editable }: { product: MerchProduct; yea
   const { dispatch, configured } = useStore();
   const [img, setImg] = useState<string | null>(null);
   const [viewing, setViewing] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     let on = true;
@@ -199,10 +213,33 @@ function ProductCard({ product, yearId, editable }: { product: MerchProduct; yea
             <p className="break-words font-semibold">{product.name}</p>
             {product.price != null && <p className="text-sm text-ink-soft">{fmtCZK(product.price)}</p>}
           </div>
-          {editable && <DeleteButton onConfirm={remove} />}
+          {editable && (
+            <div className="flex shrink-0 items-center gap-1">
+              <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEditing(true)}>
+                Upravit
+              </button>
+              <DeleteButton onConfirm={remove} />
+            </div>
+          )}
         </div>
+        {((product.sizes?.length ?? 0) > 0 || (product.colors?.length ?? 0) > 0) && (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {product.sizes?.map((s) => (
+              <span key={`s-${s}`} className="chip">
+                {s}
+              </span>
+            ))}
+            {product.colors?.map((c) => (
+              <span key={`c-${c}`} className="chip bg-paper2">
+                {c}
+              </span>
+            ))}
+          </div>
+        )}
         {product.note && <p className="mt-1 text-xs text-ink-soft">{product.note}</p>}
       </div>
+
+      {editing && <EditProductModal product={product} yearId={yearId} onClose={() => setEditing(false)} />}
 
       <Modal open={viewing} onClose={() => setViewing(false)} title={product.name}>
         {img && (
@@ -225,6 +262,67 @@ function ProductCard({ product, yearId, editable }: { product: MerchProduct; yea
   );
 }
 
+function EditProductModal({ product, yearId, onClose }: { product: MerchProduct; yearId: string; onClose: () => void }) {
+  const { dispatch } = useStore();
+  const [name, setName] = useState(product.name);
+  const [price, setPrice] = useState(product.price != null ? String(product.price) : "");
+  const [sizes, setSizes] = useState((product.sizes ?? []).join(", "));
+  const [colors, setColors] = useState((product.colors ?? []).join(", "));
+  const [note, setNote] = useState(product.note ?? "");
+
+  async function save() {
+    const priceNum = parseInt(price.replace(/\s/g, ""), 10);
+    await dispatch({
+      type: "updateMerchProduct",
+      yearId,
+      productId: product.id,
+      patch: {
+        name: name.trim() || product.name,
+        price: Number.isFinite(priceNum) ? priceNum : undefined,
+        sizes: parseList(sizes),
+        colors: parseList(colors),
+        note,
+      },
+    });
+    onClose();
+  }
+
+  return (
+    <Modal open onClose={onClose} title={`Upravit: ${product.name}`}>
+      <div className="space-y-3">
+        <div>
+          <label className="label">Název</label>
+          <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+        </div>
+        <div>
+          <label className="label">Cena (Kč)</label>
+          <input className="input" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Velikosti (přes čárku)</label>
+          <input className="input" placeholder="S, M, L, XL" value={sizes} onChange={(e) => setSizes(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Barvy (přes čárku)</label>
+          <input className="input" placeholder="černá, bílá" value={colors} onChange={(e) => setColors(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Poznámka</label>
+          <input className="input" value={note} onChange={(e) => setNote(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2 pt-1">
+          <button className="btn-primary flex-1" onClick={save}>
+            Uložit
+          </button>
+          <button className="btn-ghost" onClick={onClose}>
+            Zrušit
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 function OrderRow({ order, yearId }: { order: MerchOrder; yearId: string }) {
   const { dispatch } = useStore();
   return (
@@ -237,11 +335,15 @@ function OrderRow({ order, yearId }: { order: MerchOrder; yearId: string }) {
         <DeleteButton onConfirm={() => dispatch({ type: "removeMerchOrder", yearId, orderId: order.id })} />
       </div>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
-        {order.items.map((it, i) => (
-          <span key={i} className="chip">
-            {it.qty}× {it.name}
-          </span>
-        ))}
+        {order.items.map((it, i) => {
+          const variant = [it.size, it.color].filter(Boolean).join(" · ");
+          return (
+            <span key={i} className="chip">
+              {it.qty}× {it.name}
+              {variant && <span className="text-ink-soft"> · {variant}</span>}
+            </span>
+          );
+        })}
       </div>
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
         {order.phone && (

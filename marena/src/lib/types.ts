@@ -146,13 +146,17 @@ export interface MerchProduct {
   name: string; // např. „Tričko Mařena 2026", „Mikina", „Plátěnka"
   price?: number; // cena v Kč
   blobId?: string; // foto produktu (ukládá se zvlášť, ne v hlavní DB)
-  note?: string; // velikosti, barvy, detaily
+  sizes?: string[]; // nabízené velikosti (S, M, L…) — zadává správce / role merch
+  colors?: string[]; // nabízené barvy
+  note?: string; // další detaily (materiál apod.)
   createdAt: string;
 }
 
 export interface MerchOrderItem {
   productId: string;
   name: string; // název produktu v době objednávky
+  size?: string; // zvolená velikost
+  color?: string; // zvolená barva
   qty: number;
 }
 

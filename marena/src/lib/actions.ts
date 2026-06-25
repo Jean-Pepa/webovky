@@ -56,8 +56,8 @@ export type Action =
   | { type: "addKitchenFile"; yearId: string; label: string; category: string; blobId: string; fileKind: "image" | "file"; fileName?: string; note?: string; author: string }
   | { type: "removeKitchenFile"; yearId: string; fileId: string }
   // Merch — nabídka produktů (správce / role merch) a objednávky (veřejná stránka).
-  | { type: "addMerchProduct"; yearId: string; name: string; price?: number; blobId?: string; note?: string }
-  | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; blobId?: string; note?: string } }
+  | { type: "addMerchProduct"; yearId: string; name: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; note?: string }
+  | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; note?: string } }
   | { type: "removeMerchProduct"; yearId: string; productId: string }
   | { type: "addMerchOrder"; yearId: string; name: string; phone?: string; email?: string; items: MerchOrderItem[]; note?: string }
   | { type: "removeMerchOrder"; yearId: string; orderId: string }
@@ -67,6 +67,13 @@ export type Action =
 
 function now(): string {
   return new Date().toISOString();
+}
+
+// Očistí seznam textů (velikosti, barvy) — ořízne a vyhodí prázdné; prázdný → undefined.
+function cleanList(arr?: string[]): string[] | undefined {
+  if (!arr) return undefined;
+  const out = arr.map((s) => s.trim()).filter(Boolean);
+  return out.length ? out : undefined;
 }
 
 // Vrátí novou DB s aplikovanou změnou na daný ročník.
@@ -477,6 +484,8 @@ export function applyAction(db: DB, a: Action): DB {
             name: a.name.trim() || "Bez názvu",
             price: Number.isFinite(a.price) ? a.price : undefined,
             blobId: a.blobId,
+            sizes: cleanList(a.sizes),
+            colors: cleanList(a.colors),
             note: a.note?.trim() || undefined,
             createdAt: now(),
           },
@@ -493,6 +502,8 @@ export function applyAction(db: DB, a: Action): DB {
             ...q,
             name: q.name !== undefined ? q.name.trim() || p.name : p.name,
             price: "price" in q ? (Number.isFinite(q.price) ? q.price : undefined) : p.price,
+            sizes: "sizes" in q ? cleanList(q.sizes) : p.sizes,
+            colors: "colors" in q ? cleanList(q.colors) : p.colors,
             note: "note" in q ? q.note?.trim() || undefined : p.note,
           };
         }),
@@ -508,7 +519,13 @@ export function applyAction(db: DB, a: Action): DB {
             name: a.name.trim() || "—",
             phone: a.phone?.trim() || undefined,
             email: a.email?.trim() || undefined,
-            items: (a.items ?? []).map((it) => ({ productId: it.productId, name: it.name, qty: Math.max(1, Math.round(it.qty || 1)) })),
+            items: (a.items ?? []).map((it) => ({
+              productId: it.productId,
+              name: it.name,
+              size: it.size?.trim() || undefined,
+              color: it.color?.trim() || undefined,
+              qty: Math.max(1, Math.round(it.qty || 1)),
+            })),
             note: a.note?.trim() || undefined,
             createdAt: now(),
           },

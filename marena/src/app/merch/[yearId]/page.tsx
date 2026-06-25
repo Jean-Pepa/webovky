@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { applyAction } from "@/lib/actions";
 import { loadReceipt } from "@/lib/receipts";
 import { fmtCZK } from "@/lib/format";
+import { Icon } from "@/components/Icons";
 import type { DB } from "@/lib/types";
 
 const LS_DB = "marena_db"; // demo režim (localStorage) — stejný klíč jako ve store
@@ -13,11 +14,25 @@ interface PubProduct {
   id: string;
   name: string;
   price: number | null;
+  sizes: string[];
+  colors: string[];
   note: string | null;
   image: string | null;
 }
 
+interface CartLine {
+  key: string;
+  productId: string;
+  name: string;
+  price: number | null;
+  size?: string;
+  color?: string;
+  qty: number;
+}
+
 type Status = "loading" | "ready" | "notfound" | "error";
+
+const variantLabel = (l: { size?: string; color?: string }) => [l.size, l.color].filter(Boolean).join(" · ");
 
 export default function MerchOrderPage() {
   const { yearId } = useParams<{ yearId: string }>();
@@ -25,7 +40,8 @@ export default function MerchOrderPage() {
   const [mode, setMode] = useState<"server" | "demo">("server");
   const [label, setLabel] = useState("");
   const [products, setProducts] = useState<PubProduct[]>([]);
-  const [qty, setQty] = useState<Record<string, number>>({});
+  const [sel, setSel] = useState<Record<string, { size?: string; color?: string }>>({});
+  const [cart, setCart] = useState<CartLine[]>([]);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -38,16 +54,24 @@ export default function MerchOrderPage() {
   useEffect(() => {
     if (!yearId) return;
     let cancelled = false;
+    const norm = (p: Partial<PubProduct>): PubProduct => ({
+      id: p.id as string,
+      name: p.name as string,
+      price: p.price ?? null,
+      sizes: p.sizes ?? [],
+      colors: p.colors ?? [],
+      note: p.note ?? null,
+      image: p.image ?? null,
+    });
     (async () => {
-      // 1) zkus sdílený backend (produkce)
       try {
         const res = await fetch(`/api/merch/${yearId}`, { cache: "no-store" });
         if (res.ok) {
-          const j = (await res.json()) as { label: string; products: PubProduct[] };
+          const j = (await res.json()) as { label: string; products: Partial<PubProduct>[] };
           if (!cancelled) {
             setMode("server");
             setLabel(j.label);
-            setProducts(j.products);
+            setProducts(j.products.map(norm));
             setStatus("ready");
           }
           return;
@@ -56,11 +80,9 @@ export default function MerchOrderPage() {
           if (!cancelled) setStatus("notfound");
           return;
         }
-        // 503 → backend není nastavený → demo režim níže
       } catch {
         /* síť selhala → demo režim */
       }
-      // 2) demo režim — data z localStorage tohoto prohlížeče
       try {
         const raw = localStorage.getItem(LS_DB);
         const db = raw ? (JSON.parse(raw) as DB) : null;
@@ -70,13 +92,17 @@ export default function MerchOrderPage() {
           return;
         }
         const list = await Promise.all(
-          (year.merch ?? []).map(async (p) => ({
-            id: p.id,
-            name: p.name,
-            price: p.price ?? null,
-            note: p.note ?? null,
-            image: p.blobId ? await loadReceipt(p.blobId, false) : null,
-          })),
+          (year.merch ?? []).map(async (p) =>
+            norm({
+              id: p.id,
+              name: p.name,
+              price: p.price ?? null,
+              sizes: p.sizes ?? [],
+              colors: p.colors ?? [],
+              note: p.note ?? null,
+              image: p.blobId ? await loadReceipt(p.blobId, false) : null,
+            }),
+          ),
         );
         if (!cancelled) {
           setMode("demo");
@@ -93,17 +119,25 @@ export default function MerchOrderPage() {
     };
   }, [yearId]);
 
-  const setItemQty = (id: string, n: number) =>
-    setQty((q) => ({ ...q, [id]: Math.max(0, Math.min(99, n)) }));
-
-  const selections = products.map((p) => ({ ...p, qty: qty[p.id] || 0 })).filter((p) => p.qty > 0);
-  const total = selections.reduce((sum, p) => sum + (p.price ?? 0) * p.qty, 0);
+  function addToCart(p: PubProduct) {
+    const s = sel[p.id] || {};
+    const size = p.sizes.length ? s.size ?? p.sizes[0] : undefined;
+    const color = p.colors.length ? s.color ?? p.colors[0] : undefined;
+    const key = `${p.id}|${size ?? ""}|${color ?? ""}`;
+    setCart((prev) => {
+      const i = prev.findIndex((l) => l.key === key);
+      if (i >= 0) return prev.map((l, j) => (j === i ? { ...l, qty: l.qty + 1 } : l));
+      return [...prev, { key, productId: p.id, name: p.name, price: p.price, size, color, qty: 1 }];
+    });
+  }
+  const removeLine = (key: string) => setCart((prev) => prev.filter((l) => l.key !== key));
+  const total = cart.reduce((sum, l) => sum + (l.price ?? 0) * l.qty, 0);
 
   async function submit() {
     setErr(null);
     if (!name.trim()) return setErr("Vyplň prosím jméno.");
     if (!phone.trim() && !email.trim()) return setErr("Vyplň telefon nebo e-mail, ať tě umíme kontaktovat.");
-    if (selections.length === 0) return setErr("Vyber aspoň jednu věc z nabídky.");
+    if (cart.length === 0) return setErr("Košík je prázdný — přidej aspoň jednu věc z nabídky.");
 
     setSubmitting(true);
     try {
@@ -116,7 +150,7 @@ export default function MerchOrderPage() {
             phone,
             email,
             note,
-            selections: selections.map((s) => ({ productId: s.id, qty: s.qty })),
+            selections: cart.map((l) => ({ productId: l.productId, qty: l.qty, size: l.size, color: l.color })),
           }),
         });
         if (!res.ok) {
@@ -125,7 +159,6 @@ export default function MerchOrderPage() {
           return;
         }
       } else {
-        // demo režim — zapiš do localStorage
         const raw = localStorage.getItem(LS_DB);
         const db = raw ? (JSON.parse(raw) as DB) : null;
         if (!db) {
@@ -140,7 +173,7 @@ export default function MerchOrderPage() {
           phone,
           email,
           note,
-          items: selections.map((s) => ({ productId: s.id, name: s.name, qty: s.qty })),
+          items: cart.map((l) => ({ productId: l.productId, name: l.name, size: l.size, color: l.color, qty: l.qty })),
         });
         localStorage.setItem(LS_DB, JSON.stringify(next));
       }
@@ -191,55 +224,107 @@ export default function MerchOrderPage() {
                 <section className="space-y-3">
                   <h1 className="font-display text-lg font-semibold">Vyber si z nabídky</h1>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {products.map((p) => (
-                      <div key={p.id} className="card overflow-hidden">
-                        {p.image ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={p.image} alt={p.name} className="h-44 w-full bg-paper2 object-contain" />
-                        ) : (
-                          <div className="grid h-44 w-full place-items-center bg-paper2 text-ink-soft">bez fotky</div>
-                        )}
-                        <div className="p-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <p className="break-words font-semibold">{p.name}</p>
-                              {p.price != null && <p className="text-sm text-ink-soft">{fmtCZK(p.price)}</p>}
-                            </div>
-                          </div>
-                          {p.note && <p className="mt-1 text-xs text-ink-soft">{p.note}</p>}
-                          <div className="mt-3 flex items-center gap-2">
+                    {products.map((p) => {
+                      const curSize = p.sizes.length ? sel[p.id]?.size ?? p.sizes[0] : undefined;
+                      const curColor = p.colors.length ? sel[p.id]?.color ?? p.colors[0] : undefined;
+                      return (
+                        <div key={p.id} className="card overflow-hidden">
+                          {p.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={p.image} alt={p.name} className="h-44 w-full bg-paper2 object-contain" />
+                          ) : (
+                            <div className="grid h-44 w-full place-items-center bg-paper2 text-ink-soft">bez fotky</div>
+                          )}
+                          <div className="p-3">
+                            <p className="break-words font-semibold">{p.name}</p>
+                            {p.price != null && <p className="text-sm text-ink-soft">{fmtCZK(p.price)}</p>}
+                            {p.note && <p className="mt-1 text-xs text-ink-soft">{p.note}</p>}
+
+                            {p.sizes.length > 0 && (
+                              <div className="mt-2.5">
+                                <p className="mb-1 text-xs font-medium text-ink-soft">Velikost</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {p.sizes.map((sz) => {
+                                    const on = curSize === sz;
+                                    return (
+                                      <button
+                                        key={sz}
+                                        type="button"
+                                        onClick={() => setSel((s) => ({ ...s, [p.id]: { ...s[p.id], size: sz } }))}
+                                        className={`rounded-full px-3 py-1 text-sm font-medium transition ${
+                                          on ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft ring-1 ring-black/10 hover:bg-black/5"
+                                        }`}
+                                      >
+                                        {sz}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {p.colors.length > 0 && (
+                              <div className="mt-2.5">
+                                <p className="mb-1 text-xs font-medium text-ink-soft">Barva</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {p.colors.map((col) => {
+                                    const on = curColor === col;
+                                    return (
+                                      <button
+                                        key={col}
+                                        type="button"
+                                        onClick={() => setSel((s) => ({ ...s, [p.id]: { ...s[p.id], color: col } }))}
+                                        className={`rounded-full px-3 py-1 text-sm font-medium transition ${
+                                          on ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft ring-1 ring-black/10 hover:bg-black/5"
+                                        }`}
+                                      >
+                                        {col}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
                             <button
-                              className="grid h-8 w-8 place-items-center rounded-full bg-black/5 text-lg hover:bg-black/10"
-                              onClick={() => setItemQty(p.id, (qty[p.id] || 0) - 1)}
-                              aria-label="Méně"
+                              onClick={() => addToCart(p)}
+                              className="btn-primary mt-3 w-full justify-center"
+                              aria-label="Přidat do košíku"
                             >
-                              −
-                            </button>
-                            <span className="w-8 text-center font-semibold">{qty[p.id] || 0}</span>
-                            <button
-                              className="grid h-8 w-8 place-items-center rounded-full bg-black/5 text-lg hover:bg-black/10"
-                              onClick={() => setItemQty(p.id, (qty[p.id] || 0) + 1)}
-                              aria-label="Více"
-                            >
-                              +
+                              <Icon name="cart" className="h-5 w-5" /> Do košíku
                             </button>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </section>
 
                 <section className="card space-y-3 p-4">
-                  <h2 className="font-display text-lg font-semibold">Objednávka</h2>
-                  {selections.length > 0 ? (
-                    <ul className="space-y-1 text-sm">
-                      {selections.map((s) => (
-                        <li key={s.id} className="flex justify-between gap-2">
-                          <span>
-                            {s.qty}× {s.name}
+                  <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
+                    <Icon name="cart" className="h-5 w-5 text-marigold-600" /> Košík
+                  </h2>
+                  {cart.length > 0 ? (
+                    <ul className="space-y-1.5 text-sm">
+                      {cart.map((l) => (
+                        <li key={l.key} className="flex items-center justify-between gap-2">
+                          <span className="min-w-0">
+                            <span className="font-medium">
+                              {l.qty}× {l.name}
+                            </span>
+                            {variantLabel(l) && <span className="text-ink-soft"> · {variantLabel(l)}</span>}
                           </span>
-                          {s.price != null && <span className="text-ink-soft">{fmtCZK(s.price * s.qty)}</span>}
+                          <span className="flex shrink-0 items-center gap-2">
+                            {l.price != null && <span className="text-ink-soft">{fmtCZK(l.price * l.qty)}</span>}
+                            <button
+                              onClick={() => removeLine(l.key)}
+                              className="text-ink-soft/60 hover:text-red-600"
+                              aria-label="Odebrat z košíku"
+                              title="Odebrat"
+                            >
+                              ✕
+                            </button>
+                          </span>
                         </li>
                       ))}
                       {total > 0 && (
@@ -250,14 +335,14 @@ export default function MerchOrderPage() {
                       )}
                     </ul>
                   ) : (
-                    <p className="text-sm text-ink-soft">Zatím nic nevybráno — nahoře přidej množství u věcí, které chceš.</p>
+                    <p className="text-sm text-ink-soft">Košík je prázdný — nahoře vyber velikost/barvu a klikni na 🛒 Do košíku.</p>
                   )}
 
-                  <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="grid gap-2 pt-1 sm:grid-cols-2">
                     <input className="input" placeholder="Jméno a příjmení" value={name} onChange={(e) => setName(e.target.value)} />
                     <input className="input" placeholder="Telefon" value={phone} onChange={(e) => setPhone(e.target.value)} />
                     <input className="input sm:col-span-2" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
-                    <input className="input sm:col-span-2" placeholder="Poznámka (velikost, barva…)" value={note} onChange={(e) => setNote(e.target.value)} />
+                    <input className="input sm:col-span-2" placeholder="Poznámka (nepovinné)" value={note} onChange={(e) => setNote(e.target.value)} />
                   </div>
 
                   {err && <p className="text-sm text-red-600">{err}</p>}

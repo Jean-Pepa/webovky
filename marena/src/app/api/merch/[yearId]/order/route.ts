@@ -29,13 +29,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ yearId:
   if (!year) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const catalog = new Map((year.merch ?? []).map((p) => [p.id, p]));
-  const items: { productId: string; name: string; qty: number }[] = [];
+  const items: { productId: string; name: string; size?: string; color?: string; qty: number }[] = [];
   for (const s of selections) {
-    const sel = s as { productId?: unknown; qty?: unknown };
+    const sel = s as { productId?: unknown; qty?: unknown; size?: unknown; color?: unknown };
     const p = catalog.get(String(sel.productId));
     if (!p) continue;
     const qty = Math.max(1, Math.min(99, Math.round(Number(sel.qty) || 1)));
-    items.push({ productId: p.id, name: p.name, qty });
+    // Velikost/barva přijmeme jen pokud sedí s nabídkou produktu.
+    const size = typeof sel.size === "string" && (!p.sizes?.length || p.sizes.includes(sel.size)) ? sel.size : undefined;
+    const color = typeof sel.color === "string" && (!p.colors?.length || p.colors.includes(sel.color)) ? sel.color : undefined;
+    items.push({ productId: p.id, name: p.name, size, color, qty });
   }
   if (!items.length) return NextResponse.json({ error: "no_items" }, { status: 400 });
 

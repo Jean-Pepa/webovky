@@ -19,7 +19,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ yearId:
     (year.merch ?? []).map(async (p) => {
       let image: string | null = null;
       if (p.blobId && redis) image = (await redis.get(receiptKey(p.blobId))) as string | null;
-      return { id: p.id, name: p.name, price: p.price ?? null, note: p.note ?? null, image };
+      return {
+        id: p.id,
+        name: p.name,
+        price: p.price ?? null,
+        sizes: p.sizes ?? [],
+        colors: p.colors ?? [],
+        note: p.note ?? null,
+        image,
+      };
     }),
   );
   return NextResponse.json({ label: year.label, products });
