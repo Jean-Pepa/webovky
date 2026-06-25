@@ -99,16 +99,16 @@ export default function TymPage() {
   function PersonRow({ p, roleId, variant }: { p: Member; roleId: string; variant: "lead" | "helper" }) {
     const isLead = variant === "lead";
     return (
-      <div className={`rounded-xl p-2.5 ${isLead ? "border-2 border-red-500 bg-white" : "bg-white/70 ring-1 ring-black/[0.05]"}`}>
+      <div className={`rounded-xl p-2.5 ${isLead ? "border-2 border-leaf bg-white" : "bg-white/70 ring-1 ring-black/[0.05]"}`}>
         <p className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
           <span>{isLead ? "👑" : "↳"}</span>
           <span>{p.name}</span>
           {isLead ? (
-            <span className="chip bg-red-500 text-white">vedoucí</span>
+            <span className="chip bg-leaf text-white">vedoucí</span>
           ) : (
             <span className="chip">pomocník</span>
           )}
-          {sameName(p.name, me) && <span className="chip bg-marigold-600 text-white">to jsi ty</span>}
+          {sameName(p.name, me) && <span className="chip bg-leaf text-white">to jsi ty</span>}
         </p>
         {(p.phone || p.email) ? (
           <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
@@ -143,13 +143,13 @@ export default function TymPage() {
     const isLead = variant === "lead";
     const marker = variant === "lead" ? "👑" : variant === "helper" ? "↳" : "👤";
     return (
-      <div className={`rounded-lg p-2 ${isLead ? "border border-red-400 bg-white" : "bg-white/70 ring-1 ring-black/[0.05]"}`}>
+      <div className={`rounded-lg p-2 ${isLead ? "border border-leaf bg-white" : "bg-white/70 ring-1 ring-black/[0.05]"}`}>
         <div className="flex items-start gap-1.5">
           <span className="shrink-0 text-sm">{marker}</span>
           <div className="min-w-0 flex-1">
             <p className="flex items-center gap-1.5 text-sm font-semibold">
               <span className="truncate">{m.name}</span>
-              {sameName(m.name, me) && <span className="chip shrink-0 bg-marigold-600 text-white">ty</span>}
+              {sameName(m.name, me) && <span className="chip shrink-0 bg-leaf text-white">ty</span>}
             </p>
             {m.phone && (
               <a href={`tel:${m.phone}`} className="block truncate text-xs text-ink-soft hover:text-marigold-700">
@@ -181,7 +181,7 @@ export default function TymPage() {
     const mine = myMember?.roleIds.includes(r.id) ?? false;
     const open = openRole === r.id;
     return (
-      <div className={`card p-4 transition ${taken ? "role-taken bg-marigold-50/50" : ""}`}>
+      <div className={`card p-4 transition ${taken ? "role-taken bg-leaf/5" : ""}`}>
         <div className="flex items-start gap-3">
           <span className="text-2xl">{r.emoji}</span>
           <div className="min-w-0 flex-1">
@@ -599,7 +599,7 @@ function ProfileForm({
                 type="button"
                 onClick={() => setAsLead(true)}
                 className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition ${
-                  asLead ? "bg-red-500 text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"
+                  asLead ? "bg-leaf text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"
                 }`}
               >
                 👑 Vedoucí
