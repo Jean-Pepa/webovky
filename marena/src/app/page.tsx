@@ -230,7 +230,9 @@ export default function Home() {
 
         <div className="mx-auto w-full max-w-3xl px-4 pt-24 text-center [text-shadow:0_2px_20px_rgba(0,0,0,0.55)]">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white">{t.heroKicker}</p>
-          <h1 className="mt-3 font-display text-[4.5rem] font-bold leading-[0.95] tracking-[6cm] sm:text-[6.75rem] md:text-[9rem]">
+          {/* Rozestup písmen je obří jen na velkých displejích; na telefonu by
+              nápis přetékal/ořezával, proto tracking škáluje od jemného po 6 cm. */}
+          <h1 className="mt-3 font-display text-[3.5rem] font-bold leading-[0.95] tracking-[0.08em] sm:text-[6.75rem] sm:tracking-[1.5cm] md:text-[9rem] md:tracking-[4cm] lg:tracking-[6cm]">
             {"MAŘENA".split("").map((ch, i) => (
               <span key={i} className="marena-letter" style={{ animationDelay: `${i * -0.06}s` }}>
                 {ch}
