@@ -44,9 +44,12 @@ export default function MerchPage() {
             🔒 Tento ročník je uzamčený — nabídku jde jen prohlížet.
           </p>
         ) : (
-          <p className="rounded-2xl border border-black/10 bg-paper2 px-4 py-3 text-sm text-ink-soft">
-            Prohlížíš nabídku. Spravovat ji může jen role <strong>Merch</strong> a správce.
-          </p>
+          <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
+            <Icon name="merch" className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              Nabídku může spravovat jen role <strong>Merch</strong> a správce. Ty máš jen náhled.
+            </span>
+          </div>
         )}
         {products.length === 0 ? (
           <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
