@@ -4,6 +4,7 @@
 import type { DB, Year, Member, EventKind, FinanceKind, Task, Invite, MerchOrderItem } from "./types";
 import { uid } from "./id";
 import { ROLE_TASKS } from "./roleTasks";
+import { sameName } from "./names";
 
 // Vygeneruje výchozí úkoly „rozdané" na jednotlivé role (z manuálu).
 export function defaultRoleTasks(createdAt: string): Task[] {
@@ -180,7 +181,7 @@ export function applyAction(db: DB, a: Action): DB {
         const name = a.name.trim();
         const wasEmpty = !y.members.some((m) => m.roleIds.includes(a.roleId));
         let members = y.members;
-        const target = a.memberId ? members.find((m) => m.id === a.memberId) : members.find((m) => m.name === name);
+        const target = a.memberId ? members.find((m) => m.id === a.memberId) : members.find((m) => sameName(m.name, name));
         let memberId: string;
         if (target) {
           memberId = target.id;

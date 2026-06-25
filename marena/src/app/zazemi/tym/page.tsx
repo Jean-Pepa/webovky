@@ -7,6 +7,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
 import { Icon } from "@/components/Icons";
 import { isAdmin } from "@/lib/admin";
+import { sameName } from "@/lib/names";
 import type { Member } from "@/lib/types";
 
 export default function TymPage() {
@@ -23,7 +24,7 @@ export default function TymPage() {
   const editable = canEditCurrentYear; // starší (zamčený) ročník = jen ke čtení
   const admin = isAdmin(me);
 
-  const myMember = year.members.find((m) => m.name === me);
+  const myMember = year.members.find((m) => sameName(m.name, me));
   const mineRoles = ROLES.filter((r) => myMember?.roleIds.includes(r.id));
   const otherRoles = ROLES.filter((r) => !myMember?.roleIds.includes(r.id));
 
@@ -79,7 +80,7 @@ export default function TymPage() {
         asLead: !!data.asLead,
       });
     } else {
-      const existing = year.members.find((m) => m.name === me);
+      const existing = year.members.find((m) => sameName(m.name, me));
       if (existing) {
         await dispatch({
           type: "updateMember",
@@ -107,7 +108,7 @@ export default function TymPage() {
           ) : (
             <span className="chip">pomocník</span>
           )}
-          {p.name === me && <span className="chip bg-marigold-600 text-white">to jsi ty</span>}
+          {sameName(p.name, me) && <span className="chip bg-marigold-600 text-white">to jsi ty</span>}
         </p>
         {(p.phone || p.email) ? (
           <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
@@ -148,7 +149,7 @@ export default function TymPage() {
           <div className="min-w-0 flex-1">
             <p className="flex items-center gap-1.5 text-sm font-semibold">
               <span className="truncate">{m.name}</span>
-              {m.name === me && <span className="chip shrink-0 bg-marigold-600 text-white">ty</span>}
+              {sameName(m.name, me) && <span className="chip shrink-0 bg-marigold-600 text-white">ty</span>}
             </p>
             {m.phone && (
               <a href={`tel:${m.phone}`} className="block truncate text-xs text-ink-soft hover:text-marigold-700">
