@@ -122,6 +122,35 @@ export default function TymPage() {
     );
   }
 
+  // Řádek v pravém přehledu (seskupeno po rolích): vedoucí / pomocník / bez role.
+  function RosterPerson({ m, variant }: { m: Member; variant: "lead" | "helper" | "none" }) {
+    const isLead = variant === "lead";
+    return (
+      <div className={`rounded-lg p-2 ${isLead ? "border border-red-400 bg-white" : "bg-white/70 ring-1 ring-black/[0.05]"}`}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+              <span>{variant === "lead" ? "👑" : variant === "helper" ? "↳" : "👤"}</span>
+              <span className="break-words">{m.name}</span>
+              {m.name === me && <span className="chip bg-marigold-600 text-white">ty</span>}
+            </p>
+            {(m.email || m.phone) && (
+              <p className="mt-0.5 break-words text-xs text-ink-soft">{[m.phone, m.email].filter(Boolean).join(" · ")}</p>
+            )}
+          </div>
+          {admin && (
+            <div className="flex shrink-0 items-center gap-1">
+              <button className="btn-ghost px-1.5 py-0.5 text-[11px]" onClick={() => setEditMember(m)} title="Upravit člena">
+                Upravit
+              </button>
+              <DeleteButton onConfirm={() => dispatch({ type: "removeMember", yearId: year.id, memberId: m.id })} />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   function RoleCard({ r }: { r: Role }) {
     const people = takenBy(r.id);
     const taken = people.length > 0;
@@ -301,48 +330,45 @@ export default function TymPage() {
             {year.members.length === 0 ? (
               <p className="text-sm text-ink-soft">Zatím nikdo. Buď první!</p>
             ) : (
-              <ul className="space-y-2.5">
-                {year.members.map((m) => (
-                  <li key={m.id} className="rounded-xl border border-black/[0.06] bg-white p-2.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="flex flex-wrap items-center gap-1.5 font-semibold">
-                          {m.name}
-                          {m.name === me && <span className="chip bg-marigold-600 text-white">ty</span>}
-                        </p>
-                        {(m.email || m.phone) && (
-                          <p className="mt-0.5 break-words text-xs text-ink-soft">{[m.phone, m.email].filter(Boolean).join(" · ")}</p>
+              <div className="space-y-4">
+                {ROLES.filter((r) => takenBy(r.id).length > 0).map((r) => {
+                  const holders = takenBy(r.id);
+                  const leadId = leadIdOf(r.id);
+                  const lead = holders.find((h) => h.id === leadId);
+                  const helpers = holders.filter((h) => h.id !== leadId);
+                  return (
+                    <div key={r.id}>
+                      <h3 className="mb-1.5 flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+                        <span>{r.emoji}</span> {r.name}
+                        <span className="chip">{holders.length}</span>
+                      </h3>
+                      <div className="space-y-1.5">
+                        {lead && <RosterPerson m={lead} variant="lead" />}
+                        {helpers.length > 0 && (
+                          <div className="ml-3 space-y-1.5 border-l-2 border-marigold-300 pl-3">
+                            {helpers.map((h) => (
+                              <RosterPerson key={h.id} m={h} variant="helper" />
+                            ))}
+                          </div>
                         )}
                       </div>
-                      {admin && (
-                        <div className="flex shrink-0 items-center gap-1">
-                          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEditMember(m)} title="Upravit člena">
-                            Upravit
-                          </button>
-                          <DeleteButton onConfirm={() => dispatch({ type: "removeMember", yearId: year.id, memberId: m.id })} />
-                        </div>
-                      )}
                     </div>
-                    <div className="mt-1.5 flex flex-wrap gap-1">
-                      {m.roleIds.length === 0 ? (
-                        <span className="text-xs text-ink-soft/60">bez role</span>
-                      ) : (
-                        m.roleIds.map((id) => {
-                          const role = roleById(id);
-                          if (!role) return null;
-                          const isLead = leadIdOf(id) === m.id;
-                          return (
-                            <span key={id} className={`chip ${isLead ? "ring-1 ring-red-400" : ""}`}>
-                              {isLead ? "👑 " : ""}
-                              {role.emoji} {role.name}
-                            </span>
-                          );
-                        })
-                      )}
+                  );
+                })}
+
+                {year.members.filter((m) => m.roleIds.length === 0).length > 0 && (
+                  <div>
+                    <h3 className="mb-1.5 text-sm font-semibold text-ink-soft">Bez role</h3>
+                    <div className="space-y-1.5">
+                      {year.members
+                        .filter((m) => m.roleIds.length === 0)
+                        .map((m) => (
+                          <RosterPerson key={m.id} m={m} variant="none" />
+                        ))}
                     </div>
-                  </li>
-                ))}
-              </ul>
+                  </div>
+                )}
+              </div>
             )}
             {!admin && (
               <p className="mt-3 text-[11px] text-ink-soft/60">Upravovat a mazat lidi v seznamu může jen správce.</p>
