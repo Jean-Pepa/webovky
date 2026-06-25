@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { fmtDate } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
+import { isAdmin } from "@/lib/admin";
 import type { Shift } from "@/lib/types";
 
 const AREA_META: Record<string, string> = {
@@ -174,6 +175,7 @@ export default function ProvozPage() {
 
 function ShiftCard({ shift, yearId, me }: { shift: Shift; yearId: string; me: string }) {
   const { dispatch } = useStore();
+  const admin = isAdmin(me);
   const filled = shift.people.length;
   const cap = shift.capacity;
   const mine = shift.people.includes(me);
@@ -203,8 +205,17 @@ function ShiftCard({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
       {shift.people.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {shift.people.map((p) => (
-            <span key={p} className={`chip ${p === me ? "bg-marigold-600 text-white" : ""}`}>
+            <span key={p} className={`chip inline-flex items-center gap-1 ${p === me ? "bg-marigold-600 text-white" : ""}`}>
               {p}
+              {admin && (
+                <button
+                  onClick={() => dispatch({ type: "removeShiftPerson", yearId, shiftId: shift.id, name: p })}
+                  className={p === me ? "text-white/70 hover:text-white" : "text-ink-soft/60 hover:text-red-600"}
+                  title={`Odebrat ze směny — ${p}`}
+                >
+                  ✕
+                </button>
+              )}
             </span>
           ))}
         </div>

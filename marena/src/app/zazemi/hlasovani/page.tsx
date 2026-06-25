@@ -88,7 +88,7 @@ export default function HlasovaniPage() {
           Zatím žádná anketa. Založ první rozhodování týmu.
         </div>
       ) : (
-        polls.map((p) => <PollCard key={p.id} poll={p} yearId={year.id} me={me} />)
+        polls.map((p) => <PollCard key={p.id} poll={p} yearId={year.id} me={me} totalPeople={year.members.length} />)
       )}
     </div>
   );
@@ -101,10 +101,12 @@ function votersWord(n: number): string {
   return "lidí hlasovalo";
 }
 
-function PollCard({ poll, yearId, me }: { poll: Poll; yearId: string; me: string }) {
+function PollCard({ poll, yearId, me, totalPeople }: { poll: Poll; yearId: string; me: string; totalPeople: number }) {
   const { dispatch } = useStore();
+  const [showOverview, setShowOverview] = useState(false);
   const totalVoters = new Set(poll.options.flatMap((o) => o.voters)).size;
   const maxVotes = Math.max(1, ...poll.options.map((o) => o.voters.length));
+  const admin = isAdmin(me);
 
   return (
     <div className={`card p-5 ${poll.closed ? "bg-leaf/[0.04] ring-2 ring-leaf" : ""}`}>
@@ -158,25 +160,67 @@ function PollCard({ poll, yearId, me }: { poll: Poll; yearId: string; me: string
       <div className="mt-4 flex flex-wrap items-center gap-3">
         {totalVoters === 0 ? (
           <span className="inline-flex items-center rounded-full bg-paper2 px-4 py-2 text-sm font-medium text-ink-soft">
-            Zatím nikdo nehlasoval
+            {totalPeople > 0 ? `Zatím nikdo z ${totalPeople} nehlasoval` : "Zatím nikdo nehlasoval"}
           </span>
         ) : (
           <span className="inline-flex items-center gap-2.5 rounded-full bg-marigold-600 px-4 py-2 text-white shadow-sm">
-            <span className="font-display text-3xl font-bold leading-none tracking-tight">{totalVoters}</span>
-            <span className="text-sm font-semibold leading-tight">{votersWord(totalVoters)}</span>
+            <span className="font-display text-3xl font-bold leading-none tracking-tight">
+              {totalVoters}
+              {totalPeople > 0 && <span className="text-xl font-semibold opacity-80"> z {totalPeople}</span>}
+            </span>
+            <span className="text-sm font-semibold leading-tight">
+              {totalPeople > 0 ? `${totalPeople === 1 ? "člověka" : "lidí"} hlasovalo` : votersWord(totalVoters)}
+            </span>
           </span>
         )}
         <span className="ml-auto flex items-center gap-2">
-          {isAdmin(me) && (
+          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setShowOverview((v) => !v)}>
+            <Icon name="vote" className="h-3.5 w-3.5" /> {showOverview ? "Skrýt přehled" : "Přehled"}
+          </button>
+          {admin && (
             <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "closePoll", yearId, pollId: poll.id })}>
               {poll.closed ? "Otevřít" : "Uzavřít"}
             </button>
           )}
-          {(isAdmin(me) || poll.author === me) && (
+          {(admin || poll.author === me) && (
             <DeleteButton onConfirm={() => dispatch({ type: "removePoll", yearId, pollId: poll.id })} />
           )}
         </span>
       </div>
+
+      {showOverview && (
+        <div className="mt-3 space-y-3 rounded-2xl bg-paper2 p-4">
+          <p className="text-xs font-semibold text-ink-soft">Kdo hlasoval za co</p>
+          {poll.options.map((o) => (
+            <div key={o.id}>
+              <div className="flex items-center justify-between gap-2 text-sm font-medium">
+                <span>{o.label}</span>
+                <span className="text-ink-soft">{o.voters.length}</span>
+              </div>
+              {o.voters.length > 0 ? (
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {o.voters.map((v) => (
+                    <span key={v} className="chip inline-flex items-center gap-1">
+                      {v}
+                      {admin && (
+                        <button
+                          onClick={() => dispatch({ type: "removeVoter", yearId, pollId: poll.id, optionId: o.id, voter: v })}
+                          className="text-ink-soft/60 hover:text-red-600"
+                          title={`Odebrat hlas — ${v}`}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-1 text-xs text-ink-soft">— nikdo —</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
