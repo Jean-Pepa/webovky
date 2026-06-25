@@ -28,6 +28,7 @@ export type Action =
   | { type: "removePost"; yearId: string; postId: string }
   | { type: "addPoll"; yearId: string; author: string; question: string; options: string[]; multi?: boolean }
   | { type: "vote"; yearId: string; pollId: string; optionId: string; voter: string }
+  | { type: "removeVoter"; yearId: string; pollId: string; optionId: string; voter: string }
   | { type: "closePoll"; yearId: string; pollId: string }
   | { type: "removePoll"; yearId: string; pollId: string }
   | { type: "addEvent"; yearId: string; date: string; endDate?: string; time?: string; title: string; kind: EventKind; note?: string; author: string }
@@ -44,6 +45,7 @@ export type Action =
   | { type: "removeFinance"; yearId: string; financeId: string }
   | { type: "addShift"; yearId: string; area: string; title?: string; date?: string; from?: string; to?: string; capacity?: number; note?: string }
   | { type: "signShift"; yearId: string; shiftId: string; name: string }
+  | { type: "removeShiftPerson"; yearId: string; shiftId: string; name: string }
   | { type: "removeShift"; yearId: string; shiftId: string }
   | { type: "addInvite"; yearId: string; category: string; name: string; link?: string; priority?: number }
   | { type: "updateInvite"; yearId: string; inviteId: string; patch: Partial<Pick<Invite, "category" | "name" | "link" | "priority" | "contacted" | "interest" | "availability" | "price" | "confirmedDate" | "note">> }
@@ -183,6 +185,21 @@ export function applyAction(db: DB, a: Action): DB {
           };
         }),
       }));
+    case "removeVoter":
+      // Správce odebere hlas konkrétního člověka u dané možnosti.
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        polls: y.polls.map((poll) =>
+          poll.id !== a.pollId
+            ? poll
+            : {
+                ...poll,
+                options: poll.options.map((o) =>
+                  o.id === a.optionId ? { ...o, voters: o.voters.filter((v) => v !== a.voter) } : o,
+                ),
+              },
+        ),
+      }));
     case "closePoll":
       return mapYear(db, a.yearId, (y) => ({
         ...y,
@@ -318,6 +335,14 @@ export function applyAction(db: DB, a: Action): DB {
           if (s.capacity > 0 && s.people.length >= s.capacity) return s;
           return { ...s, people: [...s.people, name] };
         }),
+      }));
+    case "removeShiftPerson":
+      // Správce odebere konkrétního člověka ze směny.
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        shifts: (y.shifts ?? []).map((s) =>
+          s.id === a.shiftId ? { ...s, people: s.people.filter((p) => p !== a.name) } : s,
+        ),
       }));
     case "removeShift":
       return mapYear(db, a.yearId, (y) => ({ ...y, shifts: (y.shifts ?? []).filter((s) => s.id !== a.shiftId) }));
