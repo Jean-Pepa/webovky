@@ -17,6 +17,7 @@ interface PubProduct {
   sizes: string[];
   colors: string[];
   note: string | null;
+  soldOut: boolean;
   image: string | null;
 }
 
@@ -61,6 +62,7 @@ export default function MerchOrderPage() {
       sizes: p.sizes ?? [],
       colors: p.colors ?? [],
       note: p.note ?? null,
+      soldOut: p.soldOut ?? false,
       image: p.image ?? null,
     });
     (async () => {
@@ -91,6 +93,10 @@ export default function MerchOrderPage() {
           if (!cancelled) setStatus("notfound");
           return;
         }
+        const soldByProduct = new Map<string, number>();
+        for (const o of year.merchOrders ?? []) {
+          for (const it of o.items) soldByProduct.set(it.productId, (soldByProduct.get(it.productId) ?? 0) + it.qty);
+        }
         const list = await Promise.all(
           (year.merch ?? []).map(async (p) =>
             norm({
@@ -100,6 +106,7 @@ export default function MerchOrderPage() {
               sizes: p.sizes ?? [],
               colors: p.colors ?? [],
               note: p.note ?? null,
+              soldOut: p.stock != null && p.stock - (soldByProduct.get(p.id) ?? 0) <= 0,
               image: p.blobId ? await loadReceipt(p.blobId, false) : null,
             }),
           ),
@@ -120,6 +127,7 @@ export default function MerchOrderPage() {
   }, [yearId]);
 
   function addToCart(p: PubProduct) {
+    if (p.soldOut) return;
     const s = sel[p.id] || {};
     const size = p.sizes.length ? s.size ?? p.sizes[0] : undefined;
     const color = p.colors.length ? s.color ?? p.colors[0] : undefined;
@@ -136,7 +144,8 @@ export default function MerchOrderPage() {
   async function submit() {
     setErr(null);
     if (!name.trim()) return setErr("Vyplň prosím jméno.");
-    if (!phone.trim() && !email.trim()) return setErr("Vyplň telefon nebo e-mail, ať tě umíme kontaktovat.");
+    if (!phone.trim()) return setErr("Vyplň telefon.");
+    if (!email.trim()) return setErr("Vyplň e-mail.");
     if (cart.length === 0) return setErr("Košík je prázdný — přidej aspoň jednu věc z nabídky.");
 
     setSubmitting(true);
@@ -173,7 +182,7 @@ export default function MerchOrderPage() {
           phone,
           email,
           note,
-          items: cart.map((l) => ({ productId: l.productId, name: l.name, size: l.size, color: l.color, qty: l.qty })),
+          items: cart.map((l) => ({ productId: l.productId, name: l.name, size: l.size, color: l.color, price: l.price ?? undefined, qty: l.qty })),
         });
         localStorage.setItem(LS_DB, JSON.stringify(next));
       }
@@ -228,13 +237,22 @@ export default function MerchOrderPage() {
                       const curSize = p.sizes.length ? sel[p.id]?.size ?? p.sizes[0] : undefined;
                       const curColor = p.colors.length ? sel[p.id]?.color ?? p.colors[0] : undefined;
                       return (
-                        <div key={p.id} className="card overflow-hidden">
-                          {p.image ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={p.image} alt={p.name} className="h-44 w-full bg-paper2 object-contain" />
-                          ) : (
-                            <div className="grid h-44 w-full place-items-center bg-paper2 text-ink-soft">bez fotky</div>
-                          )}
+                        <div key={p.id} className={`card overflow-hidden ${p.soldOut ? "opacity-90" : ""}`}>
+                          <div className="relative">
+                            {p.image ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={p.image} alt={p.name} className="h-44 w-full bg-paper2 object-contain" />
+                            ) : (
+                              <div className="grid h-44 w-full place-items-center bg-paper2 text-ink-soft">bez fotky</div>
+                            )}
+                            {p.soldOut && (
+                              <div className="absolute inset-0 grid place-items-center bg-white/55">
+                                <span className="-rotate-6 rounded-full bg-red-600 px-4 py-1.5 text-sm font-bold uppercase tracking-wide text-white shadow-lg">
+                                  Vyprodáno
+                                </span>
+                              </div>
+                            )}
+                          </div>
                           <div className="p-3">
                             <p className="break-words font-semibold">{p.name}</p>
                             {p.price != null && <p className="text-sm text-ink-soft">{fmtCZK(p.price)}</p>}
@@ -288,10 +306,11 @@ export default function MerchOrderPage() {
 
                             <button
                               onClick={() => addToCart(p)}
-                              className="btn-primary mt-3 w-full justify-center"
+                              disabled={p.soldOut}
+                              className="btn-primary mt-3 w-full justify-center disabled:opacity-50"
                               aria-label="Přidat do košíku"
                             >
-                              <Icon name="cart" className="h-5 w-5" /> Do košíku
+                              {p.soldOut ? "Vyprodáno" : (<><Icon name="cart" className="h-5 w-5" /> Do košíku</>)}
                             </button>
                           </div>
                         </div>

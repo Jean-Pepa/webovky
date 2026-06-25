@@ -44,6 +44,9 @@ export type Action =
   | { type: "addLink"; yearId: string; label: string; value: string; folder?: string; note?: string }
   | { type: "removeLink"; yearId: string; linkId: string }
   | { type: "addFinance"; yearId: string; kind: FinanceKind; label: string; amount: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string }
+  | { type: "openCashbox"; yearId: string; label?: string; opening: number }
+  | { type: "closeCashbox"; yearId: string; cashboxId: string; closing: number }
+  | { type: "removeCashbox"; yearId: string; cashboxId: string }
   | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string; receiptId?: string; receiptIds?: string[] } }
   | { type: "toggleFinancePaid"; yearId: string; financeId: string }
   | { type: "removeFinance"; yearId: string; financeId: string }
@@ -57,10 +60,11 @@ export type Action =
   | { type: "addKitchenFile"; yearId: string; label: string; category: string; blobId: string; fileKind: "image" | "file"; fileName?: string; note?: string; author: string }
   | { type: "removeKitchenFile"; yearId: string; fileId: string }
   // Merch — nabídka produktů (správce / role merch) a objednávky (veřejná stránka).
-  | { type: "addMerchProduct"; yearId: string; name: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; note?: string }
-  | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; note?: string } }
+  | { type: "addMerchProduct"; yearId: string; name: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; note?: string }
+  | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; note?: string } }
   | { type: "removeMerchProduct"; yearId: string; productId: string }
   | { type: "addMerchOrder"; yearId: string; name: string; phone?: string; email?: string; items: MerchOrderItem[]; note?: string }
+  | { type: "toggleMerchOrderDone"; yearId: string; orderId: string }
   | { type: "removeMerchOrder"; yearId: string; orderId: string }
   // Uvolnění místa: smaže všechny fotky/účtenky ročníku (reference v DB; samotné
   // bloby maže klient zvlášť). Texty (finance, popisy) zůstávají.
@@ -68,6 +72,13 @@ export type Action =
 
 function now(): string {
   return new Date().toISOString();
+}
+
+// "HH:MM" z ISO časového razítka.
+function hhmm(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
 // Očistí seznam textů (velikosti, barvy) — ořízne a vyhodí prázdné; prázdný → undefined.
@@ -381,6 +392,51 @@ export function applyAction(db: DB, a: Action): DB {
     case "removeFinance":
       return mapYear(db, a.yearId, (y) => ({ ...y, finances: (y.finances ?? []).filter((f) => f.id !== a.financeId) }));
 
+    case "openCashbox":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        cashboxes: [
+          { id: uid("cb_"), label: a.label?.trim() || undefined, opening: Math.round(a.opening), openedAt: now(), createdAt: now() },
+          ...(y.cashboxes ?? []),
+        ],
+      }));
+    case "closeCashbox":
+      return mapYear(db, a.yearId, (y) => {
+        const box = (y.cashboxes ?? []).find((c) => c.id === a.cashboxId);
+        if (!box || box.closedAt) return y; // neexistuje nebo už uzavřená
+        const closing = Math.round(a.closing);
+        const trzba = closing - box.opening; // tržba = večer − ráno
+        const closedAt = now();
+        const day = box.openedAt.slice(0, 10); // YYYY-MM-DD
+        const financeId = uid("f_");
+        const lbl = box.label ? ` — ${box.label}` : "";
+        const fin = {
+          id: financeId,
+          kind: (trzba >= 0 ? "prijem" : "vydaj") as FinanceKind,
+          label: `Kasa${lbl}`,
+          amount: Math.abs(trzba),
+          category: "kasa",
+          paid: true,
+          date: day,
+          note: `Kasa${box.label ? " " + box.label : ""}: ráno ${box.opening} Kč (${hhmm(box.openedAt)}) → večer ${closing} Kč (${hhmm(closedAt)}); tržba ${trzba} Kč`,
+          createdAt: now(),
+        };
+        return {
+          ...y,
+          cashboxes: (y.cashboxes ?? []).map((c) => (c.id === a.cashboxId ? { ...c, closing, closedAt, financeId } : c)),
+          finances: [fin, ...(y.finances ?? [])],
+        };
+      });
+    case "removeCashbox":
+      return mapYear(db, a.yearId, (y) => {
+        const box = (y.cashboxes ?? []).find((c) => c.id === a.cashboxId);
+        return {
+          ...y,
+          cashboxes: (y.cashboxes ?? []).filter((c) => c.id !== a.cashboxId),
+          finances: box?.financeId ? (y.finances ?? []).filter((f) => f.id !== box.financeId) : y.finances,
+        };
+      });
+
     case "addShift":
       return mapYear(db, a.yearId, (y) => ({
         ...y,
@@ -487,6 +543,7 @@ export function applyAction(db: DB, a: Action): DB {
             blobId: a.blobId,
             sizes: cleanList(a.sizes),
             colors: cleanList(a.colors),
+            stock: Number.isFinite(a.stock) ? a.stock : undefined,
             note: a.note?.trim() || undefined,
             createdAt: now(),
           },
@@ -505,6 +562,7 @@ export function applyAction(db: DB, a: Action): DB {
             price: "price" in q ? (Number.isFinite(q.price) ? q.price : undefined) : p.price,
             sizes: "sizes" in q ? cleanList(q.sizes) : p.sizes,
             colors: "colors" in q ? cleanList(q.colors) : p.colors,
+            stock: "stock" in q ? (Number.isFinite(q.stock) ? q.stock : undefined) : p.stock,
             note: "note" in q ? q.note?.trim() || undefined : p.note,
           };
         }),
@@ -525,16 +583,63 @@ export function applyAction(db: DB, a: Action): DB {
               name: it.name,
               size: it.size?.trim() || undefined,
               color: it.color?.trim() || undefined,
+              price: Number.isFinite(it.price) ? it.price : undefined,
               qty: Math.max(1, Math.round(it.qty || 1)),
             })),
             note: a.note?.trim() || undefined,
+            done: false,
             createdAt: now(),
           },
           ...(y.merchOrders ?? []),
         ],
       }));
+    case "toggleMerchOrderDone":
+      return mapYear(db, a.yearId, (y) => {
+        const order = (y.merchOrders ?? []).find((o) => o.id === a.orderId);
+        if (!order) return y;
+        if (!order.done) {
+          // vyřízeno → zapiš tržbu objednávky jako příjem do financí
+          const total = order.items.reduce((sum, it) => {
+            const price = it.price ?? (y.merch ?? []).find((p) => p.id === it.productId)?.price ?? 0;
+            return sum + price * it.qty;
+          }, 0);
+          const financeId = uid("f_");
+          const itemsText = order.items
+            .map((it) => `${it.qty}× ${it.name}${[it.size, it.color].filter(Boolean).length ? ` (${[it.size, it.color].filter(Boolean).join(" · ")})` : ""}`)
+            .join(", ");
+          const fin = {
+            id: financeId,
+            kind: "prijem" as FinanceKind,
+            label: `Merch — ${order.name}`,
+            amount: total,
+            category: "merch",
+            paid: true,
+            date: order.createdAt.slice(0, 10),
+            note: itemsText,
+            createdAt: now(),
+          };
+          return {
+            ...y,
+            merchOrders: (y.merchOrders ?? []).map((o) => (o.id === a.orderId ? { ...o, done: true, financeId } : o)),
+            finances: [fin, ...(y.finances ?? [])],
+          };
+        }
+        // zpět na „čeká" → odeber navázaný příjem
+        return {
+          ...y,
+          merchOrders: (y.merchOrders ?? []).map((o) => (o.id === a.orderId ? { ...o, done: false, financeId: undefined } : o)),
+          finances: order.financeId ? (y.finances ?? []).filter((f) => f.id !== order.financeId) : y.finances,
+        };
+      });
     case "removeMerchOrder":
-      return mapYear(db, a.yearId, (y) => ({ ...y, merchOrders: (y.merchOrders ?? []).filter((o) => o.id !== a.orderId) }));
+      return mapYear(db, a.yearId, (y) => {
+        const order = (y.merchOrders ?? []).find((o) => o.id === a.orderId);
+        return {
+          ...y,
+          merchOrders: (y.merchOrders ?? []).filter((o) => o.id !== a.orderId),
+          finances: order?.financeId ? (y.finances ?? []).filter((f) => f.id !== order.financeId) : y.finances,
+        };
+      });
 
     default:
       return db;

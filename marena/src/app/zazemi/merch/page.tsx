@@ -6,60 +6,75 @@ import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
-import { fmtCZK, fmtDate } from "@/lib/format";
+import { fmtCZK, fmtDateTime } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { canSeeMerch } from "@/lib/merch";
+import { isAdmin } from "@/lib/admin";
 import type { MerchProduct, MerchOrder } from "@/lib/types";
+
+// Cena objednávky = součet (cena za kus × počet). Cena se bere ze snapshotu
+// v položce, jinak z aktuální nabídky (kvůli starším objednávkám).
+function orderTotal(order: MerchOrder, products: MerchProduct[]): number {
+  return order.items.reduce((sum, it) => {
+    const price = it.price ?? products.find((p) => p.id === it.productId)?.price ?? 0;
+    return sum + price * it.qty;
+  }, 0);
+}
 
 export default function MerchPage() {
   const { currentYear, me, canEditCurrentYear } = useStore();
   const year = currentYear;
   if (!year) return null;
 
-  if (!canSeeMerch(year, me)) {
-    return (
-      <div className="mx-auto max-w-md">
-        <div className="card p-8 text-center">
-          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-paper2">
-            <Icon name="merch" className="h-6 w-6 text-ink-soft" />
-          </div>
-          <h1 className="font-display text-xl font-semibold">Merch</h1>
-          <p className="mt-1 text-sm text-ink-soft">
-            Tato sekce je jen pro správce a člověka s rolí <strong>Merch</strong>. Roli si přiřadíš v sekci Tým a role.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Merch vidí každý; spravovat (přidávat/měnit) může role Merch a správce, mazat objednávky jen správce.
+  const canManage = canSeeMerch(year, me) && canEditCurrentYear;
+  const canDeleteOrders = isAdmin(me) && canEditCurrentYear;
 
   const products = year.merch ?? [];
   const orders = [...(year.merchOrders ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const pending = orders.filter((o) => !o.done).length;
+  const doneCount = orders.length - pending;
+  const totalQty = orders.reduce((s, o) => s + o.items.reduce((q, it) => q + it.qty, 0), 0);
+  const revenue = orders.reduce((s, o) => s + orderTotal(o, products), 0);
+  const doneRevenue = orders.filter((o) => o.done).reduce((s, o) => s + orderTotal(o, products), 0);
+  // Prodáno na produkt — pro „skladem / zbývá" přímo u karty.
+  const soldByProduct = new Map<string, number>();
+  for (const o of orders) for (const it of o.items) soldByProduct.set(it.productId, (soldByProduct.get(it.productId) ?? 0) + it.qty);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-semibold tracking-tight">Merch</h1>
-        <p className="text-sm text-ink-soft">Nahraj fotky nabídky, sdílej QR kód a sleduj objednávky.</p>
+        <p className="text-sm text-ink-soft">
+          {canManage ? "Nahraj fotky nabídky, sdílej QR kód a sleduj objednávky." : "Nabídka merche a QR kód k objednání."}
+        </p>
       </div>
 
       {/* Nabídka (fotky merche) */}
       <section className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Nabídka</h2>
-        {canEditCurrentYear ? (
+        {canManage ? (
           <AddProduct yearId={year.id} />
-        ) : (
+        ) : canSeeMerch(year, me) ? (
           <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             🔒 Tento ročník je uzamčený — nabídku jde jen prohlížet.
           </p>
+        ) : (
+          <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
+            <Icon name="merch" className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              Nabídku může spravovat jen role <strong>Merch</strong> a správce. Ty máš jen náhled.
+            </span>
+          </div>
         )}
         {products.length === 0 ? (
           <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
-            Zatím žádný merch. Nahraj první kousek.
+            {canManage ? "Zatím žádný merch. Nahraj první kousek." : "Zatím tu není žádný merch."}
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((p) => (
-              <ProductCard key={p.id} product={p} yearId={year.id} editable={canEditCurrentYear} />
+              <ProductCard key={p.id} product={p} yearId={year.id} editable={canManage} sold={soldByProduct.get(p.id) ?? 0} />
             ))}
           </div>
         )}
@@ -68,8 +83,14 @@ export default function MerchPage() {
       {/* Objednávky + QR */}
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         <section className="space-y-3">
-          <h2 className="font-display text-lg font-semibold">
-            Objednávky <span className="text-sm font-normal text-ink-soft">({orders.length})</span>
+          <h2 className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+            Objednávky
+            <span className="grid h-8 min-w-8 place-items-center rounded-full bg-marigold-600 px-2.5 font-display text-base font-bold text-white">
+              {orders.length}
+            </span>
+            {pending > 0 && (
+              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">{pending} čeká</span>
+            )}
           </h2>
           {orders.length === 0 ? (
             <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
@@ -78,13 +99,46 @@ export default function MerchPage() {
           ) : (
             <div className="space-y-2">
               {orders.map((o) => (
-                <OrderRow key={o.id} order={o} yearId={year.id} />
+                <OrderRow key={o.id} order={o} yearId={year.id} canManage={canManage} canDelete={canDeleteOrders} total={orderTotal(o, products)} />
               ))}
             </div>
           )}
         </section>
 
-        <aside>
+        <aside className="space-y-4">
+          {/* Souhrn / propočty */}
+          <div className="card p-4">
+            <h2 className="mb-2 font-display text-lg font-semibold">Souhrn</h2>
+            <dl className="space-y-1.5 text-sm">
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-soft">Objednávek</dt>
+                <dd className="font-semibold">{orders.length}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-soft">Kusů celkem</dt>
+                <dd className="font-semibold">{totalQty}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-soft">Čeká / Vyřízeno</dt>
+                <dd className="font-semibold">
+                  <span className="text-amber-700">{pending}</span> / <span className="text-leaf-700">{doneCount}</span>
+                </dd>
+              </div>
+              <div className="flex justify-between gap-2 border-t border-black/10 pt-1.5">
+                <dt className="text-ink-soft">Tržba celkem</dt>
+                <dd className="font-display text-base font-bold text-marigold-700">{fmtCZK(revenue)}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-soft">Z toho vyřízeno</dt>
+                <dd className="font-semibold text-leaf-700">{fmtCZK(doneRevenue)}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-soft">Čeká na vyřízení</dt>
+                <dd className="font-semibold text-amber-700">{fmtCZK(revenue - doneRevenue)}</dd>
+              </div>
+            </dl>
+          </div>
+
           <QrCard yearId={year.id} />
         </aside>
       </div>
@@ -176,8 +230,10 @@ function AddProduct({ yearId }: { yearId: string }) {
   );
 }
 
-function ProductCard({ product, yearId, editable }: { product: MerchProduct; yearId: string; editable: boolean }) {
+function ProductCard({ product, yearId, editable, sold }: { product: MerchProduct; yearId: string; editable: boolean; sold: number }) {
   const { dispatch, configured } = useStore();
+  const remaining = product.stock != null ? product.stock - sold : null;
+  const soldOut = remaining != null && remaining <= 0;
   const [img, setImg] = useState<string | null>(null);
   const [viewing, setViewing] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -237,6 +293,25 @@ function ProductCard({ product, yearId, editable }: { product: MerchProduct; yea
           </div>
         )}
         {product.note && <p className="mt-1 text-xs text-ink-soft">{product.note}</p>}
+
+        {/* Sklad přímo u produktu: nastavení + prodáno/zbývá/vyprodáno */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-black/[0.05] pt-2 text-xs text-ink-soft">
+          {editable ? (
+            <span className="flex items-center gap-1">
+              Skladem <StockInput product={product} yearId={yearId} />
+            </span>
+          ) : product.stock != null ? (
+            <span>Skladem: {product.stock}</span>
+          ) : (
+            <span>Skladem: neomezeně</span>
+          )}
+          <span>prodáno: {sold}</span>
+          {soldOut ? (
+            <span className="rounded-full bg-red-100 px-2 py-0.5 font-bold text-red-700">Vyprodáno</span>
+          ) : remaining != null ? (
+            <span className="rounded-full bg-leaf/15 px-2 py-0.5 font-semibold text-leaf-700">zbývá {remaining}</span>
+          ) : null}
+        </div>
       </div>
 
       {editing && <EditProductModal product={product} yearId={yearId} onClose={() => setEditing(false)} />}
@@ -268,10 +343,12 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
   const [price, setPrice] = useState(product.price != null ? String(product.price) : "");
   const [sizes, setSizes] = useState((product.sizes ?? []).join(", "));
   const [colors, setColors] = useState((product.colors ?? []).join(", "));
+  const [stock, setStock] = useState(product.stock != null ? String(product.stock) : "");
   const [note, setNote] = useState(product.note ?? "");
 
   async function save() {
     const priceNum = parseInt(price.replace(/\s/g, ""), 10);
+    const stockNum = parseInt(stock.replace(/\s/g, ""), 10);
     await dispatch({
       type: "updateMerchProduct",
       yearId,
@@ -281,6 +358,7 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
         price: Number.isFinite(priceNum) ? priceNum : undefined,
         sizes: parseList(sizes),
         colors: parseList(colors),
+        stock: Number.isFinite(stockNum) ? stockNum : undefined,
         note,
       },
     });
@@ -307,6 +385,10 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
           <input className="input" placeholder="černá, bílá" value={colors} onChange={(e) => setColors(e.target.value)} />
         </div>
         <div>
+          <label className="label">Skladem (ks) — prázdné = neomezeně</label>
+          <input className="input" inputMode="numeric" placeholder="např. 50" value={stock} onChange={(e) => setStock(e.target.value)} />
+        </div>
+        <div>
           <label className="label">Poznámka</label>
           <input className="input" value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
@@ -323,42 +405,92 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
   );
 }
 
-function OrderRow({ order, yearId }: { order: MerchOrder; yearId: string }) {
+function OrderRow({
+  order,
+  yearId,
+  canManage,
+  canDelete,
+  total,
+}: {
+  order: MerchOrder;
+  yearId: string;
+  canManage: boolean;
+  canDelete: boolean;
+  total: number;
+}) {
   const { dispatch } = useStore();
+  const itemsText = order.items
+    .map((it) => `${it.qty}× ${it.name}${[it.size, it.color].filter(Boolean).length ? ` (${[it.size, it.color].filter(Boolean).join(" · ")})` : ""}`)
+    .join(", ");
+
   return (
-    <div className="card p-3">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="font-semibold">{order.name}</p>
-          <p className="text-xs text-ink-soft">{fmtDate(order.createdAt)}</p>
-        </div>
-        <DeleteButton onConfirm={() => dispatch({ type: "removeMerchOrder", yearId, orderId: order.id })} />
-      </div>
-      <div className="mt-1.5 flex flex-wrap gap-1.5">
-        {order.items.map((it, i) => {
-          const variant = [it.size, it.color].filter(Boolean).join(" · ");
-          return (
-            <span key={i} className="chip">
-              {it.qty}× {it.name}
-              {variant && <span className="text-ink-soft"> · {variant}</span>}
-            </span>
-          );
-        })}
-      </div>
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+    <div className={`card px-3 py-2 ${order.done ? "bg-leaf/[0.06]" : ""}`}>
+      {/* Řádek 1: jméno · telefon · e-mail · datum a čas · stav · smazat */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="font-semibold">{order.name}</span>
         {order.phone && (
-          <a href={`tel:${order.phone}`} className="text-ink-soft hover:text-ink">
+          <a href={`tel:${order.phone}`} className="text-xs text-ink-soft hover:text-ink">
             📞 {order.phone}
           </a>
         )}
         {order.email && (
-          <a href={`mailto:${order.email}`} className="text-ink-soft hover:text-ink">
+          <a href={`mailto:${order.email}`} className="text-xs text-ink-soft hover:text-ink">
             ✉️ {order.email}
           </a>
         )}
+        <span className="text-xs text-ink-soft/70">{fmtDateTime(order.createdAt)}</span>
+
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {canManage ? (
+            <button
+              onClick={() => dispatch({ type: "toggleMerchOrderDone", yearId, orderId: order.id })}
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+                order.done ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+              }`}
+              title="Přepnout stav"
+            >
+              {order.done ? "✓ Vyřízeno" : "⏳ Čeká"}
+            </button>
+          ) : (
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                order.done ? "bg-leaf/15 text-leaf-700" : "bg-amber-100 text-amber-800"
+              }`}
+            >
+              {order.done ? "✓ Vyřízeno" : "⏳ Čeká"}
+            </span>
+          )}
+          {canDelete && <DeleteButton onConfirm={() => dispatch({ type: "removeMerchOrder", yearId, orderId: order.id })} />}
+        </div>
       </div>
-      {order.note && <p className="mt-1 text-xs text-ink-soft">Pozn.: {order.note}</p>}
+
+      {/* Řádek 2: jaký merch a jeho počet (+ poznámka a cena) */}
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-black/[0.05] pt-1 text-sm">
+        <span>{itemsText}</span>
+        {order.note && <span className="text-xs text-ink-soft">· pozn.: {order.note}</span>}
+        {total > 0 && <span className="ml-auto font-display font-bold text-ink">{fmtCZK(total)}</span>}
+      </div>
     </div>
+  );
+}
+
+function StockInput({ product, yearId }: { product: MerchProduct; yearId: string }) {
+  const { dispatch } = useStore();
+  const [val, setVal] = useState(product.stock != null ? String(product.stock) : "");
+  function save() {
+    const n = parseInt(val.replace(/\s/g, ""), 10);
+    dispatch({ type: "updateMerchProduct", yearId, productId: product.id, patch: { stock: Number.isFinite(n) ? n : undefined } });
+  }
+  return (
+    <input
+      className="w-16 rounded-lg border border-black/10 bg-white px-2 py-1 text-xs"
+      inputMode="numeric"
+      value={val}
+      onChange={(e) => setVal(e.target.value)}
+      onBlur={save}
+      onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+      placeholder="ks"
+    />
   );
 }
 

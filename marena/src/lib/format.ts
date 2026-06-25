@@ -10,6 +10,15 @@ export function fmtDate(iso?: string): string {
   return `${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+export function fmtDateTime(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()} ${hh}:${mm}`;
+}
+
 export function fmtDayShort(iso: string): { day: number; dow: string; month: string } {
   const d = new Date(`${iso}T00:00:00`);
   return { day: d.getDate(), dow: DAYS[d.getDay()], month: MONTHS[d.getMonth()] };

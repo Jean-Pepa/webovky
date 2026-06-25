@@ -7,8 +7,8 @@ import { Photo } from "@/components/Photo";
 import { Icon, type IconName } from "@/components/Icons";
 
 // ⬇️ Až budete mít účet, stačí změnit tenhle jeden řádek na svůj Instagram.
-const IG_URL = "https://instagram.com/marena_favut";
-const IG_HANDLE = "@marena_favut";
+const IG_URL = "https://www.instagram.com/marena2k25";
+const IG_HANDLE = "@marena2k25";
 
 type Lang = "cs" | "en" | "de";
 const LANGS: Lang[] = ["cs", "en", "de"];
@@ -230,7 +230,7 @@ export default function Home() {
 
         <div className="mx-auto w-full max-w-3xl px-4 pt-24 text-center [text-shadow:0_2px_20px_rgba(0,0,0,0.55)]">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white">{t.heroKicker}</p>
-          <h1 className="mt-3 font-display text-5xl font-bold leading-[0.95] tracking-[0.18em] sm:text-7xl sm:tracking-[0.35em] md:text-8xl">
+          <h1 className="mt-3 font-display text-[4.5rem] font-bold leading-[0.95] tracking-[6cm] sm:text-[6.75rem] md:text-[9rem]">
             {"MAŘENA".split("").map((ch, i) => (
               <span key={i} className="marena-letter" style={{ animationDelay: `${i * -0.06}s` }}>
                 {ch}

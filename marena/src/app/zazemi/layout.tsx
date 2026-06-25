@@ -8,7 +8,6 @@ import { Loading } from "@/components/Loading";
 import { YearSwitcher } from "@/components/YearSwitcher";
 import { Icon, type IconName } from "@/components/Icons";
 import { isAdmin } from "@/lib/admin";
-import { canSeeMerch } from "@/lib/merch";
 import { sameName } from "@/lib/names";
 import { ArchiveModal } from "@/components/ArchiveModal";
 
@@ -31,10 +30,37 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [boardUnread, setBoardUnread] = useState(0);
 
   useEffect(() => {
     if (ready && !authed) router.replace("/prihlaseni");
   }, [ready, authed, router]);
+
+  // Odznak nepřečtených na Nástěnce: spočítej příspěvky novější než poslední
+  // návštěva nástěnky (per prohlížeč). Na /zazemi se vše označí za přečtené.
+  useEffect(() => {
+    let count = 0;
+    if (currentYear) {
+      const key = `marena_board_seen_${currentYear.id}`;
+      if (pathname === "/zazemi") {
+        try {
+          localStorage.setItem(key, new Date().toISOString());
+        } catch {
+          /* ignore */
+        }
+      } else {
+        let seen = "";
+        try {
+          seen = localStorage.getItem(key) || "";
+        } catch {
+          /* ignore */
+        }
+        count = (currentYear.posts ?? []).filter((p) => p.createdAt > seen && !sameName(p.author, me)).length;
+      }
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setBoardUnread(count);
+  }, [currentYear, pathname, me]);
 
   if (!ready) return <Loading />;
   if (!authed) return <Loading label="Přesměrování na přihlášení…" />;
@@ -44,7 +70,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const incompleteContact = !!myMember && (!myMember.email?.trim() || !myMember.phone?.trim());
   if (!me || (currentYear && canEditCurrentYear && !isAdmin(me) && (!myMember || incompleteContact))) return <IdentityGate />;
 
-  const showMerch = canSeeMerch(currentYear, me);
+  const showMerch = true; // Merch záložku vidí každý (spravovat může jen role Merch + správce)
 
   async function doLogout() {
     setMenuOpen(false);
@@ -99,6 +125,11 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                 }`}
               >
                 <Icon name={n.icon} className="h-4 w-4" /> {n.label}
+                {n.href === "/zazemi" && boardUnread > 0 && (
+                  <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-red-600 px-1 text-[11px] font-bold leading-none text-white">
+                    {boardUnread}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -155,6 +186,11 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                     }`}
                   >
                     <Icon name={n.icon} className="h-5 w-5" /> {n.label}
+                    {n.href === "/zazemi" && boardUnread > 0 && (
+                      <span className="ml-auto grid h-5 min-w-[20px] place-items-center rounded-full bg-red-600 px-1 text-[11px] font-bold leading-none text-white">
+                        {boardUnread}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
