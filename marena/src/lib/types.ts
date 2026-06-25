@@ -157,6 +157,7 @@ export interface MerchOrderItem {
   name: string; // název produktu v době objednávky
   size?: string; // zvolená velikost
   color?: string; // zvolená barva
+  price?: number; // cena za kus v době objednávky (Kč)
   qty: number;
 }
 

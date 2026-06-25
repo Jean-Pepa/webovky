@@ -12,6 +12,15 @@ import { canSeeMerch } from "@/lib/merch";
 import { isAdmin } from "@/lib/admin";
 import type { MerchProduct, MerchOrder } from "@/lib/types";
 
+// Cena objednávky = součet (cena za kus × počet). Cena se bere ze snapshotu
+// v položce, jinak z aktuální nabídky (kvůli starším objednávkám).
+function orderTotal(order: MerchOrder, products: MerchProduct[]): number {
+  return order.items.reduce((sum, it) => {
+    const price = it.price ?? products.find((p) => p.id === it.productId)?.price ?? 0;
+    return sum + price * it.qty;
+  }, 0);
+}
+
 export default function MerchPage() {
   const { currentYear, me, canEditCurrentYear } = useStore();
   const year = currentYear;
@@ -24,6 +33,10 @@ export default function MerchPage() {
   const products = year.merch ?? [];
   const orders = [...(year.merchOrders ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const pending = orders.filter((o) => !o.done).length;
+  const doneCount = orders.length - pending;
+  const totalQty = orders.reduce((s, o) => s + o.items.reduce((q, it) => q + it.qty, 0), 0);
+  const revenue = orders.reduce((s, o) => s + orderTotal(o, products), 0);
+  const doneRevenue = orders.filter((o) => o.done).reduce((s, o) => s + orderTotal(o, products), 0);
 
   return (
     <div className="space-y-6">
@@ -83,13 +96,46 @@ export default function MerchPage() {
           ) : (
             <div className="space-y-2">
               {orders.map((o) => (
-                <OrderRow key={o.id} order={o} yearId={year.id} canManage={canManage} canDelete={canDeleteOrders} />
+                <OrderRow key={o.id} order={o} yearId={year.id} canManage={canManage} canDelete={canDeleteOrders} total={orderTotal(o, products)} />
               ))}
             </div>
           )}
         </section>
 
-        <aside>
+        <aside className="space-y-4">
+          {/* Souhrn / propočty */}
+          <div className="card p-4">
+            <h2 className="mb-2 font-display text-lg font-semibold">Souhrn</h2>
+            <dl className="space-y-1.5 text-sm">
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-soft">Objednávek</dt>
+                <dd className="font-semibold">{orders.length}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-soft">Kusů celkem</dt>
+                <dd className="font-semibold">{totalQty}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-soft">Čeká / Vyřízeno</dt>
+                <dd className="font-semibold">
+                  <span className="text-amber-700">{pending}</span> / <span className="text-leaf-700">{doneCount}</span>
+                </dd>
+              </div>
+              <div className="flex justify-between gap-2 border-t border-black/10 pt-1.5">
+                <dt className="text-ink-soft">Tržba celkem</dt>
+                <dd className="font-display text-base font-bold text-marigold-700">{fmtCZK(revenue)}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-soft">Z toho vyřízeno</dt>
+                <dd className="font-semibold text-leaf-700">{fmtCZK(doneRevenue)}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-soft">Čeká na vyřízení</dt>
+                <dd className="font-semibold text-amber-700">{fmtCZK(revenue - doneRevenue)}</dd>
+              </div>
+            </dl>
+          </div>
+
           <QrCard yearId={year.id} />
         </aside>
       </div>
@@ -333,11 +379,13 @@ function OrderRow({
   yearId,
   canManage,
   canDelete,
+  total,
 }: {
   order: MerchOrder;
   yearId: string;
   canManage: boolean;
   canDelete: boolean;
+  total: number;
 }) {
   const { dispatch } = useStore();
   const itemsText = order.items
@@ -363,6 +411,7 @@ function OrderRow({
       <span className="text-xs text-ink-soft/70">{fmtDate(order.createdAt)}</span>
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
+        {total > 0 && <span className="font-display font-bold text-ink">{fmtCZK(total)}</span>}
         {canManage ? (
           <button
             onClick={() => dispatch({ type: "toggleMerchOrderDone", yearId, orderId: order.id })}

@@ -526,6 +526,7 @@ export function applyAction(db: DB, a: Action): DB {
               name: it.name,
               size: it.size?.trim() || undefined,
               color: it.color?.trim() || undefined,
+              price: Number.isFinite(it.price) ? it.price : undefined,
               qty: Math.max(1, Math.round(it.qty || 1)),
             })),
             note: a.note?.trim() || undefined,

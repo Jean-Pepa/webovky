@@ -136,7 +136,8 @@ export default function MerchOrderPage() {
   async function submit() {
     setErr(null);
     if (!name.trim()) return setErr("Vyplň prosím jméno.");
-    if (!phone.trim() && !email.trim()) return setErr("Vyplň telefon nebo e-mail, ať tě umíme kontaktovat.");
+    if (!phone.trim()) return setErr("Vyplň telefon.");
+    if (!email.trim()) return setErr("Vyplň e-mail.");
     if (cart.length === 0) return setErr("Košík je prázdný — přidej aspoň jednu věc z nabídky.");
 
     setSubmitting(true);
@@ -173,7 +174,7 @@ export default function MerchOrderPage() {
           phone,
           email,
           note,
-          items: cart.map((l) => ({ productId: l.productId, name: l.name, size: l.size, color: l.color, qty: l.qty })),
+          items: cart.map((l) => ({ productId: l.productId, name: l.name, size: l.size, color: l.color, price: l.price ?? undefined, qty: l.qty })),
         });
         localStorage.setItem(LS_DB, JSON.stringify(next));
       }
