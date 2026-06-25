@@ -230,7 +230,7 @@ export default function Home() {
 
         <div className="mx-auto w-full max-w-3xl px-4 pt-24 text-center [text-shadow:0_2px_20px_rgba(0,0,0,0.55)]">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white">{t.heroKicker}</p>
-          <h1 className="mt-3 font-display text-5xl font-bold leading-[0.95] tracking-[0.18em] sm:text-7xl sm:tracking-[0.35em] md:text-8xl">
+          <h1 className="mt-3 font-display text-5xl font-bold leading-[0.95] tracking-[1cm] sm:text-7xl md:text-8xl">
             {"MAŘENA".split("").map((ch, i) => (
               <span key={i} className="marena-letter" style={{ animationDelay: `${i * -0.06}s` }}>
                 {ch}
