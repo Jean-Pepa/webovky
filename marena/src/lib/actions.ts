@@ -60,6 +60,9 @@ export type Action =
   | { type: "addSponsor"; yearId: string; name: string }
   | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: "oslovit" | "ceka" | "potvrzeno" | "odmitl"; who?: string; link?: string; note?: string } }
   | { type: "removeSponsor"; yearId: string; sponsorId: string }
+  | { type: "addDrink"; yearId: string; name: string; kind: "koktejl" | "panak" | "jine" }
+  | { type: "updateDrink"; yearId: string; drinkId: string; patch: { name?: string; kind?: "koktejl" | "panak" | "jine"; price?: number; note?: string; ingredients?: { name: string; cost: number }[] } }
+  | { type: "removeDrink"; yearId: string; drinkId: string }
   | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string; receiptId?: string; receiptIds?: string[] } }
   | { type: "toggleFinancePaid"; yearId: string; financeId: string }
   | { type: "removeFinance"; yearId: string; financeId: string }
@@ -563,6 +566,40 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => ({
         ...y,
         sponsors: (y.sponsors ?? []).filter((s) => s.id !== a.sponsorId),
+      }));
+
+    case "addDrink": {
+      const name = a.name.trim();
+      if (!name) return db;
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        bar: [...(y.bar ?? []), { id: uid("dr_"), name, kind: a.kind, ingredients: [], createdAt: now() }],
+      }));
+    }
+    case "updateDrink":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        bar: (y.bar ?? []).map((d) =>
+          d.id === a.drinkId
+            ? {
+                ...d,
+                name: a.patch.name?.trim() || d.name,
+                kind: a.patch.kind ?? d.kind,
+                price: a.patch.price !== undefined ? (a.patch.price > 0 ? Math.round(a.patch.price) : undefined) : d.price,
+                note: a.patch.note !== undefined ? a.patch.note.trim() || undefined : d.note,
+                ingredients: a.patch.ingredients
+                  ? a.patch.ingredients
+                      .filter((i) => i.name.trim())
+                      .map((i) => ({ name: i.name.trim(), cost: Math.max(0, Math.round(i.cost) || 0) }))
+                  : d.ingredients,
+              }
+            : d,
+        ),
+      }));
+    case "removeDrink":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        bar: (y.bar ?? []).filter((d) => d.id !== a.drinkId),
       }));
 
     case "addShift":

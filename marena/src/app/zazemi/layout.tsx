@@ -22,6 +22,7 @@ const NAV: { href: string; label: string; icon: IconName }[] = [
   { href: "/zazemi/ukoly", label: "Úkoly", icon: "tasks" },
   { href: "/zazemi/provoz", label: "Provoz & směny", icon: "ops" },
   { href: "/zazemi/kuchyne", label: "Kuchyně", icon: "food" },
+  { href: "/zazemi/bar", label: "Bar", icon: "beer" },
   { href: "/zazemi/vyzdoba", label: "Výzdoba", icon: "palette" },
   { href: "/zazemi/finance", label: "Finance", icon: "finance" },
   { href: "/zazemi/kontakty", label: "Kontakty", icon: "contacts" },

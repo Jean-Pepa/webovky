@@ -133,6 +133,22 @@ export interface Contribution {
   createdAt: string;
 }
 
+// Bar — ceník drinků s recepturou (suroviny + náklad) a prodejní cenou.
+export type DrinkKind = "koktejl" | "panak" | "jine";
+export interface DrinkIngredient {
+  name: string; // surovina (gin 40ml, led, třpytky…)
+  cost: number; // náklad za porci (Kč)
+}
+export interface Drink {
+  id: string;
+  name: string; // např. „VÍLÍ NEKTAR"
+  kind: DrinkKind;
+  ingredients: DrinkIngredient[]; // receptura (u panáků prázdné)
+  price?: number; // prodejní cena (Kč)
+  note?: string;
+  createdAt: string;
+}
+
 // Sponzoři — koho oslovit o podporu, co dávají a v jakém stavu domluva je.
 export type SponsorStatus = "oslovit" | "ceka" | "potvrzeno" | "odmitl";
 export interface Sponsor {
@@ -252,6 +268,7 @@ export interface Year {
   freshmen?: Freshman[]; // prváci – ruční seznam účastníků
   decor?: Decor[]; // výzdoba – nápady a materiál
   sponsors?: Sponsor[]; // sponzoři – koho oslovit, co dává, stav
+  bar?: Drink[]; // bar – ceník drinků s recepturou
   shifts?: Shift[]; // provoz — rozpis směn, na které se lidi přihlašují
   invites?: Invite[]; // program — koho oslovit (přednášející, kapely)
   kitchen?: KitchenFile[]; // kuchyně — nahrané fotky/soubory (nákupy, menu…)
