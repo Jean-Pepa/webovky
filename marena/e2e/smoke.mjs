@@ -208,6 +208,8 @@ try {
     await byText("zapsáno do financí").first().waitFor({ timeout: 4000 });
   });
   await step("Finance: výběr — přidat přispěvatele + vráceno", async () => {
+    await page.getByRole("button", { name: /^\+ Výběr$/ }).click(); // odkryje vyplňovací řádek
+    await page.waitForTimeout(200);
     const sec = page.locator("section#vyber");
     await sec.getByPlaceholder("Jméno a příjmení").fill("E2E Vkladatel");
     await sec.getByPlaceholder("Částka").fill("2000");

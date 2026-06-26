@@ -9,7 +9,7 @@ import { compressImage, readFileAsDataUrl, saveReceipt, loadReceipt, deleteRecei
 import { fmtDate } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { isAdmin } from "@/lib/admin";
-import type { KitchenFile } from "@/lib/types";
+import type { KitchenFile, Meal } from "@/lib/types";
 
 const CATS = ["Nákupy", "Menu", "Ostatní"];
 const MAX_FILE_BYTES = 1_300_000; // ~1,3 MB pro ne-obrázky (fotky se zmenší samy)
@@ -78,9 +78,13 @@ export default function KuchynePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Kuchyně</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Kuchyně 🍳</h1>
       </div>
 
+      <MenuSection editable={editable} />
+      <ShoppingSection editable={editable} />
+
+      <h2 className="font-display text-lg font-semibold">📎 Soubory (nákupy, menu, recepty)</h2>
       {/* Nahrání */}
       {editable ? (
         <div className="card space-y-3 p-4">
@@ -235,5 +239,127 @@ function KitchenCard({ item, yearId, editable }: { item: KitchenFile; yearId: st
         )}
       </Modal>
     </div>
+  );
+}
+
+const MEAL_LABEL: Record<Meal, string> = { snidane: "🌅 Snídaně", obed: "🍲 Oběd", jine: "🍽️ Jiné" };
+
+// Denní menu — co se který den vaří.
+function MenuSection({ editable }: { editable: boolean }) {
+  const { currentYear, dispatch } = useStore();
+  const [open, setOpen] = useState(false);
+  const [day, setDay] = useState("");
+  const [meal, setMeal] = useState<Meal>("obed");
+  const [dish, setDish] = useState("");
+  const year = currentYear;
+  if (!year) return null;
+  const menu = year.menu ?? [];
+  // Seskupení po dnech v pořadí prvního výskytu.
+  const days: string[] = [];
+  for (const m of menu) if (!days.includes(m.day)) days.push(m.day);
+
+  async function add() {
+    if (!day.trim() || !dish.trim() || !editable) return;
+    await dispatch({ type: "addMenuEntry", yearId: year!.id, day: day.trim(), meal, dish: dish.trim() });
+    setDish("");
+  }
+
+  return (
+    <section className="card space-y-3 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-display text-lg font-semibold">📅 Denní menu</h2>
+        {editable && (
+          <button className="btn-secondary px-3 py-1.5 text-sm" onClick={() => setOpen((v) => !v)}>
+            {open ? "Zavřít" : "+ Přidat jídlo"}
+          </button>
+        )}
+      </div>
+      {open && editable && (
+        <div className="grid gap-2 sm:grid-cols-[10rem_8rem_1fr_auto]">
+          <input className="input" placeholder="Den (Čtvrtek 18.9.)" value={day} onChange={(e) => setDay(e.target.value)} />
+          <select className="input" value={meal} onChange={(e) => setMeal(e.target.value as Meal)}>
+            <option value="snidane">Snídaně</option>
+            <option value="obed">Oběd</option>
+            <option value="jine">Jiné</option>
+          </select>
+          <input className="input" placeholder="Co se vaří" value={dish} onChange={(e) => setDish(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
+          <button className="btn-primary" onClick={add} disabled={!day.trim() || !dish.trim()}>+ Přidat</button>
+        </div>
+      )}
+      {menu.length === 0 ? (
+        <p className="text-sm text-ink-soft">Zatím žádné menu. {editable ? "Přidej, co se který den vaří." : ""}</p>
+      ) : (
+        <div className="space-y-3">
+          {days.map((d) => (
+            <div key={d}>
+              <p className="mb-1 text-sm font-semibold">{d}</p>
+              <ul className="divide-y divide-black/[0.06] rounded-xl bg-paper2/40">
+                {menu.filter((m) => m.day === d).map((m) => (
+                  <li key={m.id} className="flex items-center gap-2 px-3 py-1.5 text-sm">
+                    <span className="shrink-0 text-xs">{MEAL_LABEL[m.meal]}</span>
+                    <span className="min-w-0 flex-1 break-words font-medium">{m.dish}</span>
+                    {editable && <DeleteButton onConfirm={() => dispatch({ type: "removeMenuEntry", yearId: year!.id, entryId: m.id })} />}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// Nákupní seznam — odškrtávací checklist.
+function ShoppingSection({ editable }: { editable: boolean }) {
+  const { currentYear, dispatch } = useStore();
+  const [name, setName] = useState("");
+  const [qty, setQty] = useState("");
+  const year = currentYear;
+  if (!year) return null;
+  const items = [...(year.shopping ?? [])].sort((a, b) => Number(!!a.bought) - Number(!!b.bought) || a.createdAt.localeCompare(b.createdAt));
+  const boughtCount = items.filter((i) => i.bought).length;
+
+  async function add() {
+    if (!name.trim() || !editable) return;
+    await dispatch({ type: "addShoppingItem", yearId: year!.id, name: name.trim(), qty: qty.trim() || undefined });
+    setName("");
+    setQty("");
+  }
+
+  return (
+    <section className="card space-y-3 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-display text-lg font-semibold">
+          🛒 Nákupní seznam{items.length > 0 && <span className="ml-2 text-sm font-normal text-ink-soft">{boughtCount}/{items.length} koupeno</span>}
+        </h2>
+        {editable && boughtCount > 0 && (
+          <button className="btn-ghost px-3 py-1.5 text-xs" onClick={() => dispatch({ type: "clearBoughtShopping", yearId: year!.id })}>
+            Smazat koupené
+          </button>
+        )}
+      </div>
+      {editable && (
+        <div className="flex flex-wrap gap-2">
+          <input className="input min-w-[140px] flex-1" placeholder="Co koupit" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
+          <input className="input w-28" placeholder="Množství" value={qty} onChange={(e) => setQty(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
+          <button className="btn-primary" onClick={add} disabled={!name.trim()}>+ Přidat</button>
+        </div>
+      )}
+      {items.length === 0 ? (
+        <p className="text-sm text-ink-soft">Nákupní seznam je prázdný.</p>
+      ) : (
+        <ul className="divide-y divide-black/[0.06]">
+          {items.map((i) => (
+            <li key={i.id} className="flex items-center gap-3 py-2 text-sm">
+              <input type="checkbox" checked={!!i.bought} onChange={() => dispatch({ type: "toggleShoppingBought", yearId: year!.id, itemId: i.id })} disabled={!editable} className="h-4 w-4 accent-marigold-600" />
+              <span className={`min-w-0 flex-1 break-words ${i.bought ? "text-ink-soft line-through" : "font-medium"}`}>{i.name}</span>
+              {i.qty && <span className="shrink-0 text-xs text-ink-soft">{i.qty}</span>}
+              {editable && <DeleteButton onConfirm={() => dispatch({ type: "removeShoppingItem", yearId: year!.id, itemId: i.id })} />}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

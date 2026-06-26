@@ -48,6 +48,7 @@ export default function FinancePage() {
   const { currentYear, me, dispatch, canEditCurrentYear } = useStore();
   const [open, setOpen] = useState(false);
   const [kasaOpen, setKasaOpen] = useState(false);
+  const [vyberOpen, setVyberOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("vse");
   const [catFilter, setCatFilter] = useState<string>("");
 
@@ -113,6 +114,21 @@ export default function FinancePage() {
     }
     return [...map.entries()].sort((a, b) => b[1].prijem + b[1].vydaj - (a[1].prijem + a[1].vydaj));
   }, [items]);
+
+  // Proplácení — kolik kdo zaplatil z výdajů a kolik mu ještě dlužíme (nezaplaceno).
+  const byPerson = useMemo(() => {
+    const map = new Map<string, { total: number; owed: number }>();
+    for (const f of items) {
+      if (f.kind !== "vydaj" || !f.who?.trim()) continue;
+      const key = f.who.trim();
+      const cur = map.get(key) || { total: 0, owed: 0 };
+      cur.total += f.amount;
+      if (!f.paid) cur.owed += f.amount;
+      map.set(key, cur);
+    }
+    return [...map.entries()].sort((a, b) => b[1].owed - a[1].owed || b[1].total - a[1].total);
+  }, [items]);
+  const totalOwed = useMemo(() => byPerson.reduce((s, [, v]) => s + v.owed, 0), [byPerson]);
 
   // Merch — kolik už merch vydělal (příjmy z kategorie „merch", hlavně z vyřízených objednávek).
   const merchTotal = useMemo(
@@ -189,13 +205,27 @@ export default function FinancePage() {
         </div>
         {canAdd && (
           <div className="flex flex-wrap items-center gap-2">
-            <button className="btn-secondary" onClick={() => document.getElementById("vyber")?.scrollIntoView({ behavior: "smooth" })}>
-              + Výběr
+            <button
+              className="btn-secondary"
+              onClick={() => {
+                const opening = !vyberOpen;
+                setVyberOpen(opening);
+                if (opening) setTimeout(() => document.getElementById("vyber")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+              }}
+            >
+              {vyberOpen ? "Zavřít" : "+ Výběr"}
             </button>
             <button className="btn-secondary" onClick={() => setKasaOpen(true)}>
               + Kasa
             </button>
-            <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
+            <button
+              className="btn-primary"
+              onClick={() => {
+                const opening = !open;
+                setOpen(opening);
+                if (opening) setTimeout(() => document.getElementById("add-finance")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+              }}
+            >
               {open ? "Zavřít" : "+ Přidat položku"}
             </button>
           </div>
@@ -285,7 +315,7 @@ export default function FinancePage() {
           <p className="mb-3 text-xs text-ink-soft">
             Zapiš, kdo dal kolik do společné kasy. Nevrácené se počítá do celkového balíku. Na konci u každého odklikni Vráceno.
           </p>
-          {canAdd && (
+          {canAdd && vyberOpen && (
             <div className="mb-3 flex flex-wrap gap-2">
               <input
                 className="input min-w-[140px] flex-1"
@@ -293,6 +323,7 @@ export default function FinancePage() {
                 value={ctName}
                 onChange={(e) => setCtName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && document.getElementById("ct-amount")?.focus()}
+                autoFocus
               />
               <input
                 id="ct-amount"
@@ -309,9 +340,11 @@ export default function FinancePage() {
             </div>
           )}
           {contributions.length === 0 ? (
-            <p className="text-sm text-ink-soft">Zatím nikdo. Zapiš výše, kdo dal do výběru.</p>
+            <p className="text-sm text-ink-soft">
+              {canAdd ? "Zatím nikdo. Klikni nahoře na + Výběr a zapiš, kdo dal do výběru." : "Zatím nikdo."}
+            </p>
           ) : (
-            <Collapsible peekClass="max-h-[230px]" expandable={contributions.length > 4} total={contributions.length}>
+            <Collapsible peekClass="max-h-[168px]" expandable={contributions.length > 3} total={contributions.length}>
               <ul className="divide-y divide-black/[0.06]">
                 {[...contributions]
                   .sort((a, b) => Number(!!a.returned) - Number(!!b.returned) || a.name.localeCompare(b.name, "cs"))
@@ -360,7 +393,7 @@ export default function FinancePage() {
 
       {/* Přidat */}
       {open && (
-        <div className="card space-y-3 p-4">
+        <div id="add-finance" className="card scroll-mt-20 space-y-3 p-4 ring-2 ring-marigold-200">
           <div className="inline-flex rounded-full bg-paper2 p-1 text-sm">
             <button onClick={() => setKind("vydaj")} className={`rounded-full px-4 py-1.5 font-medium transition ${kind === "vydaj" ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}>
               − Výdaj
@@ -391,8 +424,10 @@ export default function FinancePage() {
       )}
 
       {/* Filtr */}
-      <div className="space-y-2">
-      <h2 className="font-display text-lg font-semibold">Všechny finance</h2>
+      <div className="space-y-2 pt-2">
+      <h2 className="flex items-center gap-2 border-b-2 border-marigold-600/70 pb-1.5 font-display text-2xl font-bold tracking-tight">
+        <span aria-hidden>📊</span> Všechny finance
+      </h2>
       <div className="flex flex-wrap items-center gap-2">
         {([
           ["vse", "Vše"],
@@ -473,23 +508,56 @@ export default function FinancePage() {
         </div>
       )}
 
-      {/* Souhrn po kategoriích */}
-      {byCategory.length > 0 && (
-        <div className="card p-5">
-          <h2 className="mb-3 font-display text-base font-semibold">Souhrn po kategoriích</h2>
-          <ul className="divide-y divide-black/[0.06]">
-            {byCategory.map(([cat, v]) => (
-              <li key={cat} className="flex items-center gap-3 py-2 text-sm">
-                <span className="font-medium">{cat}</span>
-                <span className="ml-auto flex items-center gap-4">
-                  {v.prijem > 0 && <span className="text-leaf-700">+{fmtCZK(v.prijem)}</span>}
-                  {v.vydaj > 0 && <span className="text-ink-soft">−{fmtCZK(v.vydaj)}</span>}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Souhrn po kategoriích */}
+        {byCategory.length > 0 && (
+          <div className="card p-5">
+            <h2 className="mb-3 font-display text-base font-semibold">Souhrn po kategoriích</h2>
+            <ul className="divide-y divide-black/[0.06]">
+              {byCategory.map(([cat, v]) => (
+                <li key={cat} className="flex items-center gap-3 py-2 text-sm">
+                  <span className="min-w-0 break-words font-medium">{cat}</span>
+                  <span className="ml-auto flex shrink-0 items-center gap-4">
+                    {v.prijem > 0 && <span className="text-leaf-700">+{fmtCZK(v.prijem)}</span>}
+                    {v.vydaj > 0 && <span className="text-ink-soft">−{fmtCZK(v.vydaj)}</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Proplácení — kdo zaplatil a kolik mu vrátit */}
+        {byPerson.length > 0 && (
+          <div className="card p-5">
+            <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-base font-semibold">
+              Proplácení po lidech
+              {totalOwed > 0 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-marigold-600/10 px-2.5 py-0.5 text-sm">
+                  <span className="text-xs font-normal text-marigold-700">vrátit celkem</span>
+                  <span className="font-bold text-marigold-700">{fmtCZK(totalOwed)}</span>
                 </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+              )}
+            </h2>
+            <p className="mb-2 text-xs text-ink-soft">Vrátit = výdaje dané osoby, které ještě nejsou proplacené (přepneš je na Zaplaceno u položky).</p>
+            <ul className="divide-y divide-black/[0.06]">
+              {byPerson.map(([who, v]) => (
+                <li key={who} className="flex items-center gap-3 py-2 text-sm">
+                  <span className="min-w-0 break-words font-medium">{who}</span>
+                  <span className="ml-auto flex shrink-0 items-center gap-3">
+                    {v.owed > 0 ? (
+                      <span className="font-semibold text-marigold-700">vrátit {fmtCZK(v.owed)}</span>
+                    ) : (
+                      <span className="text-leaf-700">✓ vyrovnáno</span>
+                    )}
+                    <span className="text-xs text-ink-soft">z {fmtCZK(v.total)}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

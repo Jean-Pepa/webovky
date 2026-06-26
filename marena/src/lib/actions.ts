@@ -51,11 +51,30 @@ export type Action =
   | { type: "toggleContributionReturned"; yearId: string; contributionId: string }
   | { type: "updateContribution"; yearId: string; contributionId: string; patch: { name?: string; amount?: number } }
   | { type: "removeContribution"; yearId: string; contributionId: string }
+  | { type: "addFreshman"; yearId: string; name: string; email?: string; note?: string }
+  | { type: "updateFreshman"; yearId: string; freshmanId: string; patch: { name?: string; email?: string; note?: string } }
+  | { type: "removeFreshman"; yearId: string; freshmanId: string }
+  | { type: "addDecor"; yearId: string; title: string }
+  | { type: "updateDecor"; yearId: string; decorId: string; patch: { title?: string; status?: "napad" | "shani" | "hotovo"; who?: string; link?: string; note?: string } }
+  | { type: "removeDecor"; yearId: string; decorId: string }
+  | { type: "addSponsor"; yearId: string; name: string }
+  | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: "oslovit" | "ceka" | "potvrzeno" | "odmitl"; who?: string; link?: string; note?: string } }
+  | { type: "removeSponsor"; yearId: string; sponsorId: string }
+  | { type: "addDrink"; yearId: string; name: string; kind: "koktejl" | "panak" | "jine" }
+  | { type: "updateDrink"; yearId: string; drinkId: string; patch: { name?: string; kind?: "koktejl" | "panak" | "jine"; price?: number; note?: string; ingredients?: { name: string; cost: number }[] } }
+  | { type: "removeDrink"; yearId: string; drinkId: string }
+  | { type: "addMenuEntry"; yearId: string; day: string; meal: "snidane" | "obed" | "jine"; dish: string }
+  | { type: "removeMenuEntry"; yearId: string; entryId: string }
+  | { type: "addShoppingItem"; yearId: string; name: string; qty?: string }
+  | { type: "toggleShoppingBought"; yearId: string; itemId: string }
+  | { type: "removeShoppingItem"; yearId: string; itemId: string }
+  | { type: "clearBoughtShopping"; yearId: string }
   | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string; receiptId?: string; receiptIds?: string[] } }
   | { type: "toggleFinancePaid"; yearId: string; financeId: string }
   | { type: "removeFinance"; yearId: string; financeId: string }
   | { type: "addShift"; yearId: string; area: string; title?: string; date?: string; from?: string; to?: string; capacity?: number; note?: string }
   | { type: "signShift"; yearId: string; shiftId: string; name: string }
+  | { type: "signShiftBackup"; yearId: string; shiftId: string; name: string }
   | { type: "removeShiftPerson"; yearId: string; shiftId: string; name: string }
   | { type: "removeShift"; yearId: string; shiftId: string }
   | { type: "addInvite"; yearId: string; category: string; name: string; link?: string; priority?: number }
@@ -472,6 +491,153 @@ export function applyAction(db: DB, a: Action): DB {
         contributions: (y.contributions ?? []).filter((c) => c.id !== a.contributionId),
       }));
 
+    case "addFreshman": {
+      const name = a.name.trim();
+      if (!name) return db;
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        freshmen: [...(y.freshmen ?? []), { id: uid("fr_"), name, email: a.email?.trim() || undefined, note: a.note?.trim() || undefined, createdAt: now() }],
+      }));
+    }
+    case "updateFreshman":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        freshmen: (y.freshmen ?? []).map((f) =>
+          f.id === a.freshmanId
+            ? { ...f, name: a.patch.name?.trim() || f.name, email: a.patch.email !== undefined ? a.patch.email.trim() || undefined : f.email, note: a.patch.note !== undefined ? a.patch.note.trim() || undefined : f.note }
+            : f,
+        ),
+      }));
+    case "removeFreshman":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        freshmen: (y.freshmen ?? []).filter((f) => f.id !== a.freshmanId),
+      }));
+
+    case "addDecor": {
+      const title = a.title.trim();
+      if (!title) return db;
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        decor: [...(y.decor ?? []), { id: uid("dc_"), title, status: "napad" as const, createdAt: now() }],
+      }));
+    }
+    case "updateDecor":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        decor: (y.decor ?? []).map((d) =>
+          d.id === a.decorId
+            ? {
+                ...d,
+                title: a.patch.title?.trim() || d.title,
+                status: a.patch.status ?? d.status,
+                who: a.patch.who !== undefined ? a.patch.who.trim() || undefined : d.who,
+                link: a.patch.link !== undefined ? a.patch.link.trim() || undefined : d.link,
+                note: a.patch.note !== undefined ? a.patch.note.trim() || undefined : d.note,
+              }
+            : d,
+        ),
+      }));
+    case "removeDecor":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        decor: (y.decor ?? []).filter((d) => d.id !== a.decorId),
+      }));
+
+    case "addSponsor": {
+      const name = a.name.trim();
+      if (!name) return db;
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        sponsors: [...(y.sponsors ?? []), { id: uid("sp_"), name, status: "oslovit" as const, createdAt: now() }],
+      }));
+    }
+    case "updateSponsor":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        sponsors: (y.sponsors ?? []).map((s) =>
+          s.id === a.sponsorId
+            ? {
+                ...s,
+                name: a.patch.name?.trim() || s.name,
+                gives: a.patch.gives !== undefined ? a.patch.gives.trim() || undefined : s.gives,
+                status: a.patch.status ?? s.status,
+                who: a.patch.who !== undefined ? a.patch.who.trim() || undefined : s.who,
+                link: a.patch.link !== undefined ? a.patch.link.trim() || undefined : s.link,
+                note: a.patch.note !== undefined ? a.patch.note.trim() || undefined : s.note,
+              }
+            : s,
+        ),
+      }));
+    case "removeSponsor":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        sponsors: (y.sponsors ?? []).filter((s) => s.id !== a.sponsorId),
+      }));
+
+    case "addDrink": {
+      const name = a.name.trim();
+      if (!name) return db;
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        bar: [...(y.bar ?? []), { id: uid("dr_"), name, kind: a.kind, ingredients: [], createdAt: now() }],
+      }));
+    }
+    case "updateDrink":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        bar: (y.bar ?? []).map((d) =>
+          d.id === a.drinkId
+            ? {
+                ...d,
+                name: a.patch.name?.trim() || d.name,
+                kind: a.patch.kind ?? d.kind,
+                price: a.patch.price !== undefined ? (a.patch.price > 0 ? Math.round(a.patch.price) : undefined) : d.price,
+                note: a.patch.note !== undefined ? a.patch.note.trim() || undefined : d.note,
+                ingredients: a.patch.ingredients
+                  ? a.patch.ingredients
+                      .filter((i) => i.name.trim())
+                      .map((i) => ({ name: i.name.trim(), cost: Math.max(0, Math.round(i.cost) || 0) }))
+                  : d.ingredients,
+              }
+            : d,
+        ),
+      }));
+    case "removeDrink":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        bar: (y.bar ?? []).filter((d) => d.id !== a.drinkId),
+      }));
+
+    case "addMenuEntry": {
+      const dish = a.dish.trim();
+      const day = a.day.trim();
+      if (!dish || !day) return db;
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        menu: [...(y.menu ?? []), { id: uid("mn_"), day, meal: a.meal, dish, createdAt: now() }],
+      }));
+    }
+    case "removeMenuEntry":
+      return mapYear(db, a.yearId, (y) => ({ ...y, menu: (y.menu ?? []).filter((m) => m.id !== a.entryId) }));
+    case "addShoppingItem": {
+      const name = a.name.trim();
+      if (!name) return db;
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        shopping: [...(y.shopping ?? []), { id: uid("sh_"), name, qty: a.qty?.trim() || undefined, createdAt: now() }],
+      }));
+    }
+    case "toggleShoppingBought":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        shopping: (y.shopping ?? []).map((s) => (s.id === a.itemId ? { ...s, bought: !s.bought } : s)),
+      }));
+    case "removeShoppingItem":
+      return mapYear(db, a.yearId, (y) => ({ ...y, shopping: (y.shopping ?? []).filter((s) => s.id !== a.itemId) }));
+    case "clearBoughtShopping":
+      return mapYear(db, a.yearId, (y) => ({ ...y, shopping: (y.shopping ?? []).filter((s) => !s.bought) }));
+
     case "addShift":
       return mapYear(db, a.yearId, (y) => ({
         ...y,
@@ -500,15 +666,28 @@ export function applyAction(db: DB, a: Action): DB {
           if (s.people.includes(name)) return { ...s, people: s.people.filter((p) => p !== name) };
           // plno → nepřidávat (kapacita 0 = neomezeně)
           if (s.capacity > 0 && s.people.length >= s.capacity) return s;
-          return { ...s, people: [...s.people, name] };
+          // při přihlášení do směny vypadne ze zálohy (nemůže být v obou)
+          return { ...s, people: [...s.people, name], backup: (s.backup ?? []).filter((p) => p !== name) };
+        }),
+      }));
+    case "signShiftBackup":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        shifts: (y.shifts ?? []).map((s) => {
+          if (s.id !== a.shiftId) return s;
+          const name = a.name.trim() || "Anonym";
+          const backup = s.backup ?? [];
+          if (backup.includes(name)) return { ...s, backup: backup.filter((p) => p !== name) };
+          // jako záloha vypadne z hlavních přihlášených
+          return { ...s, backup: [...backup, name], people: s.people.filter((p) => p !== name) };
         }),
       }));
     case "removeShiftPerson":
-      // Správce odebere konkrétního člověka ze směny.
+      // Správce odebere konkrétního člověka ze směny (z přihlášených i ze zálohy).
       return mapYear(db, a.yearId, (y) => ({
         ...y,
         shifts: (y.shifts ?? []).map((s) =>
-          s.id === a.shiftId ? { ...s, people: s.people.filter((p) => p !== a.name) } : s,
+          s.id === a.shiftId ? { ...s, people: s.people.filter((p) => p !== a.name), backup: (s.backup ?? []).filter((p) => p !== a.name) } : s,
         ),
       }));
     case "removeShift":

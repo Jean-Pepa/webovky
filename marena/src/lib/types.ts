@@ -87,6 +87,7 @@ export interface Shift {
   to?: string; // čas do
   capacity: number; // kolik lidí je potřeba (0 = neomezeně)
   people: string[]; // přihlášená jména
+  backup?: string[]; // záloha (kdyby někdo vypadl)
   note?: string;
   createdAt: string;
 }
@@ -130,6 +131,73 @@ export interface Contribution {
   amount: number; // kolik dal (Kč)
   returned?: boolean; // na konci vráceno
   returnedAt?: string; // ISO – kdy se vrátilo
+  createdAt: string;
+}
+
+// Bar — ceník drinků s recepturou (suroviny + náklad) a prodejní cenou.
+export type DrinkKind = "koktejl" | "panak" | "jine";
+export interface DrinkIngredient {
+  name: string; // surovina (gin 40ml, led, třpytky…)
+  cost: number; // náklad za porci (Kč)
+}
+export interface Drink {
+  id: string;
+  name: string; // např. „VÍLÍ NEKTAR"
+  kind: DrinkKind;
+  ingredients: DrinkIngredient[]; // receptura (u panáků prázdné)
+  price?: number; // prodejní cena (Kč)
+  note?: string;
+  createdAt: string;
+}
+
+// Sponzoři — koho oslovit o podporu, co dávají a v jakém stavu domluva je.
+export type SponsorStatus = "oslovit" | "ceka" | "potvrzeno" | "odmitl";
+export interface Sponsor {
+  id: string;
+  name: string;
+  gives?: string; // co dává (pivo, čaj, kávovar, poukazy, peníze…)
+  status: SponsorStatus; // oslovit → čeká → potvrzeno / odmítl
+  who?: string; // kdo to řeší
+  link?: string;
+  note?: string; // požadavky / detaily (např. „chce logo")
+  createdAt: string;
+}
+
+// Výzdoba — nápady a materiál na výzdobu dvora/fakulty; kdo to shání a stav.
+export type DecorStatus = "napad" | "shani" | "hotovo";
+export interface Decor {
+  id: string;
+  title: string; // nápad / materiál (např. „Luxfery z Bazoše", „LED pásky")
+  status: DecorStatus; // nápad → shání se → hotovo
+  who?: string; // kdo to má na starost / shání
+  link?: string; // odkaz (bazoš, eshop…)
+  note?: string;
+  createdAt: string;
+}
+
+// Prváci — ruční seznam prváků (účastníků), o kterých festival je.
+export interface Freshman {
+  id: string;
+  name: string;
+  email?: string;
+  note?: string; // cokoli (skupina, telefon, poznámka…)
+  createdAt: string;
+}
+
+// Kuchyně — denní menu (co se který den vaří) a nákupní seznam.
+export type Meal = "snidane" | "obed" | "jine";
+export interface MenuEntry {
+  id: string;
+  day: string; // volný popis dne (např. „Čtvrtek 18.9.")
+  meal: Meal;
+  dish: string; // co se vaří
+  createdAt: string;
+}
+export interface ShoppingItem {
+  id: string;
+  name: string;
+  qty?: string; // množství (volný text, např. „4 kg", „2 basy")
+  bought?: boolean;
   createdAt: string;
 }
 
@@ -215,6 +283,12 @@ export interface Year {
   finances?: FinanceItem[]; // pokladní kniha — příjmy a výdaje
   cashboxes?: Cashbox[]; // denní kasy na hotovost (ráno vklad → večer tržba)
   contributions?: Contribution[]; // výběr – kdo dal kolik do společné kasy (vklady)
+  freshmen?: Freshman[]; // prváci – ruční seznam účastníků
+  decor?: Decor[]; // výzdoba – nápady a materiál
+  sponsors?: Sponsor[]; // sponzoři – koho oslovit, co dává, stav
+  bar?: Drink[]; // bar – ceník drinků s recepturou
+  menu?: MenuEntry[]; // kuchyně – denní menu
+  shopping?: ShoppingItem[]; // kuchyně – nákupní seznam
   shifts?: Shift[]; // provoz — rozpis směn, na které se lidi přihlašují
   invites?: Invite[]; // program — koho oslovit (přednášející, kapely)
   kitchen?: KitchenFile[]; // kuchyně — nahrané fotky/soubory (nákupy, menu…)
