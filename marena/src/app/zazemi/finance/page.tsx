@@ -203,7 +203,14 @@ export default function FinancePage() {
             <button className="btn-secondary" onClick={() => setKasaOpen(true)}>
               + Kasa
             </button>
-            <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
+            <button
+              className="btn-primary"
+              onClick={() => {
+                const opening = !open;
+                setOpen(opening);
+                if (opening) setTimeout(() => document.getElementById("add-finance")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+              }}
+            >
               {open ? "Zavřít" : "+ Přidat položku"}
             </button>
           </div>
@@ -371,7 +378,7 @@ export default function FinancePage() {
 
       {/* Přidat */}
       {open && (
-        <div className="card space-y-3 p-4">
+        <div id="add-finance" className="card scroll-mt-20 space-y-3 p-4 ring-2 ring-marigold-200">
           <div className="inline-flex rounded-full bg-paper2 p-1 text-sm">
             <button onClick={() => setKind("vydaj")} className={`rounded-full px-4 py-1.5 font-medium transition ${kind === "vydaj" ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}>
               − Výdaj
@@ -402,8 +409,10 @@ export default function FinancePage() {
       )}
 
       {/* Filtr */}
-      <div className="space-y-2">
-      <h2 className="font-display text-lg font-semibold">Všechny finance</h2>
+      <div className="space-y-2 pt-2">
+      <h2 className="flex items-center gap-2 border-b-2 border-marigold-600/70 pb-1.5 font-display text-2xl font-bold tracking-tight">
+        <span aria-hidden>📊</span> Všechny finance
+      </h2>
       <div className="flex flex-wrap items-center gap-2">
         {([
           ["vse", "Vše"],
