@@ -221,7 +221,7 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
   const [body, setBody] = useState(p.body);
   const [roleId, setRoleId] = useState(p.roleId ?? "");
   const canEdit = isAdmin(me) || p.author === me;
-  const canDelete = isAdmin(me); // mazat smí jen správce (Pan_Vyskočil)
+  const canDelete = isAdmin(me); // mazat smí jen správce (Mařena)
   const role = roleById(p.roleId);
 
   function startEdit() {

@@ -1,5 +1,5 @@
 // Pravidla ročníků: měnit se smí jen AKTUÁLNÍ (nejnovější) ročník. Starší ročníky
-// jsou uzamčené — dají se přepnout a prohlížet, ale ne měnit. Správce (Pan_Vyskočil)
+// jsou uzamčené — dají se přepnout a prohlížet, ale ne měnit. Správce (Mařena)
 // má kontrolu nad vším, takže může editovat kterýkoliv ročník.
 
 import type { DB } from "./types";

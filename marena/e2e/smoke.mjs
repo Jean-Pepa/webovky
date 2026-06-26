@@ -113,7 +113,7 @@ try {
 
   // ---------- IDENTITY GATE ----------
   await step("IdentityGate: bez kontaktu nepustí", async () => {
-    await page.getByPlaceholder("Jméno a příjmení").fill("Pan_Vyskočil");
+    await page.getByPlaceholder("Jméno a příjmení").fill("Mařena");
     await page.getByRole("button", { name: /vstoupit do zázemí/i }).click();
     await page.waitForTimeout(500);
     await page.getByPlaceholder("E-mail").waitFor({ timeout: 3000 });

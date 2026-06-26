@@ -8,7 +8,7 @@ import { Modal } from "@/components/Modal";
 import { DeleteButton } from "@/components/DeleteButton";
 import type { Year } from "@/lib/types";
 
-// Přepínač ročníků — vlastní rozbalovací menu. Správce (Pan_Vyskočil) má u každého
+// Přepínač ročníků — vlastní rozbalovací menu. Správce (Mařena) má u každého
 // ročníku Upravit a Smazat a vespod založení nového ročníku.
 export function YearSwitcher() {
   const { db, currentYear, me, setCurrentYearId, dispatch } = useStore();

@@ -15,7 +15,7 @@ export default function TymPage() {
   const [openRole, setOpenRole] = useState<string | null>(null);
   // Profilový modal: buď "vezmi si roli X" (roleToAdd), nebo jen úprava profilu.
   const [modal, setModal] = useState<{ roleToAdd?: string } | null>(null);
-  // Správce (Pan_Vyskočil) může upravit libovolného člena.
+  // Správce (Mařena) může upravit libovolného člena.
   const [editMember, setEditMember] = useState<Member | null>(null);
 
   const current = currentYear;
@@ -237,7 +237,7 @@ export default function TymPage() {
                 Uvolnit funkci
               </button>
             ) : r.id === "ekonom" && !admin ? (
-              <span className="text-xs text-ink-soft">🔒 Tuto funkci přiděluje jen správce (Pan_Vyskočil).</span>
+              <span className="text-xs text-ink-soft">🔒 Tuto funkci přiděluje jen správce (Mařena).</span>
             ) : (
               <button
                 className={taken ? "btn-secondary" : "btn-primary"}
@@ -437,7 +437,7 @@ export default function TymPage() {
   );
 }
 
-// Správce (Pan_Vyskočil) může upravit jméno, kontakt i funkce libovolného člena.
+// Správce (Mařena) může upravit jméno, kontakt i funkce libovolného člena.
 function AdminEditMemberModal({ member, yearId, onClose }: { member: Member; yearId: string; onClose: () => void }) {
   const { dispatch } = useStore();
   const [name, setName] = useState(member.name);
