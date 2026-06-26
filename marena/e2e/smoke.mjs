@@ -187,7 +187,8 @@ try {
     await page.goto(`${BASE}/zazemi/finance`, { waitUntil: "networkidle" });
     await page.getByRole("button", { name: /Přidat položku/i }).click();
     await page.getByPlaceholder(/Popis/i).first().fill("E2E výdaj");
-    await page.getByPlaceholder(/Částka/i).first().fill("500");
+    // „Částka (Kč)" je pole položky; samotná „Částka" je u výběru — proto specificky.
+    await page.getByPlaceholder(/Částka.*Kč/i).first().fill("500");
     await page.getByRole("button", { name: /^Přidat$|Uložit|Přidat výdaj|Přidat položku/i }).last().click();
     // Položka se vykresluje 2× (mobil karta + desktop tabulka) — cílíme na viditelnou.
     await byText("E2E výdaj").filter({ visible: true }).first().waitFor({ timeout: 4000 });
@@ -195,7 +196,7 @@ try {
   await step("Finance: otevřít kasu", async () => {
     await page.getByRole("button", { name: /\+ Kasa/i }).click();
     await page.getByPlaceholder(/Bar, úterý|Označení/i).fill("E2E kasa");
-    await page.getByPlaceholder(/2000|Ranní vklad|vklad/i).fill("1000");
+    await page.getByPlaceholder(/např\. 2000/i).fill("1000");
     await page.getByRole("button", { name: /Otevřít kasu/i }).click();
     await byText("Kasa — E2E kasa").first().waitFor({ timeout: 4000 });
   });
@@ -205,6 +206,18 @@ try {
     await box.getByRole("button", { name: /Uzavřít a zapsat/i }).click();
     await page.waitForTimeout(600);
     await byText("zapsáno do financí").first().waitFor({ timeout: 4000 });
+  });
+  await step("Finance: výběr — přidat přispěvatele + vráceno", async () => {
+    const sec = page.locator("section#vyber");
+    await sec.getByPlaceholder("Jméno a příjmení").fill("E2E Vkladatel");
+    await sec.getByPlaceholder("Částka").fill("2000");
+    await sec.getByRole("button", { name: /^\+ Přidat$/ }).click();
+    await sec.getByText("E2E Vkladatel").first().waitFor({ timeout: 4000 });
+    // označit vráceno (admin) → škrtnuté + badge „Vráceno"
+    const row = sec.locator("li", { hasText: "E2E Vkladatel" }).first();
+    await row.getByRole("button", { name: /Vrátit/ }).click();
+    await page.waitForTimeout(400);
+    await row.getByRole("button", { name: /Vráceno/ }).first().waitFor({ timeout: 3000 });
   });
 
   // ---------- MERCH (správa) ----------

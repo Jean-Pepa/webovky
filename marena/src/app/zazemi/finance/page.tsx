@@ -9,7 +9,7 @@ import { Modal } from "@/components/Modal";
 import { isAdmin } from "@/lib/admin";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
-import type { FinanceItem, FinanceKind, Cashbox } from "@/lib/types";
+import type { FinanceItem, FinanceKind, Cashbox, Contribution } from "@/lib/types";
 
 const CATEGORIES = [
   "vklad",
@@ -45,11 +45,15 @@ function receiptsOf(item: FinanceItem): string[] {
 }
 
 export default function FinancePage() {
-  const { currentYear, me, dispatch } = useStore();
+  const { currentYear, me, dispatch, canEditCurrentYear } = useStore();
   const [open, setOpen] = useState(false);
   const [kasaOpen, setKasaOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("vse");
   const [catFilter, setCatFilter] = useState<string>("");
+
+  // Výběr (vklady) – rychlé přidání přispěvatele.
+  const [ctName, setCtName] = useState("");
+  const [ctAmount, setCtAmount] = useState("");
 
   const [kind, setKind] = useState<FinanceKind>("vydaj");
   const [label, setLabel] = useState("");
@@ -63,6 +67,18 @@ export default function FinancePage() {
   const year = currentYear;
 
   const items = useMemo(() => year?.finances ?? [], [year]);
+  const contributions = useMemo(() => year?.contributions ?? [], [year]);
+
+  // Výběr: kolik je aktuálně v balíku (nevrácené) a kolik se už vrátilo.
+  const vyber = useMemo(() => {
+    let inPool = 0,
+      returned = 0;
+    for (const c of contributions) {
+      if (c.returned) returned += c.amount;
+      else inPool += c.amount;
+    }
+    return { inPool, returned, total: inPool + returned };
+  }, [contributions]);
 
   const totals = useMemo(() => {
     let prijmy = 0,
@@ -81,8 +97,11 @@ export default function FinancePage() {
         else otevreno += f.amount;
       }
     }
+    // Nevrácený výběr je hotovost v balíku → příjem (a tedy i bilance).
+    prijmy += vyber.inPool;
+    vybrano += vyber.inPool;
     return { prijmy, vydaje, bilance: prijmy - vydaje, kasa: vybrano - zaplaceno, otevreno };
-  }, [items]);
+  }, [items, vyber]);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, { prijem: number; vydaj: number }>();
@@ -124,7 +143,9 @@ export default function FinancePage() {
 
   if (!year) return null;
 
-  // Finance smí upravovat jen správce (Pan_Vyskočil). Ostatní mají jen náhled.
+  // Přidávat položky i kasy může každý z aktuálního ročníku (canAdd).
+  // Upravovat / mazat / přepínat zaplaceno už jen správce (canEdit).
+  const canAdd = canEditCurrentYear;
   const canEdit = isAdmin(me);
 
   // Kasy: kolik se ráno vložilo (vklady) a kolik se vydělalo (tržba z uzavřených).
@@ -133,7 +154,7 @@ export default function FinancePage() {
 
   async function add() {
     const num = parseAmount(amount);
-    if (!label.trim() || num <= 0 || !year || !canEdit) return;
+    if (!label.trim() || num <= 0 || !year || !canAdd) return;
     const gross = vatMode === "none" ? grossFromNet(num) : num;
     const net = vatMode === "none" ? num : undefined;
     await dispatch({ type: "addFinance", yearId: year.id, kind, label, amount: gross, net, category: category || undefined, who: who || undefined, paid, date: date || undefined });
@@ -147,6 +168,14 @@ export default function FinancePage() {
     setOpen(false);
   }
 
+  async function addContribution() {
+    const num = parseAmount(ctAmount);
+    if (!ctName.trim() || num <= 0 || !year || !canAdd) return;
+    await dispatch({ type: "addContribution", yearId: year.id, name: ctName.trim(), amount: num });
+    setCtName("");
+    setCtAmount("");
+  }
+
   return (
     <div className="space-y-6">
       <datalist id="fin-cats">
@@ -158,8 +187,11 @@ export default function FinancePage() {
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight">Finance</h1>
         </div>
-        {canEdit && (
-          <div className="flex items-center gap-2">
+        {canAdd && (
+          <div className="flex flex-wrap items-center gap-2">
+            <button className="btn-secondary" onClick={() => document.getElementById("vyber")?.scrollIntoView({ behavior: "smooth" })}>
+              + Výběr
+            </button>
             <button className="btn-secondary" onClick={() => setKasaOpen(true)}>
               + Kasa
             </button>
@@ -170,12 +202,19 @@ export default function FinancePage() {
         )}
       </div>
 
-      {/* Finance může upravovat jen správce */}
-      {!canEdit && (
+      {/* Kdo co smí: každý přidává, upravuje jen správce; zamčený ročník = jen náhled */}
+      {!canAdd ? (
         <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
           <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>Finance může upravovat jen správce. Ty máš jen náhled.</span>
+          <span>Tento ročník je uzamčený — máš jen náhled.</span>
         </div>
+      ) : (
+        !canEdit && (
+          <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
+            <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>Můžeš přidávat položky i kasy. Upravovat a mazat zapsané může jen správce.</span>
+          </div>
+        )
       )}
 
       {/* Souhrn */}
@@ -186,7 +225,7 @@ export default function FinancePage() {
       </div>
 
       {/* Denní kasy */}
-      {((year.cashboxes?.length ?? 0) > 0 || canEdit) && (
+      {((year.cashboxes?.length ?? 0) > 0 || canAdd) && (
         <section className="card p-4">
           <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
             🧰 Denní kasy
@@ -214,9 +253,72 @@ export default function FinancePage() {
                 {[...(year.cashboxes ?? [])]
                   .sort((a, b) => b.openedAt.localeCompare(a.openedAt))
                   .map((c) => (
-                    <CashboxCard key={c.id} box={c} yearId={year.id} canEdit={canEdit} />
+                    <CashboxCard key={c.id} box={c} yearId={year.id} canAdd={canAdd} canEdit={canEdit} />
                   ))}
               </div>
+            </Collapsible>
+          )}
+        </section>
+      )}
+
+      {/* Výběr (vklady) — kdo dal kolik do společné kasy */}
+      {(contributions.length > 0 || canAdd) && (
+        <section id="vyber" className="card scroll-mt-20 p-4">
+          <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+            💰 Výběr (vklady)
+            {contributions.length > 0 && (
+              <>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf/12 px-2.5 py-0.5 text-sm">
+                  <span className="text-xs font-normal text-leaf-700">v balíku</span>
+                  <span className="font-bold text-leaf-700">+{fmtCZK(vyber.inPool)}</span>
+                </span>
+                {vyber.returned > 0 && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-sm">
+                    <span className="text-xs font-normal text-ink-soft">vráceno</span>
+                    <span className="font-bold text-ink">−{fmtCZK(vyber.returned)}</span>
+                  </span>
+                )}
+                <span className="chip">{contributions.length}</span>
+              </>
+            )}
+          </h2>
+          <p className="mb-3 text-xs text-ink-soft">
+            Zapiš, kdo dal kolik do společné kasy. Nevrácené se počítá do celkového balíku. Na konci u každého odklikni Vráceno.
+          </p>
+          {canAdd && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              <input
+                className="input min-w-[140px] flex-1"
+                placeholder="Jméno a příjmení"
+                value={ctName}
+                onChange={(e) => setCtName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && document.getElementById("ct-amount")?.focus()}
+              />
+              <input
+                id="ct-amount"
+                className="input w-28"
+                inputMode="numeric"
+                placeholder="Částka"
+                value={ctAmount}
+                onChange={(e) => setCtAmount(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addContribution()}
+              />
+              <button className="btn-primary" onClick={addContribution} disabled={!ctName.trim() || !ctAmount.trim()}>
+                + Přidat
+              </button>
+            </div>
+          )}
+          {contributions.length === 0 ? (
+            <p className="text-sm text-ink-soft">Zatím nikdo. Zapiš výše, kdo dal do výběru.</p>
+          ) : (
+            <Collapsible peekClass="max-h-[230px]" expandable={contributions.length > 4} total={contributions.length}>
+              <ul className="divide-y divide-black/[0.06]">
+                {[...contributions]
+                  .sort((a, b) => Number(!!a.returned) - Number(!!b.returned) || a.name.localeCompare(b.name, "cs"))
+                  .map((c) => (
+                    <ContributionRow key={c.id} c={c} yearId={year.id} canEdit={canEdit} />
+                  ))}
+              </ul>
             </Collapsible>
           )}
         </section>
@@ -343,7 +445,7 @@ export default function FinancePage() {
             {/* Mobil: karty (tabulka se na úzký displej nevejde) */}
             <div className="divide-y divide-black/[0.06] md:hidden">
               {rows.map((f) => (
-                <FinanceCard key={f.id} item={f} yearId={year.id} canEdit={canEdit} />
+                <FinanceCard key={f.id} item={f} yearId={year.id} canAdd={canAdd} canEdit={canEdit} />
               ))}
             </div>
             {/* Desktop: klasická tabulka */}
@@ -362,7 +464,7 @@ export default function FinancePage() {
                 </thead>
                 <tbody>
                   {rows.map((f) => (
-                    <FinanceRow key={f.id} item={f} yearId={year.id} canEdit={canEdit} />
+                    <FinanceRow key={f.id} item={f} yearId={year.id} canAdd={canAdd} canEdit={canEdit} />
                   ))}
                 </tbody>
               </table>
@@ -439,7 +541,7 @@ function useFinanceRow(item: FinanceItem, yearId: string) {
 }
 
 // Mobilní karta jedné finanční položky (na úzkém displeji místo tabulky).
-function FinanceCard({ item, yearId, canEdit }: { item: FinanceItem; yearId: string; canEdit: boolean }) {
+function FinanceCard({ item, yearId, canAdd, canEdit }: { item: FinanceItem; yearId: string; canAdd: boolean; canEdit: boolean }) {
   const s = useFinanceRow(item, yearId);
   const isPrijem = item.kind === "prijem";
 
@@ -483,7 +585,7 @@ function FinanceCard({ item, yearId, canEdit }: { item: FinanceItem; yearId: str
         </div>
       </div>
       <div className="mt-2 pl-8">
-        <ReceiptControl item={item} yearId={yearId} canEdit={canEdit} />
+        <ReceiptControl item={item} yearId={yearId} canAdd={canAdd} canEdit={canEdit} />
       </div>
       <div className="mt-2 flex items-center justify-between gap-2 pl-8">
         {canEdit ? (
@@ -509,7 +611,7 @@ function FinanceCard({ item, yearId, canEdit }: { item: FinanceItem; yearId: str
   );
 }
 
-function FinanceRow({ item, yearId, canEdit }: { item: FinanceItem; yearId: string; canEdit: boolean }) {
+function FinanceRow({ item, yearId, canAdd, canEdit }: { item: FinanceItem; yearId: string; canAdd: boolean; canEdit: boolean }) {
   const { dispatch, edit, setEdit, label, setLabel, vatMode, setVatMode, amount, setAmount, category, setCategory, who, setWho, date, setDate, save } =
     useFinanceRow(item, yearId);
 
@@ -542,7 +644,7 @@ function FinanceRow({ item, yearId, canEdit }: { item: FinanceItem; yearId: stri
           <span className="font-medium">{item.label}</span>
         </div>
         {item.note && <p className="mt-0.5 pl-8 text-xs text-ink-soft">{item.note}</p>}
-        <div className="pl-8"><ReceiptControl item={item} yearId={yearId} canEdit={canEdit} /></div>
+        <div className="pl-8"><ReceiptControl item={item} yearId={yearId} canAdd={canAdd} canEdit={canEdit} /></div>
       </td>
       <td className="px-3 py-3">{item.category ? <span className="chip">{item.category}</span> : <span className="text-ink-soft/50">—</span>}</td>
       <td className="px-3 py-3 text-ink-soft">{item.who || "—"}</td>
@@ -632,7 +734,7 @@ function AmountField({
 }
 
 // Účtenky jako fotky: víc účtenek na položku, zobrazení, stažení (správce) a smazání.
-function ReceiptControl({ item, yearId, canEdit }: { item: FinanceItem; yearId: string; canEdit: boolean }) {
+function ReceiptControl({ item, yearId, canAdd, canEdit }: { item: FinanceItem; yearId: string; canAdd: boolean; canEdit: boolean }) {
   const { configured, dispatch } = useStore();
   const list = receiptsOf(item);
   const [busy, setBusy] = useState(false);
@@ -682,7 +784,7 @@ function ReceiptControl({ item, yearId, canEdit }: { item: FinanceItem; yearId: 
           <button onClick={() => view(id)} className="font-medium hover:underline">
             📎 Účtenka{list.length > 1 ? ` ${i + 1}` : ""}
           </button>
-          {canEdit && (
+          {canAdd && (
             <button onClick={() => download(id)} title="Stáhnout účtenku" className="hover:text-ink">
               <Icon name="download" className="h-3.5 w-3.5" />
             </button>
@@ -694,7 +796,7 @@ function ReceiptControl({ item, yearId, canEdit }: { item: FinanceItem; yearId: 
           )}
         </span>
       ))}
-      {canEdit && (
+      {canAdd && (
         <label className="inline-flex cursor-pointer items-center gap-1 text-ink-soft/70 hover:text-ink">
           📎 {busy ? "Nahrávám…" : list.length ? "Přidat další" : "Přidat účtenku"}
           <input type="file" accept="image/*" className="hidden" onChange={onFile} disabled={busy} />
@@ -723,8 +825,29 @@ function ReceiptControl({ item, yearId, canEdit }: { item: FinanceItem; yearId: 
   );
 }
 
+// Řádek výběru (vkladu) — jméno + částka + (pro správce) Vráceno / smazat.
+function ContributionRow({ c, yearId, canEdit }: { c: Contribution; yearId: string; canEdit: boolean }) {
+  const { dispatch } = useStore();
+  return (
+    <li className="flex items-center gap-3 py-2">
+      <p className={`min-w-0 flex-1 break-words font-medium ${c.returned ? "text-ink-soft line-through" : ""}`}>{c.name}</p>
+      <span className={`shrink-0 font-display font-semibold ${c.returned ? "text-ink-soft line-through" : "text-leaf-700"}`}>{fmtCZK(c.amount)}</span>
+      {canEdit && (
+        <button
+          onClick={() => dispatch({ type: "toggleContributionReturned", yearId, contributionId: c.id })}
+          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition ${c.returned ? "bg-leaf/12 text-leaf-700 hover:bg-leaf/20" : "bg-paper2 text-ink-soft hover:bg-black/5"}`}
+          title={c.returned ? "Označit jako nevrácené" : "Označit jako vrácené"}
+        >
+          {c.returned ? "Vráceno ✓" : "Vrátit"}
+        </button>
+      )}
+      {canEdit && <DeleteButton onConfirm={() => dispatch({ type: "removeContribution", yearId, contributionId: c.id })} />}
+    </li>
+  );
+}
+
 // Denní kasa: ráno vklad → večer stav; tržba se po uzavření zapíše do financí.
-function CashboxCard({ box, yearId, canEdit }: { box: Cashbox; yearId: string; canEdit: boolean }) {
+function CashboxCard({ box, yearId, canAdd, canEdit }: { box: Cashbox; yearId: string; canAdd: boolean; canEdit: boolean }) {
   const { dispatch } = useStore();
   const [closeVal, setCloseVal] = useState("");
   const closed = !!box.closedAt;
@@ -764,7 +887,7 @@ function CashboxCard({ box, yearId, canEdit }: { box: Cashbox; yearId: string; c
             <span className="ml-2 text-xs text-ink-soft">✓ zapsáno do financí</span>
           </p>
         )
-      ) : canEdit ? (
+      ) : canAdd ? (
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <input
             className="input w-44"

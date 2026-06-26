@@ -47,6 +47,10 @@ export type Action =
   | { type: "openCashbox"; yearId: string; label?: string; opening: number }
   | { type: "closeCashbox"; yearId: string; cashboxId: string; closing: number }
   | { type: "removeCashbox"; yearId: string; cashboxId: string }
+  | { type: "addContribution"; yearId: string; name: string; amount: number }
+  | { type: "toggleContributionReturned"; yearId: string; contributionId: string }
+  | { type: "updateContribution"; yearId: string; contributionId: string; patch: { name?: string; amount?: number } }
+  | { type: "removeContribution"; yearId: string; contributionId: string }
   | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string; receiptId?: string; receiptIds?: string[] } }
   | { type: "toggleFinancePaid"; yearId: string; financeId: string }
   | { type: "removeFinance"; yearId: string; financeId: string }
@@ -436,6 +440,37 @@ export function applyAction(db: DB, a: Action): DB {
           finances: box?.financeId ? (y.finances ?? []).filter((f) => f.id !== box.financeId) : y.finances,
         };
       });
+
+    case "addContribution": {
+      const name = a.name.trim();
+      const amount = Math.round(a.amount);
+      if (!name || amount <= 0) return db;
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        contributions: [...(y.contributions ?? []), { id: uid("ct_"), name, amount, createdAt: now() }],
+      }));
+    }
+    case "toggleContributionReturned":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        contributions: (y.contributions ?? []).map((c) =>
+          c.id === a.contributionId ? { ...c, returned: !c.returned, returnedAt: !c.returned ? now() : undefined } : c,
+        ),
+      }));
+    case "updateContribution":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        contributions: (y.contributions ?? []).map((c) =>
+          c.id === a.contributionId
+            ? { ...c, name: a.patch.name?.trim() || c.name, amount: a.patch.amount != null ? Math.round(a.patch.amount) : c.amount }
+            : c,
+        ),
+      }));
+    case "removeContribution":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        contributions: (y.contributions ?? []).filter((c) => c.id !== a.contributionId),
+      }));
 
     case "addShift":
       return mapYear(db, a.yearId, (y) => ({
