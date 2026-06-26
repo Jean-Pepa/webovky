@@ -48,6 +48,7 @@ export default function FinancePage() {
   const { currentYear, me, dispatch, canEditCurrentYear } = useStore();
   const [open, setOpen] = useState(false);
   const [kasaOpen, setKasaOpen] = useState(false);
+  const [vyberOpen, setVyberOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("vse");
   const [catFilter, setCatFilter] = useState<string>("");
 
@@ -189,8 +190,15 @@ export default function FinancePage() {
         </div>
         {canAdd && (
           <div className="flex flex-wrap items-center gap-2">
-            <button className="btn-secondary" onClick={() => document.getElementById("vyber")?.scrollIntoView({ behavior: "smooth" })}>
-              + Výběr
+            <button
+              className="btn-secondary"
+              onClick={() => {
+                const opening = !vyberOpen;
+                setVyberOpen(opening);
+                if (opening) setTimeout(() => document.getElementById("vyber")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+              }}
+            >
+              {vyberOpen ? "Zavřít" : "+ Výběr"}
             </button>
             <button className="btn-secondary" onClick={() => setKasaOpen(true)}>
               + Kasa
@@ -285,7 +293,7 @@ export default function FinancePage() {
           <p className="mb-3 text-xs text-ink-soft">
             Zapiš, kdo dal kolik do společné kasy. Nevrácené se počítá do celkového balíku. Na konci u každého odklikni Vráceno.
           </p>
-          {canAdd && (
+          {canAdd && vyberOpen && (
             <div className="mb-3 flex flex-wrap gap-2">
               <input
                 className="input min-w-[140px] flex-1"
@@ -293,6 +301,7 @@ export default function FinancePage() {
                 value={ctName}
                 onChange={(e) => setCtName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && document.getElementById("ct-amount")?.focus()}
+                autoFocus
               />
               <input
                 id="ct-amount"
@@ -309,9 +318,11 @@ export default function FinancePage() {
             </div>
           )}
           {contributions.length === 0 ? (
-            <p className="text-sm text-ink-soft">Zatím nikdo. Zapiš výše, kdo dal do výběru.</p>
+            <p className="text-sm text-ink-soft">
+              {canAdd ? "Zatím nikdo. Klikni nahoře na + Výběr a zapiš, kdo dal do výběru." : "Zatím nikdo."}
+            </p>
           ) : (
-            <Collapsible peekClass="max-h-[230px]" expandable={contributions.length > 4} total={contributions.length}>
+            <Collapsible peekClass="max-h-[168px]" expandable={contributions.length > 3} total={contributions.length}>
               <ul className="divide-y divide-black/[0.06]">
                 {[...contributions]
                   .sort((a, b) => Number(!!a.returned) - Number(!!b.returned) || a.name.localeCompare(b.name, "cs"))
