@@ -16,6 +16,9 @@ export default function VyzdobaPage() {
   const { currentYear, dispatch, canEditCurrentYear } = useStore();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
+  const [who, setWho] = useState("");
+  const [link, setLink] = useState("");
+  const [note, setNote] = useState("");
 
   const year = currentYear;
   const list = useMemo(
@@ -33,8 +36,11 @@ export default function VyzdobaPage() {
 
   async function add() {
     if (!title.trim() || !year || !canEdit) return;
-    await dispatch({ type: "addDecor", yearId: year.id, title: title.trim() });
+    await dispatch({ type: "addDecor", yearId: year.id, title: title.trim(), who, link, note });
     setTitle("");
+    setWho("");
+    setLink("");
+    setNote("");
   }
 
   return (
@@ -52,18 +58,32 @@ export default function VyzdobaPage() {
       </div>
 
       {open && canEdit && (
-        <div className="card flex flex-wrap gap-2 p-4">
+        <div className="card space-y-2 p-4">
           <input
-            className="input min-w-[160px] flex-1"
+            className="input"
             placeholder="Nápad / materiál (např. Luxfery z Bazoše, LED pásky…)"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && add()}
             autoFocus
           />
-          <button className="btn-primary" onClick={add} disabled={!title.trim()}>
-            + Přidat
-          </button>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <input className="input" placeholder="Kdo shání" value={who} onChange={(e) => setWho(e.target.value)} />
+            <input className="input" placeholder="Odkaz (nepovinné)" value={link} onChange={(e) => setLink(e.target.value)} />
+          </div>
+          <input
+            className="input"
+            placeholder="Poznámka"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && add()}
+          />
+          <div className="flex gap-2">
+            <button className="btn-primary py-2 text-sm" onClick={add} disabled={!title.trim()}>
+              + Přidat nápad
+            </button>
+            <button className="btn-ghost py-2 text-sm" onClick={() => setOpen(false)}>Zrušit</button>
+          </div>
         </div>
       )}
 

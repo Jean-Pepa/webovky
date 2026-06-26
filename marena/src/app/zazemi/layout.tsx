@@ -11,19 +11,27 @@ import { isAdmin } from "@/lib/admin";
 import { sameName } from "@/lib/names";
 import { ArchiveModal } from "@/components/ArchiveModal";
 
+// Pořadí podle významových skupin (co patří k sobě, je vedle sebe):
+// komunikace & plán → lidé → festival (program/provoz) → peníze → kontakty.
 const NAV: { href: string; label: string; icon: IconName }[] = [
+  // Komunikace & plánování
   { href: "/zazemi", label: "Nástěnka", icon: "board" },
   { href: "/zazemi/hlasovani", label: "Hlasování", icon: "vote" },
   { href: "/zazemi/kalendar", label: "Kalendář", icon: "calendar" },
-  { href: "/zazemi/program", label: "Program", icon: "mic" },
-  { href: "/zazemi/sponzori", label: "Sponzoři", icon: "spark" },
+  { href: "/zazemi/ukoly", label: "Úkoly", icon: "tasks" },
+  // Lidé
   { href: "/zazemi/tym", label: "Tým & role", icon: "users" },
   { href: "/zazemi/prvaci", label: "Prváci", icon: "star" },
-  { href: "/zazemi/ukoly", label: "Úkoly", icon: "tasks" },
+  // Festival — obsah a provoz
+  { href: "/zazemi/program", label: "Program", icon: "mic" },
   { href: "/zazemi/provoz", label: "Provoz & směny", icon: "ops" },
   { href: "/zazemi/kuchyne", label: "Kuchyně & bar", icon: "food" },
   { href: "/zazemi/vyzdoba", label: "Výzdoba", icon: "palette" },
+  // Peníze a vnější vztahy
+  { href: "/zazemi/sponzori", label: "Sponzoři", icon: "spark" },
+  { href: "/zazemi/merch", label: "Merch", icon: "merch" },
   { href: "/zazemi/finance", label: "Finance", icon: "finance" },
+  // Reference
   { href: "/zazemi/kontakty", label: "Kontakty", icon: "contacts" },
 ];
 
@@ -72,8 +80,6 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const myMember = currentYear?.members.find((m) => sameName(m.name, me));
   const incompleteContact = !!myMember && (!myMember.email?.trim() || !myMember.phone?.trim());
   if (!me || (currentYear && canEditCurrentYear && !isAdmin(me) && (!myMember || incompleteContact))) return <IdentityGate />;
-
-  const showMerch = true; // Merch záložku vidí každý (spravovat může jen role Merch + správce)
 
   async function doLogout() {
     setMenuOpen(false);
@@ -136,16 +142,6 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               </Link>
             );
           })}
-          {showMerch && (
-            <Link
-              href="/zazemi/merch"
-              className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                pathname === "/zazemi/merch" ? "bg-marigold-600 text-white" : "text-ink-soft hover:bg-black/5"
-              }`}
-            >
-              <Icon name="merch" className="h-4 w-4" /> Merch
-            </Link>
-          )}
           <Link
             href="/zazemi/almanach"
             className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-marigold-600 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-marigold-700"
@@ -197,17 +193,6 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   </Link>
                 );
               })}
-              {showMerch && (
-                <Link
-                  href="/zazemi/merch"
-                  onClick={() => setMenuOpen(false)}
-                  className={`inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-medium transition-colors ${
-                    pathname === "/zazemi/merch" ? "bg-marigold-600 text-white" : "text-ink hover:bg-black/5"
-                  }`}
-                >
-                  <Icon name="merch" className="h-5 w-5" /> Merch
-                </Link>
-              )}
               <Link
                 href="/zazemi/almanach"
                 onClick={() => setMenuOpen(false)}

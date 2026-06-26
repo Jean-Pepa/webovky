@@ -54,10 +54,10 @@ export type Action =
   | { type: "addFreshman"; yearId: string; name: string; email?: string; note?: string }
   | { type: "updateFreshman"; yearId: string; freshmanId: string; patch: { name?: string; email?: string; note?: string } }
   | { type: "removeFreshman"; yearId: string; freshmanId: string }
-  | { type: "addDecor"; yearId: string; title: string }
+  | { type: "addDecor"; yearId: string; title: string; who?: string; link?: string; note?: string }
   | { type: "updateDecor"; yearId: string; decorId: string; patch: { title?: string; status?: "napad" | "shani" | "hotovo"; who?: string; link?: string; note?: string } }
   | { type: "removeDecor"; yearId: string; decorId: string }
-  | { type: "addSponsor"; yearId: string; name: string }
+  | { type: "addSponsor"; yearId: string; name: string; gives?: string; who?: string; link?: string; note?: string }
   | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: "oslovit" | "ceka" | "potvrzeno" | "odmitl"; who?: string; link?: string; note?: string } }
   | { type: "removeSponsor"; yearId: string; sponsorId: string }
   | { type: "addDrink"; yearId: string; name: string; kind: "koktejl" | "panak" | "snidane" | "obed" | "jine"; place: "bar" | "kuchyne"; day?: "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne" }
@@ -519,7 +519,18 @@ export function applyAction(db: DB, a: Action): DB {
       if (!title) return db;
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        decor: [...(y.decor ?? []), { id: uid("dc_"), title, status: "napad" as const, createdAt: now() }],
+        decor: [
+          ...(y.decor ?? []),
+          {
+            id: uid("dc_"),
+            title,
+            status: "napad" as const,
+            who: a.who?.trim() || undefined,
+            link: a.link?.trim() || undefined,
+            note: a.note?.trim() || undefined,
+            createdAt: now(),
+          },
+        ],
       }));
     }
     case "updateDecor":
@@ -549,7 +560,19 @@ export function applyAction(db: DB, a: Action): DB {
       if (!name) return db;
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        sponsors: [...(y.sponsors ?? []), { id: uid("sp_"), name, status: "oslovit" as const, createdAt: now() }],
+        sponsors: [
+          ...(y.sponsors ?? []),
+          {
+            id: uid("sp_"),
+            name,
+            status: "oslovit" as const,
+            gives: a.gives?.trim() || undefined,
+            who: a.who?.trim() || undefined,
+            link: a.link?.trim() || undefined,
+            note: a.note?.trim() || undefined,
+            createdAt: now(),
+          },
+        ],
       }));
     }
     case "updateSponsor":
