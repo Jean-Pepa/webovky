@@ -137,6 +137,8 @@ export interface Contribution {
 // Kuchyně & bar — položka menu s recepturou (suroviny + náklad).
 // Bar = drinky (koktejl/panák), kuchyně = jídla (snídaně/oběd) — skládají se stejně.
 export type DrinkKind = "koktejl" | "panak" | "snidane" | "obed" | "jine";
+// Den v týdnu — u kuchyně se jídla rozdělují na jednotlivé dny (Po–Ne).
+export type Weekday = "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne";
 export interface DrinkIngredient {
   name: string; // surovina (gin 40ml, brambory 2kg…)
   cost: number; // náklad za porci (Kč)
@@ -146,6 +148,7 @@ export interface Drink {
   place?: "bar" | "kuchyne"; // kam patří (chybí = bar, kvůli starým datům)
   name: string; // např. „VÍLÍ NEKTAR" / „Guláš"
   kind: DrinkKind;
+  day?: Weekday; // den v týdnu (jen u kuchyně; chybí = bez dne)
   ingredients: DrinkIngredient[]; // receptura
   price?: number; // prodejní cena (Kč) — hlavně u baru
   note?: string;

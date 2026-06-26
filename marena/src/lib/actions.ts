@@ -60,8 +60,8 @@ export type Action =
   | { type: "addSponsor"; yearId: string; name: string }
   | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: "oslovit" | "ceka" | "potvrzeno" | "odmitl"; who?: string; link?: string; note?: string } }
   | { type: "removeSponsor"; yearId: string; sponsorId: string }
-  | { type: "addDrink"; yearId: string; name: string; kind: "koktejl" | "panak" | "snidane" | "obed" | "jine"; place: "bar" | "kuchyne" }
-  | { type: "updateDrink"; yearId: string; drinkId: string; patch: { name?: string; kind?: "koktejl" | "panak" | "snidane" | "obed" | "jine"; price?: number; note?: string; ingredients?: { name: string; cost: number }[] } }
+  | { type: "addDrink"; yearId: string; name: string; kind: "koktejl" | "panak" | "snidane" | "obed" | "jine"; place: "bar" | "kuchyne"; day?: "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne" }
+  | { type: "updateDrink"; yearId: string; drinkId: string; patch: { name?: string; kind?: "koktejl" | "panak" | "snidane" | "obed" | "jine"; day?: "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne" | null; price?: number; note?: string; ingredients?: { name: string; cost: number }[] } }
   | { type: "removeDrink"; yearId: string; drinkId: string }
   | { type: "addMenuEntry"; yearId: string; day: string; meal: "snidane" | "obed" | "jine"; dish: string }
   | { type: "removeMenuEntry"; yearId: string; entryId: string }
@@ -580,7 +580,7 @@ export function applyAction(db: DB, a: Action): DB {
       if (!name) return db;
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        bar: [...(y.bar ?? []), { id: uid("dr_"), place: a.place, name, kind: a.kind, ingredients: [], createdAt: now() }],
+        bar: [...(y.bar ?? []), { id: uid("dr_"), place: a.place, name, kind: a.kind, day: a.day, ingredients: [], createdAt: now() }],
       }));
     }
     case "updateDrink":
@@ -592,6 +592,7 @@ export function applyAction(db: DB, a: Action): DB {
                 ...d,
                 name: a.patch.name?.trim() || d.name,
                 kind: a.patch.kind ?? d.kind,
+                day: a.patch.day !== undefined ? (a.patch.day ?? undefined) : d.day,
                 price: a.patch.price !== undefined ? (a.patch.price > 0 ? Math.round(a.patch.price) : undefined) : d.price,
                 note: a.patch.note !== undefined ? a.patch.note.trim() || undefined : d.note,
                 ingredients: a.patch.ingredients

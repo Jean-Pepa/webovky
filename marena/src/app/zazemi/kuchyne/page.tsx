@@ -9,7 +9,7 @@ import { compressImage, readFileAsDataUrl, saveReceipt, loadReceipt, deleteRecei
 import { fmtCZK, fmtDate } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { isAdmin } from "@/lib/admin";
-import type { KitchenFile, Drink, DrinkKind, DrinkIngredient } from "@/lib/types";
+import type { KitchenFile, Drink, DrinkKind, DrinkIngredient, Weekday } from "@/lib/types";
 
 type Place = "kuchyne" | "bar";
 const placeOfDrink = (d: Drink): Place => d.place ?? "bar";
@@ -27,6 +27,19 @@ const KINDS: Record<Place, { value: DrinkKind; label: string; group: string }[]>
     { value: "jine", label: "Ostatní", group: "🍽️ Ostatní" },
   ],
 };
+const KIND_LABEL: Record<DrinkKind, string> = {
+  koktejl: "Koktejl", panak: "Panák", snidane: "Snídaně", obed: "Oběd", jine: "Ostatní",
+};
+// Dny v týdnu — u kuchyně se jídla rozdělují na jednotlivé dny (Po–Ne).
+const DAYS: { value: Weekday; label: string }[] = [
+  { value: "po", label: "Pondělí" },
+  { value: "ut", label: "Úterý" },
+  { value: "st", label: "Středa" },
+  { value: "ct", label: "Čtvrtek" },
+  { value: "pa", label: "Pátek" },
+  { value: "so", label: "Sobota" },
+  { value: "ne", label: "Neděle" },
+];
 const drinkCost = (d: Drink) => d.ingredients.reduce((s, i) => s + (i.cost || 0), 0);
 
 const CATS = ["Nákupy", "Menu", "Ostatní"];
@@ -70,16 +83,31 @@ function MenuSection({ place, editable }: { place: Place; editable: boolean }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [kind, setKind] = useState<DrinkKind>(place === "bar" ? "koktejl" : "obed");
+  const [day, setDay] = useState<Weekday | "">(place === "kuchyne" ? "po" : "");
   const year = currentYear!;
   const items = (year.bar ?? []).filter((d) => placeOfDrink(d) === place);
 
-  const groups = KINDS[place]
-    .map((k) => ({ group: k.group, list: items.filter((d) => d.kind === k.value).sort((a, b) => a.name.localeCompare(b.name, "cs")) }))
-    .filter((g) => g.list.length > 0);
+  // Bar = seskupení podle druhu, kuchyně = podle dne (Po–Ne) + „bez dne".
+  let groups: { group: string; list: Drink[] }[];
+  if (place === "bar") {
+    groups = KINDS.bar
+      .map((k) => ({ group: k.group, list: items.filter((d) => d.kind === k.value).sort((a, b) => a.name.localeCompare(b.name, "cs")) }))
+      .filter((g) => g.list.length > 0);
+  } else {
+    const order = KINDS.kuchyne.map((k) => k.value);
+    const forDay = (d?: Weekday) =>
+      items
+        .filter((x) => x.day === d)
+        .sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind) || a.name.localeCompare(b.name, "cs"));
+    groups = [
+      ...DAYS.map((dd) => ({ group: `📅 ${dd.label}`, list: forDay(dd.value) })),
+      { group: "📋 Bez dne", list: forDay(undefined) },
+    ].filter((g) => g.list.length > 0);
+  }
 
   async function add() {
     if (!name.trim() || !editable) return;
-    await dispatch({ type: "addDrink", yearId: year.id, name: name.trim(), kind, place });
+    await dispatch({ type: "addDrink", yearId: year.id, name: name.trim(), kind, place, day: place === "kuchyne" && day ? day : undefined });
     setName("");
   }
 
@@ -104,11 +132,19 @@ function MenuSection({ place, editable }: { place: Place; editable: boolean }) {
             onKeyDown={(e) => e.key === "Enter" && add()}
             autoFocus
           />
-          <select className="input w-36" value={kind} onChange={(e) => setKind(e.target.value as DrinkKind)}>
+          <select className="input w-32" value={kind} onChange={(e) => setKind(e.target.value as DrinkKind)}>
             {KINDS[place].map((k) => (
               <option key={k.value} value={k.value}>{k.label}</option>
             ))}
           </select>
+          {place === "kuchyne" && (
+            <select className="input w-32" value={day} onChange={(e) => setDay(e.target.value as Weekday | "")}>
+              {DAYS.map((dd) => (
+                <option key={dd.value} value={dd.value}>{dd.label}</option>
+              ))}
+              <option value="">— bez dne —</option>
+            </select>
+          )}
           <button className="btn-primary" onClick={add} disabled={!name.trim()}>+ Přidat</button>
         </div>
       )}
@@ -145,7 +181,12 @@ function DrinkCard({ d, place, yearId, editable }: { d: Drink; place: Place; yea
   return (
     <div className="card p-4">
       <div className="flex items-start justify-between gap-2">
-        <h4 className="min-w-0 break-words font-display text-base font-semibold">{d.name}</h4>
+        <div className="min-w-0">
+          <h4 className="break-words font-display text-base font-semibold">{d.name}</h4>
+          {place === "kuchyne" && (
+            <span className="mt-1 inline-block rounded-full bg-paper2 px-2 py-0.5 text-[11px] font-medium text-ink-soft">{KIND_LABEL[d.kind]}</span>
+          )}
+        </div>
         {editable && (
           <div className="flex shrink-0 items-center gap-1">
             <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>Upravit</button>
@@ -181,6 +222,7 @@ function DrinkEdit({ d, place, yearId, onClose }: { d: Drink; place: Place; year
   const { dispatch } = useStore();
   const [name, setName] = useState(d.name);
   const [kind, setKind] = useState<DrinkKind>(d.kind);
+  const [day, setDay] = useState<Weekday | "">(d.day ?? "");
   const [price, setPrice] = useState(d.price != null ? String(d.price) : "");
   const [note, setNote] = useState(d.note ?? "");
   const [ings, setIngs] = useState<DrinkIngredient[]>(d.ingredients.length ? d.ingredients : []);
@@ -193,20 +235,28 @@ function DrinkEdit({ d, place, yearId, onClose }: { d: Drink; place: Place; year
       type: "updateDrink",
       yearId,
       drinkId: d.id,
-      patch: { name, kind, price: price.trim() ? Number(price.replace(",", ".")) : 0, note, ingredients: ings.map((i) => ({ name: i.name, cost: Number(i.cost) || 0 })) },
+      patch: { name, kind, day: place === "kuchyne" ? (day || null) : undefined, price: price.trim() ? Number(price.replace(",", ".")) : 0, note, ingredients: ings.map((i) => ({ name: i.name, cost: Number(i.cost) || 0 })) },
     });
     onClose();
   }
 
   return (
     <div className="card space-y-3 p-4 ring-2 ring-marigold-200">
-      <div className="grid gap-2 sm:grid-cols-[1fr_8rem]">
+      <div className={`grid gap-2 ${place === "kuchyne" ? "sm:grid-cols-[1fr_7rem_7rem]" : "sm:grid-cols-[1fr_8rem]"}`}>
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Název" />
         <select className="input" value={kind} onChange={(e) => setKind(e.target.value as DrinkKind)}>
           {KINDS[place].map((k) => (
             <option key={k.value} value={k.value}>{k.label}</option>
           ))}
         </select>
+        {place === "kuchyne" && (
+          <select className="input" value={day} onChange={(e) => setDay(e.target.value as Weekday | "")}>
+            {DAYS.map((dd) => (
+              <option key={dd.value} value={dd.value}>{dd.label}</option>
+            ))}
+            <option value="">bez dne</option>
+          </select>
+        )}
       </div>
       <div>
         <p className="mb-1 text-xs font-medium text-ink-soft">Suroviny (název + náklad Kč)</p>
