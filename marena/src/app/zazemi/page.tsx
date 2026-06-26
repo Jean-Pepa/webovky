@@ -39,8 +39,9 @@ export default function NastenkaPage() {
   const myTasks = year?.tasks.filter((t) => !t.done && (t.assignee === me || !t.assignee)).length ?? 0;
   const myShifts = (year?.shifts ?? []).filter((s) => s.people.includes(me)).length;
 
-  const bilance = (year?.finances ?? []).reduce((s, f) => s + (f.kind === "prijem" ? f.amount : -f.amount), 0);
-  const hasFinance = (year?.finances ?? []).length > 0;
+  const contribInPool = (year?.contributions ?? []).filter((c) => !c.returned).reduce((s, c) => s + c.amount, 0);
+  const bilance = (year?.finances ?? []).reduce((s, f) => s + (f.kind === "prijem" ? f.amount : -f.amount), 0) + contribInPool;
+  const hasFinance = (year?.finances ?? []).length > 0 || (year?.contributions ?? []).length > 0;
 
   if (!year) return null;
 

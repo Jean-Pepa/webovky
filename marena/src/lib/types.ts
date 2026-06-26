@@ -122,6 +122,17 @@ export interface Cashbox {
   createdAt: string;
 }
 
+// Výběr (třídní vklad) — kdo dal kolik do společné kasy. Nevrácené příspěvky se
+// počítají do celkového balíku jako příjem; po „vráceno" se z balíku odečtou.
+export interface Contribution {
+  id: string;
+  name: string; // jméno (a příjmení) přispěvatele
+  amount: number; // kolik dal (Kč)
+  returned?: boolean; // na konci vráceno
+  returnedAt?: string; // ISO – kdy se vrátilo
+  createdAt: string;
+}
+
 // Kuchyně — nahrané fotky a soubory (nákupní seznamy, menu na vaření, recepty…).
 export interface KitchenFile {
   id: string;
@@ -203,6 +214,7 @@ export interface Year {
   links?: LinkItem[]; // důležité kontakty a odkazy (volitelné kvůli zpětné kompatibilitě)
   finances?: FinanceItem[]; // pokladní kniha — příjmy a výdaje
   cashboxes?: Cashbox[]; // denní kasy na hotovost (ráno vklad → večer tržba)
+  contributions?: Contribution[]; // výběr – kdo dal kolik do společné kasy (vklady)
   shifts?: Shift[]; // provoz — rozpis směn, na které se lidi přihlašují
   invites?: Invite[]; // program — koho oslovit (přednášející, kapely)
   kitchen?: KitchenFile[]; // kuchyně — nahrané fotky/soubory (nákupy, menu…)

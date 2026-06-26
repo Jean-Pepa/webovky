@@ -9,7 +9,7 @@ import { Modal } from "@/components/Modal";
 import { isAdmin } from "@/lib/admin";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
-import type { FinanceItem, FinanceKind, Cashbox } from "@/lib/types";
+import type { FinanceItem, FinanceKind, Cashbox, Contribution } from "@/lib/types";
 
 const CATEGORIES = [
   "vklad",
@@ -51,6 +51,10 @@ export default function FinancePage() {
   const [filter, setFilter] = useState<Filter>("vse");
   const [catFilter, setCatFilter] = useState<string>("");
 
+  // Výběr (vklady) – rychlé přidání přispěvatele.
+  const [ctName, setCtName] = useState("");
+  const [ctAmount, setCtAmount] = useState("");
+
   const [kind, setKind] = useState<FinanceKind>("vydaj");
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
@@ -63,6 +67,18 @@ export default function FinancePage() {
   const year = currentYear;
 
   const items = useMemo(() => year?.finances ?? [], [year]);
+  const contributions = useMemo(() => year?.contributions ?? [], [year]);
+
+  // Výběr: kolik je aktuálně v balíku (nevrácené) a kolik se už vrátilo.
+  const vyber = useMemo(() => {
+    let inPool = 0,
+      returned = 0;
+    for (const c of contributions) {
+      if (c.returned) returned += c.amount;
+      else inPool += c.amount;
+    }
+    return { inPool, returned, total: inPool + returned };
+  }, [contributions]);
 
   const totals = useMemo(() => {
     let prijmy = 0,
@@ -81,8 +97,11 @@ export default function FinancePage() {
         else otevreno += f.amount;
       }
     }
+    // Nevrácený výběr je hotovost v balíku → příjem (a tedy i bilance).
+    prijmy += vyber.inPool;
+    vybrano += vyber.inPool;
     return { prijmy, vydaje, bilance: prijmy - vydaje, kasa: vybrano - zaplaceno, otevreno };
-  }, [items]);
+  }, [items, vyber]);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, { prijem: number; vydaj: number }>();
@@ -149,6 +168,14 @@ export default function FinancePage() {
     setOpen(false);
   }
 
+  async function addContribution() {
+    const num = parseAmount(ctAmount);
+    if (!ctName.trim() || num <= 0 || !year || !canAdd) return;
+    await dispatch({ type: "addContribution", yearId: year.id, name: ctName.trim(), amount: num });
+    setCtName("");
+    setCtAmount("");
+  }
+
   return (
     <div className="space-y-6">
       <datalist id="fin-cats">
@@ -161,7 +188,10 @@ export default function FinancePage() {
           <h1 className="font-display text-2xl font-semibold tracking-tight">Finance</h1>
         </div>
         {canAdd && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button className="btn-secondary" onClick={() => document.getElementById("vyber")?.scrollIntoView({ behavior: "smooth" })}>
+              + Výběr
+            </button>
             <button className="btn-secondary" onClick={() => setKasaOpen(true)}>
               + Kasa
             </button>
@@ -226,6 +256,69 @@ export default function FinancePage() {
                     <CashboxCard key={c.id} box={c} yearId={year.id} canAdd={canAdd} canEdit={canEdit} />
                   ))}
               </div>
+            </Collapsible>
+          )}
+        </section>
+      )}
+
+      {/* Výběr (vklady) — kdo dal kolik do společné kasy */}
+      {(contributions.length > 0 || canAdd) && (
+        <section id="vyber" className="card scroll-mt-20 p-4">
+          <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+            💰 Výběr (vklady)
+            {contributions.length > 0 && (
+              <>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf/12 px-2.5 py-0.5 text-sm">
+                  <span className="text-xs font-normal text-leaf-700">v balíku</span>
+                  <span className="font-bold text-leaf-700">+{fmtCZK(vyber.inPool)}</span>
+                </span>
+                {vyber.returned > 0 && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-sm">
+                    <span className="text-xs font-normal text-ink-soft">vráceno</span>
+                    <span className="font-bold text-ink">−{fmtCZK(vyber.returned)}</span>
+                  </span>
+                )}
+                <span className="chip">{contributions.length}</span>
+              </>
+            )}
+          </h2>
+          <p className="mb-3 text-xs text-ink-soft">
+            Zapiš, kdo dal kolik do společné kasy. Nevrácené se počítá do celkového balíku. Na konci u každého odklikni Vráceno.
+          </p>
+          {canAdd && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              <input
+                className="input min-w-[140px] flex-1"
+                placeholder="Jméno a příjmení"
+                value={ctName}
+                onChange={(e) => setCtName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && document.getElementById("ct-amount")?.focus()}
+              />
+              <input
+                id="ct-amount"
+                className="input w-28"
+                inputMode="numeric"
+                placeholder="Částka"
+                value={ctAmount}
+                onChange={(e) => setCtAmount(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addContribution()}
+              />
+              <button className="btn-primary" onClick={addContribution} disabled={!ctName.trim() || !ctAmount.trim()}>
+                + Přidat
+              </button>
+            </div>
+          )}
+          {contributions.length === 0 ? (
+            <p className="text-sm text-ink-soft">Zatím nikdo. Zapiš výše, kdo dal do výběru.</p>
+          ) : (
+            <Collapsible peekClass="max-h-[230px]" expandable={contributions.length > 4} total={contributions.length}>
+              <ul className="divide-y divide-black/[0.06]">
+                {[...contributions]
+                  .sort((a, b) => Number(!!a.returned) - Number(!!b.returned) || a.name.localeCompare(b.name, "cs"))
+                  .map((c) => (
+                    <ContributionRow key={c.id} c={c} yearId={year.id} canEdit={canEdit} />
+                  ))}
+              </ul>
             </Collapsible>
           )}
         </section>
@@ -729,6 +822,27 @@ function ReceiptControl({ item, yearId, canAdd, canEdit }: { item: FinanceItem; 
         )}
       </Modal>
     </div>
+  );
+}
+
+// Řádek výběru (vkladu) — jméno + částka + (pro správce) Vráceno / smazat.
+function ContributionRow({ c, yearId, canEdit }: { c: Contribution; yearId: string; canEdit: boolean }) {
+  const { dispatch } = useStore();
+  return (
+    <li className="flex items-center gap-3 py-2">
+      <p className={`min-w-0 flex-1 break-words font-medium ${c.returned ? "text-ink-soft line-through" : ""}`}>{c.name}</p>
+      <span className={`shrink-0 font-display font-semibold ${c.returned ? "text-ink-soft line-through" : "text-leaf-700"}`}>{fmtCZK(c.amount)}</span>
+      {canEdit && (
+        <button
+          onClick={() => dispatch({ type: "toggleContributionReturned", yearId, contributionId: c.id })}
+          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition ${c.returned ? "bg-leaf/12 text-leaf-700 hover:bg-leaf/20" : "bg-paper2 text-ink-soft hover:bg-black/5"}`}
+          title={c.returned ? "Označit jako nevrácené" : "Označit jako vrácené"}
+        >
+          {c.returned ? "Vráceno ✓" : "Vrátit"}
+        </button>
+      )}
+      {canEdit && <DeleteButton onConfirm={() => dispatch({ type: "removeContribution", yearId, contributionId: c.id })} />}
+    </li>
   );
 }
 
