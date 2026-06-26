@@ -112,16 +112,14 @@ function FreshmanRow({ f, yearId, canEdit }: { f: Freshman; yearId: string; canE
 
   return (
     <li className="flex items-start gap-3 px-4 py-2.5">
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
         <p className="break-words font-medium">{f.name}</p>
-        <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
-          {f.email && (
-            <a href={`mailto:${f.email}`} className="break-all hover:text-marigold-700">
-              ✉️ {f.email}
-            </a>
-          )}
-          {f.note && <span className="break-words">📝 {f.note}</span>}
-        </div>
+        {f.email && (
+          <a href={`mailto:${f.email}`} className="break-all text-xs text-ink-soft hover:text-marigold-700">
+            ✉️ {f.email}
+          </a>
+        )}
+        {f.note && <span className="break-words text-xs text-ink-soft">📝 {f.note}</span>}
       </div>
       {canEdit && (
         <div className="flex shrink-0 items-center gap-1">

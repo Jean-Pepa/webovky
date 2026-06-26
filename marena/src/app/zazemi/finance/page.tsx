@@ -7,6 +7,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { isAdmin } from "@/lib/admin";
+import { normName } from "@/lib/names";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
 import type { FinanceItem, FinanceKind, Cashbox, Contribution } from "@/lib/types";
@@ -51,6 +52,7 @@ export default function FinancePage() {
   const [vyberOpen, setVyberOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("vse");
   const [catFilter, setCatFilter] = useState<string>("");
+  const [q, setQ] = useState(""); // vyhledávání podle popisu
 
   // Výběr (vklady) – rychlé přidání přispěvatele.
   const [ctName, setCtName] = useState("");
@@ -154,8 +156,9 @@ export default function FinancePage() {
         return true;
       })
       .filter((f) => (catFilter ? (f.category || "bez kategorie") === catFilter : true))
+      .filter((f) => (q.trim() ? normName(f.label).includes(normName(q)) : true))
       .sort((a, b) => (b.date || b.createdAt).localeCompare(a.date || a.createdAt));
-  }, [items, filter, catFilter]);
+  }, [items, filter, catFilter, q]);
 
   if (!year) return null;
 
@@ -456,8 +459,14 @@ export default function FinancePage() {
             {l}
           </button>
         ))}
+        <input
+          className="ml-auto w-44 rounded-full border border-black/10 bg-white px-3.5 py-1.5 text-sm sm:w-52"
+          placeholder="🔎 Hledat v popisu…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
         {byCategory.length > 0 && (
-          <select className="ml-auto rounded-full border border-black/10 bg-white px-3 py-1.5 text-sm text-ink-soft" value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
+          <select className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-sm text-ink-soft" value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
             <option value="">Všechny kategorie</option>
             {byCategory.map(([cat]) => (
               <option key={cat} value={cat}>
@@ -472,7 +481,7 @@ export default function FinancePage() {
       {/* Tabulka */}
       {rows.length === 0 ? (
         <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
-          Zatím žádné položky. Přidej první vklad nebo výdaj.
+          {q.trim() || filter !== "vse" || catFilter ? "Nic neodpovídá filtru ani hledání." : "Zatím žádné položky. Přidej první vklad nebo výdaj."}
         </div>
       ) : (
         <div className="card overflow-hidden">
