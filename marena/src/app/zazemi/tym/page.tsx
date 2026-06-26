@@ -402,16 +402,21 @@ export default function TymPage() {
         {admin && (
           <aside className="h-fit min-w-0 lg:sticky lg:top-4">
             <section className="card p-4">
-              <h2 className="mb-3 font-display text-base font-semibold">Jména ({year.members.length})</h2>
+              <h2 className="mb-1 font-display text-base font-semibold">Jména ({year.members.length})</h2>
+              <p className="mb-3 text-xs text-ink-soft">Smazat účet odstraní člověka úplně — z týmu, rolí i seznamu.</p>
               {year.members.length === 0 ? (
                 <p className="text-sm text-ink-soft">Zatím nikdo.</p>
               ) : (
-                <ul className="space-y-1">
+                <ul className="divide-y divide-black/[0.06]">
                   {[...year.members]
                     .sort((a, b) => a.name.localeCompare(b.name, "cs"))
                     .map((m) => (
-                      <li key={m.id} className="truncate text-sm">
-                        {m.name}
+                      <li key={m.id} className="flex items-center gap-2 py-1.5 text-sm">
+                        <span className="min-w-0 flex-1 truncate">{m.name}</span>
+                        <DeleteButton
+                          label="Smazat účet"
+                          onConfirm={() => dispatch({ type: "removeMember", yearId: year.id, memberId: m.id })}
+                        />
                       </li>
                     ))}
                 </ul>
