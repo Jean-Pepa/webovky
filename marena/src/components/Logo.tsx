@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 // rozbitý obrázek). Na tmavém podkladu (light) je logo v bílém poli.
 const SOURCES = ["/logo-fa.svg", "/logo-fa.png", "/photos/logo-fa.svg", "/photos/logo-fa.png"];
 
-export function Logo({ href = "/", light = false }: { href?: string; light?: boolean }) {
+export function Logo({ href = "/", light = false, sizeClass = "h-[1.5cm]" }: { href?: string; light?: boolean; sizeClass?: string }) {
   const [src, setSrc] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function Logo({ href = "/", light = false }: { href?: string; light?: boo
       {src ? (
         <span className="inline-flex">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt="Fakulta architektury VUT" className="h-[1.5cm] w-auto" />
+          <img src={src} alt="Fakulta architektury VUT" className={`${sizeClass} w-auto`} />
         </span>
       ) : (
         <FallbackMark light={light} />

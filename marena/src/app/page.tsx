@@ -189,21 +189,22 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* NAV */}
+      {/* NAV — na telefonu kompaktní jeden řádek úplně nahoře (logo zmenšené,
+          ať se vejde a nepřekrývá hero text) */}
       <header className="absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/55 via-black/25 to-transparent pb-6">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-5 [text-shadow:0_1px_10px_rgba(0,0,0,0.45)]">
-          <span className="[&_*]:text-white">
-            <Logo light />
+        <div className="mx-auto flex max-w-6xl flex-nowrap items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-4 sm:py-5 [text-shadow:0_1px_10px_rgba(0,0,0,0.45)]">
+          <span className="shrink-0 [&_*]:text-white">
+            <Logo light sizeClass="h-8 sm:h-[1.5cm]" />
           </span>
-          <nav className="flex items-center gap-2">
+          <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             {/* Přepínač jazyka */}
             <div className="flex items-center gap-0.5 rounded-full bg-white/10 p-1 ring-1 ring-white/20">
-              <Icon name="globe" className="ml-1 mr-0.5 h-4 w-4 text-white" />
+              <Icon name="globe" className="ml-1 mr-0.5 hidden h-4 w-4 text-white sm:block" />
               {LANGS.map((l) => (
                 <button
                   key={l}
                   onClick={() => changeLang(l)}
-                  className={`rounded-full px-2 py-1 text-xs font-semibold uppercase transition ${
+                  className={`rounded-full px-1.5 py-1 text-xs font-semibold uppercase transition sm:px-2 ${
                     lang === l ? "bg-white text-ink" : "text-white/80 hover:text-white"
                   }`}
                   aria-label={l === "cs" ? "Čeština" : l === "en" ? "English" : "Deutsch"}
@@ -212,11 +213,12 @@ export default function Home() {
                 </button>
               ))}
             </div>
-            <a href={IG_URL} target="_blank" rel="noreferrer" className="btn-primary" aria-label="Instagram">
+            <a href={IG_URL} target="_blank" rel="noreferrer" className="btn-primary px-2.5 sm:px-5" aria-label="Instagram">
               <Icon name="instagram" className="h-4 w-4" /> <span className="hidden sm:inline">Instagram</span>
             </a>
-            <Link href="/prihlaseni" className="rounded-full px-3 py-2 text-sm font-medium text-white transition hover:opacity-80">
-              {t.organizers}
+            <Link href="/prihlaseni" className="rounded-full px-2 py-1.5 text-xs font-medium text-white transition hover:opacity-80 sm:px-3 sm:py-2 sm:text-sm" aria-label={t.organizers}>
+              <span className="hidden min-[360px]:inline">{t.organizers}</span>
+              <Icon name="users" className="h-5 w-5 min-[360px]:hidden" />
             </Link>
           </nav>
         </div>
