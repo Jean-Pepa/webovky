@@ -51,6 +51,9 @@ export type Action =
   | { type: "toggleContributionReturned"; yearId: string; contributionId: string }
   | { type: "updateContribution"; yearId: string; contributionId: string; patch: { name?: string; amount?: number } }
   | { type: "removeContribution"; yearId: string; contributionId: string }
+  | { type: "addFreshman"; yearId: string; name: string; email?: string; note?: string }
+  | { type: "updateFreshman"; yearId: string; freshmanId: string; patch: { name?: string; email?: string; note?: string } }
+  | { type: "removeFreshman"; yearId: string; freshmanId: string }
   | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string; receiptId?: string; receiptIds?: string[] } }
   | { type: "toggleFinancePaid"; yearId: string; financeId: string }
   | { type: "removeFinance"; yearId: string; financeId: string }
@@ -470,6 +473,29 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => ({
         ...y,
         contributions: (y.contributions ?? []).filter((c) => c.id !== a.contributionId),
+      }));
+
+    case "addFreshman": {
+      const name = a.name.trim();
+      if (!name) return db;
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        freshmen: [...(y.freshmen ?? []), { id: uid("fr_"), name, email: a.email?.trim() || undefined, note: a.note?.trim() || undefined, createdAt: now() }],
+      }));
+    }
+    case "updateFreshman":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        freshmen: (y.freshmen ?? []).map((f) =>
+          f.id === a.freshmanId
+            ? { ...f, name: a.patch.name?.trim() || f.name, email: a.patch.email !== undefined ? a.patch.email.trim() || undefined : f.email, note: a.patch.note !== undefined ? a.patch.note.trim() || undefined : f.note }
+            : f,
+        ),
+      }));
+    case "removeFreshman":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        freshmen: (y.freshmen ?? []).filter((f) => f.id !== a.freshmanId),
       }));
 
     case "addShift":

@@ -133,6 +133,15 @@ export interface Contribution {
   createdAt: string;
 }
 
+// Prváci — ruční seznam prváků (účastníků), o kterých festival je.
+export interface Freshman {
+  id: string;
+  name: string;
+  email?: string;
+  note?: string; // cokoli (skupina, telefon, poznámka…)
+  createdAt: string;
+}
+
 // Kuchyně — nahrané fotky a soubory (nákupní seznamy, menu na vaření, recepty…).
 export interface KitchenFile {
   id: string;
@@ -215,6 +224,7 @@ export interface Year {
   finances?: FinanceItem[]; // pokladní kniha — příjmy a výdaje
   cashboxes?: Cashbox[]; // denní kasy na hotovost (ráno vklad → večer tržba)
   contributions?: Contribution[]; // výběr – kdo dal kolik do společné kasy (vklady)
+  freshmen?: Freshman[]; // prváci – ruční seznam účastníků
   shifts?: Shift[]; // provoz — rozpis směn, na které se lidi přihlašují
   invites?: Invite[]; // program — koho oslovit (přednášející, kapely)
   kitchen?: KitchenFile[]; // kuchyně — nahrané fotky/soubory (nákupy, menu…)
