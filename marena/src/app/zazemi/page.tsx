@@ -276,7 +276,7 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
           </div>
           {p.editedBy && p.editedAt && (
             <div>
-              ✏️ upravil(a): <span className="font-medium text-ink">{p.editedBy}</span> · {fmtDateTime(p.editedAt)}
+              upravil(a): <span className="font-medium text-ink">{p.editedBy}</span> · {fmtDateTime(p.editedAt)}
             </div>
           )}
         </div>
