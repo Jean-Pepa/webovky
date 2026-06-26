@@ -6,12 +6,21 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { Logo } from "@/components/Logo";
 import { Mascot } from "@/components/Mascot";
+import { supabaseEnabled } from "@/lib/supabase/config";
+import { MagicLinkLogin } from "@/components/MagicLinkLogin";
 
 export default function LoginPage() {
   const { login, authed, ready } = useStore();
   const router = useRouter();
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [errParam, setErrParam] = useState<string | null>(null);
+  const magic = supabaseEnabled();
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setErrParam(new URLSearchParams(window.location.search).get("err"));
+  }, []);
 
   useEffect(() => {
     if (ready && authed) router.replace("/zazemi");
@@ -41,26 +50,32 @@ export default function LoginPage() {
           <Mascot size={150} wave />
         </div>
         <div className="rounded-3xl bg-white/10 p-7 text-white ring-1 ring-white/15 backdrop-blur-md">
-          <h1 className="font-display text-2xl font-semibold">Vstup do zázemí</h1>
-          <form onSubmit={submit} className="mt-5 space-y-3">
-            <input
-              name="password"
-              type="password"
-              required
-              placeholder="Heslo do zázemí"
-              onChange={() => setError(false)}
-              className="w-full rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 text-base text-white placeholder:text-white/50 outline-none transition focus:border-marigold-300 focus:ring-2 focus:ring-marigold-300/30 sm:text-sm"
-              autoFocus
-            />
-            {error && (
-              <p className="rounded-xl bg-red-500/20 px-3 py-2 text-sm text-red-100">
-                Špatné heslo. Zkus to znovu.
-              </p>
-            )}
-            <button type="submit" disabled={busy} className="btn-primary w-full">
-              {busy ? "Přihlašuji…" : "Vstoupit"}
-            </button>
-          </form>
+          {magic ? (
+            <MagicLinkLogin deniedHint={errParam === "denied"} />
+          ) : (
+            <>
+              <h1 className="font-display text-2xl font-semibold">Vstup do zázemí</h1>
+              <form onSubmit={submit} className="mt-5 space-y-3">
+                <input
+                  name="password"
+                  type="password"
+                  required
+                  placeholder="Heslo do zázemí"
+                  onChange={() => setError(false)}
+                  className="w-full rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 text-base text-white placeholder:text-white/50 outline-none transition focus:border-marigold-300 focus:ring-2 focus:ring-marigold-300/30 sm:text-sm"
+                  autoFocus
+                />
+                {error && (
+                  <p className="rounded-xl bg-red-500/20 px-3 py-2 text-sm text-red-100">
+                    Špatné heslo. Zkus to znovu.
+                  </p>
+                )}
+                <button type="submit" disabled={busy} className="btn-primary w-full">
+                  {busy ? "Přihlašuji…" : "Vstoupit"}
+                </button>
+              </form>
+            </>
+          )}
         </div>
         <p className="mt-4 text-center text-xs text-white/60">
           <Link href="/" className="hover:text-white">

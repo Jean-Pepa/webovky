@@ -5,6 +5,8 @@ import type { DB, Year } from "./types";
 import { applyAction, type Action } from "./actions";
 import { seedDB } from "./seed";
 import { isYearEditable, yearFromPassword } from "./years";
+import { supabaseEnabled } from "./supabase/config";
+import { createSupabaseBrowser } from "./supabase/client";
 
 type Mode = "loading" | "server" | "local";
 
@@ -145,9 +147,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    if (supabaseEnabled()) {
+      try {
+        await createSupabaseBrowser().auth.signOut();
+      } catch {
+        /* ignore */
+      }
+      localStorage.removeItem(LS_ME);
+    }
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
     localStorage.removeItem(LS_AUTH);
-    setState((s) => ({ ...s, authed: false }));
+    setState((s) => ({ ...s, authed: false, ...(supabaseEnabled() ? { me: "" } : {}) }));
   }, []);
 
   const setMe = useCallback((name: string) => {

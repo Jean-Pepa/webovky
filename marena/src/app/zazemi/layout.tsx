@@ -11,6 +11,8 @@ import { isAdmin, ADMIN_NAME } from "@/lib/admin";
 import { sameName } from "@/lib/names";
 import { ArchiveModal } from "@/components/ArchiveModal";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
+import { SupabaseGate } from "@/components/SupabaseGate";
+import { supabaseEnabled } from "@/lib/supabase/config";
 
 // Pořadí podle významových skupin (co patří k sobě, je vedle sebe):
 // komunikace & plán → lidé → festival (program/provoz) → peníze → kontakty.
@@ -77,11 +79,16 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
 
   if (!ready) return <Loading />;
   if (!authed) return <Loading label="Přesměrování na přihlášení…" />;
-  // Bez kompletního záznamu (jméno + e-mail + telefon) se do týmu nevstoupí.
-  // Platí pro nové, smazané i členy s neúplným kontaktem (kromě správce).
-  const myMember = currentYear?.members.find((m) => sameName(m.name, me));
-  const incompleteContact = !!myMember && (!myMember.email?.trim() || !myMember.phone?.trim());
-  if (!me || (currentYear && canEditCurrentYear && !isAdmin(me) && (!myMember || incompleteContact))) return <IdentityGate />;
+  if (supabaseEnabled()) {
+    // S Supabase se jméno odvodí z přihlášeného e-mailu (žádné ruční zadávání).
+    if (!me) return <SupabaseGate />;
+  } else {
+    // Bez kompletního záznamu (jméno + e-mail + telefon) se do týmu nevstoupí.
+    // Platí pro nové, smazané i členy s neúplným kontaktem (kromě správce).
+    const myMember = currentYear?.members.find((m) => sameName(m.name, me));
+    const incompleteContact = !!myMember && (!myMember.email?.trim() || !myMember.phone?.trim());
+    if (!me || (currentYear && canEditCurrentYear && !isAdmin(me) && (!myMember || incompleteContact))) return <IdentityGate />;
+  }
 
   async function doLogout() {
     setMenuOpen(false);
