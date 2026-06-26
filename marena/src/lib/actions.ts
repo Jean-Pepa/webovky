@@ -24,6 +24,8 @@ export type Action =
   | { type: "addMember"; yearId: string; name: string; roleIds: string[]; email?: string; phone?: string; contact?: string; note?: string }
   | { type: "updateMember"; yearId: string; memberId: string; patch: { name?: string; roleIds?: string[]; email?: string; phone?: string; contact?: string; note?: string } }
   | { type: "removeMember"; yearId: string; memberId: string }
+  // Kompletní smazání účtu — vždy člena, volitelně i jeho příspěvky, hlasy a směny.
+  | { type: "purgeMember"; yearId: string; memberId: string; name: string; opts: { posts?: boolean; votes?: boolean; shifts?: boolean } }
   // Vzít si roli (vytvoří/upraví člena a přidá roli). asLead / první držitel = vedoucí.
   | { type: "takeRole"; yearId: string; memberId?: string; name: string; email?: string; phone?: string; roleId: string; asLead: boolean }
   | { type: "setRoleLead"; yearId: string; roleId: string; memberId: string }
@@ -211,6 +213,23 @@ export function applyAction(db: DB, a: Action): DB {
       );
     case "removeMember":
       return mapYear(db, a.yearId, (y) => normalizeLeads({ ...y, members: y.members.filter((m) => m.id !== a.memberId) }));
+    case "purgeMember":
+      return mapYear(db, a.yearId, (y) => {
+        const next: Year = { ...y, members: y.members.filter((m) => m.id !== a.memberId) };
+        if (a.opts.posts) next.posts = next.posts.filter((p) => !sameName(p.author, a.name));
+        if (a.opts.votes)
+          next.polls = next.polls.map((poll) => ({
+            ...poll,
+            options: poll.options.map((o) => ({ ...o, voters: o.voters.filter((v) => !sameName(v, a.name)) })),
+          }));
+        if (a.opts.shifts)
+          next.shifts = (y.shifts ?? []).map((s) => ({
+            ...s,
+            people: s.people.filter((n) => !sameName(n, a.name)),
+            backup: (s.backup ?? []).filter((n) => !sameName(n, a.name)),
+          }));
+        return normalizeLeads(next);
+      });
     case "takeRole":
       return mapYear(db, a.yearId, (y) => {
         const name = a.name.trim();

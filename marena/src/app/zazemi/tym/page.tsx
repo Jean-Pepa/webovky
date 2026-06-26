@@ -8,11 +8,12 @@ import { Modal } from "@/components/Modal";
 import { Icon } from "@/components/Icons";
 import { isAdmin } from "@/lib/admin";
 import { sameName } from "@/lib/names";
-import type { Member } from "@/lib/types";
+import type { Member, Year } from "@/lib/types";
 
 export default function TymPage() {
   const { currentYear, me, setMe, dispatch, canEditCurrentYear } = useStore();
   const [openRole, setOpenRole] = useState<string | null>(null);
+  const [purge, setPurge] = useState<Member | null>(null); // účet ke smazání (tabulka co vše)
   // Profilový modal: buď "vezmi si roli X" (roleToAdd), nebo jen úprava profilu.
   const [modal, setModal] = useState<{ roleToAdd?: string } | null>(null);
   // Správce (Mařena) může upravit libovolného člena.
@@ -413,10 +414,9 @@ export default function TymPage() {
                     .map((m) => (
                       <li key={m.id} className="flex items-center gap-2 py-1.5 text-sm">
                         <span className="min-w-0 flex-1 truncate">{m.name}</span>
-                        <DeleteButton
-                          label="Smazat účet"
-                          onConfirm={() => dispatch({ type: "removeMember", yearId: year.id, memberId: m.id })}
-                        />
+                        <button className="btn-danger shrink-0" onClick={() => setPurge(m)}>
+                          Smazat účet
+                        </button>
                       </li>
                     ))}
                 </ul>
@@ -438,7 +438,76 @@ export default function TymPage() {
       />
 
       {editMember && <AdminEditMemberModal member={editMember} yearId={year.id} onClose={() => setEditMember(null)} />}
+      {purge && <PurgeAccountModal key={purge.id} member={purge} year={year} onClose={() => setPurge(null)} />}
     </div>
+  );
+}
+
+// Tabulka „co vše navždy smazat" u jednoho účtu (jen pro správce).
+function PurgeAccountModal({ member, year, onClose }: { member: Member; year: Year; onClose: () => void }) {
+  const { dispatch } = useStore();
+  const [posts, setPosts] = useState(true);
+  const [votes, setVotes] = useState(true);
+  const [shifts, setShifts] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const name = member.name;
+
+  const postCount = (year.posts ?? []).filter((p) => sameName(p.author, name)).length;
+  const voteCount = (year.polls ?? []).reduce(
+    (s, poll) => s + poll.options.reduce((a, o) => a + o.voters.filter((v) => sameName(v, name)).length, 0),
+    0,
+  );
+  const shiftCount = (year.shifts ?? []).filter(
+    (s) => s.people.some((n) => sameName(n, name)) || (s.backup ?? []).some((n) => sameName(n, name)),
+  ).length;
+
+  async function go() {
+    setBusy(true);
+    await dispatch({ type: "purgeMember", yearId: year.id, memberId: member.id, name, opts: { posts, votes, shifts } });
+    onClose();
+  }
+
+  const rows: { checked: boolean; onToggle: () => void; label: string; count: number }[] = [
+    { checked: posts, onToggle: () => setPosts((v) => !v), label: "Příspěvky na nástěnce", count: postCount },
+    { checked: votes, onToggle: () => setVotes((v) => !v), label: "Hlasy v anketách", count: voteCount },
+    { checked: shifts, onToggle: () => setShifts((v) => !v), label: "Přihlášení na směny", count: shiftCount },
+  ];
+
+  return (
+    <Modal open onClose={onClose} title={`Smazat účet — ${name}`}>
+      <p className="mb-3 text-sm text-ink-soft">
+        Vyber, co se má u tohoto člověka <strong>navždy</strong> smazat. Účet (jméno, kontakt, role) se smaže vždy.
+      </p>
+      <div className="space-y-2">
+        <div className="flex items-center gap-3 rounded-xl bg-red-50 px-3 py-2.5 text-sm">
+          <Icon name="users" className="h-4 w-4 text-red-600" />
+          <span className="flex-1 font-medium">Účet — jméno, kontakt, role</span>
+          <span className="shrink-0 text-xs font-medium text-red-600">smaže se vždy</span>
+        </div>
+        {rows.map((r) => (
+          <label
+            key={r.label}
+            className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm ${r.count === 0 ? "border-black/[0.06] opacity-50" : "border-black/10"}`}
+          >
+            <input
+              type="checkbox"
+              checked={r.checked && r.count > 0}
+              onChange={r.onToggle}
+              disabled={r.count === 0}
+              className="h-4 w-4 accent-red-600"
+            />
+            <span className="min-w-0 flex-1 break-words">{r.label}</span>
+            <span className="shrink-0 text-xs text-ink-soft">{r.count}×</span>
+          </label>
+        ))}
+      </div>
+      <div className="mt-4 flex gap-2">
+        <button className="btn-danger" onClick={go} disabled={busy}>
+          {busy ? "Mažu…" : "Smazat navždy"}
+        </button>
+        <button className="btn-ghost" onClick={onClose}>Zrušit</button>
+      </div>
+    </Modal>
   );
 }
 

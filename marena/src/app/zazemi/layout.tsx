@@ -10,6 +10,7 @@ import { Icon, type IconName } from "@/components/Icons";
 import { isAdmin, ADMIN_NAME } from "@/lib/admin";
 import { sameName } from "@/lib/names";
 import { ArchiveModal } from "@/components/ArchiveModal";
+import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 
 // Pořadí podle významových skupin (co patří k sobě, je vedle sebe):
 // komunikace & plán → lidé → festival (program/provoz) → peníze → kontakty.
@@ -41,6 +42,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [pwdOpen, setPwdOpen] = useState(false);
   const [boardUnread, setBoardUnread] = useState(0);
 
   useEffect(() => {
@@ -105,8 +107,17 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               </span>
             )}
           </div>
-          {/* Desktop: přepínač ročníku + jméno */}
+          {/* Desktop: změna hesla (správce) + přepínač ročníku + jméno */}
           <div className="ml-auto hidden items-center gap-2 md:flex">
+            {isAdmin(me) && (
+              <button
+                onClick={() => setPwdOpen(true)}
+                title="Změnit heslo do zázemí"
+                className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-black/10 transition hover:bg-black/5"
+              >
+                🔑 Heslo
+              </button>
+            )}
             <YearSwitcher />
             <MeBadge />
           </div>
@@ -171,6 +182,17 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <YearSwitcher />
               <MeBadge />
+              {isAdmin(me) && (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setPwdOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-black/10 hover:bg-black/5"
+                >
+                  🔑 Heslo
+                </button>
+              )}
             </div>
             <nav className="flex flex-col gap-1">
               {NAV.map((n) => {
@@ -223,6 +245,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
       </header>
 
       {isAdmin(me) && <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />}
+      {isAdmin(me) && <ChangePasswordModal open={pwdOpen} onClose={() => setPwdOpen(false)} />}
 
       {currentYear && !canEditCurrentYear && (
         <div className="flex items-center justify-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs font-medium text-amber-800">
