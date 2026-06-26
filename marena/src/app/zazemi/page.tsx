@@ -58,7 +58,7 @@ export default function NastenkaPage() {
     <div className="space-y-6">
       <Onboarding />
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-      <div className="space-y-5">
+      <div className="min-w-0 space-y-5">
         <div className="flex items-end justify-between gap-3">
           <div>
             <h1 className="font-display text-2xl font-semibold">Nástěnka</h1>
@@ -111,8 +111,8 @@ export default function NastenkaPage() {
                       {p.author} · {fmtRelative(p.createdAt)}
                     </span>
                   </div>
-                  <h3 className="font-display text-lg font-semibold">{p.title}</h3>
-                  {p.body && <p className="mt-1 whitespace-pre-wrap text-sm text-ink-soft">{p.body}</p>}
+                  <h3 className="break-words font-display text-lg font-semibold">{p.title}</h3>
+                  {p.body && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-ink-soft">{p.body}</p>}
                   <div className="mt-2 flex items-center gap-2">
                     <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "togglePin", yearId: year.id, postId: p.id })}>
                       {p.pinned ? "Odepnout" : "Připnout"}
@@ -128,7 +128,7 @@ export default function NastenkaPage() {
         )}
       </div>
 
-      <aside className="space-y-4">
+      <aside className="min-w-0 space-y-4">
         <WidgetLinks openPolls={openPolls} myTasks={myTasks} myShifts={myShifts} />
         {hasFinance && (
           <Link href="/zazemi/finance" className="card block p-4 transition hover:border-black/10">

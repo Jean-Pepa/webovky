@@ -57,7 +57,10 @@ async function step(name, fn) {
 }
 
 const browser = await chromium.launch({ executablePath: findChrome(), args: ["--no-sandbox"] });
-const ctx = await browser.newContext({ viewport: { width: 1400, height: 1000 } });
+// Viewport jde přepsat přes env E2E_W/E2E_H (kvůli testu na telefonu/tabletu).
+const VW = Number(process.env.E2E_W) || 1400;
+const VH = Number(process.env.E2E_H) || 1000;
+const ctx = await browser.newContext({ viewport: { width: VW, height: VH } });
 const page = await ctx.newPage();
 page.on("console", (m) => {
   if (m.type() === "error") consoleErrors.push(`[${current}] ${m.text().slice(0, 200)}`);
@@ -119,7 +122,8 @@ try {
     await page.getByPlaceholder("E-mail").fill("admin@marena.cz");
     await page.getByPlaceholder(/Telefon/).fill("+420777111222");
     await page.getByRole("button", { name: /vstoupit do zázemí/i }).click();
-    await page.getByRole("link", { name: /Nástěnka/ }).first().waitFor({ timeout: 6000 });
+    // „+ Přidat info" je na nástěnce viditelné na všech velikostech (nav je na mobilu schovaný v hamburgeru).
+    await page.getByRole("button", { name: /Přidat info/i }).first().waitFor({ timeout: 6000 });
   });
 
   // ---------- NÁSTĚNKA ----------
@@ -154,7 +158,7 @@ try {
   // ---------- TÝM & ROLE ----------
   await step("Tým & role: načtení", async () => {
     await page.goto(`${BASE}/zazemi/tym`, { waitUntil: "networkidle" });
-    await byText("Tým & role").first().waitFor({ timeout: 5000 });
+    await byText("Tým & role").filter({ visible: true }).first().waitFor({ timeout: 5000 });
   });
   await step("Tým & role: vzít si roli (Grafik) → vedoucí", async () => {
     const card = page.locator(".card", { hasText: "Grafik" }).first();
@@ -185,7 +189,8 @@ try {
     await page.getByPlaceholder(/Popis/i).first().fill("E2E výdaj");
     await page.getByPlaceholder(/Částka/i).first().fill("500");
     await page.getByRole("button", { name: /^Přidat$|Uložit|Přidat výdaj|Přidat položku/i }).last().click();
-    await byText("E2E výdaj").first().waitFor({ timeout: 4000 });
+    // Položka se vykresluje 2× (mobil karta + desktop tabulka) — cílíme na viditelnou.
+    await byText("E2E výdaj").filter({ visible: true }).first().waitFor({ timeout: 4000 });
   });
   await step("Finance: otevřít kasu", async () => {
     await page.getByRole("button", { name: /\+ Kasa/i }).click();
@@ -261,7 +266,7 @@ try {
   });
   await step("Finance: merch příjem zapsán", async () => {
     await page.goto(`${BASE}/zazemi/finance`, { waitUntil: "networkidle" });
-    await byText("Merch — Test Kupující").first().waitFor({ timeout: 5000 });
+    await byText("Merch — Test Kupující").filter({ visible: true }).first().waitFor({ timeout: 5000 });
   });
 
   // ---------- KALENDÁŘ ----------
@@ -305,7 +310,7 @@ try {
     await page.getByPlaceholder(/Kategorie/i).fill("Kapely");
     await page.getByPlaceholder(/Kdo\?/i).first().fill("E2E kapela");
     await page.getByRole("button", { name: /^Přidat$/ }).first().click();
-    await byText("E2E kapela").first().waitFor({ timeout: 4000 });
+    await byText("E2E kapela").filter({ visible: true }).first().waitFor({ timeout: 4000 });
   });
 
   // ---------- FINANCE: FILTRY ----------
@@ -349,7 +354,7 @@ try {
     await step(`Stránka ${path} se načte`, async () => {
       await page.goto(`${BASE}${path}`, { waitUntil: "networkidle" });
       await page.waitForTimeout(400);
-      if (txt) await byText(txt).first().waitFor({ timeout: 4000 });
+      if (txt) await byText(txt).filter({ visible: true }).first().waitFor({ timeout: 4000 });
     });
   }
 

@@ -340,7 +340,14 @@ export default function FinancePage() {
       ) : (
         <div className="card overflow-hidden">
           <Collapsible peekClass="max-h-[260px]" expandable={rows.length > 2} total={rows.length}>
-            <div className="overflow-x-auto">
+            {/* Mobil: karty (tabulka se na úzký displej nevejde) */}
+            <div className="divide-y divide-black/[0.06] md:hidden">
+              {rows.map((f) => (
+                <FinanceCard key={f.id} item={f} yearId={year.id} canEdit={canEdit} />
+              ))}
+            </div>
+            {/* Desktop: klasická tabulka */}
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[640px] border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-black/[0.06] text-left text-xs font-medium uppercase tracking-wide text-ink-soft">
@@ -404,7 +411,8 @@ function SummaryCard({ label, value, sub, tone }: { label: string; value: number
   );
 }
 
-function FinanceRow({ item, yearId, canEdit }: { item: FinanceItem; yearId: string; canEdit: boolean }) {
+// Sdílený stav řádku financí — používá ho tabulkový řádek (desktop) i karta (mobil).
+function useFinanceRow(item: FinanceItem, yearId: string) {
   const { dispatch } = useStore();
   const [edit, setEdit] = useState(false);
   const [label, setLabel] = useState(item.label);
@@ -426,6 +434,84 @@ function FinanceRow({ item, yearId, canEdit }: { item: FinanceItem; yearId: stri
     });
     setEdit(false);
   }
+
+  return { dispatch, edit, setEdit, label, setLabel, vatMode, setVatMode, amount, setAmount, category, setCategory, who, setWho, date, setDate, save };
+}
+
+// Mobilní karta jedné finanční položky (na úzkém displeji místo tabulky).
+function FinanceCard({ item, yearId, canEdit }: { item: FinanceItem; yearId: string; canEdit: boolean }) {
+  const s = useFinanceRow(item, yearId);
+  const isPrijem = item.kind === "prijem";
+
+  if (s.edit) {
+    return (
+      <div className="space-y-2 bg-paper2/40 p-3">
+        <input className="input" value={s.label} onChange={(e) => s.setLabel(e.target.value)} placeholder="Popis" />
+        <AmountField value={s.amount} setValue={s.setAmount} vatMode={s.vatMode} setVatMode={s.setVatMode} onEnter={s.save} />
+        <input className="input" list="fin-cats" value={s.category} onChange={(e) => s.setCategory(e.target.value)} placeholder="Kategorie" />
+        <input className="input" value={s.who} onChange={(e) => s.setWho(e.target.value)} placeholder="Kdo / od koho" />
+        <input type="date" className="input" value={s.date} onChange={(e) => s.setDate(e.target.value)} />
+        <div className="flex gap-2 pt-0.5">
+          <button className="btn-primary flex-1 py-2 text-sm" onClick={s.save}>Uložit</button>
+          <button className="btn-ghost py-2 text-sm" onClick={() => s.setEdit(false)}>Zrušit</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-3">
+      <div className="flex items-start gap-2">
+        <span className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs ${isPrijem ? "bg-leaf/12 text-leaf-700" : "bg-black/[0.05] text-ink-soft"}`}>
+          {isPrijem ? "+" : "−"}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-medium">{item.label}</p>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-soft">
+            {item.category && <span className="chip">{item.category}</span>}
+            {item.who && <span>👤 {item.who}</span>}
+            {item.date && <span>📅 {fmtDate(item.date)}</span>}
+          </div>
+          {item.note && <p className="mt-0.5 text-xs text-ink-soft">{item.note}</p>}
+        </div>
+        <div className="shrink-0 text-right">
+          <div className={`font-semibold ${isPrijem ? "text-leaf-700" : "text-ink"}`}>
+            {isPrijem ? "+" : "−"}
+            {fmtCZK(item.amount)}
+          </div>
+          {item.net != null && <div className="text-[11px] text-ink-soft">bez DPH {fmtCZK(item.net)}</div>}
+        </div>
+      </div>
+      <div className="mt-2 pl-8">
+        <ReceiptControl item={item} yearId={yearId} canEdit={canEdit} />
+      </div>
+      <div className="mt-2 flex items-center justify-between gap-2 pl-8">
+        {canEdit ? (
+          <button
+            onClick={() => s.dispatch({ type: "toggleFinancePaid", yearId, financeId: item.id })}
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${item.paid ? "bg-leaf/12 text-leaf-700" : "bg-marigold-600 text-white"}`}
+          >
+            {item.paid ? "Zaplaceno" : "Čeká"}
+          </button>
+        ) : (
+          <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${item.paid ? "bg-leaf/12 text-leaf-700" : "bg-marigold-600 text-white"}`}>
+            {item.paid ? "Zaplaceno" : "Čeká"}
+          </span>
+        )}
+        {canEdit && (
+          <div className="flex items-center gap-1">
+            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => s.setEdit(true)}>Upravit</button>
+            <DeleteButton onConfirm={() => s.dispatch({ type: "removeFinance", yearId, financeId: item.id })} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FinanceRow({ item, yearId, canEdit }: { item: FinanceItem; yearId: string; canEdit: boolean }) {
+  const { dispatch, edit, setEdit, label, setLabel, vatMode, setVatMode, amount, setAmount, category, setCategory, who, setWho, date, setDate, save } =
+    useFinanceRow(item, yearId);
 
   if (edit) {
     return (

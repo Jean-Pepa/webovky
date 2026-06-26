@@ -117,17 +117,17 @@ export default function KontaktyPage() {
                   {items.map((l) => {
                     const href = hrefFor(l.value);
                     return (
-                      <li key={l.id} className={`card flex flex-col p-4 ${isSponsor ? "ring-1 ring-marigold-300" : ""}`}>
+                      <li key={l.id} className={`card flex min-w-0 flex-col p-4 ${isSponsor ? "ring-1 ring-marigold-300" : ""}`}>
                         <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-display text-base font-semibold">{l.label}</h3>
+                          <h3 className="min-w-0 break-words font-display text-base font-semibold">{l.label}</h3>
                           <DeleteButton onConfirm={() => dispatch({ type: "removeLink", yearId: year.id, linkId: l.id })} />
                         </div>
                         {href ? (
-                          <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="mt-0.5 break-words text-sm font-medium text-marigold-700 hover:underline">
+                          <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="mt-0.5 break-all text-sm font-medium text-marigold-700 hover:underline">
                             {l.value}
                           </a>
                         ) : (
-                          <p className="mt-0.5 break-words text-sm text-ink-soft">{l.value}</p>
+                          <p className="mt-0.5 break-all text-sm text-ink-soft">{l.value}</p>
                         )}
                         {l.note && <p className="mt-1 text-xs text-ink-soft">{l.note}</p>}
                       </li>
