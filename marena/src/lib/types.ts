@@ -133,6 +133,18 @@ export interface Contribution {
   createdAt: string;
 }
 
+// Výzdoba — nápady a materiál na výzdobu dvora/fakulty; kdo to shání a stav.
+export type DecorStatus = "napad" | "shani" | "hotovo";
+export interface Decor {
+  id: string;
+  title: string; // nápad / materiál (např. „Luxfery z Bazoše", „LED pásky")
+  status: DecorStatus; // nápad → shání se → hotovo
+  who?: string; // kdo to má na starost / shání
+  link?: string; // odkaz (bazoš, eshop…)
+  note?: string;
+  createdAt: string;
+}
+
 // Prváci — ruční seznam prváků (účastníků), o kterých festival je.
 export interface Freshman {
   id: string;
@@ -225,6 +237,7 @@ export interface Year {
   cashboxes?: Cashbox[]; // denní kasy na hotovost (ráno vklad → večer tržba)
   contributions?: Contribution[]; // výběr – kdo dal kolik do společné kasy (vklady)
   freshmen?: Freshman[]; // prváci – ruční seznam účastníků
+  decor?: Decor[]; // výzdoba – nápady a materiál
   shifts?: Shift[]; // provoz — rozpis směn, na které se lidi přihlašují
   invites?: Invite[]; // program — koho oslovit (přednášející, kapely)
   kitchen?: KitchenFile[]; // kuchyně — nahrané fotky/soubory (nákupy, menu…)

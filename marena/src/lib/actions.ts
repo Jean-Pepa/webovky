@@ -54,6 +54,9 @@ export type Action =
   | { type: "addFreshman"; yearId: string; name: string; email?: string; note?: string }
   | { type: "updateFreshman"; yearId: string; freshmanId: string; patch: { name?: string; email?: string; note?: string } }
   | { type: "removeFreshman"; yearId: string; freshmanId: string }
+  | { type: "addDecor"; yearId: string; title: string }
+  | { type: "updateDecor"; yearId: string; decorId: string; patch: { title?: string; status?: "napad" | "shani" | "hotovo"; who?: string; link?: string; note?: string } }
+  | { type: "removeDecor"; yearId: string; decorId: string }
   | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string; receiptId?: string; receiptIds?: string[] } }
   | { type: "toggleFinancePaid"; yearId: string; financeId: string }
   | { type: "removeFinance"; yearId: string; financeId: string }
@@ -496,6 +499,36 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => ({
         ...y,
         freshmen: (y.freshmen ?? []).filter((f) => f.id !== a.freshmanId),
+      }));
+
+    case "addDecor": {
+      const title = a.title.trim();
+      if (!title) return db;
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        decor: [...(y.decor ?? []), { id: uid("dc_"), title, status: "napad" as const, createdAt: now() }],
+      }));
+    }
+    case "updateDecor":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        decor: (y.decor ?? []).map((d) =>
+          d.id === a.decorId
+            ? {
+                ...d,
+                title: a.patch.title?.trim() || d.title,
+                status: a.patch.status ?? d.status,
+                who: a.patch.who !== undefined ? a.patch.who.trim() || undefined : d.who,
+                link: a.patch.link !== undefined ? a.patch.link.trim() || undefined : d.link,
+                note: a.patch.note !== undefined ? a.patch.note.trim() || undefined : d.note,
+              }
+            : d,
+        ),
+      }));
+    case "removeDecor":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        decor: (y.decor ?? []).filter((d) => d.id !== a.decorId),
       }));
 
     case "addShift":
