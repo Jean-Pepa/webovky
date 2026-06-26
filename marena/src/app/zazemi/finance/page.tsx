@@ -115,6 +115,21 @@ export default function FinancePage() {
     return [...map.entries()].sort((a, b) => b[1].prijem + b[1].vydaj - (a[1].prijem + a[1].vydaj));
   }, [items]);
 
+  // Proplácení — kolik kdo zaplatil z výdajů a kolik mu ještě dlužíme (nezaplaceno).
+  const byPerson = useMemo(() => {
+    const map = new Map<string, { total: number; owed: number }>();
+    for (const f of items) {
+      if (f.kind !== "vydaj" || !f.who?.trim()) continue;
+      const key = f.who.trim();
+      const cur = map.get(key) || { total: 0, owed: 0 };
+      cur.total += f.amount;
+      if (!f.paid) cur.owed += f.amount;
+      map.set(key, cur);
+    }
+    return [...map.entries()].sort((a, b) => b[1].owed - a[1].owed || b[1].total - a[1].total);
+  }, [items]);
+  const totalOwed = useMemo(() => byPerson.reduce((s, [, v]) => s + v.owed, 0), [byPerson]);
+
   // Merch — kolik už merch vydělal (příjmy z kategorie „merch", hlavně z vyřízených objednávek).
   const merchTotal = useMemo(
     () => items.filter((f) => f.category === "merch" && f.kind === "prijem").reduce((s, f) => s + f.amount, 0),
@@ -493,23 +508,56 @@ export default function FinancePage() {
         </div>
       )}
 
-      {/* Souhrn po kategoriích */}
-      {byCategory.length > 0 && (
-        <div className="card p-5">
-          <h2 className="mb-3 font-display text-base font-semibold">Souhrn po kategoriích</h2>
-          <ul className="divide-y divide-black/[0.06]">
-            {byCategory.map(([cat, v]) => (
-              <li key={cat} className="flex items-center gap-3 py-2 text-sm">
-                <span className="font-medium">{cat}</span>
-                <span className="ml-auto flex items-center gap-4">
-                  {v.prijem > 0 && <span className="text-leaf-700">+{fmtCZK(v.prijem)}</span>}
-                  {v.vydaj > 0 && <span className="text-ink-soft">−{fmtCZK(v.vydaj)}</span>}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Souhrn po kategoriích */}
+        {byCategory.length > 0 && (
+          <div className="card p-5">
+            <h2 className="mb-3 font-display text-base font-semibold">Souhrn po kategoriích</h2>
+            <ul className="divide-y divide-black/[0.06]">
+              {byCategory.map(([cat, v]) => (
+                <li key={cat} className="flex items-center gap-3 py-2 text-sm">
+                  <span className="min-w-0 break-words font-medium">{cat}</span>
+                  <span className="ml-auto flex shrink-0 items-center gap-4">
+                    {v.prijem > 0 && <span className="text-leaf-700">+{fmtCZK(v.prijem)}</span>}
+                    {v.vydaj > 0 && <span className="text-ink-soft">−{fmtCZK(v.vydaj)}</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Proplácení — kdo zaplatil a kolik mu vrátit */}
+        {byPerson.length > 0 && (
+          <div className="card p-5">
+            <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-base font-semibold">
+              Proplácení po lidech
+              {totalOwed > 0 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-marigold-600/10 px-2.5 py-0.5 text-sm">
+                  <span className="text-xs font-normal text-marigold-700">vrátit celkem</span>
+                  <span className="font-bold text-marigold-700">{fmtCZK(totalOwed)}</span>
                 </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+              )}
+            </h2>
+            <p className="mb-2 text-xs text-ink-soft">Vrátit = výdaje dané osoby, které ještě nejsou proplacené (přepneš je na Zaplaceno u položky).</p>
+            <ul className="divide-y divide-black/[0.06]">
+              {byPerson.map(([who, v]) => (
+                <li key={who} className="flex items-center gap-3 py-2 text-sm">
+                  <span className="min-w-0 break-words font-medium">{who}</span>
+                  <span className="ml-auto flex shrink-0 items-center gap-3">
+                    {v.owed > 0 ? (
+                      <span className="font-semibold text-marigold-700">vrátit {fmtCZK(v.owed)}</span>
+                    ) : (
+                      <span className="text-leaf-700">✓ vyrovnáno</span>
+                    )}
+                    <span className="text-xs text-ink-soft">z {fmtCZK(v.total)}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
