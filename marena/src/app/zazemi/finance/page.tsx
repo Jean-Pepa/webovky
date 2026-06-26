@@ -45,7 +45,7 @@ function receiptsOf(item: FinanceItem): string[] {
 }
 
 export default function FinancePage() {
-  const { currentYear, me, dispatch } = useStore();
+  const { currentYear, me, dispatch, canEditCurrentYear } = useStore();
   const [open, setOpen] = useState(false);
   const [kasaOpen, setKasaOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("vse");
@@ -124,7 +124,9 @@ export default function FinancePage() {
 
   if (!year) return null;
 
-  // Finance smí upravovat jen správce (Pan_Vyskočil). Ostatní mají jen náhled.
+  // Přidávat položky i kasy může každý z aktuálního ročníku (canAdd).
+  // Upravovat / mazat / přepínat zaplaceno už jen správce (canEdit).
+  const canAdd = canEditCurrentYear;
   const canEdit = isAdmin(me);
 
   // Kasy: kolik se ráno vložilo (vklady) a kolik se vydělalo (tržba z uzavřených).
@@ -133,7 +135,7 @@ export default function FinancePage() {
 
   async function add() {
     const num = parseAmount(amount);
-    if (!label.trim() || num <= 0 || !year || !canEdit) return;
+    if (!label.trim() || num <= 0 || !year || !canAdd) return;
     const gross = vatMode === "none" ? grossFromNet(num) : num;
     const net = vatMode === "none" ? num : undefined;
     await dispatch({ type: "addFinance", yearId: year.id, kind, label, amount: gross, net, category: category || undefined, who: who || undefined, paid, date: date || undefined });
@@ -158,7 +160,7 @@ export default function FinancePage() {
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight">Finance</h1>
         </div>
-        {canEdit && (
+        {canAdd && (
           <div className="flex items-center gap-2">
             <button className="btn-secondary" onClick={() => setKasaOpen(true)}>
               + Kasa
@@ -170,12 +172,19 @@ export default function FinancePage() {
         )}
       </div>
 
-      {/* Finance může upravovat jen správce */}
-      {!canEdit && (
+      {/* Kdo co smí: každý přidává, upravuje jen správce; zamčený ročník = jen náhled */}
+      {!canAdd ? (
         <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
           <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>Finance může upravovat jen správce. Ty máš jen náhled.</span>
+          <span>Tento ročník je uzamčený — máš jen náhled.</span>
         </div>
+      ) : (
+        !canEdit && (
+          <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
+            <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>Můžeš přidávat položky i kasy. Upravovat a mazat zapsané může jen správce.</span>
+          </div>
+        )
       )}
 
       {/* Souhrn */}
@@ -186,7 +195,7 @@ export default function FinancePage() {
       </div>
 
       {/* Denní kasy */}
-      {((year.cashboxes?.length ?? 0) > 0 || canEdit) && (
+      {((year.cashboxes?.length ?? 0) > 0 || canAdd) && (
         <section className="card p-4">
           <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
             🧰 Denní kasy
@@ -214,7 +223,7 @@ export default function FinancePage() {
                 {[...(year.cashboxes ?? [])]
                   .sort((a, b) => b.openedAt.localeCompare(a.openedAt))
                   .map((c) => (
-                    <CashboxCard key={c.id} box={c} yearId={year.id} canEdit={canEdit} />
+                    <CashboxCard key={c.id} box={c} yearId={year.id} canAdd={canAdd} canEdit={canEdit} />
                   ))}
               </div>
             </Collapsible>
@@ -343,7 +352,7 @@ export default function FinancePage() {
             {/* Mobil: karty (tabulka se na úzký displej nevejde) */}
             <div className="divide-y divide-black/[0.06] md:hidden">
               {rows.map((f) => (
-                <FinanceCard key={f.id} item={f} yearId={year.id} canEdit={canEdit} />
+                <FinanceCard key={f.id} item={f} yearId={year.id} canAdd={canAdd} canEdit={canEdit} />
               ))}
             </div>
             {/* Desktop: klasická tabulka */}
@@ -362,7 +371,7 @@ export default function FinancePage() {
                 </thead>
                 <tbody>
                   {rows.map((f) => (
-                    <FinanceRow key={f.id} item={f} yearId={year.id} canEdit={canEdit} />
+                    <FinanceRow key={f.id} item={f} yearId={year.id} canAdd={canAdd} canEdit={canEdit} />
                   ))}
                 </tbody>
               </table>
@@ -439,7 +448,7 @@ function useFinanceRow(item: FinanceItem, yearId: string) {
 }
 
 // Mobilní karta jedné finanční položky (na úzkém displeji místo tabulky).
-function FinanceCard({ item, yearId, canEdit }: { item: FinanceItem; yearId: string; canEdit: boolean }) {
+function FinanceCard({ item, yearId, canAdd, canEdit }: { item: FinanceItem; yearId: string; canAdd: boolean; canEdit: boolean }) {
   const s = useFinanceRow(item, yearId);
   const isPrijem = item.kind === "prijem";
 
@@ -483,7 +492,7 @@ function FinanceCard({ item, yearId, canEdit }: { item: FinanceItem; yearId: str
         </div>
       </div>
       <div className="mt-2 pl-8">
-        <ReceiptControl item={item} yearId={yearId} canEdit={canEdit} />
+        <ReceiptControl item={item} yearId={yearId} canAdd={canAdd} canEdit={canEdit} />
       </div>
       <div className="mt-2 flex items-center justify-between gap-2 pl-8">
         {canEdit ? (
@@ -509,7 +518,7 @@ function FinanceCard({ item, yearId, canEdit }: { item: FinanceItem; yearId: str
   );
 }
 
-function FinanceRow({ item, yearId, canEdit }: { item: FinanceItem; yearId: string; canEdit: boolean }) {
+function FinanceRow({ item, yearId, canAdd, canEdit }: { item: FinanceItem; yearId: string; canAdd: boolean; canEdit: boolean }) {
   const { dispatch, edit, setEdit, label, setLabel, vatMode, setVatMode, amount, setAmount, category, setCategory, who, setWho, date, setDate, save } =
     useFinanceRow(item, yearId);
 
@@ -542,7 +551,7 @@ function FinanceRow({ item, yearId, canEdit }: { item: FinanceItem; yearId: stri
           <span className="font-medium">{item.label}</span>
         </div>
         {item.note && <p className="mt-0.5 pl-8 text-xs text-ink-soft">{item.note}</p>}
-        <div className="pl-8"><ReceiptControl item={item} yearId={yearId} canEdit={canEdit} /></div>
+        <div className="pl-8"><ReceiptControl item={item} yearId={yearId} canAdd={canAdd} canEdit={canEdit} /></div>
       </td>
       <td className="px-3 py-3">{item.category ? <span className="chip">{item.category}</span> : <span className="text-ink-soft/50">—</span>}</td>
       <td className="px-3 py-3 text-ink-soft">{item.who || "—"}</td>
@@ -632,7 +641,7 @@ function AmountField({
 }
 
 // Účtenky jako fotky: víc účtenek na položku, zobrazení, stažení (správce) a smazání.
-function ReceiptControl({ item, yearId, canEdit }: { item: FinanceItem; yearId: string; canEdit: boolean }) {
+function ReceiptControl({ item, yearId, canAdd, canEdit }: { item: FinanceItem; yearId: string; canAdd: boolean; canEdit: boolean }) {
   const { configured, dispatch } = useStore();
   const list = receiptsOf(item);
   const [busy, setBusy] = useState(false);
@@ -682,7 +691,7 @@ function ReceiptControl({ item, yearId, canEdit }: { item: FinanceItem; yearId: 
           <button onClick={() => view(id)} className="font-medium hover:underline">
             📎 Účtenka{list.length > 1 ? ` ${i + 1}` : ""}
           </button>
-          {canEdit && (
+          {canAdd && (
             <button onClick={() => download(id)} title="Stáhnout účtenku" className="hover:text-ink">
               <Icon name="download" className="h-3.5 w-3.5" />
             </button>
@@ -694,7 +703,7 @@ function ReceiptControl({ item, yearId, canEdit }: { item: FinanceItem; yearId: 
           )}
         </span>
       ))}
-      {canEdit && (
+      {canAdd && (
         <label className="inline-flex cursor-pointer items-center gap-1 text-ink-soft/70 hover:text-ink">
           📎 {busy ? "Nahrávám…" : list.length ? "Přidat další" : "Přidat účtenku"}
           <input type="file" accept="image/*" className="hidden" onChange={onFile} disabled={busy} />
@@ -724,7 +733,7 @@ function ReceiptControl({ item, yearId, canEdit }: { item: FinanceItem; yearId: 
 }
 
 // Denní kasa: ráno vklad → večer stav; tržba se po uzavření zapíše do financí.
-function CashboxCard({ box, yearId, canEdit }: { box: Cashbox; yearId: string; canEdit: boolean }) {
+function CashboxCard({ box, yearId, canAdd, canEdit }: { box: Cashbox; yearId: string; canAdd: boolean; canEdit: boolean }) {
   const { dispatch } = useStore();
   const [closeVal, setCloseVal] = useState("");
   const closed = !!box.closedAt;
@@ -764,7 +773,7 @@ function CashboxCard({ box, yearId, canEdit }: { box: Cashbox; yearId: string; c
             <span className="ml-2 text-xs text-ink-soft">✓ zapsáno do financí</span>
           </p>
         )
-      ) : canEdit ? (
+      ) : canAdd ? (
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <input
             className="input w-44"
