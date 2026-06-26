@@ -133,6 +133,19 @@ export interface Contribution {
   createdAt: string;
 }
 
+// Sponzoři — koho oslovit o podporu, co dávají a v jakém stavu domluva je.
+export type SponsorStatus = "oslovit" | "ceka" | "potvrzeno" | "odmitl";
+export interface Sponsor {
+  id: string;
+  name: string;
+  gives?: string; // co dává (pivo, čaj, kávovar, poukazy, peníze…)
+  status: SponsorStatus; // oslovit → čeká → potvrzeno / odmítl
+  who?: string; // kdo to řeší
+  link?: string;
+  note?: string; // požadavky / detaily (např. „chce logo")
+  createdAt: string;
+}
+
 // Výzdoba — nápady a materiál na výzdobu dvora/fakulty; kdo to shání a stav.
 export type DecorStatus = "napad" | "shani" | "hotovo";
 export interface Decor {
@@ -238,6 +251,7 @@ export interface Year {
   contributions?: Contribution[]; // výběr – kdo dal kolik do společné kasy (vklady)
   freshmen?: Freshman[]; // prváci – ruční seznam účastníků
   decor?: Decor[]; // výzdoba – nápady a materiál
+  sponsors?: Sponsor[]; // sponzoři – koho oslovit, co dává, stav
   shifts?: Shift[]; // provoz — rozpis směn, na které se lidi přihlašují
   invites?: Invite[]; // program — koho oslovit (přednášející, kapely)
   kitchen?: KitchenFile[]; // kuchyně — nahrané fotky/soubory (nákupy, menu…)

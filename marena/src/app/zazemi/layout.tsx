@@ -16,6 +16,7 @@ const NAV: { href: string; label: string; icon: IconName }[] = [
   { href: "/zazemi/hlasovani", label: "Hlasování", icon: "vote" },
   { href: "/zazemi/kalendar", label: "Kalendář", icon: "calendar" },
   { href: "/zazemi/program", label: "Program", icon: "mic" },
+  { href: "/zazemi/sponzori", label: "Sponzoři", icon: "spark" },
   { href: "/zazemi/tym", label: "Tým & role", icon: "users" },
   { href: "/zazemi/prvaci", label: "Prváci", icon: "star" },
   { href: "/zazemi/ukoly", label: "Úkoly", icon: "tasks" },

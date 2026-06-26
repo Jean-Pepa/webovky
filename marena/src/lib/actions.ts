@@ -57,6 +57,9 @@ export type Action =
   | { type: "addDecor"; yearId: string; title: string }
   | { type: "updateDecor"; yearId: string; decorId: string; patch: { title?: string; status?: "napad" | "shani" | "hotovo"; who?: string; link?: string; note?: string } }
   | { type: "removeDecor"; yearId: string; decorId: string }
+  | { type: "addSponsor"; yearId: string; name: string }
+  | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: "oslovit" | "ceka" | "potvrzeno" | "odmitl"; who?: string; link?: string; note?: string } }
+  | { type: "removeSponsor"; yearId: string; sponsorId: string }
   | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string; receiptId?: string; receiptIds?: string[] } }
   | { type: "toggleFinancePaid"; yearId: string; financeId: string }
   | { type: "removeFinance"; yearId: string; financeId: string }
@@ -529,6 +532,37 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => ({
         ...y,
         decor: (y.decor ?? []).filter((d) => d.id !== a.decorId),
+      }));
+
+    case "addSponsor": {
+      const name = a.name.trim();
+      if (!name) return db;
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        sponsors: [...(y.sponsors ?? []), { id: uid("sp_"), name, status: "oslovit" as const, createdAt: now() }],
+      }));
+    }
+    case "updateSponsor":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        sponsors: (y.sponsors ?? []).map((s) =>
+          s.id === a.sponsorId
+            ? {
+                ...s,
+                name: a.patch.name?.trim() || s.name,
+                gives: a.patch.gives !== undefined ? a.patch.gives.trim() || undefined : s.gives,
+                status: a.patch.status ?? s.status,
+                who: a.patch.who !== undefined ? a.patch.who.trim() || undefined : s.who,
+                link: a.patch.link !== undefined ? a.patch.link.trim() || undefined : s.link,
+                note: a.patch.note !== undefined ? a.patch.note.trim() || undefined : s.note,
+              }
+            : s,
+        ),
+      }));
+    case "removeSponsor":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        sponsors: (y.sponsors ?? []).filter((s) => s.id !== a.sponsorId),
       }));
 
     case "addShift":
