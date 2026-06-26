@@ -60,15 +60,15 @@ export type Action =
   | { type: "addSponsor"; yearId: string; name: string }
   | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: "oslovit" | "ceka" | "potvrzeno" | "odmitl"; who?: string; link?: string; note?: string } }
   | { type: "removeSponsor"; yearId: string; sponsorId: string }
-  | { type: "addDrink"; yearId: string; name: string; kind: "koktejl" | "panak" | "jine" }
-  | { type: "updateDrink"; yearId: string; drinkId: string; patch: { name?: string; kind?: "koktejl" | "panak" | "jine"; price?: number; note?: string; ingredients?: { name: string; cost: number }[] } }
+  | { type: "addDrink"; yearId: string; name: string; kind: "koktejl" | "panak" | "snidane" | "obed" | "jine"; place: "bar" | "kuchyne"; day?: "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne" }
+  | { type: "updateDrink"; yearId: string; drinkId: string; patch: { name?: string; kind?: "koktejl" | "panak" | "snidane" | "obed" | "jine"; day?: "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne" | null; price?: number; note?: string; ingredients?: { name: string; cost: number }[] } }
   | { type: "removeDrink"; yearId: string; drinkId: string }
   | { type: "addMenuEntry"; yearId: string; day: string; meal: "snidane" | "obed" | "jine"; dish: string }
   | { type: "removeMenuEntry"; yearId: string; entryId: string }
-  | { type: "addShoppingItem"; yearId: string; name: string; qty?: string }
+  | { type: "addShoppingItem"; yearId: string; name: string; qty?: string; place: "bar" | "kuchyne" }
   | { type: "toggleShoppingBought"; yearId: string; itemId: string }
   | { type: "removeShoppingItem"; yearId: string; itemId: string }
-  | { type: "clearBoughtShopping"; yearId: string }
+  | { type: "clearBoughtShopping"; yearId: string; place: "bar" | "kuchyne" }
   | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string; receiptId?: string; receiptIds?: string[] } }
   | { type: "toggleFinancePaid"; yearId: string; financeId: string }
   | { type: "removeFinance"; yearId: string; financeId: string }
@@ -80,7 +80,7 @@ export type Action =
   | { type: "addInvite"; yearId: string; category: string; name: string; link?: string; priority?: number }
   | { type: "updateInvite"; yearId: string; inviteId: string; patch: Partial<Pick<Invite, "category" | "name" | "link" | "priority" | "contacted" | "interest" | "availability" | "price" | "confirmedDate" | "note">> }
   | { type: "removeInvite"; yearId: string; inviteId: string }
-  | { type: "addKitchenFile"; yearId: string; label: string; category: string; blobId: string; fileKind: "image" | "file"; fileName?: string; note?: string; author: string }
+  | { type: "addKitchenFile"; yearId: string; label: string; category: string; blobId: string; fileKind: "image" | "file"; fileName?: string; note?: string; author: string; place?: "bar" | "kuchyne" }
   | { type: "removeKitchenFile"; yearId: string; fileId: string }
   // Merch — nabídka produktů (správce / role merch) a objednávky (veřejná stránka).
   | { type: "addMerchProduct"; yearId: string; name: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; note?: string }
@@ -580,7 +580,7 @@ export function applyAction(db: DB, a: Action): DB {
       if (!name) return db;
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        bar: [...(y.bar ?? []), { id: uid("dr_"), name, kind: a.kind, ingredients: [], createdAt: now() }],
+        bar: [...(y.bar ?? []), { id: uid("dr_"), place: a.place, name, kind: a.kind, day: a.day, ingredients: [], createdAt: now() }],
       }));
     }
     case "updateDrink":
@@ -592,6 +592,7 @@ export function applyAction(db: DB, a: Action): DB {
                 ...d,
                 name: a.patch.name?.trim() || d.name,
                 kind: a.patch.kind ?? d.kind,
+                day: a.patch.day !== undefined ? (a.patch.day ?? undefined) : d.day,
                 price: a.patch.price !== undefined ? (a.patch.price > 0 ? Math.round(a.patch.price) : undefined) : d.price,
                 note: a.patch.note !== undefined ? a.patch.note.trim() || undefined : d.note,
                 ingredients: a.patch.ingredients
@@ -625,7 +626,7 @@ export function applyAction(db: DB, a: Action): DB {
       if (!name) return db;
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        shopping: [...(y.shopping ?? []), { id: uid("sh_"), name, qty: a.qty?.trim() || undefined, createdAt: now() }],
+        shopping: [...(y.shopping ?? []), { id: uid("sh_"), place: a.place, name, qty: a.qty?.trim() || undefined, createdAt: now() }],
       }));
     }
     case "toggleShoppingBought":
@@ -636,7 +637,7 @@ export function applyAction(db: DB, a: Action): DB {
     case "removeShoppingItem":
       return mapYear(db, a.yearId, (y) => ({ ...y, shopping: (y.shopping ?? []).filter((s) => s.id !== a.itemId) }));
     case "clearBoughtShopping":
-      return mapYear(db, a.yearId, (y) => ({ ...y, shopping: (y.shopping ?? []).filter((s) => !s.bought) }));
+      return mapYear(db, a.yearId, (y) => ({ ...y, shopping: (y.shopping ?? []).filter((s) => !(s.bought && (s.place ?? "kuchyne") === a.place)) }));
 
     case "addShift":
       return mapYear(db, a.yearId, (y) => ({
@@ -724,6 +725,7 @@ export function applyAction(db: DB, a: Action): DB {
         kitchen: [
           {
             id: uid("k_"),
+            place: a.place ?? "kuchyne",
             label: a.label.trim() || a.fileName?.trim() || "Bez názvu",
             category: a.category.trim() || "Ostatní",
             blobId: a.blobId,

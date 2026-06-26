@@ -134,18 +134,23 @@ export interface Contribution {
   createdAt: string;
 }
 
-// Bar — ceník drinků s recepturou (suroviny + náklad) a prodejní cenou.
-export type DrinkKind = "koktejl" | "panak" | "jine";
+// Kuchyně & bar — položka menu s recepturou (suroviny + náklad).
+// Bar = drinky (koktejl/panák), kuchyně = jídla (snídaně/oběd) — skládají se stejně.
+export type DrinkKind = "koktejl" | "panak" | "snidane" | "obed" | "jine";
+// Den v týdnu — u kuchyně se jídla rozdělují na jednotlivé dny (Po–Ne).
+export type Weekday = "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne";
 export interface DrinkIngredient {
-  name: string; // surovina (gin 40ml, led, třpytky…)
+  name: string; // surovina (gin 40ml, brambory 2kg…)
   cost: number; // náklad za porci (Kč)
 }
 export interface Drink {
   id: string;
-  name: string; // např. „VÍLÍ NEKTAR"
+  place?: "bar" | "kuchyne"; // kam patří (chybí = bar, kvůli starým datům)
+  name: string; // např. „VÍLÍ NEKTAR" / „Guláš"
   kind: DrinkKind;
-  ingredients: DrinkIngredient[]; // receptura (u panáků prázdné)
-  price?: number; // prodejní cena (Kč)
+  day?: Weekday; // den v týdnu (jen u kuchyně; chybí = bez dne)
+  ingredients: DrinkIngredient[]; // receptura
+  price?: number; // prodejní cena (Kč) — hlavně u baru
   note?: string;
   createdAt: string;
 }
@@ -195,6 +200,7 @@ export interface MenuEntry {
 }
 export interface ShoppingItem {
   id: string;
+  place?: "bar" | "kuchyne"; // kam patří (chybí = kuchyně)
   name: string;
   qty?: string; // množství (volný text, např. „4 kg", „2 basy")
   bought?: boolean;
@@ -204,6 +210,7 @@ export interface ShoppingItem {
 // Kuchyně — nahrané fotky a soubory (nákupní seznamy, menu na vaření, recepty…).
 export interface KitchenFile {
   id: string;
+  place?: "bar" | "kuchyne"; // kam patří (chybí = kuchyně)
   label: string; // popis (např. „Nákup Makro – sobota", „Menu úterý")
   category: string; // "Nákupy" | "Menu" | "Ostatní"
   blobId: string; // ID uloženého souboru (foto/soubor se ukládá zvlášť, ne v hlavní DB)
