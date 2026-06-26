@@ -37,7 +37,7 @@ const NAV: { href: string; label: string; icon: IconName }[] = [
 ];
 
 export default function ZazemiLayout({ children }: { children: React.ReactNode }) {
-  const { ready, authed, me, logout, syncError, dismissSyncError, db, currentYear, canEditCurrentYear } = useStore();
+  const { ready, authed, me, setMe, logout, syncError, dismissSyncError, db, currentYear, canEditCurrentYear } = useStore();
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -89,6 +89,13 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
     router.replace("/");
   }
 
+  // Změnit jméno = znovu otevřít přihlašovací okno (login/registrace).
+  // Vyčistí identitu, čímž se zobrazí vstupní brána jako na začátku.
+  function changeName() {
+    setMenuOpen(false);
+    setMe("");
+  }
+
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-ink/10 bg-paper/85 backdrop-blur">
@@ -107,7 +114,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               </span>
             )}
           </div>
-          {/* Desktop: změna hesla (správce) + přepínač ročníku + jméno */}
+          {/* Desktop: heslo (správce) + změna jména + přepínač ročníku + jméno */}
           <div className="ml-auto hidden items-center gap-2 md:flex">
             {isAdmin(me) && (
               <button
@@ -118,6 +125,13 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                 🔑 Heslo
               </button>
             )}
+            <button
+              onClick={changeName}
+              title="Změnit jméno (znovu přihlášení)"
+              className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-black/10 transition hover:bg-black/5"
+            >
+              ✏️ Jméno
+            </button>
             <YearSwitcher />
             <MeBadge />
           </div>
@@ -193,6 +207,12 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   🔑 Heslo
                 </button>
               )}
+              <button
+                onClick={changeName}
+                className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-black/10 hover:bg-black/5"
+              >
+                ✏️ Jméno
+              </button>
             </div>
             <nav className="flex flex-col gap-1">
               {NAV.map((n) => {
@@ -268,37 +288,14 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   );
 }
 
+// Jméno přihlášeného — jen zobrazení (neměnné klikem). Změna jména jde přes
+// tlačítko „Změnit jméno", které znovu otevře přihlašovací okno.
 function MeBadge() {
-  const { me, setMe } = useStore();
-  const [editing, setEditing] = useState(false);
-  const [val, setVal] = useState(me);
-  if (editing) {
-    return (
-      <span className="flex items-center gap-1">
-        <input value={val} onChange={(e) => setVal(e.target.value)} className="w-28 rounded-full border border-ink/15 px-3 py-1.5 text-base sm:text-sm" />
-        <button
-          className="btn-primary px-3 py-1.5 text-xs"
-          onClick={() => {
-            if (val.trim()) setMe(val.trim());
-            setEditing(false);
-          }}
-        >
-          OK
-        </button>
-      </span>
-    );
-  }
+  const { me } = useStore();
   return (
-    <button
-      className="chip hover:bg-paper"
-      onClick={() => {
-        setVal(me);
-        setEditing(true);
-      }}
-      title="Změnit jméno"
-    >
+    <span className="chip" title="Tvoje jméno">
       👤 {me}
-    </button>
+    </span>
   );
 }
 
