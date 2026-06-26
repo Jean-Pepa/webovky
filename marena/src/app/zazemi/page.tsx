@@ -10,6 +10,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { Onboarding } from "@/components/Onboarding";
 import { Icon } from "@/components/Icons";
 import { isAdmin } from "@/lib/admin";
+import type { Post } from "@/lib/types";
 
 export default function NastenkaPage() {
   const { currentYear, me, dispatch } = useStore();
@@ -97,34 +98,9 @@ export default function NastenkaPage() {
           <Empty>Zatím tu nic není. Buď první a napiš ostatním důležité info.</Empty>
         ) : (
           <div className="space-y-3">
-            {posts.map((p) => {
-              const role = roleById(p.roleId);
-              return (
-                <article key={p.id} className={`card p-4 ${p.pinned ? "ring-1 ring-marigold-300" : ""}`}>
-                  <div className="mb-1 flex items-center gap-2 text-xs text-ink-soft">
-                    {p.pinned && <span className="chip bg-marigold-600 text-white">📌 Připnuto</span>}
-                    {role && (
-                      <span className="chip">
-                        {role.emoji} {role.name}
-                      </span>
-                    )}
-                    <span className="ml-auto">
-                      {p.author} · {fmtRelative(p.createdAt)}
-                    </span>
-                  </div>
-                  <h3 className="break-words font-display text-lg font-semibold">{p.title}</h3>
-                  {p.body && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-ink-soft">{p.body}</p>}
-                  <div className="mt-2 flex items-center gap-2">
-                    <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "togglePin", yearId: year.id, postId: p.id })}>
-                      {p.pinned ? "Odepnout" : "Připnout"}
-                    </button>
-                    {(isAdmin(me) || p.author === me) && (
-                      <DeleteButton onConfirm={() => dispatch({ type: "removePost", yearId: year.id, postId: p.id })} />
-                    )}
-                  </div>
-                </article>
-              );
-            })}
+            {posts.map((p) => (
+              <PostCard key={p.id} post={p} yearId={year.id} />
+            ))}
           </div>
         )}
       </div>
@@ -200,6 +176,82 @@ export default function NastenkaPage() {
       </aside>
       </div>
     </div>
+  );
+}
+
+function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
+  const { me, dispatch } = useStore();
+  const [edit, setEdit] = useState(false);
+  const [title, setTitle] = useState(p.title);
+  const [body, setBody] = useState(p.body);
+  const [roleId, setRoleId] = useState(p.roleId ?? "");
+  const canEdit = isAdmin(me) || p.author === me;
+  const role = roleById(p.roleId);
+
+  function startEdit() {
+    setTitle(p.title);
+    setBody(p.body);
+    setRoleId(p.roleId ?? "");
+    setEdit(true);
+  }
+  async function save() {
+    if (!title.trim()) return;
+    await dispatch({ type: "updatePost", yearId, postId: p.id, patch: { title, body, roleId: roleId || null } });
+    setEdit(false);
+  }
+
+  if (edit) {
+    return (
+      <article className="card space-y-3 p-4 ring-2 ring-marigold-200">
+        <input className="input" placeholder="Nadpis" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
+        <textarea className="input min-h-24" placeholder="Co potřebují ostatní vědět?" value={body} onChange={(e) => setBody(e.target.value)} />
+        <select className="input max-w-56" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
+          <option value="">Za jakou roli? (nepovinné)</option>
+          {ROLES.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.emoji} {r.name}
+            </option>
+          ))}
+        </select>
+        <div className="flex gap-2">
+          <button className="btn-primary py-2 text-sm" onClick={save} disabled={!title.trim()}>
+            Uložit
+          </button>
+          <button className="btn-ghost py-2 text-sm" onClick={() => setEdit(false)}>
+            Zrušit
+          </button>
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <article className={`card p-4 ${p.pinned ? "ring-1 ring-marigold-300" : ""}`}>
+      <div className="mb-1 flex items-center gap-2 text-xs text-ink-soft">
+        {p.pinned && <span className="chip bg-marigold-600 text-white">📌 Připnuto</span>}
+        {role && (
+          <span className="chip">
+            {role.emoji} {role.name}
+          </span>
+        )}
+        <span className="ml-auto">
+          {p.author} · {fmtRelative(p.createdAt)}
+        </span>
+      </div>
+      <h3 className="break-words font-display text-lg font-semibold">{p.title}</h3>
+      {p.body && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-ink-soft">{p.body}</p>}
+      <div className="mt-2 flex items-center gap-2">
+        <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "togglePin", yearId, postId: p.id })}>
+          {p.pinned ? "Odepnout" : "Připnout"}
+        </button>
+        {canEdit && (
+          <button className="btn-ghost px-2 py-1 text-xs" onClick={startEdit}>
+            Upravit
+          </button>
+        )}
+        {canEdit && <DeleteButton onConfirm={() => dispatch({ type: "removePost", yearId, postId: p.id })} />}
+      </div>
+    </article>
   );
 }
 

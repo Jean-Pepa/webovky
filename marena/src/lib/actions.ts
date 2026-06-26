@@ -28,6 +28,7 @@ export type Action =
   | { type: "takeRole"; yearId: string; memberId?: string; name: string; email?: string; phone?: string; roleId: string; asLead: boolean }
   | { type: "setRoleLead"; yearId: string; roleId: string; memberId: string }
   | { type: "addPost"; yearId: string; author: string; roleId?: string; title: string; body: string; pinned?: boolean }
+  | { type: "updatePost"; yearId: string; postId: string; patch: { title?: string; body?: string; roleId?: string | null } }
   | { type: "togglePin"; yearId: string; postId: string }
   | { type: "removePost"; yearId: string; postId: string }
   | { type: "addPoll"; yearId: string; author: string; question: string; options: string[]; multi?: boolean }
@@ -251,6 +252,20 @@ export function applyAction(db: DB, a: Action): DB {
           { id: uid("p_"), author: a.author.trim() || "Anonym", roleId: a.roleId, title: a.title.trim(), body: a.body.trim(), pinned: a.pinned ?? false, createdAt: now() },
           ...y.posts,
         ],
+      }));
+    case "updatePost":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        posts: y.posts.map((p) =>
+          p.id === a.postId
+            ? {
+                ...p,
+                title: a.patch.title !== undefined ? a.patch.title.trim() || p.title : p.title,
+                body: a.patch.body !== undefined ? a.patch.body.trim() : p.body,
+                roleId: a.patch.roleId !== undefined ? (a.patch.roleId ?? undefined) : p.roleId,
+              }
+            : p,
+        ),
       }));
     case "togglePin":
       return mapYear(db, a.yearId, (y) => ({
