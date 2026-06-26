@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { ROLES, roleById } from "@/lib/roles";
@@ -179,6 +179,41 @@ export default function NastenkaPage() {
   );
 }
 
+// Tělo příspěvku: ukáže ~3 řádky, zbytek schová do rolovačky se šipkou na rozbalení.
+function PostBody({ body }: { body: string }) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [overflow, setOverflow] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || expanded) return;
+    setOverflow(el.scrollHeight > el.clientHeight + 2);
+  }, [body, expanded]);
+
+  return (
+    <div className="mt-1">
+      <p
+        ref={ref}
+        className={`whitespace-pre-wrap break-words text-sm leading-5 text-ink-soft ${
+          expanded ? "" : "max-h-[3.75rem] overflow-y-auto overscroll-contain pr-1"
+        }`}
+      >
+        {body}
+      </p>
+      {(overflow || expanded) && (
+        <button
+          className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-marigold-700 hover:underline"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? "Sbalit" : "Zobrazit celé"}
+          <Icon name="chevron" className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
+        </button>
+      )}
+    </div>
+  );
+}
+
 function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
   const { me, dispatch } = useStore();
   const [edit, setEdit] = useState(false);
@@ -239,7 +274,7 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
         </span>
       </div>
       <h3 className="break-words font-display text-lg font-semibold">{p.title}</h3>
-      {p.body && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-ink-soft">{p.body}</p>}
+      {p.body && <PostBody body={p.body} />}
       <div className="mt-2 flex items-center gap-2">
         <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "togglePin", yearId, postId: p.id })}>
           {p.pinned ? "Odepnout" : "Připnout"}
