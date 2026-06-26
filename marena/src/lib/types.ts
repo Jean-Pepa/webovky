@@ -20,6 +20,8 @@ export interface Post {
   body: string;
   pinned: boolean;
   createdAt: string;
+  editedBy?: string; // kdo naposledy upravil (autor založení se nemění)
+  editedAt?: string; // ISO – kdy se naposledy upravilo
 }
 
 export interface PollOption {

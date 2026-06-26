@@ -1,4 +1,4 @@
-// Hromadná správa nahraných fotek a účtenek — pro správce (Pan_Vyskočil):
+// Hromadná správa nahraných fotek a účtenek — pro správce (Mařena):
 //  • collectMedia: vyjmenuje všechny nahrané soubory napříč ročníky,
 //  • downloadMediaZip: stáhne je všechny jako jeden ZIP (složky po ročnících),
 //  • deleteBlobs: smaže bloby z úložiště (uvolnění místa na další ročník).

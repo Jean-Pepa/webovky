@@ -17,6 +17,10 @@ export default function SponzoriPage() {
   const { currentYear, dispatch, canEditCurrentYear } = useStore();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [gives, setGives] = useState("");
+  const [who, setWho] = useState("");
+  const [link, setLink] = useState("");
+  const [note, setNote] = useState("");
 
   const year = currentYear;
   const list = useMemo(
@@ -30,8 +34,12 @@ export default function SponzoriPage() {
 
   async function add() {
     if (!name.trim() || !year || !canEdit) return;
-    await dispatch({ type: "addSponsor", yearId: year.id, name: name.trim() });
+    await dispatch({ type: "addSponsor", yearId: year.id, name: name.trim(), gives, who, link, note });
     setName("");
+    setGives("");
+    setWho("");
+    setLink("");
+    setNote("");
   }
 
   return (
@@ -49,18 +57,33 @@ export default function SponzoriPage() {
       </div>
 
       {open && canEdit && (
-        <div className="card flex flex-wrap gap-2 p-4">
+        <div className="card space-y-2 p-4">
           <input
-            className="input min-w-[160px] flex-1"
+            className="input"
             placeholder="Název sponzora (např. Rebel Bean, Pivovar Hauskrecht…)"
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && add()}
             autoFocus
           />
-          <button className="btn-primary" onClick={add} disabled={!name.trim()}>
-            + Přidat
-          </button>
+          <input className="input" placeholder="Co dává (pivo, čaj, kávovar, peníze…)" value={gives} onChange={(e) => setGives(e.target.value)} />
+          <div className="grid gap-2 sm:grid-cols-2">
+            <input className="input" placeholder="Kdo to řeší" value={who} onChange={(e) => setWho(e.target.value)} />
+            <input className="input" placeholder="Odkaz / kontakt" value={link} onChange={(e) => setLink(e.target.value)} />
+          </div>
+          <input
+            className="input"
+            placeholder="Požadavky / poznámka (např. chce logo)"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && add()}
+          />
+          <div className="flex gap-2">
+            <button className="btn-primary py-2 text-sm" onClick={add} disabled={!name.trim()}>
+              + Přidat sponzora
+            </button>
+            <button className="btn-ghost py-2 text-sm" onClick={() => setOpen(false)}>Zrušit</button>
+          </div>
         </div>
       )}
 

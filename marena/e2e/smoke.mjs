@@ -112,15 +112,16 @@ try {
   });
 
   // ---------- IDENTITY GATE ----------
-  await step("IdentityGate: bez kontaktu nepustí", async () => {
-    await page.getByPlaceholder("Jméno a příjmení").fill("Pan_Vyskočil");
+  await step("IdentityGate: neznámý e-mail nepustí", async () => {
+    // Výchozí režim „Už mám účet" — neexistující e-mail musí dát chybu, ne pustit dál.
+    await page.getByPlaceholder(/správce napíše/i).fill("neznamy@nikde.cz");
     await page.getByRole("button", { name: /vstoupit do zázemí/i }).click();
     await page.waitForTimeout(500);
-    await page.getByPlaceholder("E-mail").waitFor({ timeout: 3000 });
+    if (await page.getByRole("button", { name: /Přidat info/i }).count()) throw new Error("neznámý e-mail pustil dál");
   });
-  await step("IdentityGate: vyplnit a vstoupit", async () => {
-    await page.getByPlaceholder("E-mail").fill("admin@marena.cz");
-    await page.getByPlaceholder(/Telefon/).fill("+420777111222");
+  await step("IdentityGate: správce Mařena jen jménem", async () => {
+    // Správce se přihlásí jen jménem „Mařena" (žádný e-mail/telefon).
+    await page.getByPlaceholder(/správce napíše/i).fill("Mařena");
     await page.getByRole("button", { name: /vstoupit do zázemí/i }).click();
     // „+ Přidat info" je na nástěnce viditelné na všech velikostech (nav je na mobilu schovaný v hamburgeru).
     await page.getByRole("button", { name: /Přidat info/i }).first().waitFor({ timeout: 6000 });

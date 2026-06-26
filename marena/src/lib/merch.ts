@@ -1,4 +1,4 @@
-// Přístup k sekci Merch: vidí ji jen správce (Pan_Vyskočil) a člověk, který má
+// Přístup k sekci Merch: vidí ji jen správce (Mařena) a člověk, který má
 // v týmu roli „Merch". Identita je jen jméno, role se berou z členů ročníku.
 
 import type { Year } from "./types";

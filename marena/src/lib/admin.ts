@@ -3,9 +3,11 @@
 // archiv do PDF pro úschovu na další roky).
 //
 // App nemá účty s hesly — identita je jen jméno. Správce je tedy ten, kdo se
-// představí přesně tímto jménem.
-export const ADMIN_NAME = "Pan_Vyskočil";
+// představí tímto jménem (nezáleží na velikosti písmen ani diakritice).
+import { sameName } from "./names";
+
+export const ADMIN_NAME = "Mařena";
 
 export function isAdmin(name?: string | null): boolean {
-  return (name ?? "").trim().toLowerCase() === ADMIN_NAME.toLowerCase();
+  return sameName(name ?? "", ADMIN_NAME);
 }

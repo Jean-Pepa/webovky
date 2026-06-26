@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
   // Heslo na ročník (marenaYYYY) platí, jen když ten ročník existuje — založit
-  // ho smí jen správce (Pan_Vyskočil). Master heslo (MARENA_PASSWORD) jede vždy.
+  // ho smí jen správce (Mařena). Master heslo (MARENA_PASSWORD) jede vždy.
   const master = !!process.env.MARENA_PASSWORD && password.trim().toLowerCase() === process.env.MARENA_PASSWORD.toLowerCase();
   const yr = yearFromPassword(password);
   if (!master && yr && isConfigured()) {

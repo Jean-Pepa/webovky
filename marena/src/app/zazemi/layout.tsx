@@ -7,23 +7,31 @@ import { useStore } from "@/lib/store";
 import { Loading } from "@/components/Loading";
 import { YearSwitcher } from "@/components/YearSwitcher";
 import { Icon, type IconName } from "@/components/Icons";
-import { isAdmin } from "@/lib/admin";
+import { isAdmin, ADMIN_NAME } from "@/lib/admin";
 import { sameName } from "@/lib/names";
 import { ArchiveModal } from "@/components/ArchiveModal";
 
+// Pořadí podle významových skupin (co patří k sobě, je vedle sebe):
+// komunikace & plán → lidé → festival (program/provoz) → peníze → kontakty.
 const NAV: { href: string; label: string; icon: IconName }[] = [
+  // Komunikace & plánování
   { href: "/zazemi", label: "Nástěnka", icon: "board" },
   { href: "/zazemi/hlasovani", label: "Hlasování", icon: "vote" },
   { href: "/zazemi/kalendar", label: "Kalendář", icon: "calendar" },
-  { href: "/zazemi/program", label: "Program", icon: "mic" },
-  { href: "/zazemi/sponzori", label: "Sponzoři", icon: "spark" },
+  { href: "/zazemi/ukoly", label: "Úkoly", icon: "tasks" },
+  // Lidé
   { href: "/zazemi/tym", label: "Tým & role", icon: "users" },
   { href: "/zazemi/prvaci", label: "Prváci", icon: "star" },
-  { href: "/zazemi/ukoly", label: "Úkoly", icon: "tasks" },
+  // Festival — obsah a provoz
+  { href: "/zazemi/program", label: "Program", icon: "mic" },
   { href: "/zazemi/provoz", label: "Provoz & směny", icon: "ops" },
   { href: "/zazemi/kuchyne", label: "Kuchyně & bar", icon: "food" },
   { href: "/zazemi/vyzdoba", label: "Výzdoba", icon: "palette" },
+  // Peníze a vnější vztahy
+  { href: "/zazemi/sponzori", label: "Sponzoři", icon: "spark" },
+  { href: "/zazemi/merch", label: "Merch", icon: "merch" },
   { href: "/zazemi/finance", label: "Finance", icon: "finance" },
+  // Reference
   { href: "/zazemi/kontakty", label: "Kontakty", icon: "contacts" },
 ];
 
@@ -72,8 +80,6 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const myMember = currentYear?.members.find((m) => sameName(m.name, me));
   const incompleteContact = !!myMember && (!myMember.email?.trim() || !myMember.phone?.trim());
   if (!me || (currentYear && canEditCurrentYear && !isAdmin(me) && (!myMember || incompleteContact))) return <IdentityGate />;
-
-  const showMerch = true; // Merch záložku vidí každý (spravovat může jen role Merch + správce)
 
   async function doLogout() {
     setMenuOpen(false);
@@ -136,16 +142,6 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               </Link>
             );
           })}
-          {showMerch && (
-            <Link
-              href="/zazemi/merch"
-              className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                pathname === "/zazemi/merch" ? "bg-marigold-600 text-white" : "text-ink-soft hover:bg-black/5"
-              }`}
-            >
-              <Icon name="merch" className="h-4 w-4" /> Merch
-            </Link>
-          )}
           <Link
             href="/zazemi/almanach"
             className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-marigold-600 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-marigold-700"
@@ -197,17 +193,6 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   </Link>
                 );
               })}
-              {showMerch && (
-                <Link
-                  href="/zazemi/merch"
-                  onClick={() => setMenuOpen(false)}
-                  className={`inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-medium transition-colors ${
-                    pathname === "/zazemi/merch" ? "bg-marigold-600 text-white" : "text-ink hover:bg-black/5"
-                  }`}
-                >
-                  <Icon name="merch" className="h-5 w-5" /> Merch
-                </Link>
-              )}
               <Link
                 href="/zazemi/almanach"
                 onClick={() => setMenuOpen(false)}
@@ -294,19 +279,25 @@ function MeBadge() {
   );
 }
 
-// Když je člověk přihlášený, ale ještě nezadal jméno. Hned při prvním vstupu
-// vyžádáme jméno + e-mail + telefon a založíme člena — ať se u rolí vyplní samo.
-// Pokud jméno už v týmu existuje (i z dřívějška), kontakt se předvyplní.
+// Vstupní brána do zázemí. Dva režimy:
+//  • „Už mám účet" — stačí e-mail z registrace (na novém zařízení se jím přihlásíš).
+//    Správce (Mařena) se přihlásí jen jménem „Mařena", nic dalšího nevyplňuje.
+//  • „Zaregistrovat se" — jméno + e-mail + telefon; založí se člen v aktuálním ročníku.
 function IdentityGate() {
   const { setMe, me, currentYear, canEditCurrentYear, dispatch } = useStore();
-  const [name, setName] = useState(me); // předvyplň jméno, když už je člověk přihlášený
-  // Předvyplň i kontakt z existujícího (byť neúplného) záznamu.
-  const [email, setEmail] = useState(() => currentYear?.members.find((m) => sameName(m.name, me))?.email ?? "");
-  const [phone, setPhone] = useState(() => currentYear?.members.find((m) => sameName(m.name, me))?.phone ?? "");
+  const [mode, setMode] = useState<"login" | "register">("login");
+
+  // Přihlášení (už mám účet) — e-mail; správce zadá jméno Mařena.
+  const [loginId, setLoginId] = useState("");
+
+  // Registrace (nový účet)
+  const [name, setName] = useState(me);
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const touched = useRef({ email: false, phone: false }); // ať se ručně psané nepřepíše
+
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  // Ať automatické předvyplnění nepřepisuje to, co už člověk sám napsal.
-  const touched = useRef({ email: false, phone: false });
 
   const matched = currentYear?.members.find((m) => sameName(m.name, name));
 
@@ -319,8 +310,22 @@ function IdentityGate() {
     }
   }
 
-  async function submit(e: React.FormEvent) {
+  function doLogin(e: React.FormEvent) {
     e.preventDefault();
+    setErr(null);
+    const val = loginId.trim();
+    if (!val) return setErr("Zadej e-mail. (Správce zadá jméno Mařena.)");
+    // Správce: stačí jméno Mařena, žádný kontakt.
+    if (isAdmin(val)) return setMe(ADMIN_NAME);
+    // Najdi člena podle e-mailu z registrace v aktuálním ročníku.
+    const member = (currentYear?.members ?? []).find((m) => m.email && m.email.trim().toLowerCase() === val.toLowerCase());
+    if (!member) return setErr("Účet s tímto e-mailem nenajdeme. Vlevo se nejdřív zaregistruj.");
+    setMe(member.name);
+  }
+
+  async function doRegister(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null);
     const n = name.trim();
     if (!n) return setErr("Vyplň jméno.");
     if (!email.trim()) return setErr("Vyplň e-mail.");
@@ -342,38 +347,71 @@ function IdentityGate() {
     <div className="grid min-h-screen place-items-center px-4">
       <div className="card w-full max-w-sm p-7">
         <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-marigold-100 text-2xl">👋</div>
-        <h1 className="text-center font-display text-xl font-semibold">Vítej v týmu Mařeny</h1>
-        <p className="mt-1 text-center text-sm text-ink-soft">
-          Vyplň jméno, e-mail a telefon — ať tě ostatní v týmu zastihnou. U rolí se ti to pak doplní samo.
-        </p>
-        <form className="mt-4 flex flex-col gap-2" onSubmit={submit}>
-          <input className="input" placeholder="Jméno a příjmení" value={name} onChange={(e) => onNameChange(e.target.value)} autoFocus />
-          <input
-            className="input"
-            type="email"
-            placeholder="E-mail"
-            value={email}
-            onChange={(e) => {
-              touched.current.email = true;
-              setEmail(e.target.value);
-            }}
-          />
-          <input
-            className="input"
-            type="tel"
-            placeholder="Telefon (+420…)"
-            value={phone}
-            onChange={(e) => {
-              touched.current.phone = true;
-              setPhone(e.target.value);
-            }}
-          />
-          {matched && <p className="text-xs text-leaf-700">👋 Vítej zpátky, {matched.name}! Kontakt jsme ti předvyplnili.</p>}
-          {err && <p className="text-sm text-red-600">{err}</p>}
-          <button className="btn-primary mt-1" type="submit" disabled={busy}>
-            {busy ? "Ukládám…" : "Vstoupit do zázemí"}
-          </button>
-        </form>
+        <h1 className="text-center font-display text-xl font-semibold">Vítej v zázemí Mařeny</h1>
+
+        {/* Přepínač: už mám účet / zaregistrovat se */}
+        <div className="mt-4 inline-flex w-full rounded-full bg-paper2 p-0.5 text-sm">
+          {(["login", "register"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => {
+                setMode(m);
+                setErr(null);
+              }}
+              className={`flex-1 rounded-full px-3 py-1.5 font-medium transition ${mode === m ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}
+            >
+              {m === "login" ? "Už mám účet" : "Zaregistrovat se"}
+            </button>
+          ))}
+        </div>
+
+        {mode === "login" ? (
+          <form className="mt-4 flex flex-col gap-2" onSubmit={doLogin}>
+            <p className="text-center text-sm text-ink-soft">Zadej e-mail, který jsi použil/a při registraci.</p>
+            <input
+              className="input"
+              placeholder="E-mail (správce napíše: Mařena)"
+              value={loginId}
+              onChange={(e) => setLoginId(e.target.value)}
+              autoFocus
+            />
+            {err && <p className="text-sm text-red-600">{err}</p>}
+            <button className="btn-primary mt-1" type="submit">
+              Vstoupit do zázemí
+            </button>
+          </form>
+        ) : (
+          <form className="mt-4 flex flex-col gap-2" onSubmit={doRegister}>
+            <p className="text-center text-sm text-ink-soft">Vyplň jméno, e-mail a telefon — ať tě ostatní v týmu zastihnou.</p>
+            <input className="input" placeholder="Jméno a příjmení" value={name} onChange={(e) => onNameChange(e.target.value)} autoFocus />
+            <input
+              className="input"
+              type="email"
+              placeholder="E-mail"
+              value={email}
+              onChange={(e) => {
+                touched.current.email = true;
+                setEmail(e.target.value);
+              }}
+            />
+            <input
+              className="input"
+              type="tel"
+              placeholder="Telefon (+420…)"
+              value={phone}
+              onChange={(e) => {
+                touched.current.phone = true;
+                setPhone(e.target.value);
+              }}
+            />
+            {matched && <p className="text-xs text-leaf-700">👋 Vítej zpátky, {matched.name}! Kontakt jsme ti předvyplnili.</p>}
+            {err && <p className="text-sm text-red-600">{err}</p>}
+            <button className="btn-primary mt-1" type="submit" disabled={busy}>
+              {busy ? "Ukládám…" : "Vytvořit účet a vstoupit"}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

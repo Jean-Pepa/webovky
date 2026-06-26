@@ -28,6 +28,7 @@ export type Action =
   | { type: "takeRole"; yearId: string; memberId?: string; name: string; email?: string; phone?: string; roleId: string; asLead: boolean }
   | { type: "setRoleLead"; yearId: string; roleId: string; memberId: string }
   | { type: "addPost"; yearId: string; author: string; roleId?: string; title: string; body: string; pinned?: boolean }
+  | { type: "updatePost"; yearId: string; postId: string; editedBy: string; patch: { title?: string; body?: string; roleId?: string | null } }
   | { type: "togglePin"; yearId: string; postId: string }
   | { type: "removePost"; yearId: string; postId: string }
   | { type: "addPoll"; yearId: string; author: string; question: string; options: string[]; multi?: boolean }
@@ -54,10 +55,10 @@ export type Action =
   | { type: "addFreshman"; yearId: string; name: string; email?: string; note?: string }
   | { type: "updateFreshman"; yearId: string; freshmanId: string; patch: { name?: string; email?: string; note?: string } }
   | { type: "removeFreshman"; yearId: string; freshmanId: string }
-  | { type: "addDecor"; yearId: string; title: string }
+  | { type: "addDecor"; yearId: string; title: string; who?: string; link?: string; note?: string }
   | { type: "updateDecor"; yearId: string; decorId: string; patch: { title?: string; status?: "napad" | "shani" | "hotovo"; who?: string; link?: string; note?: string } }
   | { type: "removeDecor"; yearId: string; decorId: string }
-  | { type: "addSponsor"; yearId: string; name: string }
+  | { type: "addSponsor"; yearId: string; name: string; gives?: string; who?: string; link?: string; note?: string }
   | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: "oslovit" | "ceka" | "potvrzeno" | "odmitl"; who?: string; link?: string; note?: string } }
   | { type: "removeSponsor"; yearId: string; sponsorId: string }
   | { type: "addDrink"; yearId: string; name: string; kind: "koktejl" | "panak" | "snidane" | "obed" | "jine"; place: "bar" | "kuchyne"; day?: "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne" }
@@ -251,6 +252,23 @@ export function applyAction(db: DB, a: Action): DB {
           { id: uid("p_"), author: a.author.trim() || "Anonym", roleId: a.roleId, title: a.title.trim(), body: a.body.trim(), pinned: a.pinned ?? false, createdAt: now() },
           ...y.posts,
         ],
+      }));
+    case "updatePost":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        // Původní autor a datum vzniku se NEMĚNÍ; zapíše se jen kdo a kdy upravil.
+        posts: y.posts.map((p) =>
+          p.id === a.postId
+            ? {
+                ...p,
+                title: a.patch.title !== undefined ? a.patch.title.trim() || p.title : p.title,
+                body: a.patch.body !== undefined ? a.patch.body.trim() : p.body,
+                roleId: a.patch.roleId !== undefined ? (a.patch.roleId ?? undefined) : p.roleId,
+                editedBy: a.editedBy.trim() || p.editedBy,
+                editedAt: now(),
+              }
+            : p,
+        ),
       }));
     case "togglePin":
       return mapYear(db, a.yearId, (y) => ({
@@ -519,7 +537,18 @@ export function applyAction(db: DB, a: Action): DB {
       if (!title) return db;
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        decor: [...(y.decor ?? []), { id: uid("dc_"), title, status: "napad" as const, createdAt: now() }],
+        decor: [
+          ...(y.decor ?? []),
+          {
+            id: uid("dc_"),
+            title,
+            status: "napad" as const,
+            who: a.who?.trim() || undefined,
+            link: a.link?.trim() || undefined,
+            note: a.note?.trim() || undefined,
+            createdAt: now(),
+          },
+        ],
       }));
     }
     case "updateDecor":
@@ -549,7 +578,19 @@ export function applyAction(db: DB, a: Action): DB {
       if (!name) return db;
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        sponsors: [...(y.sponsors ?? []), { id: uid("sp_"), name, status: "oslovit" as const, createdAt: now() }],
+        sponsors: [
+          ...(y.sponsors ?? []),
+          {
+            id: uid("sp_"),
+            name,
+            status: "oslovit" as const,
+            gives: a.gives?.trim() || undefined,
+            who: a.who?.trim() || undefined,
+            link: a.link?.trim() || undefined,
+            note: a.note?.trim() || undefined,
+            createdAt: now(),
+          },
+        ],
       }));
     }
     case "updateSponsor":
