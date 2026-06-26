@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { ROLES, roleById } from "@/lib/roles";
-import { fmtRelative, fmtDateTime, fmtDayShort, todayISO, fmtCZK } from "@/lib/format";
+import { fmtDateTime, fmtDayShort, todayISO, fmtCZK } from "@/lib/format";
 import { KINDS } from "@/lib/kinds";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Onboarding } from "@/components/Onboarding";
@@ -263,22 +263,26 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
 
   return (
     <article className={`card p-4 ${p.pinned ? "ring-1 ring-marigold-300" : ""}`}>
-      <div className="mb-1 flex items-center gap-2 text-xs text-ink-soft">
+      <div className="mb-1 flex flex-wrap items-start gap-x-2 gap-y-1 text-xs text-ink-soft">
         {p.pinned && <span className="chip bg-marigold-600 text-white">📌 Připnuto</span>}
         {role && (
           <span className="chip">
             {role.emoji} {role.name}
           </span>
         )}
-        <span className="ml-auto">
-          {p.author} · {fmtRelative(p.createdAt)}
-        </span>
+        <div className="ml-auto text-right leading-tight">
+          <div>
+            založil(a): <span className="font-medium text-ink">{p.author}</span> · {fmtDateTime(p.createdAt)}
+          </div>
+          {p.editedBy && p.editedAt && (
+            <div>
+              ✏️ upravil(a): <span className="font-medium text-ink">{p.editedBy}</span> · {fmtDateTime(p.editedAt)}
+            </div>
+          )}
+        </div>
       </div>
       <h3 className="break-words font-display text-lg font-semibold">{p.title}</h3>
       {p.body && <PostBody body={p.body} />}
-      {p.editedBy && p.editedAt && (
-        <p className="mt-1.5 text-xs italic text-ink-soft">✏️ upravil(a) {p.editedBy} · {fmtDateTime(p.editedAt)}</p>
-      )}
       <div className="mt-2 flex items-center gap-2">
         <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "togglePin", yearId, postId: p.id })}>
           {p.pinned ? "Odepnout" : "Připnout"}
