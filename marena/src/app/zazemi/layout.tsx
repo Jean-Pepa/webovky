@@ -371,7 +371,7 @@ function IdentityGate() {
             <p className="text-center text-sm text-ink-soft">Zadej e-mail, který jsi použil/a při registraci.</p>
             <input
               className="input"
-              placeholder="E-mail (správce napíše: Mařena)"
+              placeholder="E-mail"
               value={loginId}
               onChange={(e) => setLoginId(e.target.value)}
               autoFocus
