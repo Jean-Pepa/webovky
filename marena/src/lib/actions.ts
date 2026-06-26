@@ -74,6 +74,7 @@ export type Action =
   | { type: "removeFinance"; yearId: string; financeId: string }
   | { type: "addShift"; yearId: string; area: string; title?: string; date?: string; from?: string; to?: string; capacity?: number; note?: string }
   | { type: "signShift"; yearId: string; shiftId: string; name: string }
+  | { type: "signShiftBackup"; yearId: string; shiftId: string; name: string }
   | { type: "removeShiftPerson"; yearId: string; shiftId: string; name: string }
   | { type: "removeShift"; yearId: string; shiftId: string }
   | { type: "addInvite"; yearId: string; category: string; name: string; link?: string; priority?: number }
@@ -665,15 +666,28 @@ export function applyAction(db: DB, a: Action): DB {
           if (s.people.includes(name)) return { ...s, people: s.people.filter((p) => p !== name) };
           // plno → nepřidávat (kapacita 0 = neomezeně)
           if (s.capacity > 0 && s.people.length >= s.capacity) return s;
-          return { ...s, people: [...s.people, name] };
+          // při přihlášení do směny vypadne ze zálohy (nemůže být v obou)
+          return { ...s, people: [...s.people, name], backup: (s.backup ?? []).filter((p) => p !== name) };
+        }),
+      }));
+    case "signShiftBackup":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        shifts: (y.shifts ?? []).map((s) => {
+          if (s.id !== a.shiftId) return s;
+          const name = a.name.trim() || "Anonym";
+          const backup = s.backup ?? [];
+          if (backup.includes(name)) return { ...s, backup: backup.filter((p) => p !== name) };
+          // jako záloha vypadne z hlavních přihlášených
+          return { ...s, backup: [...backup, name], people: s.people.filter((p) => p !== name) };
         }),
       }));
     case "removeShiftPerson":
-      // Správce odebere konkrétního člověka ze směny.
+      // Správce odebere konkrétního člověka ze směny (z přihlášených i ze zálohy).
       return mapYear(db, a.yearId, (y) => ({
         ...y,
         shifts: (y.shifts ?? []).map((s) =>
-          s.id === a.shiftId ? { ...s, people: s.people.filter((p) => p !== a.name) } : s,
+          s.id === a.shiftId ? { ...s, people: s.people.filter((p) => p !== a.name), backup: (s.backup ?? []).filter((p) => p !== a.name) } : s,
         ),
       }));
     case "removeShift":

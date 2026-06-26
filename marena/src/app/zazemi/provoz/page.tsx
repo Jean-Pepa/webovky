@@ -40,6 +40,7 @@ export default function ProvozPage() {
   const { currentYear, me, dispatch } = useStore();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("vse");
+  const [view, setView] = useState<"seznam" | "rozvrh">("seznam");
 
   const [area, setArea] = useState("");
   const [title, setTitle] = useState("");
@@ -72,6 +73,22 @@ export default function ProvozPage() {
       const ib = AREA_ORDER.indexOf(b[0]);
       return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a[0].localeCompare(b[0]);
     });
+  }, [shifts, filter, me]);
+
+  // Rozvrh: směny seskupené po dnech, seřazené podle času.
+  const byDay = useMemo(() => {
+    const filtered = shifts.filter((s) => {
+      if (filter === "moje") return s.people.includes(me) || (s.backup ?? []).includes(me);
+      if (filter === "volne") return s.capacity === 0 || s.people.length < s.capacity;
+      return true;
+    });
+    const map = new Map<string, Shift[]>();
+    for (const s of filtered) {
+      const key = s.date || "Bez data";
+      (map.get(key) ?? map.set(key, []).get(key)!).push(s);
+    }
+    for (const arr of map.values()) arr.sort((a, b) => (a.from || "").localeCompare(b.from || "") || a.area.localeCompare(b.area));
+    return [...map.entries()].sort((a, b) => (a[0] === "Bez data" ? 1 : b[0] === "Bez data" ? -1 : a[0].localeCompare(b[0])));
   }, [shifts, filter, me]);
 
   if (!year) return null;
@@ -131,45 +148,134 @@ export default function ProvozPage() {
         </div>
       )}
 
-      {/* filtr */}
-      <div className="flex flex-wrap gap-2">
-        {([
-          ["vse", "Vše"],
-          ["moje", "Moje směny"],
-          ["volne", "Volné"],
-        ] as [Filter, string][]).map(([f, l]) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${filter === f ? "bg-marigold-600 text-white" : "bg-white text-ink-soft ring-1 ring-black/10 hover:bg-paper2"}`}
-          >
-            {l}
-          </button>
-        ))}
+      {/* filtr + přepínač pohledu */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-2">
+          {([
+            ["vse", "Vše"],
+            ["moje", "Moje směny"],
+            ["volne", "Volné"],
+          ] as [Filter, string][]).map(([f, l]) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${filter === f ? "bg-marigold-600 text-white" : "bg-white text-ink-soft ring-1 ring-black/10 hover:bg-paper2"}`}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+        <div className="inline-flex rounded-full bg-paper2 p-0.5 text-sm">
+          {([
+            ["seznam", "Seznam"],
+            ["rozvrh", "Rozvrh"],
+          ] as ["seznam" | "rozvrh", string][]).map(([v, l]) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`rounded-full px-3 py-1.5 font-medium transition ${view === v ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {groups.length === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
-          {filter === "vse" ? "Zatím žádné směny. Přidej první rozpis." : "Nic tu není."}
-        </div>
+      {shifts.length === 0 ? (
+        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">Zatím žádné směny. Přidej první rozpis.</div>
+      ) : view === "seznam" ? (
+        groups.length === 0 ? (
+          <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">Nic tu není.</div>
+        ) : (
+          <div className="space-y-6">
+            {groups.map(([areaName, items]) => (
+              <section key={areaName}>
+                <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
+                  <span>{areaEmoji(areaName)}</span> {areaName}
+                  <span className="chip">{items.length}</span>
+                </h2>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {items.map((s) => (
+                    <ShiftCard key={s.id} shift={s} yearId={year.id} me={me} />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        )
+      ) : byDay.length === 0 ? (
+        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">Nic tu není.</div>
       ) : (
-        <div className="space-y-6">
-          {groups.map(([areaName, items]) => (
-            <section key={areaName}>
-              <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
-                <span>{areaEmoji(areaName)}</span> {areaName}
-                <span className="chip">{items.length}</span>
+        <div className="space-y-5">
+          {byDay.map(([day, items]) => (
+            <section key={day} className="card overflow-hidden">
+              <h2 className="border-b border-black/[0.06] bg-paper2/60 px-4 py-2 font-display text-base font-semibold">
+                {day === "Bez data" ? "📌 Bez data" : `📅 ${fmtDate(day)}`}
+                <span className="ml-2 text-sm font-normal text-ink-soft">{items.length} směn</span>
               </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="divide-y divide-black/[0.06]">
                 {items.map((s) => (
-                  <ShiftCard key={s.id} shift={s} yearId={year.id} me={me} />
+                  <RozvrhRow key={s.id} shift={s} yearId={year.id} me={me} />
                 ))}
-              </div>
+              </ul>
             </section>
           ))}
         </div>
       )}
     </div>
+  );
+}
+
+// Kompaktní řádek v rozvrhu (po dnech): čas · oblast · přihlášení + záloha.
+function RozvrhRow({ shift, yearId, me }: { shift: Shift; yearId: string; me: string }) {
+  const { dispatch } = useStore();
+  const admin = isAdmin(me);
+  const mine = shift.people.includes(me);
+  const inBackup = (shift.backup ?? []).includes(me);
+  const cap = shift.capacity;
+  const full = cap > 0 && shift.people.length >= cap && !mine;
+  const t = [shift.from, shift.to].filter(Boolean).join("–");
+
+  return (
+    <li className={`flex flex-col gap-2 p-3 sm:flex-row sm:items-center ${mine ? "bg-marigold-50/50" : ""}`}>
+      <div className="flex min-w-0 flex-1 items-start gap-2">
+        <span className="shrink-0 text-base">{areaEmoji(shift.area)}</span>
+        <div className="min-w-0">
+          <p className="break-words text-sm font-medium">
+            {shift.title || shift.area}
+            {t && <span className="ml-2 font-normal text-ink-soft">{t}</span>}
+          </p>
+          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
+            {shift.people.length > 0 ? (
+              shift.people.map((p) => (
+                <span key={p} className={`chip ${p === me ? "bg-marigold-600 text-white" : ""}`}>{p}</span>
+              ))
+            ) : (
+              <span className="text-ink-soft/70">zatím nikdo</span>
+            )}
+            {(shift.backup ?? []).length > 0 && (
+              <span className="text-ink-soft">záloha: {(shift.backup ?? []).join(", ")}</span>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="flex shrink-0 gap-1.5">
+        <button
+          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${mine ? "bg-marigold-600 text-white" : full ? "bg-paper2 text-ink-soft/50" : "bg-leaf/12 text-leaf-700 hover:bg-leaf/20"}`}
+          onClick={() => !full || mine ? dispatch({ type: "signShift", yearId, shiftId: shift.id, name: me }) : undefined}
+          disabled={full && !mine}
+        >
+          {mine ? "Odhlásit" : full ? "Plno" : "Přihlásit"}
+        </button>
+        <button
+          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${inBackup ? "bg-marigold-600/15 text-marigold-700" : "bg-paper2 text-ink-soft hover:bg-black/5"}`}
+          onClick={() => dispatch({ type: "signShiftBackup", yearId, shiftId: shift.id, name: me })}
+        >
+          {inBackup ? "Záloha ✓" : "Záloha"}
+        </button>
+        {admin && <DeleteButton onConfirm={() => dispatch({ type: "removeShift", yearId, shiftId: shift.id })} />}
+      </div>
+    </li>
   );
 }
 
@@ -179,6 +285,7 @@ function ShiftCard({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
   const filled = shift.people.length;
   const cap = shift.capacity;
   const mine = shift.people.includes(me);
+  const inBackup = (shift.backup ?? []).includes(me);
   const full = cap > 0 && filled >= cap && !mine;
   const time = timeLabel(shift);
 
@@ -221,22 +328,45 @@ function ShiftCard({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
         </div>
       )}
 
+      {(shift.backup ?? []).length > 0 && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-soft">
+          <span>záloha:</span>
+          {(shift.backup ?? []).map((p) => (
+            <span key={p} className={`chip inline-flex items-center gap-1 ${p === me ? "bg-marigold-600/15 text-marigold-700" : ""}`}>
+              {p}
+              {admin && (
+                <button onClick={() => dispatch({ type: "removeShiftPerson", yearId, shiftId: shift.id, name: p })} className="text-ink-soft/60 hover:text-red-600" title={`Odebrat ze zálohy — ${p}`}>
+                  ✕
+                </button>
+              )}
+            </span>
+          ))}
+        </div>
+      )}
+
       {shift.note && <p className="mt-2 text-xs text-ink-soft">{shift.note}</p>}
 
-      <div className="mt-3 pt-1">
+      <div className="mt-3 flex gap-2 pt-1">
         {mine ? (
-          <button className="btn-secondary w-full" onClick={() => dispatch({ type: "signShift", yearId, shiftId: shift.id, name: me })}>
+          <button className="btn-secondary flex-1" onClick={() => dispatch({ type: "signShift", yearId, shiftId: shift.id, name: me })}>
             Odhlásit se
           </button>
         ) : full ? (
-          <button className="btn-secondary w-full" disabled>
+          <button className="btn-secondary flex-1" disabled>
             Plno
           </button>
         ) : (
-          <button className="btn-primary w-full" onClick={() => dispatch({ type: "signShift", yearId, shiftId: shift.id, name: me })}>
+          <button className="btn-primary flex-1" onClick={() => dispatch({ type: "signShift", yearId, shiftId: shift.id, name: me })}>
             Přihlásit se
           </button>
         )}
+        <button
+          className={`rounded-full px-3 py-2 text-sm font-medium transition ${inBackup ? "bg-marigold-600/15 text-marigold-700" : "bg-paper2 text-ink-soft hover:bg-black/5"}`}
+          onClick={() => dispatch({ type: "signShiftBackup", yearId, shiftId: shift.id, name: me })}
+          title="Přihlásit se jako záloha"
+        >
+          {inBackup ? "Záloha ✓" : "Záloha"}
+        </button>
       </div>
     </div>
   );

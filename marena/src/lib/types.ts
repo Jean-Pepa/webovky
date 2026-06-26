@@ -87,6 +87,7 @@ export interface Shift {
   to?: string; // čas do
   capacity: number; // kolik lidí je potřeba (0 = neomezeně)
   people: string[]; // přihlášená jména
+  backup?: string[]; // záloha (kdyby někdo vypadl)
   note?: string;
   createdAt: string;
 }
