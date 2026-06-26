@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { ROLES, roleById } from "@/lib/roles";
-import { fmtRelative, fmtDayShort, todayISO, fmtCZK } from "@/lib/format";
+import { fmtRelative, fmtDateTime, fmtDayShort, todayISO, fmtCZK } from "@/lib/format";
 import { KINDS } from "@/lib/kinds";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Onboarding } from "@/components/Onboarding";
@@ -221,6 +221,7 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
   const [body, setBody] = useState(p.body);
   const [roleId, setRoleId] = useState(p.roleId ?? "");
   const canEdit = isAdmin(me) || p.author === me;
+  const canDelete = isAdmin(me); // mazat smí jen správce (Pan_Vyskočil)
   const role = roleById(p.roleId);
 
   function startEdit() {
@@ -231,7 +232,7 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
   }
   async function save() {
     if (!title.trim()) return;
-    await dispatch({ type: "updatePost", yearId, postId: p.id, patch: { title, body, roleId: roleId || null } });
+    await dispatch({ type: "updatePost", yearId, postId: p.id, editedBy: me, patch: { title, body, roleId: roleId || null } });
     setEdit(false);
   }
 
@@ -275,6 +276,9 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
       </div>
       <h3 className="break-words font-display text-lg font-semibold">{p.title}</h3>
       {p.body && <PostBody body={p.body} />}
+      {p.editedBy && p.editedAt && (
+        <p className="mt-1.5 text-xs italic text-ink-soft">✏️ upravil(a) {p.editedBy} · {fmtDateTime(p.editedAt)}</p>
+      )}
       <div className="mt-2 flex items-center gap-2">
         <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "togglePin", yearId, postId: p.id })}>
           {p.pinned ? "Odepnout" : "Připnout"}
@@ -284,7 +288,7 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
             Upravit
           </button>
         )}
-        {canEdit && <DeleteButton onConfirm={() => dispatch({ type: "removePost", yearId, postId: p.id })} />}
+        {canDelete && <DeleteButton onConfirm={() => dispatch({ type: "removePost", yearId, postId: p.id })} />}
       </div>
     </article>
   );
