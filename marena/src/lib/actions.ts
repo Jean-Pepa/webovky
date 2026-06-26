@@ -63,6 +63,12 @@ export type Action =
   | { type: "addDrink"; yearId: string; name: string; kind: "koktejl" | "panak" | "jine" }
   | { type: "updateDrink"; yearId: string; drinkId: string; patch: { name?: string; kind?: "koktejl" | "panak" | "jine"; price?: number; note?: string; ingredients?: { name: string; cost: number }[] } }
   | { type: "removeDrink"; yearId: string; drinkId: string }
+  | { type: "addMenuEntry"; yearId: string; day: string; meal: "snidane" | "obed" | "jine"; dish: string }
+  | { type: "removeMenuEntry"; yearId: string; entryId: string }
+  | { type: "addShoppingItem"; yearId: string; name: string; qty?: string }
+  | { type: "toggleShoppingBought"; yearId: string; itemId: string }
+  | { type: "removeShoppingItem"; yearId: string; itemId: string }
+  | { type: "clearBoughtShopping"; yearId: string }
   | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string; receiptId?: string; receiptIds?: string[] } }
   | { type: "toggleFinancePaid"; yearId: string; financeId: string }
   | { type: "removeFinance"; yearId: string; financeId: string }
@@ -601,6 +607,35 @@ export function applyAction(db: DB, a: Action): DB {
         ...y,
         bar: (y.bar ?? []).filter((d) => d.id !== a.drinkId),
       }));
+
+    case "addMenuEntry": {
+      const dish = a.dish.trim();
+      const day = a.day.trim();
+      if (!dish || !day) return db;
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        menu: [...(y.menu ?? []), { id: uid("mn_"), day, meal: a.meal, dish, createdAt: now() }],
+      }));
+    }
+    case "removeMenuEntry":
+      return mapYear(db, a.yearId, (y) => ({ ...y, menu: (y.menu ?? []).filter((m) => m.id !== a.entryId) }));
+    case "addShoppingItem": {
+      const name = a.name.trim();
+      if (!name) return db;
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        shopping: [...(y.shopping ?? []), { id: uid("sh_"), name, qty: a.qty?.trim() || undefined, createdAt: now() }],
+      }));
+    }
+    case "toggleShoppingBought":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        shopping: (y.shopping ?? []).map((s) => (s.id === a.itemId ? { ...s, bought: !s.bought } : s)),
+      }));
+    case "removeShoppingItem":
+      return mapYear(db, a.yearId, (y) => ({ ...y, shopping: (y.shopping ?? []).filter((s) => s.id !== a.itemId) }));
+    case "clearBoughtShopping":
+      return mapYear(db, a.yearId, (y) => ({ ...y, shopping: (y.shopping ?? []).filter((s) => !s.bought) }));
 
     case "addShift":
       return mapYear(db, a.yearId, (y) => ({

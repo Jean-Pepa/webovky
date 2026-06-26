@@ -183,6 +183,23 @@ export interface Freshman {
   createdAt: string;
 }
 
+// Kuchyně — denní menu (co se který den vaří) a nákupní seznam.
+export type Meal = "snidane" | "obed" | "jine";
+export interface MenuEntry {
+  id: string;
+  day: string; // volný popis dne (např. „Čtvrtek 18.9.")
+  meal: Meal;
+  dish: string; // co se vaří
+  createdAt: string;
+}
+export interface ShoppingItem {
+  id: string;
+  name: string;
+  qty?: string; // množství (volný text, např. „4 kg", „2 basy")
+  bought?: boolean;
+  createdAt: string;
+}
+
 // Kuchyně — nahrané fotky a soubory (nákupní seznamy, menu na vaření, recepty…).
 export interface KitchenFile {
   id: string;
@@ -269,6 +286,8 @@ export interface Year {
   decor?: Decor[]; // výzdoba – nápady a materiál
   sponsors?: Sponsor[]; // sponzoři – koho oslovit, co dává, stav
   bar?: Drink[]; // bar – ceník drinků s recepturou
+  menu?: MenuEntry[]; // kuchyně – denní menu
+  shopping?: ShoppingItem[]; // kuchyně – nákupní seznam
   shifts?: Shift[]; // provoz — rozpis směn, na které se lidi přihlašují
   invites?: Invite[]; // program — koho oslovit (přednášející, kapely)
   kitchen?: KitchenFile[]; // kuchyně — nahrané fotky/soubory (nákupy, menu…)
