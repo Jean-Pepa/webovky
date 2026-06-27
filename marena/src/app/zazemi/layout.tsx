@@ -39,7 +39,7 @@ const NAV: { href: string; label: string; icon: IconName }[] = [
 ];
 
 export default function ZazemiLayout({ children }: { children: React.ReactNode }) {
-  const { ready, authed, me, setMe, logout, syncError, dismissSyncError, db, currentYear, canEditCurrentYear, pendingApproval } = useStore();
+  const { ready, authed, me, logout, syncError, dismissSyncError, db, currentYear, canEditCurrentYear, pendingApproval } = useStore();
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -96,13 +96,6 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
     router.replace("/");
   }
 
-  // Změnit jméno = znovu otevřít přihlašovací okno (login/registrace).
-  // Vyčistí identitu, čímž se zobrazí vstupní brána jako na začátku.
-  function changeName() {
-    setMenuOpen(false);
-    setMe("");
-  }
-
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-ink/10 bg-paper/85 backdrop-blur">
@@ -132,13 +125,6 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                 🔑 Heslo
               </button>
             )}
-            <button
-              onClick={changeName}
-              title="Změnit jméno (znovu přihlášení)"
-              className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-black/10 transition hover:bg-black/5"
-            >
-              ✏️ Jméno
-            </button>
             <YearSwitcher />
             <MeBadge />
           </div>
@@ -214,12 +200,6 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   🔑 Heslo
                 </button>
               )}
-              <button
-                onClick={changeName}
-                className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-black/10 hover:bg-black/5"
-              >
-                ✏️ Jméno
-              </button>
             </div>
             <nav className="flex flex-col gap-1">
               {NAV.map((n) => {
