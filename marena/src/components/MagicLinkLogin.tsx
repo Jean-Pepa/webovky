@@ -143,8 +143,9 @@ export function MagicLinkLogin({ deniedHint }: { deniedHint?: boolean }) {
       <div className="space-y-3 text-white">
         <h1 className="font-display text-2xl font-semibold">Mrkni do e-mailu 📬</h1>
         <p className="text-sm text-white/80">
-          Na <strong>{email.trim()}</strong> jsme poslali přihlašovací odkaz. Klikni na něj na tomhle zařízení a budeš
-          v zázemí. (Odkaz chvíli platí; pokud nepřišel, koukni do spamu.)
+          Na <strong>{email.trim()}</strong> jsme poslali přihlašovací odkaz. Klikni na něj, potvrdí se přihlášení a{" "}
+          <strong>tady v tomhle okně</strong> tě to pak samo pustí dovnitř — nech ho prosím otevřené. (Odkaz chvíli platí;
+          pokud nepřišel, koukni do spamu.)
         </p>
         <button className="btn-secondary" onClick={() => setSent(false)}>
           Zadat jiný e-mail
