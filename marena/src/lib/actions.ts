@@ -23,7 +23,7 @@ export type Action =
   | { type: "deleteYear"; yearId: string }
   | { type: "addMember"; yearId: string; name: string; roleIds: string[]; email?: string; phone?: string; contact?: string; note?: string; approved?: boolean }
   | { type: "approveMember"; yearId: string; memberId: string }
-  | { type: "updateMember"; yearId: string; memberId: string; patch: { name?: string; roleIds?: string[]; email?: string; phone?: string; contact?: string; note?: string } }
+  | { type: "updateMember"; yearId: string; memberId: string; patch: { name?: string; roleIds?: string[]; email?: string; phone?: string; contact?: string; note?: string; approved?: boolean } }
   | { type: "removeMember"; yearId: string; memberId: string }
   // Kompletní smazání účtu — vždy člena, volitelně i jeho příspěvky, hlasy a směny.
   | { type: "purgeMember"; yearId: string; memberId: string; name: string; opts: { posts?: boolean; votes?: boolean; shifts?: boolean } }

@@ -10,7 +10,7 @@ import { supabaseEnabled } from "@/lib/supabase/config";
 import { MagicLinkLogin } from "@/components/MagicLinkLogin";
 
 export default function LoginPage() {
-  const { login, authed, ready } = useStore();
+  const { login, authed, ready, setMe } = useStore();
   const router = useRouter();
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -18,14 +18,48 @@ export default function LoginPage() {
   const [passOk, setPassOk] = useState(false); // heslo do zázemí prošlo → ukaž e-mail
   const magic = supabaseEnabled();
 
+  // Údržba: když je appka vypnutá, ukáže se místo přihlášení nápis. Dovnitř se
+  // dostane jen správce (přes login + heslo), aby ji mohl zase zapnout.
+  const [maint, setMaint] = useState<boolean | null>(null);
+  const [adminMode, setAdminMode] = useState(false);
+  const [adminName, setAdminName] = useState("Mařena");
+  const [adminPass, setAdminPass] = useState("");
+  const [adminErr, setAdminErr] = useState<string | null>(null);
+  const [adminBusy, setAdminBusy] = useState(false);
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setErrParam(new URLSearchParams(window.location.search).get("err"));
   }, []);
 
   useEffect(() => {
+    fetch("/api/maintenance", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d: { maintenance?: boolean }) => setMaint(!!d.maintenance))
+      .catch(() => setMaint(false));
+  }, []);
+
+  useEffect(() => {
     if (ready && authed) router.replace("/zazemi");
   }, [ready, authed, router]);
+
+  async function submitAdmin(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setAdminErr(null);
+    setAdminBusy(true);
+    const res = await fetch("/api/auth/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: adminPass }),
+    }).catch(() => null);
+    setAdminBusy(false);
+    if (res && res.ok) {
+      setMe(adminName.trim() || "Mařena");
+      window.location.assign("/zazemi");
+    } else {
+      setAdminErr("Špatné heslo správce.");
+    }
+  }
 
   // Bez Supabase: heslo rovnou pustí dovnitř.
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -71,7 +105,52 @@ export default function LoginPage() {
           <Mascot size={150} wave />
         </div>
         <div className="rounded-3xl bg-white/10 p-7 text-white ring-1 ring-white/15 backdrop-blur-md">
-          {magic && passOk ? (
+          {maint === true ? (
+            adminMode ? (
+              // Údržba: jediná cesta dovnitř je správce (login + heslo).
+              <form onSubmit={submitAdmin} className="space-y-3">
+                <h1 className="font-display text-2xl font-semibold">🔑 Přihlášení správce</h1>
+                <p className="text-sm text-white/70">Aplikace je v údržbě. Dovnitř se dostaneš jen ty.</p>
+                <input
+                  className="w-full rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 text-base text-white placeholder:text-white/50 outline-none focus:border-marigold-300 sm:text-sm"
+                  placeholder="Login (jméno)"
+                  value={adminName}
+                  onChange={(e) => setAdminName(e.target.value)}
+                />
+                <input
+                  className="w-full rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 text-base text-white placeholder:text-white/50 outline-none focus:border-marigold-300 sm:text-sm"
+                  type="password"
+                  placeholder="Heslo správce"
+                  value={adminPass}
+                  onChange={(e) => setAdminPass(e.target.value)}
+                  autoFocus
+                />
+                {adminErr && <p className="rounded-xl bg-red-500/20 px-3 py-2 text-sm text-red-100">{adminErr}</p>}
+                <button type="submit" disabled={adminBusy || !adminPass} className="btn-primary w-full">
+                  {adminBusy ? "Přihlašuji…" : "Vstoupit jako správce"}
+                </button>
+                <button type="button" onClick={() => setAdminMode(false)} className="w-full text-center text-xs text-white/60 hover:text-white">
+                  ← Zpět
+                </button>
+              </form>
+            ) : (
+              // Údržba: nápis pro běžné lidi + nenápadný vstup pro správce.
+              <div className="text-center">
+                <div className="text-5xl">🛠️</div>
+                <h1 className="mt-3 font-display text-2xl font-semibold">Probíhá údržba</h1>
+                <p className="mt-2 text-sm text-white/80">
+                  Aplikace je dočasně vypnutá. Nedá se nic dělat, dokud ji správce zase nezapne. Zkus to prosím za chvíli.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setAdminMode(true)}
+                  className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-white/60 hover:text-white"
+                >
+                  🔑 Správce
+                </button>
+              </div>
+            )
+          ) : magic && passOk ? (
             // 2. krok (Supabase): přihlášení e-mailem
             <MagicLinkLogin deniedHint={errParam === "denied"} />
           ) : (

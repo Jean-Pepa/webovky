@@ -31,5 +31,7 @@ export async function GET(req: Request) {
     return NextResponse.redirect(`${origin}/prihlaseni?err=denied`);
   }
 
-  return NextResponse.redirect(`${origin}/zazemi`);
+  // Nepouštíme dovnitř tady (v okně z odkazu) — jen potvrdíme přihlášení. Dovnitř
+  // se člověk dostane v původním okně, kde zadával e-mail (to si hlídá session).
+  return NextResponse.redirect(`${origin}/auth/hotovo`);
 }
