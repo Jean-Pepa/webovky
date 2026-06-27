@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store";
 
@@ -17,7 +17,11 @@ export function MagicLinkLogin({ deniedHint }: { deniedHint?: boolean }) {
   const [adminBusy, setAdminBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [phonePrefix, setPhonePrefix] = useState("+420"); // hodně Slováků → CZ/SK na výběr
+  const [phoneNum, setPhoneNum] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const fullPhone = `${phonePrefix ? phonePrefix + " " : ""}${phoneNum.trim()}`.trim();
 
   async function submitAdmin(e: React.FormEvent) {
     e.preventDefault();
@@ -39,6 +43,22 @@ export function MagicLinkLogin({ deniedHint }: { deniedHint?: boolean }) {
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  // Po odeslání odkazu hlídej, jestli se člověk mezitím přihlásil (klikl na odkaz
+  // v jiné záložce) — pak pustí dovnitř i tohle původní okno.
+  useEffect(() => {
+    if (!sent) return;
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch("/api/auth/status", { cache: "no-store" });
+        const d = (await res.json()) as { authed?: boolean };
+        if (d?.authed) window.location.assign("/zazemi");
+      } catch {
+        /* ignore */
+      }
+    }, 3000);
+    return () => clearInterval(id);
+  }, [sent]);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
@@ -52,7 +72,7 @@ export function MagicLinkLogin({ deniedHint }: { deniedHint?: boolean }) {
         email: mail,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: mode === "register" ? { name: name.trim() } : undefined,
+          data: mode === "register" ? { name: name.trim(), phone: fullPhone || undefined } : undefined,
         },
       });
       if (error) {
@@ -156,6 +176,27 @@ export function MagicLinkLogin({ deniedHint }: { deniedHint?: boolean }) {
           onChange={(e) => setEmail(e.target.value)}
           autoFocus={mode === "login"}
         />
+        {mode === "register" && (
+          <div className="flex gap-2">
+            <select
+              className="rounded-xl border border-white/20 bg-white/10 px-2 py-2.5 text-base text-white outline-none focus:border-marigold-300 sm:text-sm"
+              value={phonePrefix}
+              onChange={(e) => setPhonePrefix(e.target.value)}
+              aria-label="Předvolba"
+            >
+              <option className="text-ink" value="+420">🇨🇿 +420</option>
+              <option className="text-ink" value="+421">🇸🇰 +421</option>
+              <option className="text-ink" value="">🌍 jiná</option>
+            </select>
+            <input
+              className="min-w-0 flex-1 rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 text-base text-white placeholder:text-white/50 outline-none focus:border-marigold-300 focus:ring-2 focus:ring-marigold-300/30 sm:text-sm"
+              type="tel"
+              placeholder={phonePrefix ? "telefon" : "celé číslo s předvolbou"}
+              value={phoneNum}
+              onChange={(e) => setPhoneNum(e.target.value)}
+            />
+          </div>
+        )}
         {err && <p className="rounded-xl bg-red-500/20 px-3 py-2 text-sm text-red-100">{err}</p>}
         <button type="submit" disabled={busy} className="btn-primary w-full">
           {busy ? "Posílám…" : "Poslat přihlašovací odkaz"}
