@@ -651,6 +651,10 @@ function ProfileForm({
   // Volně obsazená funkce → výchozí vedoucí; jinak výchozí pomocník.
   const [asLead, setAsLead] = useState(roleEmpty);
 
+  // Když si bereš roli a kontakt už máš kompletní (z registrace), znovu se neptáme.
+  const contactComplete = !!(initial.name.trim() && initial.email.trim() && initial.phone.trim());
+  const skipContact = !!roleToAdd && contactComplete;
+
   return (
     <form
       className="space-y-3"
@@ -661,19 +665,29 @@ function ProfileForm({
         onSave({ name, email, phone, roleToAdd, asLead: canChooseLead ? asLead : false });
       }}
     >
-      <p className="text-sm text-ink-soft">Doplň prosím jméno, e-mail a telefon, ať tě ostatní v týmu zastihnou.</p>
-      <div>
-        <label className="label">Jméno</label>
-        <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Tvoje jméno" autoFocus />
-      </div>
-      <div>
-        <label className="label">E-mail</label>
-        <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ty@email.cz" />
-      </div>
-      <div>
-        <label className="label">Telefon</label>
-        <input className="input" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+420…" />
-      </div>
+      {skipContact ? (
+        <p className="rounded-xl bg-paper2 px-3 py-2 text-sm text-ink-soft">
+          Přidáš se jako <strong className="text-ink">{name}</strong>
+          {email ? ` · ${email}` : ""}
+          {phone ? ` · ${phone}` : ""}.
+        </p>
+      ) : (
+        <>
+          <p className="text-sm text-ink-soft">Doplň prosím jméno, e-mail a telefon, ať tě ostatní v týmu zastihnou.</p>
+          <div>
+            <label className="label">Jméno</label>
+            <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Tvoje jméno" autoFocus />
+          </div>
+          <div>
+            <label className="label">E-mail</label>
+            <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ty@email.cz" />
+          </div>
+          <div>
+            <label className="label">Telefon</label>
+            <input className="input" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+420…" />
+          </div>
+        </>
+      )}
 
       {roleToAdd &&
         (canChooseLead ? (

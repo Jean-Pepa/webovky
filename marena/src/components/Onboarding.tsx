@@ -42,8 +42,16 @@ export function Onboarding() {
         </span>
         <div>
           <h2 className="font-display text-lg font-semibold tracking-tight">Vítej v zázemí Mařeny</h2>
-          <p className="text-sm text-ink-soft">Tady běží celá organizace. Ve čtyřech krocích jsi v obraze:</p>
+          <p className="text-sm text-ink-soft">Hlavní místo, kde běží celá organizace. Ve čtyřech krocích jsi v obraze:</p>
         </div>
+      </div>
+
+      <div className="mt-3 rounded-2xl border border-marigold-200 bg-white/70 p-3">
+        <p className="text-sm font-semibold text-ink">Všechno na jednom místě — žádné další platformy.</p>
+        <p className="mt-0.5 text-xs text-ink-soft">
+          Konec hledání po Messengeru, WhatsAppu, mailech, Excelech a skupinách. Tým, nástěnka, směny, hlasování,
+          kalendář, finance, kontakty i merch — všechno řešíme tady. Jeden odkaz, jeden přehled.
+        </p>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
