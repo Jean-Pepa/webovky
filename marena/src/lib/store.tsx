@@ -156,11 +156,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       } catch {
         /* ignore */
       }
-      localStorage.removeItem(LS_ME);
     }
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    // Úplné odhlášení: zapomeň heslo do zázemí i identitu, ať se příště musí
+    // znovu zadat heslo (marena2026) i přihlášení.
     localStorage.removeItem(LS_AUTH);
-    setState((s) => ({ ...s, authed: false, ...(supabaseEnabled() ? { me: "" } : {}) }));
+    localStorage.removeItem(LS_ME);
+    setState((s) => ({ ...s, authed: false, me: "" }));
   }, []);
 
   const setMe = useCallback((name: string) => {

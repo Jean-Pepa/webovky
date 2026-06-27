@@ -93,7 +93,9 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   async function doLogout() {
     setMenuOpen(false);
     await logout();
-    router.replace("/");
+    // Tvrdé přesměrování na úvod — kompletně vyčistí stav appky, takže příště
+    // se musí znovu zadat heslo do zázemí i přihlášení.
+    window.location.assign("/");
   }
 
   return (
@@ -316,7 +318,30 @@ function IdentityGate() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // Záložní přihlášení správce (login + heslo) — stejné jako na úvodním okně.
+  const [admin, setAdmin] = useState(false);
+  const [adminName, setAdminName] = useState("Mařena");
+  const [adminPass, setAdminPass] = useState("");
+  const [adminErr, setAdminErr] = useState<string | null>(null);
+  const [adminBusy, setAdminBusy] = useState(false);
+
   const matched = currentYear?.members.find((m) => sameName(m.name, name));
+  // Telefony porovnáváme bez mezer, ať „+420 776…" == „+420776…".
+  const samePhone = (a?: string, b?: string) => !!a && !!b && a.replace(/\s+/g, "") === b.replace(/\s+/g, "");
+
+  async function submitAdmin(e: React.FormEvent) {
+    e.preventDefault();
+    setAdminErr(null);
+    setAdminBusy(true);
+    const res = await fetch("/api/auth/admin", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ password: adminPass }),
+    }).catch(() => null);
+    setAdminBusy(false);
+    if (res && res.ok) setMe(adminName.trim() || ADMIN_NAME);
+    else setAdminErr("Špatné heslo správce.");
+  }
 
   function onNameChange(v: string) {
     setName(v);
@@ -344,20 +369,59 @@ function IdentityGate() {
     e.preventDefault();
     setErr(null);
     const n = name.trim();
+    const mail = email.trim();
+    const tel = phone.trim();
     if (!n) return setErr("Vyplň jméno.");
-    if (!email.trim()) return setErr("Vyplň e-mail.");
-    if (!phone.trim()) return setErr("Vyplň telefon.");
+    if (!mail) return setErr("Vyplň e-mail.");
+    if (!tel) return setErr("Vyplň telefon.");
+
+    // Žádné duplicity: e-mail, telefon ani jméno existujícího účtu nejdou znovu
+    // zaregistrovat — člověk se má místo toho přihlásit přes „Už mám účet".
+    const members = currentYear?.members ?? [];
+    const byEmail = members.find((m) => (m.email ?? "").trim().toLowerCase() === mail.toLowerCase());
+    if (byEmail) return setErr("Tento e-mail už v týmu existuje. Přihlas se vlevo přes „Už mám účet“.");
+    const byPhone = members.find((m) => samePhone(m.phone, tel));
+    if (byPhone) return setErr("Tento telefon už v týmu existuje. Přihlas se vlevo přes „Už mám účet“.");
+    const byName = members.find((m) => sameName(m.name, n));
+    // Jméno s vyplněným e-mailem = už zaregistrovaný účet → blokuj.
+    if (byName && (byName.email ?? "").trim()) {
+      return setErr("Účet s tímto jménem už existuje. Přihlas se vlevo přes „Už mám účet“.");
+    }
+
     setBusy(true);
-    // Založ (nebo doplň) člena s kontaktem v aktuálním ročníku.
+    // Založ nového člena — nebo doplň kontakt předpřipravenému členu (bez e-mailu),
+    // kterého správce přidal jen jménem; to není duplicita.
     if (currentYear && canEditCurrentYear) {
-      const existing = currentYear.members.find((m) => sameName(m.name, n));
-      if (existing) {
-        await dispatch({ type: "updateMember", yearId: currentYear.id, memberId: existing.id, patch: { email: email.trim(), phone: phone.trim() } });
+      if (byName) {
+        await dispatch({ type: "updateMember", yearId: currentYear.id, memberId: byName.id, patch: { email: mail, phone: tel } });
       } else {
-        await dispatch({ type: "addMember", yearId: currentYear.id, name: n, roleIds: [], email: email.trim(), phone: phone.trim() });
+        await dispatch({ type: "addMember", yearId: currentYear.id, name: n, roleIds: [], email: mail, phone: tel });
       }
     }
     setMe(n);
+  }
+
+  if (admin) {
+    return (
+      <div className="grid min-h-screen place-items-center px-4">
+        <div className="card w-full max-w-sm p-7">
+          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-marigold-100 text-2xl">🔑</div>
+          <h1 className="text-center font-display text-xl font-semibold">Přihlášení správce</h1>
+          <p className="mt-1 text-center text-sm text-ink-soft">Login a heslo správce.</p>
+          <form onSubmit={submitAdmin} className="mt-4 flex flex-col gap-2">
+            <input className="input" placeholder="Login (jméno)" value={adminName} onChange={(e) => setAdminName(e.target.value)} />
+            <input className="input" type="password" placeholder="Heslo správce" value={adminPass} onChange={(e) => setAdminPass(e.target.value)} autoFocus />
+            {adminErr && <p className="text-sm text-red-600">{adminErr}</p>}
+            <button className="btn-primary mt-1" type="submit" disabled={adminBusy || !adminPass}>
+              {adminBusy ? "Přihlašuji…" : "Vstoupit jako správce"}
+            </button>
+            <button type="button" onClick={() => setAdmin(false)} className="text-center text-xs text-ink-soft hover:text-ink">
+              ← Zpět na přihlášení
+            </button>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -422,13 +486,34 @@ function IdentityGate() {
                 setPhone(e.target.value);
               }}
             />
-            {matched && <p className="text-xs text-leaf-700">👋 Vítej zpátky, {matched.name}! Kontakt jsme ti předvyplnili.</p>}
+            {matched &&
+              ((matched.email ?? "").trim() ? (
+                <p className="text-xs text-amber-700">
+                  Účet „{matched.name}“ už existuje — přihlas se vlevo přes „Už mám účet“.
+                </p>
+              ) : (
+                <p className="text-xs text-leaf-700">👋 Vítej zpátky, {matched.name}! Kontakt jsme ti předvyplnili.</p>
+              ))}
             {err && <p className="text-sm text-red-600">{err}</p>}
             <button className="btn-primary mt-1" type="submit" disabled={busy}>
               {busy ? "Ukládám…" : "Vytvořit účet a vstoupit"}
             </button>
           </form>
         )}
+
+        <div className="mt-4 border-t border-ink/10 pt-3 text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setAdmin(true);
+              setErr(null);
+            }}
+            title="Přihlášení správce (login + heslo)"
+            className="inline-flex items-center gap-1 text-xs font-medium text-ink-soft hover:text-ink"
+          >
+            🔑 Správce
+          </button>
+        </div>
       </div>
     </div>
   );
