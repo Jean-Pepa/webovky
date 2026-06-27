@@ -7,6 +7,8 @@ import { seedDB } from "./seed";
 import { isYearEditable, yearFromPassword } from "./years";
 import { supabaseEnabled } from "./supabase/config";
 import { createSupabaseBrowser } from "./supabase/client";
+import { sameName } from "./names";
+import { isAdmin } from "./admin";
 
 type Mode = "loading" | "server" | "local";
 
@@ -24,6 +26,7 @@ interface StoreState {
 interface StoreApi extends StoreState {
   currentYear: Year | null;
   canEditCurrentYear: boolean; // smím měnit aktuálně vybraný ročník? (starší jsou zamčené)
+  pendingApproval: boolean; // čekám na schválení správcem (zamčeno, jen náhled)
   login: (password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   setMe: (name: string) => void;
@@ -220,12 +223,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return state.db.years.find((y) => y.id === state.currentYearId) ?? state.db.years[0] ?? null;
   }, [state.db, state.currentYearId]);
 
-  const canEditCurrentYear = isYearEditable(state.db, currentYear?.id ?? null, state.me);
+  // Čekání na schválení: můj člen má approved === false (a nejsem správce).
+  const myMember = currentYear?.members.find((m) => sameName(m.name, state.me));
+  const pendingApproval = !isAdmin(state.me) && myMember?.approved === false;
+  const canEditCurrentYear = isYearEditable(state.db, currentYear?.id ?? null, state.me) && !pendingApproval;
 
   const value: StoreApi = {
     ...state,
     currentYear,
     canEditCurrentYear,
+    pendingApproval,
     login,
     logout,
     setMe,

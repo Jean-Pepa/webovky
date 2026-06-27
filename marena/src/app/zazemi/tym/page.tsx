@@ -413,7 +413,18 @@ export default function TymPage() {
                     .sort((a, b) => a.name.localeCompare(b.name, "cs"))
                     .map((m) => (
                       <li key={m.id} className="flex items-center gap-2 py-1.5 text-sm">
-                        <span className="min-w-0 flex-1 truncate">{m.name}</span>
+                        <span className="min-w-0 flex-1 truncate">
+                          {m.name}
+                          {m.approved === false && <span className="ml-1.5 text-xs font-medium text-amber-600">⏳ čeká</span>}
+                        </span>
+                        {m.approved === false && (
+                          <button
+                            className="shrink-0 rounded-full bg-leaf px-3 py-1 text-xs font-semibold text-white transition hover:opacity-90"
+                            onClick={() => dispatch({ type: "approveMember", yearId: year.id, memberId: m.id })}
+                          >
+                            Schválit
+                          </button>
+                        )}
                         <button className="btn-danger shrink-0" onClick={() => setPurge(m)}>
                           Smazat účet
                         </button>

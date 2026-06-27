@@ -30,9 +30,9 @@ export function SupabaseGate() {
       }
       const metaName = (user?.user_metadata?.name as string | undefined)?.trim();
       const name = metaName || email.split("@")[0];
-      // První přihlášení bez člena → založ ho (jen jde-li ročník upravovat).
-      if (canEditCurrentYear && metaName) {
-        await dispatch({ type: "addMember", yearId: currentYear.id, name, roleIds: [], email });
+      // První přihlášení bez člena → založ ho jako NESCHVÁLENÉHO (čeká na správce).
+      if (metaName) {
+        await dispatch({ type: "addMember", yearId: currentYear.id, name, roleIds: [], email, approved: false });
       }
       setMe(name);
     })();

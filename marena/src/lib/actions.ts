@@ -21,7 +21,8 @@ export type Action =
   | { type: "createYear"; id: string; label?: string; theme?: string; fledaDate?: string; copyFromYearId?: string }
   | { type: "updateYear"; yearId: string; patch: Partial<Pick<Year, "label" | "theme" | "fledaDate" | "plannedPeople" | "deposit">> }
   | { type: "deleteYear"; yearId: string }
-  | { type: "addMember"; yearId: string; name: string; roleIds: string[]; email?: string; phone?: string; contact?: string; note?: string }
+  | { type: "addMember"; yearId: string; name: string; roleIds: string[]; email?: string; phone?: string; contact?: string; note?: string; approved?: boolean }
+  | { type: "approveMember"; yearId: string; memberId: string }
   | { type: "updateMember"; yearId: string; memberId: string; patch: { name?: string; roleIds?: string[]; email?: string; phone?: string; contact?: string; note?: string } }
   | { type: "removeMember"; yearId: string; memberId: string }
   // Kompletní smazání účtu — vždy člena, volitelně i jeho příspěvky, hlasy a směny.
@@ -199,11 +200,17 @@ export function applyAction(db: DB, a: Action): DB {
               phone: a.phone?.trim() || undefined,
               contact: a.contact?.trim() || undefined,
               note: a.note?.trim() || undefined,
+              approved: a.approved,
               createdAt: now(),
             },
           ],
         }),
       );
+    case "approveMember":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        members: y.members.map((m) => (m.id === a.memberId ? { ...m, approved: true } : m)),
+      }));
     case "updateMember":
       return mapYear(db, a.yearId, (y) =>
         normalizeLeads({

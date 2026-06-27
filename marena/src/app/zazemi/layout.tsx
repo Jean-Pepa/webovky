@@ -39,7 +39,7 @@ const NAV: { href: string; label: string; icon: IconName }[] = [
 ];
 
 export default function ZazemiLayout({ children }: { children: React.ReactNode }) {
-  const { ready, authed, me, setMe, logout, syncError, dismissSyncError, db, currentYear, canEditCurrentYear } = useStore();
+  const { ready, authed, me, setMe, logout, syncError, dismissSyncError, db, currentYear, canEditCurrentYear, pendingApproval } = useStore();
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -274,10 +274,20 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
       {isAdmin(me) && <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />}
       {isAdmin(me) && <ChangePasswordModal open={pwdOpen} onClose={() => setPwdOpen(false)} />}
 
-      {currentYear && !canEditCurrentYear && (
+      {currentYear && !canEditCurrentYear && !pendingApproval && (
         <div className="flex items-center justify-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs font-medium text-amber-800">
           <Icon name="book" className="h-4 w-4 shrink-0" />
           <span>🔒 {currentYear.label} je uzamčený ročník — jde jen prohlížet. Měnit lze jen aktuální (nejnovější) ročník.</span>
+        </div>
+      )}
+
+      {/* Čekání na schválení správcem — velký nápis uprostřed, obsah jen ke čtení. */}
+      {pendingApproval && (
+        <div className="pointer-events-none fixed inset-x-0 top-1/3 z-40 grid place-items-center px-4">
+          <div className="rounded-2xl bg-amber-500/95 px-6 py-5 text-center text-white shadow-2xl ring-2 ring-white/30">
+            <div className="font-display text-2xl font-bold sm:text-3xl">⏳ Čeká se na schválení</div>
+            <div className="mt-1.5 text-sm text-white/90">Správce tě musí schválit. Zatím můžeš jen prohlížet — nic se nedá měnit.</div>
+          </div>
         </div>
       )}
 
