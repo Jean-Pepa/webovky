@@ -93,7 +93,9 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   async function doLogout() {
     setMenuOpen(false);
     await logout();
-    router.replace("/");
+    // Tvrdé přesměrování na úvod — kompletně vyčistí stav appky, takže příště
+    // se musí znovu zadat heslo do zázemí i přihlášení.
+    window.location.assign("/");
   }
 
   return (
