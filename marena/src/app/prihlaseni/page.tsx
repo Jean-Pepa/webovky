@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
   const [errParam, setErrParam] = useState<string | null>(null);
+  const [passOk, setPassOk] = useState(false); // heslo do zázemí prošlo → ukaž e-mail
   const magic = supabaseEnabled();
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export default function LoginPage() {
     if (ready && authed) router.replace("/zazemi");
   }, [ready, authed, router]);
 
+  // Bez Supabase: heslo rovnou pustí dovnitř.
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
@@ -34,6 +36,25 @@ export default function LoginPage() {
     setBusy(false);
     if (ok) router.push("/zazemi");
     else setError(true);
+  }
+
+  // Se Supabase: heslo je jen první krok — pak teprve přihlášení e-mailem.
+  async function submitPassword(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setBusy(true);
+    const fd = new FormData(e.currentTarget);
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: String(fd.get("password") || "") }),
+    }).catch(() => null);
+    setBusy(false);
+    if (res && res.ok) {
+      setError(false);
+      setPassOk(true);
+    } else {
+      setError(true);
+    }
   }
 
   return (
@@ -50,12 +71,15 @@ export default function LoginPage() {
           <Mascot size={150} wave />
         </div>
         <div className="rounded-3xl bg-white/10 p-7 text-white ring-1 ring-white/15 backdrop-blur-md">
-          {magic ? (
+          {magic && passOk ? (
+            // 2. krok (Supabase): přihlášení e-mailem
             <MagicLinkLogin deniedHint={errParam === "denied"} />
           ) : (
+            // Heslo do zázemí — bez Supabase rovnou pustí dovnitř, se Supabase je to 1. krok.
             <>
               <h1 className="font-display text-2xl font-semibold">Vstup do zázemí</h1>
-              <form onSubmit={submit} className="mt-5 space-y-3">
+              {magic && <p className="mt-1 text-sm text-white/70">Nejdřív společné heslo, pak přihlášení e-mailem.</p>}
+              <form onSubmit={magic ? submitPassword : submit} className="mt-5 space-y-3">
                 <input
                   name="password"
                   type="password"
@@ -71,7 +95,7 @@ export default function LoginPage() {
                   </p>
                 )}
                 <button type="submit" disabled={busy} className="btn-primary w-full">
-                  {busy ? "Přihlašuji…" : "Vstoupit"}
+                  {busy ? "Přihlašuji…" : magic ? "Pokračovat" : "Vstoupit"}
                 </button>
               </form>
             </>

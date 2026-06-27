@@ -23,13 +23,15 @@ export function authToken(): string {
 }
 
 export async function isAuthed(): Promise<boolean> {
-  // Když je zapnutý Supabase magic-link, přihlášení řídí Supabase session +
-  // allowlist (ne sdílené heslo). Jinak platí původní cookie ze sdíleného hesla.
+  const jar = await cookies();
+  const passOk = jar.get(AUTH_COOKIE)?.value === authToken();
+  // Se Supabase je potřeba OBOJÍ: nejdřív společné heslo (cookie), pak ověřený
+  // e-mail z allowlistu. Bez Supabase stačí samotné heslo jako dosud.
   if (supabaseEnabled()) {
+    if (!passOk) return false;
     const user = await getSupabaseUser();
     if (!user?.email) return false;
     return isEmailAllowed(user.email);
   }
-  const jar = await cookies();
-  return jar.get(AUTH_COOKIE)?.value === authToken();
+  return passOk;
 }
