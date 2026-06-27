@@ -1,6 +1,9 @@
 import { cookies } from "next/headers";
 import { createHash } from "crypto";
 import { isYearPassword } from "./years";
+import { supabaseEnabled } from "./supabase/config";
+import { getSupabaseUser } from "./supabase/server";
+import { isEmailAllowed } from "./allowlist";
 
 // Hesla do zázemí: pro každý ročník jedno — „marena2026" … „marena2050".
 // Volitelně lze přes MARENA_PASSWORD nastavit ještě další (master) heslo.
@@ -20,6 +23,13 @@ export function authToken(): string {
 }
 
 export async function isAuthed(): Promise<boolean> {
+  // Když je zapnutý Supabase magic-link, přihlášení řídí Supabase session +
+  // allowlist (ne sdílené heslo). Jinak platí původní cookie ze sdíleného hesla.
+  if (supabaseEnabled()) {
+    const user = await getSupabaseUser();
+    if (!user?.email) return false;
+    return isEmailAllowed(user.email);
+  }
   const jar = await cookies();
   return jar.get(AUTH_COOKIE)?.value === authToken();
 }

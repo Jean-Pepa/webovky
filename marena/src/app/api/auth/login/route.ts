@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { AUTH_COOKIE, authToken, isValidPassword } from "@/lib/auth";
+import { AUTH_COOKIE, authToken } from "@/lib/auth";
+import { verifyPassword } from "@/lib/password";
 import { yearFromPassword } from "@/lib/years";
 import { isConfigured, readDB } from "@/lib/server-db";
 
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const password = String(body?.password ?? "");
-  if (!isValidPassword(password)) {
+  if (!(await verifyPassword(password))) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
   // Heslo na ročník (marenaYYYY) platí, jen když ten ročník existuje — založit
