@@ -67,11 +67,29 @@ export function MagicLinkLogin({ deniedHint }: { deniedHint?: boolean }) {
     if (mode === "register" && !name.trim()) return setErr("Zadej jméno.");
     setBusy(true);
     try {
+      // „Už mám účet": odkaz pošli jen na e-mail, který v týmu existuje. Na neznámý
+      // se nic neposílá — člověka to pošle na registraci.
+      if (mode === "login") {
+        const r = await fetch("/api/auth/email-known", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ email: mail }),
+        }).catch(() => null);
+        const known = !!(r && r.ok && ((await r.json()) as { known?: boolean }).known);
+        if (!known) {
+          setErr("Tenhle e-mail u nás nemáme. Zkontroluj ho, nebo se vpravo zaregistruj.");
+          setBusy(false);
+          return;
+        }
+      }
       const supabase = createSupabaseBrowser();
       const { error } = await supabase.auth.signInWithOtp({
         email: mail,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
+          // při přihlášení nezakládej nový účet v Supabase (jen existující),
+          // při registraci ano.
+          shouldCreateUser: mode === "register",
           data: mode === "register" ? { name: name.trim(), phone: fullPhone || undefined } : undefined,
         },
       });

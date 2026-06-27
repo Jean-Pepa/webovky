@@ -263,12 +263,22 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
         </div>
       )}
 
-      {/* Čekání na schválení správcem — velký nápis uprostřed, obsah jen ke čtení. */}
+      {/* Čekání na schválení správcem — velký nápis uprostřed. Vrstva přes celou
+          obrazovku zachytává kliknutí (na nic se nedá klikat), ale nástěnku za ní
+          je vidět. Jediná akce je odhlášení, ať člověk neuvízne. */}
       {pendingApproval && (
-        <div className="pointer-events-none fixed inset-x-0 top-1/3 z-40 grid place-items-center px-4">
-          <div className="rounded-2xl bg-amber-500/95 px-6 py-5 text-center text-white shadow-2xl ring-2 ring-white/30">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 px-4 backdrop-blur-[1px]">
+          <div className="max-w-sm rounded-2xl bg-amber-500 px-6 py-6 text-center text-white shadow-2xl ring-2 ring-white/30">
             <div className="font-display text-2xl font-bold sm:text-3xl">⏳ Čeká se na schválení</div>
-            <div className="mt-1.5 text-sm text-white/90">Správce tě musí schválit. Zatím můžeš jen prohlížet — nic se nedá měnit.</div>
+            <div className="mt-2 text-sm text-white/95">
+              Jsi v systému, ale dokud tě správce neschválí, nedá se nic ovládat. Mrkni sem za chvíli znovu.
+            </div>
+            <button
+              onClick={doLogout}
+              className="mt-4 rounded-full bg-white/20 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-white/30"
+            >
+              Odhlásit se
+            </button>
           </div>
         </div>
       )}
@@ -309,10 +319,11 @@ function IdentityGate() {
   // Přihlášení (už mám účet) — e-mail; správce zadá jméno Mařena.
   const [loginId, setLoginId] = useState("");
 
-  // Registrace (nový účet)
+  // Registrace (nový účet). Telefon začíná českou předvolbou — Slováci si přepíšou
+  // na +421, ostatní na svou.
   const [name, setName] = useState(me);
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState("+420 ");
   const touched = useRef({ email: false, phone: false }); // ať se ručně psané nepřepíše
 
   const [err, setErr] = useState<string | null>(null);
@@ -390,12 +401,13 @@ function IdentityGate() {
 
     setBusy(true);
     // Založ nového člena — nebo doplň kontakt předpřipravenému členu (bez e-mailu),
-    // kterého správce přidal jen jménem; to není duplicita.
+    // kterého správce přidal jen jménem; to není duplicita. V obou případech účet
+    // čeká na schválení správcem (approved: false) — do té doby je zamčený.
     if (currentYear && canEditCurrentYear) {
       if (byName) {
-        await dispatch({ type: "updateMember", yearId: currentYear.id, memberId: byName.id, patch: { email: mail, phone: tel } });
+        await dispatch({ type: "updateMember", yearId: currentYear.id, memberId: byName.id, patch: { email: mail, phone: tel, approved: false } });
       } else {
-        await dispatch({ type: "addMember", yearId: currentYear.id, name: n, roleIds: [], email: mail, phone: tel });
+        await dispatch({ type: "addMember", yearId: currentYear.id, name: n, roleIds: [], email: mail, phone: tel, approved: false });
       }
     }
     setMe(n);
