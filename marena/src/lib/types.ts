@@ -9,6 +9,7 @@ export interface Member {
   phone?: string;
   contact?: string; // starší pole (instagram apod.) — kvůli zpětné kompatibilitě
   note?: string;
+  approved?: boolean; // schválení správcem. false = čeká (zamčeno); jinak má přístup
   createdAt: string;
 }
 

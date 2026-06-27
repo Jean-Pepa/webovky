@@ -14,6 +14,19 @@ export function isValidPassword(pw: string): boolean {
 }
 
 export const AUTH_COOKIE = "marena_auth";
+export const ADMIN_COOKIE = "marena_admin";
+
+// Záložní přihlášení správce (login + heslo) — obchází Supabase i společné heslo.
+// Heslo lze přebít přes MARENA_ADMIN_PASSWORD; výchozí je domluvené.
+function adminPassword(): string {
+  return process.env.MARENA_ADMIN_PASSWORD || "Jenicekuzjde";
+}
+export function checkAdminPassword(pw: string): boolean {
+  return (pw || "").trim() === adminPassword();
+}
+export function adminToken(): string {
+  return createHash("sha256").update(`marena:admin:v1:${adminPassword()}`).digest("hex");
+}
 
 // Do cookie neukládáme heslo, ale stabilní odvozený token (hash). Token je
 // stejný pro všechna platná hesla — cookie znamená jen „přihlášen do zázemí".
@@ -24,6 +37,8 @@ export function authToken(): string {
 
 export async function isAuthed(): Promise<boolean> {
   const jar = await cookies();
+  // Správcovský záložní login (login + heslo) — plný přístup, obchází Supabase.
+  if (jar.get(ADMIN_COOKIE)?.value === adminToken()) return true;
   const passOk = jar.get(AUTH_COOKIE)?.value === authToken();
   // Se Supabase je potřeba OBOJÍ: nejdřív společné heslo (cookie), pak ověřený
   // e-mail z allowlistu. Bez Supabase stačí samotné heslo jako dosud.

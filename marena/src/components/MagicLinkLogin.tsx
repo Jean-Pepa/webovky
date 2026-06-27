@@ -2,14 +2,40 @@
 
 import { useState } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
+import { useStore } from "@/lib/store";
 
 // Přihlášení e-mailem (magic link). Zadáš e-mail → přijde odkaz → klik → uvnitř.
 // „Zaregistrovat se" navíc uloží jméno (použije se při založení člena).
+// Malá ikonka „Správce" navíc nabízí záložní přihlášení správce (login + heslo).
 export function MagicLinkLogin({ deniedHint }: { deniedHint?: boolean }) {
+  const { setMe } = useStore();
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [admin, setAdmin] = useState(false);
+  const [adminName, setAdminName] = useState("Mařena");
+  const [adminPass, setAdminPass] = useState("");
+  const [adminErr, setAdminErr] = useState<string | null>(null);
+  const [adminBusy, setAdminBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+
+  async function submitAdmin(e: React.FormEvent) {
+    e.preventDefault();
+    setAdminErr(null);
+    setAdminBusy(true);
+    const res = await fetch("/api/auth/admin", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ password: adminPass }),
+    }).catch(() => null);
+    setAdminBusy(false);
+    if (res && res.ok) {
+      setMe(adminName.trim() || "Mařena");
+      window.location.assign("/zazemi");
+    } else {
+      setAdminErr("Špatné heslo správce.");
+    }
+  }
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -40,6 +66,38 @@ export function MagicLinkLogin({ deniedHint }: { deniedHint?: boolean }) {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (admin) {
+    return (
+      <div className="text-white">
+        <h1 className="font-display text-2xl font-semibold">🔑 Přihlášení správce</h1>
+        <p className="mt-1 text-sm text-white/70">Login a heslo správce (bez e-mailu).</p>
+        <form onSubmit={submitAdmin} className="mt-4 space-y-3">
+          <input
+            className="w-full rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 text-base text-white placeholder:text-white/50 outline-none focus:border-marigold-300 focus:ring-2 focus:ring-marigold-300/30 sm:text-sm"
+            placeholder="Login (jméno)"
+            value={adminName}
+            onChange={(e) => setAdminName(e.target.value)}
+          />
+          <input
+            className="w-full rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 text-base text-white placeholder:text-white/50 outline-none focus:border-marigold-300 focus:ring-2 focus:ring-marigold-300/30 sm:text-sm"
+            type="password"
+            placeholder="Heslo správce"
+            value={adminPass}
+            onChange={(e) => setAdminPass(e.target.value)}
+            autoFocus
+          />
+          {adminErr && <p className="rounded-xl bg-red-500/20 px-3 py-2 text-sm text-red-100">{adminErr}</p>}
+          <button type="submit" disabled={adminBusy || !adminPass} className="btn-primary w-full">
+            {adminBusy ? "Přihlašuji…" : "Vstoupit jako správce"}
+          </button>
+          <button type="button" onClick={() => setAdmin(false)} className="w-full text-center text-xs text-white/60 hover:text-white">
+            ← Zpět na přihlášení e-mailem
+          </button>
+        </form>
+      </div>
+    );
   }
 
   if (sent) {
@@ -104,6 +162,14 @@ export function MagicLinkLogin({ deniedHint }: { deniedHint?: boolean }) {
         </button>
         <p className="text-xs text-white/60">Pošleme ti na e-mail odkaz, kterým se přihlásíš. Bez hesla.</p>
       </form>
+      <button
+        type="button"
+        onClick={() => setAdmin(true)}
+        title="Přihlášení správce (login + heslo)"
+        className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-white/60 hover:text-white"
+      >
+        🔑 Správce
+      </button>
     </div>
   );
 }
