@@ -46,10 +46,30 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
   const [boardUnread, setBoardUnread] = useState(0);
+  const [maint, setMaint] = useState<boolean | null>(null); // režim údržby (null = ještě nevíme)
 
   useEffect(() => {
     if (ready && !authed) router.replace("/prihlaseni");
   }, [ready, authed, router]);
+
+  // Stav údržby — načti a pravidelně osvěžuj, ať se členům zámek projeví i bez
+  // reloadu, když ho správce přepne.
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      fetch("/api/maintenance", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((d: { maintenance?: boolean }) => {
+          if (alive) setMaint(!!d.maintenance);
+        })
+        .catch(() => {});
+    load();
+    const id = setInterval(load, 20000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
 
   // Odznak nepřečtených na Nástěnce: spočítej příspěvky novější než poslední
   // návštěva nástěnky (per prohlížeč). Na /zazemi se vše označí za přečtené.
@@ -129,6 +149,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             )}
             <YearSwitcher />
             <MeBadge />
+            {isAdmin(me) && <AppPowerToggle maint={maint} onChanged={setMaint} />}
           </div>
           {/* Mobil: hamburger */}
           <button
@@ -191,6 +212,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <YearSwitcher />
               <MeBadge />
+              {isAdmin(me) && <AppPowerToggle maint={maint} onChanged={setMaint} />}
               {isAdmin(me) && (
                 <button
                   onClick={() => {
@@ -292,6 +314,26 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
         </div>
       )}
 
+      {/* Údržba — když správce vypne aplikaci, ostatní mají přes celou obrazovku
+          nápis a nic se nedá ovládat. Správce (může to zase zapnout) je výjimka. */}
+      {maint === true && !isAdmin(me) && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/50 px-4 backdrop-blur-[1px]">
+          <div className="max-w-sm rounded-2xl bg-ink px-6 py-6 text-center text-white shadow-2xl ring-2 ring-white/15">
+            <div className="text-4xl">🛠️</div>
+            <div className="mt-2 font-display text-2xl font-bold sm:text-3xl">Probíhá údržba</div>
+            <div className="mt-2 text-sm text-white/85">
+              Aplikace je dočasně vypnutá. Nedá se nic dělat, dokud ji správce zase nezapne. Zkus to za chvíli.
+            </div>
+            <button
+              onClick={doLogout}
+              className="mt-4 rounded-full bg-white/15 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-white/25"
+            >
+              Odhlásit se
+            </button>
+          </div>
+        </div>
+      )}
+
       <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
     </div>
   );
@@ -305,6 +347,42 @@ function MeBadge() {
     <span className="chip" title="Tvoje jméno">
       👤 {me}
     </span>
+  );
+}
+
+// Vypínač aplikace (jen správce). Zapnuto = appka běží; vypnuto = údržba
+// (ostatní mají přes celou obrazovku nápis a nic nejde dělat).
+function AppPowerToggle({ maint, onChanged }: { maint: boolean | null; onChanged: (next: boolean) => void }) {
+  const [busy, setBusy] = useState(false);
+  const appOn = maint === false;
+
+  async function toggle() {
+    if (maint === null || busy) return;
+    const next = !maint; // nový stav údržby
+    setBusy(true);
+    const r = await fetch("/api/maintenance", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ on: next }),
+    }).catch(() => null);
+    setBusy(false);
+    if (r && r.ok) onChanged(next);
+    else alert("Přepnutí se nepovedlo. (Vypínač funguje jen s Redisem, ne v demu.)");
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={maint === null || busy}
+      title={appOn ? "Aplikace běží — klikni pro údržbu (vypnutí)" : "Údržba — klikni pro zapnutí aplikace"}
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-black/10 transition hover:bg-black/5 disabled:opacity-50"
+    >
+      <span className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition ${appOn ? "bg-leaf" : "bg-red-500"}`}>
+        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${appOn ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+      </span>
+      <span className={appOn ? "text-leaf-700" : "text-red-600"}>{appOn ? "Appka běží" : "Údržba"}</span>
+    </button>
   );
 }
 
