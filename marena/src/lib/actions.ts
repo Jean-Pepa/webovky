@@ -38,6 +38,7 @@ export type Action =
   | { type: "vote"; yearId: string; pollId: string; optionId: string; voter: string }
   | { type: "removeVoter"; yearId: string; pollId: string; optionId: string; voter: string }
   | { type: "closePoll"; yearId: string; pollId: string }
+  | { type: "updatePoll"; yearId: string; pollId: string; question: string; multi: boolean; options: { id?: string; label: string }[] }
   | { type: "removePoll"; yearId: string; pollId: string }
   | { type: "addEvent"; yearId: string; date: string; endDate?: string; time?: string; title: string; kind: EventKind; note?: string; author: string }
   | { type: "updateEvent"; yearId: string; eventId: string; patch: { title?: string; date?: string; endDate?: string; time?: string; kind?: EventKind; note?: string } }
@@ -82,7 +83,20 @@ export type Action =
   | { type: "removeShiftPerson"; yearId: string; shiftId: string; name: string }
   | { type: "removeShift"; yearId: string; shiftId: string }
   | { type: "addInvite"; yearId: string; category: string; name: string; link?: string; priority?: number }
-  | { type: "updateInvite"; yearId: string; inviteId: string; patch: Partial<Pick<Invite, "category" | "name" | "link" | "priority" | "contacted" | "interest" | "availability" | "price" | "confirmedDate" | "note">> }
+  | {
+      type: "updateInvite";
+      yearId: string;
+      inviteId: string;
+      // Prázdný řetězec / null = „smazat" (přežije JSON.stringify; undefined by se zahodilo).
+      patch: Partial<Pick<Invite, "category" | "name" | "contacted" | "interest">> & {
+        link?: string;
+        priority?: number | null;
+        availability?: string;
+        price?: string;
+        confirmedDate?: string;
+        note?: string;
+      };
+    }
   | { type: "removeInvite"; yearId: string; inviteId: string }
   | { type: "addKitchenFile"; yearId: string; label: string; category: string; blobId: string; fileKind: "image" | "file"; fileName?: string; note?: string; author: string; place?: "bar" | "kuchyne" }
   | { type: "removeKitchenFile"; yearId: string; fileId: string }
@@ -282,19 +296,23 @@ export function applyAction(db: DB, a: Action): DB {
     case "updatePost":
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        // Původní autor a datum vzniku se NEMĚNÍ; zapíše se jen kdo a kdy upravil.
-        posts: y.posts.map((p) =>
-          p.id === a.postId
-            ? {
-                ...p,
-                title: a.patch.title !== undefined ? a.patch.title.trim() || p.title : p.title,
-                body: a.patch.body !== undefined ? a.patch.body.trim() : p.body,
-                roleId: a.patch.roleId !== undefined ? (a.patch.roleId ?? undefined) : p.roleId,
-                editedBy: a.editedBy.trim() || p.editedBy,
-                editedAt: now(),
-              }
-            : p,
-        ),
+        // Původní autor a datum vzniku se NEMĚNÍ; přidá se záznam do historie úprav.
+        posts: y.posts.map((p) => {
+          if (p.id !== a.postId) return p;
+          const at = now();
+          const by = a.editedBy.trim() || p.editedBy || "—";
+          // Stará data: pokud má jen editedBy/editedAt, převedeme je na první záznam.
+          const prior = p.edits ?? (p.editedBy && p.editedAt ? [{ by: p.editedBy, at: p.editedAt }] : []);
+          return {
+            ...p,
+            title: a.patch.title !== undefined ? a.patch.title.trim() || p.title : p.title,
+            body: a.patch.body !== undefined ? a.patch.body.trim() : p.body,
+            roleId: a.patch.roleId !== undefined ? (a.patch.roleId ?? undefined) : p.roleId,
+            edits: [...prior, { by, at }],
+            editedBy: by, // legacy zrcadlo (poslední úprava)
+            editedAt: at,
+          };
+        }),
       }));
     case "togglePin":
       return mapYear(db, a.yearId, (y) => ({
@@ -358,6 +376,26 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => ({
         ...y,
         polls: y.polls.map((p) => (p.id === a.pollId ? { ...p, closed: !p.closed } : p)),
+      }));
+    case "updatePoll":
+      // Úprava otázky a možností. Možnosti se podle id páruje se starými, ať
+      // zůstanou hlasy; nové (bez id) začnou prázdné, smazané o hlasy přijdou.
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        polls: y.polls.map((p) => {
+          if (p.id !== a.pollId) return p;
+          const byId = new Map(p.options.map((o) => [o.id, o]));
+          const options = a.options
+            .map((o) => {
+              const label = o.label.trim();
+              if (!label) return null;
+              const existing = o.id ? byId.get(o.id) : undefined;
+              return existing ? { ...existing, label } : { id: uid("o_"), label, voters: [] };
+            })
+            .filter((o): o is { id: string; label: string; voters: string[] } => o !== null);
+          if (options.length < 2) return p; // anketa musí mít aspoň 2 možnosti
+          return { ...p, question: a.question.trim() || p.question, multi: a.multi, options };
+        }),
       }));
     case "removePoll":
       return mapYear(db, a.yearId, (y) => ({ ...y, polls: y.polls.filter((p) => p.id !== a.pollId) }));
@@ -781,7 +819,21 @@ export function applyAction(db: DB, a: Action): DB {
     case "updateInvite":
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        invites: (y.invites ?? []).map((i) => (i.id === a.inviteId ? { ...i, ...a.patch } : i)),
+        invites: (y.invites ?? []).map((i) => {
+          if (i.id !== a.inviteId) return i;
+          const m = { ...i, ...a.patch };
+          // Prázdné hodnoty znamenají „smazat" — ať po vymazání pole nezůstane stará hodnota.
+          const clean = (v: string | undefined) => (v && v.trim() ? v.trim() : undefined);
+          return {
+            ...m,
+            link: clean(m.link),
+            priority: m.priority && m.priority > 0 ? Math.round(m.priority) : undefined,
+            availability: clean(m.availability),
+            price: clean(m.price),
+            confirmedDate: clean(m.confirmedDate),
+            note: clean(m.note),
+          };
+        }),
       }));
     case "removeInvite":
       return mapYear(db, a.yearId, (y) => ({ ...y, invites: (y.invites ?? []).filter((i) => i.id !== a.inviteId) }));

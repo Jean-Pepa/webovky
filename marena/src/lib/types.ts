@@ -21,8 +21,9 @@ export interface Post {
   body: string;
   pinned: boolean;
   createdAt: string;
-  editedBy?: string; // kdo naposledy upravil (autor založení se nemění)
-  editedAt?: string; // ISO – kdy se naposledy upravilo
+  editedBy?: string; // kdo naposledy upravil (autor založení se nemění) — legacy
+  editedAt?: string; // ISO – kdy se naposledy upravilo — legacy
+  edits?: { by: string; at: string }[]; // historie úprav (kdo a kdy), od nejstarší
 }
 
 export interface PollOption {
