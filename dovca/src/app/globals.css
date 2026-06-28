@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* ---- Dovča · čistý, vzdušný „prázdninový" vzhled -------------------- */
+  --color-paper: #f4f7f9; /* světle modrošedé pozadí */
+  --color-paper2: #e7edf1; /* o stupínek tmavší (výplně, hover, chipy) */
+  --color-ink: #102a33; /* hlavní text (tmavá modrozelená) */
+  --color-ink-soft: #5b727c; /* sekundární text */
+
+  /* Akcent — moře / dovolená (tyrkysově modrá) */
+  --color-sea-50: #ecfbfb;
+  --color-sea-100: #cff5f6;
+  --color-sea-200: #a3e9ec;
+  --color-sea-300: #6dd6dd;
+  --color-sea-400: #34bcc7;
+  --color-sea-500: #129dab;
+  --color-sea-600: #0c7e8e; /* primární akce */
+  --color-sea-700: #0d6473;
+  --color-sea-800: #11505d;
+  --color-sea-900: #13434e;
+
+  /* Stavy dostupnosti */
+  --color-free: #2faa57; /* můžu (zelená) */
+  --color-free-soft: #e3f6e9;
+  --color-maybe: #e0a313; /* možná (jantarová) */
+  --color-maybe-soft: #fbf0d6;
+  --color-out: #df4b56; /* nemůžu (červená) */
+  --color-out-soft: #fbe3e5;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-sans);
+
+  --radius-app: 18px;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.011em;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 650;
+  letter-spacing: -0.022em;
+}
+
+/* Jemný „prázdninový" přechod v hlavičce */
+.hero-sky {
+  background: linear-gradient(160deg, #0c7e8e 0%, #129dab 55%, #34bcc7 100%);
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-sea-600
+      px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-sea-700
+      active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border
+      border-black/10 bg-white px-5 py-2.5 text-sm font-medium text-ink transition-all
+      hover:bg-paper2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full px-4 py-2
+      text-sm font-medium text-ink-soft transition-colors hover:bg-black/[0.04] hover:text-ink
+      disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-danger {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full px-3 py-1.5
+      text-sm font-medium text-red-600 transition-colors hover:bg-red-50
+      disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .card {
+    @apply rounded-3xl border border-black/[0.06] bg-white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 8px 24px rgba(0, 0, 0, 0.04);
+  }
+  .input {
+    @apply w-full rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-base text-ink
+      outline-none transition placeholder:text-ink-soft/50 focus:border-sea-400
+      focus:ring-4 focus:ring-sea-500/15 sm:text-sm;
+  }
+  .label {
+    @apply mb-1 block text-xs font-medium text-ink-soft;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full bg-paper2 px-2.5 py-1 text-xs font-medium
+      text-ink-soft;
+  }
+}
