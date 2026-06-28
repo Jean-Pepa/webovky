@@ -82,7 +82,20 @@ export type Action =
   | { type: "removeShiftPerson"; yearId: string; shiftId: string; name: string }
   | { type: "removeShift"; yearId: string; shiftId: string }
   | { type: "addInvite"; yearId: string; category: string; name: string; link?: string; priority?: number }
-  | { type: "updateInvite"; yearId: string; inviteId: string; patch: Partial<Pick<Invite, "category" | "name" | "link" | "priority" | "contacted" | "interest" | "availability" | "price" | "confirmedDate" | "note">> }
+  | {
+      type: "updateInvite";
+      yearId: string;
+      inviteId: string;
+      // Prázdný řetězec / null = „smazat" (přežije JSON.stringify; undefined by se zahodilo).
+      patch: Partial<Pick<Invite, "category" | "name" | "contacted" | "interest">> & {
+        link?: string;
+        priority?: number | null;
+        availability?: string;
+        price?: string;
+        confirmedDate?: string;
+        note?: string;
+      };
+    }
   | { type: "removeInvite"; yearId: string; inviteId: string }
   | { type: "addKitchenFile"; yearId: string; label: string; category: string; blobId: string; fileKind: "image" | "file"; fileName?: string; note?: string; author: string; place?: "bar" | "kuchyne" }
   | { type: "removeKitchenFile"; yearId: string; fileId: string }
@@ -781,7 +794,21 @@ export function applyAction(db: DB, a: Action): DB {
     case "updateInvite":
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        invites: (y.invites ?? []).map((i) => (i.id === a.inviteId ? { ...i, ...a.patch } : i)),
+        invites: (y.invites ?? []).map((i) => {
+          if (i.id !== a.inviteId) return i;
+          const m = { ...i, ...a.patch };
+          // Prázdné hodnoty znamenají „smazat" — ať po vymazání pole nezůstane stará hodnota.
+          const clean = (v: string | undefined) => (v && v.trim() ? v.trim() : undefined);
+          return {
+            ...m,
+            link: clean(m.link),
+            priority: m.priority && m.priority > 0 ? Math.round(m.priority) : undefined,
+            availability: clean(m.availability),
+            price: clean(m.price),
+            confirmedDate: clean(m.confirmedDate),
+            note: clean(m.note),
+          };
+        }),
       }));
     case "removeInvite":
       return mapYear(db, a.yearId, (y) => ({ ...y, invites: (y.invites ?? []).filter((i) => i.id !== a.inviteId) }));

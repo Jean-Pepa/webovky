@@ -162,17 +162,19 @@ function useInviteRow(invite: Invite, yearId: string) {
   }
 
   async function save() {
+    // Posíláme i prázdné hodnoty ("" / null) — aby šlo pole opravdu vymazat.
+    // (undefined by JSON.stringify zahodil a stará hodnota by zůstala.)
     await dispatch({
       type: "updateInvite",
       yearId,
       inviteId: invite.id,
       patch: {
         name: name.trim() || invite.name,
-        link: link.trim() || undefined,
-        priority: parseInt(priority, 10) || undefined,
-        availability: availability.trim() || undefined,
-        price: price.trim() || undefined,
-        confirmedDate: confirmedDate.trim() || undefined,
+        link: link.trim(),
+        priority: priority.trim() ? parseInt(priority, 10) || null : null,
+        availability: availability.trim(),
+        price: price.trim(),
+        confirmedDate: confirmedDate.trim(),
       },
     });
     setEdit(false);
