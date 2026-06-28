@@ -223,7 +223,7 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
   const [roleId, setRoleId] = useState(p.roleId ?? "");
   // Historie úprav (nová), s fallbackem na stará data (jen poslední úprava).
   const edits = p.edits ?? (p.editedBy && p.editedAt ? [{ by: p.editedBy, at: p.editedAt }] : []);
-  const canEdit = isAdmin(me) || p.author === me;
+  const canEdit = true; // úpravu nástěnky smí každý (kdo má přístup do zázemí)
   const canDelete = isAdmin(me); // mazat smí jen správce (Mařena)
   const role = roleById(p.roleId);
 
