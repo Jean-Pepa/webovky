@@ -107,6 +107,74 @@ function PollCard({ poll, yearId, me, totalPeople }: { poll: Poll; yearId: strin
   const totalVoters = new Set(poll.options.flatMap((o) => o.voters)).size;
   const maxVotes = Math.max(1, ...poll.options.map((o) => o.voters.length));
   const admin = isAdmin(me);
+  const canEdit = admin || poll.author === me;
+
+  // Úprava ankety (otázka + možnosti). Hlasy u zachovaných možností zůstanou.
+  const [editing, setEditing] = useState(false);
+  const [q, setQ] = useState(poll.question);
+  const [opts, setOpts] = useState<{ id?: string; label: string }[]>([]);
+  const [multiEdit, setMultiEdit] = useState(poll.multi);
+
+  function startEdit() {
+    setQ(poll.question);
+    setOpts(poll.options.map((o) => ({ id: o.id, label: o.label })));
+    setMultiEdit(poll.multi);
+    setEditing(true);
+  }
+
+  async function saveEdit() {
+    const cleaned = opts.map((o) => ({ id: o.id, label: o.label.trim() })).filter((o) => o.label);
+    if (!q.trim() || cleaned.length < 2) return;
+    await dispatch({ type: "updatePoll", yearId, pollId: poll.id, question: q, multi: multiEdit, options: cleaned });
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="card space-y-3 p-5">
+        <input className="input" placeholder="Otázka" value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="space-y-2">
+          {opts.map((o, i) => {
+            const votes = poll.options.find((po) => po.id === o.id)?.voters.length ?? 0;
+            return (
+              <div key={o.id ?? `new-${i}`} className="flex items-center gap-2">
+                <input
+                  className="input"
+                  placeholder={`Možnost ${i + 1}`}
+                  value={o.label}
+                  onChange={(e) => setOpts((arr) => arr.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))}
+                />
+                {votes > 0 && <span className="shrink-0 text-xs text-ink-soft" title="Hlasy zůstanou">{votes}×</span>}
+                {opts.length > 2 && (
+                  <button
+                    className="btn-ghost px-2"
+                    aria-label={`Odebrat možnost ${i + 1}`}
+                    title={votes > 0 ? "Odebrat (přijde o hlasy)" : "Odebrat možnost"}
+                    onClick={() => setOpts((arr) => arr.filter((_, j) => j !== i))}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          <button className="btn-ghost" onClick={() => setOpts((arr) => [...arr, { label: "" }])}>
+            + Další možnost
+          </button>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-sm text-ink-soft">
+            <input type="checkbox" checked={multiEdit} onChange={(e) => setMultiEdit(e.target.checked)} />
+            Lze vybrat víc možností
+          </label>
+          <div className="ml-auto flex gap-2">
+            <button className="btn-ghost" onClick={() => setEditing(false)}>Zrušit</button>
+            <button className="btn-primary" onClick={saveEdit}>Uložit</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`card p-5 ${poll.closed ? "bg-leaf/[0.04] ring-2 ring-leaf" : ""}`}>
@@ -177,6 +245,11 @@ function PollCard({ poll, yearId, me, totalPeople }: { poll: Poll; yearId: strin
           <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setShowOverview((v) => !v)}>
             <Icon name="vote" className="h-3.5 w-3.5" /> {showOverview ? "Skrýt přehled" : "Přehled"}
           </button>
+          {canEdit && (
+            <button className="btn-ghost px-2 py-1 text-xs" onClick={startEdit}>
+              Upravit
+            </button>
+          )}
           {admin && (
             <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "closePoll", yearId, pollId: poll.id })}>
               {poll.closed ? "Otevřít" : "Uzavřít"}

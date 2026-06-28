@@ -217,9 +217,12 @@ function PostBody({ body }: { body: string }) {
 function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
   const { me, dispatch } = useStore();
   const [edit, setEdit] = useState(false);
+  const [showEdits, setShowEdits] = useState(false);
   const [title, setTitle] = useState(p.title);
   const [body, setBody] = useState(p.body);
   const [roleId, setRoleId] = useState(p.roleId ?? "");
+  // Historie úprav (nová), s fallbackem na stará data (jen poslední úprava).
+  const edits = p.edits ?? (p.editedBy && p.editedAt ? [{ by: p.editedBy, at: p.editedAt }] : []);
   const canEdit = isAdmin(me) || p.author === me;
   const canDelete = isAdmin(me); // mazat smí jen správce (Mařena)
   const role = roleById(p.roleId);
@@ -270,15 +273,34 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
             {role.emoji} {role.name}
           </span>
         )}
-        <div className="ml-auto text-right leading-tight">
+        <div className="ml-auto max-w-[70%] text-right leading-tight">
           <div>
             založil(a): <span className="font-medium text-ink">{p.author}</span> · {fmtDateTime(p.createdAt)}
           </div>
-          {p.editedBy && p.editedAt && (
+          {edits.length > 0 && (
             <div>
-              upravil(a): <span className="font-medium text-ink">{p.editedBy}</span> · {fmtDateTime(p.editedAt)}
+              upravil(a): <span className="font-medium text-ink">{edits[0].by}</span> · {fmtDateTime(edits[0].at)}
             </div>
           )}
+          {edits.length > 1 &&
+            (showEdits ? (
+              <>
+                <div className="mt-1 max-h-24 space-y-0.5 overflow-y-auto rounded-lg bg-paper2/70 px-2 py-1.5 text-left">
+                  {edits.slice(1).map((e, i) => (
+                    <div key={i}>
+                      upravil(a): <span className="font-medium text-ink">{e.by}</span> · {fmtDateTime(e.at)}
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => setShowEdits(false)} className="font-medium text-marigold-700 hover:underline">
+                  zobrazit méně
+                </button>
+              </>
+            ) : (
+              <button onClick={() => setShowEdits(true)} className="font-medium text-marigold-700 hover:underline">
+                zobrazit více ({edits.length - 1})
+              </button>
+            ))}
         </div>
       </div>
       <h3 className="break-words font-display text-lg font-semibold">{p.title}</h3>
