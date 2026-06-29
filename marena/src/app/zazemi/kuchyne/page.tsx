@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
+import { SearchBox } from "@/components/SearchBox";
+import { matchesQuery } from "@/lib/search";
 import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, readFileAsDataUrl, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { fmtCZK, fmtDate } from "@/lib/format";
@@ -40,6 +42,7 @@ const DAYS: { value: Weekday; label: string }[] = [
   { value: "so", label: "Sobota" },
   { value: "ne", label: "Neděle" },
 ];
+const DAY_LABEL: Record<Weekday, string> = Object.fromEntries(DAYS.map((d) => [d.value, d.label])) as Record<Weekday, string>;
 const drinkCost = (d: Drink) => d.ingredients.reduce((s, i) => s + (i.cost || 0), 0);
 
 const CATS = ["Nákupy", "Menu", "Ostatní"];
@@ -48,6 +51,7 @@ const MAX_FILE_BYTES = 1_300_000;
 export default function KuchyneBarPage() {
   const { currentYear, canEditCurrentYear } = useStore();
   const [place, setPlace] = useState<Place>("kuchyne");
+  const [q, setQ] = useState("");
   const year = currentYear;
   if (!year) return null;
   const editable = canEditCurrentYear;
@@ -69,8 +73,10 @@ export default function KuchyneBarPage() {
         </div>
       </div>
 
-      <MenuSection key={`m-${place}`} place={place} editable={editable} />
-      <ShoppingSection key={`s-${place}`} place={place} editable={editable} />
+      <SearchBox value={q} onChange={setQ} placeholder="Hledat…" />
+
+      <MenuSection key={`m-${place}`} place={place} editable={editable} q={q} />
+      <ShoppingSection key={`s-${place}`} place={place} editable={editable} q={q} />
       <FilesSection key={`f-${place}`} place={place} editable={editable} />
     </div>
   );
@@ -78,14 +84,25 @@ export default function KuchyneBarPage() {
 
 /* ---------------- MENU (skládá se jako drinky) ---------------- */
 
-function MenuSection({ place, editable }: { place: Place; editable: boolean }) {
+function MenuSection({ place, editable, q }: { place: Place; editable: boolean; q: string }) {
   const { currentYear, dispatch } = useStore();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [kind, setKind] = useState<DrinkKind>(place === "bar" ? "koktejl" : "obed");
   const [day, setDay] = useState<Weekday | "">(place === "kuchyne" ? "po" : "");
   const year = currentYear!;
-  const items = (year.bar ?? []).filter((d) => placeOfDrink(d) === place);
+  const items = (year.bar ?? [])
+    .filter((d) => placeOfDrink(d) === place)
+    .filter((d) =>
+      matchesQuery(
+        q,
+        d.name,
+        KIND_LABEL[d.kind],
+        d.day ? DAY_LABEL[d.day] : "",
+        d.note,
+        ...d.ingredients.map((i) => i.name),
+      ),
+    );
 
   // Bar = seskupení podle druhu, kuchyně = podle dne (Po–Ne) + „bez dne".
   let groups: { group: string; list: Drink[] }[];
@@ -150,9 +167,13 @@ function MenuSection({ place, editable }: { place: Place; editable: boolean }) {
       )}
 
       {items.length === 0 ? (
-        <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
-          {editable ? "Zatím prázdné. Přidej položku a doplň recepturu." : "Zatím prázdné."}
-        </div>
+        q.trim() ? (
+          <p className="text-sm text-ink-soft">Nic neodpovídá hledání.</p>
+        ) : (
+          <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
+            {editable ? "Zatím prázdné. Přidej položku a doplň recepturu." : "Zatím prázdné."}
+          </div>
+        )
       ) : (
         groups.map((g) => (
           <div key={g.group} className="space-y-2">
@@ -294,13 +315,14 @@ function DrinkEdit({ d, place, yearId, onClose }: { d: Drink; place: Place; year
 
 /* ---------------- NÁKUPNÍ SEZNAM ---------------- */
 
-function ShoppingSection({ place, editable }: { place: Place; editable: boolean }) {
+function ShoppingSection({ place, editable, q }: { place: Place; editable: boolean; q: string }) {
   const { currentYear, dispatch } = useStore();
   const [name, setName] = useState("");
   const [qty, setQty] = useState("");
   const year = currentYear!;
   const items = (year.shopping ?? [])
     .filter((s) => (s.place ?? "kuchyne") === place)
+    .filter((s) => matchesQuery(q, s.name, s.qty))
     .sort((a, b) => Number(!!a.bought) - Number(!!b.bought) || a.createdAt.localeCompare(b.createdAt));
   const boughtCount = items.filter((i) => i.bought).length;
 
@@ -331,7 +353,7 @@ function ShoppingSection({ place, editable }: { place: Place; editable: boolean 
         </div>
       )}
       {items.length === 0 ? (
-        <p className="text-sm text-ink-soft">Nákupní seznam je prázdný.</p>
+        <p className="text-sm text-ink-soft">{q.trim() ? "Nic neodpovídá hledání." : "Nákupní seznam je prázdný."}</p>
       ) : (
         <ul className="divide-y divide-black/[0.06]">
           {items.map((i) => (

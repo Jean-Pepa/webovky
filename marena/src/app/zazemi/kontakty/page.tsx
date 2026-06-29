@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { DeleteButton } from "@/components/DeleteButton";
+import { SearchBox } from "@/components/SearchBox";
+import { matchesQuery } from "@/lib/search";
 import type { LinkItem } from "@/lib/types";
 
 // Doporučené pořadí složek; cokoliv navíc se zařadí za ně, prázdné jako „Ostatní".
@@ -29,14 +31,21 @@ export default function KontaktyPage() {
   const [folder, setFolder] = useState("");
   const [note, setNote] = useState("");
   const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
 
   const year = currentYear;
   const links = useMemo(() => year?.links ?? [], [year]);
 
+  // Filtr podle hledání — prochází napříč všemi složkami (label, value, note, folder).
+  const filtered = useMemo(
+    () => links.filter((l) => matchesQuery(q, l.label, l.value, l.note, l.folder)),
+    [links, q]
+  );
+
   // Seskupení podle složky + seřazení složek dle FOLDER_ORDER.
   const folders = useMemo(() => {
     const map = new Map<string, LinkItem[]>();
-    for (const l of links) {
+    for (const l of filtered) {
       const key = l.folder?.trim() || "Ostatní";
       const arr = map.get(key) || [];
       arr.push(l);
@@ -48,7 +57,7 @@ export default function KontaktyPage() {
       return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib) || a.localeCompare(b);
     });
     return keys.map((k) => [k, map.get(k)!] as const);
-  }, [links]);
+  }, [filtered]);
 
   if (!year) return null;
 
@@ -71,6 +80,8 @@ export default function KontaktyPage() {
           {open ? "Zavřít" : "+ Přidat kontakt"}
         </button>
       </div>
+
+      {links.length > 0 && <SearchBox value={q} onChange={setQ} placeholder="Hledat kontakt…" />}
 
       <datalist id="folder-list">
         {FOLDER_ORDER.map((f) => (
@@ -96,6 +107,8 @@ export default function KontaktyPage() {
         <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
           Zatím žádné kontakty. Přidej ty důležité a zařaď je do složek.
         </div>
+      ) : filtered.length === 0 && q ? (
+        <p className="text-sm text-ink-soft">Nic neodpovídá hledání.</p>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1fr_220px]">
           {/* Hlavní obsah — složky pod sebou */}

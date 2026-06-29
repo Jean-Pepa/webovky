@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { fmtDate } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
+import { SearchBox } from "@/components/SearchBox";
 import { isAdmin } from "@/lib/admin";
+import { matchesQuery } from "@/lib/search";
 import type { Shift } from "@/lib/types";
 
 const AREA_META: Record<string, string> = {
@@ -39,6 +41,7 @@ function timeLabel(s: Shift): string {
 export default function ProvozPage() {
   const { currentYear, me, dispatch } = useStore();
   const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("vse");
   const [view, setView] = useState<"seznam" | "rozvrh">("seznam");
 
@@ -55,6 +58,7 @@ export default function ProvozPage() {
 
   const groups = useMemo(() => {
     const filtered = shifts.filter((s) => {
+      if (!matchesQuery(q, s.title, s.area, s.note, s.people.join(" "), (s.backup ?? []).join(" "))) return false;
       if (filter === "moje") return s.people.includes(me);
       if (filter === "volne") return s.capacity === 0 || s.people.length < s.capacity;
       return true;
@@ -73,11 +77,12 @@ export default function ProvozPage() {
       const ib = AREA_ORDER.indexOf(b[0]);
       return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a[0].localeCompare(b[0]);
     });
-  }, [shifts, filter, me]);
+  }, [shifts, filter, me, q]);
 
   // Rozvrh: směny seskupené po dnech, seřazené podle času.
   const byDay = useMemo(() => {
     const filtered = shifts.filter((s) => {
+      if (!matchesQuery(q, s.title, s.area, s.note, s.people.join(" "), (s.backup ?? []).join(" "))) return false;
       if (filter === "moje") return s.people.includes(me) || (s.backup ?? []).includes(me);
       if (filter === "volne") return s.capacity === 0 || s.people.length < s.capacity;
       return true;
@@ -89,7 +94,7 @@ export default function ProvozPage() {
     }
     for (const arr of map.values()) arr.sort((a, b) => (a.from || "").localeCompare(b.from || "") || a.area.localeCompare(b.area));
     return [...map.entries()].sort((a, b) => (a[0] === "Bez data" ? 1 : b[0] === "Bez data" ? -1 : a[0].localeCompare(b[0])));
-  }, [shifts, filter, me]);
+  }, [shifts, filter, me, q]);
 
   if (!year) return null;
 
@@ -122,6 +127,8 @@ export default function ProvozPage() {
           {open ? "Zavřít" : "+ Přidat směnu"}
         </button>
       </div>
+
+      <SearchBox value={q} onChange={setQ} placeholder="Hledat směnu…" />
 
       {open && (
         <div className="card space-y-2 p-4">
@@ -185,7 +192,7 @@ export default function ProvozPage() {
         <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">Zatím žádné směny. Přidej první rozpis.</div>
       ) : view === "seznam" ? (
         groups.length === 0 ? (
-          <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">Nic tu není.</div>
+          <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">{q.trim() ? "Nic neodpovídá hledání." : "Nic tu není."}</div>
         ) : (
           <div className="space-y-6">
             {groups.map(([areaName, items]) => (
@@ -204,7 +211,7 @@ export default function ProvozPage() {
           </div>
         )
       ) : byDay.length === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">Nic tu není.</div>
+        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">{q.trim() ? "Nic neodpovídá hledání." : "Nic tu není."}</div>
       ) : (
         <div className="space-y-5">
           {byDay.map(([day, items]) => (

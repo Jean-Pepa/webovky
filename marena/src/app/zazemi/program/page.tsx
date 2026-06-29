@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { DeleteButton } from "@/components/DeleteButton";
+import { SearchBox } from "@/components/SearchBox";
+import { matchesQuery } from "@/lib/search";
 import type { Invite, Interest } from "@/lib/types";
 
 const CAT_META: Record<string, string> = {
@@ -28,6 +30,7 @@ const INTEREST_META: Record<Interest, { label: string; cls: string }> = {
 export default function ProgramPage() {
   const { currentYear, dispatch } = useStore();
   const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
   const [category, setCategory] = useState("");
   const [name, setName] = useState("");
   const [link, setLink] = useState("");
@@ -36,9 +39,14 @@ export default function ProgramPage() {
   const year = currentYear;
   const invites = useMemo(() => year?.invites ?? [], [year]);
 
+  const filtered = useMemo(
+    () => invites.filter((i) => matchesQuery(q, i.name, i.category, i.link, i.availability, i.price, i.confirmedDate, i.note)),
+    [invites, q],
+  );
+
   const groups = useMemo(() => {
     const map = new Map<string, Invite[]>();
-    for (const i of invites) {
+    for (const i of filtered) {
       const arr = map.get(i.category) || [];
       arr.push(i);
       map.set(i.category, arr);
@@ -51,7 +59,7 @@ export default function ProgramPage() {
       const ib = CAT_ORDER.indexOf(b[0]);
       return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a[0].localeCompare(b[0]);
     });
-  }, [invites]);
+  }, [filtered]);
 
   if (!year) return null;
 
@@ -81,6 +89,8 @@ export default function ProgramPage() {
         </button>
       </div>
 
+      <SearchBox value={q} onChange={setQ} placeholder="Hledat v programu…" />
+
       {open && (
         <div className="card space-y-2 p-4">
           <div className="grid gap-2 sm:grid-cols-4">
@@ -97,7 +107,7 @@ export default function ProgramPage() {
 
       {groups.length === 0 ? (
         <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
-          Zatím prázdné. Přidej přednášející a kapely, které chcete oslovit.
+          {q.trim() ? "Nic neodpovídá hledání." : "Zatím prázdné. Přidej přednášející a kapely, které chcete oslovit."}
         </div>
       ) : (
         <div className="space-y-6">

@@ -8,6 +8,8 @@ import { Modal } from "@/components/Modal";
 import { Icon } from "@/components/Icons";
 import { isAdmin } from "@/lib/admin";
 import { sameName } from "@/lib/names";
+import { SearchBox } from "@/components/SearchBox";
+import { matchesQuery } from "@/lib/search";
 import type { Member, Year } from "@/lib/types";
 
 export default function TymPage() {
@@ -21,6 +23,7 @@ export default function TymPage() {
   // Oslavné okno po výběru role (zmizí za 3 s).
   const [celebrate, setCelebrate] = useState<string | null>(null);
   const celebrateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [q, setQ] = useState("");
 
   function congratulate(roleId: string) {
     const roleName = ROLES.find((r) => r.id === roleId)?.name;
@@ -37,10 +40,12 @@ export default function TymPage() {
   const admin = isAdmin(me);
 
   const myMember = year.members.find((m) => sameName(m.name, me));
-  const mineRoles = ROLES.filter((r) => myMember?.roleIds.includes(r.id));
-  const otherRoles = ROLES.filter((r) => !myMember?.roleIds.includes(r.id));
-
   const takenBy = (roleId: string) => year.members.filter((m) => m.roleIds.includes(roleId));
+
+  // Hledání filtruje posty podle názvu role nebo jména zapsaného člověka.
+  const roleMatchesQ = (r: Role) => matchesQuery(q, r.name, r.short, ...takenBy(r.id).map((m) => m.name));
+  const mineRoles = ROLES.filter((r) => myMember?.roleIds.includes(r.id) && roleMatchesQ(r));
+  const otherRoles = ROLES.filter((r) => !myMember?.roleIds.includes(r.id) && roleMatchesQ(r));
 
   // Vedoucí role = výslovně určený (roleLeads), jinak nejdřív zapsaný držitel.
   const leadIdOf = (roleId: string): string | undefined => {
@@ -280,8 +285,9 @@ export default function TymPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-semibold tracking-tight">Tým &amp; role</h1>
+        <SearchBox value={q} onChange={setQ} placeholder="Hledat roli nebo člověka…" className="w-full sm:w-72" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -367,7 +373,7 @@ export default function TymPage() {
               <p className="text-sm text-ink-soft">Zatím nikdo. Buď první!</p>
             ) : (
               <div className="space-y-4">
-                {ROLES.filter((r) => takenBy(r.id).length > 0).map((r) => {
+                {ROLES.filter((r) => takenBy(r.id).length > 0 && roleMatchesQ(r)).map((r) => {
                   const holders = takenBy(r.id);
                   const leadId = leadIdOf(r.id);
                   const lead = holders.find((h) => h.id === leadId);
@@ -426,6 +432,7 @@ export default function TymPage() {
           ) : (
             <ul className="divide-y divide-black/[0.06]">
               {[...year.members]
+                .filter((m) => matchesQuery(q, m.name, m.email, m.phone))
                 .sort((a, b) => {
                   // čekající nahoru, pak abecedně
                   const ap = a.approved === false ? 0 : 1;

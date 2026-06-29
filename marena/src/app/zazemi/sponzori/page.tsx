@@ -3,6 +3,8 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useStore } from "@/lib/store";
 import { DeleteButton } from "@/components/DeleteButton";
+import { SearchBox } from "@/components/SearchBox";
+import { matchesQuery } from "@/lib/search";
 import type { Sponsor, SponsorStatus, SponsorCategory } from "@/lib/types";
 
 // Editor více odkazů / kontaktů — tlačítko „+" přidá další pole, „✕" ho odebere.
@@ -79,6 +81,7 @@ export default function SponzoriPage() {
   const [category, setCategory] = useState<SponsorCategory>("jidlo_piti");
   const [returning, setReturning] = useState(false);
   const [filter, setFilter] = useState<"vse" | SponsorStatus>("vse");
+  const [q, setQ] = useState("");
 
   const year = currentYear;
   const sponsors = useMemo(() => year?.sponsors ?? [], [year]);
@@ -97,8 +100,11 @@ export default function SponzoriPage() {
       const tb = b.statusAt ?? b.createdAt;
       return ta.localeCompare(tb) || a.name.localeCompare(b.name, "cs");
     });
-    return filter === "vse" ? sorted : sorted.filter((s) => s.status === filter);
-  }, [sponsors, filter]);
+    const byStatus = filter === "vse" ? sorted : sorted.filter((s) => s.status === filter);
+    return byStatus.filter((s) =>
+      matchesQuery(q, s.name, s.gives, s.who, s.note, CAT[s.category ?? "ostatni"]?.label, linksOf(s).join(" ")),
+    );
+  }, [sponsors, filter, q]);
 
   if (!year) return null;
   const canEdit = canEditCurrentYear;
@@ -127,6 +133,12 @@ export default function SponzoriPage() {
           </button>
         )}
       </div>
+
+      {sponsors.length > 0 && (
+        <div className="flex justify-end">
+          <SearchBox value={q} onChange={setQ} placeholder="Hledat sponzora…" className="w-full sm:w-72" />
+        </div>
+      )}
 
       {open && canEdit && (
         <div className="card space-y-3 p-4">

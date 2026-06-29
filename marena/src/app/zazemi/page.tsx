@@ -9,6 +9,8 @@ import { KINDS } from "@/lib/kinds";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Onboarding } from "@/components/Onboarding";
 import { Icon } from "@/components/Icons";
+import { SearchBox } from "@/components/SearchBox";
+import { matchesQuery } from "@/lib/search";
 import { isAdmin } from "@/lib/admin";
 import type { Post } from "@/lib/types";
 
@@ -19,6 +21,7 @@ export default function NastenkaPage() {
   const [roleId, setRoleId] = useState("");
   const [pinned, setPinned] = useState(false);
   const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
 
   const year = currentYear;
 
@@ -29,6 +32,11 @@ export default function NastenkaPage() {
       return b.createdAt.localeCompare(a.createdAt);
     });
   }, [year]);
+
+  const filteredPosts = useMemo(
+    () => posts.filter((p) => matchesQuery(q, p.title, p.body, p.author)),
+    [posts, q]
+  );
 
   const upcoming = useMemo(() => {
     if (!year) return [];
@@ -94,11 +102,17 @@ export default function NastenkaPage() {
           </div>
         )}
 
+        {posts.length > 0 && (
+          <SearchBox value={q} onChange={setQ} placeholder="Hledat v nástěnce…" />
+        )}
+
         {posts.length === 0 ? (
           <Empty>Zatím tu nic není. Buď první a napiš ostatním důležité info.</Empty>
+        ) : filteredPosts.length === 0 ? (
+          <p className="text-sm text-ink-soft">Nic neodpovídá hledání.</p>
         ) : (
           <div className="space-y-3">
-            {posts.map((p) => (
+            {filteredPosts.map((p) => (
               <PostCard key={p.id} post={p} yearId={year.id} />
             ))}
           </div>
