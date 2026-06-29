@@ -19,10 +19,9 @@ const CAT_META: Record<string, string> = {
 const CAT_ORDER = Object.keys(CAT_META);
 const catEmoji = (c: string) => CAT_META[c] ?? "📍";
 
-const isConfirmed = (i: Invite) => !i.cancelled && !!i.confirmedDate?.trim();
-// Pořadí ve skupině: potvrzeno (0) → osloveno/má zájem (1) → odmítl (2) → neosloveno (3) → zrušeno (4, dole).
+const isConfirmed = (i: Invite) => !!i.confirmedDate?.trim();
+// Pořadí ve skupině: potvrzeno (0) → osloveno/má zájem (1) → odmítl (2) → neosloveno (3, dole).
 function inviteRank(i: Invite): number {
-  if (i.cancelled) return 4;
   if (isConfirmed(i)) return 0;
   if (i.interest === "ne") return 2;
   if (i.contacted) return 1;
@@ -30,7 +29,6 @@ function inviteRank(i: Invite): number {
 }
 // Barva řádku/karty podle stavu.
 function inviteBg(i: Invite): string {
-  if (i.cancelled) return "bg-black/[0.04] opacity-60";
   if (isConfirmed(i)) return "bg-amber-200";
   if (i.interest === "ano") return "bg-leaf/15";
   if (i.interest === "ne") return "bg-red-500/10";
@@ -178,11 +176,15 @@ const INTEREST_META: Record<Interest, { label: string; cls: string }> = {
   ne: { label: "👎 odmítl", cls: "bg-red-500/10 text-red-600" },
 };
 
-// Tlačítko „Osloveno?" — klik zároveň nastaví zájem na čeká (a zpět na nevyplněno).
+// Tlačítko „Osloveno?" — klik zároveň nastaví zájem na čeká. Po potvrzení
+// (oranžová) je zamčené; změnit jde až po „Zrušit".
 function ContactedButton({ invite, yearId }: { invite: Invite; yearId: string }) {
   const { dispatch } = useStore();
+  const locked = isConfirmed(invite);
   return (
     <button
+      disabled={locked}
+      title={locked ? "Potvrzeno — pro změnu nejdřív Zrušit" : undefined}
       onClick={() =>
         dispatch({
           type: "updateInvite",
@@ -193,7 +195,7 @@ function ContactedButton({ invite, yearId }: { invite: Invite; yearId: string })
       }
       className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
         invite.contacted ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-paper2 text-ink-soft hover:bg-black/5"
-      }`}
+      } ${locked ? "cursor-not-allowed opacity-60 hover:bg-leaf/15" : ""}`}
     >
       {invite.contacted ? "Osloveno ✓" : "Neosloveno"}
     </button>
@@ -201,11 +203,9 @@ function ContactedButton({ invite, yearId }: { invite: Invite; yearId: string })
 }
 
 // Zájem: jeden klikací štítek, který se po kliknutí přepíná (čeká → má zájem →
-// odmítl → …). U zrušeného „Zrušeno", u potvrzeného rovnou „Potvrzeno".
+// odmítl → …). U potvrzeného (oranžová) rovnou „Potvrzeno" (neklikací).
 function InterestControl({ invite, yearId }: { invite: Invite; yearId: string }) {
   const { dispatch } = useStore();
-  if (invite.cancelled)
-    return <span className="inline-flex rounded-full bg-black/[0.06] px-2.5 py-1 text-xs font-semibold text-ink-soft line-through">✖️ Zrušeno</span>;
   if (isConfirmed(invite))
     return <span className="inline-flex rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">✅ Potvrzeno</span>;
   if (!invite.contacted) return <span className="text-xs text-ink-soft/50">—</span>;
@@ -222,23 +222,23 @@ function InterestControl({ invite, yearId }: { invite: Invite; yearId: string })
   );
 }
 
-// Zrušit / Obnovit — pro (dříve) potvrzenou pozvánku, kterou je třeba zrušit.
+// „Zrušit" — jen u potvrzené (oranžové) pozvánky; vynuluje stav zpět do startu
+// (neosloveno, bez zájmu, bez termínu/ceny/poznámky). Jméno/odkaz/kategorie zůstanou.
 function CancelButton({ invite, yearId }: { invite: Invite; yearId: string }) {
   const { dispatch } = useStore();
-  if (invite.cancelled)
-    return (
-      <button
-        className="btn-ghost px-2 py-1 text-xs text-leaf-700"
-        onClick={() => dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { cancelled: false } })}
-      >
-        Obnovit
-      </button>
-    );
   if (!isConfirmed(invite)) return null;
   return (
     <button
       className="btn-ghost px-2 py-1 text-xs text-red-600"
-      onClick={() => dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { cancelled: true } })}
+      title="Zrušit a vynulovat do startu"
+      onClick={() =>
+        dispatch({
+          type: "updateInvite",
+          yearId,
+          inviteId: invite.id,
+          patch: { contacted: false, interest: "nevim", availability: "", price: "", confirmedDate: "", note: "" },
+        })
+      }
     >
       Zrušit
     </button>
