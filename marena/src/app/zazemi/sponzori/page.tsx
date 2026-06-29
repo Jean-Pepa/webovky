@@ -3,15 +3,34 @@
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { DeleteButton } from "@/components/DeleteButton";
-import type { Sponsor, SponsorStatus } from "@/lib/types";
+import type { Sponsor, SponsorStatus, SponsorCategory } from "@/lib/types";
 
-const STATUS: Record<SponsorStatus, { label: string; cls: string; order: number }> = {
-  oslovit: { label: "📋 oslovit", cls: "bg-paper2 text-ink-soft", order: 0 },
-  ceka: { label: "⏳ čeká", cls: "bg-marigold-600/12 text-marigold-700", order: 1 },
-  potvrzeno: { label: "✅ potvrzeno", cls: "bg-leaf/15 text-leaf-700", order: 2 },
-  odmitl: { label: "✖️ odmítl", cls: "bg-red-500/10 text-red-600", order: 3 },
+const STATUS: Record<SponsorStatus, { label: string; cls: string }> = {
+  oslovit: { label: "📋 oslovit", cls: "bg-paper2 text-ink-soft" },
+  ceka: { label: "⏳ čeká", cls: "bg-marigold-600/12 text-marigold-700" },
+  potvrzeno: { label: "✅ potvrzeno", cls: "bg-leaf/15 text-leaf-700" },
+  odmitl: { label: "✖️ odmítl", cls: "bg-red-500/10 text-red-600" },
 };
 const NEXT: Record<SponsorStatus, SponsorStatus> = { oslovit: "ceka", ceka: "potvrzeno", potvrzeno: "odmitl", odmitl: "oslovit" };
+// Pořadí skupin: „čeká" nahoře, pak „potvrzeno", pak „oslovit", „odmítl" úplně dole.
+const GROUP: Record<SponsorStatus, number> = { ceka: 0, potvrzeno: 1, oslovit: 2, odmitl: 3 };
+
+const CATEGORIES: { id: SponsorCategory; label: string; emoji: string }[] = [
+  { id: "jidlo_piti", label: "Jídlo a pití", emoji: "🍔" },
+  { id: "stavebni", label: "Stavební materiál", emoji: "🧱" },
+  { id: "tisk", label: "Tisk", emoji: "🖨️" },
+  { id: "technika", label: "Technika", emoji: "💻" },
+  { id: "ostatni", label: "Ostatní", emoji: "📦" },
+];
+const CAT = Object.fromEntries(CATEGORIES.map((c) => [c.id, c])) as Record<SponsorCategory, (typeof CATEGORIES)[number]>;
+
+const FILTERS: { id: "vse" | SponsorStatus; label: string }[] = [
+  { id: "vse", label: "Vše" },
+  { id: "oslovit", label: "Oslovit" },
+  { id: "ceka", label: "Čeká" },
+  { id: "potvrzeno", label: "Potvrzeno" },
+  { id: "odmitl", label: "Odmítl" },
+];
 
 export default function SponzoriPage() {
   const { currentYear, dispatch, canEditCurrentYear } = useStore();
@@ -21,25 +40,42 @@ export default function SponzoriPage() {
   const [who, setWho] = useState("");
   const [link, setLink] = useState("");
   const [note, setNote] = useState("");
+  const [category, setCategory] = useState<SponsorCategory>("jidlo_piti");
+  const [returning, setReturning] = useState(false);
+  const [filter, setFilter] = useState<"vse" | SponsorStatus>("vse");
 
   const year = currentYear;
-  const list = useMemo(
-    () => [...(year?.sponsors ?? [])].sort((a, b) => STATUS[a.status].order - STATUS[b.status].order || a.name.localeCompare(b.name, "cs")),
-    [year],
-  );
-  const confirmed = useMemo(() => (year?.sponsors ?? []).filter((s) => s.status === "potvrzeno").length, [year]);
+  const sponsors = useMemo(() => year?.sponsors ?? [], [year]);
+
+  const counts = useMemo(() => {
+    const c = { oslovit: 0, ceka: 0, potvrzeno: 0, odmitl: 0 };
+    for (const s of sponsors) c[s.status]++;
+    return c;
+  }, [sponsors]);
+
+  const list = useMemo(() => {
+    const sorted = [...sponsors].sort((a, b) => {
+      if (GROUP[a.status] !== GROUP[b.status]) return GROUP[a.status] - GROUP[b.status];
+      // uvnitř skupiny: podle času změny stavu (fronta — kdo dřív, ten výš)
+      const ta = a.statusAt ?? a.createdAt;
+      const tb = b.statusAt ?? b.createdAt;
+      return ta.localeCompare(tb) || a.name.localeCompare(b.name, "cs");
+    });
+    return filter === "vse" ? sorted : sorted.filter((s) => s.status === filter);
+  }, [sponsors, filter]);
 
   if (!year) return null;
   const canEdit = canEditCurrentYear;
 
   async function add() {
     if (!name.trim() || !year || !canEdit) return;
-    await dispatch({ type: "addSponsor", yearId: year.id, name: name.trim(), gives, who, link, note });
+    await dispatch({ type: "addSponsor", yearId: year.id, name: name.trim(), gives, who, link, note, category, returning });
     setName("");
     setGives("");
     setWho("");
     setLink("");
     setNote("");
+    setReturning(false);
   }
 
   return (
@@ -57,7 +93,7 @@ export default function SponzoriPage() {
       </div>
 
       {open && canEdit && (
-        <div className="card space-y-2 p-4">
+        <div className="card space-y-3 p-4">
           <input
             className="input"
             placeholder="Název sponzora (např. Rebel Bean, Pivovar Hauskrecht…)"
@@ -71,32 +107,76 @@ export default function SponzoriPage() {
             <input className="input" placeholder="Kdo to řeší" value={who} onChange={(e) => setWho(e.target.value)} />
             <input className="input" placeholder="Odkaz / kontakt" value={link} onChange={(e) => setLink(e.target.value)} />
           </div>
-          <input
-            className="input"
-            placeholder="Požadavky / poznámka (např. chce logo)"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && add()}
-          />
+          <input className="input" placeholder="Požadavky / poznámka (např. chce logo)" value={note} onChange={(e) => setNote(e.target.value)} />
+
+          <div>
+            <p className="mb-1 text-xs font-medium text-ink-soft">Kategorie</p>
+            <div className="flex flex-wrap gap-1.5">
+              {CATEGORIES.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setCategory(c.id)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${category === c.id ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"}`}
+                >
+                  {c.emoji} {c.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-1 text-xs font-medium text-ink-soft">Typ sponzora</p>
+            <div className="inline-flex rounded-full bg-paper2 p-0.5 text-xs">
+              <button type="button" onClick={() => setReturning(false)} className={`rounded-full px-3 py-1 font-medium transition ${!returning ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}>
+                🆕 Nový
+              </button>
+              <button type="button" onClick={() => setReturning(true)} className={`rounded-full px-3 py-1 font-medium transition ${returning ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}>
+                🔁 Stálý
+              </button>
+            </div>
+          </div>
+
           <div className="flex gap-2">
             <button className="btn-primary py-2 text-sm" onClick={add} disabled={!name.trim()}>
               + Přidat sponzora
             </button>
-            <button className="btn-ghost py-2 text-sm" onClick={() => setOpen(false)}>Zrušit</button>
+            <button className="btn-ghost py-2 text-sm" onClick={() => setOpen(false)}>
+              Zrušit
+            </button>
           </div>
         </div>
       )}
 
-      {(year.sponsors?.length ?? 0) > 0 && (
-        <p className="text-sm text-ink-soft">
-          {year.sponsors?.length} sponzorů · <span className="font-semibold text-leaf-700">{confirmed} potvrzeno</span>
-        </p>
+      {sponsors.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-sm text-ink-soft">
+            {sponsors.length} sponzorů · <span className="font-semibold text-leaf-700">{counts.potvrzeno} potvrzeno</span> ·{" "}
+            <span className="font-semibold text-red-600">{counts.odmitl} odmítl</span>
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {FILTERS.map((f) => {
+              const n = f.id === "vse" ? sponsors.length : counts[f.id];
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => setFilter(f.id)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${filter === f.id ? "bg-ink text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"}`}
+                >
+                  {f.label} <span className="opacity-70">{n}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       )}
 
-      {(year.sponsors?.length ?? 0) === 0 ? (
+      {sponsors.length === 0 ? (
         <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
           {canEdit ? "Zatím žádní sponzoři. Přidej prvního nahoře." : "Zatím žádní sponzoři."}
         </div>
+      ) : list.length === 0 ? (
+        <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">V tomhle filtru nikdo není.</div>
       ) : (
         <ul className="space-y-2">
           {list.map((s) => (
@@ -116,15 +196,17 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
   const [who, setWho] = useState(s.who ?? "");
   const [link, setLink] = useState(s.link ?? "");
   const [note, setNote] = useState(s.note ?? "");
+  const [category, setCategory] = useState<SponsorCategory>(s.category ?? "ostatni");
+  const [returning, setReturning] = useState(!!s.returning);
 
   async function save() {
-    await dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { name, gives, who, link, note } });
+    await dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { name, gives, who, link, note, category, returning } });
     setEdit(false);
   }
 
   if (edit) {
     return (
-      <li className="card space-y-2 p-3">
+      <li className="card space-y-3 p-3">
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Název sponzora" />
         <input className="input" value={gives} onChange={(e) => setGives(e.target.value)} placeholder="Co dává (pivo, čaj, kávovar, peníze…)" />
         <div className="grid gap-2 sm:grid-cols-2">
@@ -132,9 +214,39 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
           <input className="input" value={link} onChange={(e) => setLink(e.target.value)} placeholder="Odkaz / kontakt" />
         </div>
         <input className="input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Požadavky / poznámka (např. chce logo)" />
+        <div>
+          <p className="mb-1 text-xs font-medium text-ink-soft">Kategorie</p>
+          <div className="flex flex-wrap gap-1.5">
+            {CATEGORIES.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setCategory(c.id)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition ${category === c.id ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"}`}
+              >
+                {c.emoji} {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="mb-1 text-xs font-medium text-ink-soft">Typ sponzora</p>
+          <div className="inline-flex rounded-full bg-paper2 p-0.5 text-xs">
+            <button type="button" onClick={() => setReturning(false)} className={`rounded-full px-3 py-1 font-medium transition ${!returning ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}>
+              🆕 Nový
+            </button>
+            <button type="button" onClick={() => setReturning(true)} className={`rounded-full px-3 py-1 font-medium transition ${returning ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}>
+              🔁 Stálý
+            </button>
+          </div>
+        </div>
         <div className="flex gap-2">
-          <button className="btn-primary py-2 text-sm" onClick={save}>Uložit</button>
-          <button className="btn-ghost py-2 text-sm" onClick={() => setEdit(false)}>Zrušit</button>
+          <button className="btn-primary py-2 text-sm" onClick={save}>
+            Uložit
+          </button>
+          <button className="btn-ghost py-2 text-sm" onClick={() => setEdit(false)}>
+            Zrušit
+          </button>
         </div>
       </li>
     );
@@ -151,7 +263,15 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
         {STATUS[s.status].label}
       </button>
       <div className="min-w-0 flex-1">
-        <p className="break-words font-medium">{s.name}</p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <p className="break-words font-medium">{s.name}</p>
+          {s.returning && <span className="rounded-full bg-plum-600/10 px-2 py-0.5 text-[11px] font-medium text-plum-700">🔁 stálý</span>}
+          {s.category && (
+            <span className="rounded-full bg-paper2 px-2 py-0.5 text-[11px] font-medium text-ink-soft">
+              {CAT[s.category].emoji} {CAT[s.category].label}
+            </span>
+          )}
+        </div>
         {s.gives && <p className="break-words text-sm text-leaf-700">dává: {s.gives}</p>}
         <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
           {s.who && <span>👤 {s.who}</span>}
@@ -165,7 +285,9 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
       </div>
       {canEdit && (
         <div className="flex shrink-0 items-center gap-1">
-          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>Upravit</button>
+          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>
+            Upravit
+          </button>
           <DeleteButton onConfirm={() => dispatch({ type: "removeSponsor", yearId, sponsorId: s.id })} />
         </div>
       )}
