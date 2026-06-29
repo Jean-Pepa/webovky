@@ -182,7 +182,7 @@ export default function TymPage() {
     const mine = myMember?.roleIds.includes(r.id) ?? false;
     const open = openRole === r.id;
     return (
-      <div className={`card p-4 transition ${taken ? "role-taken bg-leaf/5" : ""}`}>
+      <div className={`card p-4 transition ${mine ? "role-taken bg-leaf/5" : ""}`}>
         <div className="flex items-start gap-3">
           <span className="text-2xl">{r.emoji}</span>
           <div className="min-w-0 flex-1">
