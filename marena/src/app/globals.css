@@ -147,6 +147,25 @@
 .role-taken {
   animation: marena-glow 2.4s ease-in-out infinite;
 }
+
+/* Oslavné okno po výběru role — krátké „vyskočení". */
+@keyframes marena-pop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.marena-pop {
+  animation: marena-pop 0.35s ease-out;
+}
 @media (prefers-reduced-motion: reduce) {
   .role-taken {
     animation: none;

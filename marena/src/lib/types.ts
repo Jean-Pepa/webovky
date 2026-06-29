@@ -171,7 +171,8 @@ export interface Sponsor {
   category?: SponsorCategory; // jídlo a pití / stavební materiál / tisk / technika / ostatní
   returning?: boolean; // stálý sponzor (sponzoroval Mařenu už dřív)
   who?: string; // kdo to řeší
-  link?: string;
+  link?: string; // legacy – jeden odkaz; nově se používá links[]
+  links?: string[]; // odkazy / kontakty (může jich být víc)
   note?: string; // požadavky / detaily (např. „chce logo")
   createdAt: string;
 }
