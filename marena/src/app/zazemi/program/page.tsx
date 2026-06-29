@@ -199,12 +199,13 @@ function ContactedButton({ invite, yearId }: { invite: Invite; yearId: string })
 function InterestControl({ invite, yearId }: { invite: Invite; yearId: string }) {
   const { dispatch } = useStore();
   const set = (interest: Interest) => dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { interest } });
+  // Když je něco v „Potvrzeno" (oranžová), políčko zájem rovnou hlásí Potvrzeno.
+  if (isConfirmed(invite))
+    return <span className="inline-flex rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">✅ Potvrzeno</span>;
   if (invite.interest === "ano")
     return <span className="inline-flex rounded-full bg-leaf/20 px-2.5 py-1 text-xs font-semibold text-leaf-700">👍 má zájem 🔒</span>;
   if (invite.interest === "ne")
     return <span className="inline-flex rounded-full bg-red-500/15 px-2.5 py-1 text-xs font-semibold text-red-600">👎 odmítl 🔒</span>;
-  if (isConfirmed(invite))
-    return <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">čeká 🔒</span>;
   if (!invite.contacted) return <span className="text-xs text-ink-soft/50">—</span>;
   return (
     <div className="flex flex-wrap gap-1">
