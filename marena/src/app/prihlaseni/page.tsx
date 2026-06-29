@@ -33,10 +33,23 @@ export default function LoginPage() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/maintenance", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((d: { maintenance?: boolean }) => setMaint(!!d.maintenance))
-      .catch(() => setMaint(false));
+    let alive = true;
+    const load = () =>
+      fetch("/api/maintenance", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((d: { maintenance?: boolean }) => alive && setMaint(!!d.maintenance))
+        .catch(() => alive && setMaint(false));
+    load();
+    const id = setInterval(load, 3000);
+    const onVisible = () => document.visibilityState === "visible" && load();
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", load);
+    return () => {
+      alive = false;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", load);
+    };
   }, []);
 
   useEffect(() => {

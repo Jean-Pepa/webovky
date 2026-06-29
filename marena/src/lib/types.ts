@@ -244,6 +244,7 @@ export interface Invite {
   availability?: string; // kdy může?
   price?: string; // kolik za to chce peněz?
   confirmedDate?: string; // finálně potvrzené datum
+  cancelled?: boolean; // zrušeno (i u dříve potvrzeného) — propadne dolů
   note?: string;
   createdAt: string;
 }

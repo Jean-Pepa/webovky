@@ -64,10 +64,16 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
         })
         .catch(() => {});
     load();
-    const id = setInterval(load, 20000);
+    // Často kontroluj (rychlé zamčení i bez reloadu) + hned při návratu na okno/záložku.
+    const id = setInterval(load, 3000);
+    const onVisible = () => document.visibilityState === "visible" && load();
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", load);
     return () => {
       alive = false;
       clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", load);
     };
   }, []);
 
