@@ -19,18 +19,18 @@ const CAT_META: Record<string, string> = {
 const CAT_ORDER = Object.keys(CAT_META);
 const catEmoji = (c: string) => CAT_META[c] ?? "📍";
 
-const isConfirmed = (i: Invite) => !!i.confirmedDate?.trim();
-// Pořadí ve skupině: potvrzeno (0) → osloveno/má zájem (1) → odmítl (2) → neosloveno (3, dole).
+// „Potvrzeno" = rozhodnuto ano (interest === "ano"). Datum se už nezadává.
+const isConfirmed = (i: Invite) => i.interest === "ano";
+// Pořadí ve skupině: potvrzeno (0) → osloveno/čeká (1) → odmítl (2) → neosloveno (3, dole).
 function inviteRank(i: Invite): number {
-  if (isConfirmed(i)) return 0;
+  if (i.interest === "ano") return 0;
   if (i.interest === "ne") return 2;
   if (i.contacted) return 1;
   return 3;
 }
 // Barva řádku/karty podle stavu.
 function inviteBg(i: Invite): string {
-  if (isConfirmed(i)) return "bg-amber-200";
-  if (i.interest === "ano") return "bg-leaf/15";
+  if (i.interest === "ano") return "bg-amber-200";
   if (i.interest === "ne") return "bg-red-500/10";
   return "";
 }
@@ -42,6 +42,8 @@ export default function ProgramPage() {
   const [category, setCategory] = useState("");
   const [name, setName] = useState("");
   const [link, setLink] = useState("");
+  const [availability, setAvailability] = useState("");
+  const [price, setPrice] = useState("");
 
   const year = currentYear;
   const invites = useMemo(() => year?.invites ?? [], [year]);
@@ -59,13 +61,8 @@ export default function ProgramPage() {
       map.set(i.category, arr);
     }
     for (const arr of map.values()) {
-      // Potvrzeno nahoře, pak osloveno/má zájem, pak odmítl, dole neosloveno; v rámci toho má zájem nahoru, jinak abecedně.
-      arr.sort(
-        (a, b) =>
-          inviteRank(a) - inviteRank(b) ||
-          (a.interest === "ano" ? 0 : 1) - (b.interest === "ano" ? 0 : 1) ||
-          a.name.localeCompare(b.name),
-      );
+      // Potvrzeno nahoře, pak osloveno/čeká, pak odmítl, dole neosloveno; pak abecedně.
+      arr.sort((a, b) => inviteRank(a) - inviteRank(b) || a.name.localeCompare(b.name));
     }
     return [...map.entries()].sort((a, b) => {
       const ia = CAT_ORDER.indexOf(a[0]);
@@ -79,9 +76,11 @@ export default function ProgramPage() {
   async function add() {
     if (!name.trim() || !category.trim() || !year) return;
     // Číslo se přiděluje automaticky podle pořadí ve skupině — prioritu nezadáváme.
-    await dispatch({ type: "addInvite", yearId: year.id, category, name, link: link || undefined });
+    await dispatch({ type: "addInvite", yearId: year.id, category, name, link: link || undefined, availability: availability || undefined, price: price || undefined });
     setName("");
     setLink("");
+    setAvailability("");
+    setPrice("");
     setOpen(false);
   }
 
@@ -111,6 +110,10 @@ export default function ProgramPage() {
             <input className="input sm:col-span-2" placeholder="Kdo? (jméno / kapela)" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <input className="input" placeholder="Odkaz (web / instagram)" value={link} onChange={(e) => setLink(e.target.value)} />
+          <div className="grid gap-2 sm:grid-cols-2">
+            <input className="input" placeholder="Kdy může (nepovinné)" value={availability} onChange={(e) => setAvailability(e.target.value)} />
+            <input className="input" placeholder="Cena (nepovinné)" value={price} onChange={(e) => setPrice(e.target.value)} />
+          </div>
           <button className="btn-primary" onClick={add}>
             Přidat
           </button>
@@ -167,15 +170,6 @@ export default function ProgramPage() {
   );
 }
 
-// Cyklus stavů zájmu (po kliknutí): čeká → má zájem → odmítl → čeká.
-const INTEREST_CYCLE: Interest[] = ["ceka", "ano", "ne"];
-const INTEREST_META: Record<Interest, { label: string; cls: string }> = {
-  nevim: { label: "čeká", cls: "bg-marigold-100 text-marigold-800" },
-  ceka: { label: "čeká", cls: "bg-marigold-100 text-marigold-800" },
-  ano: { label: "👍 má zájem", cls: "bg-leaf/15 text-leaf-700" },
-  ne: { label: "👎 odmítl", cls: "bg-red-500/10 text-red-600" },
-};
-
 // Tlačítko „Osloveno?" — klik zároveň nastaví zájem na čeká. Po potvrzení
 // (oranžová) je zamčené; změnit jde až po „Zrušit".
 function ContactedButton({ invite, yearId }: { invite: Invite; yearId: string }) {
@@ -202,23 +196,40 @@ function ContactedButton({ invite, yearId }: { invite: Invite; yearId: string })
   );
 }
 
-// Zájem: jeden klikací štítek, který se po kliknutí přepíná (čeká → má zájem →
-// odmítl → …). U potvrzeného (oranžová) rovnou „Potvrzeno" (neklikací).
-function InterestControl({ invite, yearId }: { invite: Invite; yearId: string }) {
+// Zájem — jen ZOBRAZENÍ stavu (neklikací). Řídí se přes ano/ne v „Potvrzeno".
+function InterestControl({ invite }: { invite: Invite }) {
+  if (invite.interest === "ano")
+    return <span className="inline-flex rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">✅ potvrzeno</span>;
+  if (invite.interest === "ne")
+    return <span className="inline-flex rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600">👎 odmítl</span>;
+  if (invite.contacted)
+    return <span className="inline-flex rounded-full bg-marigold-100 px-2.5 py-1 text-xs font-medium text-marigold-800">čeká</span>;
+  return <span className="text-xs text-ink-soft/50">—</span>;
+}
+
+// „Potvrzeno" — dvě tlačítka ano/ne (po oslovení). ano → potvrzeno (oranžová),
+// ne → odmítl. Vybrané je zvýrazněné, druhým klikem jde přepnout.
+function ConfirmButtons({ invite, yearId }: { invite: Invite; yearId: string }) {
   const { dispatch } = useStore();
-  if (isConfirmed(invite))
-    return <span className="inline-flex rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">✅ Potvrzeno</span>;
   if (!invite.contacted) return <span className="text-xs text-ink-soft/50">—</span>;
-  const next = INTEREST_CYCLE[(INTEREST_CYCLE.indexOf(invite.interest) + 1) % INTEREST_CYCLE.length];
-  const m = INTEREST_META[invite.interest];
+  const set = (interest: Interest) => dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { interest } });
+  const yes = invite.interest === "ano";
+  const no = invite.interest === "ne";
   return (
-    <button
-      onClick={() => dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { interest: next } })}
-      title="Klikni pro změnu"
-      className={`rounded-full px-2.5 py-1 text-xs font-medium transition hover:opacity-80 ${m.cls}`}
-    >
-      {m.label}
-    </button>
+    <div className="flex gap-1">
+      <button
+        onClick={() => set(yes ? "ceka" : "ano")}
+        className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${yes ? "bg-amber-500 text-white" : "bg-amber-100 text-amber-800 hover:bg-amber-200"}`}
+      >
+        ano
+      </button>
+      <button
+        onClick={() => set(no ? "ceka" : "ne")}
+        className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${no ? "bg-red-500 text-white" : "bg-red-500/10 text-red-600 hover:bg-red-500/20"}`}
+      >
+        ne
+      </button>
+    </div>
   );
 }
 
@@ -236,7 +247,7 @@ function CancelButton({ invite, yearId }: { invite: Invite; yearId: string }) {
           type: "updateInvite",
           yearId,
           inviteId: invite.id,
-          patch: { contacted: false, interest: "nevim", availability: "", price: "", confirmedDate: "", note: "" },
+          patch: { contacted: false, interest: "nevim", availability: "", price: "", note: "" },
         })
       }
     >
@@ -253,11 +264,9 @@ function useInviteRow(invite: Invite, yearId: string) {
   const [link, setLink] = useState(invite.link ?? "");
   const [availability, setAvailability] = useState(invite.availability ?? "");
   const [price, setPrice] = useState(invite.price ?? "");
-  const [confirmedDate, setConfirmedDate] = useState(invite.confirmedDate ?? "");
 
   async function save() {
-    // Posíláme i prázdné hodnoty ("" / null) — aby šlo pole opravdu vymazat.
-    // (undefined by JSON.stringify zahodil a stará hodnota by zůstala.)
+    // Posíláme i prázdné hodnoty ("") — aby šlo pole opravdu vymazat.
     await dispatch({
       type: "updateInvite",
       yearId,
@@ -267,13 +276,12 @@ function useInviteRow(invite: Invite, yearId: string) {
         link: link.trim(),
         availability: availability.trim(),
         price: price.trim(),
-        confirmedDate: confirmedDate.trim(),
       },
     });
     setEdit(false);
   }
 
-  return { dispatch, edit, setEdit, name, setName, link, setLink, availability, setAvailability, price, setPrice, confirmedDate, setConfirmedDate, save };
+  return { dispatch, edit, setEdit, name, setName, link, setLink, availability, setAvailability, price, setPrice, save };
 }
 
 // Mobilní karta jedné pozvánky (na úzkém displeji místo tabulky).
@@ -288,7 +296,6 @@ function InviteCard({ invite, yearId, index }: { invite: Invite; yearId: string;
         <div className="grid grid-cols-2 gap-2">
           <input className="input" value={s.availability} onChange={(e) => s.setAvailability(e.target.value)} placeholder="Kdy může" />
           <input className="input" value={s.price} onChange={(e) => s.setPrice(e.target.value)} placeholder="Cena" />
-          <input className="input col-span-2" value={s.confirmedDate} onChange={(e) => s.setConfirmedDate(e.target.value)} placeholder="Potvrzeno (datum)" />
         </div>
         <div className="flex gap-2 pt-0.5">
           <button className="btn-primary flex-1 py-2 text-sm" onClick={s.save}>Uložit</button>
@@ -312,13 +319,18 @@ function InviteCard({ invite, yearId, index }: { invite: Invite; yearId: string;
           <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
             {invite.availability && <span>🗓 {invite.availability}</span>}
             {invite.price && <span>💰 {invite.price}</span>}
-            {invite.confirmedDate && <span className="font-semibold text-amber-800">✓ potvrzeno: {invite.confirmedDate}</span>}
           </div>
         </div>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <ContactedButton invite={invite} yearId={yearId} />
-        <InterestControl invite={invite} yearId={yearId} />
+        <InterestControl invite={invite} />
+        {invite.contacted && (
+          <span className="flex items-center gap-1 text-xs text-ink-soft">
+            <span>potvrdit:</span>
+            <ConfirmButtons invite={invite} yearId={yearId} />
+          </span>
+        )}
         <div className="ml-auto flex items-center gap-1">
           <CancelButton invite={invite} yearId={yearId} />
           <button className="btn-ghost px-2 py-1 text-xs" onClick={() => s.setEdit(true)}>Upravit</button>
@@ -330,7 +342,7 @@ function InviteCard({ invite, yearId, index }: { invite: Invite; yearId: string;
 }
 
 function InviteRow({ invite, yearId, index }: { invite: Invite; yearId: string; index: number }) {
-  const { dispatch, edit, setEdit, name, setName, link, setLink, availability, setAvailability, price, setPrice, confirmedDate, setConfirmedDate, save } =
+  const { dispatch, edit, setEdit, name, setName, link, setLink, availability, setAvailability, price, setPrice, save } =
     useInviteRow(invite, yearId);
 
   if (edit) {
@@ -344,7 +356,7 @@ function InviteRow({ invite, yearId, index }: { invite: Invite; yearId: string; 
         <td className="px-3 py-2 text-ink-soft" colSpan={2}>—</td>
         <td className="px-3 py-2"><input className="input" value={availability} onChange={(e) => setAvailability(e.target.value)} placeholder="Kdy" /></td>
         <td className="px-3 py-2"><input className="input" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Cena" /></td>
-        <td className="px-3 py-2"><input className="input" value={confirmedDate} onChange={(e) => setConfirmedDate(e.target.value)} placeholder="Datum" /></td>
+        <td className="px-3 py-2 text-ink-soft">—</td>
         <td className="px-3 py-2">
           <div className="flex gap-1">
             <button className="btn-primary px-3 py-1.5 text-xs" onClick={save}>Uložit</button>
@@ -370,11 +382,13 @@ function InviteRow({ invite, yearId, index }: { invite: Invite; yearId: string; 
         <ContactedButton invite={invite} yearId={yearId} />
       </td>
       <td className="px-3 py-3">
-        <InterestControl invite={invite} yearId={yearId} />
+        <InterestControl invite={invite} />
       </td>
       <td className="px-3 py-3 text-ink-soft">{invite.availability || "—"}</td>
       <td className="px-3 py-3 text-ink-soft">{invite.price || "—"}</td>
-      <td className="px-3 py-3 whitespace-nowrap">{invite.confirmedDate ? <span className="font-semibold text-amber-800">{invite.confirmedDate}</span> : <span className="text-ink-soft/50">—</span>}</td>
+      <td className="px-3 py-3">
+        <ConfirmButtons invite={invite} yearId={yearId} />
+      </td>
       <td className="px-3 py-3">
         <div className="flex items-center justify-end gap-1">
           <CancelButton invite={invite} yearId={yearId} />
