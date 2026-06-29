@@ -94,7 +94,7 @@ export type Action =
       yearId: string;
       inviteId: string;
       // Prázdný řetězec / null = „smazat" (přežije JSON.stringify; undefined by se zahodilo).
-      patch: Partial<Pick<Invite, "category" | "name" | "contacted" | "interest">> & {
+      patch: Partial<Pick<Invite, "category" | "name" | "contacted" | "interest" | "cancelled">> & {
         link?: string;
         priority?: number | null;
         availability?: string;

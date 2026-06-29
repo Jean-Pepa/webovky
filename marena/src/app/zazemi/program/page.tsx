@@ -19,11 +19,10 @@ const CAT_META: Record<string, string> = {
 const CAT_ORDER = Object.keys(CAT_META);
 const catEmoji = (c: string) => CAT_META[c] ?? "📍";
 
-const isConfirmed = (i: Invite) => !!i.confirmedDate?.trim();
-// Zamčeno = rozhodnuto (má zájem / odmítl / potvrzeno) → stav osloveno a zájem už nejde měnit.
-const isLocked = (i: Invite) => isConfirmed(i) || i.interest === "ano" || i.interest === "ne";
-// Pořadí ve skupině: potvrzeno (0, oranžová) → osloveno/má zájem (1) → odmítl (2) → neosloveno (3).
+const isConfirmed = (i: Invite) => !i.cancelled && !!i.confirmedDate?.trim();
+// Pořadí ve skupině: potvrzeno (0) → osloveno/má zájem (1) → odmítl (2) → neosloveno (3) → zrušeno (4, dole).
 function inviteRank(i: Invite): number {
+  if (i.cancelled) return 4;
   if (isConfirmed(i)) return 0;
   if (i.interest === "ne") return 2;
   if (i.contacted) return 1;
@@ -31,6 +30,7 @@ function inviteRank(i: Invite): number {
 }
 // Barva řádku/karty podle stavu.
 function inviteBg(i: Invite): string {
+  if (i.cancelled) return "bg-black/[0.04] opacity-60";
   if (isConfirmed(i)) return "bg-amber-200";
   if (i.interest === "ano") return "bg-leaf/15";
   if (i.interest === "ne") return "bg-red-500/10";
@@ -169,15 +169,20 @@ export default function ProgramPage() {
   );
 }
 
-// Tlačítko „Osloveno?" — klik zároveň nastaví zájem na čeká. Po rozhodnutí (má
-// zájem / odmítl / potvrzeno) je zamčené.
+// Cyklus stavů zájmu (po kliknutí): čeká → má zájem → odmítl → čeká.
+const INTEREST_CYCLE: Interest[] = ["ceka", "ano", "ne"];
+const INTEREST_META: Record<Interest, { label: string; cls: string }> = {
+  nevim: { label: "čeká", cls: "bg-marigold-100 text-marigold-800" },
+  ceka: { label: "čeká", cls: "bg-marigold-100 text-marigold-800" },
+  ano: { label: "👍 má zájem", cls: "bg-leaf/15 text-leaf-700" },
+  ne: { label: "👎 odmítl", cls: "bg-red-500/10 text-red-600" },
+};
+
+// Tlačítko „Osloveno?" — klik zároveň nastaví zájem na čeká (a zpět na nevyplněno).
 function ContactedButton({ invite, yearId }: { invite: Invite; yearId: string }) {
   const { dispatch } = useStore();
-  const locked = isLocked(invite);
   return (
     <button
-      disabled={locked}
-      title={locked ? "Zamčeno — už je rozhodnuto" : undefined}
       onClick={() =>
         dispatch({
           type: "updateInvite",
@@ -187,35 +192,56 @@ function ContactedButton({ invite, yearId }: { invite: Invite; yearId: string })
         })
       }
       className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-        invite.contacted ? "bg-leaf/15 text-leaf-700" : "bg-paper2 text-ink-soft hover:bg-black/5"
-      } ${locked ? "cursor-not-allowed opacity-60" : ""}`}
+        invite.contacted ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-paper2 text-ink-soft hover:bg-black/5"
+      }`}
     >
       {invite.contacted ? "Osloveno ✓" : "Neosloveno"}
     </button>
   );
 }
 
-// Zájem: dokud není rozhodnuto, nabídne volbu 👍/👎; po volbě zamčený stav.
+// Zájem: jeden klikací štítek, který se po kliknutí přepíná (čeká → má zájem →
+// odmítl → …). U zrušeného „Zrušeno", u potvrzeného rovnou „Potvrzeno".
 function InterestControl({ invite, yearId }: { invite: Invite; yearId: string }) {
   const { dispatch } = useStore();
-  const set = (interest: Interest) => dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { interest } });
-  // Když je něco v „Potvrzeno" (oranžová), políčko zájem rovnou hlásí Potvrzeno.
+  if (invite.cancelled)
+    return <span className="inline-flex rounded-full bg-black/[0.06] px-2.5 py-1 text-xs font-semibold text-ink-soft line-through">✖️ Zrušeno</span>;
   if (isConfirmed(invite))
     return <span className="inline-flex rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">✅ Potvrzeno</span>;
-  if (invite.interest === "ano")
-    return <span className="inline-flex rounded-full bg-leaf/20 px-2.5 py-1 text-xs font-semibold text-leaf-700">👍 má zájem 🔒</span>;
-  if (invite.interest === "ne")
-    return <span className="inline-flex rounded-full bg-red-500/15 px-2.5 py-1 text-xs font-semibold text-red-600">👎 odmítl 🔒</span>;
   if (!invite.contacted) return <span className="text-xs text-ink-soft/50">—</span>;
+  const next = INTEREST_CYCLE[(INTEREST_CYCLE.indexOf(invite.interest) + 1) % INTEREST_CYCLE.length];
+  const m = INTEREST_META[invite.interest];
   return (
-    <div className="flex flex-wrap gap-1">
-      <button onClick={() => set("ano")} className="rounded-full bg-leaf/10 px-2 py-1 text-xs font-medium text-leaf-700 transition hover:bg-leaf/20">
-        👍 zájem
+    <button
+      onClick={() => dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { interest: next } })}
+      title="Klikni pro změnu"
+      className={`rounded-full px-2.5 py-1 text-xs font-medium transition hover:opacity-80 ${m.cls}`}
+    >
+      {m.label}
+    </button>
+  );
+}
+
+// Zrušit / Obnovit — pro (dříve) potvrzenou pozvánku, kterou je třeba zrušit.
+function CancelButton({ invite, yearId }: { invite: Invite; yearId: string }) {
+  const { dispatch } = useStore();
+  if (invite.cancelled)
+    return (
+      <button
+        className="btn-ghost px-2 py-1 text-xs text-leaf-700"
+        onClick={() => dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { cancelled: false } })}
+      >
+        Obnovit
       </button>
-      <button onClick={() => set("ne")} className="rounded-full bg-red-500/[0.06] px-2 py-1 text-xs font-medium text-red-600 transition hover:bg-red-500/15">
-        👎 odmítl
-      </button>
-    </div>
+    );
+  if (!isConfirmed(invite)) return null;
+  return (
+    <button
+      className="btn-ghost px-2 py-1 text-xs text-red-600"
+      onClick={() => dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { cancelled: true } })}
+    >
+      Zrušit
+    </button>
   );
 }
 
@@ -294,6 +320,7 @@ function InviteCard({ invite, yearId, index }: { invite: Invite; yearId: string;
         <ContactedButton invite={invite} yearId={yearId} />
         <InterestControl invite={invite} yearId={yearId} />
         <div className="ml-auto flex items-center gap-1">
+          <CancelButton invite={invite} yearId={yearId} />
           <button className="btn-ghost px-2 py-1 text-xs" onClick={() => s.setEdit(true)}>Upravit</button>
           <DeleteButton onConfirm={() => s.dispatch({ type: "removeInvite", yearId, inviteId: invite.id })} />
         </div>
@@ -350,6 +377,7 @@ function InviteRow({ invite, yearId, index }: { invite: Invite; yearId: string; 
       <td className="px-3 py-3 whitespace-nowrap">{invite.confirmedDate ? <span className="font-semibold text-amber-800">{invite.confirmedDate}</span> : <span className="text-ink-soft/50">—</span>}</td>
       <td className="px-3 py-3">
         <div className="flex items-center justify-end gap-1">
+          <CancelButton invite={invite} yearId={yearId} />
           <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>Upravit</button>
           <DeleteButton onConfirm={() => dispatch({ type: "removeInvite", yearId, inviteId: invite.id })} />
         </div>
