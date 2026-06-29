@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { ROLES, roleById, type Role } from "@/lib/roles";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -18,6 +18,17 @@ export default function TymPage() {
   const [modal, setModal] = useState<{ roleToAdd?: string } | null>(null);
   // Správce (Mařena) může upravit libovolného člena.
   const [editMember, setEditMember] = useState<Member | null>(null);
+  // Oslavné okno po výběru role (zmizí za 3 s).
+  const [celebrate, setCelebrate] = useState<string | null>(null);
+  const celebrateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function congratulate(roleId: string) {
+    const roleName = ROLES.find((r) => r.id === roleId)?.name;
+    if (!roleName) return;
+    if (celebrateTimer.current) clearTimeout(celebrateTimer.current);
+    setCelebrate(roleName);
+    celebrateTimer.current = setTimeout(() => setCelebrate(null), 3000);
+  }
 
   const current = currentYear;
   if (!current) return null;
@@ -64,6 +75,7 @@ export default function TymPage() {
       roleId,
       asLead: false,
     });
+    congratulate(roleId);
   }
 
   async function saveProfile(data: { name: string; email: string; phone: string; roleToAdd?: string; asLead?: boolean }) {
@@ -80,6 +92,7 @@ export default function TymPage() {
         roleId: data.roleToAdd,
         asLead: !!data.asLead,
       });
+      congratulate(data.roleToAdd);
     } else {
       const existing = year.members.find((m) => sameName(m.name, me));
       if (existing) {
@@ -475,6 +488,20 @@ export default function TymPage() {
 
       {editMember && <AdminEditMemberModal member={editMember} yearId={year.id} onClose={() => setEditMember(null)} />}
       {purge && <PurgeAccountModal key={purge.id} member={purge} year={year} onClose={() => setPurge(null)} />}
+
+      {/* Oslava po výběru role — vyskočí na 3 s a zmizí. */}
+      {celebrate && (
+        <div className="pointer-events-none fixed inset-0 z-50 grid place-items-center px-4">
+          <div className="marena-pop max-w-sm rounded-3xl bg-gradient-to-br from-marigold-500 to-plum-600 px-8 py-7 text-center text-white shadow-2xl ring-2 ring-white/30">
+            <div className="text-5xl">🎉</div>
+            <p className="mt-2 font-display text-xl font-bold">Mařena ti gratuluje, boží bojovníku!</p>
+            <p className="mt-2 text-base">
+              Tvoje role je <strong>{celebrate}</strong>.
+            </p>
+            <p className="mt-1 text-sm text-white/90">Hodně zdaru. 💪</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
