@@ -1,9 +1,41 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useStore } from "@/lib/store";
 import { DeleteButton } from "@/components/DeleteButton";
 import type { Sponsor, SponsorStatus, SponsorCategory } from "@/lib/types";
+
+// Editor více odkazů / kontaktů — tlačítko „+" přidá další pole, „✕" ho odebere.
+function LinksEditor({ links, setLinks }: { links: string[]; setLinks: Dispatch<SetStateAction<string[]>> }) {
+  return (
+    <div className="space-y-2">
+      {links.map((l, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <input
+            className="input"
+            placeholder="Odkaz / kontakt"
+            value={l}
+            onChange={(e) => setLinks((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))}
+          />
+          {links.length > 1 && (
+            <button
+              type="button"
+              className="btn-ghost px-2"
+              aria-label="Odebrat odkaz"
+              title="Odebrat odkaz"
+              onClick={() => setLinks((arr) => arr.filter((_, j) => j !== i))}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      ))}
+      <button type="button" className="btn-ghost text-sm" onClick={() => setLinks((arr) => [...arr, ""])}>
+        + Další odkaz / kontakt
+      </button>
+    </div>
+  );
+}
 
 const STATUS: Record<SponsorStatus, { label: string; cls: string }> = {
   oslovit: { label: "📋 oslovit", cls: "bg-paper2 text-ink-soft" },
@@ -32,13 +64,17 @@ const FILTERS: { id: "vse" | SponsorStatus; label: string }[] = [
   { id: "odmitl", label: "Odmítl" },
 ];
 
+// Odkazy sponzora: nové links[] + starý jeden link (kvůli původním datům).
+const linksOf = (s: Sponsor): string[] => [...(s.links ?? []), ...(s.link ? [s.link] : [])];
+const hrefOf = (l: string) => (l.startsWith("http") ? l : `https://${l}`);
+
 export default function SponzoriPage() {
   const { currentYear, dispatch, canEditCurrentYear } = useStore();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [gives, setGives] = useState("");
   const [who, setWho] = useState("");
-  const [link, setLink] = useState("");
+  const [links, setLinks] = useState<string[]>([""]);
   const [note, setNote] = useState("");
   const [category, setCategory] = useState<SponsorCategory>("jidlo_piti");
   const [returning, setReturning] = useState(false);
@@ -69,11 +105,11 @@ export default function SponzoriPage() {
 
   async function add() {
     if (!name.trim() || !year || !canEdit) return;
-    await dispatch({ type: "addSponsor", yearId: year.id, name: name.trim(), gives, who, link, note, category, returning });
+    await dispatch({ type: "addSponsor", yearId: year.id, name: name.trim(), gives, who, links, note, category, returning });
     setName("");
     setGives("");
     setWho("");
-    setLink("");
+    setLinks([""]);
     setNote("");
     setReturning(false);
   }
@@ -103,10 +139,8 @@ export default function SponzoriPage() {
             autoFocus
           />
           <input className="input" placeholder="Co dává (pivo, čaj, kávovar, peníze…)" value={gives} onChange={(e) => setGives(e.target.value)} />
-          <div className="grid gap-2 sm:grid-cols-2">
-            <input className="input" placeholder="Kdo to řeší" value={who} onChange={(e) => setWho(e.target.value)} />
-            <input className="input" placeholder="Odkaz / kontakt" value={link} onChange={(e) => setLink(e.target.value)} />
-          </div>
+          <input className="input" placeholder="Kdo to řeší" value={who} onChange={(e) => setWho(e.target.value)} />
+          <LinksEditor links={links} setLinks={setLinks} />
           <input className="input" placeholder="Požadavky / poznámka (např. chce logo)" value={note} onChange={(e) => setNote(e.target.value)} />
 
           <div>
@@ -194,13 +228,16 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
   const [name, setName] = useState(s.name);
   const [gives, setGives] = useState(s.gives ?? "");
   const [who, setWho] = useState(s.who ?? "");
-  const [link, setLink] = useState(s.link ?? "");
+  const [links, setLinks] = useState<string[]>(() => {
+    const l = linksOf(s);
+    return l.length ? l : [""];
+  });
   const [note, setNote] = useState(s.note ?? "");
   const [category, setCategory] = useState<SponsorCategory>(s.category ?? "ostatni");
   const [returning, setReturning] = useState(!!s.returning);
 
   async function save() {
-    await dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { name, gives, who, link, note, category, returning } });
+    await dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { name, gives, who, links, note, category, returning } });
     setEdit(false);
   }
 
@@ -209,10 +246,8 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
       <li className="card space-y-3 p-3">
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Název sponzora" />
         <input className="input" value={gives} onChange={(e) => setGives(e.target.value)} placeholder="Co dává (pivo, čaj, kávovar, peníze…)" />
-        <div className="grid gap-2 sm:grid-cols-2">
-          <input className="input" value={who} onChange={(e) => setWho(e.target.value)} placeholder="Kdo to řeší" />
-          <input className="input" value={link} onChange={(e) => setLink(e.target.value)} placeholder="Odkaz / kontakt" />
-        </div>
+        <input className="input" value={who} onChange={(e) => setWho(e.target.value)} placeholder="Kdo to řeší" />
+        <LinksEditor links={links} setLinks={setLinks} />
         <input className="input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Požadavky / poznámka (např. chce logo)" />
         <div>
           <p className="mb-1 text-xs font-medium text-ink-soft">Kategorie</p>
@@ -275,11 +310,11 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
         {s.gives && <p className="break-words text-sm text-leaf-700">dává: {s.gives}</p>}
         <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
           {s.who && <span>👤 {s.who}</span>}
-          {s.link && (
-            <a href={s.link.startsWith("http") ? s.link : `https://${s.link}`} target="_blank" rel="noreferrer" className="break-all text-marigold-700 hover:underline">
-              🔗 odkaz
+          {linksOf(s).map((l, i, arr) => (
+            <a key={i} href={hrefOf(l)} target="_blank" rel="noreferrer" className="break-all text-marigold-700 hover:underline">
+              🔗 odkaz{arr.length > 1 ? ` ${i + 1}` : ""}
             </a>
-          )}
+          ))}
           {s.note && <span className="break-words">📝 {s.note}</span>}
         </div>
       </div>
