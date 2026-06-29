@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { DeleteButton } from "@/components/DeleteButton";
+import { SearchBox } from "@/components/SearchBox";
+import { matchesQuery } from "@/lib/search";
 import type { Decor, DecorStatus } from "@/lib/types";
 
 const STATUS: Record<DecorStatus, { label: string; cls: string; order: number }> = {
@@ -15,6 +17,7 @@ const NEXT: Record<DecorStatus, DecorStatus> = { napad: "shani", shani: "hotovo"
 export default function VyzdobaPage() {
   const { currentYear, dispatch, canEditCurrentYear } = useStore();
   const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
   const [title, setTitle] = useState("");
   const [who, setWho] = useState("");
   const [link, setLink] = useState("");
@@ -22,8 +25,11 @@ export default function VyzdobaPage() {
 
   const year = currentYear;
   const list = useMemo(
-    () => [...(year?.decor ?? [])].sort((a, b) => STATUS[a.status].order - STATUS[b.status].order || a.createdAt.localeCompare(b.createdAt)),
-    [year],
+    () =>
+      [...(year?.decor ?? [])]
+        .filter((d) => matchesQuery(q, d.title, d.who, d.link, d.note))
+        .sort((a, b) => STATUS[a.status].order - STATUS[b.status].order || a.createdAt.localeCompare(b.createdAt)),
+    [year, q],
   );
   const counts = useMemo(() => {
     const c = { napad: 0, shani: 0, hotovo: 0 } as Record<DecorStatus, number>;
@@ -56,6 +62,10 @@ export default function VyzdobaPage() {
           </button>
         )}
       </div>
+
+      {(year.decor?.length ?? 0) > 0 && (
+        <SearchBox value={q} onChange={setQ} placeholder="Hledat výzdobu…" />
+      )}
 
       {open && canEdit && (
         <div className="card space-y-2 p-4">
@@ -99,6 +109,8 @@ export default function VyzdobaPage() {
         <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
           {canEdit ? "Zatím žádné nápady. Přidej první nahoře." : "Zatím žádné nápady."}
         </div>
+      ) : list.length === 0 && q.trim() ? (
+        <p className="text-sm text-ink-soft">Nic neodpovídá hledání.</p>
       ) : (
         <ul className="space-y-2">
           {list.map((d) => (

@@ -5,12 +5,15 @@ import { useStore } from "@/lib/store";
 import { ROLES, roleById } from "@/lib/roles";
 import { fmtDate } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
+import { SearchBox } from "@/components/SearchBox";
+import { matchesQuery } from "@/lib/search";
 
 type Filter = "vse" | "moje" | "nehotove" | "hotove";
 
 export default function UkolyPage() {
   const { currentYear, me, dispatch } = useStore();
   const [filter, setFilter] = useState<Filter>("nehotove");
+  const [q, setQ] = useState("");
   const [title, setTitle] = useState("");
   const [roleId, setRoleId] = useState("");
   const [assignee, setAssignee] = useState("");
@@ -24,12 +27,14 @@ export default function UkolyPage() {
   const tasks = useMemo(() => {
     if (!year) return [];
     return year.tasks.filter((t) => {
+      const roleName = t.roleId ? roleById(t.roleId)?.name : undefined;
+      if (!matchesQuery(q, t.title, t.assignee, roleName)) return false;
       if (filter === "moje") return !t.done && (t.assignee === me || (!!t.roleId && myRoleIds.includes(t.roleId)));
       if (filter === "nehotove") return !t.done;
       if (filter === "hotove") return t.done;
       return true;
     });
-  }, [year, filter, me, myRoleIds]);
+  }, [year, filter, me, myRoleIds, q]);
 
   // seskupení podle role
   const grouped = useMemo(() => {
@@ -103,6 +108,9 @@ export default function UkolyPage() {
         </button>
       </div>
 
+      {/* hledání */}
+      <SearchBox value={q} onChange={setQ} placeholder="Hledat úkol…" />
+
       {/* filtr */}
       <div className="flex flex-wrap gap-2">
         {([
@@ -125,7 +133,9 @@ export default function UkolyPage() {
 
       {/* seznam */}
       {tasks.length === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">Nic tu není. 🎉</div>
+        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+          {q.trim() ? "Nic neodpovídá hledání." : "Nic tu není. 🎉"}
+        </div>
       ) : (
         <div className="space-y-4">
           {[...grouped.entries()].map(([key, items]) => {

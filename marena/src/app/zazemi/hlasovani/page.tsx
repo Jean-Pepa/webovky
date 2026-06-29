@@ -5,12 +5,15 @@ import { useStore } from "@/lib/store";
 import { fmtRelative } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
+import { SearchBox } from "@/components/SearchBox";
+import { matchesQuery } from "@/lib/search";
 import { isAdmin } from "@/lib/admin";
 import type { Poll } from "@/lib/types";
 
 export default function HlasovaniPage() {
   const { currentYear, me, dispatch } = useStore();
   const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [multi, setMulti] = useState(false);
@@ -27,10 +30,12 @@ export default function HlasovaniPage() {
     setOpen(false);
   }
 
-  const polls = [...year.polls].sort((a, b) => {
-    if (a.closed !== b.closed) return a.closed ? 1 : -1;
-    return b.createdAt.localeCompare(a.createdAt);
-  });
+  const polls = [...year.polls]
+    .sort((a, b) => {
+      if (a.closed !== b.closed) return a.closed ? 1 : -1;
+      return b.createdAt.localeCompare(a.createdAt);
+    })
+    .filter((p) => matchesQuery(q, p.question, p.author, p.options.map((o) => o.label).join(" ")));
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
@@ -42,6 +47,8 @@ export default function HlasovaniPage() {
           {open ? "Zavřít" : "+ Nová anketa"}
         </button>
       </div>
+
+      <SearchBox value={q} onChange={setQ} placeholder="Hledat anketu…" />
 
       {open && (
         <div className="card space-y-3 p-4">
@@ -85,7 +92,7 @@ export default function HlasovaniPage() {
 
       {polls.length === 0 ? (
         <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
-          Zatím žádná anketa. Založ první rozhodování týmu.
+          {q ? "Nic neodpovídá hledání." : "Zatím žádná anketa. Založ první rozhodování týmu."}
         </div>
       ) : (
         polls.map((p) => <PollCard key={p.id} poll={p} yearId={year.id} me={me} totalPeople={year.members.length} />)
