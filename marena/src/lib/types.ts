@@ -161,11 +161,15 @@ export interface Drink {
 
 // Sponzoři — koho oslovit o podporu, co dávají a v jakém stavu domluva je.
 export type SponsorStatus = "oslovit" | "ceka" | "potvrzeno" | "odmitl";
+export type SponsorCategory = "jidlo_piti" | "stavebni" | "tisk" | "technika" | "ostatni";
 export interface Sponsor {
   id: string;
   name: string;
   gives?: string; // co dává (pivo, čaj, kávovar, poukazy, peníze…)
   status: SponsorStatus; // oslovit → čeká → potvrzeno / odmítl
+  statusAt?: string; // ISO – kdy se naposledy změnil stav (řazení ve skupině)
+  category?: SponsorCategory; // jídlo a pití / stavební materiál / tisk / technika / ostatní
+  returning?: boolean; // stálý sponzor (sponzoroval Mařenu už dřív)
   who?: string; // kdo to řeší
   link?: string;
   note?: string; // požadavky / detaily (např. „chce logo")

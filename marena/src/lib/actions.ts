@@ -1,7 +1,7 @@
 // Čistý reducer nad DB. Stejná logika běží na serveru (Redis) i v prohlížeči
 // (localStorage demo režim) — proto je bezstavová a deterministická až na uid().
 
-import type { DB, Year, Member, EventKind, FinanceKind, Task, Invite, MerchOrderItem } from "./types";
+import type { DB, Year, Member, EventKind, FinanceKind, Task, Invite, MerchOrderItem, SponsorStatus, SponsorCategory } from "./types";
 import { uid } from "./id";
 import { ROLE_TASKS } from "./roleTasks";
 import { sameName } from "./names";
@@ -62,8 +62,8 @@ export type Action =
   | { type: "addDecor"; yearId: string; title: string; who?: string; link?: string; note?: string }
   | { type: "updateDecor"; yearId: string; decorId: string; patch: { title?: string; status?: "napad" | "shani" | "hotovo"; who?: string; link?: string; note?: string } }
   | { type: "removeDecor"; yearId: string; decorId: string }
-  | { type: "addSponsor"; yearId: string; name: string; gives?: string; who?: string; link?: string; note?: string }
-  | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: "oslovit" | "ceka" | "potvrzeno" | "odmitl"; who?: string; link?: string; note?: string } }
+  | { type: "addSponsor"; yearId: string; name: string; gives?: string; who?: string; link?: string; note?: string; category?: SponsorCategory; returning?: boolean }
+  | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: SponsorStatus; who?: string; link?: string; note?: string; category?: SponsorCategory; returning?: boolean } }
   | { type: "removeSponsor"; yearId: string; sponsorId: string }
   | { type: "addDrink"; yearId: string; name: string; kind: "koktejl" | "panak" | "snidane" | "obed" | "jine"; place: "bar" | "kuchyne"; day?: "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne" }
   | { type: "updateDrink"; yearId: string; drinkId: string; patch: { name?: string; kind?: "koktejl" | "panak" | "snidane" | "obed" | "jine"; day?: "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne" | null; price?: number; note?: string; ingredients?: { name: string; cost: number }[] } }
@@ -648,6 +648,9 @@ export function applyAction(db: DB, a: Action): DB {
             id: uid("sp_"),
             name,
             status: "oslovit" as const,
+            statusAt: now(),
+            category: a.category,
+            returning: a.returning || undefined,
             gives: a.gives?.trim() || undefined,
             who: a.who?.trim() || undefined,
             link: a.link?.trim() || undefined,
@@ -667,6 +670,10 @@ export function applyAction(db: DB, a: Action): DB {
                 name: a.patch.name?.trim() || s.name,
                 gives: a.patch.gives !== undefined ? a.patch.gives.trim() || undefined : s.gives,
                 status: a.patch.status ?? s.status,
+                // při změně stavu zapiš čas — kvůli řazení uvnitř skupiny (fronta)
+                statusAt: a.patch.status !== undefined && a.patch.status !== s.status ? now() : s.statusAt,
+                category: a.patch.category !== undefined ? a.patch.category : s.category,
+                returning: a.patch.returning !== undefined ? a.patch.returning : s.returning,
                 who: a.patch.who !== undefined ? a.patch.who.trim() || undefined : s.who,
                 link: a.patch.link !== undefined ? a.patch.link.trim() || undefined : s.link,
                 note: a.patch.note !== undefined ? a.patch.note.trim() || undefined : s.note,
