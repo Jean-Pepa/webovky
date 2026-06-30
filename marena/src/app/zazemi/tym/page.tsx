@@ -40,6 +40,15 @@ export default function TymPage() {
   const editable = canEditCurrentYear; // starší (zamčený) ročník = jen ke čtení
   const admin = isAdmin(me);
 
+  // Kolik lidí čeká na schválení správcem (oranžové upozornění u nadpisu).
+  const pendingCount = year.members.filter((m) => m.approved === false).length;
+  const pendingLabel =
+    pendingCount === 1
+      ? "1 člověk čeká na schválení"
+      : pendingCount >= 2 && pendingCount <= 4
+        ? `${pendingCount} lidé čekají na schválení`
+        : `${pendingCount} lidí čeká na schválení`;
+
   const myMember = year.members.find((m) => sameName(m.name, me));
   const takenBy = (roleId: string) => year.members.filter((m) => m.roleIds.includes(roleId));
 
@@ -299,7 +308,14 @@ export default function TymPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Tým &amp; role</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-2xl font-semibold tracking-tight">Tým &amp; role</h1>
+          {admin && pendingCount > 0 && (
+            <span className="pending-glow inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-sm font-semibold text-white">
+              ⏳ {pendingLabel}
+            </span>
+          )}
+        </div>
         <SearchBox value={q} onChange={setQ} placeholder="Hledat roli nebo člověka…" className="w-full sm:w-72" />
       </div>
 
@@ -345,6 +361,87 @@ export default function TymPage() {
               <p className="mt-2 text-sm text-ink-soft">Ještě nejsi v týmu. Vyber si roli níže — vyskočí okno na doplnění kontaktu.</p>
             )}
           </section>
+
+          {/* Soupiska celého týmu — sbalitelná, vidí ji všichni; upravovat (schválit/smazat) může jen správce */}
+          <Collapsible
+            key={`soupiska-${q.length > 0}`}
+            defaultOpen={q.length > 0}
+            className="card p-4 sm:p-5"
+            header={
+              <span className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+                Soupiska týmu ({year.members.length})
+                {year.members.filter((m) => m.approved === false).length > 0 && (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                    ⏳ {year.members.filter((m) => m.approved === false).length} čeká
+                  </span>
+                )}
+              </span>
+            }
+          >
+            <p className="mb-3 mt-2 text-xs text-ink-soft">
+              {admin
+                ? "Tady schvaluješ nové účty. Čekající jsou nahoře. „Smazat účet“ odstraní člověka úplně — z týmu, rolí i seznamu."
+                : "Přehled všech v týmu i s kontaktem. Upravovat a schvalovat může jen správce — tobě se ukazuje jen náhled."}
+            </p>
+            {year.members.length === 0 ? (
+              <p className="text-sm text-ink-soft">Zatím nikdo.</p>
+            ) : (
+              <ul className="divide-y divide-black/[0.06]">
+                {[...year.members]
+                  .filter((m) => matchesQuery(q, m.name, m.email, m.phone))
+                  .sort((a, b) => {
+                    // čekající nahoru, pak abecedně
+                    const ap = a.approved === false ? 0 : 1;
+                    const bp = b.approved === false ? 0 : 1;
+                    if (ap !== bp) return ap - bp;
+                    return a.name.localeCompare(b.name, "cs");
+                  })
+                  .map((m) => {
+                    const pending = m.approved === false;
+                    return (
+                      <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium">{m.name}</span>
+                            {pending ? (
+                              <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">⏳ Čeká</span>
+                            ) : (
+                              <span className="shrink-0 rounded-full bg-leaf/15 px-2 py-0.5 text-xs font-semibold text-leaf-700">✓ Schváleno</span>
+                            )}
+                          </div>
+                          {(m.phone || m.email) && (
+                            <div className="mt-0.5 break-words text-xs text-ink-soft">
+                              {m.phone && (
+                                <a href={`tel:${m.phone}`} className="hover:text-marigold-700">📞 {m.phone}</a>
+                              )}
+                              {m.phone && m.email && <span> · </span>}
+                              {m.email && (
+                                <a href={`mailto:${m.email}`} className="break-all hover:text-marigold-700">✉️ {m.email}</a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        {admin && (
+                          <div className="flex shrink-0 items-center gap-2">
+                            {pending && (
+                              <button
+                                className="rounded-full bg-leaf px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+                                onClick={() => dispatch({ type: "approveMember", yearId: year.id, memberId: m.id })}
+                              >
+                                Schválit
+                              </button>
+                            )}
+                            <button className="btn-danger" onClick={() => setPurge(m)}>
+                              Smazat účet
+                            </button>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+              </ul>
+            )}
+          </Collapsible>
 
           {/* Moje funkce nahoře */}
           {mineRoles.length > 0 && (
@@ -446,81 +543,6 @@ export default function TymPage() {
         </aside>
 
       </div>
-
-      {/* Jen pro správce: schvalování a správa účtů (plná šířka, ať se vejde celé jméno i kontakt) */}
-      {admin && (
-        <Collapsible
-          key={`ucty-${q.length > 0}`}
-          defaultOpen={q.length > 0}
-          className="card p-4 sm:p-5"
-          header={
-            <span className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
-              Účty ({year.members.length})
-              {year.members.filter((m) => m.approved === false).length > 0 && (
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                  ⏳ {year.members.filter((m) => m.approved === false).length} čeká
-                </span>
-              )}
-            </span>
-          }
-        >
-          <p className="mb-3 mt-2 text-xs text-ink-soft">
-            Tady schvaluješ nové účty. Čekající jsou nahoře. „Smazat účet“ odstraní člověka úplně — z týmu, rolí i seznamu.
-          </p>
-          {year.members.length === 0 ? (
-            <p className="text-sm text-ink-soft">Zatím nikdo.</p>
-          ) : (
-            <ul className="divide-y divide-black/[0.06]">
-              {[...year.members]
-                .filter((m) => matchesQuery(q, m.name, m.email, m.phone))
-                .sort((a, b) => {
-                  // čekající nahoru, pak abecedně
-                  const ap = a.approved === false ? 0 : 1;
-                  const bp = b.approved === false ? 0 : 1;
-                  if (ap !== bp) return ap - bp;
-                  return a.name.localeCompare(b.name, "cs");
-                })
-                .map((m) => {
-                  const pending = m.approved === false;
-                  return (
-                    <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-medium">{m.name}</span>
-                          {pending ? (
-                            <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">⏳ Čeká</span>
-                          ) : (
-                            <span className="shrink-0 rounded-full bg-leaf/15 px-2 py-0.5 text-xs font-semibold text-leaf-700">✓ Schváleno</span>
-                          )}
-                        </div>
-                        {(m.phone || m.email) && (
-                          <div className="mt-0.5 break-words text-xs text-ink-soft">
-                            {m.phone && <span>📞 {m.phone}</span>}
-                            {m.phone && m.email && <span> · </span>}
-                            {m.email && <span>✉️ {m.email}</span>}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        {pending && (
-                          <button
-                            className="rounded-full bg-leaf px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
-                            onClick={() => dispatch({ type: "approveMember", yearId: year.id, memberId: m.id })}
-                          >
-                            Schválit
-                          </button>
-                        )}
-                        <button className="btn-danger" onClick={() => setPurge(m)}>
-                          Smazat účet
-                        </button>
-                      </div>
-                    </li>
-                  );
-                })}
-            </ul>
-          )}
-        </Collapsible>
-      )}
 
       <ProfileModal
         open={modal !== null}

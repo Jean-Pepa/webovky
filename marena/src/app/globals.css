@@ -192,6 +192,25 @@
   }
 }
 
+/* Upozornění správci „čeká na schválení" — oranžově pulzuje (svítí). */
+@keyframes marena-glow-amber {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.45), 0 0 10px rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.8), 0 0 22px rgba(245, 158, 11, 0.7);
+  }
+}
+.pending-glow {
+  animation: marena-glow-amber 1.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pending-glow {
+    animation: none;
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.7);
+  }
+}
+
 @layer components {
   .btn-primary {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-marigold-600
