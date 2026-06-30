@@ -8,6 +8,7 @@ import { Gate } from "@/components/Gate";
 import { Header } from "@/components/Header";
 import { Modal } from "@/components/Modal";
 import { TripCalendar } from "@/components/TripCalendar";
+import { Expenses } from "@/components/Expenses";
 import { fmtRange, addDays } from "@/lib/format";
 import { rankWindows, topDistinctWindows, type WindowResult } from "@/lib/windows";
 import { newId } from "@/lib/id";
@@ -30,6 +31,7 @@ function TripDetail() {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [proposalPrefill, setProposalPrefill] = useState<{ start: string; end: string } | null>(null);
+  const [tab, setTab] = useState<"plan" | "money">("plan");
 
   // Auto-přihlášení do výpravy (přidá mě mezi účastníky, výchozí stav = můžu).
   const memberKey = trip?.members.join("|");
@@ -86,19 +88,41 @@ function TripDetail() {
         </div>
       )}
 
-      <Members trip={trip} me={me} />
-
-      <div className="grid gap-5 lg:grid-cols-2">
-        <TripCalendar trip={trip} me={me} />
-        <BestWindows
-          trip={trip}
-          picks={topPicks}
-          totalWindows={ranked.length}
-          onPropose={(w) => setProposalPrefill({ start: w.start, end: w.end })}
-        />
+      {/* přepínač Termín / Náklady */}
+      <div className="inline-flex rounded-full bg-paper2 p-0.5 text-sm font-medium">
+        <button
+          className={`rounded-full px-4 py-1.5 transition ${tab === "plan" ? "bg-white shadow-sm text-ink" : "text-ink-soft"}`}
+          onClick={() => setTab("plan")}
+        >
+          📅 Termín
+        </button>
+        <button
+          className={`rounded-full px-4 py-1.5 transition ${tab === "money" ? "bg-white shadow-sm text-ink" : "text-ink-soft"}`}
+          onClick={() => setTab("money")}
+        >
+          💸 Náklady
+        </button>
       </div>
 
-      <Proposals trip={trip} me={me} onNew={() => setProposalPrefill({ start: trip.horizonStart, end: addDays(trip.horizonStart, trip.lengthDays - 1) })} />
+      {tab === "plan" && (
+        <>
+          <Members trip={trip} me={me} />
+
+          <div className="grid gap-5 lg:grid-cols-2">
+            <TripCalendar trip={trip} me={me} />
+            <BestWindows
+              trip={trip}
+              picks={topPicks}
+              totalWindows={ranked.length}
+              onPropose={(w) => setProposalPrefill({ start: w.start, end: w.end })}
+            />
+          </div>
+
+          <Proposals trip={trip} me={me} onNew={() => setProposalPrefill({ start: trip.horizonStart, end: addDays(trip.horizonStart, trip.lengthDays - 1) })} />
+        </>
+      )}
+
+      {tab === "money" && <Expenses trip={trip} me={me} />}
 
       {settingsOpen && <SettingsModal trip={trip} onClose={() => setSettingsOpen(false)} />}
       {proposalPrefill && (

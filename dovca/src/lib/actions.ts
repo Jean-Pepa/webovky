@@ -1,4 +1,4 @@
-import type { DB, Trip, Proposal, AvailStatus, VoteValue } from "./types";
+import type { DB, Trip, Proposal, Expense, AvailStatus, VoteValue } from "./types";
 
 // Akce = jediný způsob, jak měnit DB. applyAction je čistá funkce a běží
 // stejně na klientovi (demo režim) i na serveru (atomicky pod zámkem), takže
@@ -21,7 +21,15 @@ export type Action =
   | { type: "removeProposal"; tripId: string; proposalId: string }
   | { type: "voteProposal"; tripId: string; proposalId: string; person: string; vote: VoteValue | null }
   | { type: "lockTrip"; tripId: string; start: string; end: string; place?: string }
-  | { type: "unlockTrip"; tripId: string };
+  | { type: "unlockTrip"; tripId: string }
+  | { type: "addExpense"; tripId: string; expense: Expense }
+  | { type: "removeExpense"; tripId: string; expenseId: string }
+  | {
+      type: "updateExpense";
+      tripId: string;
+      expenseId: string;
+      patch: Partial<Pick<Expense, "amount" | "category" | "paidBy" | "car" | "note" | "date">>;
+    };
 
 function mapTrip(db: DB, tripId: string, fn: (t: Trip) => Trip): DB {
   return { ...db, trips: db.trips.map((t) => (t.id === tripId ? fn(t) : t)) };
@@ -100,6 +108,21 @@ export function applyAction(db: DB, action: Action): DB {
 
     case "unlockTrip":
       return mapTrip(db, action.tripId, (t) => ({ ...t, locked: null }));
+
+    case "addExpense":
+      return mapTrip(db, action.tripId, (t) => ({ ...t, expenses: [...(t.expenses ?? []), action.expense] }));
+
+    case "removeExpense":
+      return mapTrip(db, action.tripId, (t) => ({
+        ...t,
+        expenses: (t.expenses ?? []).filter((e) => e.id !== action.expenseId),
+      }));
+
+    case "updateExpense":
+      return mapTrip(db, action.tripId, (t) => ({
+        ...t,
+        expenses: (t.expenses ?? []).map((e) => (e.id === action.expenseId ? { ...e, ...action.patch } : e)),
+      }));
 
     default:
       return db;

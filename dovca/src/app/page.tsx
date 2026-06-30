@@ -124,6 +124,7 @@ function NewTripModal({ onClose }: { onClose: () => void }) {
       members: [me],
       availability: {},
       proposals: [],
+      expenses: [],
       locked: null,
     };
     await dispatch({ type: "addTrip", trip });

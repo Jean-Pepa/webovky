@@ -38,6 +38,13 @@ export function seedDB(): DB {
           Péťa: paint(["2026-07-27", "2026-08-02"], "maybe"),
         },
         proposals: [],
+        expenses: [
+          { id: "x1", amount: 1450, category: "benzin", paidBy: "Kuba", car: "Kubova Octavia", note: "plná nádrž", date: "2026-07-13", createdAt: "2026-07-13T08:00:00.000Z" },
+          { id: "x2", amount: 380, category: "myto", paidBy: "Kuba", car: "Kubova Octavia", note: "rakouská dálnice", date: "2026-07-13", createdAt: "2026-07-13T09:30:00.000Z" },
+          { id: "x3", amount: 1620, category: "benzin", paidBy: "Tomáš", car: "Tomášovo Audi", date: "2026-07-13", createdAt: "2026-07-13T08:10:00.000Z" },
+          { id: "x4", amount: 240, category: "parkovne", paidBy: "Vojta", note: "u apartmánu", date: "2026-07-14", createdAt: "2026-07-14T19:00:00.000Z" },
+          { id: "x5", amount: 900, category: "jidlo", paidBy: "Marek", note: "společný nákup", date: "2026-07-14", createdAt: "2026-07-14T17:00:00.000Z" },
+        ],
         locked: null,
       },
     ],

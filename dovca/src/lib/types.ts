@@ -22,6 +22,21 @@ export interface Proposal {
   votes: Record<string, VoteValue>; // jméno → hlas
 }
 
+// Kategorie nákladů na cestu.
+export type ExpenseCategory = "benzin" | "myto" | "parkovne" | "ubytovani" | "jidlo" | "ostatni";
+
+// Jedna útrata v rámci cesty (benzín, dálnice/mýtné, parkovné…).
+export interface Expense {
+  id: string;
+  amount: number; // částka v Kč
+  category: ExpenseCategory;
+  paidBy: string; // kdo zaplatil (jméno)
+  car?: string; // do/za které auto (volitelné)
+  note?: string;
+  date: string; // ISO datum
+  createdAt: string; // ISO datetime
+}
+
 export interface Trip {
   id: string;
   name: string; // např. „Léto 2026"
@@ -35,6 +50,8 @@ export interface Trip {
   // dostupnost: jméno → { datumISO: stav }. Chybějící den = „můžu".
   availability: Record<string, Record<string, AvailStatus>>;
   proposals: Proposal[];
+  // útraty na cestu (benzín, mýtné, …)
+  expenses: Expense[];
   // zamčený finální termín (když se parta dohodla)
   locked: { start: string; end: string; place?: string } | null;
 }

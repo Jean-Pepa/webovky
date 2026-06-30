@@ -29,6 +29,14 @@ export function fmtRange(start: string, end: string): string {
   return `${left} – ${right}`;
 }
 
+// Částka v Kč s mezerou jako oddělovačem tisíců (např. „1 500 Kč").
+export function fmtCZK(amount: number): string {
+  const sign = amount < 0 ? "−" : "";
+  const abs = Math.abs(Math.round(amount));
+  const grouped = abs.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return `${sign}${grouped} Kč`;
+}
+
 export function todayISO(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
