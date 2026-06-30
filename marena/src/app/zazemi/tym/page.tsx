@@ -9,6 +9,7 @@ import { Icon } from "@/components/Icons";
 import { isAdmin } from "@/lib/admin";
 import { sameName } from "@/lib/names";
 import { SearchBox } from "@/components/SearchBox";
+import { Collapsible } from "@/components/Collapsible";
 import { matchesQuery } from "@/lib/search";
 import type { Member, Year } from "@/lib/types";
 
@@ -38,6 +39,15 @@ export default function TymPage() {
   const year = current; // typ Year (zachová zúžení i ve vnořených funkcích)
   const editable = canEditCurrentYear; // starší (zamčený) ročník = jen ke čtení
   const admin = isAdmin(me);
+
+  // Kolik lidí čeká na schválení správcem (oranžové upozornění u nadpisu).
+  const pendingCount = year.members.filter((m) => m.approved === false).length;
+  const pendingLabel =
+    pendingCount === 1
+      ? "1 člověk čeká na schválení"
+      : pendingCount >= 2 && pendingCount <= 4
+        ? `${pendingCount} lidé čekají na schválení`
+        : `${pendingCount} lidí čeká na schválení`;
 
   const myMember = year.members.find((m) => sameName(m.name, me));
   const takenBy = (roleId: string) => year.members.filter((m) => m.roleIds.includes(roleId));
@@ -194,99 +204,118 @@ export default function TymPage() {
     );
   }
 
-  function RoleCard({ r }: { r: Role }) {
+  function RoleCard({ r, defaultOpen }: { r: Role; defaultOpen: boolean }) {
     const people = takenBy(r.id);
     const taken = people.length > 0;
     const mine = myMember?.roleIds.includes(r.id) ?? false;
-    const open = openRole === r.id;
+    const dutiesOpen = openRole === r.id;
+    const leadId = leadIdOf(r.id);
+    const lead = people.find((p) => p.id === leadId);
+    const helpers = people.filter((p) => p.id !== leadId);
+
     return (
-      <div className={`card p-4 transition ${mine ? "role-taken bg-leaf/5" : ""}`}>
-        <div className="flex items-start gap-3">
-          <span className="text-2xl">{r.emoji}</span>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="font-display text-base font-semibold">{r.name}</h3>
-              {taken ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-marigold-600 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
-                  <Icon name="users" className="h-3.5 w-3.5" />
-                  <span className="text-xs leading-none">{people.length}</span>
-                  <span className="opacity-85">· Obsazeno</span>
-                </span>
+      <Collapsible
+        defaultOpen={defaultOpen}
+        className={`card overflow-hidden transition ${mine ? "role-taken bg-leaf/5" : ""}`}
+        headerClassName="items-start gap-3 p-4"
+        header={(open) => (
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">{r.emoji}</span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-display text-base font-semibold">{r.name}</span>
+                {taken ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-marigold-600 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+                    <Icon name="users" className="h-3.5 w-3.5" />
+                    <span className="text-xs leading-none">{people.length}</span>
+                    <span className="opacity-85">· Obsazeno</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-leaf-700">
+                    <Icon name="users" className="h-3.5 w-3.5" />
+                    <span className="text-xs leading-none">0</span>
+                    <span className="opacity-85">· Volné</span>
+                  </span>
+                )}
+              </div>
+              {/* Sbaleno → kdo to vede; rozbaleno → krátký popis. */}
+              {open ? (
+                <p className="mt-0.5 text-sm text-ink-soft">{r.short}</p>
+              ) : taken && lead ? (
+                <p className="mt-0.5 truncate text-sm text-ink-soft">
+                  👑 {lead.name}
+                  {helpers.length > 0 ? ` · +${helpers.length}` : ""}
+                </p>
               ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-leaf-700">
-                  <Icon name="users" className="h-3.5 w-3.5" />
-                  <span className="text-xs leading-none">0</span>
-                  <span className="opacity-85">· Volné</span>
-                </span>
+                <p className="mt-0.5 text-sm text-ink-soft/70">Zatím volné — můžeš si ji vzít.</p>
               )}
             </div>
-            <p className="text-sm text-ink-soft">{r.short}</p>
           </div>
-        </div>
-
-        {/* Kdo funkci drží — vedoucí (červený rámeček) + odsazení pomocníci */}
-        <div className="mt-3">
+        )}
+      >
+        <div className="px-4 pb-4">
+          {/* Kdo funkci drží — vedoucí (červený rámeček) + odsazení pomocníci */}
           {!taken ? (
             <p className="text-xs text-ink-soft/70">Zatím nikdo — můžeš si ji vzít a stát se vedoucím.</p>
           ) : (
-            (() => {
-              const leadId = leadIdOf(r.id);
-              const lead = people.find((p) => p.id === leadId);
-              const helpers = people.filter((p) => p.id !== leadId);
-              return (
-                <div className="space-y-2">
-                  {lead && <PersonRow p={lead} roleId={r.id} variant="lead" />}
-                  {helpers.length > 0 && (
-                    <div className="ml-3 space-y-2 border-l-2 border-marigold-300 pl-3">
-                      {helpers.map((p) => (
-                        <PersonRow key={p.id} p={p} roleId={r.id} variant="helper" />
-                      ))}
-                    </div>
-                  )}
+            <div className="space-y-2">
+              {lead && <PersonRow p={lead} roleId={r.id} variant="lead" />}
+              {helpers.length > 0 && (
+                <div className="ml-3 space-y-2 border-l-2 border-marigold-300 pl-3">
+                  {helpers.map((p) => (
+                    <PersonRow key={p.id} p={p} roleId={r.id} variant="helper" />
+                  ))}
                 </div>
-              );
-            })()
+              )}
+            </div>
+          )}
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {editable &&
+              (mine ? (
+                <button className="btn-secondary" onClick={() => removeRoleFromMe(r.id)}>
+                  Uvolnit funkci
+                </button>
+              ) : r.id === "ekonom" && !admin ? (
+                <span className="text-xs text-ink-soft">🔒 Tuto funkci přiděluje jen správce (Mařena).</span>
+              ) : (
+                <button
+                  className={taken ? "btn-secondary" : "btn-primary"}
+                  onClick={() => (myMember ? takeRoleDirect(r.id) : setModal({ roleToAdd: r.id }))}
+                >
+                  {taken ? "Přidat se taky" : "Vzít si"}
+                </button>
+              ))}
+            <button className="btn-ghost" onClick={() => setOpenRole(dutiesOpen ? null : r.id)}>
+              {dutiesOpen ? "Skrýt úkoly" : "Co to obnáší"}
+            </button>
+          </div>
+          {dutiesOpen && (
+            <ul className="mt-3 space-y-1.5 border-t border-black/[0.06] pt-3 text-sm text-ink-soft">
+              {r.duties.map((d, i) => (
+                <li key={i} className="flex gap-2">
+                  <span className="text-marigold-600">•</span>
+                  <span>{d}</span>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {editable &&
-            (mine ? (
-              <button className="btn-secondary" onClick={() => removeRoleFromMe(r.id)}>
-                Uvolnit funkci
-              </button>
-            ) : r.id === "ekonom" && !admin ? (
-              <span className="text-xs text-ink-soft">🔒 Tuto funkci přiděluje jen správce (Mařena).</span>
-            ) : (
-              <button
-                className={taken ? "btn-secondary" : "btn-primary"}
-                onClick={() => (myMember ? takeRoleDirect(r.id) : setModal({ roleToAdd: r.id }))}
-              >
-                {taken ? "Přidat se taky" : "Vzít si"}
-              </button>
-            ))}
-          <button className="btn-ghost" onClick={() => setOpenRole(open ? null : r.id)}>
-            {open ? "Skrýt úkoly" : "Co to obnáší"}
-          </button>
-        </div>
-        {open && (
-          <ul className="mt-3 space-y-1.5 border-t border-black/[0.06] pt-3 text-sm text-ink-soft">
-            {r.duties.map((d, i) => (
-              <li key={i} className="flex gap-2">
-                <span className="text-marigold-600">•</span>
-                <span>{d}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      </Collapsible>
     );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Tým &amp; role</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-2xl font-semibold tracking-tight">Tým &amp; role</h1>
+          {admin && pendingCount > 0 && (
+            <span className="pending-glow inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-sm font-semibold text-white">
+              ⏳ {pendingLabel}
+            </span>
+          )}
+        </div>
         <SearchBox value={q} onChange={setQ} placeholder="Hledat roli nebo člověka…" className="w-full sm:w-72" />
       </div>
 
@@ -333,13 +362,94 @@ export default function TymPage() {
             )}
           </section>
 
+          {/* Soupiska celého týmu — sbalitelná, vidí ji všichni; upravovat (schválit/smazat) může jen správce */}
+          <Collapsible
+            key={`soupiska-${q.length > 0}`}
+            defaultOpen={q.length > 0}
+            className="card p-4 sm:p-5"
+            header={
+              <span className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+                Soupiska týmu ({year.members.length})
+                {year.members.filter((m) => m.approved === false).length > 0 && (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                    ⏳ {year.members.filter((m) => m.approved === false).length} čeká
+                  </span>
+                )}
+              </span>
+            }
+          >
+            <p className="mb-3 mt-2 text-xs text-ink-soft">
+              {admin
+                ? "Tady schvaluješ nové účty. Čekající jsou nahoře. „Smazat účet“ odstraní člověka úplně — z týmu, rolí i seznamu."
+                : "Přehled všech v týmu i s kontaktem. Upravovat a schvalovat může jen správce — tobě se ukazuje jen náhled."}
+            </p>
+            {year.members.length === 0 ? (
+              <p className="text-sm text-ink-soft">Zatím nikdo.</p>
+            ) : (
+              <ul className="divide-y divide-black/[0.06]">
+                {[...year.members]
+                  .filter((m) => matchesQuery(q, m.name, m.email, m.phone))
+                  .sort((a, b) => {
+                    // čekající nahoru, pak abecedně
+                    const ap = a.approved === false ? 0 : 1;
+                    const bp = b.approved === false ? 0 : 1;
+                    if (ap !== bp) return ap - bp;
+                    return a.name.localeCompare(b.name, "cs");
+                  })
+                  .map((m) => {
+                    const pending = m.approved === false;
+                    return (
+                      <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium">{m.name}</span>
+                            {pending ? (
+                              <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">⏳ Čeká</span>
+                            ) : (
+                              <span className="shrink-0 rounded-full bg-leaf/15 px-2 py-0.5 text-xs font-semibold text-leaf-700">✓ Schváleno</span>
+                            )}
+                          </div>
+                          {(m.phone || m.email) && (
+                            <div className="mt-0.5 break-words text-xs text-ink-soft">
+                              {m.phone && (
+                                <a href={`tel:${m.phone}`} className="hover:text-marigold-700">📞 {m.phone}</a>
+                              )}
+                              {m.phone && m.email && <span> · </span>}
+                              {m.email && (
+                                <a href={`mailto:${m.email}`} className="break-all hover:text-marigold-700">✉️ {m.email}</a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        {admin && (
+                          <div className="flex shrink-0 items-center gap-2">
+                            {pending && (
+                              <button
+                                className="rounded-full bg-leaf px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+                                onClick={() => dispatch({ type: "approveMember", yearId: year.id, memberId: m.id })}
+                              >
+                                Schválit
+                              </button>
+                            )}
+                            <button className="btn-danger" onClick={() => setPurge(m)}>
+                              Smazat účet
+                            </button>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+              </ul>
+            )}
+          </Collapsible>
+
           {/* Moje funkce nahoře */}
           {mineRoles.length > 0 && (
             <section className="space-y-3">
               <h2 className="font-display text-lg font-semibold">Moje funkce</h2>
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid items-start gap-3 md:grid-cols-2">
                 {mineRoles.map((r) => (
-                  <RoleCard key={r.id} r={r} />
+                  <RoleCard key={r.id} r={r} defaultOpen />
                 ))}
               </div>
             </section>
@@ -348,9 +458,9 @@ export default function TymPage() {
           {/* Ostatní posty */}
           <section className="space-y-3">
             <h2 className="font-display text-lg font-semibold">{mineRoles.length > 0 ? "Další posty" : "Posty a co obnášejí"}</h2>
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid items-start gap-3 md:grid-cols-2">
               {otherRoles.map((r) => (
-                <RoleCard key={r.id} r={r} />
+                <RoleCard key={`${r.id}-${q.length > 0}`} r={r} defaultOpen={q.length > 0} />
               ))}
             </div>
           </section>
@@ -372,19 +482,25 @@ export default function TymPage() {
             {year.members.length === 0 ? (
               <p className="text-sm text-ink-soft">Zatím nikdo. Buď první!</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-1.5">
                 {ROLES.filter((r) => takenBy(r.id).length > 0 && roleMatchesQ(r)).map((r) => {
                   const holders = takenBy(r.id);
                   const leadId = leadIdOf(r.id);
                   const lead = holders.find((h) => h.id === leadId);
                   const helpers = holders.filter((h) => h.id !== leadId);
                   return (
-                    <div key={r.id}>
-                      <h3 className="mb-1.5 flex flex-wrap items-center gap-1.5 text-sm font-semibold">
-                        <span>{r.emoji}</span> {r.name}
-                        <span className="chip">{holders.length}</span>
-                      </h3>
-                      <div className="space-y-1.5">
+                    <Collapsible
+                      key={`${r.id}-${q.length > 0}`}
+                      defaultOpen={q.length > 0}
+                      className="rounded-xl bg-paper2/60 px-2 py-1.5"
+                      header={
+                        <span className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+                          <span>{r.emoji}</span> {r.name}
+                          <span className="chip">{holders.length}</span>
+                        </span>
+                      }
+                    >
+                      <div className="mt-1.5 space-y-1.5">
                         {lead && <RosterPerson m={lead} variant="lead" />}
                         {helpers.length > 0 && (
                           <div className="ml-3 space-y-1.5 border-l-2 border-marigold-300 pl-3">
@@ -394,21 +510,29 @@ export default function TymPage() {
                           </div>
                         )}
                       </div>
-                    </div>
+                    </Collapsible>
                   );
                 })}
 
                 {year.members.filter((m) => m.roleIds.length === 0).length > 0 && (
-                  <div>
-                    <h3 className="mb-1.5 text-sm font-semibold text-ink-soft">Bez role</h3>
-                    <div className="space-y-1.5">
+                  <Collapsible
+                    defaultOpen={q.length > 0}
+                    className="rounded-xl bg-paper2/60 px-2 py-1.5"
+                    header={
+                      <span className="flex items-center gap-1.5 text-sm font-semibold text-ink-soft">
+                        Bez role
+                        <span className="chip">{year.members.filter((m) => m.roleIds.length === 0).length}</span>
+                      </span>
+                    }
+                  >
+                    <div className="mt-1.5 space-y-1.5">
                       {year.members
                         .filter((m) => m.roleIds.length === 0)
                         .map((m) => (
                           <RosterPerson key={m.id} m={m} variant="none" />
                         ))}
                     </div>
-                  </div>
+                  </Collapsible>
                 )}
               </div>
             )}
@@ -419,68 +543,6 @@ export default function TymPage() {
         </aside>
 
       </div>
-
-      {/* Jen pro správce: schvalování a správa účtů (plná šířka, ať se vejde celé jméno i kontakt) */}
-      {admin && (
-        <section className="card p-4 sm:p-5">
-          <h2 className="font-display text-lg font-semibold">Účty ({year.members.length})</h2>
-          <p className="mb-3 mt-0.5 text-xs text-ink-soft">
-            Tady schvaluješ nové účty. Čekající jsou nahoře. „Smazat účet“ odstraní člověka úplně — z týmu, rolí i seznamu.
-          </p>
-          {year.members.length === 0 ? (
-            <p className="text-sm text-ink-soft">Zatím nikdo.</p>
-          ) : (
-            <ul className="divide-y divide-black/[0.06]">
-              {[...year.members]
-                .filter((m) => matchesQuery(q, m.name, m.email, m.phone))
-                .sort((a, b) => {
-                  // čekající nahoru, pak abecedně
-                  const ap = a.approved === false ? 0 : 1;
-                  const bp = b.approved === false ? 0 : 1;
-                  if (ap !== bp) return ap - bp;
-                  return a.name.localeCompare(b.name, "cs");
-                })
-                .map((m) => {
-                  const pending = m.approved === false;
-                  return (
-                    <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-medium">{m.name}</span>
-                          {pending ? (
-                            <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">⏳ Čeká</span>
-                          ) : (
-                            <span className="shrink-0 rounded-full bg-leaf/15 px-2 py-0.5 text-xs font-semibold text-leaf-700">✓ Schváleno</span>
-                          )}
-                        </div>
-                        {(m.phone || m.email) && (
-                          <div className="mt-0.5 break-words text-xs text-ink-soft">
-                            {m.phone && <span>📞 {m.phone}</span>}
-                            {m.phone && m.email && <span> · </span>}
-                            {m.email && <span>✉️ {m.email}</span>}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        {pending && (
-                          <button
-                            className="rounded-full bg-leaf px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
-                            onClick={() => dispatch({ type: "approveMember", yearId: year.id, memberId: m.id })}
-                          >
-                            Schválit
-                          </button>
-                        )}
-                        <button className="btn-danger" onClick={() => setPurge(m)}>
-                          Smazat účet
-                        </button>
-                      </div>
-                    </li>
-                  );
-                })}
-            </ul>
-          )}
-        </section>
-      )}
 
       <ProfileModal
         open={modal !== null}
