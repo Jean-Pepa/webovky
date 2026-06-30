@@ -21,17 +21,21 @@ export default function TymPage() {
   const [modal, setModal] = useState<{ roleToAdd?: string } | null>(null);
   // Správce (Mařena) může upravit libovolného člena.
   const [editMember, setEditMember] = useState<Member | null>(null);
-  // Oslavné okno po výběru role (zmizí za 3 s).
-  const [celebrate, setCelebrate] = useState<string | null>(null);
+  // Vyskakovací okno po výběru / uvolnění role (zmizí za 3 s).
+  const [celebrate, setCelebrate] = useState<{ role: string; kind: "taken" | "released" } | null>(null);
   const celebrateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [q, setQ] = useState("");
 
-  function congratulate(roleId: string) {
+  // Stejné okno (a stejná doba) pro vzetí i uvolnění funkce — liší se jen text.
+  function flash(roleId: string, kind: "taken" | "released") {
     const roleName = ROLES.find((r) => r.id === roleId)?.name;
     if (!roleName) return;
     if (celebrateTimer.current) clearTimeout(celebrateTimer.current);
-    setCelebrate(roleName);
+    setCelebrate({ role: roleName, kind });
     celebrateTimer.current = setTimeout(() => setCelebrate(null), 3000);
+  }
+  function congratulate(roleId: string) {
+    flash(roleId, "taken");
   }
 
   const current = currentYear;
@@ -75,6 +79,7 @@ export default function TymPage() {
       memberId: myMember.id,
       patch: { roleIds: myMember.roleIds.filter((r) => r !== roleId) },
     });
+    flash(roleId, "released");
   }
 
   // Kdo už má účet, přidá si další roli na jeden klik (bez vyplňování kontaktu).
@@ -558,17 +563,28 @@ export default function TymPage() {
       {editMember && <AdminEditMemberModal member={editMember} yearId={year.id} onClose={() => setEditMember(null)} />}
       {purge && <PurgeAccountModal key={purge.id} member={purge} year={year} onClose={() => setPurge(null)} />}
 
-      {/* Oslava po výběru role — vyskočí na 3 s a zmizí. */}
+      {/* Vyskakovací okno po výběru / uvolnění role — vyskočí na 3 s a zmizí. */}
       {celebrate && (
         <div className="pointer-events-none fixed inset-0 z-50 grid place-items-center px-4">
-          <div className="marena-pop max-w-sm rounded-3xl bg-gradient-to-br from-marigold-500 to-plum-600 px-8 py-7 text-center text-white shadow-2xl ring-2 ring-white/30">
-            <div className="text-5xl">🎉</div>
-            <p className="mt-2 font-display text-xl font-bold">Mařena ti gratuluje, boží bojovníku!</p>
-            <p className="mt-2 text-base">
-              Tvoje role je <strong>{celebrate}</strong>.
-            </p>
-            <p className="mt-1 text-sm text-white/90">Hodně zdaru. 💪</p>
-          </div>
+          {celebrate.kind === "taken" ? (
+            <div className="marena-pop max-w-sm rounded-3xl bg-gradient-to-br from-marigold-500 to-plum-600 px-8 py-7 text-center text-white shadow-2xl ring-2 ring-white/30">
+              <div className="text-5xl">🎉</div>
+              <p className="mt-2 font-display text-xl font-bold">Mařena ti gratuluje, boží bojovníku!</p>
+              <p className="mt-2 text-base">
+                Tvoje role je <strong>{celebrate.role}</strong>.
+              </p>
+              <p className="mt-1 text-sm text-white/90">Hodně zdaru. 💪</p>
+            </div>
+          ) : (
+            <div className="marena-pop max-w-sm rounded-3xl bg-gradient-to-br from-plum-600 to-ink px-8 py-7 text-center text-white shadow-2xl ring-2 ring-white/30">
+              <div className="text-5xl">👋</div>
+              <p className="mt-2 font-display text-xl font-bold">Funkci jsi uvolnil!</p>
+              <p className="mt-2 text-base">
+                Roli <strong>{celebrate.role}</strong> jsi pustil — je zase volná pro ostatní.
+              </p>
+              <p className="mt-1 text-sm text-white/90">Díky za pomoc! 🙌</p>
+            </div>
+          )}
         </div>
       )}
     </div>
