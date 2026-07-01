@@ -247,6 +247,9 @@ export interface Invite {
   cancelled?: boolean; // zrušeno (i u dříve potvrzeného) — propadne dolů
   note?: string;
   addedBy?: string; // kdo přidal do programu (jméno)
+  contactedBy?: string; // kdo označil „osloveno"
+  interestBy?: string; // kdo dal ano/ne (rozhodnutí o zájmu)
+  cancelledBy?: string; // kdo klikl na „zrušeno"
   createdAt: string;
 }
 
