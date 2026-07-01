@@ -89,7 +89,7 @@ export default function Home() {
                 </button>
               ))}
             </div>
-            <a href={igUrl} target="_blank" rel="noreferrer" className="btn-primary vegas-btn px-2.5 sm:px-5" aria-label="Instagram">
+            <a href={igUrl} target="_blank" rel="noreferrer" className="btn-vegas vegas-btn px-2.5 sm:px-5" aria-label="Instagram">
               <Icon name="instagram" className="h-4 w-4" /> <span className="hidden sm:inline">Instagram</span>
             </a>
             <Link href="/prihlaseni" className="rounded-full px-2 py-1.5 text-xs font-medium text-white transition hover:opacity-80 sm:px-3 sm:py-2 sm:text-sm" aria-label={t.organizers}>
@@ -116,11 +116,11 @@ export default function Home() {
             ))}
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-white/90">{t.heroTagline}</p>
-          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-marigold-600 px-4 py-1.5 text-sm font-semibold text-white shadow-[0_0_18px_rgba(255,150,0,0.7)] [text-shadow:none]">
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-4 py-1.5 text-sm font-semibold text-white shadow-[0_0_18px_rgba(255,46,166,0.7)] [text-shadow:none]">
             {t.heroBadge}
           </div>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <a href={igUrl} target="_blank" rel="noreferrer" className="btn-primary vegas-btn px-6 py-3 text-base text-white [text-shadow:none]">
+            <a href={igUrl} target="_blank" rel="noreferrer" className="btn-vegas vegas-btn px-6 py-3 text-base text-white [text-shadow:none]">
               {t.ctaInsta}
             </a>
             <a href="#co-te-ceka" className="rounded-full border border-cyan-300/60 bg-black/25 px-6 py-3 text-base font-semibold text-white shadow-[0_0_16px_rgba(79,240,255,0.4)] [text-shadow:none] transition hover:bg-black/40">
@@ -131,7 +131,7 @@ export default function Home() {
           <div className="mt-9">
             <Link
               href="/merch"
-              className="merch-pulse vegas-btn inline-block rounded-full bg-marigold-600 px-8 py-4 font-display text-2xl font-extrabold text-white ring-2 ring-white/40 [text-shadow:none] hover:bg-marigold-700 sm:text-3xl"
+              className="merch-pulse vegas-btn inline-block rounded-full bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-8 py-4 font-display text-2xl font-extrabold text-white ring-2 ring-white/40 [text-shadow:none] hover:from-[#ff49b6] hover:to-[#b53aff] sm:text-3xl"
             >
               {t.merchCta}
             </Link>
@@ -158,7 +158,7 @@ export default function Home() {
                 <Photo src={lineupPhotoOf(content, i)} alt={item.title} label={`foto — ${item.title}`} className="aspect-[4/3] w-full" />
                 <div className="p-5">
                   <h3 className="flex items-center gap-2.5 font-display text-lg font-semibold text-white">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10 text-marigold-300 ring-1 ring-marigold-400/40">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10 text-fuchsia-300 ring-1 ring-fuchsia-400/40">
                       <Icon name={m.icon} className="h-5 w-5" />
                     </span>
                     {item.title}
@@ -175,7 +175,7 @@ export default function Home() {
           <Photo src={photoOf(content, "finale")} alt={t.finaleTitle} label="finále — koncert na Flédě" className="h-80 w-full md:h-[28rem]" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10" />
           <div className="absolute inset-x-0 bottom-0 p-6 md:p-10 [text-shadow:0_2px_16px_rgba(0,0,0,0.6)]">
-            <span className="inline-flex items-center gap-1 rounded-full bg-marigold-600 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow-[0_0_14px_rgba(255,150,0,0.7)]">
+            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow-[0_0_14px_rgba(255,46,166,0.7)]">
               {t.finaleBadge}
             </span>
             <h3 className="mt-3 flex items-center gap-3 font-display text-3xl font-bold tracking-tight vegas-neon-gold md:text-5xl">
@@ -248,7 +248,7 @@ export default function Home() {
           </span>
           <h2 className="font-display text-4xl font-bold tracking-tight vegas-neon-gold">{t.instaTitle}</h2>
           <p className="max-w-xl text-white/75">{t.instaText}</p>
-          <a href={igUrl} target="_blank" rel="noreferrer" className="btn-primary vegas-btn px-7 py-3.5 text-base">
+          <a href={igUrl} target="_blank" rel="noreferrer" className="btn-vegas vegas-btn px-7 py-3.5 text-base">
             <Icon name="instagram" className="h-5 w-5" /> {igHandle}
           </a>
         </div>

@@ -292,6 +292,13 @@
       px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-marigold-700
       active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
   }
+  /* Vegas tlačítko — neonový přechod růžová → fialová (místo červené na homepage). */
+  .btn-vegas {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full
+      bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-5 py-2.5 text-sm font-medium text-white
+      transition-all hover:from-[#ff49b6] hover:to-[#b53aff] active:scale-[0.98]
+      disabled:cursor-not-allowed disabled:opacity-50;
+  }
   .btn-secondary {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border
       border-black/10 bg-white px-5 py-2.5 text-sm font-medium text-ink transition-all
