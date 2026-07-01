@@ -225,7 +225,7 @@ function ContactedButton({ invite, yearId, canEdit }: { invite: Invite; yearId: 
           type: "updateInvite",
           yearId,
           inviteId: invite.id,
-          patch: invite.contacted ? { contacted: false, interest: "nevim" } : { contacted: true, interest: "ceka" },
+          patch: willContact ? { contacted: true, interest: "ceka", contactedBy: me } : { contacted: false, interest: "nevim", contactedBy: "" },
         });
         flash(willContact ? `„${invite.name}" je teď osloveno` : `„${invite.name}" už není osloveno`, willContact ? "✉️" : "↩️");
       }}
@@ -262,7 +262,8 @@ function ConfirmButtons({ invite, yearId, canEdit }: { invite: Invite; yearId: s
   const locked = (yes || no) && !admin;
   const choose = (interest: Interest) => {
     if (locked) return;
-    dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { interest } });
+    const decided = interest === "ano" || interest === "ne";
+    dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { interest, interestBy: decided ? me : "" } });
     if (interest === "ano") flash(`„${invite.name}": má zájem — potvrzeno`, "✅");
     else if (interest === "ne") flash(`„${invite.name}": nemá zájem`, "👎");
     else flash(`„${invite.name}": zpět na čeká`, "⏳");
@@ -291,11 +292,11 @@ function ConfirmButtons({ invite, yearId, canEdit }: { invite: Invite; yearId: s
 // přesune pozvánku mezi odmítnuté (interest = ne). Info (termín/cena/poznámka)
 // zůstává, jen se změní stav; jméno/odkaz/kategorie beze změny.
 function CancelButton({ invite, yearId, canEdit }: { invite: Invite; yearId: string; canEdit: boolean }) {
-  const { dispatch } = useStore();
+  const { dispatch, me } = useStore();
   const [ask, setAsk] = useState(false);
   if (!canEdit || !isConfirmed(invite)) return null;
   function confirmCancel() {
-    dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { interest: "ne" } });
+    dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { interest: "ne", cancelledBy: me } });
     setAsk(false);
     flash(`„${invite.name}" spadla mezi odmítnuté`, "👎");
   }
@@ -333,7 +334,7 @@ function CancelButton({ invite, yearId, canEdit }: { invite: Invite; yearId: str
 
 // Sdílený stav pozvánky — používá řádek tabulky (desktop) i karta (mobil).
 function useInviteRow(invite: Invite, yearId: string) {
-  const { dispatch } = useStore();
+  const { dispatch, me } = useStore();
   const [edit, setEdit] = useState(false);
   const [name, setName] = useState(invite.name);
   const [link, setLink] = useState(invite.link ?? "");
@@ -356,7 +357,20 @@ function useInviteRow(invite: Invite, yearId: string) {
     setEdit(false);
   }
 
-  return { dispatch, edit, setEdit, name, setName, link, setLink, availability, setAvailability, price, setPrice, save };
+  // Reset stavu (jen správce) — vrátí do neutrality (neosloveno, bez zájmu) a smaže
+  // záznamy „kdo co", ale info (jméno, odkaz, kdy může, cena) zůstane.
+  async function resetState() {
+    await dispatch({
+      type: "updateInvite",
+      yearId,
+      inviteId: invite.id,
+      patch: { contacted: false, interest: "nevim", contactedBy: "", interestBy: "", cancelledBy: "" },
+    });
+    setEdit(false);
+    flash(`„${invite.name}": stav vyresetován`, "🔄");
+  }
+
+  return { dispatch, me, edit, setEdit, name, setName, link, setLink, availability, setAvailability, price, setPrice, save, resetState };
 }
 
 // Mobilní karta jedné pozvánky (na úzkém displeji místo tabulky).
@@ -376,6 +390,11 @@ function InviteCard({ invite, yearId, index, canEdit }: { invite: Invite; yearId
           <button className="btn-primary flex-1 py-2 text-sm" onClick={s.save}>Uložit</button>
           <button className="btn-ghost py-2 text-sm" onClick={() => s.setEdit(false)}>Zrušit</button>
         </div>
+        {isAdmin(s.me) && (
+          <button className="btn-ghost w-full justify-center py-2 text-sm text-ink-soft ring-1 ring-black/10" onClick={s.resetState}>
+            🔄 Vyresetovat stav (osloveno + ano/ne)
+          </button>
+        )}
       </div>
     );
   }
@@ -395,6 +414,9 @@ function InviteCard({ invite, yearId, index, canEdit }: { invite: Invite; yearId
             {invite.availability && <span>🗓 {invite.availability}</span>}
             {invite.price && <span>💰 {invite.price}</span>}
             {invite.addedBy && <span>➕ přidal {invite.addedBy}</span>}
+            {invite.contactedBy && <span>✉️ oslovil {invite.contactedBy}</span>}
+            {invite.interestBy && <span>{invite.interest === "ne" ? "👎" : "✅"} rozhodl {invite.interestBy}</span>}
+            {invite.cancelledBy && <span>↩️ zrušil {invite.cancelledBy}</span>}
           </div>
         </div>
       </div>
@@ -420,7 +442,7 @@ function InviteCard({ invite, yearId, index, canEdit }: { invite: Invite; yearId
 }
 
 function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId: string; index: number; canEdit: boolean }) {
-  const { dispatch, edit, setEdit, name, setName, link, setLink, availability, setAvailability, price, setPrice, save } =
+  const { dispatch, me, edit, setEdit, name, setName, link, setLink, availability, setAvailability, price, setPrice, save, resetState } =
     useInviteRow(invite, yearId);
 
   if (canEdit && edit) {
@@ -436,9 +458,14 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
         <td className="px-3 py-2"><input className="input" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Cena" /></td>
         <td className="px-3 py-2 text-ink-soft">—</td>
         <td className="px-3 py-2">
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1">
             <button className="btn-primary px-3 py-1.5 text-xs" onClick={save}>Uložit</button>
             <button className="btn-ghost px-2 py-1.5 text-xs" onClick={() => setEdit(false)}>Zrušit</button>
+            {isAdmin(me) && (
+              <button className="btn-ghost px-2 py-1.5 text-xs text-ink-soft ring-1 ring-black/10" onClick={resetState} title="Vrátí do neutrality (osloveno + ano/ne), info zůstane">
+                🔄 Reset stavu
+              </button>
+            )}
           </div>
         </td>
       </tr>
@@ -456,6 +483,9 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
           </a>
         )}
         {invite.addedBy && <div className="text-xs text-ink-soft">➕ přidal {invite.addedBy}</div>}
+        {invite.contactedBy && <div className="text-xs text-ink-soft">✉️ oslovil {invite.contactedBy}</div>}
+        {invite.interestBy && <div className="text-xs text-ink-soft">{invite.interest === "ne" ? "👎" : "✅"} rozhodl {invite.interestBy}</div>}
+        {invite.cancelledBy && <div className="text-xs text-ink-soft">↩️ zrušil {invite.cancelledBy}</div>}
       </td>
       <td className="px-3 py-3">
         <ContactedButton invite={invite} yearId={yearId} canEdit={canEdit} />
