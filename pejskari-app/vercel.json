@@ -3,5 +3,10 @@
   "buildCommand": "npx expo export -p web",
   "outputDirectory": "dist",
   "framework": null,
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "git": {
+    "deploymentEnabled": {
+      "claude/jizerska-padesatka-prep-9vhlwf": false
+    }
+  }
 }

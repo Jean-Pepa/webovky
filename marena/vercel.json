@@ -3,7 +3,8 @@
   "framework": "nextjs",
   "git": {
     "deploymentEnabled": {
-      "claude/busy-gauss-t83y4w": false
+      "claude/busy-gauss-t83y4w": false,
+      "claude/jizerska-padesatka-prep-9vhlwf": false
     }
   }
 }
