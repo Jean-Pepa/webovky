@@ -121,6 +121,7 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
           alt="Mařena — Las Vegas"
           label="Las Vegas Strip v noci"
           className="absolute inset-0 -z-10 hidden h-full w-full sm:block"
+          imgClass="object-center vegas-hero-flicker"
         />
         <div className="absolute inset-0 -z-10 hidden bg-gradient-to-r from-black/90 via-black/40 to-black/10 sm:block" />
         <div className="absolute inset-0 -z-10 hidden bg-gradient-to-t from-[#0b0713] via-transparent to-black/50 sm:block" />
@@ -147,7 +148,7 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
           <img
             src={content?.photos?.hero?.trim() || "/photos/vegas-hero.jpg"}
             alt="Mařena — Las Vegas Strip"
-            className="aspect-[3/2] w-full object-cover"
+            className="aspect-[3/2] w-full object-cover vegas-hero-flicker"
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0b0713] via-transparent to-transparent" />
         </div>
