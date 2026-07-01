@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { Logo } from "@/components/Logo";
-import { Mascot } from "@/components/Mascot";
 import { supabaseEnabled } from "@/lib/supabase/config";
 import { MagicLinkLogin } from "@/components/MagicLinkLogin";
 
@@ -115,7 +114,14 @@ export default function LoginPage() {
 
       <div className="w-full max-w-sm">
         <div className="mb-4 flex justify-center">
-          <Mascot size={150} wave />
+          {/* Las Vegas logo Mařeny s kačenkou. Obrázek má černé pozadí — na tmavém
+              gradientu ho „schová" mix-blend-lighten, takže svítí jen samotné logo. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/marena-vegas.png"
+            alt="Mařena Las Vegas"
+            className="w-72 max-w-full mix-blend-lighten"
+          />
         </div>
         <div className="rounded-3xl bg-white/10 p-7 text-white ring-1 ring-white/15 backdrop-blur-md">
           {maint === true ? (
