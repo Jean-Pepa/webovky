@@ -454,21 +454,16 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
             {role.emoji} {role.name}
           </span>
         )}
-        <div className="ml-auto max-w-[70%] text-right leading-tight">
-          <div>
+        <div className="ml-auto text-right leading-tight">
+          <div className="whitespace-nowrap">
             založil(a): <span className="font-medium text-ink">{p.author}</span> · {fmtDateTime(p.createdAt)}
           </div>
-          {edits.length > 0 && (
-            <div>
-              upravil(a): <span className="font-medium text-ink">{edits[0].by}</span> · {fmtDateTime(edits[0].at)}
-            </div>
-          )}
-          {edits.length > 1 &&
+          {edits.length > 0 &&
             (showEdits ? (
               <>
-                <div className="mt-1 max-h-24 space-y-0.5 overflow-y-auto rounded-lg bg-paper2/70 px-2 py-1.5 text-left">
-                  {edits.slice(1).map((e, i) => (
-                    <div key={i}>
+                <div className="mt-1 max-h-24 space-y-0.5 overflow-auto rounded-lg bg-paper2/70 px-2 py-1.5 text-left">
+                  {edits.map((e, i) => (
+                    <div key={i} className="whitespace-nowrap">
                       upravil(a): <span className="font-medium text-ink">{e.by}</span> · {fmtDateTime(e.at)}
                     </div>
                   ))}
@@ -479,7 +474,7 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
               </>
             ) : (
               <button onClick={() => setShowEdits(true)} className="font-medium text-marigold-700 hover:underline">
-                zobrazit více ({edits.length - 1})
+                zobrazit více ({edits.length})
               </button>
             ))}
         </div>
