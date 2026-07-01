@@ -108,6 +108,9 @@ export default function Home() {
 
         <div className="mx-auto w-full max-w-3xl px-4 pt-24 text-center [text-shadow:0_2px_20px_rgba(0,0,0,0.55)]">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] vegas-neon-cyan">{t.heroKicker}</p>
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-300/50 bg-black/30 px-4 py-1 text-xs font-bold uppercase tracking-[0.22em] vegas-neon-gold [text-shadow:none]">
+            🎰 56. ročník · Las Vegas edition
+          </div>
           <h1 className="vegas-gold-title mt-3 font-display text-[3.5rem] font-bold leading-[0.95] tracking-[0.08em] text-white sm:text-[6.75rem] sm:tracking-[1.5cm] md:text-[9rem] md:tracking-[4cm] lg:tracking-[6cm]">
             {"MAŘENA".split("").map((ch, i) => (
               <span key={i} className="marena-letter" style={{ animationDelay: `${i * -0.06}s` }}>
@@ -184,6 +187,40 @@ export default function Home() {
             <p className="mt-2 max-w-2xl text-white/90 md:text-lg">{t.finaleText}</p>
           </div>
         </article>
+      </section>
+
+      {/* TÉMA ROČNÍKU — Learning from Las Vegas: Kachna vs. Ozdobená bouda */}
+      <section className="relative">
+        <div aria-hidden className="vegas-bulbs" />
+        <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
+          <p className="text-sm font-semibold uppercase tracking-wide vegas-neon-cyan">Téma 56. ročníku · Learning from Las Vegas</p>
+          <h2 className="mt-2 font-display text-4xl font-bold tracking-tight vegas-neon-gold md:text-5xl">Kachna vs. Ozdobená bouda</h2>
+          <p className="mt-3 max-w-2xl text-white/70">
+            Slavná architektonická teorie Roberta Venturiho a Denise Scott Brownové z knihy „Učení se z Las Vegas“. Dvě
+            cesty, jak stavba mluví — a letos je z toho téma Mařeny. 🦆🎰
+          </p>
+          <div className="mt-8 grid gap-5 md:grid-cols-2">
+            {/* Kachna — forma = obsah, nápis netřeba */}
+            <article className="vegas-card rounded-3xl p-6 ring-1 ring-amber-300/30 md:p-8">
+              <div className="text-5xl">🦆</div>
+              <h3 className="mt-3 font-display text-2xl font-bold vegas-neon-gold">Kachna</h3>
+              <p className="mt-2 text-white/80">
+                Dům, který má tvar toho, co je uvnitř. Poznáš ho na první pohled —{" "}
+                <strong className="text-white">nápis nepotřebuje</strong>. (Však náš maskot je kachna. 😉)
+              </p>
+            </article>
+            {/* Ozdobená bouda — krabice, kterou definují nápisy a světla */}
+            <article className="vegas-card rounded-3xl p-6 ring-1 ring-pink-400/30 md:p-8">
+              <div className="text-5xl">🏨💡</div>
+              <h3 className="mt-3 font-display text-2xl font-bold vegas-neon-pink">Ozdobená bouda</h3>
+              <p className="mt-2 text-white/80">
+                Obyčejná krabice — sama o sobě neřekne nic. Teprve{" "}
+                <strong className="text-white">nápisy a světla</strong> prozradí, co uvnitř najdeš. Přesně jako cedule na Stripu.
+              </p>
+            </article>
+          </div>
+        </div>
+        <div aria-hidden className="vegas-bulbs" />
       </section>
 
       {/* MAŘENA BAND */}
