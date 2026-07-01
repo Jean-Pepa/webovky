@@ -12,6 +12,9 @@ import {
   STRINGS,
   LINEUP_MEDIA,
   DEFAULT_PHOTOS,
+  THEMES,
+  type ThemeId,
+  themeOf,
   type HomeContent,
   type HomeText,
   type HomeNews,
@@ -164,6 +167,10 @@ export default function WebEditorPage() {
   function setIg(key: "url" | "handle", value: string) {
     setC((prev) => ({ ...prev, ig: { ...(prev.ig ?? {}), [key]: value } }));
   }
+  function setTheme(theme: ThemeId) {
+    setC((prev) => ({ ...prev, theme }));
+  }
+  const activeTheme = themeOf(c);
 
   const news = c.news ?? [];
   const newId = () => `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -234,6 +241,38 @@ export default function WebEditorPage() {
           Naposledy uloženo: {new Date(c.updatedAt).toLocaleString("cs")} {c.updatedBy ? `· ${c.updatedBy}` : ""}
         </p>
       )}
+
+      {/* TÉMA WEBU — vzhled homepage (každý ročník může mít jiné) */}
+      <section className="card p-4 sm:p-5">
+        <h2 className="font-display text-lg font-semibold">🎨 Téma webu</h2>
+        <p className="mb-3 mt-0.5 text-xs text-ink-soft">
+          Vyber vzhled veřejné homepage. Texty, fotky i novinky zůstávají stejné — mění se jen styl. Ulož změny dole.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {THEMES.map((th) => {
+            const on = activeTheme === th.id;
+            return (
+              <button
+                key={th.id}
+                type="button"
+                onClick={() => setTheme(th.id)}
+                className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition ${
+                  on ? "border-marigold-500 bg-marigold-50 ring-2 ring-marigold-500/30" : "border-black/10 hover:bg-black/[0.03]"
+                }`}
+              >
+                <span className="text-2xl">{th.emoji}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2 font-semibold">
+                    {th.name}
+                    {on && <span className="rounded-full bg-marigold-600 px-2 py-0.5 text-[11px] font-semibold text-white">Aktivní</span>}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-ink-soft">{th.desc}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       {/* FOTKY — společné pro všechny jazyky (vlož odkaz na obrázek / URL) */}
       <Collapsible

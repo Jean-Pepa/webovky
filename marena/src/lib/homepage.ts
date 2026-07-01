@@ -208,13 +208,29 @@ export interface HomeNews {
   link?: string;
 }
 
+// Vzhled (téma) veřejné homepage — každý ročník může mít jiné.
+// Přidání dalšího tématu: dopiš sem ID, přidej položku do THEMES a novou
+// větev vykreslení v src/app/page.tsx.
+export type ThemeId = "normal" | "vegas";
+
+export const THEMES: { id: ThemeId; name: string; emoji: string; desc: string }[] = [
+  { id: "vegas", name: "Las Vegas", emoji: "🎰", desc: "Neonové kasino — zlatý nápis, světla a kačenka. Letošní 56. ročník." },
+  { id: "normal", name: "Normální", emoji: "🎓", desc: "Čistý web ve fakultních barvách, jak vypadal dřív." },
+];
+
 export interface HomeContent {
+  theme?: ThemeId;
   text?: Partial<Record<Lang, HomeText>>;
   photos?: { hero?: string; finale?: string; letters?: string; lineup?: (string | undefined)[] };
   ig?: { url?: string; handle?: string };
   news?: HomeNews[];
   updatedAt?: string;
   updatedBy?: string;
+}
+
+// Výchozí téma je Las Vegas (letošní ročník); správce ho může přepnout.
+export function themeOf(c: HomeContent | null): ThemeId {
+  return c?.theme === "normal" ? "normal" : "vegas";
 }
 
 // Přepis přeloží přes výchozí texty daného jazyka (prázdné pole = výchozí).
