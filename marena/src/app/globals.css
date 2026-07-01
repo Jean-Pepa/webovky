@@ -274,7 +274,7 @@
 }
 .vegas-sign-flicker {
   background: #05030a; /* skoro černá jako noční obloha */
-  animation: vegas-sign-flicker 4.6s infinite;
+  animation: vegas-sign-flicker 2s infinite; /* rychleji než blikání „56 ročník" (4.5s) */
   will-change: opacity;
 }
 @media (prefers-reduced-motion: reduce) {
