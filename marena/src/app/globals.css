@@ -254,32 +254,31 @@
   color: #ff4536;
   text-shadow: 0 0 6px rgba(255, 80, 60, 0.95), 0 0 16px rgba(255, 45, 25, 0.75), 0 0 34px rgba(255, 20, 0, 0.55);
 }
-/* Neonové problikávání hero fotky (jako blikající neon v Las Vegas) — krátké
-   nepravidelné poklesy jasu, jinak plný jas. */
-@keyframes vegas-hero-flicker {
-  0%, 100% { filter: brightness(1) contrast(1.02); }
-  5% { filter: brightness(0.85) contrast(1.02); }
-  5.7% { filter: brightness(1.04) contrast(1.02); }
-  6.3% { filter: brightness(0.9) contrast(1.02); }
-  7% { filter: brightness(1) contrast(1.02); }
-  32% { filter: brightness(1) contrast(1.02); }
-  32.6% { filter: brightness(0.76) contrast(1.02); }
-  33.2% { filter: brightness(1.05) contrast(1.02); }
-  33.6% { filter: brightness(1) contrast(1.02); }
-  58% { filter: brightness(1) contrast(1.02); }
-  58.6% { filter: brightness(0.88) contrast(1.02); }
-  59.1% { filter: brightness(1) contrast(1.02); }
-  81% { filter: brightness(1) contrast(1.02); }
-  81.6% { filter: brightness(0.78) contrast(1.02); }
-  82% { filter: brightness(1.06) contrast(1.02); }
-  82.5% { filter: brightness(1) contrast(1.02); }
+/* Problikávání jen neonového nápisu (Holiday Motel) v hero fotce — tmavý překryv
+   jen přes oblast nápisu krátce zabliká (okolí je černá noční obloha, takže se
+   zdá, že bliká jen nápis). Rytmus podobný blikání „56 ročník". */
+@keyframes vegas-sign-flicker {
+  0%, 17%, 100% { opacity: 0; }
+  18% { opacity: 0.6; }
+  19% { opacity: 0; }
+  21% { opacity: 0.45; }
+  22% { opacity: 0; }
+  54% { opacity: 0; }
+  55% { opacity: 0.65; }
+  56% { opacity: 0; }
+  57% { opacity: 0.4; }
+  58% { opacity: 0; }
+  83% { opacity: 0; }
+  84% { opacity: 0.55; }
+  85% { opacity: 0; }
 }
-.vegas-hero-flicker {
-  animation: vegas-hero-flicker 5.2s infinite;
-  will-change: filter;
+.vegas-sign-flicker {
+  background: #05030a; /* skoro černá jako noční obloha */
+  animation: vegas-sign-flicker 4.6s infinite;
+  will-change: opacity;
 }
 @media (prefers-reduced-motion: reduce) {
-  .vegas-hero-flicker { animation: none; }
+  .vegas-sign-flicker { animation: none; opacity: 0; }
 }
 /* Blikající zlatý neon (jako světla v Las Vegas) — pro nápis „56 ročník". */
 @keyframes vegas-flicker-gold {
