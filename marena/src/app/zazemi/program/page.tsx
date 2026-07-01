@@ -49,7 +49,7 @@ function inviteBg(i: Invite): string {
 }
 
 export default function ProgramPage() {
-  const { currentYear, dispatch } = useStore();
+  const { currentYear, dispatch, me } = useStore();
   const canEdit = useCanEditProgram();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -91,7 +91,7 @@ export default function ProgramPage() {
     if (!name.trim() || !category.trim() || !year) return;
     const who = name.trim();
     // Číslo se přiděluje automaticky podle pořadí ve skupině — prioritu nezadáváme.
-    await dispatch({ type: "addInvite", yearId: year.id, category, name, link: link || undefined, availability: availability || undefined, price: price || undefined });
+    await dispatch({ type: "addInvite", yearId: year.id, category, name, link: link || undefined, availability: availability || undefined, price: price || undefined, addedBy: me || undefined });
     setName("");
     setLink("");
     setAvailability("");
@@ -393,6 +393,7 @@ function InviteCard({ invite, yearId, index, canEdit }: { invite: Invite; yearId
           <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
             {invite.availability && <span>🗓 {invite.availability}</span>}
             {invite.price && <span>💰 {invite.price}</span>}
+            {invite.addedBy && <span>➕ přidal {invite.addedBy}</span>}
           </div>
         </div>
       </div>
@@ -453,6 +454,7 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
             odkaz ↗
           </a>
         )}
+        {invite.addedBy && <div className="text-xs text-ink-soft">➕ přidal {invite.addedBy}</div>}
       </td>
       <td className="px-3 py-3">
         <ContactedButton invite={invite} yearId={yearId} canEdit={canEdit} />
