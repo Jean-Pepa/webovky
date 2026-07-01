@@ -198,13 +198,7 @@ export default function MerchOrderPage() {
     <div className="min-h-screen bg-paper">
       <div className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-6 text-center">
-          <div className="font-display text-3xl font-bold tracking-[0.12em]">
-            {"MAŘENA".split("").map((ch, i) => (
-              <span key={i} className="marena-letter" style={{ animationDelay: `${i * -0.06}s` }}>
-                {ch}
-              </span>
-            ))}
-          </div>
+          <div className="marena-header-gold inline-block font-display text-3xl font-extrabold uppercase tracking-[0.08em]">MAŘENA</div>
           <p className="mt-1 text-sm text-ink-soft">Merch{label ? ` · ${label}` : ""}</p>
         </div>
 
