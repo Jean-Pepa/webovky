@@ -128,13 +128,14 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
     <div className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-ink/10 bg-paper/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-x-4 gap-y-2 px-4 py-3">
-          <div className="flex items-baseline gap-2">
-            <Link href="/zazemi" aria-label="Mařena — zázemí" className="font-display text-2xl font-bold tracking-[0.06em] sm:text-3xl">
-              {"MAŘENA".split("").map((ch, i) => (
-                <span key={i} className="marena-letter" style={{ animationDelay: `${i * -0.06}s` }}>
-                  {ch}
-                </span>
-              ))}
+          <div className="flex items-center gap-2">
+            {/* Zlatý „Las Vegas" nápis jako na homepage — na tmavé cedulce, ať je čitelný i na světlém pozadí zázemí. */}
+            <Link
+              href="/zazemi"
+              aria-label="Mařena — zázemí"
+              className="vegas-neon-gold rounded-lg bg-[#0b0713] px-2.5 py-1 font-display text-xl font-extrabold uppercase tracking-[0.06em] ring-1 ring-amber-300/25 sm:text-2xl"
+            >
+              MAŘENA
             </Link>
             {currentYear && (
               <span className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">

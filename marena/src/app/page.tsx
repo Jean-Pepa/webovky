@@ -128,7 +128,8 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
         {/* Horní lišta: logo (kačenka + MAŘENA / Las Vegas) + nav */}
         <div className="relative z-20 mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:py-6">
           <div className="flex flex-col items-start gap-1.5">
-            <Logo light sizeClass="h-6 sm:h-8" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-fa-bw.png" alt="Fakulta architektury VUT" className="h-6 w-auto sm:h-8" />
             <span className="font-display text-3xl font-extrabold uppercase tracking-wide vegas-neon-gold sm:text-4xl">MAŘENA</span>
           </div>
           <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2 [text-shadow:0_1px_8px_rgba(0,0,0,0.6)]">
@@ -163,9 +164,9 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
             <div className="mt-5 flex flex-wrap items-center gap-3 [text-shadow:none]">
               <Link
                 href="/merch"
-                className="merch-pulse vegas-btn inline-flex items-center rounded-full bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-7 py-3.5 font-display text-xl font-extrabold text-white ring-2 ring-white/40 hover:from-[#ff49b6] hover:to-[#b53aff] sm:text-2xl"
+                className="merch-pulse vegas-btn inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-7 py-3.5 font-display text-xl font-extrabold text-white ring-2 ring-white/40 hover:from-[#ff49b6] hover:to-[#b53aff] sm:text-2xl"
               >
-                {t.merchCta}
+                <Icon name="cart" className="h-6 w-6 shrink-0 text-white sm:h-7 sm:w-7" /> {t.merchCta}
               </Link>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-3 [text-shadow:none]">
@@ -389,9 +390,9 @@ function NormalHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Hom
           <div className="mt-9">
             <Link
               href="/merch"
-              className="merch-pulse inline-block rounded-full bg-marigold-600 px-8 py-4 font-display text-2xl font-extrabold text-white shadow-2xl ring-2 ring-white/40 [text-shadow:none] hover:bg-marigold-700 sm:text-3xl"
+              className="merch-pulse inline-flex items-center gap-2 rounded-full bg-marigold-600 px-8 py-4 font-display text-2xl font-extrabold text-white shadow-2xl ring-2 ring-white/40 [text-shadow:none] hover:bg-marigold-700 sm:text-3xl"
             >
-              {t.merchCta}
+              <Icon name="cart" className="h-7 w-7 shrink-0 text-white" /> {t.merchCta}
             </Link>
           </div>
         </div>

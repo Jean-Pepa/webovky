@@ -59,7 +59,7 @@ export const STRINGS: Record<Lang, Strings> = {
     heroBadge: "🐣 Jsi prvák? Tohle je tvůj vstup do života na fakultě.",
     ctaInsta: "Sleduj nás na Instagramu →",
     ctaScroll: "Co tě čeká ↓",
-    merchCta: "🛍️ Kup si merch Mařeny →",
+    merchCta: "Kup si merch Mařeny →",
     whatsKicker: "Na co se těšit",
     whatsTitle: "Co tě na Mařeně čeká",
     whatsIntro:
@@ -98,7 +98,7 @@ export const STRINGS: Record<Lang, Strings> = {
     heroBadge: "🐣 A freshman? This is your start to life at the faculty.",
     ctaInsta: "Follow us on Instagram →",
     ctaScroll: "What's in store ↓",
-    merchCta: "🛍️ Get the Mařena merch →",
+    merchCta: "Get the Mařena merch →",
     whatsKicker: "What to look forward to",
     whatsTitle: "What awaits you at Mařena",
     whatsIntro:
@@ -137,7 +137,7 @@ export const STRINGS: Record<Lang, Strings> = {
     heroBadge: "🐣 Erstsemester? Das ist dein Einstieg ins Leben an der Fakultät.",
     ctaInsta: "Folge uns auf Instagram →",
     ctaScroll: "Was dich erwartet ↓",
-    merchCta: "🛍️ Hol dir den Mařena-Merch →",
+    merchCta: "Hol dir den Mařena-Merch →",
     whatsKicker: "Worauf du dich freuen kannst",
     whatsTitle: "Was dich bei Mařena erwartet",
     whatsIntro:
