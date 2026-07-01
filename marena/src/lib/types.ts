@@ -20,6 +20,7 @@ export interface Post {
   title: string;
   body: string;
   pinned: boolean;
+  photoIds?: string[]; // přiložené obrázky (blob id, načítá se přes loadReceipt)
   createdAt: string;
   editedBy?: string; // kdo naposledy upravil (autor založení se nemění) — legacy
   editedAt?: string; // ISO – kdy se naposledy upravilo — legacy
