@@ -616,8 +616,8 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
       {poll && (
         <div className="mt-3 flex items-center gap-2 rounded-xl bg-marigold-50 px-3 py-2 ring-1 ring-marigold-200">
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">🗳️ {poll.question}</span>
-          <Link href={`/zazemi/hlasovani?poll=${poll.id}`} className="btn-primary shrink-0 px-3 py-1.5 text-xs">
-            Hlasování
+          <Link href={`/zazemi/hlasovani?poll=${poll.id}`} className="btn-primary shrink-0 px-3 py-1.5 text-xs font-bold uppercase tracking-wide">
+            HLASOVAT
           </Link>
         </div>
       )}
