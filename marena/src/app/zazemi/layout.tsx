@@ -126,7 +126,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-20 border-b border-ink/10 bg-paper/85 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-ink/10 bg-paper/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-x-4 gap-y-2 px-4 py-3">
           <div className="flex items-baseline gap-2">
             <Link href="/zazemi" aria-label="Mařena — zázemí" className="font-display text-2xl font-bold tracking-[0.06em] sm:text-3xl">
@@ -225,7 +225,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
 
         {/* Mobilní menu (rozbalovací) */}
         {menuOpen && (
-          <div className="max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-ink/10 bg-paper/95 px-3 py-3 md:hidden">
+          <div className="h-[calc(100dvh-3.25rem)] overflow-y-auto border-t border-ink/10 bg-paper px-3 py-3 md:hidden">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <YearSwitcher />
               <MeBadge />

@@ -239,6 +239,26 @@
   color: #ffd94d;
   text-shadow: 0 0 6px rgba(255, 217, 77, 0.95), 0 0 20px rgba(255, 170, 40, 0.6), 0 0 40px rgba(255, 120, 0, 0.4);
 }
+/* Blikající zlatý neon (jako světla v Las Vegas) — pro nápis „56 ročník". */
+@keyframes vegas-flicker-gold {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% {
+    text-shadow: 0 0 7px #fff6c2, 0 0 16px #ffd94d, 0 0 32px #ffb300, 0 0 54px #ff8a00;
+    opacity: 1;
+  }
+  20%, 24%, 55% {
+    text-shadow: 0 0 3px #ffe08a;
+    opacity: 0.5;
+  }
+}
+.vegas-flicker-gold {
+  color: #ffd94d;
+  animation: vegas-flicker-gold 4.5s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vegas-flicker-gold {
+    animation: none;
+  }
+}
 
 /* Běžící žárovky (marquee) — vodorovný pásek světel, jako nad kasinem. */
 @keyframes vegas-bulbs {
