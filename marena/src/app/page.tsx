@@ -127,13 +127,8 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
 
         {/* Horní lišta: logo (kačenka + MAŘENA / Las Vegas) + nav */}
         <div className="relative z-20 mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:py-6">
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/duck.png" alt="" aria-hidden className="h-12 w-12 shrink-0 object-contain sm:h-16 sm:w-16" />
-            <div className="leading-none">
-              <div className="font-display text-2xl font-extrabold tracking-wide vegas-neon-gold sm:text-3xl">MAŘENA</div>
-              <div className="-mt-0.5 font-display text-sm font-semibold italic text-pink-400 [text-shadow:0_0_10px_rgba(255,80,190,0.7)] sm:text-base">Las Vegas</div>
-            </div>
+          <div className="flex items-center">
+            <span className="font-display text-3xl font-extrabold uppercase tracking-wide vegas-neon-gold sm:text-4xl">MAŘENA</span>
           </div>
           <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2 [text-shadow:0_1px_8px_rgba(0,0,0,0.6)]">
             <LangSwitch lang={lang} changeLang={changeLang} />
@@ -158,7 +153,10 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
         {/* Obsah — na desktopu dole vlevo přes foto, na mobilu pod bannerem */}
         <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 items-end px-4 pb-12 pt-8 sm:pb-20 sm:pt-0">
           <div className="max-w-2xl [text-shadow:0_2px_20px_rgba(0,0,0,0.85)]">
-            <span className="marquee-sign">🎰 56. ročník</span>
+            <div className="vegas-flicker-gold flex items-end gap-2 [text-shadow:none]">
+              <span className="font-display text-6xl font-extrabold leading-[0.8] sm:text-7xl">56</span>
+              <span className="mb-1.5 font-display text-base font-bold uppercase tracking-[0.25em] sm:text-lg">ročník</span>
+            </div>
             <h1 className="sr-only">Mařena — Las Vegas, 56. ročník studentského festivalu Fakulty architektury VUT</h1>
             <p className="mt-4 max-w-xl text-lg font-medium text-white sm:text-2xl">{t.heroTagline}</p>
             <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-4 py-1.5 text-sm font-semibold text-white shadow-[0_0_18px_rgba(255,46,166,0.7)] [text-shadow:none]">
