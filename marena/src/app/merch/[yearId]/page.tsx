@@ -6,6 +6,7 @@ import { applyAction } from "@/lib/actions";
 import { loadReceipt } from "@/lib/receipts";
 import { fmtCZK } from "@/lib/format";
 import { Icon } from "@/components/Icons";
+import { ImageViewer } from "@/components/ImageViewer";
 import { FlashHost, flash } from "@/components/Flash";
 import type { DB } from "@/lib/types";
 
@@ -44,6 +45,7 @@ export default function MerchOrderPage() {
   const [products, setProducts] = useState<PubProduct[]>([]);
   const [sel, setSel] = useState<Record<string, { size?: string; color?: string }>>({});
   const [cart, setCart] = useState<CartLine[]>([]);
+  const [viewIdx, setViewIdx] = useState<number | null>(null);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -197,9 +199,15 @@ export default function MerchOrderPage() {
     }
   }
 
+  // Galerie všech fotek produktů — klik na fotku zvětší a šipkami se listuje mezi nimi.
+  const gallery = products.filter((p) => p.image);
+  const galleryImages = gallery.map((p) => p.image as string);
+  const galleryIndex = new Map(gallery.map((p, i) => [p.id, i] as const));
+
   return (
     <div className="min-h-screen bg-paper">
       <FlashHost />
+      <ImageViewer images={galleryImages} index={viewIdx} onIndex={setViewIdx} title="Merch" />
       <div className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-6 text-center">
           <div className="marena-header-gold inline-block font-display text-3xl font-extrabold uppercase tracking-[0.08em]">MAŘENA</div>
@@ -238,8 +246,10 @@ export default function MerchOrderPage() {
                         <div key={p.id} className={`card overflow-hidden ${p.soldOut ? "opacity-90" : ""}`}>
                           <div className="relative">
                             {p.image ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={p.image} alt={p.name} className="h-44 w-full bg-paper2 object-contain" />
+                              <button type="button" className="block w-full" onClick={() => setViewIdx(galleryIndex.get(p.id) ?? null)} aria-label="Zvětšit foto">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={p.image} alt={p.name} className="h-44 w-full cursor-zoom-in bg-paper2 object-contain" />
+                              </button>
                             ) : (
                               <div className="grid h-44 w-full place-items-center bg-paper2 text-ink-soft">bez fotky</div>
                             )}

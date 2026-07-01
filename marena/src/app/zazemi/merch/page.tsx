@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
+import { ImageViewer } from "@/components/ImageViewer";
 import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { fmtCZK, fmtDateTime } from "@/lib/format";
@@ -237,7 +238,7 @@ function ProductCard({ product, yearId, editable, sold }: { product: MerchProduc
   const remaining = product.stock != null ? product.stock - sold : null;
   const soldOut = remaining != null && remaining <= 0;
   const [img, setImg] = useState<string | null>(null);
-  const [viewing, setViewing] = useState(false);
+  const [viewIdx, setViewIdx] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
@@ -255,7 +256,7 @@ function ProductCard({ product, yearId, editable, sold }: { product: MerchProduc
 
   return (
     <div className="card overflow-hidden">
-      <button className="block w-full" onClick={() => img && setViewing(true)} aria-label="Zvětšit foto">
+      <button className="block w-full" onClick={() => img && setViewIdx(0)} aria-label="Zvětšit foto">
         {img ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={img} alt={product.name} className="h-40 w-full bg-paper2 object-contain" />
@@ -318,23 +319,7 @@ function ProductCard({ product, yearId, editable, sold }: { product: MerchProduc
 
       {editing && <EditProductModal product={product} yearId={yearId} onClose={() => setEditing(false)} />}
 
-      <Modal open={viewing} onClose={() => setViewing(false)} title={product.name}>
-        {img && (
-          <div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={img} alt={product.name} className="max-h-[64vh] w-full rounded-xl object-contain" />
-            <div className="mt-3 flex justify-center">
-              <button
-                onClick={() => setViewing(false)}
-                aria-label="Zavřít"
-                className="grid h-11 w-11 place-items-center rounded-full bg-black/5 text-ink-soft transition hover:bg-black/10 hover:text-ink"
-              >
-                <Icon name="close" className="h-6 w-6" />
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      <ImageViewer images={img ? [img] : []} index={viewIdx} onIndex={setViewIdx} title={product.name} />
     </div>
   );
 }

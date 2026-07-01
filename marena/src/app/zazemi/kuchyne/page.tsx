@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
-import { Modal } from "@/components/Modal";
+import { ImageViewer } from "@/components/ImageViewer";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -466,7 +466,8 @@ function FilesSection({ place, editable }: { place: Place; editable: boolean }) 
 function KitchenCard({ item, yearId, editable }: { item: KitchenFile; yearId: string; editable: boolean }) {
   const { configured, dispatch, me } = useStore();
   const admin = isAdmin(me);
-  const [viewing, setViewing] = useState<string | null>(null);
+  const [img, setImg] = useState<string | null>(null);
+  const [viewIdx, setViewIdx] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(false);
 
@@ -483,7 +484,7 @@ function KitchenCard({ item, yearId, editable }: { item: KitchenFile; yearId: st
     const url = await loadReceipt(item.blobId, configured);
     setBusy(false);
     if (!url) { setErr(true); return; }
-    if (item.fileKind === "image") setViewing(url);
+    if (item.fileKind === "image") { setImg(url); setViewIdx(0); }
     else { const a = document.createElement("a"); a.href = url; a.download = item.fileName || item.label || "soubor"; a.click(); }
   }
   async function remove() {
@@ -514,14 +515,7 @@ function KitchenCard({ item, yearId, editable }: { item: KitchenFile; yearId: st
         </button>
         {err && <span className="text-xs text-red-600">nepovedlo se</span>}
       </div>
-      <Modal open={viewing !== null} onClose={() => setViewing(null)} title={item.label}>
-        {viewing && (
-          <div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={viewing} alt={item.label} className="max-h-[64vh] w-full rounded-xl object-contain" />
-          </div>
-        )}
-      </Modal>
+      <ImageViewer images={img ? [img] : []} index={viewIdx} onIndex={setViewIdx} title={item.label} />
     </div>
   );
 }

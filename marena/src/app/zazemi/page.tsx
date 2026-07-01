@@ -10,7 +10,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { Onboarding } from "@/components/Onboarding";
 import { Icon } from "@/components/Icons";
 import { SearchBox } from "@/components/SearchBox";
-import { Modal } from "@/components/Modal";
+import { ImageViewer } from "@/components/ImageViewer";
 import { matchesQuery } from "@/lib/search";
 import { isAdmin } from "@/lib/admin";
 import { flash } from "@/components/Flash";
@@ -414,8 +414,6 @@ function PostPhotos({ ids }: { ids: string[] }) {
 
   const ready = ids.map((id) => urls[id]).filter(Boolean) as string[];
   if (ready.length === 0) return null;
-  const many = ready.length > 1;
-  const go = (delta: number) => setViewIdx((i) => (i === null ? i : (i + delta + ready.length) % ready.length));
   return (
     <>
       <div className="mt-2 flex flex-wrap gap-2">
@@ -430,40 +428,7 @@ function PostPhotos({ ids }: { ids: string[] }) {
           />
         ))}
       </div>
-      <Modal open={viewIdx !== null} onClose={() => setViewIdx(null)} title="Obrázek">
-        {viewIdx !== null && (
-          <div>
-            <div className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={ready[viewIdx]} alt="obrázek" className="max-h-[68vh] w-full rounded-xl object-contain" />
-              {many && (
-                <>
-                  <button
-                    onClick={() => go(-1)}
-                    aria-label="Předchozí"
-                    className="absolute left-1 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-ink/70 text-2xl leading-none text-white shadow-lg transition hover:bg-ink"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    onClick={() => go(1)}
-                    aria-label="Další"
-                    className="absolute right-1 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-ink/70 text-2xl leading-none text-white shadow-lg transition hover:bg-ink"
-                  >
-                    ›
-                  </button>
-                </>
-              )}
-            </div>
-            {many && <p className="mt-2 text-center text-sm text-ink-soft">{viewIdx + 1} / {ready.length}</p>}
-            <div className="mt-3 flex justify-center">
-              <button onClick={() => setViewIdx(null)} className="btn-primary px-8">
-                Zavřít
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      <ImageViewer images={ready} index={viewIdx} onIndex={setViewIdx} />
     </>
   );
 }

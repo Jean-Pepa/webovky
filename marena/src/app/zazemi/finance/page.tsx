@@ -6,6 +6,7 @@ import { fmtCZK, fmtDate, fmtDateTime, todayISO } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
+import { ImageViewer } from "@/components/ImageViewer";
 import { isAdmin } from "@/lib/admin";
 import { normName } from "@/lib/names";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
@@ -818,7 +819,8 @@ function ReceiptControl({ item, yearId, canAdd, canEdit }: { item: FinanceItem; 
   const { configured, dispatch } = useStore();
   const list = receiptsOf(item);
   const [busy, setBusy] = useState(false);
-  const [viewing, setViewing] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>([]);
+  const [viewIdx, setViewIdx] = useState<number | null>(null);
   const [err, setErr] = useState(false);
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -839,10 +841,14 @@ function ReceiptControl({ item, yearId, canAdd, canEdit }: { item: FinanceItem; 
       setBusy(false);
     }
   }
-  async function view(id: string) {
-    const url = await loadReceipt(id, configured);
-    if (url) setViewing(url);
-    else setErr(true);
+  async function view(i: number) {
+    setErr(false);
+    // Načteme všechny účtenky položky, aby šlo listovat šipkami mezi nimi.
+    const urls = await Promise.all(list.map((rid) => loadReceipt(rid, configured)));
+    const ready = urls.filter(Boolean) as string[];
+    if (!ready.length) { setErr(true); return; }
+    setImages(ready);
+    setViewIdx(Math.min(i, ready.length - 1));
   }
   async function download(id: string) {
     const url = await loadReceipt(id, configured);
@@ -861,7 +867,7 @@ function ReceiptControl({ item, yearId, canAdd, canEdit }: { item: FinanceItem; 
     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
       {list.map((id, i) => (
         <span key={id} className="inline-flex items-center gap-1.5 rounded-full bg-leaf/12 px-2 py-0.5 text-leaf-700">
-          <button onClick={() => view(id)} className="font-medium hover:underline">
+          <button onClick={() => view(i)} className="font-medium hover:underline">
             📎 Účtenka{list.length > 1 ? ` ${i + 1}` : ""}
           </button>
           {canAdd && (
@@ -884,23 +890,7 @@ function ReceiptControl({ item, yearId, canAdd, canEdit }: { item: FinanceItem; 
       )}
       {err && <span className="text-red-600">nepovedlo se</span>}
 
-      <Modal open={viewing !== null} onClose={() => setViewing(null)} title="Účtenka">
-        {viewing && (
-          <div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={viewing} alt="Účtenka" className="max-h-[64vh] w-full rounded-xl object-contain" />
-            <div className="mt-3 flex justify-center">
-              <button
-                onClick={() => setViewing(null)}
-                aria-label="Zavřít"
-                className="grid h-11 w-11 place-items-center rounded-full bg-black/5 text-ink-soft transition hover:bg-black/10 hover:text-ink"
-              >
-                <Icon name="close" className="h-6 w-6" />
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      <ImageViewer images={images} index={viewIdx} onIndex={setViewIdx} title="Účtenka" />
     </div>
   );
 }

@@ -274,7 +274,7 @@ function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { po
                 <span className="text-ink-soft">{o.voters.length}</span>
               </div>
               {o.voters.length > 0 ? (
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                <div className="mt-1.5 flex flex-col items-start gap-1.5">
                   {o.voters.map((v) => (
                     <span key={v} className="chip inline-flex items-center gap-1">
                       {v}
