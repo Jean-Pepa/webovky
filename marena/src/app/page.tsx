@@ -121,8 +121,9 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
           alt="Mařena — Las Vegas"
           label="Las Vegas Strip v noci"
           className="absolute inset-0 -z-10 hidden h-full w-full sm:block"
-          imgClass="object-center vegas-hero-flicker"
         />
+        {/* Problikávání jen cedule „WELCOME LEARN FROM LAS VEGAS" (desktop) — přes pravou část fota. */}
+        <div aria-hidden className="vegas-sign-flicker pointer-events-none absolute -z-10 hidden sm:block" style={{ left: "78%", top: "50%", width: "19%", height: "18%" }} />
         <div className="absolute inset-0 -z-10 hidden bg-gradient-to-r from-black/90 via-black/40 to-black/10 sm:block" />
         <div className="absolute inset-0 -z-10 hidden bg-gradient-to-t from-[#0b0713] via-transparent to-black/50 sm:block" />
 
@@ -148,8 +149,10 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
           <img
             src={content?.photos?.hero?.trim() || "/photos/vegas-hero.jpg"}
             alt="Mařena — Las Vegas Strip"
-            className="aspect-[3/2] w-full object-cover vegas-hero-flicker"
+            className="aspect-[3/2] w-full object-cover"
           />
+          {/* Problikávání jen cedule „WELCOME LEARN FROM LAS VEGAS" — obrázek je 3:2 a nezoříznutý, takže % sedí přesně. */}
+          <div aria-hidden className="vegas-sign-flicker pointer-events-none absolute" style={{ left: "78%", top: "51.5%", width: "18.5%", height: "15%" }} />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0b0713] via-transparent to-transparent" />
         </div>
 
