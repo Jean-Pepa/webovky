@@ -112,16 +112,18 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
         className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(255,180,45,0.12),_transparent_62%)]"
       />
 
-      {/* HERO — Las Vegas Strip: logo vlevo nahoře, minimalistická nav, obsah dole */}
-      <section className="relative isolate flex min-h-screen flex-col overflow-hidden">
+      {/* HERO — Las Vegas Strip. Desktop = foto přes celou plochu; mobil = celý
+          obrázek jako banner (aby bylo vidět celé okolí, nic se neořízne). */}
+      <section className="relative isolate flex flex-col overflow-hidden bg-[#0b0713] sm:min-h-screen">
+        {/* Desktop: foto přes celou plochu (cover) + ztmavení */}
         <Photo
           src={content?.photos?.hero?.trim() || "/photos/vegas-hero.jpg"}
           alt="Mařena — Las Vegas"
           label="Las Vegas Strip v noci"
-          className="absolute inset-0 -z-10 h-full w-full"
+          className="absolute inset-0 -z-10 hidden h-full w-full sm:block"
         />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/90 via-black/40 to-black/10" />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#0b0713] via-transparent to-black/50" />
+        <div className="absolute inset-0 -z-10 hidden bg-gradient-to-r from-black/90 via-black/40 to-black/10 sm:block" />
+        <div className="absolute inset-0 -z-10 hidden bg-gradient-to-t from-[#0b0713] via-transparent to-black/50 sm:block" />
 
         {/* Horní lišta: logo (kačenka + MAŘENA / Las Vegas) + nav */}
         <div className="relative z-20 mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:py-6">
@@ -142,8 +144,19 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
           </nav>
         </div>
 
-        {/* Obsah dole vlevo — 56. ročník, věta, merch + odkazy */}
-        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 items-end px-4 pb-14 sm:pb-20">
+        {/* Mobil: celý Vegas obrázek jako banner (na desktopu skryté) */}
+        <div className="relative sm:hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={content?.photos?.hero?.trim() || "/photos/vegas-hero.jpg"}
+            alt="Mařena — Las Vegas Strip"
+            className="aspect-[3/2] w-full object-cover"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0b0713] via-transparent to-transparent" />
+        </div>
+
+        {/* Obsah — na desktopu dole vlevo přes foto, na mobilu pod bannerem */}
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 items-end px-4 pb-12 pt-8 sm:pb-20 sm:pt-0">
           <div className="max-w-2xl [text-shadow:0_2px_20px_rgba(0,0,0,0.85)]">
             <span className="marquee-sign">🎰 56. ročník</span>
             <h1 className="sr-only">Mařena — Las Vegas, 56. ročník studentského festivalu Fakulty architektury VUT</h1>
