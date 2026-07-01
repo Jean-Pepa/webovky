@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { fmtRelative } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -18,7 +19,24 @@ export default function HlasovaniPage() {
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [multi, setMulti] = useState(false);
+  // Když přijdeme z nástěnky přes ?poll=<id>, odscrolujeme a anketu na chvíli zvýrazníme.
+  const [highlight, setHighlight] = useState<string | null>(null);
   const year = currentYear;
+
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("poll");
+    if (!id) return;
+    const t = setTimeout(() => {
+      setHighlight(id);
+      document.getElementById(`poll-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+    const clear = setTimeout(() => setHighlight(null), 2600);
+    return () => {
+      clearTimeout(t);
+      clearTimeout(clear);
+    };
+  }, [year?.id]);
+
   if (!year) return null;
 
   async function create() {
@@ -38,6 +56,10 @@ export default function HlasovaniPage() {
       return b.createdAt.localeCompare(a.createdAt);
     })
     .filter((p) => matchesQuery(q, p.question, p.author, p.options.map((o) => o.label).join(" ")));
+
+  // Ke které anketě patří jaký příspěvek na nástěnce (pro tlačítko zpět na nástěnku).
+  const postByPoll = new Map<string, { id: string; title: string }>();
+  for (const po of year.posts) if (po.pollId) postByPoll.set(po.pollId, { id: po.id, title: po.title });
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
@@ -97,7 +119,9 @@ export default function HlasovaniPage() {
           {q ? "Nic neodpovídá hledání." : "Zatím žádná anketa. Založ první rozhodování týmu."}
         </div>
       ) : (
-        polls.map((p) => <PollCard key={p.id} poll={p} yearId={year.id} me={me} totalPeople={year.members.length} />)
+        polls.map((p) => (
+          <PollCard key={p.id} poll={p} yearId={year.id} me={me} totalPeople={year.members.length} highlight={highlight === p.id} linkedPost={postByPoll.get(p.id)} />
+        ))
       )}
     </div>
   );
@@ -110,7 +134,7 @@ function votersWord(n: number): string {
   return "lidí hlasovalo";
 }
 
-function PollCard({ poll, yearId, me, totalPeople }: { poll: Poll; yearId: string; me: string; totalPeople: number }) {
+function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { poll: Poll; yearId: string; me: string; totalPeople: number; highlight?: boolean; linkedPost?: { id: string; title: string } }) {
   const { dispatch } = useStore();
   const [showOverview, setShowOverview] = useState(false);
   const totalVoters = new Set(poll.options.flatMap((o) => o.voters)).size;
@@ -139,7 +163,12 @@ function PollCard({ poll, yearId, me, totalPeople }: { poll: Poll; yearId: strin
   }
 
   return (
-    <div className={`card p-5 ${poll.closed ? "bg-leaf/[0.04] ring-2 ring-leaf" : ""}`}>
+    <div
+      id={`poll-${poll.id}`}
+      className={`card scroll-mt-24 p-5 transition-shadow ${poll.closed ? "bg-leaf/[0.04] ring-2 ring-leaf" : ""} ${
+        highlight ? "ring-2 ring-marigold-500 shadow-[0_0_0_4px_rgba(253,175,34,0.25)]" : ""
+      }`}
+    >
       <div className="mb-1 flex items-center gap-2 text-xs text-ink-soft">
         <span>{poll.author}</span>
         <span>· {fmtRelative(poll.createdAt)}</span>
@@ -148,6 +177,15 @@ function PollCard({ poll, yearId, me, totalPeople }: { poll: Poll; yearId: strin
           <span className="badge-closed-glow inline-flex items-center gap-1 rounded-full bg-leaf px-2.5 py-0.5 text-xs font-semibold text-white">
             <Icon name="tasks" className="h-3.5 w-3.5" /> uzavřeno
           </span>
+        )}
+        {linkedPost && (
+          <Link
+            href={`/zazemi?post=${linkedPost.id}`}
+            title={`Nástěnka: ${linkedPost.title}`}
+            className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-marigold-100 px-2.5 py-1 text-xs font-medium text-marigold-800 ring-1 ring-marigold-200 transition hover:bg-marigold-200"
+          >
+            📌 Nástěnka
+          </Link>
         )}
       </div>
       <h3 className="font-display text-lg font-semibold">{poll.question}</h3>
@@ -236,7 +274,7 @@ function PollCard({ poll, yearId, me, totalPeople }: { poll: Poll; yearId: strin
                 <span className="text-ink-soft">{o.voters.length}</span>
               </div>
               {o.voters.length > 0 ? (
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                <div className="mt-1.5 flex flex-col items-start gap-1.5">
                   {o.voters.map((v) => (
                     <span key={v} className="chip inline-flex items-center gap-1">
                       {v}

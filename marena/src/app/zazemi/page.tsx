@@ -10,13 +10,112 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { Onboarding } from "@/components/Onboarding";
 import { Icon } from "@/components/Icons";
 import { SearchBox } from "@/components/SearchBox";
-import { Modal } from "@/components/Modal";
+import { ImageViewer } from "@/components/ImageViewer";
 import { matchesQuery } from "@/lib/search";
 import { isAdmin } from "@/lib/admin";
 import { flash } from "@/components/Flash";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
 import type { Post } from "@/lib/types";
+
+// Koncept ankety připojené k příspěvku (žije pak v sekci Hlasování).
+// Buď se připojí už existující anketa (mode "existing"), nebo se založí nová.
+type PollDraft = { on: boolean; mode: "existing" | "new"; existingId: string; question: string; options: string[]; multi: boolean };
+const emptyPoll: PollDraft = { on: false, mode: "new", existingId: "", question: "", options: ["", ""], multi: false };
+type PollChoice = { kind: "existing"; id: string } | { kind: "new"; question: string; options: string[]; multi: boolean };
+// Vyhodnotí koncept: co se má reálně stát (připojit / založit), nebo null když nic.
+function resolvePoll(d: PollDraft): PollChoice | null {
+  if (!d.on) return null;
+  if (d.mode === "existing") return d.existingId ? { kind: "existing", id: d.existingId } : null;
+  const opts = d.options.map((o) => o.trim()).filter(Boolean);
+  if (!d.question.trim() || opts.length < 2) return null;
+  return { kind: "new", question: d.question.trim(), options: opts, multi: d.multi };
+}
+
+// Editor ankety — sdílený mezi přidáním a úpravou příspěvku.
+function PollComposer({ draft, setDraft, polls }: { draft: PollDraft; setDraft: (d: PollDraft) => void; polls: { id: string; question: string }[] }) {
+  const setOpt = (i: number, v: string) => setDraft({ ...draft, options: draft.options.map((x, j) => (j === i ? v : x)) });
+  const hasExisting = polls.length > 0;
+  return (
+    <div className="rounded-2xl bg-paper2/60 p-3 ring-1 ring-black/10">
+      <label className="flex items-center gap-2 text-sm font-medium text-ink">
+        <input
+          type="checkbox"
+          checked={draft.on}
+          // Když jsou už nějaké ankety, přednastavíme „připojit existující".
+          onChange={(e) => setDraft({ ...draft, on: e.target.checked, mode: e.target.checked && hasExisting ? "existing" : "new" })}
+        />
+        🗳️ Přidat anketu (objeví se i v sekci Hlasování)
+      </label>
+      {draft.on && (
+        <div className="mt-3 space-y-2">
+          {hasExisting && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className={draft.mode === "existing" ? "btn-primary px-3 py-1.5 text-xs" : "btn-ghost px-3 py-1.5 text-xs"}
+                onClick={() => setDraft({ ...draft, mode: "existing" })}
+              >
+                Připojit existující
+              </button>
+              <button
+                type="button"
+                className={draft.mode === "new" ? "btn-primary px-3 py-1.5 text-xs" : "btn-ghost px-3 py-1.5 text-xs"}
+                onClick={() => setDraft({ ...draft, mode: "new" })}
+              >
+                Vytvořit novou
+              </button>
+            </div>
+          )}
+          {draft.mode === "existing" && hasExisting ? (
+            <select className="input" value={draft.existingId} onChange={(e) => setDraft({ ...draft, existingId: e.target.value })}>
+              <option value="">Vyber existující anketu…</option>
+              {polls.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.question}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <>
+              <input
+                className="input"
+                placeholder="Otázka ankety"
+                value={draft.question}
+                onChange={(e) => setDraft({ ...draft, question: e.target.value })}
+              />
+              {draft.options.map((o, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input className="input" placeholder={`Možnost ${i + 1}`} value={o} onChange={(e) => setOpt(i, e.target.value)} />
+                  {draft.options.length > 2 && (
+                    <button
+                      type="button"
+                      className="btn-ghost px-2"
+                      aria-label={`Odebrat možnost ${i + 1}`}
+                      title="Odebrat možnost"
+                      onClick={() => setDraft({ ...draft, options: draft.options.filter((_, j) => j !== i) })}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+              <div className="flex flex-wrap items-center gap-3">
+                <button type="button" className="btn-ghost" onClick={() => setDraft({ ...draft, options: [...draft.options, ""] })}>
+                  + Další možnost
+                </button>
+                <label className="flex items-center gap-2 text-sm text-ink-soft">
+                  <input type="checkbox" checked={draft.multi} onChange={(e) => setDraft({ ...draft, multi: e.target.checked })} />
+                  Lze vybrat víc možností
+                </label>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function NastenkaPage() {
   const { currentYear, me, dispatch, configured } = useStore();
@@ -29,6 +128,9 @@ export default function NastenkaPage() {
   // Přiložené obrázky k novému příspěvku — nahrají se hned, ukládáme si id + náhled.
   const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [pollDraft, setPollDraft] = useState<PollDraft>(emptyPoll);
+  // Když přijdeme z ankety přes ?post=<id>, doscrollujeme a příspěvek na chvíli zvýrazníme.
+  const [highlightPost, setHighlightPost] = useState<string | null>(null);
 
   async function onPickPhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -82,18 +184,42 @@ export default function NastenkaPage() {
   const bilance = (year?.finances ?? []).reduce((s, f) => s + (f.kind === "prijem" ? f.amount : -f.amount), 0) + contribInPool;
   const hasFinance = (year?.finances ?? []).length > 0 || (year?.contributions ?? []).length > 0;
 
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("post");
+    if (!id) return;
+    const t = setTimeout(() => {
+      setHighlightPost(id);
+      document.getElementById(`post-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+    const clear = setTimeout(() => setHighlightPost(null), 2600);
+    return () => {
+      clearTimeout(t);
+      clearTimeout(clear);
+    };
+  }, [year?.id]);
+
   if (!year) return null;
 
   async function submit() {
     if (!title.trim() || !year) return;
-    await dispatch({ type: "addPost", yearId: year.id, author: me, roleId: roleId || undefined, title, body, pinned, photoIds: photos.map((p) => p.id) });
+    // Volitelná anketa — buď připojíme existující, nebo založíme novou.
+    const choice = resolvePoll(pollDraft);
+    let pollId: string | undefined;
+    if (choice?.kind === "existing") {
+      pollId = choice.id;
+    } else if (choice?.kind === "new") {
+      pollId = uid("v_");
+      await dispatch({ type: "addPoll", yearId: year.id, author: me, question: choice.question, options: choice.options, multi: choice.multi, id: pollId });
+    }
+    await dispatch({ type: "addPost", yearId: year.id, author: me, roleId: roleId || undefined, title, body, pinned, photoIds: photos.map((p) => p.id), pollId });
     setTitle("");
     setBody("");
     setRoleId("");
     setPinned(false);
     setPhotos([]);
+    setPollDraft(emptyPoll);
     setOpen(false);
-    flash("Příspěvek přidán", "📌");
+    flash(choice ? "Příspěvek i anketa přidány" : "Příspěvek přidán", choice ? "🗳️" : "📌");
   }
 
   return (
@@ -139,6 +265,8 @@ export default function NastenkaPage() {
               <input type="file" accept="image/*" multiple className="hidden" onChange={onPickPhotos} disabled={uploading} />
             </label>
 
+            <PollComposer draft={pollDraft} setDraft={setPollDraft} polls={year.polls} />
+
             <div className="flex flex-wrap items-center gap-3">
               <select className="input max-w-56" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
                 <option value="">Za jakou roli? (nepovinné)</option>
@@ -170,7 +298,7 @@ export default function NastenkaPage() {
         ) : (
           <div className="space-y-3">
             {filteredPosts.map((p) => (
-              <PostCard key={p.id} post={p} yearId={year.id} />
+              <PostCard key={p.id} post={p} yearId={year.id} highlight={highlightPost === p.id} />
             ))}
           </div>
         )}
@@ -286,8 +414,6 @@ function PostPhotos({ ids }: { ids: string[] }) {
 
   const ready = ids.map((id) => urls[id]).filter(Boolean) as string[];
   if (ready.length === 0) return null;
-  const many = ready.length > 1;
-  const go = (delta: number) => setViewIdx((i) => (i === null ? i : (i + delta + ready.length) % ready.length));
   return (
     <>
       <div className="mt-2 flex flex-wrap gap-2">
@@ -302,46 +428,13 @@ function PostPhotos({ ids }: { ids: string[] }) {
           />
         ))}
       </div>
-      <Modal open={viewIdx !== null} onClose={() => setViewIdx(null)} title="Obrázek">
-        {viewIdx !== null && (
-          <div>
-            <div className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={ready[viewIdx]} alt="obrázek" className="max-h-[68vh] w-full rounded-xl object-contain" />
-              {many && (
-                <>
-                  <button
-                    onClick={() => go(-1)}
-                    aria-label="Předchozí"
-                    className="absolute left-1 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-ink/70 text-2xl leading-none text-white shadow-lg transition hover:bg-ink"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    onClick={() => go(1)}
-                    aria-label="Další"
-                    className="absolute right-1 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-ink/70 text-2xl leading-none text-white shadow-lg transition hover:bg-ink"
-                  >
-                    ›
-                  </button>
-                </>
-              )}
-            </div>
-            {many && <p className="mt-2 text-center text-sm text-ink-soft">{viewIdx + 1} / {ready.length}</p>}
-            <div className="mt-3 flex justify-center">
-              <button onClick={() => setViewIdx(null)} className="btn-primary px-8">
-                Zavřít
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      <ImageViewer images={ready} index={viewIdx} onIndex={setViewIdx} />
     </>
   );
 }
 
-function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
-  const { me, dispatch, configured } = useStore();
+function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; highlight?: boolean }) {
+  const { me, dispatch, configured, currentYear } = useStore();
   const [edit, setEdit] = useState(false);
   const [showEdits, setShowEdits] = useState(false);
   const [title, setTitle] = useState(p.title);
@@ -349,6 +442,9 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
   const [roleId, setRoleId] = useState(p.roleId ?? "");
   const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [pollDraft, setPollDraft] = useState<PollDraft>(emptyPoll);
+  // Připojená anketa (pokud existuje) — kvůli tlačítku „Hlasování".
+  const poll = p.pollId ? currentYear?.polls.find((pl) => pl.id === p.pollId) : undefined;
   // Historie úprav (nová), s fallbackem na stará data (jen poslední úprava).
   const edits = p.edits ?? (p.editedBy && p.editedAt ? [{ by: p.editedBy, at: p.editedAt }] : []);
   const canEdit = true; // úpravu nástěnky smí každý (kdo má přístup do zázemí)
@@ -359,6 +455,7 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
     setTitle(p.title);
     setBody(p.body);
     setRoleId(p.roleId ?? "");
+    setPollDraft(emptyPoll);
     // Načti existující obrázky, ať je jde v úpravě vidět, odebrat i doplnit.
     const existing: { id: string; url: string }[] = [];
     for (const id of p.photoIds ?? []) {
@@ -391,8 +488,26 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
 
   async function save() {
     if (!title.trim()) return;
-    await dispatch({ type: "updatePost", yearId, postId: p.id, editedBy: me, patch: { title, body, roleId: roleId || null, photoIds: photos.map((x) => x.id) } });
+    // Anketu jde doplnit jen když ještě žádná připojená není.
+    const patch: { title: string; body: string; roleId: string | null; photoIds: string[]; pollId?: string } = {
+      title,
+      body,
+      roleId: roleId || null,
+      photoIds: photos.map((x) => x.id),
+    };
+    if (!p.pollId) {
+      const choice = resolvePoll(pollDraft);
+      if (choice?.kind === "existing") {
+        patch.pollId = choice.id;
+      } else if (choice?.kind === "new" && currentYear) {
+        const pollId = uid("v_");
+        await dispatch({ type: "addPoll", yearId, author: me, question: choice.question, options: choice.options, multi: choice.multi, id: pollId });
+        patch.pollId = pollId;
+      }
+    }
+    await dispatch({ type: "updatePost", yearId, postId: p.id, editedBy: me, patch });
     setEdit(false);
+    if (patch.pollId) flash("Anketa připojena k příspěvku", "🗳️");
   }
 
   if (edit) {
@@ -433,6 +548,14 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
           <input type="file" accept="image/*" multiple className="hidden" onChange={onPickPhotos} disabled={uploading} />
         </label>
 
+        {p.pollId ? (
+          <p className="rounded-2xl bg-paper2/60 px-3 py-2 text-sm text-ink-soft ring-1 ring-black/10">
+            🗳️ Anketa je k příspěvku připojena{poll ? `: „${poll.question}"` : ""}. Upravit ji můžeš v sekci Hlasování.
+          </p>
+        ) : (
+          <PollComposer draft={pollDraft} setDraft={setPollDraft} polls={currentYear?.polls ?? []} />
+        )}
+
         <div className="flex gap-2">
           <button className="btn-primary py-2 text-sm" onClick={save} disabled={!title.trim()}>
             Uložit
@@ -446,7 +569,12 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
   }
 
   return (
-    <article className={`card p-4 ${p.pinned ? "ring-1 ring-marigold-300" : ""}`}>
+    <article
+      id={`post-${p.id}`}
+      className={`card scroll-mt-24 p-4 transition-shadow ${p.pinned ? "ring-1 ring-marigold-300" : ""} ${
+        highlight ? "ring-2 ring-marigold-500 shadow-[0_0_0_4px_rgba(253,175,34,0.25)]" : ""
+      }`}
+    >
       <div className="mb-1 flex flex-wrap items-start gap-x-2 gap-y-1 text-xs text-ink-soft">
         {p.pinned && <span className="chip bg-marigold-600 text-white">📌 Připnuto</span>}
         {role && (
@@ -454,21 +582,16 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
             {role.emoji} {role.name}
           </span>
         )}
-        <div className="ml-auto max-w-[70%] text-right leading-tight">
-          <div>
+        <div className="ml-auto text-right leading-tight">
+          <div className="whitespace-nowrap">
             založil(a): <span className="font-medium text-ink">{p.author}</span> · {fmtDateTime(p.createdAt)}
           </div>
-          {edits.length > 0 && (
-            <div>
-              upravil(a): <span className="font-medium text-ink">{edits[0].by}</span> · {fmtDateTime(edits[0].at)}
-            </div>
-          )}
-          {edits.length > 1 &&
+          {edits.length > 0 &&
             (showEdits ? (
               <>
-                <div className="mt-1 max-h-24 space-y-0.5 overflow-y-auto rounded-lg bg-paper2/70 px-2 py-1.5 text-left">
-                  {edits.slice(1).map((e, i) => (
-                    <div key={i}>
+                <div className="mt-1 max-h-24 space-y-0.5 overflow-auto rounded-lg bg-paper2/70 px-2 py-1.5 text-left">
+                  {edits.map((e, i) => (
+                    <div key={i} className="whitespace-nowrap">
                       upravil(a): <span className="font-medium text-ink">{e.by}</span> · {fmtDateTime(e.at)}
                     </div>
                   ))}
@@ -479,7 +602,7 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
               </>
             ) : (
               <button onClick={() => setShowEdits(true)} className="font-medium text-marigold-700 hover:underline">
-                zobrazit více ({edits.length - 1})
+                zobrazit více ({edits.length})
               </button>
             ))}
         </div>
@@ -487,6 +610,14 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
       <h3 className="break-words font-display text-lg font-semibold">{p.title}</h3>
       {p.body && <PostBody body={p.body} />}
       {p.photoIds && p.photoIds.length > 0 && <PostPhotos ids={p.photoIds} />}
+      {poll && (
+        <div className="mt-3 flex items-center gap-2 rounded-xl bg-marigold-50 px-3 py-2 ring-1 ring-marigold-200">
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">🗳️ {poll.question}</span>
+          <Link href={`/zazemi/hlasovani?poll=${poll.id}`} className="btn-primary shrink-0 px-3 py-1.5 text-xs">
+            Hlasování
+          </Link>
+        </div>
+      )}
       <div className="mt-2 flex items-center gap-2">
         <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "togglePin", yearId, postId: p.id })}>
           {p.pinned ? "Odepnout" : "Připnout"}
