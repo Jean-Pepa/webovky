@@ -103,7 +103,7 @@ function LangSwitch({ lang, changeLang }: { lang: Lang; changeLang: (l: Lang) =>
 /* ============================ TÉMA: LAS VEGAS ============================ */
 function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: HomeView) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0b0713] text-white">
+    <div className="relative min-h-screen overflow-hidden bg-[#000000] text-white">
       {/* Vegas pozadí — čisté: jemná světla + teplá zlatá záře shora.
           absolute (ne fixed) — fixed + mix-blend-mode dělá v Chromiu chybu vykreslení. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 vegas-stars opacity-40" />
@@ -114,7 +114,7 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
 
       {/* HERO — Las Vegas Strip. Desktop = foto přes celou plochu; mobil = celý
           obrázek jako banner (aby bylo vidět celé okolí, nic se neořízne). */}
-      <section className="relative isolate flex flex-col overflow-hidden bg-[#0b0713] sm:min-h-screen">
+      <section className="relative isolate flex flex-col overflow-hidden bg-[#000000] sm:min-h-screen">
         {/* Desktop: foto přes celou plochu (cover) + ztmavení */}
         <Photo
           src={content?.photos?.hero?.trim() || "/photos/vegas-hero.jpg"}
@@ -125,7 +125,7 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
         {/* Problikávání jen cedule „WELCOME LEARN FROM LAS VEGAS" (desktop) — přes pravou část fota. */}
         <div aria-hidden className="vegas-sign-flicker pointer-events-none absolute -z-10 hidden sm:block" style={{ left: "78%", top: "50%", width: "19%", height: "18%" }} />
         <div className="absolute inset-0 -z-10 hidden bg-gradient-to-r from-black/90 via-black/40 to-black/10 sm:block" />
-        <div className="absolute inset-0 -z-10 hidden bg-gradient-to-t from-[#0b0713] via-transparent to-black/50 sm:block" />
+        <div className="absolute inset-0 -z-10 hidden bg-gradient-to-t from-[#000000] via-transparent to-black/50 sm:block" />
 
         {/* Horní lišta: logo (kačenka + MAŘENA / Las Vegas) + nav */}
         <div className="relative z-20 mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:py-6">
@@ -153,7 +153,7 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
           />
           {/* Problikávání jen cedule „WELCOME LEARN FROM LAS VEGAS" — obrázek je 3:2 a nezoříznutý, takže % sedí přesně. */}
           <div aria-hidden className="vegas-sign-flicker pointer-events-none absolute" style={{ left: "78%", top: "51.5%", width: "18.5%", height: "15%" }} />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0b0713] via-transparent to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#000000] via-transparent to-transparent" />
         </div>
 
         {/* Obsah — na desktopu dole vlevo přes foto, na mobilu pod bannerem */}
@@ -247,7 +247,7 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
       {/* MAŘENA BAND */}
       <section className="relative h-[26rem] md:h-[34rem]">
         <Photo src={photoOf(content, "letters")} alt="Nápis MAŘENA před Fakultou architektury VUT" label="MAŘENA před fakultou" className="absolute inset-0 h-full w-full" imgClass="object-bottom" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0b0713]/85 via-black/30 to-[#0b0713]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#000000]/85 via-black/30 to-[#000000]" />
         <div className="relative mx-auto flex h-full max-w-6xl items-start px-4 pt-8">
           <p className="max-w-2xl font-display text-2xl font-semibold tracking-tight text-white md:text-4xl [text-shadow:0_0_18px_rgba(255,180,40,0.55),0_2px_18px_rgba(0,0,0,0.65)]">
             {t.band}
@@ -300,7 +300,7 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
       )}
 
       {/* INSTAGRAM CTA */}
-      <section className="relative bg-gradient-to-b from-[#1a0b2e] to-[#0b0713]">
+      <section className="relative bg-gradient-to-b from-[#1a0b2e] to-[#000000]">
         <div aria-hidden className="vegas-bulbs absolute inset-x-0 top-0" />
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-4 py-16 text-center md:py-20">
           <a
@@ -322,7 +322,7 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-white/10 bg-[#0b0713]">
+      <footer className="border-t border-white/10 bg-[#000000]">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-8 text-sm text-white/60">
           <span className="[&_*]:text-white">
             <Logo light />
