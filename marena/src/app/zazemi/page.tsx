@@ -488,14 +488,15 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
 
   async function save() {
     if (!title.trim()) return;
-    // Anketu jde doplnit jen když ještě žádná připojená není.
+    // Anketu jde doplnit jen když žádná ŽIVÁ připojená není. Pokud byla připojená
+    // anketa mezitím smazána (mrtvý odkaz), odpojíme ji.
     const patch: { title: string; body: string; roleId: string | null; photoIds: string[]; pollId?: string } = {
       title,
       body,
       roleId: roleId || null,
       photoIds: photos.map((x) => x.id),
     };
-    if (!p.pollId) {
+    if (!poll) {
       const choice = resolvePoll(pollDraft);
       if (choice?.kind === "existing") {
         patch.pollId = choice.id;
@@ -503,6 +504,8 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
         const pollId = uid("v_");
         await dispatch({ type: "addPoll", yearId, author: me, question: choice.question, options: choice.options, multi: choice.multi, id: pollId });
         patch.pollId = pollId;
+      } else if (p.pollId) {
+        patch.pollId = ""; // odkaz na smazanou anketu → odpojit
       }
     }
     await dispatch({ type: "updatePost", yearId, postId: p.id, editedBy: me, patch });
@@ -548,9 +551,9 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
           <input type="file" accept="image/*" multiple className="hidden" onChange={onPickPhotos} disabled={uploading} />
         </label>
 
-        {p.pollId ? (
+        {poll ? (
           <p className="rounded-2xl bg-paper2/60 px-3 py-2 text-sm text-ink-soft ring-1 ring-black/10">
-            🗳️ Anketa je k příspěvku připojena{poll ? `: „${poll.question}"` : ""}. Upravit ji můžeš v sekci Hlasování.
+            🗳️ Anketa je k příspěvku připojena: „{poll.question}“. Upravit ji můžeš v sekci Hlasování.
           </p>
         ) : (
           <PollComposer draft={pollDraft} setDraft={setPollDraft} polls={currentYear?.polls ?? []} />
@@ -613,8 +616,8 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
       {poll && (
         <div className="mt-3 flex items-center gap-2 rounded-xl bg-marigold-50 px-3 py-2 ring-1 ring-marigold-200">
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">🗳️ {poll.question}</span>
-          <Link href={`/zazemi/hlasovani?poll=${poll.id}`} className="btn-primary shrink-0 px-3 py-1.5 text-xs">
-            Hlasování
+          <Link href={`/zazemi/hlasovani?poll=${poll.id}`} className="btn-primary shrink-0 px-3 py-1.5 text-xs font-bold uppercase tracking-wide">
+            HLASOVAT
           </Link>
         </div>
       )}

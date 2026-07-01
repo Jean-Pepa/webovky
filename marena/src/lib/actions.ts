@@ -406,7 +406,12 @@ export function applyAction(db: DB, a: Action): DB {
         }),
       }));
     case "removePoll":
-      return mapYear(db, a.yearId, (y) => ({ ...y, polls: y.polls.filter((p) => p.id !== a.pollId) }));
+      // Smazání ankety ji zároveň odpojí od případného příspěvku na nástěnce.
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        polls: y.polls.filter((p) => p.id !== a.pollId),
+        posts: y.posts.map((p) => (p.pollId === a.pollId ? { ...p, pollId: undefined } : p)),
+      }));
 
     case "addEvent":
       return mapYear(db, a.yearId, (y) => ({
