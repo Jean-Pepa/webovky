@@ -280,8 +280,30 @@
   background: rgba(22, 13, 36, 0.72);
   box-shadow: 0 0 0 1px rgba(255, 92, 198, 0.28), 0 0 26px rgba(140, 40, 255, 0.2);
 }
+/* Zlatý „Las Vegas" nápis MAŘENA (homepage) — teplé zlato + blikající záře. */
+.vegas-gold-title span,
+.vegas-gold-title .marena-letter {
+  background: linear-gradient(180deg, #fff6c2 0%, #ffe066 34%, #ffc21f 60%, #e08a00 82%, #a85f06 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: none; /* zruší zelený „matrix" flicker */
+}
+@keyframes vegas-gold-flicker {
+  0%, 17%, 21%, 54%, 58%, 100% {
+    filter: drop-shadow(0 0 8px rgba(255, 205, 80, 0.95)) drop-shadow(0 0 22px rgba(255, 160, 20, 0.7)) drop-shadow(0 0 46px rgba(255, 110, 0, 0.5));
+  }
+  19%, 56% {
+    filter: drop-shadow(0 0 4px rgba(255, 205, 80, 0.6)) drop-shadow(0 0 10px rgba(255, 160, 20, 0.4));
+  }
+}
+.vegas-gold-title {
+  animation: vegas-gold-flicker 5s infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .vegas-glow, .vegas-bulbs, .vegas-stars {
+  .vegas-glow, .vegas-bulbs, .vegas-stars, .vegas-gold-title {
     animation: none;
   }
 }
