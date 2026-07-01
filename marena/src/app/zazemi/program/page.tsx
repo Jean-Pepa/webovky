@@ -41,10 +41,11 @@ function inviteRank(i: Invite): number {
   if (i.contacted) return 1;
   return 3;
 }
-// Barva řádku/karty podle stavu.
+// Barva řádku/karty podle stavu — potvrzeno = světle zelená s rámečkem (jako role),
+// odmítnuto = světle červená také s rámečkem.
 function inviteBg(i: Invite): string {
-  if (i.interest === "ano") return "bg-amber-200";
-  if (i.interest === "ne") return "bg-red-500/10";
+  if (i.interest === "ano") return "bg-leaf/15 ring-1 ring-inset ring-leaf/40";
+  if (i.interest === "ne") return "bg-red-500/10 ring-1 ring-inset ring-red-400/50";
   return "";
 }
 
@@ -240,7 +241,7 @@ function ContactedButton({ invite, yearId, canEdit }: { invite: Invite; yearId: 
 // Zájem — jen ZOBRAZENÍ stavu (neklikací). Řídí se přes ano/ne v „Má zájem?".
 function InterestControl({ invite }: { invite: Invite }) {
   if (invite.interest === "ano")
-    return <span className="inline-flex rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">✅ potvrzeno</span>;
+    return <span className="inline-flex rounded-full bg-leaf/15 px-2.5 py-1 text-xs font-semibold text-leaf-700 ring-1 ring-inset ring-leaf/40">✅ potvrzeno</span>;
   if (invite.interest === "ne")
     return <span className="inline-flex rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600">👎 odmítl</span>;
   if (invite.contacted)
@@ -271,7 +272,7 @@ function ConfirmButtons({ invite, yearId, canEdit }: { invite: Invite; yearId: s
       <button
         disabled={locked}
         onClick={() => choose(yes ? "ceka" : "ano")}
-        className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${yes ? "bg-amber-500 text-white" : "bg-amber-100 text-amber-800 hover:bg-amber-200"} ${locked ? "cursor-not-allowed opacity-60" : ""}`}
+        className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${yes ? "bg-leaf text-white" : "bg-leaf/10 text-leaf-700 hover:bg-leaf/20"} ${locked ? "cursor-not-allowed opacity-60" : ""}`}
       >
         ano
       </button>
