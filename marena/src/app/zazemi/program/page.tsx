@@ -6,6 +6,7 @@ import { isAdmin } from "@/lib/admin";
 import { sameName } from "@/lib/names";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
+import { Icon } from "@/components/Icons";
 import { flash } from "@/components/Flash";
 import { matchesQuery } from "@/lib/search";
 import type { Invite, Interest } from "@/lib/types";
@@ -40,15 +41,16 @@ function inviteRank(i: Invite): number {
   if (i.contacted) return 1;
   return 3;
 }
-// Barva řádku/karty podle stavu.
+// Barva řádku/karty podle stavu — potvrzeno = světle zelená s rámečkem (jako role),
+// odmítnuto = světle červená také s rámečkem.
 function inviteBg(i: Invite): string {
-  if (i.interest === "ano") return "bg-amber-200";
-  if (i.interest === "ne") return "bg-red-500/10";
+  if (i.interest === "ano") return "bg-leaf/15 ring-1 ring-inset ring-leaf/40";
+  if (i.interest === "ne") return "bg-red-500/10 ring-1 ring-inset ring-red-400/50";
   return "";
 }
 
 export default function ProgramPage() {
-  const { currentYear, dispatch } = useStore();
+  const { currentYear, dispatch, me } = useStore();
   const canEdit = useCanEditProgram();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -90,7 +92,7 @@ export default function ProgramPage() {
     if (!name.trim() || !category.trim() || !year) return;
     const who = name.trim();
     // Číslo se přiděluje automaticky podle pořadí ve skupině — prioritu nezadáváme.
-    await dispatch({ type: "addInvite", yearId: year.id, category, name, link: link || undefined, availability: availability || undefined, price: price || undefined });
+    await dispatch({ type: "addInvite", yearId: year.id, category, name, link: link || undefined, availability: availability || undefined, price: price || undefined, addedBy: me || undefined });
     setName("");
     setLink("");
     setAvailability("");
@@ -110,7 +112,6 @@ export default function ProgramPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight">Program</h1>
-          {!canEdit && <p className="mt-0.5 text-xs text-ink-soft">Program vidí každý, upravovat ho může jen kapelník, koordinátor přednášek, bavič a správce.</p>}
         </div>
         {canEdit && (
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
@@ -118,6 +119,13 @@ export default function ProgramPage() {
           </button>
         )}
       </div>
+
+      {!canEdit && (
+        <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
+          <Icon name="mic" className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>Program vidí každý, upravovat ho může jen kapelník, koordinátor přednášek, bavič a správce.</span>
+        </div>
+      )}
 
       <SearchBox value={q} onChange={setQ} placeholder="Hledat v programu…" />
 
@@ -233,7 +241,7 @@ function ContactedButton({ invite, yearId, canEdit }: { invite: Invite; yearId: 
 // Zájem — jen ZOBRAZENÍ stavu (neklikací). Řídí se přes ano/ne v „Má zájem?".
 function InterestControl({ invite }: { invite: Invite }) {
   if (invite.interest === "ano")
-    return <span className="inline-flex rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">✅ potvrzeno</span>;
+    return <span className="inline-flex rounded-full bg-leaf/15 px-2.5 py-1 text-xs font-semibold text-leaf-700 ring-1 ring-inset ring-leaf/40">✅ potvrzeno</span>;
   if (invite.interest === "ne")
     return <span className="inline-flex rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600">👎 odmítl</span>;
   if (invite.contacted)
@@ -264,7 +272,7 @@ function ConfirmButtons({ invite, yearId, canEdit }: { invite: Invite; yearId: s
       <button
         disabled={locked}
         onClick={() => choose(yes ? "ceka" : "ano")}
-        className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${yes ? "bg-amber-500 text-white" : "bg-amber-100 text-amber-800 hover:bg-amber-200"} ${locked ? "cursor-not-allowed opacity-60" : ""}`}
+        className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${yes ? "bg-leaf text-white" : "bg-leaf/10 text-leaf-700 hover:bg-leaf/20"} ${locked ? "cursor-not-allowed opacity-60" : ""}`}
       >
         ano
       </button>
@@ -386,6 +394,7 @@ function InviteCard({ invite, yearId, index, canEdit }: { invite: Invite; yearId
           <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
             {invite.availability && <span>🗓 {invite.availability}</span>}
             {invite.price && <span>💰 {invite.price}</span>}
+            {invite.addedBy && <span>➕ přidal {invite.addedBy}</span>}
           </div>
         </div>
       </div>
@@ -446,6 +455,7 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
             odkaz ↗
           </a>
         )}
+        {invite.addedBy && <div className="text-xs text-ink-soft">➕ přidal {invite.addedBy}</div>}
       </td>
       <td className="px-3 py-3">
         <ContactedButton invite={invite} yearId={yearId} canEdit={canEdit} />

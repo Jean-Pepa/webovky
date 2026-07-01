@@ -88,7 +88,7 @@ export type Action =
   | { type: "signShiftBackup"; yearId: string; shiftId: string; name: string }
   | { type: "removeShiftPerson"; yearId: string; shiftId: string; name: string }
   | { type: "removeShift"; yearId: string; shiftId: string }
-  | { type: "addInvite"; yearId: string; category: string; name: string; link?: string; availability?: string; price?: string; priority?: number }
+  | { type: "addInvite"; yearId: string; category: string; name: string; link?: string; availability?: string; price?: string; priority?: number; addedBy?: string }
   | {
       type: "updateInvite";
       yearId: string;
@@ -829,6 +829,7 @@ export function applyAction(db: DB, a: Action): DB {
             priority: a.priority && a.priority > 0 ? Math.round(a.priority) : undefined,
             contacted: false,
             interest: "nevim",
+            addedBy: a.addedBy?.trim() || undefined,
             createdAt: now(),
           },
         ],

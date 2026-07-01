@@ -246,6 +246,7 @@ export interface Invite {
   confirmedDate?: string; // finálně potvrzené datum
   cancelled?: boolean; // zrušeno (i u dříve potvrzeného) — propadne dolů
   note?: string;
+  addedBy?: string; // kdo přidal do programu (jméno)
   createdAt: string;
 }
 
