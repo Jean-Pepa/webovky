@@ -2,8 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
+import { isAdmin } from "@/lib/admin";
+import { sameName } from "@/lib/names";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
+import { flash } from "@/components/Flash";
 import { matchesQuery } from "@/lib/search";
 import type { Invite, Interest } from "@/lib/types";
 
@@ -18,6 +21,15 @@ const CAT_META: Record<string, string> = {
 };
 const CAT_ORDER = Object.keys(CAT_META);
 const catEmoji = (c: string) => CAT_META[c] ?? "📍";
+
+// Přidávat a upravovat program smí jen tyto role (+ správce). Ostatní jen čtou.
+const PROGRAM_EDIT_ROLES = ["kapelnik", "prednasky", "program"];
+function useCanEditProgram(): boolean {
+  const { currentYear, me } = useStore();
+  if (isAdmin(me)) return true;
+  const mine = currentYear?.members.find((m) => sameName(m.name, me));
+  return (mine?.roleIds ?? []).some((r) => PROGRAM_EDIT_ROLES.includes(r));
+}
 
 // „Potvrzeno" = rozhodnuto ano (interest === "ano"). Datum se už nezadává.
 const isConfirmed = (i: Invite) => i.interest === "ano";
@@ -37,6 +49,7 @@ function inviteBg(i: Invite): string {
 
 export default function ProgramPage() {
   const { currentYear, dispatch } = useStore();
+  const canEdit = useCanEditProgram();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("");
@@ -75,6 +88,7 @@ export default function ProgramPage() {
 
   async function add() {
     if (!name.trim() || !category.trim() || !year) return;
+    const who = name.trim();
     // Číslo se přiděluje automaticky podle pořadí ve skupině — prioritu nezadáváme.
     await dispatch({ type: "addInvite", yearId: year.id, category, name, link: link || undefined, availability: availability || undefined, price: price || undefined });
     setName("");
@@ -82,6 +96,7 @@ export default function ProgramPage() {
     setAvailability("");
     setPrice("");
     setOpen(false);
+    flash(`Přidáno do programu: ${who}`, "🎉");
   }
 
   return (
@@ -95,15 +110,18 @@ export default function ProgramPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight">Program</h1>
+          {!canEdit && <p className="mt-0.5 text-xs text-ink-soft">Program vidí každý, upravovat ho může jen kapelník, koordinátor přednášek, bavič a správce.</p>}
         </div>
-        <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
-          {open ? "Zavřít" : "+ Přidat do programu"}
-        </button>
+        {canEdit && (
+          <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
+            {open ? "Zavřít" : "+ Přidat do programu"}
+          </button>
+        )}
       </div>
 
       <SearchBox value={q} onChange={setQ} placeholder="Hledat v programu…" />
 
-      {open && (
+      {canEdit && open && (
         <div className="card space-y-2 p-4">
           <div className="grid gap-2 sm:grid-cols-3">
             <input className="input" list="cat-list" placeholder="Kategorie (Přednášky, Kapely…)" value={category} onChange={(e) => setCategory(e.target.value)} />
@@ -136,7 +154,7 @@ export default function ProgramPage() {
                 {/* Mobil: karty */}
                 <div className="divide-y divide-black/[0.06] md:hidden">
                   {items.map((i, idx) => (
-                    <InviteCard key={i.id} invite={i} yearId={year.id} index={idx + 1} />
+                    <InviteCard key={i.id} invite={i} yearId={year.id} index={idx + 1} canEdit={canEdit} />
                   ))}
                 </div>
                 {/* Desktop: tabulka */}
@@ -147,16 +165,16 @@ export default function ProgramPage() {
                         <th className="px-3 py-2.5 w-10">#</th>
                         <th className="px-3 py-2.5">Kdo</th>
                         <th className="px-3 py-2.5">Osloveno?</th>
-                        <th className="px-3 py-2.5">Zájem?</th>
+                        <th className="px-3 py-2.5">Stav</th>
                         <th className="px-3 py-2.5">Kdy může</th>
                         <th className="px-3 py-2.5">Cena</th>
-                        <th className="px-3 py-2.5">Potvrzeno</th>
+                        <th className="px-3 py-2.5">Má zájem?</th>
                         <th className="px-3 py-2.5" />
                       </tr>
                     </thead>
                     <tbody>
                       {items.map((i, idx) => (
-                        <InviteRow key={i.id} invite={i} yearId={year.id} index={idx + 1} />
+                        <InviteRow key={i.id} invite={i} yearId={year.id} index={idx + 1} canEdit={canEdit} />
                       ))}
                     </tbody>
                   </table>
@@ -171,22 +189,38 @@ export default function ProgramPage() {
 }
 
 // Tlačítko „Osloveno?" — klik zároveň nastaví zájem na čeká. Po potvrzení
-// (oranžová) je zamčené; změnit jde až po „Zrušit".
-function ContactedButton({ invite, yearId }: { invite: Invite; yearId: string }) {
-  const { dispatch } = useStore();
-  const locked = isConfirmed(invite);
+// (oranžová) je zamčené; změnit jde až po „Zrušit". Bez práva úpravy jen zobrazení.
+function ContactedButton({ invite, yearId, canEdit }: { invite: Invite; yearId: string; canEdit: boolean }) {
+  const { dispatch, me } = useStore();
+  const admin = isAdmin(me);
+  // Po rozhodnutí (ano/ne) zamčeno: potvrzené pro všechny (musí se Zrušit),
+  // odmítnuté jen pro ne-správce (změnit může správce).
+  const decided = invite.interest === "ano" || invite.interest === "ne";
+  const locked = isConfirmed(invite) || (decided && !admin);
+
+  if (!canEdit) {
+    // Jen náhled — bez tlačítka.
+    return (
+      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${invite.contacted ? "bg-leaf/15 text-leaf-700" : "bg-paper2 text-ink-soft"}`}>
+        {invite.contacted ? "Osloveno ✓" : "Neosloveno"}
+      </span>
+    );
+  }
+
   return (
     <button
       disabled={locked}
-      title={locked ? "Potvrzeno — pro změnu nejdřív Zrušit" : undefined}
-      onClick={() =>
+      title={locked ? (admin ? "Potvrzeno — pro změnu nejdřív Zrušit" : "Rozhodnuto — změnit může jen správce") : undefined}
+      onClick={() => {
+        const willContact = !invite.contacted;
         dispatch({
           type: "updateInvite",
           yearId,
           inviteId: invite.id,
           patch: invite.contacted ? { contacted: false, interest: "nevim" } : { contacted: true, interest: "ceka" },
-        })
-      }
+        });
+        flash(willContact ? `„${invite.name}" je teď osloveno` : `„${invite.name}" už není osloveno`, willContact ? "✉️" : "↩️");
+      }}
       className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
         invite.contacted ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-paper2 text-ink-soft hover:bg-black/5"
       } ${locked ? "cursor-not-allowed opacity-60 hover:bg-leaf/15" : ""}`}
@@ -196,7 +230,7 @@ function ContactedButton({ invite, yearId }: { invite: Invite; yearId: string })
   );
 }
 
-// Zájem — jen ZOBRAZENÍ stavu (neklikací). Řídí se přes ano/ne v „Potvrzeno".
+// Zájem — jen ZOBRAZENÍ stavu (neklikací). Řídí se přes ano/ne v „Má zájem?".
 function InterestControl({ invite }: { invite: Invite }) {
   if (invite.interest === "ano")
     return <span className="inline-flex rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">✅ potvrzeno</span>;
@@ -207,25 +241,37 @@ function InterestControl({ invite }: { invite: Invite }) {
   return <span className="text-xs text-ink-soft/50">—</span>;
 }
 
-// „Potvrzeno" — dvě tlačítka ano/ne (po oslovení). ano → potvrzeno (oranžová),
-// ne → odmítl. Vybrané je zvýrazněné, druhým klikem jde přepnout.
-function ConfirmButtons({ invite, yearId }: { invite: Invite; yearId: string }) {
-  const { dispatch } = useStore();
-  if (!invite.contacted) return <span className="text-xs text-ink-soft/50">—</span>;
-  const set = (interest: Interest) => dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { interest } });
+// „Má zájem?" — dvě tlačítka ano/ne (po oslovení). ano → potvrzeno (oranžová),
+// ne → odmítl. Jakmile padne rozhodnutí, zamkne se — změnit smí už jen správce.
+// Bez práva úpravy se tlačítka nezobrazí (stav ukazuje InterestControl).
+function ConfirmButtons({ invite, yearId, canEdit }: { invite: Invite; yearId: string; canEdit: boolean }) {
+  const { dispatch, me } = useStore();
+  const admin = isAdmin(me);
+  if (!canEdit || !invite.contacted) return null;
   const yes = invite.interest === "ano";
   const no = invite.interest === "ne";
+  // Jakmile padne rozhodnutí (ano/ne), je zamčené — změnit může už jen správce.
+  const locked = (yes || no) && !admin;
+  const choose = (interest: Interest) => {
+    if (locked) return;
+    dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { interest } });
+    if (interest === "ano") flash(`„${invite.name}": má zájem — potvrzeno`, "✅");
+    else if (interest === "ne") flash(`„${invite.name}": nemá zájem`, "👎");
+    else flash(`„${invite.name}": zpět na čeká`, "⏳");
+  };
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-1" title={locked ? "Rozhodnuto — změnit může jen správce" : undefined}>
       <button
-        onClick={() => set(yes ? "ceka" : "ano")}
-        className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${yes ? "bg-amber-500 text-white" : "bg-amber-100 text-amber-800 hover:bg-amber-200"}`}
+        disabled={locked}
+        onClick={() => choose(yes ? "ceka" : "ano")}
+        className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${yes ? "bg-amber-500 text-white" : "bg-amber-100 text-amber-800 hover:bg-amber-200"} ${locked ? "cursor-not-allowed opacity-60" : ""}`}
       >
         ano
       </button>
       <button
-        onClick={() => set(no ? "ceka" : "ne")}
-        className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${no ? "bg-red-500 text-white" : "bg-red-500/10 text-red-600 hover:bg-red-500/20"}`}
+        disabled={locked}
+        onClick={() => choose(no ? "ceka" : "ne")}
+        className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${no ? "bg-red-500 text-white" : "bg-red-500/10 text-red-600 hover:bg-red-500/20"} ${locked ? "cursor-not-allowed opacity-60" : ""}`}
       >
         ne
       </button>
@@ -233,26 +279,47 @@ function ConfirmButtons({ invite, yearId }: { invite: Invite; yearId: string }) 
   );
 }
 
-// „Zrušit" — jen u potvrzené (oranžové) pozvánky; vynuluje stav zpět do startu
-// (neosloveno, bez zájmu, bez termínu/ceny/poznámky). Jméno/odkaz/kategorie zůstanou.
-function CancelButton({ invite, yearId }: { invite: Invite; yearId: string }) {
+// „Zrušeno?" — jen u potvrzené (oranžové) pozvánky. Po potvrzení v okně
+// přesune pozvánku mezi odmítnuté (interest = ne). Info (termín/cena/poznámka)
+// zůstává, jen se změní stav; jméno/odkaz/kategorie beze změny.
+function CancelButton({ invite, yearId, canEdit }: { invite: Invite; yearId: string; canEdit: boolean }) {
   const { dispatch } = useStore();
-  if (!isConfirmed(invite)) return null;
+  const [ask, setAsk] = useState(false);
+  if (!canEdit || !isConfirmed(invite)) return null;
+  function confirmCancel() {
+    dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { interest: "ne" } });
+    setAsk(false);
+    flash(`„${invite.name}" spadla mezi odmítnuté`, "👎");
+  }
   return (
-    <button
-      className="btn-ghost px-2 py-1 text-xs text-red-600"
-      title="Zrušit a vynulovat do startu"
-      onClick={() =>
-        dispatch({
-          type: "updateInvite",
-          yearId,
-          inviteId: invite.id,
-          patch: { contacted: false, interest: "nevim", availability: "", price: "", note: "" },
-        })
-      }
-    >
-      Zrušit
-    </button>
+    <>
+      <button
+        className="btn-ghost px-2 py-1 text-xs text-red-600"
+        title="Označit jako zrušeno — přesun mezi odmítnuté"
+        onClick={() => setAsk(true)}
+      >
+        Zrušeno?
+      </button>
+      {ask && (
+        <div className="fixed inset-0 z-50 grid place-items-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAsk(false)} aria-hidden />
+          <div className="relative w-full max-w-md rounded-3xl border border-black/10 bg-white p-6 shadow-2xl" role="dialog" aria-modal="true">
+            <h2 className="mb-4 font-display text-lg font-semibold tracking-tight">Opravdu zrušeno?</h2>
+            <p className="text-sm text-ink-soft">
+              Opravdu byla <strong className="text-ink">{invite.name}</strong> zrušena? Přesuneme ji mezi odmítnuté (info zůstane).
+            </p>
+            <div className="mt-4 flex items-center gap-2">
+              <button className="btn-primary flex-1" onClick={confirmCancel}>
+                Ano, zrušeno
+              </button>
+              <button className="btn-ghost" onClick={() => setAsk(false)}>
+                Ne
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -285,10 +352,10 @@ function useInviteRow(invite: Invite, yearId: string) {
 }
 
 // Mobilní karta jedné pozvánky (na úzkém displeji místo tabulky).
-function InviteCard({ invite, yearId, index }: { invite: Invite; yearId: string; index: number }) {
+function InviteCard({ invite, yearId, index, canEdit }: { invite: Invite; yearId: string; index: number; canEdit: boolean }) {
   const s = useInviteRow(invite, yearId);
 
-  if (s.edit) {
+  if (canEdit && s.edit) {
     return (
       <div className="space-y-2 bg-paper2/40 p-3">
         <input className="input" value={s.name} onChange={(e) => s.setName(e.target.value)} placeholder="Jméno" />
@@ -323,29 +390,31 @@ function InviteCard({ invite, yearId, index }: { invite: Invite; yearId: string;
         </div>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <ContactedButton invite={invite} yearId={yearId} />
+        <ContactedButton invite={invite} yearId={yearId} canEdit={canEdit} />
         <InterestControl invite={invite} />
-        {invite.contacted && (
-          <span className="flex items-center gap-1 text-xs text-ink-soft">
-            <span>potvrdit:</span>
-            <ConfirmButtons invite={invite} yearId={yearId} />
-          </span>
+        {canEdit && invite.contacted && (
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-ink-soft">má zájem?</span>
+            <ConfirmButtons invite={invite} yearId={yearId} canEdit={canEdit} />
+          </div>
         )}
-        <div className="ml-auto flex items-center gap-1">
-          <CancelButton invite={invite} yearId={yearId} />
-          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => s.setEdit(true)}>Upravit</button>
-          <DeleteButton onConfirm={() => s.dispatch({ type: "removeInvite", yearId, inviteId: invite.id })} />
-        </div>
+        {canEdit && (
+          <div className="ml-auto flex items-center gap-1">
+            <CancelButton invite={invite} yearId={yearId} canEdit={canEdit} />
+            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => s.setEdit(true)}>Upravit</button>
+            <DeleteButton onConfirm={() => s.dispatch({ type: "removeInvite", yearId, inviteId: invite.id })} />
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function InviteRow({ invite, yearId, index }: { invite: Invite; yearId: string; index: number }) {
+function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId: string; index: number; canEdit: boolean }) {
   const { dispatch, edit, setEdit, name, setName, link, setLink, availability, setAvailability, price, setPrice, save } =
     useInviteRow(invite, yearId);
 
-  if (edit) {
+  if (canEdit && edit) {
     return (
       <tr className="border-b border-black/[0.06] bg-paper2/40 align-top">
         <td className="px-3 py-2 text-ink-soft">{index}</td>
@@ -379,7 +448,7 @@ function InviteRow({ invite, yearId, index }: { invite: Invite; yearId: string; 
         )}
       </td>
       <td className="px-3 py-3">
-        <ContactedButton invite={invite} yearId={yearId} />
+        <ContactedButton invite={invite} yearId={yearId} canEdit={canEdit} />
       </td>
       <td className="px-3 py-3">
         <InterestControl invite={invite} />
@@ -387,14 +456,16 @@ function InviteRow({ invite, yearId, index }: { invite: Invite; yearId: string; 
       <td className="px-3 py-3 text-ink-soft">{invite.availability || "—"}</td>
       <td className="px-3 py-3 text-ink-soft">{invite.price || "—"}</td>
       <td className="px-3 py-3">
-        <ConfirmButtons invite={invite} yearId={yearId} />
+        {canEdit ? <ConfirmButtons invite={invite} yearId={yearId} canEdit={canEdit} /> : <span className="text-xs text-ink-soft/50">—</span>}
       </td>
       <td className="px-3 py-3">
-        <div className="flex items-center justify-end gap-1">
-          <CancelButton invite={invite} yearId={yearId} />
-          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>Upravit</button>
-          <DeleteButton onConfirm={() => dispatch({ type: "removeInvite", yearId, inviteId: invite.id })} />
-        </div>
+        {canEdit ? (
+          <div className="flex items-center justify-end gap-1">
+            <CancelButton invite={invite} yearId={yearId} canEdit={canEdit} />
+            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>Upravit</button>
+            <DeleteButton onConfirm={() => dispatch({ type: "removeInvite", yearId, inviteId: invite.id })} />
+          </div>
+        ) : null}
       </td>
     </tr>
   );

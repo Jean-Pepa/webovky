@@ -127,7 +127,9 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
 
         {/* Horní lišta: logo (kačenka + MAŘENA / Las Vegas) + nav */}
         <div className="relative z-20 mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:py-6">
-          <div className="flex items-center">
+          <div className="flex flex-col items-start gap-1.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-fa-bw.png" alt="Fakulta architektury VUT" className="h-6 w-auto sm:h-8" />
             <span className="font-display text-3xl font-extrabold uppercase tracking-wide vegas-neon-gold sm:text-4xl">MAŘENA</span>
           </div>
           <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2 [text-shadow:0_1px_8px_rgba(0,0,0,0.6)]">
@@ -158,16 +160,13 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
               <span className="mb-1.5 font-display text-base font-bold uppercase tracking-[0.25em] sm:text-lg">ročník</span>
             </div>
             <h1 className="sr-only">Mařena — Las Vegas, 56. ročník studentského festivalu Fakulty architektury VUT</h1>
-            <p className="mt-4 max-w-xl text-lg font-medium text-white sm:text-2xl">{t.heroTagline}</p>
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-4 py-1.5 text-sm font-semibold text-white shadow-[0_0_18px_rgba(255,46,166,0.7)] [text-shadow:none]">
-              {t.heroBadge}
-            </div>
-            <div className="mt-7 flex flex-wrap items-center gap-3 [text-shadow:none]">
+            <p className="mt-4 whitespace-nowrap text-xs font-bold uppercase vegas-neon-red sm:text-xl">{t.heroTagline}</p>
+            <div className="mt-5 flex flex-wrap items-center gap-3 [text-shadow:none]">
               <Link
                 href="/merch"
-                className="merch-pulse vegas-btn inline-flex items-center rounded-full bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-7 py-3.5 font-display text-xl font-extrabold text-white ring-2 ring-white/40 hover:from-[#ff49b6] hover:to-[#b53aff] sm:text-2xl"
+                className="merch-pulse vegas-btn inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-7 py-3.5 font-display text-xl font-extrabold text-white ring-2 ring-white/40 hover:from-[#ff49b6] hover:to-[#b53aff] sm:text-2xl"
               >
-                {t.merchCta}
+                <Icon name="cart" className="h-6 w-6 shrink-0 text-white sm:h-7 sm:w-7" /> {t.merchCta}
               </Link>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-3 [text-shadow:none]">
@@ -300,10 +299,16 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
       <section className="relative bg-gradient-to-b from-[#1a0b2e] to-[#0b0713]">
         <div aria-hidden className="vegas-bulbs absolute inset-x-0 top-0" />
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-4 py-16 text-center md:py-20">
-          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-white/10 text-white ring-1 ring-amber-300/40 shadow-[0_0_24px_rgba(255,180,40,0.35)]">
+          <a
+            href={igUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Instagram"
+            className="grid h-16 w-16 place-items-center rounded-2xl bg-white/10 text-white ring-1 ring-amber-300/40 shadow-[0_0_24px_rgba(255,180,40,0.35)] transition hover:bg-white/20"
+          >
             <Icon name="instagram" className="h-9 w-9" />
-          </span>
-          <span className="marquee-sign">Sleduj</span>
+          </a>
+          <a href={igUrl} target="_blank" rel="noreferrer" className="marquee-sign transition hover:brightness-110">Sleduj</a>
           <h2 className="font-display text-4xl font-bold tracking-tight vegas-neon-gold">{t.instaTitle}</h2>
           <p className="max-w-xl text-white/75">{t.instaText}</p>
           <a href={igUrl} target="_blank" rel="noreferrer" className="btn-vegas vegas-btn px-7 py-3.5 text-base">
@@ -373,9 +378,6 @@ function NormalHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Hom
             ))}
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-white">{t.heroTagline}</p>
-          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-marigold-600 px-4 py-1.5 text-sm font-semibold text-white [text-shadow:none]">
-            {t.heroBadge}
-          </div>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <a href={igUrl} target="_blank" rel="noreferrer" className="btn-primary px-6 py-3 text-base text-white [text-shadow:none]">
               {t.ctaInsta}
@@ -388,9 +390,9 @@ function NormalHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Hom
           <div className="mt-9">
             <Link
               href="/merch"
-              className="merch-pulse inline-block rounded-full bg-marigold-600 px-8 py-4 font-display text-2xl font-extrabold text-white shadow-2xl ring-2 ring-white/40 [text-shadow:none] hover:bg-marigold-700 sm:text-3xl"
+              className="merch-pulse inline-flex items-center gap-2 rounded-full bg-marigold-600 px-8 py-4 font-display text-2xl font-extrabold text-white shadow-2xl ring-2 ring-white/40 [text-shadow:none] hover:bg-marigold-700 sm:text-3xl"
             >
-              {t.merchCta}
+              <Icon name="cart" className="h-7 w-7 shrink-0 text-white" /> {t.merchCta}
             </Link>
           </div>
         </div>

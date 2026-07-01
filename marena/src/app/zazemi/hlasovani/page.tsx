@@ -8,6 +8,7 @@ import { Icon } from "@/components/Icons";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
 import { isAdmin } from "@/lib/admin";
+import { flash } from "@/components/Flash";
 import type { Poll } from "@/lib/types";
 
 export default function HlasovaniPage() {
@@ -28,6 +29,7 @@ export default function HlasovaniPage() {
     setOptions(["", ""]);
     setMulti(false);
     setOpen(false);
+    flash("Anketa vytvořena", "🗳️");
   }
 
   const polls = [...year.polls]
@@ -158,7 +160,10 @@ function PollCard({ poll, yearId, me, totalPeople }: { poll: Poll; yearId: strin
             <button
               key={o.id}
               disabled={poll.closed}
-              onClick={() => dispatch({ type: "vote", yearId, pollId: poll.id, optionId: o.id, voter: me })}
+              onClick={async () => {
+                await dispatch({ type: "vote", yearId, pollId: poll.id, optionId: o.id, voter: me });
+                flash(`Hlasoval jsi: ${o.label}`, "🗳️");
+              }}
               className={`relative block w-full overflow-hidden rounded-xl border px-3 py-2.5 text-left transition ${
                 mine ? "border-marigold-400 bg-marigold-50" : "border-ink/10 bg-white hover:bg-paper2"
               } ${poll.closed ? "cursor-default" : "cursor-pointer"}`}

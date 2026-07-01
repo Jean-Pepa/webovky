@@ -7,6 +7,7 @@ import { fmtDate, todayISO } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
 import { isAdmin } from "@/lib/admin";
+import { flash } from "@/components/Flash";
 import type { CalEvent, EventKind } from "@/lib/types";
 
 const MONTH_NAMES = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
@@ -322,6 +323,7 @@ function AddEvent({ date, yearId }: { date: string; yearId: string }) {
           setTime("");
           setNote("");
           setDEnd("");
+          flash("Termín přidán", "📅");
         }}
       >
         Přidat do kalendáře

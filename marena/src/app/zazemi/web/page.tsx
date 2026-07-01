@@ -35,7 +35,6 @@ const GROUPS: { title: string; emoji: string; fields: { key: ScalarKey; label: s
     fields: [
       { key: "heroKicker", label: "Nadřádek (malý text nahoře)" },
       { key: "heroTagline", label: "Hlavní věta pod nápisem MAŘENA", area: true },
-      { key: "heroBadge", label: "Oranžový odznak pro prváky" },
       { key: "ctaInsta", label: "Tlačítko — Instagram" },
       { key: "ctaScroll", label: "Tlačítko — „co tě čeká“" },
       { key: "merchCta", label: "Velké tlačítko — merch" },

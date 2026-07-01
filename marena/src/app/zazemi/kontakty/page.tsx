@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
+import { flash } from "@/components/Flash";
 import type { LinkItem } from "@/lib/types";
 
 // Doporučené pořadí složek; cokoliv navíc se zařadí za ně, prázdné jako „Ostatní".
@@ -68,6 +69,7 @@ export default function KontaktyPage() {
     setValue("");
     setNote("");
     setOpen(false);
+    flash("Kontakt přidán", "📇");
   }
 
   return (

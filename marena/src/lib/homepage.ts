@@ -55,12 +55,11 @@ export const STRINGS: Record<Lang, Strings> = {
   cs: {
     organizers: "Organizátoři",
     heroKicker: "Fakulta architektury VUT · studentský festival",
-    heroTagline:
-      "Týden, na který do konce školy nezapomeneš. Přednášky, bar na dvoře, party večery, velký průvod městem a křest prváků na Flédě.",
+    heroTagline: "Týden, na který do konce školy nezapomeneš.",
     heroBadge: "🐣 Jsi prvák? Tohle je tvůj vstup do života na fakultě.",
     ctaInsta: "Sleduj nás na Instagramu →",
     ctaScroll: "Co tě čeká ↓",
-    merchCta: "🛍️ Kup si merch Mařeny →",
+    merchCta: "Kup si merch Mařeny →",
     whatsKicker: "Na co se těšit",
     whatsTitle: "Co tě na Mařeně čeká",
     whatsIntro:
@@ -95,12 +94,11 @@ export const STRINGS: Record<Lang, Strings> = {
   en: {
     organizers: "Organizers",
     heroKicker: "VUT Faculty of Architecture · student festival",
-    heroTagline:
-      "A week you won't forget for the rest of your studies. Lectures, a courtyard bar, party nights, a big city parade and the freshmen christening at Fléda.",
+    heroTagline: "A week you won't forget for the rest of your studies.",
     heroBadge: "🐣 A freshman? This is your start to life at the faculty.",
     ctaInsta: "Follow us on Instagram →",
     ctaScroll: "What's in store ↓",
-    merchCta: "🛍️ Get the Mařena merch →",
+    merchCta: "Get the Mařena merch →",
     whatsKicker: "What to look forward to",
     whatsTitle: "What awaits you at Mařena",
     whatsIntro:
@@ -135,12 +133,11 @@ export const STRINGS: Record<Lang, Strings> = {
   de: {
     organizers: "Organisatoren",
     heroKicker: "VUT Fakultät für Architektur · Studentenfestival",
-    heroTagline:
-      "Eine Woche, die du bis zum Ende des Studiums nicht vergisst. Vorträge, eine Bar im Hof, Partyabende, ein großer Stadtumzug und die Erstsemester-Taufe im Fléda.",
+    heroTagline: "Eine Woche, die du bis zum Ende des Studiums nicht vergisst.",
     heroBadge: "🐣 Erstsemester? Das ist dein Einstieg ins Leben an der Fakultät.",
     ctaInsta: "Folge uns auf Instagram →",
     ctaScroll: "Was dich erwartet ↓",
-    merchCta: "🛍️ Hol dir den Mařena-Merch →",
+    merchCta: "Hol dir den Mařena-Merch →",
     whatsKicker: "Worauf du dich freuen kannst",
     whatsTitle: "Was dich bei Mařena erwartet",
     whatsIntro:

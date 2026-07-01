@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
+import { flash } from "@/components/Flash";
 import type { Decor, DecorStatus } from "@/lib/types";
 
 const STATUS: Record<DecorStatus, { label: string; cls: string; order: number }> = {
@@ -47,6 +48,7 @@ export default function VyzdobaPage() {
     setWho("");
     setLink("");
     setNote("");
+    flash("Nápad přidán", "🎨");
   }
 
   return (

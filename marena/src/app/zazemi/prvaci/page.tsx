@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { DeleteButton } from "@/components/DeleteButton";
 import { normName } from "@/lib/names";
+import { flash } from "@/components/Flash";
 import type { Freshman } from "@/lib/types";
 
 export default function PrvaciPage() {
@@ -31,6 +32,7 @@ export default function PrvaciPage() {
     setName("");
     setEmail("");
     setNote("");
+    flash("Prvák přidán", "🐣");
   }
 
   return (

@@ -12,6 +12,7 @@ import { Icon } from "@/components/Icons";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
 import { isAdmin } from "@/lib/admin";
+import { flash } from "@/components/Flash";
 import type { Post } from "@/lib/types";
 
 export default function NastenkaPage() {
@@ -62,6 +63,7 @@ export default function NastenkaPage() {
     setRoleId("");
     setPinned(false);
     setOpen(false);
+    flash("Příspěvek přidán", "📌");
   }
 
   return (
@@ -164,26 +166,6 @@ export default function NastenkaPage() {
                   </li>
                 );
               })}
-            </ul>
-          )}
-        </div>
-
-        <div className="card p-4">
-          <h2 className="mb-2 font-display text-base font-semibold">🧑‍🤝‍🧑 Tým</h2>
-          {year.members.length === 0 ? (
-            <p className="text-sm text-ink-soft">
-              Zatím nikdo. <Link href="/zazemi/tym" className="text-marigold-700 hover:underline">Přidej se a vyber roli →</Link>
-            </p>
-          ) : (
-            <ul className="space-y-1.5 text-sm">
-              {year.members.slice(0, 8).map((m) => (
-                <li key={m.id} className="flex items-center justify-between gap-2">
-                  <span className="font-medium">{m.name}</span>
-                  <span className="truncate text-xs text-ink-soft">
-                    {m.roleIds.map((id) => roleById(id)?.emoji).join(" ") || "—"}
-                  </span>
-                </li>
-              ))}
             </ul>
           )}
         </div>

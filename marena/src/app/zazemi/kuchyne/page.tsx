@@ -11,6 +11,7 @@ import { compressImage, readFileAsDataUrl, saveReceipt, loadReceipt, deleteRecei
 import { fmtCZK, fmtDate } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { isAdmin } from "@/lib/admin";
+import { flash } from "@/components/Flash";
 import type { KitchenFile, Drink, DrinkKind, DrinkIngredient, Weekday } from "@/lib/types";
 
 type Place = "kuchyne" | "bar";
@@ -126,6 +127,8 @@ function MenuSection({ place, editable, q }: { place: Place; editable: boolean; 
     if (!name.trim() || !editable) return;
     await dispatch({ type: "addDrink", yearId: year.id, name: name.trim(), kind, place, day: place === "kuchyne" && day ? day : undefined });
     setName("");
+    if (place === "bar") flash("Přidáno na bar", "🍺");
+    else flash("Jídlo přidáno do menu", "🍲");
   }
 
   return (
@@ -331,6 +334,7 @@ function ShoppingSection({ place, editable, q }: { place: Place; editable: boole
     await dispatch({ type: "addShoppingItem", yearId: year.id, name: name.trim(), qty: qty.trim() || undefined, place });
     setName("");
     setQty("");
+    flash("Přidáno na nákupní seznam", "🛒");
   }
 
   return (

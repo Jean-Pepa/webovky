@@ -10,6 +10,7 @@ import { fmtCZK, fmtDateTime } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { canSeeMerch } from "@/lib/merch";
 import { isAdmin } from "@/lib/admin";
+import { flash } from "@/components/Flash";
 import type { MerchProduct, MerchOrder } from "@/lib/types";
 
 // Cena objednávky = součet (cena za kus × počet). Cena se bere ze snapshotu
@@ -196,6 +197,7 @@ function AddProduct({ yearId }: { yearId: string }) {
       setColors("");
       setNote("");
       setFile(null);
+      flash("Produkt přidán", "👕");
     } catch {
       setErr("Něco se pokazilo.");
     } finally {
