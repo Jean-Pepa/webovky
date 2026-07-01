@@ -10,19 +10,48 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { Onboarding } from "@/components/Onboarding";
 import { Icon } from "@/components/Icons";
 import { SearchBox } from "@/components/SearchBox";
+import { Modal } from "@/components/Modal";
 import { matchesQuery } from "@/lib/search";
 import { isAdmin } from "@/lib/admin";
 import { flash } from "@/components/Flash";
+import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
+import { uid } from "@/lib/id";
 import type { Post } from "@/lib/types";
 
 export default function NastenkaPage() {
-  const { currentYear, me, dispatch } = useStore();
+  const { currentYear, me, dispatch, configured } = useStore();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [roleId, setRoleId] = useState("");
   const [pinned, setPinned] = useState(false);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
+  // Přiložené obrázky k novému příspěvku — nahrají se hned, ukládáme si id + náhled.
+  const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  async function onPickPhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      for (const file of files) {
+        const url = await compressImage(file);
+        const id = uid("pp_");
+        const ok = await saveReceipt(id, url, configured);
+        if (ok) setPhotos((prev) => [...prev, { id, url }]);
+      }
+    } catch {
+      /* nepovedlo se — přeskočíme */
+    } finally {
+      setUploading(false);
+    }
+  }
+  async function removePhoto(id: string) {
+    await deleteReceipt(id, configured).catch(() => {});
+    setPhotos((prev) => prev.filter((p) => p.id !== id));
+  }
 
   const year = currentYear;
 
@@ -57,11 +86,12 @@ export default function NastenkaPage() {
 
   async function submit() {
     if (!title.trim() || !year) return;
-    await dispatch({ type: "addPost", yearId: year.id, author: me, roleId: roleId || undefined, title, body, pinned });
+    await dispatch({ type: "addPost", yearId: year.id, author: me, roleId: roleId || undefined, title, body, pinned, photoIds: photos.map((p) => p.id) });
     setTitle("");
     setBody("");
     setRoleId("");
     setPinned(false);
+    setPhotos([]);
     setOpen(false);
     flash("Příspěvek přidán", "📌");
   }
@@ -84,6 +114,31 @@ export default function NastenkaPage() {
           <div className="card space-y-3 p-4">
             <input className="input" placeholder="Nadpis (např. Fléda potvrzena na 4.10.)" value={title} onChange={(e) => setTitle(e.target.value)} />
             <textarea className="input min-h-24" placeholder="Co potřebují ostatní vědět?" value={body} onChange={(e) => setBody(e.target.value)} />
+
+            {/* Přílohy — obrázky */}
+            {photos.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {photos.map((p) => (
+                  <div key={p.id} className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.url} alt="příloha" className="h-20 w-20 rounded-lg object-cover ring-1 ring-black/10" />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(p.id)}
+                      className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-ink text-xs text-white shadow"
+                      aria-label="Odebrat obrázek"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-full bg-paper2 px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-black/10 transition hover:bg-black/5">
+              <span>📷</span> {uploading ? "Nahrávám…" : "Přidat obrázek"}
+              <input type="file" accept="image/*" multiple className="hidden" onChange={onPickPhotos} disabled={uploading} />
+            </label>
+
             <div className="flex flex-wrap items-center gap-3">
               <select className="input max-w-56" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
                 <option value="">Za jakou roli? (nepovinné)</option>
@@ -210,28 +265,103 @@ function PostBody({ body }: { body: string }) {
   );
 }
 
+// Obrázky u příspěvku — načtou se přes loadReceipt (blob), klik zvětší na celou obrazovku.
+function PostPhotos({ ids }: { ids: string[] }) {
+  const { configured } = useStore();
+  const [urls, setUrls] = useState<Record<string, string>>({});
+  const [viewing, setViewing] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      for (const id of ids) {
+        const url = await loadReceipt(id, configured);
+        if (alive && url) setUrls((prev) => (prev[id] ? prev : { ...prev, [id]: url }));
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [ids, configured]);
+
+  const ready = ids.map((id) => urls[id]).filter(Boolean) as string[];
+  if (ready.length === 0) return null;
+  return (
+    <>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {ready.map((url, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={i}
+            src={url}
+            alt={`obrázek ${i + 1}`}
+            onClick={() => setViewing(url)}
+            className="h-24 w-24 cursor-zoom-in rounded-lg object-cover ring-1 ring-black/10 transition hover:opacity-90"
+          />
+        ))}
+      </div>
+      <Modal open={viewing !== null} onClose={() => setViewing(null)} title="Obrázek">
+        {viewing && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={viewing} alt="obrázek" className="max-h-[70vh] w-full rounded-xl object-contain" />
+        )}
+      </Modal>
+    </>
+  );
+}
+
 function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
-  const { me, dispatch } = useStore();
+  const { me, dispatch, configured } = useStore();
   const [edit, setEdit] = useState(false);
   const [showEdits, setShowEdits] = useState(false);
   const [title, setTitle] = useState(p.title);
   const [body, setBody] = useState(p.body);
   const [roleId, setRoleId] = useState(p.roleId ?? "");
+  const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
+  const [uploading, setUploading] = useState(false);
   // Historie úprav (nová), s fallbackem na stará data (jen poslední úprava).
   const edits = p.edits ?? (p.editedBy && p.editedAt ? [{ by: p.editedBy, at: p.editedAt }] : []);
   const canEdit = true; // úpravu nástěnky smí každý (kdo má přístup do zázemí)
   const canDelete = isAdmin(me); // mazat smí jen správce (Mařena)
   const role = roleById(p.roleId);
 
-  function startEdit() {
+  async function startEdit() {
     setTitle(p.title);
     setBody(p.body);
     setRoleId(p.roleId ?? "");
+    // Načti existující obrázky, ať je jde v úpravě vidět, odebrat i doplnit.
+    const existing: { id: string; url: string }[] = [];
+    for (const id of p.photoIds ?? []) {
+      const url = await loadReceipt(id, configured);
+      if (url) existing.push({ id, url });
+    }
+    setPhotos(existing);
     setEdit(true);
   }
+  async function onPickPhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      for (const file of files) {
+        const url = await compressImage(file);
+        const id = uid("pp_");
+        const ok = await saveReceipt(id, url, configured);
+        if (ok) setPhotos((prev) => [...prev, { id, url }]);
+      }
+    } catch {
+      /* přeskočíme */
+    } finally {
+      setUploading(false);
+    }
+  }
+  // Odebrání jen ze seznamu (blob nemažeme hned — kdyby uživatel dal Zrušit).
+  const removePhoto = (id: string) => setPhotos((prev) => prev.filter((x) => x.id !== id));
+
   async function save() {
     if (!title.trim()) return;
-    await dispatch({ type: "updatePost", yearId, postId: p.id, editedBy: me, patch: { title, body, roleId: roleId || null } });
+    await dispatch({ type: "updatePost", yearId, postId: p.id, editedBy: me, patch: { title, body, roleId: roleId || null, photoIds: photos.map((x) => x.id) } });
     setEdit(false);
   }
 
@@ -248,6 +378,31 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
             </option>
           ))}
         </select>
+
+        {/* Obrázky — existující i nově přidané */}
+        {photos.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {photos.map((ph) => (
+              <div key={ph.id} className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={ph.url} alt="příloha" className="h-20 w-20 rounded-lg object-cover ring-1 ring-black/10" />
+                <button
+                  type="button"
+                  onClick={() => removePhoto(ph.id)}
+                  className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-ink text-xs text-white shadow"
+                  aria-label="Odebrat obrázek"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-full bg-paper2 px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-black/10 transition hover:bg-black/5">
+          <span>📷</span> {uploading ? "Nahrávám…" : "Přidat obrázek"}
+          <input type="file" accept="image/*" multiple className="hidden" onChange={onPickPhotos} disabled={uploading} />
+        </label>
+
         <div className="flex gap-2">
           <button className="btn-primary py-2 text-sm" onClick={save} disabled={!title.trim()}>
             Uložit
@@ -301,6 +456,7 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
       </div>
       <h3 className="break-words font-display text-lg font-semibold">{p.title}</h3>
       {p.body && <PostBody body={p.body} />}
+      {p.photoIds && p.photoIds.length > 0 && <PostPhotos ids={p.photoIds} />}
       <div className="mt-2 flex items-center gap-2">
         <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "togglePin", yearId, postId: p.id })}>
           {p.pinned ? "Odepnout" : "Připnout"}
