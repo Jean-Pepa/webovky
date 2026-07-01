@@ -311,27 +311,57 @@ function PostPhotos({ ids }: { ids: string[] }) {
 }
 
 function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
-  const { me, dispatch } = useStore();
+  const { me, dispatch, configured } = useStore();
   const [edit, setEdit] = useState(false);
   const [showEdits, setShowEdits] = useState(false);
   const [title, setTitle] = useState(p.title);
   const [body, setBody] = useState(p.body);
   const [roleId, setRoleId] = useState(p.roleId ?? "");
+  const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
+  const [uploading, setUploading] = useState(false);
   // Historie úprav (nová), s fallbackem na stará data (jen poslední úprava).
   const edits = p.edits ?? (p.editedBy && p.editedAt ? [{ by: p.editedBy, at: p.editedAt }] : []);
   const canEdit = true; // úpravu nástěnky smí každý (kdo má přístup do zázemí)
   const canDelete = isAdmin(me); // mazat smí jen správce (Mařena)
   const role = roleById(p.roleId);
 
-  function startEdit() {
+  async function startEdit() {
     setTitle(p.title);
     setBody(p.body);
     setRoleId(p.roleId ?? "");
+    // Načti existující obrázky, ať je jde v úpravě vidět, odebrat i doplnit.
+    const existing: { id: string; url: string }[] = [];
+    for (const id of p.photoIds ?? []) {
+      const url = await loadReceipt(id, configured);
+      if (url) existing.push({ id, url });
+    }
+    setPhotos(existing);
     setEdit(true);
   }
+  async function onPickPhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      for (const file of files) {
+        const url = await compressImage(file);
+        const id = uid("pp_");
+        const ok = await saveReceipt(id, url, configured);
+        if (ok) setPhotos((prev) => [...prev, { id, url }]);
+      }
+    } catch {
+      /* přeskočíme */
+    } finally {
+      setUploading(false);
+    }
+  }
+  // Odebrání jen ze seznamu (blob nemažeme hned — kdyby uživatel dal Zrušit).
+  const removePhoto = (id: string) => setPhotos((prev) => prev.filter((x) => x.id !== id));
+
   async function save() {
     if (!title.trim()) return;
-    await dispatch({ type: "updatePost", yearId, postId: p.id, editedBy: me, patch: { title, body, roleId: roleId || null } });
+    await dispatch({ type: "updatePost", yearId, postId: p.id, editedBy: me, patch: { title, body, roleId: roleId || null, photoIds: photos.map((x) => x.id) } });
     setEdit(false);
   }
 
@@ -348,6 +378,31 @@ function PostCard({ post: p, yearId }: { post: Post; yearId: string }) {
             </option>
           ))}
         </select>
+
+        {/* Obrázky — existující i nově přidané */}
+        {photos.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {photos.map((ph) => (
+              <div key={ph.id} className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={ph.url} alt="příloha" className="h-20 w-20 rounded-lg object-cover ring-1 ring-black/10" />
+                <button
+                  type="button"
+                  onClick={() => removePhoto(ph.id)}
+                  className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-ink text-xs text-white shadow"
+                  aria-label="Odebrat obrázek"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-full bg-paper2 px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-black/10 transition hover:bg-black/5">
+          <span>📷</span> {uploading ? "Nahrávám…" : "Přidat obrázek"}
+          <input type="file" accept="image/*" multiple className="hidden" onChange={onPickPhotos} disabled={uploading} />
+        </label>
+
         <div className="flex gap-2">
           <button className="btn-primary py-2 text-sm" onClick={save} disabled={!title.trim()}>
             Uložit
