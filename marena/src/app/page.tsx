@@ -60,11 +60,11 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0b0713] text-white">
-      {/* Vegas pozadí — třpytící se světla + neonová záře. */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 vegas-stars" />
+      {/* Vegas pozadí — čisté: jemná světla + teplá zlatá záře shora. */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 vegas-stars opacity-40" />
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(180,0,255,0.22),_transparent_55%),radial-gradient(ellipse_at_bottom,_rgba(255,20,147,0.16),_transparent_55%)]"
+        className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(255,180,45,0.12),_transparent_62%)]"
       />
 
       {/* NAV */}
@@ -107,9 +107,9 @@ export default function Home() {
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_rgba(0,0,0,0.35)_0%,_transparent_60%)]" />
 
         <div className="mx-auto w-full max-w-3xl px-4 pt-24 text-center [text-shadow:0_2px_20px_rgba(0,0,0,0.55)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] vegas-neon-cyan">{t.heroKicker}</p>
-          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-300/50 bg-black/30 px-4 py-1 text-xs font-bold uppercase tracking-[0.22em] vegas-neon-gold [text-shadow:none]">
-            🎰 56. ročník · Las Vegas edition
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-100/80">{t.heroKicker}</p>
+          <div className="mt-3 flex justify-center">
+            <span className="marquee-sign">🎰 56. ročník</span>
           </div>
           <h1 className="vegas-gold-title mt-3 font-display text-[3.5rem] font-bold leading-[0.95] tracking-[0.08em] text-white sm:text-[6.75rem] sm:tracking-[1.5cm] md:text-[9rem] md:tracking-[4cm] lg:tracking-[6cm]">
             {"MAŘENA".split("").map((ch, i) => (
@@ -148,8 +148,8 @@ export default function Home() {
       {/* CO TĚ ČEKÁ */}
       <section id="co-te-ceka" className="mx-auto max-w-6xl scroll-mt-8 px-4 py-16 md:py-20">
         <div className="max-w-2xl">
-          <p className="text-sm font-semibold uppercase tracking-wide vegas-neon-cyan">{t.whatsKicker}</p>
-          <h2 className="mt-2 font-display text-4xl font-bold tracking-tight vegas-neon-pink">{t.whatsTitle}</h2>
+          <span className="marquee-sign">{t.whatsKicker}</span>
+          <h2 className="mt-3 font-display text-4xl font-bold tracking-tight vegas-neon-gold">{t.whatsTitle}</h2>
           <p className="mt-3 text-white/70">{t.whatsIntro}</p>
         </div>
 
@@ -161,7 +161,7 @@ export default function Home() {
                 <Photo src={lineupPhotoOf(content, i)} alt={item.title} label={`foto — ${item.title}`} className="aspect-[4/3] w-full" />
                 <div className="p-5">
                   <h3 className="flex items-center gap-2.5 font-display text-lg font-semibold text-white">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10 text-fuchsia-300 ring-1 ring-fuchsia-400/40">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10 text-amber-300 ring-1 ring-amber-400/40">
                       <Icon name={m.icon} className="h-5 w-5" />
                     </span>
                     {item.title}
@@ -189,38 +189,14 @@ export default function Home() {
         </article>
       </section>
 
-      {/* TÉMA ROČNÍKU — Learning from Las Vegas: Kachna vs. Ozdobená bouda */}
-      <section className="relative">
-        <div aria-hidden className="vegas-bulbs" />
-        <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
-          <p className="text-sm font-semibold uppercase tracking-wide vegas-neon-cyan">Téma 56. ročníku · Learning from Las Vegas</p>
-          <h2 className="mt-2 font-display text-4xl font-bold tracking-tight vegas-neon-gold md:text-5xl">Kachna vs. Ozdobená bouda</h2>
-          <p className="mt-3 max-w-2xl text-white/70">
-            Slavná architektonická teorie Roberta Venturiho a Denise Scott Brownové z knihy „Učení se z Las Vegas“. Dvě
-            cesty, jak stavba mluví — a letos je z toho téma Mařeny. 🦆🎰
-          </p>
-          <div className="mt-8 grid gap-5 md:grid-cols-2">
-            {/* Kachna — forma = obsah, nápis netřeba */}
-            <article className="vegas-card rounded-3xl p-6 ring-1 ring-amber-300/30 md:p-8">
-              <div className="text-5xl">🦆</div>
-              <h3 className="mt-3 font-display text-2xl font-bold vegas-neon-gold">Kachna</h3>
-              <p className="mt-2 text-white/80">
-                Dům, který má tvar toho, co je uvnitř. Poznáš ho na první pohled —{" "}
-                <strong className="text-white">nápis nepotřebuje</strong>. (Však náš maskot je kachna. 😉)
-              </p>
-            </article>
-            {/* Ozdobená bouda — krabice, kterou definují nápisy a světla */}
-            <article className="vegas-card rounded-3xl p-6 ring-1 ring-pink-400/30 md:p-8">
-              <div className="text-5xl">🏨💡</div>
-              <h3 className="mt-3 font-display text-2xl font-bold vegas-neon-pink">Ozdobená bouda</h3>
-              <p className="mt-2 text-white/80">
-                Obyčejná krabice — sama o sobě neřekne nic. Teprve{" "}
-                <strong className="text-white">nápisy a světla</strong> prozradí, co uvnitř najdeš. Přesně jako cedule na Stripu.
-              </p>
-            </article>
-          </div>
+      {/* Neonová cedule s kačenkou — téma ročníku beze slov (ať si to každý domyslí). */}
+      <section className="relative bg-[#080510] py-14 md:py-16">
+        <div aria-hidden className="vegas-bulbs absolute inset-x-0 top-0" />
+        <div className="mx-auto flex max-w-6xl justify-center px-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/marena-vegas.png" alt="Mařena Las Vegas" className="w-[22rem] max-w-full mix-blend-lighten sm:w-[30rem]" />
         </div>
-        <div aria-hidden className="vegas-bulbs" />
+        <div aria-hidden className="vegas-bulbs absolute inset-x-0 bottom-0" />
       </section>
 
       {/* MAŘENA BAND */}
@@ -228,7 +204,7 @@ export default function Home() {
         <Photo src={photoOf(content, "letters")} alt="Nápis MAŘENA před Fakultou architektury VUT" label="MAŘENA před fakultou" className="absolute inset-0 h-full w-full" imgClass="object-bottom" />
         <div className="absolute inset-0 bg-gradient-to-b from-[#0b0713]/85 via-black/30 to-[#0b0713]" />
         <div className="relative mx-auto flex h-full max-w-6xl items-start px-4 pt-8">
-          <p className="max-w-2xl font-display text-2xl font-semibold tracking-tight text-white md:text-4xl [text-shadow:0_0_18px_rgba(255,92,198,0.6),0_2px_18px_rgba(0,0,0,0.65)]">
+          <p className="max-w-2xl font-display text-2xl font-semibold tracking-tight text-white md:text-4xl [text-shadow:0_0_18px_rgba(255,180,40,0.55),0_2px_18px_rgba(0,0,0,0.65)]">
             {t.band}
           </p>
         </div>
@@ -237,7 +213,8 @@ export default function Home() {
       {/* JAK TO PROBÍHÁ */}
       <section>
         <div className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="font-display text-3xl font-bold tracking-tight vegas-neon-cyan">{t.stepsTitle}</h2>
+          <span className="marquee-sign">Týden</span>
+          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight vegas-neon-gold">{t.stepsTitle}</h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {t.steps.map((s, i) => (
               <div key={i} className="vegas-card relative rounded-3xl p-5">
@@ -254,7 +231,8 @@ export default function Home() {
       {news.length > 0 && (
         <section>
           <div className="mx-auto max-w-6xl px-4 py-8 pb-16">
-            <h2 className="font-display text-3xl font-bold tracking-tight vegas-neon-pink">{t.newsTitle}</h2>
+            <span className="marquee-sign">Aktuálně</span>
+            <h2 className="mt-3 font-display text-3xl font-bold tracking-tight vegas-neon-gold">{t.newsTitle}</h2>
             <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {news.map((n) => (
                 <article key={n.id} className="vegas-card overflow-hidden rounded-3xl">
@@ -264,7 +242,7 @@ export default function Home() {
                     <h3 className="mt-1 font-display text-lg font-semibold text-white">{n.title}</h3>
                     <p className="mt-1 whitespace-pre-line text-sm text-white/70">{n.text}</p>
                     {n.link && (
-                      <a href={n.link} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-medium text-cyan-300 hover:underline">
+                      <a href={n.link} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-medium text-amber-300 hover:underline">
                         Více →
                       </a>
                     )}
@@ -280,9 +258,10 @@ export default function Home() {
       <section className="relative bg-gradient-to-b from-[#1a0b2e] to-[#0b0713]">
         <div aria-hidden className="vegas-bulbs absolute inset-x-0 top-0" />
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-4 py-16 text-center md:py-20">
-          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-white/10 text-white ring-1 ring-pink-400/40 shadow-[0_0_24px_rgba(255,92,198,0.4)]">
+          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-white/10 text-white ring-1 ring-amber-300/40 shadow-[0_0_24px_rgba(255,180,40,0.35)]">
             <Icon name="instagram" className="h-9 w-9" />
           </span>
+          <span className="marquee-sign">Sleduj</span>
           <h2 className="font-display text-4xl font-bold tracking-tight vegas-neon-gold">{t.instaTitle}</h2>
           <p className="max-w-xl text-white/75">{t.instaText}</p>
           <a href={igUrl} target="_blank" rel="noreferrer" className="btn-vegas vegas-btn px-7 py-3.5 text-base">
