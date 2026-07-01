@@ -211,11 +211,131 @@
   }
 }
 
+/* ================= Las Vegas / neon motiv homepage ================= */
+/* Blikající neon (velký nápis) — text-shadow dědí i písmena uvnitř. */
+@keyframes vegas-flicker {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% {
+    text-shadow: 0 0 7px #fff, 0 0 16px #ff3db4, 0 0 30px #ff0f9a, 0 0 52px #b400ff, 0 0 78px #7a00ff;
+    opacity: 1;
+  }
+  20%, 24%, 55% {
+    text-shadow: 0 0 4px #fff, 0 0 8px #ff3db4;
+    opacity: 0.82;
+  }
+}
+.vegas-glow {
+  animation: vegas-flicker 5s infinite;
+}
+
+.vegas-neon-pink {
+  color: #ff5cc6;
+  text-shadow: 0 0 6px rgba(255, 92, 198, 0.95), 0 0 20px rgba(255, 92, 198, 0.6), 0 0 40px rgba(180, 0, 255, 0.4);
+}
+.vegas-neon-cyan {
+  color: #4ff0ff;
+  text-shadow: 0 0 6px rgba(79, 240, 255, 0.95), 0 0 20px rgba(79, 240, 255, 0.55), 0 0 40px rgba(0, 140, 255, 0.4);
+}
+.vegas-neon-gold {
+  color: #ffd94d;
+  text-shadow: 0 0 6px rgba(255, 217, 77, 0.95), 0 0 20px rgba(255, 170, 40, 0.6), 0 0 40px rgba(255, 120, 0, 0.4);
+}
+
+/* Běžící žárovky (marquee) — vodorovný pásek světel, jako nad kasinem. */
+@keyframes vegas-bulbs {
+  to {
+    background-position: 26px 0;
+  }
+}
+.vegas-bulbs {
+  height: 12px;
+  background-image: radial-gradient(circle, #ffe89a 0 3.2px, rgba(255, 190, 90, 0.15) 3.6px, transparent 5px);
+  background-size: 26px 12px;
+  background-repeat: repeat-x;
+  animation: vegas-bulbs 0.75s linear infinite;
+  filter: drop-shadow(0 0 5px rgba(255, 200, 90, 0.9));
+}
+
+/* Třpytící se světla města v pozadí. */
+@keyframes vegas-twinkle {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.9; }
+}
+.vegas-stars {
+  background-image:
+    radial-gradient(1.6px 1.6px at 12% 22%, #fff 50%, transparent 60%),
+    radial-gradient(1.6px 1.6px at 68% 58%, #7ef0ff 50%, transparent 60%),
+    radial-gradient(2px 2px at 38% 78%, #ff7fd8 50%, transparent 60%),
+    radial-gradient(1.6px 1.6px at 84% 18%, #ffd84d 50%, transparent 60%),
+    radial-gradient(1.4px 1.4px at 52% 12%, #fff 50%, transparent 60%),
+    radial-gradient(1.6px 1.6px at 26% 62%, #b98cff 50%, transparent 60%),
+    radial-gradient(1.4px 1.4px at 90% 74%, #fff 50%, transparent 60%);
+  animation: vegas-twinkle 3.4s ease-in-out infinite;
+}
+
+/* Neonové tlačítko a neonová karta. */
+.vegas-btn {
+  box-shadow: 0 0 12px rgba(255, 92, 198, 0.85), 0 0 30px rgba(180, 0, 255, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.22);
+}
+.vegas-card {
+  background: rgba(14, 9, 22, 0.66);
+  box-shadow: 0 0 0 1px rgba(255, 205, 90, 0.16), 0 10px 34px rgba(0, 0, 0, 0.45);
+}
+/* Osvětlená cedule (marquee) — jednotný „nápis" nad sekcemi (Learning from Las Vegas). */
+.marquee-sign {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 9999px;
+  padding: 0.32rem 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: #ffe08a;
+  background: rgba(10, 6, 18, 0.5);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 205, 90, 0.55), 0 0 18px rgba(255, 170, 30, 0.22);
+  text-shadow: 0 0 8px rgba(255, 200, 60, 0.65);
+}
+/* Zlatý „Las Vegas" nápis MAŘENA (homepage) — teplé zlato + blikající záře. */
+.vegas-gold-title span,
+.vegas-gold-title .marena-letter {
+  background: linear-gradient(180deg, #fff6c2 0%, #ffe066 34%, #ffc21f 60%, #e08a00 82%, #a85f06 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: none; /* zruší zelený „matrix" flicker */
+}
+@keyframes vegas-gold-steady {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(255, 205, 80, 0.85)) drop-shadow(0 0 26px rgba(255, 160, 20, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(255, 215, 95, 0.95)) drop-shadow(0 0 42px rgba(255, 175, 35, 0.68));
+  }
+}
+.vegas-gold-title {
+  animation: vegas-gold-steady 3.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vegas-glow, .vegas-bulbs, .vegas-stars, .vegas-gold-title {
+    animation: none;
+  }
+}
+
 @layer components {
   .btn-primary {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-marigold-600
       px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-marigold-700
       active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  /* Vegas tlačítko — neonový přechod růžová → fialová (místo červené na homepage). */
+  .btn-vegas {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full
+      bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-5 py-2.5 text-sm font-medium text-white
+      transition-all hover:from-[#ff49b6] hover:to-[#b53aff] active:scale-[0.98]
+      disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-secondary {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border
