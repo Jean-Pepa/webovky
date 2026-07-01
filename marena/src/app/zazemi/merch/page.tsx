@@ -126,7 +126,7 @@ export default function MerchPage() {
                   <span className="text-amber-700">{pending}</span> / <span className="text-leaf-700">{doneCount}</span>
                 </dd>
               </div>
-              <div className="flex justify-between gap-2 border-t border-black/10 pt-1.5">
+              <div className="flex justify-between gap-2 border-t border-ink/10 pt-1.5">
                 <dt className="text-ink-soft">Tržba celkem</dt>
                 <dd className="font-display text-base font-bold text-marigold-700">{fmtCZK(revenue)}</dd>
               </div>
@@ -298,7 +298,7 @@ function ProductCard({ product, yearId, editable, sold }: { product: MerchProduc
         {product.note && <p className="mt-1 text-xs text-ink-soft">{product.note}</p>}
 
         {/* Sklad přímo u produktu: nastavení + prodáno/zbývá/vyprodáno */}
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-black/[0.05] pt-2 text-xs text-ink-soft">
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-ink/[0.05] pt-2 text-xs text-ink-soft">
           {editable ? (
             <span className="flex items-center gap-1">
               Skladem <StockInput product={product} yearId={yearId} />
@@ -452,7 +452,7 @@ function OrderRow({
       </div>
 
       {/* Řádek 2: jaký merch a jeho počet (+ poznámka a cena) */}
-      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-black/[0.05] pt-1 text-sm">
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-ink/[0.05] pt-1 text-sm">
         <span>{itemsText}</span>
         {order.note && <span className="text-xs text-ink-soft">· pozn.: {order.note}</span>}
         {total > 0 && <span className="ml-auto font-display font-bold text-ink">{fmtCZK(total)}</span>}
@@ -470,7 +470,7 @@ function StockInput({ product, yearId }: { product: MerchProduct; yearId: string
   }
   return (
     <input
-      className="w-16 rounded-lg border border-black/10 bg-white px-2 py-1 text-xs"
+      className="w-16 rounded-lg border border-ink/10 bg-white px-2 py-1 text-xs"
       inputMode="numeric"
       value={val}
       onChange={(e) => setVal(e.target.value)}
@@ -510,7 +510,7 @@ function QrCard({ yearId }: { yearId: string }) {
       <div className="grid place-items-center">
         {qr ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={qr} alt="QR kód na objednávku merche" className="h-44 w-44 rounded-xl border border-black/10 bg-white p-2" />
+          <img src={qr} alt="QR kód na objednávku merche" className="h-44 w-44 rounded-xl border border-ink/10 bg-[#fff] p-2" />
         ) : (
           <div className="grid h-44 w-44 place-items-center rounded-xl bg-paper2 text-xs text-ink-soft">Generuji…</div>
         )}

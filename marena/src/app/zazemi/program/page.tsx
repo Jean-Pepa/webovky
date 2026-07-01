@@ -169,7 +169,7 @@ export default function ProgramPage() {
                 <div className="hidden overflow-x-auto md:block">
                   <table className="w-full min-w-[820px] border-collapse text-sm">
                     <thead>
-                      <tr className="border-b border-black/[0.06] text-left text-xs font-medium uppercase tracking-wide text-ink-soft">
+                      <tr className="border-b border-ink/[0.06] text-left text-xs font-medium uppercase tracking-wide text-ink-soft">
                         <th className="px-3 py-2.5 w-10">#</th>
                         <th className="px-3 py-2.5">Kdo</th>
                         <th className="px-3 py-2.5">Osloveno?</th>
@@ -230,7 +230,7 @@ function ContactedButton({ invite, yearId, canEdit }: { invite: Invite; yearId: 
         flash(willContact ? `„${invite.name}" je teď osloveno` : `„${invite.name}" už není osloveno`, willContact ? "✉️" : "↩️");
       }}
       className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-        invite.contacted ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-paper2 text-ink-soft hover:bg-black/5"
+        invite.contacted ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-paper2 text-ink-soft hover:bg-ink/5"
       } ${locked ? "cursor-not-allowed opacity-60 hover:bg-leaf/15" : ""}`}
     >
       {invite.contacted ? "Osloveno ✓" : "Neosloveno"}
@@ -312,7 +312,7 @@ function CancelButton({ invite, yearId, canEdit }: { invite: Invite; yearId: str
       {ask && (
         <div className="fixed inset-0 z-50 grid place-items-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAsk(false)} aria-hidden />
-          <div className="relative w-full max-w-md rounded-3xl border border-black/10 bg-white p-6 shadow-2xl" role="dialog" aria-modal="true">
+          <div className="relative w-full max-w-md rounded-3xl border border-ink/10 bg-white p-6 shadow-2xl" role="dialog" aria-modal="true">
             <h2 className="mb-4 font-display text-lg font-semibold tracking-tight">Opravdu zrušeno?</h2>
             <p className="text-sm text-ink-soft">
               Opravdu byla <strong className="text-ink">{invite.name}</strong> zrušena? Přesuneme ji mezi odmítnuté (info zůstane).
@@ -391,7 +391,7 @@ function InviteCard({ invite, yearId, index, canEdit }: { invite: Invite; yearId
           <button className="btn-ghost py-2 text-sm" onClick={() => s.setEdit(false)}>Zrušit</button>
         </div>
         {isAdmin(s.me) && (
-          <button className="btn-ghost w-full justify-center py-2 text-sm text-ink-soft ring-1 ring-black/10" onClick={s.resetState}>
+          <button className="btn-ghost w-full justify-center py-2 text-sm text-ink-soft ring-1 ring-ink/10" onClick={s.resetState}>
             🔄 Vyresetovat stav (osloveno + ano/ne)
           </button>
         )}
@@ -447,7 +447,7 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
 
   if (canEdit && edit) {
     return (
-      <tr className="border-b border-black/[0.06] bg-paper2/40 align-top">
+      <tr className="border-b border-ink/[0.06] bg-paper2/40 align-top">
         <td className="px-3 py-2 text-ink-soft">{index}</td>
         <td className="px-3 py-2">
           <input className="input mb-1" value={name} onChange={(e) => setName(e.target.value)} placeholder="Jméno" />
@@ -462,7 +462,7 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
             <button className="btn-primary px-3 py-1.5 text-xs" onClick={save}>Uložit</button>
             <button className="btn-ghost px-2 py-1.5 text-xs" onClick={() => setEdit(false)}>Zrušit</button>
             {isAdmin(me) && (
-              <button className="btn-ghost px-2 py-1.5 text-xs text-ink-soft ring-1 ring-black/10" onClick={resetState} title="Vrátí do neutrality (osloveno + ano/ne), info zůstane">
+              <button className="btn-ghost px-2 py-1.5 text-xs text-ink-soft ring-1 ring-ink/10" onClick={resetState} title="Vrátí do neutrality (osloveno + ano/ne), info zůstane">
                 🔄 Reset stavu
               </button>
             )}
@@ -473,7 +473,7 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
   }
 
   return (
-    <tr className={`border-b border-black/[0.06] transition-colors ${inviteBg(invite) || "hover:bg-paper2/40"}`}>
+    <tr className={`border-b border-ink/[0.06] transition-colors ${inviteBg(invite) || "hover:bg-paper2/40"}`}>
       <td className="px-3 py-3 font-medium text-ink-soft">{index}</td>
       <td className="px-3 py-3">
         <span className="font-medium">{invite.name}</span>

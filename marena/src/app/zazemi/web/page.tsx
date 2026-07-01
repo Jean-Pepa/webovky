@@ -229,7 +229,7 @@ export default function WebEditorPage() {
           href="/"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-black/10 transition hover:bg-black/5"
+          className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-ink/10 transition hover:bg-ink/5"
         >
           <Icon name="globe" className="h-4 w-4" /> Otevřít web ↗
         </a>
@@ -256,7 +256,7 @@ export default function WebEditorPage() {
                 type="button"
                 onClick={() => setTheme(th.id)}
                 className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition ${
-                  on ? "border-marigold-500 bg-marigold-50 ring-2 ring-marigold-500/30" : "border-black/10 hover:bg-black/[0.03]"
+                  on ? "border-marigold-500 bg-marigold-50 ring-2 ring-marigold-500/30" : "border-ink/10 hover:bg-ink/[0.03]"
                 }`}
               >
                 <span className="text-2xl">{th.emoji}</span>
@@ -313,12 +313,12 @@ export default function WebEditorPage() {
       </Collapsible>
 
       {/* JAZYKOVÉ ZÁLOŽKY PRO TEXTY */}
-      <div className="sticky top-16 z-10 -mx-1 flex flex-wrap gap-1 rounded-2xl bg-paper/90 p-1 backdrop-blur ring-1 ring-black/5">
+      <div className="sticky top-16 z-10 -mx-1 flex flex-wrap gap-1 rounded-2xl bg-paper/90 p-1 backdrop-blur ring-1 ring-ink/5">
         {LANGS.map((l) => (
           <button
             key={l}
             onClick={() => setLang(l)}
-            className={`rounded-xl px-3 py-1.5 text-sm font-medium transition ${lang === l ? "bg-marigold-600 text-white" : "text-ink-soft hover:bg-black/5"}`}
+            className={`rounded-xl px-3 py-1.5 text-sm font-medium transition ${lang === l ? "bg-marigold-600 text-white" : "text-ink-soft hover:bg-ink/5"}`}
           >
             {LANG_LABEL[l]}
           </button>
@@ -398,7 +398,7 @@ export default function WebEditorPage() {
         ) : (
           <div className="space-y-4">
             {news.map((n, i) => (
-              <div key={n.id} className="rounded-2xl border border-black/10 p-3">
+              <div key={n.id} className="rounded-2xl border border-ink/10 p-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <span className="text-xs font-semibold text-ink-soft">Novinka {i + 1}</span>
                   <div className="flex items-center gap-1">
@@ -425,7 +425,7 @@ export default function WebEditorPage() {
       </Collapsible>
 
       {/* SPODNÍ LIŠTA — Uložit */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-black/10 bg-white/95 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-ink/10 bg-surface/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <div className="text-sm">
             {status === "saving" && <span className="text-ink-soft">Ukládám…</span>}
@@ -481,7 +481,7 @@ function PhotoField({
   const preview = value.trim() || fallback;
   return (
     <div className="flex gap-3">
-      <div className="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-lg bg-paper2 text-lg ring-1 ring-black/10">
+      <div className="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-lg bg-paper2 text-lg ring-1 ring-ink/10">
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={preview} alt="" className="h-full w-full object-cover" />

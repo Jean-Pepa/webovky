@@ -132,8 +132,8 @@ export default function KalendarPage() {
                     isSel
                       ? "border-marigold-500 bg-marigold-50 ring-2 ring-marigold-300"
                       : evs.length
-                        ? `border-black/10 ${tint} hover:ring-1 hover:ring-black/15`
-                        : "border-black/[0.05] bg-white hover:bg-paper2"
+                        ? `border-ink/10 ${tint} hover:ring-1 hover:ring-ink/15`
+                        : "border-ink/[0.05] bg-white hover:bg-paper2"
                   }`}
                 >
                   <div className={`text-xs font-semibold ${isToday ? "inline-grid h-5 w-5 place-items-center rounded-full bg-marigold-600 text-white" : "text-ink"}`}>
@@ -153,7 +153,7 @@ export default function KalendarPage() {
             })}
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 border-t border-black/[0.06] pt-3">
+          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 border-t border-ink/[0.06] pt-3">
             {KIND_ORDER.map((k) => (
               <span key={k} className="flex items-center gap-1 text-xs text-ink-soft">
                 <span className={`h-2 w-2 rounded-full ${KINDS[k].dot}`} /> {KINDS[k].label}
@@ -174,7 +174,7 @@ export default function KalendarPage() {
                   const k = KINDS[e.kind];
                   const isRange = e.endDate && e.endDate > e.date;
                   return (
-                    <li key={e.id} className="rounded-xl border border-black/[0.06] p-3">
+                    <li key={e.id} className="rounded-xl border border-ink/[0.06] p-3">
                       <div className="flex items-center gap-2">
                         <span className={`chip ${k.chip}`}>{k.emoji} {k.label}</span>
                         {e.time && <span className="text-xs font-semibold text-ink">{e.time}</span>}

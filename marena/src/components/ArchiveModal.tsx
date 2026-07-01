@@ -52,7 +52,7 @@ export function ArchiveModal({ open, onClose }: { open: boolean; onClose: () => 
     <Modal open={open} onClose={onClose} title="Stáhnout / archiv">
       <div className="space-y-5 text-sm">
         {/* 1) PDF */}
-        <section className="rounded-2xl border border-black/10 p-4">
+        <section className="rounded-2xl border border-ink/10 p-4">
           <div className="flex items-start gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-ink/5 text-ink">
               <Icon name="book" className="h-5 w-5" />
@@ -74,7 +74,7 @@ export function ArchiveModal({ open, onClose }: { open: boolean; onClose: () => 
         </section>
 
         {/* 2) ZIP fotek */}
-        <section className="rounded-2xl border border-black/10 p-4">
+        <section className="rounded-2xl border border-ink/10 p-4">
           <div className="flex items-start gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-leaf/12 text-leaf-700">
               <Icon name="image" className="h-5 w-5" />

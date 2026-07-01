@@ -133,7 +133,7 @@ export default function TymPage() {
   function PersonRow({ p, roleId, variant }: { p: Member; roleId: string; variant: "lead" | "helper" }) {
     const isLead = variant === "lead";
     return (
-      <div className={`rounded-xl p-2.5 ${isLead ? "border-2 border-leaf bg-white" : "bg-white/70 ring-1 ring-black/[0.05]"}`}>
+      <div className={`rounded-xl p-2.5 ${isLead ? "border-2 border-leaf bg-white" : "bg-surface/70 ring-1 ring-ink/[0.05]"}`}>
         <p className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
           <span>{isLead ? "👑" : "↳"}</span>
           <span>{p.name}</span>
@@ -177,7 +177,7 @@ export default function TymPage() {
     const isLead = variant === "lead";
     const marker = variant === "lead" ? "👑" : variant === "helper" ? "↳" : "👤";
     return (
-      <div className={`rounded-lg p-2 ${isLead ? "border border-leaf bg-white" : "bg-white/70 ring-1 ring-black/[0.05]"}`}>
+      <div className={`rounded-lg p-2 ${isLead ? "border border-leaf bg-white" : "bg-surface/70 ring-1 ring-ink/[0.05]"}`}>
         <div className="flex items-start gap-1.5">
           <span className="shrink-0 text-sm">{marker}</span>
           <div className="min-w-0 flex-1">
@@ -296,7 +296,7 @@ export default function TymPage() {
             </button>
           </div>
           {dutiesOpen && (
-            <ul className="mt-3 space-y-1.5 border-t border-black/[0.06] pt-3 text-sm text-ink-soft">
+            <ul className="mt-3 space-y-1.5 border-t border-ink/[0.06] pt-3 text-sm text-ink-soft">
               {r.duties.map((d, i) => (
                 <li key={i} className="flex gap-2">
                   <span className="text-marigold-600">•</span>
@@ -635,7 +635,7 @@ function PurgeAccountModal({ member, year, onClose }: { member: Member; year: Ye
         {rows.map((r) => (
           <label
             key={r.label}
-            className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm ${r.count === 0 ? "border-black/[0.06] opacity-50" : "border-black/10"}`}
+            className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm ${r.count === 0 ? "border-ink/[0.06] opacity-50" : "border-ink/10"}`}
           >
             <input
               type="checkbox"
@@ -707,7 +707,7 @@ function AdminEditMemberModal({ member, yearId, onClose }: { member: Member; yea
                   type="button"
                   onClick={() => toggleRole(r.id)}
                   className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-                    on ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"
+                    on ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-ink/5"
                   }`}
                 >
                   {r.emoji} {r.name}
@@ -835,7 +835,7 @@ function ProfileForm({
                 type="button"
                 onClick={() => setAsLead(true)}
                 className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition ${
-                  asLead ? "bg-leaf text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"
+                  asLead ? "bg-leaf text-white" : "bg-paper2 text-ink-soft hover:bg-ink/5"
                 }`}
               >
                 👑 Vedoucí
@@ -844,7 +844,7 @@ function ProfileForm({
                 type="button"
                 onClick={() => setAsLead(false)}
                 className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition ${
-                  !asLead ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"
+                  !asLead ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-ink/5"
                 }`}
               >
                 Pomocník

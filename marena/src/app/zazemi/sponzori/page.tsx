@@ -165,7 +165,7 @@ export default function SponzoriPage() {
                   key={c.id}
                   type="button"
                   onClick={() => setCategory(c.id)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${category === c.id ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"}`}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${category === c.id ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
                 >
                   {c.emoji} {c.label}
                 </button>
@@ -209,7 +209,7 @@ export default function SponzoriPage() {
                 <button
                   key={f.id}
                   onClick={() => setFilter(f.id)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${filter === f.id ? "bg-ink text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"}`}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${filter === f.id ? "bg-ink text-white" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
                 >
                   {f.label} <span className="opacity-70">{n}</span>
                 </button>
@@ -271,7 +271,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
                 key={c.id}
                 type="button"
                 onClick={() => setCategory(c.id)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${category === c.id ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-black/5"}`}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition ${category === c.id ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
               >
                 {c.emoji} {c.label}
               </button>
