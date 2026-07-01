@@ -6,6 +6,7 @@ import { isAdmin } from "@/lib/admin";
 import { sameName } from "@/lib/names";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
+import { Icon } from "@/components/Icons";
 import { flash } from "@/components/Flash";
 import { matchesQuery } from "@/lib/search";
 import type { Invite, Interest } from "@/lib/types";
@@ -110,7 +111,6 @@ export default function ProgramPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight">Program</h1>
-          {!canEdit && <p className="mt-0.5 text-xs text-ink-soft">Program vidí každý, upravovat ho může jen kapelník, koordinátor přednášek, bavič a správce.</p>}
         </div>
         {canEdit && (
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
@@ -118,6 +118,13 @@ export default function ProgramPage() {
           </button>
         )}
       </div>
+
+      {!canEdit && (
+        <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
+          <Icon name="mic" className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>Program vidí každý, upravovat ho může jen kapelník, koordinátor přednášek, bavič a správce.</span>
+        </div>
+      )}
 
       <SearchBox value={q} onChange={setQ} placeholder="Hledat v programu…" />
 
