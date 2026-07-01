@@ -12,6 +12,7 @@ import { sameName } from "@/lib/names";
 import { ArchiveModal } from "@/components/ArchiveModal";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 import { SupabaseGate } from "@/components/SupabaseGate";
+import { FlashHost } from "@/components/Flash";
 import { supabaseEnabled } from "@/lib/supabase/config";
 
 // Pořadí podle významových skupin (co patří k sobě, je vedle sebe):
@@ -126,6 +127,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="min-h-screen">
+      <FlashHost />
       <header className="sticky top-0 z-30 border-b border-ink/10 bg-paper/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-x-4 gap-y-2 px-4 py-3">
           <div className="flex items-center gap-2">

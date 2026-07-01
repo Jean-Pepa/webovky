@@ -10,6 +10,7 @@ import { isAdmin } from "@/lib/admin";
 import { normName } from "@/lib/names";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
+import { flash } from "@/components/Flash";
 import type { FinanceItem, FinanceKind, Cashbox, Contribution } from "@/lib/types";
 
 const CATEGORIES = [
@@ -185,6 +186,7 @@ export default function FinancePage() {
     setKind("vydaj");
     setVatMode("incl");
     setOpen(false);
+    flash("Položka přidána", "💰");
   }
 
   async function addContribution() {
@@ -193,6 +195,7 @@ export default function FinancePage() {
     await dispatch({ type: "addContribution", yearId: year.id, name: ctName.trim(), amount: num });
     setCtName("");
     setCtAmount("");
+    flash("Výběr zapsán", "💸");
   }
 
   return (
@@ -997,6 +1000,7 @@ function NewKasaModal({ open, yearId, onClose }: { open: boolean; yearId: string
     setLabel("");
     setOpening("");
     onClose();
+    flash("Kasa přidána", "🧾");
   }
 
   return (

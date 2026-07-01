@@ -7,6 +7,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
 import { isAdmin } from "@/lib/admin";
 import { matchesQuery } from "@/lib/search";
+import { flash } from "@/components/Flash";
 import type { Shift } from "@/lib/types";
 
 const AREA_META: Record<string, string> = {
@@ -109,6 +110,7 @@ export default function ProvozPage() {
     setCapacity("2");
     setNote("");
     setOpen(false);
+    flash("Směna přidána", "📋");
   }
 
   return (
@@ -269,14 +271,23 @@ function RozvrhRow({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
       <div className="flex shrink-0 gap-1.5">
         <button
           className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${mine ? "bg-marigold-600 text-white" : full ? "bg-paper2 text-ink-soft/50" : "bg-leaf/12 text-leaf-700 hover:bg-leaf/20"}`}
-          onClick={() => !full || mine ? dispatch({ type: "signShift", yearId, shiftId: shift.id, name: me }) : undefined}
+          onClick={async () => {
+            if (full && !mine) return;
+            const wasMine = mine;
+            await dispatch({ type: "signShift", yearId, shiftId: shift.id, name: me });
+            if (!wasMine) flash("Přihlášen na směnu", "🙌");
+          }}
           disabled={full && !mine}
         >
           {mine ? "Odhlásit" : full ? "Plno" : "Přihlásit"}
         </button>
         <button
           className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${inBackup ? "bg-marigold-600/15 text-marigold-700" : "bg-paper2 text-ink-soft hover:bg-black/5"}`}
-          onClick={() => dispatch({ type: "signShiftBackup", yearId, shiftId: shift.id, name: me })}
+          onClick={async () => {
+            const wasBackup = inBackup;
+            await dispatch({ type: "signShiftBackup", yearId, shiftId: shift.id, name: me });
+            if (!wasBackup) flash("Jsi záloha na směně", "🫡");
+          }}
         >
           {inBackup ? "Záloha ✓" : "Záloha"}
         </button>
@@ -363,13 +374,23 @@ function ShiftCard({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
             Plno
           </button>
         ) : (
-          <button className="btn-primary flex-1" onClick={() => dispatch({ type: "signShift", yearId, shiftId: shift.id, name: me })}>
+          <button
+            className="btn-primary flex-1"
+            onClick={async () => {
+              await dispatch({ type: "signShift", yearId, shiftId: shift.id, name: me });
+              flash("Přihlášen na směnu", "🙌");
+            }}
+          >
             Přihlásit se
           </button>
         )}
         <button
           className={`rounded-full px-3 py-2 text-sm font-medium transition ${inBackup ? "bg-marigold-600/15 text-marigold-700" : "bg-paper2 text-ink-soft hover:bg-black/5"}`}
-          onClick={() => dispatch({ type: "signShiftBackup", yearId, shiftId: shift.id, name: me })}
+          onClick={async () => {
+            const wasBackup = inBackup;
+            await dispatch({ type: "signShiftBackup", yearId, shiftId: shift.id, name: me });
+            if (!wasBackup) flash("Jsi záloha na směně", "🫡");
+          }}
           title="Přihlásit se jako záloha"
         >
           {inBackup ? "Záloha ✓" : "Záloha"}

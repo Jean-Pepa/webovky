@@ -12,6 +12,7 @@ import { Icon } from "@/components/Icons";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
 import { isAdmin } from "@/lib/admin";
+import { flash } from "@/components/Flash";
 import type { Post } from "@/lib/types";
 
 export default function NastenkaPage() {
@@ -62,6 +63,7 @@ export default function NastenkaPage() {
     setRoleId("");
     setPinned(false);
     setOpen(false);
+    flash("Příspěvek přidán", "📌");
   }
 
   return (

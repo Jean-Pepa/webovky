@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
+import { flash } from "@/components/Flash";
 import type { Sponsor, SponsorStatus, SponsorCategory } from "@/lib/types";
 
 // Editor více odkazů / kontaktů — tlačítko „+" přidá další pole, „✕" ho odebere.
@@ -118,6 +119,7 @@ export default function SponzoriPage() {
     setLinks([""]);
     setNote("");
     setReturning(false);
+    flash("Sponzor přidán", "🤝");
   }
 
   return (

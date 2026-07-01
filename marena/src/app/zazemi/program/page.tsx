@@ -6,7 +6,7 @@ import { isAdmin } from "@/lib/admin";
 import { sameName } from "@/lib/names";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
-import { FlashProvider, useFlash } from "@/components/Flash";
+import { flash } from "@/components/Flash";
 import { matchesQuery } from "@/lib/search";
 import type { Invite, Interest } from "@/lib/types";
 
@@ -48,18 +48,7 @@ function inviteBg(i: Invite): string {
 }
 
 export default function ProgramPage() {
-  // FlashProvider obaluje celou stránku, aby všechna tlačítka (ano/ne, osloveno,
-  // přidání do programu) mohla vyvolat malé vyskakovací okénko s informací.
-  return (
-    <FlashProvider>
-      <ProgramInner />
-    </FlashProvider>
-  );
-}
-
-function ProgramInner() {
   const { currentYear, dispatch } = useStore();
-  const flash = useFlash();
   const canEdit = useCanEditProgram();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -203,7 +192,6 @@ function ProgramInner() {
 // (oranžová) je zamčené; změnit jde až po „Zrušit". Bez práva úpravy jen zobrazení.
 function ContactedButton({ invite, yearId, canEdit }: { invite: Invite; yearId: string; canEdit: boolean }) {
   const { dispatch, me } = useStore();
-  const flash = useFlash();
   const admin = isAdmin(me);
   // Po rozhodnutí (ano/ne) zamčeno: potvrzené pro všechny (musí se Zrušit),
   // odmítnuté jen pro ne-správce (změnit může správce).
@@ -258,7 +246,6 @@ function InterestControl({ invite }: { invite: Invite }) {
 // Bez práva úpravy se tlačítka nezobrazí (stav ukazuje InterestControl).
 function ConfirmButtons({ invite, yearId, canEdit }: { invite: Invite; yearId: string; canEdit: boolean }) {
   const { dispatch, me } = useStore();
-  const flash = useFlash();
   const admin = isAdmin(me);
   if (!canEdit || !invite.contacted) return null;
   const yes = invite.interest === "ano";
@@ -297,7 +284,6 @@ function ConfirmButtons({ invite, yearId, canEdit }: { invite: Invite; yearId: s
 // zůstává, jen se změní stav; jméno/odkaz/kategorie beze změny.
 function CancelButton({ invite, yearId, canEdit }: { invite: Invite; yearId: string; canEdit: boolean }) {
   const { dispatch } = useStore();
-  const flash = useFlash();
   const [ask, setAsk] = useState(false);
   if (!canEdit || !isConfirmed(invite)) return null;
   function confirmCancel() {

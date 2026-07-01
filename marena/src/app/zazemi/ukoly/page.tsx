@@ -7,6 +7,7 @@ import { fmtDate } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
+import { flash } from "@/components/Flash";
 
 type Filter = "vse" | "moje" | "nehotove" | "hotove";
 
@@ -61,6 +62,7 @@ export default function UkolyPage() {
     setRoleId("");
     setAssignee("");
     setDue("");
+    flash("Úkol přidán", "✅");
   }
 
   return (
