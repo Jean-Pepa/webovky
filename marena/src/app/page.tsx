@@ -104,74 +104,73 @@ function LangSwitch({ lang, changeLang }: { lang: Lang; changeLang: (l: Lang) =>
 function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: HomeView) {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0b0713] text-white">
-      {/* Vegas pozadí — čisté: jemná světla + teplá zlatá záře shora. */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 vegas-stars opacity-40" />
+      {/* Vegas pozadí — čisté: jemná světla + teplá zlatá záře shora.
+          absolute (ne fixed) — fixed + mix-blend-mode dělá v Chromiu chybu vykreslení. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 vegas-stars opacity-40" />
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(255,180,45,0.12),_transparent_62%)]"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(255,180,45,0.12),_transparent_62%)]"
       />
 
-      {/* NAV */}
-      <header className="absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/70 via-black/30 to-transparent pb-6">
-        <div className="mx-auto flex max-w-6xl flex-nowrap items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-4 sm:py-5 [text-shadow:0_1px_10px_rgba(0,0,0,0.45)]">
-          <span className="shrink-0 [&_*]:text-white">
-            <Logo light sizeClass="h-8 sm:h-[1.5cm]" />
-          </span>
-          <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+      {/* HERO — Las Vegas Strip: logo vlevo nahoře, minimalistická nav, obsah dole */}
+      <section className="relative isolate flex min-h-screen flex-col overflow-hidden">
+        <Photo
+          src={content?.photos?.hero?.trim() || "/photos/vegas-hero.jpg"}
+          alt="Mařena — Las Vegas"
+          label="Las Vegas Strip v noci"
+          className="absolute inset-0 -z-10 h-full w-full"
+        />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/90 via-black/40 to-black/10" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#0b0713] via-transparent to-black/50" />
+
+        {/* Horní lišta: logo (kačenka + MAŘENA / Las Vegas) + nav */}
+        <div className="relative z-20 mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:py-6">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/duck.png" alt="" aria-hidden className="h-12 w-12 shrink-0 object-contain sm:h-16 sm:w-16" />
+            <div className="leading-none">
+              <div className="font-display text-2xl font-extrabold tracking-wide vegas-neon-gold sm:text-3xl">MAŘENA</div>
+              <div className="-mt-0.5 font-display text-sm font-semibold italic text-pink-400 [text-shadow:0_0_10px_rgba(255,80,190,0.7)] sm:text-base">Las Vegas</div>
+            </div>
+          </div>
+          <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2 [text-shadow:0_1px_8px_rgba(0,0,0,0.6)]">
             <LangSwitch lang={lang} changeLang={changeLang} />
-            <a href={igUrl} target="_blank" rel="noreferrer" className="btn-vegas vegas-btn px-2.5 sm:px-5" aria-label="Instagram">
-              <Icon name="instagram" className="h-4 w-4" /> <span className="hidden sm:inline">Instagram</span>
-            </a>
             <Link href="/prihlaseni" className="rounded-full px-2 py-1.5 text-xs font-medium text-white transition hover:opacity-80 sm:px-3 sm:py-2 sm:text-sm" aria-label={t.organizers}>
-              <span className="hidden min-[360px]:inline">{t.organizers}</span>
-              <Icon name="users" className="h-5 w-5 min-[360px]:hidden" />
+              <span className="hidden min-[420px]:inline">{t.organizers}</span>
+              <Icon name="users" className="h-5 w-5 min-[420px]:hidden" />
             </Link>
           </nav>
         </div>
-      </header>
 
-      {/* HERO */}
-      <section className="relative isolate flex min-h-[90vh] items-center justify-center overflow-hidden">
-        <Photo src={photoOf(content, "hero")} alt="Mařena — průvod městem" label="hero foto — průvod / dvůr Mařeny" className="absolute inset-0 -z-10 h-full w-full" />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#12001f]/80 via-black/60 to-[#0b0713]" />
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_rgba(0,0,0,0.35)_0%,_transparent_60%)]" />
-
-        <div className="mx-auto w-full max-w-3xl px-4 pt-24 text-center [text-shadow:0_2px_20px_rgba(0,0,0,0.55)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-100/80">{t.heroKicker}</p>
-          <div className="mt-3 flex justify-center">
+        {/* Obsah dole vlevo — 56. ročník, věta, merch + odkazy */}
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 items-end px-4 pb-14 sm:pb-20">
+          <div className="max-w-2xl [text-shadow:0_2px_20px_rgba(0,0,0,0.85)]">
             <span className="marquee-sign">🎰 56. ročník</span>
-          </div>
-          <h1 className="vegas-gold-title mt-3 font-display text-[3.5rem] font-bold leading-[0.95] tracking-[0.08em] text-white sm:text-[6.75rem] sm:tracking-[1.5cm] md:text-[9rem] md:tracking-[4cm] lg:tracking-[6cm]">
-            {"MAŘENA".split("").map((ch, i) => (
-              <span key={i} className="marena-letter" style={{ animationDelay: `${i * -0.06}s` }}>
-                {ch}
-              </span>
-            ))}
-          </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg text-white/90">{t.heroTagline}</p>
-          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-4 py-1.5 text-sm font-semibold text-white shadow-[0_0_18px_rgba(255,46,166,0.7)] [text-shadow:none]">
-            {t.heroBadge}
-          </div>
-          <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <a href={igUrl} target="_blank" rel="noreferrer" className="btn-vegas vegas-btn px-6 py-3 text-base text-white [text-shadow:none]">
-              {t.ctaInsta}
-            </a>
-            <a href="#co-te-ceka" className="rounded-full border border-cyan-300/60 bg-black/25 px-6 py-3 text-base font-semibold text-white shadow-[0_0_16px_rgba(79,240,255,0.4)] [text-shadow:none] transition hover:bg-black/40">
-              {t.ctaScroll}
-            </a>
-          </div>
-
-          <div className="mt-9">
-            <Link
-              href="/merch"
-              className="merch-pulse vegas-btn inline-block rounded-full bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-8 py-4 font-display text-2xl font-extrabold text-white ring-2 ring-white/40 [text-shadow:none] hover:from-[#ff49b6] hover:to-[#b53aff] sm:text-3xl"
-            >
-              {t.merchCta}
-            </Link>
+            <h1 className="sr-only">Mařena — Las Vegas, 56. ročník studentského festivalu Fakulty architektury VUT</h1>
+            <p className="mt-4 max-w-xl text-lg font-medium text-white sm:text-2xl">{t.heroTagline}</p>
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-4 py-1.5 text-sm font-semibold text-white shadow-[0_0_18px_rgba(255,46,166,0.7)] [text-shadow:none]">
+              {t.heroBadge}
+            </div>
+            <div className="mt-7 flex flex-wrap items-center gap-3 [text-shadow:none]">
+              <Link
+                href="/merch"
+                className="merch-pulse vegas-btn inline-flex items-center rounded-full bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-7 py-3.5 font-display text-xl font-extrabold text-white ring-2 ring-white/40 hover:from-[#ff49b6] hover:to-[#b53aff] sm:text-2xl"
+              >
+                {t.merchCta}
+              </Link>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3 [text-shadow:none]">
+              <a href={igUrl} target="_blank" rel="noreferrer" className="btn-vegas vegas-btn px-6 py-3 text-base">
+                <Icon name="instagram" className="h-4 w-4" /> {t.ctaInsta}
+              </a>
+              <a href="#co-te-ceka" className="rounded-full border border-white/50 bg-black/30 px-6 py-3 text-base font-semibold text-white transition hover:bg-black/50">
+                {t.ctaScroll}
+              </a>
+            </div>
           </div>
         </div>
 
-        {/* Běžící žárovky na spodní hraně hero (marquee jako nad kasinem) */}
+        {/* Běžící žárovky na spodní hraně hero */}
         <div aria-hidden className="vegas-bulbs absolute inset-x-0 bottom-0" />
       </section>
 
@@ -219,12 +218,14 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
         </article>
       </section>
 
-      {/* Neonová cedule s kačenkou — téma ročníku beze slov (ať si to každý domyslí). */}
-      <section className="relative bg-[#080510] py-14 md:py-16">
+      {/* Neonová cedule s kačenkou — téma ročníku beze slov (ať si to každý domyslí).
+          Obrázek má černé pozadí = sekce je také černá, takže není potřeba mix-blend
+          (fixed/mix-blend spolu dělaly v Chromiu chybu vykreslení). */}
+      <section className="relative bg-black py-14 md:py-16">
         <div aria-hidden className="vegas-bulbs absolute inset-x-0 top-0" />
         <div className="mx-auto flex max-w-6xl justify-center px-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/marena-vegas.png" alt="Mařena Las Vegas" className="w-[22rem] max-w-full mix-blend-lighten sm:w-[30rem]" />
+          <img src="/marena-vegas.png" alt="Mařena Las Vegas" className="w-[22rem] max-w-full sm:w-[30rem]" />
         </div>
         <div aria-hidden className="vegas-bulbs absolute inset-x-0 bottom-0" />
       </section>
