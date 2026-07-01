@@ -239,6 +239,16 @@
   color: #ffd94d;
   text-shadow: 0 0 6px rgba(255, 217, 77, 0.95), 0 0 20px rgba(255, 170, 40, 0.6), 0 0 40px rgba(255, 120, 0, 0.4);
 }
+/* Zlatý nápis MAŘENA v hlavičce zázemí — bez tmavé cedulky, čitelný na světlém
+   pozadí (sytý zlatý přechod do bronzu + jemný stín pro kontrast). */
+.marena-header-gold {
+  background: linear-gradient(180deg, #f4b71f 0%, #e0940a 52%, #a25f06 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 0 rgba(120, 72, 0, 0.35));
+}
 /* Červený neon (jako cedule MOTEL) — červené „trubičkové" písmo. */
 .vegas-neon-red {
   color: #ff4536;

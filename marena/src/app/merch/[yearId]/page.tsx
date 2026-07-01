@@ -6,6 +6,7 @@ import { applyAction } from "@/lib/actions";
 import { loadReceipt } from "@/lib/receipts";
 import { fmtCZK } from "@/lib/format";
 import { Icon } from "@/components/Icons";
+import { FlashHost, flash } from "@/components/Flash";
 import type { DB } from "@/lib/types";
 
 const LS_DB = "marena_db"; // demo režim (localStorage) — stejný klíč jako ve store
@@ -137,6 +138,8 @@ export default function MerchOrderPage() {
       if (i >= 0) return prev.map((l, j) => (j === i ? { ...l, qty: l.qty + 1 } : l));
       return [...prev, { key, productId: p.id, name: p.name, price: p.price, size, color, qty: 1 }];
     });
+    const parts = [p.name, size, color].filter(Boolean).join(" · ");
+    flash(`Přidáno do košíku: ${parts}`, "🛒");
   }
   const removeLine = (key: string) => setCart((prev) => prev.filter((l) => l.key !== key));
   const total = cart.reduce((sum, l) => sum + (l.price ?? 0) * l.qty, 0);
@@ -196,15 +199,10 @@ export default function MerchOrderPage() {
 
   return (
     <div className="min-h-screen bg-paper">
+      <FlashHost />
       <div className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-6 text-center">
-          <div className="font-display text-3xl font-bold tracking-[0.12em]">
-            {"MAŘENA".split("").map((ch, i) => (
-              <span key={i} className="marena-letter" style={{ animationDelay: `${i * -0.06}s` }}>
-                {ch}
-              </span>
-            ))}
-          </div>
+          <div className="marena-header-gold inline-block font-display text-3xl font-extrabold uppercase tracking-[0.08em]">MAŘENA</div>
           <p className="mt-1 text-sm text-ink-soft">Merch{label ? ` · ${label}` : ""}</p>
         </div>
 

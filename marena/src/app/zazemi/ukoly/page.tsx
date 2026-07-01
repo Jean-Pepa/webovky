@@ -153,7 +153,11 @@ export default function UkolyPage() {
                       <input
                         type="checkbox"
                         checked={t.done}
-                        onChange={() => dispatch({ type: "toggleTask", yearId: year.id, taskId: t.id })}
+                        onChange={() => {
+                          const nowDone = !t.done;
+                          dispatch({ type: "toggleTask", yearId: year.id, taskId: t.id });
+                          if (nowDone) flash(`Splněno: ${t.title}${me ? ` — ${me}` : ""}`, "🎉");
+                        }}
                         className="h-4 w-4 accent-marigold-600"
                       />
                       <div className="min-w-0 flex-1">

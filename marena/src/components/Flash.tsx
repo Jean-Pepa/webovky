@@ -35,12 +35,12 @@ export function FlashHost() {
 
   if (!msg) return null;
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-3 z-[60] flex justify-center px-4">
+    <div className="pointer-events-none fixed inset-0 z-[60] grid place-items-center px-4">
       <div
         key={msg.id}
-        className="marena-pop flex max-w-[calc(100vw-2rem)] items-center gap-2.5 rounded-2xl bg-ink px-4 py-3 text-sm font-medium text-white shadow-2xl ring-1 ring-white/10"
+        className="marena-pop flex max-w-[calc(100vw-2rem)] items-center gap-4 rounded-3xl bg-ink px-8 py-6 text-lg font-semibold text-white shadow-2xl ring-1 ring-white/10"
       >
-        {msg.emoji && <span className="shrink-0 text-lg leading-none">{msg.emoji}</span>}
+        {msg.emoji && <span className="shrink-0 text-4xl leading-none">{msg.emoji}</span>}
         <span className="min-w-0">{msg.text}</span>
       </div>
     </div>
