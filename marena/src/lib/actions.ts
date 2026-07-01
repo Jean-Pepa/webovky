@@ -36,11 +36,11 @@ export type Action =
   // Vzít si roli (vytvoří/upraví člena a přidá roli). asLead / první držitel = vedoucí.
   | { type: "takeRole"; yearId: string; memberId?: string; name: string; email?: string; phone?: string; roleId: string; asLead: boolean }
   | { type: "setRoleLead"; yearId: string; roleId: string; memberId: string }
-  | { type: "addPost"; yearId: string; author: string; roleId?: string; title: string; body: string; pinned?: boolean; photoIds?: string[] }
-  | { type: "updatePost"; yearId: string; postId: string; editedBy: string; patch: { title?: string; body?: string; roleId?: string | null; photoIds?: string[] } }
+  | { type: "addPost"; yearId: string; author: string; roleId?: string; title: string; body: string; pinned?: boolean; photoIds?: string[]; pollId?: string }
+  | { type: "updatePost"; yearId: string; postId: string; editedBy: string; patch: { title?: string; body?: string; roleId?: string | null; photoIds?: string[]; pollId?: string } }
   | { type: "togglePin"; yearId: string; postId: string }
   | { type: "removePost"; yearId: string; postId: string }
-  | { type: "addPoll"; yearId: string; author: string; question: string; options: string[]; multi?: boolean }
+  | { type: "addPoll"; yearId: string; author: string; question: string; options: string[]; multi?: boolean; id?: string }
   | { type: "vote"; yearId: string; pollId: string; optionId: string; voter: string }
   | { type: "removeVoter"; yearId: string; pollId: string; optionId: string; voter: string }
   | { type: "closePoll"; yearId: string; pollId: string }
@@ -295,7 +295,7 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => ({
         ...y,
         posts: [
-          { id: uid("p_"), author: a.author.trim() || "Anonym", roleId: a.roleId, title: a.title.trim(), body: a.body.trim(), pinned: a.pinned ?? false, photoIds: a.photoIds?.length ? a.photoIds : undefined, createdAt: now() },
+          { id: uid("p_"), author: a.author.trim() || "Anonym", roleId: a.roleId, title: a.title.trim(), body: a.body.trim(), pinned: a.pinned ?? false, photoIds: a.photoIds?.length ? a.photoIds : undefined, pollId: a.pollId || undefined, createdAt: now() },
           ...y.posts,
         ],
       }));
@@ -315,6 +315,7 @@ export function applyAction(db: DB, a: Action): DB {
             body: a.patch.body !== undefined ? a.patch.body.trim() : p.body,
             roleId: a.patch.roleId !== undefined ? (a.patch.roleId ?? undefined) : p.roleId,
             photoIds: a.patch.photoIds !== undefined ? (a.patch.photoIds.length ? a.patch.photoIds : undefined) : p.photoIds,
+            pollId: a.patch.pollId !== undefined ? (a.patch.pollId || undefined) : p.pollId,
             edits: [...prior, { by, at }],
             editedBy: by, // legacy zrcadlo (poslední úprava)
             editedAt: at,
@@ -334,7 +335,7 @@ export function applyAction(db: DB, a: Action): DB {
         ...y,
         polls: [
           {
-            id: uid("v_"),
+            id: a.id ?? uid("v_"),
             question: a.question.trim(),
             author: a.author.trim() || "Anonym",
             multi: a.multi ?? false,
