@@ -195,6 +195,17 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           >
             <Icon name="book" className="h-4 w-4" /> Almanach
           </Link>
+          {isAdmin(me) && (
+            <Link
+              href="/zazemi/web"
+              title="Upravit veřejný web (texty, fotky, novinky)"
+              className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium text-white transition-colors ${
+                pathname === "/zazemi/web" ? "bg-plum-700" : "bg-plum-600 hover:bg-plum-700"
+              }`}
+            >
+              <Icon name="globe" className="h-4 w-4" /> Web
+            </Link>
+          )}
           {isAdmin(me) && db && (
             <button
               onClick={() => setArchiveOpen(true)}
@@ -259,6 +270,15 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               >
                 <Icon name="book" className="h-5 w-5" /> Almanach
               </Link>
+              {isAdmin(me) && (
+                <Link
+                  href="/zazemi/web"
+                  onClick={() => setMenuOpen(false)}
+                  className="inline-flex items-center gap-2.5 rounded-xl bg-plum-600 px-3 py-2.5 text-[15px] font-medium text-white"
+                >
+                  <Icon name="globe" className="h-5 w-5" /> Správa webu
+                </Link>
+              )}
               {isAdmin(me) && db && (
                 <button
                   onClick={() => {
