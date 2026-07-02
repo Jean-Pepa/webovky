@@ -168,7 +168,7 @@ export default function ProvozPage() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${filter === f ? "bg-marigold-600 text-white" : "bg-white text-ink-soft ring-1 ring-black/10 hover:bg-paper2"}`}
+              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${filter === f ? "bg-marigold-600 text-white" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"}`}
             >
               {l}
             </button>
@@ -218,7 +218,7 @@ export default function ProvozPage() {
         <div className="space-y-5">
           {byDay.map(([day, items]) => (
             <section key={day} className="card overflow-hidden">
-              <h2 className="border-b border-black/[0.06] bg-paper2/60 px-4 py-2 font-display text-base font-semibold">
+              <h2 className="border-b border-ink/[0.06] bg-paper2/60 px-4 py-2 font-display text-base font-semibold">
                 {day === "Bez data" ? "📌 Bez data" : `📅 ${fmtDate(day)}`}
                 <span className="ml-2 text-sm font-normal text-ink-soft">{items.length} směn</span>
               </h2>
@@ -282,7 +282,7 @@ function RozvrhRow({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
           {mine ? "Odhlásit" : full ? "Plno" : "Přihlásit"}
         </button>
         <button
-          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${inBackup ? "bg-marigold-600/15 text-marigold-700" : "bg-paper2 text-ink-soft hover:bg-black/5"}`}
+          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${inBackup ? "bg-marigold-600/15 text-marigold-700" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
           onClick={async () => {
             const wasBackup = inBackup;
             await dispatch({ type: "signShiftBackup", yearId, shiftId: shift.id, name: me });
@@ -385,7 +385,7 @@ function ShiftCard({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
           </button>
         )}
         <button
-          className={`rounded-full px-3 py-2 text-sm font-medium transition ${inBackup ? "bg-marigold-600/15 text-marigold-700" : "bg-paper2 text-ink-soft hover:bg-black/5"}`}
+          className={`rounded-full px-3 py-2 text-sm font-medium transition ${inBackup ? "bg-marigold-600/15 text-marigold-700" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
           onClick={async () => {
             const wasBackup = inBackup;
             await dispatch({ type: "signShiftBackup", yearId, shiftId: shift.id, name: me });

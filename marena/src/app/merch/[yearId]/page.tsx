@@ -278,7 +278,7 @@ export default function MerchOrderPage() {
                                         type="button"
                                         onClick={() => setSel((s) => ({ ...s, [p.id]: { ...s[p.id], size: sz } }))}
                                         className={`rounded-full px-3 py-1 text-sm font-medium transition ${
-                                          on ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft ring-1 ring-black/10 hover:bg-black/5"
+                                          on ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft ring-1 ring-ink/10 hover:bg-ink/5"
                                         }`}
                                       >
                                         {sz}
@@ -301,7 +301,7 @@ export default function MerchOrderPage() {
                                         type="button"
                                         onClick={() => setSel((s) => ({ ...s, [p.id]: { ...s[p.id], color: col } }))}
                                         className={`rounded-full px-3 py-1 text-sm font-medium transition ${
-                                          on ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft ring-1 ring-black/10 hover:bg-black/5"
+                                          on ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft ring-1 ring-ink/10 hover:bg-ink/5"
                                         }`}
                                       >
                                         {col}
@@ -355,7 +355,7 @@ export default function MerchOrderPage() {
                         </li>
                       ))}
                       {total > 0 && (
-                        <li className="flex justify-between gap-2 border-t border-black/10 pt-1 font-semibold">
+                        <li className="flex justify-between gap-2 border-t border-ink/10 pt-1 font-semibold">
                           <span>Celkem</span>
                           <span>{fmtCZK(total)}</span>
                         </li>

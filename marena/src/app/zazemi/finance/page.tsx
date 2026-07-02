@@ -381,7 +381,7 @@ export default function FinancePage() {
           <Collapsible peekClass="max-h-[150px]" expandable={merchItems.length > 2} total={merchItems.length}>
             <div className="space-y-2">
               {merchItems.map((f) => (
-                <div key={f.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 rounded-xl border border-black/[0.05] bg-paper2/40 px-3 py-2 text-sm">
+                <div key={f.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 rounded-xl border border-ink/[0.05] bg-paper2/40 px-3 py-2 text-sm">
                   <span className="font-semibold">{f.label}</span>
                   {f.note && <span className="text-xs text-ink-soft">· {f.note}</span>}
                   <span className="text-xs text-ink-soft/70">{fmtDate(f.date || f.createdAt)}</span>
@@ -445,7 +445,7 @@ export default function FinancePage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${filter === f ? "bg-ink text-white" : "bg-white text-ink-soft ring-1 ring-black/10 hover:bg-paper2"}`}
+            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${filter === f ? "bg-ink text-white" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"}`}
           >
             {l}
           </button>
@@ -458,19 +458,19 @@ export default function FinancePage() {
           <button
             key={cat}
             onClick={() => setCatFilter((c) => (c === cat ? "" : cat))}
-            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${catFilter === cat ? "bg-ink text-white" : "bg-white text-ink-soft ring-1 ring-black/10 hover:bg-paper2"}`}
+            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${catFilter === cat ? "bg-ink text-white" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"}`}
           >
             {l}
           </button>
         ))}
         <input
-          className="ml-auto w-44 rounded-full border border-black/10 bg-white px-3.5 py-1.5 text-sm sm:w-52"
+          className="ml-auto w-44 rounded-full border border-ink/10 bg-white px-3.5 py-1.5 text-sm sm:w-52"
           placeholder="🔎 Hledat v popisu…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
         {byCategory.length > 0 && (
-          <select className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-sm text-ink-soft" value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
+          <select className="rounded-full border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink-soft" value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
             <option value="">Všechny kategorie</option>
             {byCategory.map(([cat]) => (
               <option key={cat} value={cat}>
@@ -500,7 +500,7 @@ export default function FinancePage() {
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[640px] border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-black/[0.06] text-left text-xs font-medium uppercase tracking-wide text-ink-soft">
+                  <tr className="border-b border-ink/[0.06] text-left text-xs font-medium uppercase tracking-wide text-ink-soft">
                     <th className="px-4 py-3">Popis</th>
                     <th className="px-3 py-3">Kategorie</th>
                     <th className="px-3 py-3">Kdo</th>
@@ -645,7 +645,7 @@ function FinanceCard({ item, yearId, canAdd, canEdit }: { item: FinanceItem; yea
   return (
     <div className="p-3">
       <div className="flex items-start gap-2">
-        <span className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs ${isPrijem ? "bg-leaf/12 text-leaf-700" : "bg-black/[0.05] text-ink-soft"}`}>
+        <span className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs ${isPrijem ? "bg-leaf/12 text-leaf-700" : "bg-ink/[0.05] text-ink-soft"}`}>
           {isPrijem ? "+" : "−"}
         </span>
         <div className="min-w-0 flex-1">
@@ -698,7 +698,7 @@ function FinanceRow({ item, yearId, canAdd, canEdit }: { item: FinanceItem; year
 
   if (edit) {
     return (
-      <tr className="border-b border-black/[0.06] bg-paper2/40 align-top">
+      <tr className="border-b border-ink/[0.06] bg-paper2/40 align-top">
         <td className="px-4 py-2"><input className="input" value={label} onChange={(e) => setLabel(e.target.value)} /></td>
         <td className="px-3 py-2"><input className="input" list="fin-cats" value={category} onChange={(e) => setCategory(e.target.value)} /></td>
         <td className="px-3 py-2"><input className="input" value={who} onChange={(e) => setWho(e.target.value)} /></td>
@@ -716,10 +716,10 @@ function FinanceRow({ item, yearId, canAdd, canEdit }: { item: FinanceItem; year
 
   const isPrijem = item.kind === "prijem";
   return (
-    <tr className="border-b border-black/[0.06] transition-colors hover:bg-paper2/40">
+    <tr className="border-b border-ink/[0.06] transition-colors hover:bg-paper2/40">
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs ${isPrijem ? "bg-leaf/12 text-leaf-700" : "bg-black/[0.05] text-ink-soft"}`}>
+          <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs ${isPrijem ? "bg-leaf/12 text-leaf-700" : "bg-ink/[0.05] text-ink-soft"}`}>
             {isPrijem ? "+" : "−"}
           </span>
           <span className="font-medium">{item.label}</span>
@@ -905,7 +905,7 @@ function ContributionRow({ c, yearId, canEdit }: { c: Contribution; yearId: stri
       {canEdit && (
         <button
           onClick={() => dispatch({ type: "toggleContributionReturned", yearId, contributionId: c.id })}
-          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition ${c.returned ? "bg-leaf/12 text-leaf-700 hover:bg-leaf/20" : "bg-paper2 text-ink-soft hover:bg-black/5"}`}
+          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition ${c.returned ? "bg-leaf/12 text-leaf-700 hover:bg-leaf/20" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
           title={c.returned ? "Označit jako nevrácené" : "Označit jako vrácené"}
         >
           {c.returned ? "Vráceno ✓" : "Vrátit"}
@@ -1050,7 +1050,7 @@ function Collapsible({
       </div>
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl py-1.5 text-sm font-medium text-ink-soft transition hover:bg-black/[0.04]"
+        className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl py-1.5 text-sm font-medium text-ink-soft transition hover:bg-ink/[0.04]"
       >
         {expanded ? "Sbalit" : `Zobrazit vše (${total})`}
         <Icon name="chevron" className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />

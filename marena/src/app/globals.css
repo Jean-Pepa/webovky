@@ -1,11 +1,14 @@
 @import "tailwindcss";
 
-@theme inline {
+@theme {
   /* ---- Mařena · čistý „Apple" vzhled --------------------------------- */
   /* Neutrální základ (světle šedá / bílá / téměř černá) + jeden teplý akcent */
+  /* Pozn.: záměrně BEZ `inline`, aby se tokeny daly za běhu přebít pro noční
+     režim (třída `.dark` na <html> jen přemapuje tyto proměnné). */
 
-  --color-paper: #f5f5f7; /* systémová světle šedá (pozadí) */
+  --color-paper: #f5f5f7; /* systémová světle šedá (pozadí stránky) */
   --color-paper2: #ececef; /* o stupínek tmavší (výplně, hover, chipy) */
+  --color-surface: #ffffff; /* karty, inputy, „bílé" plochy */
   --color-ink: #1d1d1f; /* hlavní text (Apple ink) */
   --color-ink-soft: #6e6e73; /* sekundární text */
 
@@ -42,6 +45,67 @@
   --font-display: var(--font-sans);
 
   --radius-app: 18px;
+}
+
+/* ===================== Noční režim (zázemí) =========================
+   Třída `.dark` na <html> jen přemapuje neutrální tokeny. Akcenty (červená,
+   zelená, modrá) zůstávají — na tmavém pozadí jsou dobře čitelné. Text je
+   měkce bílý (ne čistě #fff), aby „nepálil do očí". Čáry a hovery používají
+   v celé appce `ink` s průhledností, takže se převrátí samy. */
+.dark {
+  --color-paper: #1e1e21; /* pozadí stránky — měkká tmavá šedá (ne černá) */
+  --color-paper2: #37383d; /* výplně, chipy, hover plochy */
+  --color-surface: #2a2b2f; /* karty a inputy — o stupínek světlejší šedá */
+  --color-ink: #ededf0; /* hlavní text — měkká bílá */
+  --color-ink-soft: #a4a5ad; /* sekundární text */
+
+  /* Světlé „tinty" (jemné barevné plochy 50/100/200) → tmavé varianty téhož tónu,
+     ať na nočním pozadí neřve bílá/růžová. Sytost akcentů (600/700 pro tlačítka)
+     necháváme. Automaticky se přepíšou i s průhledností (color-mix). */
+  --color-marigold-50: #3a1c22; /* jemná červená plocha */
+  --color-marigold-100: #48232c;
+  --color-marigold-200: #5c2c37;
+  --color-red-50: #3a1a1d;
+  --color-red-100: #48232a;
+  --color-amber-50: #2e2410;
+  --color-amber-100: #3a2c14;
+  --color-amber-200: #4b3a1c;
+  --color-plum-100: #2a2b31; /* světlá „plum" výplň → tmavá */
+  --color-plum-200: #34353c;
+}
+
+/* Bílé plochy (karty, inputy, pruhy) → tmavý povrch. Výjimky (QR, kolečko
+   přepínače) používají bg-[#fff], takže je to nechá bílé. */
+.dark .bg-white {
+  background-color: var(--color-surface);
+}
+
+/* Akcentní TEXT na tmavém pozadí — ztmavené odstíny by nebyly vidět, tak je
+   zesvětlíme. Cílíme jen text-* třídy, takže tlačítka (bg-marigold-600/700)
+   zůstávají syté. */
+.dark .text-marigold-600 { color: #ef4a62; }
+.dark .text-marigold-700 { color: #f2758b; }
+.dark .text-marigold-800 { color: #f6a2b1; }
+.dark .text-red-600 { color: #f26d6d; }
+.dark .text-red-700 { color: #f58a8a; }
+.dark .text-leaf-700 { color: #57d98a; }
+.dark .text-amber-700 { color: #e2b25a; }
+.dark .text-amber-800 { color: #ecc069; }
+.dark .text-plum-700 { color: #d2d3d9; }
+.dark .text-plum-600 { color: #c3c4cb; }
+.dark .text-sky { color: #4aa3ff; }
+
+/* Karty na tmavém dostanou jemný „lift" místo (neviditelného) černého stínu. */
+.dark .card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+/* Jemný přechod při přepnutí den/noc (jen barvy, ne layout). */
+html.theme-anim,
+html.theme-anim body,
+html.theme-anim .card,
+html.theme-anim .input {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 }
 
 /* Font Vafle (BC Vafle) — vlož svůj licencovaný soubor do /public/fonts/.
@@ -400,27 +464,27 @@
   }
   .btn-secondary {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border
-      border-black/10 bg-white px-5 py-2.5 text-sm font-medium text-ink transition-all
+      border-ink/10 bg-surface px-5 py-2.5 text-sm font-medium text-ink transition-all
       hover:bg-paper2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-ghost {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full px-4 py-2
-      text-sm font-medium text-ink-soft transition-colors hover:bg-black/[0.04] hover:text-ink
+      text-sm font-medium text-ink-soft transition-colors hover:bg-ink/[0.06] hover:text-ink
       disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-danger {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full px-3 py-1.5
-      text-sm font-medium text-red-600 transition-colors hover:bg-red-50
+      text-sm font-medium text-red-600 transition-colors hover:bg-red-500/10
       disabled:cursor-not-allowed disabled:opacity-50;
   }
   .card {
-    @apply rounded-3xl border border-black/[0.06] bg-white;
+    @apply rounded-3xl border border-ink/[0.08] bg-surface;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 8px 24px rgba(0, 0, 0, 0.04);
   }
   .input {
     /* text-base (16px) na mobilu brání automatickému zoomu iOS Safari při
        zaostření pole; na desktopu zpět na 14px. */
-    @apply w-full rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-base text-ink
+    @apply w-full rounded-xl border border-ink/10 bg-surface px-3.5 py-2.5 text-base text-ink
       outline-none transition placeholder:text-ink-soft/50 focus:border-marigold-400
       focus:ring-4 focus:ring-marigold-500/15 sm:text-sm;
   }

@@ -31,10 +31,17 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
 };
 
+// Noční režim jen v zázemí. Skript běží ještě před vykreslením, aby při tvrdém
+// načtení /zazemi… nezablikalo světlé pozadí (žádný FOUC). Volbu drží localStorage.
+const THEME_SCRIPT = `(function(){try{if(localStorage.getItem('marena_theme')==='dark'&&location.pathname.indexOf('/zazemi')===0){document.documentElement.classList.add('dark');}}catch(e){}})();`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="cs">
       {/* Používáme systémový font (SF Pro / Segoe UI / Roboto) — žádné externí načítání. */}
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body>
         <StoreProvider>{children}</StoreProvider>
       </body>

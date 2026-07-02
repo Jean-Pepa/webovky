@@ -13,6 +13,7 @@ import { ArchiveModal } from "@/components/ArchiveModal";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 import { SupabaseGate } from "@/components/SupabaseGate";
 import { FlashHost } from "@/components/Flash";
+import { ThemeToggle, useZazemiTheme } from "@/components/ThemeToggle";
 import { supabaseEnabled } from "@/lib/supabase/config";
 
 // Pořadí podle významových skupin (co patří k sobě, je vedle sebe):
@@ -48,6 +49,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const [pwdOpen, setPwdOpen] = useState(false);
   const [boardUnread, setBoardUnread] = useState(0);
   const [maint, setMaint] = useState<boolean | null>(null); // režim údržby (null = ještě nevíme)
+  const { dark, toggle: toggleTheme } = useZazemiTheme();
 
   useEffect(() => {
     if (ready && !authed) router.replace("/prihlaseni");
@@ -145,13 +147,14 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               </span>
             )}
           </div>
-          {/* Desktop: heslo (správce) + změna jména + přepínač ročníku + jméno */}
+          {/* Desktop: přepínač den/noc + heslo (správce) + přepínač ročníku + jméno */}
           <div className="ml-auto hidden items-center gap-2 md:flex">
+            <ThemeToggle dark={dark} onToggle={toggleTheme} />
             {isAdmin(me) && (
               <button
                 onClick={() => setPwdOpen(true)}
                 title="Změnit heslo do zázemí"
-                className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-black/10 transition hover:bg-black/5"
+                className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-ink/10 transition hover:bg-ink/5"
               >
                 🔑 Heslo
               </button>
@@ -160,15 +163,18 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             <MeBadge />
             {isAdmin(me) && <AppPowerToggle maint={maint} onChanged={setMaint} />}
           </div>
-          {/* Mobil: hamburger */}
-          <button
-            className="ml-auto inline-flex items-center justify-center rounded-full p-2 text-ink-soft hover:bg-black/5 md:hidden"
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-label={menuOpen ? "Zavřít menu" : "Otevřít menu"}
-            aria-expanded={menuOpen}
-          >
-            <Icon name={menuOpen ? "close" : "menu"} className="h-6 w-6" />
-          </button>
+          {/* Mobil: přepínač den/noc (vlevo od hamburgeru) + hamburger */}
+          <div className="ml-auto flex items-center gap-1 md:hidden">
+            <ThemeToggle dark={dark} onToggle={toggleTheme} />
+            <button
+              className="inline-flex items-center justify-center rounded-full p-2 text-ink-soft hover:bg-ink/5"
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label={menuOpen ? "Zavřít menu" : "Otevřít menu"}
+              aria-expanded={menuOpen}
+            >
+              <Icon name={menuOpen ? "close" : "menu"} className="h-6 w-6" />
+            </button>
+          </div>
         </div>
 
         {/* Desktopová navigace */}
@@ -180,7 +186,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                 key={n.href}
                 href={n.href}
                 className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                  active ? "bg-marigold-600 text-white" : "text-ink-soft hover:bg-black/5"
+                  active ? "bg-marigold-600 text-white" : "text-ink-soft hover:bg-ink/5"
                 }`}
               >
                 <Icon name={n.icon} className="h-4 w-4" /> {n.label}
@@ -220,7 +226,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           )}
           <button
             onClick={doLogout}
-            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium text-ink-soft hover:bg-black/5"
+            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium text-ink-soft hover:bg-ink/5"
           >
             <Icon name="logout" className="h-4 w-4" /> Odhlásit
           </button>
@@ -239,7 +245,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                     setMenuOpen(false);
                     setPwdOpen(true);
                   }}
-                  className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-black/10 hover:bg-black/5"
+                  className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-ink/10 hover:bg-ink/5"
                 >
                   🔑 Heslo
                 </button>
@@ -254,7 +260,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                     href={n.href}
                     onClick={() => setMenuOpen(false)}
                     className={`inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-medium transition-colors ${
-                      active ? "bg-marigold-600 text-white" : "text-ink hover:bg-black/5"
+                      active ? "bg-marigold-600 text-white" : "text-ink hover:bg-ink/5"
                     }`}
                   >
                     <Icon name={n.icon} className="h-5 w-5" /> {n.label}
@@ -295,7 +301,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               )}
               <button
                 onClick={doLogout}
-                className="inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[15px] font-medium text-ink-soft hover:bg-black/5"
+                className="inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[15px] font-medium text-ink-soft hover:bg-ink/5"
               >
                 <Icon name="logout" className="h-5 w-5" /> Odhlásit
               </button>
@@ -405,10 +411,10 @@ function AppPowerToggle({ maint, onChanged }: { maint: boolean | null; onChanged
       onClick={toggle}
       disabled={maint === null || busy}
       title={appOn ? "Aplikace běží — klikni pro údržbu (vypnutí)" : "Údržba — klikni pro zapnutí aplikace"}
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-black/10 transition hover:bg-black/5 disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-ink/10 transition hover:bg-ink/5 disabled:opacity-50"
     >
       <span className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition ${appOn ? "bg-leaf" : "bg-red-500"}`}>
-        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${appOn ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+        <span className={`inline-block h-4 w-4 transform rounded-full bg-[#fff] shadow transition ${appOn ? "translate-x-[18px]" : "translate-x-0.5"}`} />
       </span>
       <span className={appOn ? "text-leaf-700" : "text-red-600"}>{appOn ? "Appka běží" : "Údržba"}</span>
     </button>

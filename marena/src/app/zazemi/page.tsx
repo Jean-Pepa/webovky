@@ -37,7 +37,7 @@ function PollComposer({ draft, setDraft, polls }: { draft: PollDraft; setDraft: 
   const setOpt = (i: number, v: string) => setDraft({ ...draft, options: draft.options.map((x, j) => (j === i ? v : x)) });
   const hasExisting = polls.length > 0;
   return (
-    <div className="rounded-2xl bg-paper2/60 p-3 ring-1 ring-black/10">
+    <div className="rounded-2xl bg-paper2/60 p-3 ring-1 ring-ink/10">
       <label className="flex items-center gap-2 text-sm font-medium text-ink">
         <input
           type="checkbox"
@@ -247,7 +247,7 @@ export default function NastenkaPage() {
                 {photos.map((p) => (
                   <div key={p.id} className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={p.url} alt="příloha" className="h-20 w-20 rounded-lg object-cover ring-1 ring-black/10" />
+                    <img src={p.url} alt="příloha" className="h-20 w-20 rounded-lg object-cover ring-1 ring-ink/10" />
                     <button
                       type="button"
                       onClick={() => removePhoto(p.id)}
@@ -260,7 +260,7 @@ export default function NastenkaPage() {
                 ))}
               </div>
             )}
-            <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-full bg-paper2 px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-black/10 transition hover:bg-black/5">
+            <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-full bg-paper2 px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-ink/10 transition hover:bg-ink/5">
               <span>📷</span> {uploading ? "Nahrávám…" : "Přidat obrázek"}
               <input type="file" accept="image/*" multiple className="hidden" onChange={onPickPhotos} disabled={uploading} />
             </label>
@@ -307,7 +307,7 @@ export default function NastenkaPage() {
       <aside className="min-w-0 space-y-4">
         <WidgetLinks openPolls={openPolls} myTasks={myTasks} myShifts={myShifts} />
         {hasFinance && (
-          <Link href="/zazemi/finance" className="card block p-4 transition hover:border-black/10">
+          <Link href="/zazemi/finance" className="card block p-4 transition hover:border-ink/10">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-base font-semibold">💰 Bilance</h2>
               <span className="text-xs font-medium text-marigold-700">detail →</span>
@@ -424,7 +424,7 @@ function PostPhotos({ ids }: { ids: string[] }) {
             src={url}
             alt={`obrázek ${i + 1}`}
             onClick={() => setViewIdx(i)}
-            className="h-24 w-24 cursor-zoom-in rounded-lg object-cover ring-1 ring-black/10 transition hover:opacity-90"
+            className="h-24 w-24 cursor-zoom-in rounded-lg object-cover ring-1 ring-ink/10 transition hover:opacity-90"
           />
         ))}
       </div>
@@ -533,7 +533,7 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
             {photos.map((ph) => (
               <div key={ph.id} className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={ph.url} alt="příloha" className="h-20 w-20 rounded-lg object-cover ring-1 ring-black/10" />
+                <img src={ph.url} alt="příloha" className="h-20 w-20 rounded-lg object-cover ring-1 ring-ink/10" />
                 <button
                   type="button"
                   onClick={() => removePhoto(ph.id)}
@@ -546,13 +546,13 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
             ))}
           </div>
         )}
-        <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-full bg-paper2 px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-black/10 transition hover:bg-black/5">
+        <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-full bg-paper2 px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-ink/10 transition hover:bg-ink/5">
           <span>📷</span> {uploading ? "Nahrávám…" : "Přidat obrázek"}
           <input type="file" accept="image/*" multiple className="hidden" onChange={onPickPhotos} disabled={uploading} />
         </label>
 
         {poll ? (
-          <p className="rounded-2xl bg-paper2/60 px-3 py-2 text-sm text-ink-soft ring-1 ring-black/10">
+          <p className="rounded-2xl bg-paper2/60 px-3 py-2 text-sm text-ink-soft ring-1 ring-ink/10">
             🗳️ Anketa je k příspěvku připojena: „{poll.question}“. Upravit ji můžeš v sekci Hlasování.
           </p>
         ) : (

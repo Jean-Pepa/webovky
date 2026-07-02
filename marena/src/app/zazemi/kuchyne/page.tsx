@@ -229,7 +229,7 @@ function DrinkCard({ d, place, yearId, editable }: { d: Drink; place: Place; yea
         </ul>
       )}
       {d.note && <p className="mt-1 text-xs text-ink-soft">{d.note}</p>}
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-black/[0.06] pt-2 text-sm">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-ink/[0.06] pt-2 text-sm">
         <span className="text-ink-soft">náklad <strong className="text-ink">{fmtCZK(cost)}</strong></span>
         {showPrice && <span className="text-ink-soft">prodej <strong className="text-ink">{d.price != null ? fmtCZK(d.price) : "—"}</strong></span>}
         {showPrice && margin != null && (
@@ -427,7 +427,7 @@ function FilesSection({ place, editable }: { place: Place; editable: boolean }) 
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <label className="label">Kam to patří</label>
-              <select className="rounded-xl border border-black/10 bg-white px-3 py-2.5 text-base sm:text-sm" value={category} onChange={(e) => setCategory(e.target.value)}>
+              <select className="rounded-xl border border-ink/10 bg-white px-3 py-2.5 text-base sm:text-sm" value={category} onChange={(e) => setCategory(e.target.value)}>
                 {CATS.map((c) => (<option key={c} value={c}>{c}</option>))}
               </select>
             </div>
