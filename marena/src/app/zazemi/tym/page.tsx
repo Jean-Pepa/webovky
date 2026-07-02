@@ -233,7 +233,6 @@ export default function TymPage() {
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-marigold-600 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
                     <Icon name="users" className="h-3.5 w-3.5" />
                     <span className="text-xs leading-none">{people.length}</span>
-                    <span className="opacity-85">· Obsazeno</span>
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-leaf-700">
