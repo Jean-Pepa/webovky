@@ -53,11 +53,11 @@
    měkce bílý (ne čistě #fff), aby „nepálil do očí". Čáry a hovery používají
    v celé appce `ink` s průhledností, takže se převrátí samy. */
 .dark {
-  --color-paper: #0e0f12; /* pozadí stránky — velmi tmavá, ne čistě černá */
-  --color-paper2: #24262c; /* výplně, chipy, hover plochy */
-  --color-surface: #1a1c21; /* karty a inputy — o kousek světlejší než pozadí */
-  --color-ink: #edeef2; /* hlavní text — měkká bílá */
-  --color-ink-soft: #9a9ca6; /* sekundární text */
+  --color-paper: #1e1e21; /* pozadí stránky — měkká tmavá šedá (ne černá) */
+  --color-paper2: #37383d; /* výplně, chipy, hover plochy */
+  --color-surface: #2a2b2f; /* karty a inputy — o stupínek světlejší šedá */
+  --color-ink: #ededf0; /* hlavní text — měkká bílá */
+  --color-ink-soft: #a4a5ad; /* sekundární text */
 
   /* Světlé „tinty" (jemné barevné plochy 50/100/200) → tmavé varianty téhož tónu,
      ať na nočním pozadí neřve bílá/růžová. Sytost akcentů (600/700 pro tlačítka)
@@ -97,7 +97,7 @@
 
 /* Karty na tmavém dostanou jemný „lift" místo (neviditelného) černého stínu. */
 .dark .card {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 18px rgba(0, 0, 0, 0.3);
 }
 
 /* Jemný přechod při přepnutí den/noc (jen barvy, ne layout). */
