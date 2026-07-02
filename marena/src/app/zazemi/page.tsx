@@ -16,6 +16,7 @@ import { isAdmin } from "@/lib/admin";
 import { flash } from "@/components/Flash";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
+import { isPollClosed } from "@/lib/poll";
 import type { Post } from "@/lib/types";
 
 // Koncept ankety připojené k příspěvku (žije pak v sekci Hlasování).
@@ -176,7 +177,7 @@ export default function NastenkaPage() {
     return [...year.events].filter((e) => e.date >= t).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5);
   }, [year]);
 
-  const openPolls = year?.polls.filter((p) => !p.closed).length ?? 0;
+  const openPolls = year?.polls.filter((p) => !isPollClosed(p)).length ?? 0;
   const myTasks = year?.tasks.filter((t) => !t.done && (t.assignee === me || !t.assignee)).length ?? 0;
   const myShifts = (year?.shifts ?? []).filter((s) => s.people.includes(me)).length;
 
