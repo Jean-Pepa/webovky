@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
-import { fmtRelative } from "@/lib/format";
+import { fmtRelative, fmtDateTime } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
 import { isAdmin } from "@/lib/admin";
 import { flash } from "@/components/Flash";
+import { isPollClosed, formatRemaining, DEADLINE_PRESETS, nowPlusHours, isoToLocalInput, localInputToIso } from "@/lib/poll";
 import type { Poll } from "@/lib/types";
 
 export default function HlasovaniPage() {
@@ -19,6 +20,7 @@ export default function HlasovaniPage() {
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [multi, setMulti] = useState(false);
+  const [closesAt, setClosesAt] = useState<string | undefined>(undefined);
   // Když přijdeme z nástěnky přes ?poll=<id>, odscrolujeme a anketu na chvíli zvýrazníme.
   const [highlight, setHighlight] = useState<string | null>(null);
   const year = currentYear;
@@ -42,17 +44,19 @@ export default function HlasovaniPage() {
   async function create() {
     const opts = options.map((o) => o.trim()).filter(Boolean);
     if (!question.trim() || opts.length < 2 || !year) return;
-    await dispatch({ type: "addPoll", yearId: year.id, author: me, question, options: opts, multi });
+    await dispatch({ type: "addPoll", yearId: year.id, author: me, question, options: opts, multi, closesAt });
     setQuestion("");
     setOptions(["", ""]);
     setMulti(false);
+    setClosesAt(undefined);
     setOpen(false);
     flash("Anketa vytvořena", "🗳️");
   }
 
   const polls = [...year.polls]
     .sort((a, b) => {
-      if (a.closed !== b.closed) return a.closed ? 1 : -1;
+      const ac = isPollClosed(a), bc = isPollClosed(b);
+      if (ac !== bc) return ac ? 1 : -1;
       return b.createdAt.localeCompare(a.createdAt);
     })
     .filter((p) => matchesQuery(q, p.question, p.author, p.options.map((o) => o.label).join(" ")));
@@ -102,6 +106,7 @@ export default function HlasovaniPage() {
               + Další možnost
             </button>
           </div>
+          <DeadlineField value={closesAt} onChange={setClosesAt} />
           <div className="flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 text-sm text-ink-soft">
               <input type="checkbox" checked={multi} onChange={(e) => setMulti(e.target.checked)} />
@@ -134,6 +139,53 @@ function votersWord(n: number): string {
   return "lidí hlasovalo";
 }
 
+// Nastavení časového limitu ankety — rychlé volby (za jak dlouho) + přesný čas.
+// Když je limit nastavený, anketa se po jeho vypršení sama uzavře.
+function DeadlineField({ value, onChange }: { value?: string; onChange: (v: string | undefined) => void }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
+  const remaining = value ? formatRemaining(value, now) : null;
+  return (
+    <div className="rounded-2xl bg-paper2/60 p-3 ring-1 ring-ink/10">
+      <p className="mb-2 text-sm font-medium text-ink">⏳ Časový limit (nepovinné) — anketa se pak sama uzavře</p>
+      <div className="flex flex-wrap gap-1.5">
+        {DEADLINE_PRESETS.map((p) => (
+          <button
+            key={p.h}
+            type="button"
+            className="rounded-full px-3 py-1 text-xs font-medium text-ink-soft ring-1 ring-ink/10 transition hover:bg-ink/5"
+            onClick={() => onChange(nowPlusHours(p.h))}
+          >
+            {p.label}
+          </button>
+        ))}
+        <button
+          type="button"
+          className={`rounded-full px-3 py-1 text-xs font-medium transition ${value ? "text-ink-soft ring-1 ring-ink/10 hover:bg-ink/5" : "bg-marigold-600 text-white"}`}
+          onClick={() => onChange(undefined)}
+        >
+          Bez limitu
+        </button>
+      </div>
+      <input
+        type="datetime-local"
+        className="input mt-2"
+        value={value ? isoToLocalInput(value) : ""}
+        onChange={(e) => onChange(localInputToIso(e.target.value))}
+      />
+      {value && (
+        <p className="mt-1.5 text-xs text-ink-soft">
+          Uzavře se {fmtDateTime(value)}
+          {remaining ? ` · zbývá ${remaining}` : " · čas už vypršel"}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { poll: Poll; yearId: string; me: string; totalPeople: number; highlight?: boolean; linkedPost?: { id: string; title: string } }) {
   const { dispatch } = useStore();
   const [showOverview, setShowOverview] = useState(false);
@@ -142,38 +194,55 @@ function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { po
   const admin = isAdmin(me);
   const canEdit = admin || poll.author === me;
 
-  // Úprava ankety (otázka + možnosti). Hlasy u zachovaných možností zůstanou.
+  // Odpočet: každou půlminutu přepočítáme „teď", ať se odpočet i uzavření hýbou.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!poll.closesAt) return;
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, [poll.closesAt]);
+  const closed = isPollClosed(poll, now);
+  const remaining = poll.closesAt && !closed ? formatRemaining(poll.closesAt, now) : null;
+
+  // Úprava ankety (otázka + možnosti + limit). Hlasy u zachovaných možností zůstanou.
   const [editing, setEditing] = useState(false);
   const [q, setQ] = useState(poll.question);
   const [opts, setOpts] = useState<{ id?: string; label: string }[]>([]);
   const [multiEdit, setMultiEdit] = useState(poll.multi);
+  const [closesAtEdit, setClosesAtEdit] = useState<string | undefined>(poll.closesAt);
 
   function startEdit() {
     setQ(poll.question);
     setOpts(poll.options.map((o) => ({ id: o.id, label: o.label })));
     setMultiEdit(poll.multi);
+    setClosesAtEdit(poll.closesAt);
     setEditing(true);
   }
 
   async function saveEdit() {
     const cleaned = opts.map((o) => ({ id: o.id, label: o.label.trim() })).filter((o) => o.label);
     if (!q.trim() || cleaned.length < 2) return;
-    await dispatch({ type: "updatePoll", yearId, pollId: poll.id, question: q, multi: multiEdit, options: cleaned });
+    await dispatch({ type: "updatePoll", yearId, pollId: poll.id, question: q, multi: multiEdit, options: cleaned, closesAt: closesAtEdit ?? null });
     setEditing(false);
   }
 
   return (
     <div
       id={`poll-${poll.id}`}
-      className={`card scroll-mt-24 p-5 transition-shadow ${poll.closed ? "bg-leaf/[0.04] ring-2 ring-leaf" : ""} ${
+      className={`card scroll-mt-24 p-5 transition-shadow ${closed ? "bg-leaf/[0.04] ring-2 ring-leaf" : ""} ${
         highlight ? "ring-2 ring-marigold-500 shadow-[0_0_0_4px_rgba(253,175,34,0.25)]" : ""
       }`}
     >
-      <div className="mb-1 flex items-center gap-2 text-xs text-ink-soft">
+      <div className="mb-1 flex flex-wrap items-center gap-2 text-xs text-ink-soft">
         <span>{poll.author}</span>
         <span>· {fmtRelative(poll.createdAt)}</span>
         {poll.multi && <span className="chip">vícevýběr</span>}
-        {poll.closed && (
+        {remaining && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-marigold-50 px-2.5 py-0.5 text-xs font-semibold text-marigold-700 ring-1 ring-marigold-200" title={`Uzavře se ${fmtDateTime(poll.closesAt!)}`}>
+            ⏳ zbývá {remaining}
+          </span>
+        )}
+        {closed && (
           <span className="badge-closed-glow inline-flex items-center gap-1 rounded-full bg-leaf px-2.5 py-0.5 text-xs font-semibold text-white">
             <Icon name="tasks" className="h-3.5 w-3.5" /> uzavřeno
           </span>
@@ -197,14 +266,14 @@ function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { po
           return (
             <button
               key={o.id}
-              disabled={poll.closed}
+              disabled={closed}
               onClick={async () => {
                 await dispatch({ type: "vote", yearId, pollId: poll.id, optionId: o.id, voter: me });
                 flash(`Hlasoval jsi: ${o.label}`, "🗳️");
               }}
               className={`relative block w-full overflow-hidden rounded-xl border px-3 py-2.5 text-left transition ${
                 mine ? "border-marigold-400 bg-marigold-50" : "border-ink/10 bg-white hover:bg-paper2"
-              } ${poll.closed ? "cursor-default" : "cursor-pointer"}`}
+              } ${closed ? "cursor-default" : "cursor-pointer"}`}
             >
               <span
                 aria-hidden
@@ -254,8 +323,11 @@ function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { po
             </button>
           )}
           {admin && (
-            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => dispatch({ type: "closePoll", yearId, pollId: poll.id })}>
-              {poll.closed ? "Otevřít" : "Uzavřít"}
+            <button
+              className="btn-ghost px-2 py-1 text-xs"
+              onClick={() => dispatch(closed ? { type: "reopenPoll", yearId, pollId: poll.id } : { type: "closePoll", yearId, pollId: poll.id })}
+            >
+              {closed ? "Otevřít" : "Uzavřít"}
             </button>
           )}
           {(admin || poll.author === me) && (
@@ -336,6 +408,7 @@ function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { po
               + Další možnost
             </button>
           </div>
+          <DeadlineField value={closesAtEdit} onChange={setClosesAtEdit} />
           <div className="flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 text-sm text-ink-soft">
               <input type="checkbox" checked={multiEdit} onChange={(e) => setMultiEdit(e.target.checked)} />

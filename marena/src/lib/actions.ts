@@ -40,11 +40,12 @@ export type Action =
   | { type: "updatePost"; yearId: string; postId: string; editedBy: string; patch: { title?: string; body?: string; roleId?: string | null; photoIds?: string[]; pollId?: string } }
   | { type: "togglePin"; yearId: string; postId: string }
   | { type: "removePost"; yearId: string; postId: string }
-  | { type: "addPoll"; yearId: string; author: string; question: string; options: string[]; multi?: boolean; id?: string }
+  | { type: "addPoll"; yearId: string; author: string; question: string; options: string[]; multi?: boolean; id?: string; closesAt?: string }
   | { type: "vote"; yearId: string; pollId: string; optionId: string; voter: string }
   | { type: "removeVoter"; yearId: string; pollId: string; optionId: string; voter: string }
   | { type: "closePoll"; yearId: string; pollId: string }
-  | { type: "updatePoll"; yearId: string; pollId: string; question: string; multi: boolean; options: { id?: string; label: string }[] }
+  | { type: "reopenPoll"; yearId: string; pollId: string }
+  | { type: "updatePoll"; yearId: string; pollId: string; question: string; multi: boolean; options: { id?: string; label: string }[]; closesAt?: string | null }
   | { type: "removePoll"; yearId: string; pollId: string }
   | { type: "addEvent"; yearId: string; date: string; endDate?: string; time?: string; title: string; kind: EventKind; note?: string; author: string }
   | { type: "updateEvent"; yearId: string; eventId: string; patch: { title?: string; date?: string; endDate?: string; time?: string; kind?: EventKind; note?: string } }
@@ -340,6 +341,7 @@ export function applyAction(db: DB, a: Action): DB {
             author: a.author.trim() || "Anonym",
             multi: a.multi ?? false,
             closed: false,
+            closesAt: a.closesAt || undefined,
             options: a.options.map((label) => ({ id: uid("o_"), label: label.trim(), voters: [] })).filter((o) => o.label),
             createdAt: now(),
           },
@@ -402,8 +404,15 @@ export function applyAction(db: DB, a: Action): DB {
             })
             .filter((o): o is { id: string; label: string; voters: string[] } => o !== null);
           if (options.length < 2) return p; // anketa musí mít aspoň 2 možnosti
-          return { ...p, question: a.question.trim() || p.question, multi: a.multi, options };
+          const closesAt = a.closesAt !== undefined ? a.closesAt || undefined : p.closesAt;
+          return { ...p, question: a.question.trim() || p.question, multi: a.multi, options, closesAt };
         }),
+      }));
+    case "reopenPoll":
+      // Znovuotevření: zruší ruční uzavření i případný vypršelý časový limit.
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        polls: y.polls.map((p) => (p.id === a.pollId ? { ...p, closed: false, closesAt: undefined } : p)),
       }));
     case "removePoll":
       // Smazání ankety ji zároveň odpojí od případného příspěvku na nástěnce.
