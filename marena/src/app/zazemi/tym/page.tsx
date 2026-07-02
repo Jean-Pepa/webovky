@@ -56,6 +56,10 @@ export default function TymPage() {
   const myMember = year.members.find((m) => sameName(m.name, me));
   const takenBy = (roleId: string) => year.members.filter((m) => m.roleIds.includes(roleId));
 
+  // Kolik lidí už má aspoň jednu roli (z celkového počtu) + kdo je zatím bez role.
+  const withRoleCount = year.members.filter((m) => m.roleIds.length > 0).length;
+  const roleless = year.members.filter((m) => m.roleIds.length === 0);
+
   // Hledání filtruje posty podle názvu role nebo jména zapsaného člověka.
   const roleMatchesQ = (r: Role) => matchesQuery(q, r.name, r.short, ...takenBy(r.id).map((m) => m.name));
   const mineRoles = ROLES.filter((r) => myMember?.roleIds.includes(r.id) && roleMatchesQ(r));
@@ -470,78 +474,35 @@ export default function TymPage() {
           </section>
         </div>
 
-        {/* Vpravo: počítadlo + seznam všech přihlášených + jejich role */}
+        {/* Vpravo: počítadlo (kolik lidí má roli z celku) + lidi bez role */}
         <aside className="h-fit min-w-0 space-y-4 lg:sticky lg:top-4">
           <div className="flex items-center gap-3 rounded-2xl bg-marigold-600 px-5 py-3 text-white shadow-sm">
             <Icon name="users" className="h-8 w-8 shrink-0" />
             <div className="leading-none">
-              <div className="font-display text-4xl font-bold tracking-tight">{year.members.length}</div>
-              <div className="mt-1 text-xs font-medium uppercase tracking-wide text-white/85">zapsáno v týmu</div>
+              <div className="font-display text-4xl font-bold tracking-tight">
+                {withRoleCount}
+                <span className="text-2xl font-semibold opacity-80"> z {year.members.length}</span>
+              </div>
+              <div className="mt-1 text-xs font-medium uppercase tracking-wide text-white/85">má roli</div>
             </div>
           </div>
+
+          {/* Lidi, kteří ještě nemají žádnou roli. */}
           <section className="card p-4">
             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
-              <Icon name="users" className="h-5 w-5 text-marigold-600" /> Přihlášení ({year.members.length})
+              <Icon name="users" className="h-5 w-5 text-marigold-600" /> Bez role ({roleless.length})
             </h2>
-            {year.members.length === 0 ? (
-              <p className="text-sm text-ink-soft">Zatím nikdo. Buď první!</p>
+            {roleless.length === 0 ? (
+              <p className="text-sm text-ink-soft">Všichni mají roli. 🎉</p>
             ) : (
               <div className="space-y-1.5">
-                {ROLES.filter((r) => takenBy(r.id).length > 0 && roleMatchesQ(r)).map((r) => {
-                  const holders = takenBy(r.id);
-                  const leadId = leadIdOf(r.id);
-                  const lead = holders.find((h) => h.id === leadId);
-                  const helpers = holders.filter((h) => h.id !== leadId);
-                  return (
-                    <Collapsible
-                      key={`${r.id}-${q.length > 0}`}
-                      defaultOpen={q.length > 0}
-                      className="rounded-xl bg-paper2/60 px-2 py-1.5"
-                      header={
-                        <span className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
-                          <span>{r.emoji}</span> {r.name}
-                          <span className="chip">{holders.length}</span>
-                        </span>
-                      }
-                    >
-                      <div className="mt-1.5 space-y-1.5">
-                        {lead && <RosterPerson m={lead} variant="lead" />}
-                        {helpers.length > 0 && (
-                          <div className="ml-3 space-y-1.5 border-l-2 border-marigold-300 pl-3">
-                            {helpers.map((h) => (
-                              <RosterPerson key={h.id} m={h} variant="helper" />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </Collapsible>
-                  );
-                })}
-
-                {year.members.filter((m) => m.roleIds.length === 0).length > 0 && (
-                  <Collapsible
-                    defaultOpen={q.length > 0}
-                    className="rounded-xl bg-paper2/60 px-2 py-1.5"
-                    header={
-                      <span className="flex items-center gap-1.5 text-sm font-semibold text-ink-soft">
-                        Bez role
-                        <span className="chip">{year.members.filter((m) => m.roleIds.length === 0).length}</span>
-                      </span>
-                    }
-                  >
-                    <div className="mt-1.5 space-y-1.5">
-                      {year.members
-                        .filter((m) => m.roleIds.length === 0)
-                        .map((m) => (
-                          <RosterPerson key={m.id} m={m} variant="none" />
-                        ))}
-                    </div>
-                  </Collapsible>
-                )}
+                {roleless.map((m) => (
+                  <RosterPerson key={m.id} m={m} variant="none" />
+                ))}
               </div>
             )}
             {!admin && (
-              <p className="mt-3 text-[11px] text-ink-soft/60">Upravovat a mazat lidi v seznamu může jen správce.</p>
+              <p className="mt-3 text-[11px] text-ink-soft/60">Upravovat a mazat lidi může jen správce.</p>
             )}
           </section>
         </aside>
