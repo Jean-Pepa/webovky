@@ -32,8 +32,9 @@ export const viewport: Viewport = {
 };
 
 // Noční režim jen v zázemí. Skript běží ještě před vykreslením, aby při tvrdém
-// načtení /zazemi… nezablikalo světlé pozadí (žádný FOUC). Volbu drží localStorage.
-const THEME_SCRIPT = `(function(){try{if(localStorage.getItem('marena_theme')==='dark'&&location.pathname.indexOf('/zazemi')===0){document.documentElement.classList.add('dark');}}catch(e){}})();`;
+// načtení /zazemi… nezablikalo světlé pozadí (žádný FOUC). Tři stavy: uložené
+// "dark"/"light" vyhrává; bez volby se řídí nastavením telefonu (prefers-color-scheme).
+const THEME_SCRIPT = `(function(){try{if(location.pathname.indexOf('/zazemi')!==0)return;var v=localStorage.getItem('marena_theme');var dark=v==='dark'||(v!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(dark)document.documentElement.classList.add('dark');}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -123,7 +123,7 @@ export default function ProvozPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Provoz &amp; směny</h1>
+          <h1 className="font-marquee glow-gold text-2xl">Provoz &amp; směny</h1>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Přidat směnu"}
@@ -168,7 +168,7 @@ export default function ProvozPage() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${filter === f ? "bg-marigold-600 text-white" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"}`}
+              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${filter === f ? "bg-gold-500 text-[#1d1d1f]" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"}`}
             >
               {l}
             </button>
@@ -246,7 +246,7 @@ function RozvrhRow({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
   const t = [shift.from, shift.to].filter(Boolean).join("–");
 
   return (
-    <li className={`flex flex-col gap-2 p-3 sm:flex-row sm:items-center ${mine ? "bg-marigold-50/50" : ""}`}>
+    <li className={`flex flex-col gap-2 p-3 sm:flex-row sm:items-center ${mine ? "bg-gold-50/50" : ""}`}>
       <div className="flex min-w-0 flex-1 items-start gap-2">
         <span className="shrink-0 text-base">{areaEmoji(shift.area)}</span>
         <div className="min-w-0">
@@ -257,7 +257,7 @@ function RozvrhRow({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
           <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
             {shift.people.length > 0 ? (
               shift.people.map((p) => (
-                <span key={p} className={`chip ${p === me ? "bg-marigold-600 text-white" : ""}`}>{p}</span>
+                <span key={p} className={`chip ${p === me ? "bg-gold-500 text-[#1d1d1f]" : ""}`}>{p}</span>
               ))
             ) : (
               <span className="text-ink-soft/70">zatím nikdo</span>
@@ -270,7 +270,7 @@ function RozvrhRow({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
       </div>
       <div className="flex shrink-0 gap-1.5">
         <button
-          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${mine ? "bg-marigold-600 text-white" : full ? "bg-paper2 text-ink-soft/50" : "bg-leaf/12 text-leaf-700 hover:bg-leaf/20"}`}
+          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${mine ? "bg-gold-500 text-[#1d1d1f]" : full ? "bg-paper2 text-ink-soft/50" : "bg-leaf/12 text-leaf-700 hover:bg-leaf/20"}`}
           onClick={async () => {
             if (full && !mine) return;
             const wasMine = mine;
@@ -282,7 +282,7 @@ function RozvrhRow({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
           {mine ? "Odhlásit" : full ? "Plno" : "Přihlásit"}
         </button>
         <button
-          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${inBackup ? "bg-marigold-600/15 text-marigold-700" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
+          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${inBackup ? "bg-gold-600/15 text-gold-700" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
           onClick={async () => {
             const wasBackup = inBackup;
             await dispatch({ type: "signShiftBackup", yearId, shiftId: shift.id, name: me });
@@ -308,7 +308,7 @@ function ShiftCard({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
   const time = timeLabel(shift);
 
   return (
-    <div className={`card flex flex-col p-4 ${mine ? "ring-2 ring-marigold-400" : ""}`}>
+    <div className={`card flex flex-col p-4 ${mine ? "ring-2 ring-gold-400" : ""}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="font-display text-base font-semibold">{shift.title || shift.area}</h3>
@@ -320,7 +320,7 @@ function ShiftCard({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
       <div className="mt-2">
         <span
           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-            cap === 0 ? "bg-paper2 text-ink-soft" : full ? "bg-marigold-600 text-white" : "bg-leaf/12 text-leaf-700"
+            cap === 0 ? "bg-paper2 text-ink-soft" : full ? "bg-gold-500 text-[#1d1d1f]" : "bg-leaf/12 text-leaf-700"
           }`}
         >
           {cap === 0 ? `${filled} přihlášeno` : full ? "Plno" : `${filled}/${cap} obsazeno`}
@@ -330,7 +330,7 @@ function ShiftCard({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
       {shift.people.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {shift.people.map((p) => (
-            <span key={p} className={`chip inline-flex items-center gap-1 ${p === me ? "bg-marigold-600 text-white" : ""}`}>
+            <span key={p} className={`chip inline-flex items-center gap-1 ${p === me ? "bg-gold-500 text-[#1d1d1f]" : ""}`}>
               {p}
               {admin && (
                 <button
@@ -350,7 +350,7 @@ function ShiftCard({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-soft">
           <span>záloha:</span>
           {(shift.backup ?? []).map((p) => (
-            <span key={p} className={`chip inline-flex items-center gap-1 ${p === me ? "bg-marigold-600/15 text-marigold-700" : ""}`}>
+            <span key={p} className={`chip inline-flex items-center gap-1 ${p === me ? "bg-gold-600/15 text-gold-700" : ""}`}>
               {p}
               {admin && (
                 <button onClick={() => dispatch({ type: "removeShiftPerson", yearId, shiftId: shift.id, name: p })} className="text-ink-soft/60 hover:text-red-600" title={`Odebrat ze zálohy — ${p}`}>
@@ -385,7 +385,7 @@ function ShiftCard({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
           </button>
         )}
         <button
-          className={`rounded-full px-3 py-2 text-sm font-medium transition ${inBackup ? "bg-marigold-600/15 text-marigold-700" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
+          className={`rounded-full px-3 py-2 text-sm font-medium transition ${inBackup ? "bg-gold-600/15 text-gold-700" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
           onClick={async () => {
             const wasBackup = inBackup;
             await dispatch({ type: "signShiftBackup", yearId, shiftId: shift.id, name: me });

@@ -111,7 +111,7 @@ export default function ProgramPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Program</h1>
+          <h1 className="font-marquee glow-gold text-2xl">Program</h1>
         </div>
         {canEdit && (
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
@@ -121,7 +121,7 @@ export default function ProgramPage() {
       </div>
 
       {!canEdit && (
-        <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
+        <div className="flex items-start gap-2 rounded-2xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
           <Icon name="mic" className="mt-0.5 h-4 w-4 shrink-0" />
           <span>Program vidí každý, upravovat ho může jen kapelník, koordinátor přednášek, bavič a správce.</span>
         </div>
@@ -245,7 +245,7 @@ function InterestControl({ invite }: { invite: Invite }) {
   if (invite.interest === "ne")
     return <span className="inline-flex rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600">👎 odmítl</span>;
   if (invite.contacted)
-    return <span className="inline-flex rounded-full bg-marigold-100 px-2.5 py-1 text-xs font-medium text-marigold-800">čeká</span>;
+    return <span className="inline-flex rounded-full bg-gold-100 px-2.5 py-1 text-xs font-medium text-gold-800">čeká</span>;
   return <span className="text-xs text-ink-soft/50">—</span>;
 }
 
@@ -406,7 +406,7 @@ function InviteCard({ invite, yearId, index, canEdit }: { invite: Invite; yearId
         <div className="min-w-0 flex-1">
           <span className="font-medium">{invite.name}</span>
           {invite.link && (
-            <a href={invite.link.startsWith("http") ? invite.link : `https://${invite.link}`} target="_blank" rel="noreferrer" className="ml-2 text-xs font-medium text-marigold-700 hover:underline">
+            <a href={invite.link.startsWith("http") ? invite.link : `https://${invite.link}`} target="_blank" rel="noreferrer" className="ml-2 text-xs font-medium text-gold-700 hover:underline">
               odkaz ↗
             </a>
           )}
@@ -478,7 +478,7 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
       <td className="px-3 py-3">
         <span className="font-medium">{invite.name}</span>
         {invite.link && (
-          <a href={invite.link.startsWith("http") ? invite.link : `https://${invite.link}`} target="_blank" rel="noreferrer" className="ml-2 text-xs font-medium text-marigold-700 hover:underline">
+          <a href={invite.link.startsWith("http") ? invite.link : `https://${invite.link}`} target="_blank" rel="noreferrer" className="ml-2 text-xs font-medium text-gold-700 hover:underline">
             odkaz ↗
           </a>
         )}

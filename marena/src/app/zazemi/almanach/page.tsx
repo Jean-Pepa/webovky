@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 const CALLOUT_STYLE: Record<Callout["kind"], { label: string; cls: string; emoji: string }> = {
   tip: { label: "Tip", cls: "border-leaf/30 bg-leaf/10 text-ink", emoji: "💡" },
-  pozor: { label: "Pozor", cls: "border-marigold-300 bg-marigold-50 text-ink", emoji: "⚠️" },
+  pozor: { label: "Pozor", cls: "border-gold-300 bg-gold-50 text-ink", emoji: "⚠️" },
   kontakt: { label: "Kontakt", cls: "border-sky/30 bg-sky/10 text-ink", emoji: "📇" },
 };
 
@@ -15,7 +15,7 @@ export default function AlmanachPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Almanach Mařeny</h1>
+        <h1 className="font-marquee glow-gold text-2xl">Almanach Mařeny</h1>
         <p className="text-sm text-ink-soft">
           Veškerá nasbíraná moudrost dvou ročníků v jednom dokumentu — interní manuál pro ty, kdo
           Mařenu organizují. Čti, doplňuj a předávej dál.
@@ -43,7 +43,7 @@ export default function AlmanachPage() {
               <div className="flex items-center gap-3">
                 <span className="grid h-11 w-11 place-items-center rounded-2xl bg-paper2 text-2xl">{s.emoji}</span>
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-marigold-700">Kapitola {String(i + 1).padStart(2, "0")}</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-gold-700">Kapitola {String(i + 1).padStart(2, "0")}</p>
                   <h2 className="font-display text-xl font-semibold tracking-tight">{s.title}</h2>
                 </div>
               </div>
@@ -53,7 +53,7 @@ export default function AlmanachPage() {
               <ul className="mt-3 space-y-2">
                 {s.tips.map((tip, j) => (
                   <li key={j} className="flex gap-3">
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-marigold-600" />
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold-600" />
                     <span className="text-[15px] leading-relaxed">{tip}</span>
                   </li>
                 ))}

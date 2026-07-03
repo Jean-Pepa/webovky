@@ -220,7 +220,7 @@ export default function WebEditorPage() {
     <div className="space-y-5 pb-24">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Správa webu</h1>
+          <h1 className="font-marquee glow-gold text-2xl">Správa webu</h1>
           <p className="mt-0.5 text-sm text-ink-soft">
             Uprav texty, nadpisy, fotky a novinky na veřejné homepage. Prázdné pole = zůstane výchozí text.
           </p>
@@ -256,14 +256,14 @@ export default function WebEditorPage() {
                 type="button"
                 onClick={() => setTheme(th.id)}
                 className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition ${
-                  on ? "border-marigold-500 bg-marigold-50 ring-2 ring-marigold-500/30" : "border-ink/10 hover:bg-ink/[0.03]"
+                  on ? "border-gold-500 bg-gold-50 ring-2 ring-gold-500/30" : "border-ink/10 hover:bg-ink/[0.03]"
                 }`}
               >
                 <span className="text-2xl">{th.emoji}</span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2 font-semibold">
                     {th.name}
-                    {on && <span className="rounded-full bg-marigold-600 px-2 py-0.5 text-[11px] font-semibold text-white">Aktivní</span>}
+                    {on && <span className="rounded-full bg-gold-500 px-2 py-0.5 text-[11px] font-semibold text-[#1d1d1f]">Aktivní</span>}
                   </span>
                   <span className="mt-0.5 block text-xs text-ink-soft">{th.desc}</span>
                 </span>
@@ -318,7 +318,7 @@ export default function WebEditorPage() {
           <button
             key={l}
             onClick={() => setLang(l)}
-            className={`rounded-xl px-3 py-1.5 text-sm font-medium transition ${lang === l ? "bg-marigold-600 text-white" : "text-ink-soft hover:bg-ink/5"}`}
+            className={`rounded-xl px-3 py-1.5 text-sm font-medium transition ${lang === l ? "bg-gold-500 text-[#1d1d1f]" : "text-ink-soft hover:bg-ink/5"}`}
           >
             {LANG_LABEL[l]}
           </button>

@@ -10,7 +10,7 @@ import type { Decor, DecorStatus } from "@/lib/types";
 
 const STATUS: Record<DecorStatus, { label: string; cls: string; order: number }> = {
   napad: { label: "💡 nápad", cls: "bg-paper2 text-ink-soft", order: 0 },
-  shani: { label: "🛒 shání se", cls: "bg-marigold-600/12 text-marigold-700", order: 1 },
+  shani: { label: "🛒 shání se", cls: "bg-gold-600/12 text-gold-700", order: 1 },
   hotovo: { label: "✅ hotovo", cls: "bg-leaf/15 text-leaf-700", order: 2 },
 };
 const NEXT: Record<DecorStatus, DecorStatus> = { napad: "shani", shani: "hotovo", hotovo: "napad" };
@@ -55,7 +55,7 @@ export default function VyzdobaPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Výzdoba 🎨</h1>
+          <h1 className="font-marquee glow-gold text-2xl">Výzdoba 🎨</h1>
           <p className="mt-0.5 text-sm text-ink-soft">Nápady a materiál na výzdobu dvora i fakulty. Klikni na stav: nápad → shání se → hotovo.</p>
         </div>
         {canEdit && (
@@ -169,7 +169,7 @@ function DecorRow({ d, yearId, canEdit }: { d: Decor; yearId: string; canEdit: b
         <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
           {d.who && <span>👤 {d.who}</span>}
           {d.link && (
-            <a href={d.link.startsWith("http") ? d.link : `https://${d.link}`} target="_blank" rel="noreferrer" className="break-all text-marigold-700 hover:underline">
+            <a href={d.link.startsWith("http") ? d.link : `https://${d.link}`} target="_blank" rel="noreferrer" className="break-all text-gold-700 hover:underline">
               🔗 odkaz
             </a>
           )}

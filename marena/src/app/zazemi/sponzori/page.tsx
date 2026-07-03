@@ -42,7 +42,7 @@ function LinksEditor({ links, setLinks }: { links: string[]; setLinks: Dispatch<
 
 const STATUS: Record<SponsorStatus, { label: string; cls: string }> = {
   oslovit: { label: "📋 oslovit", cls: "bg-paper2 text-ink-soft" },
-  ceka: { label: "⏳ čeká", cls: "bg-marigold-600/12 text-marigold-700" },
+  ceka: { label: "⏳ čeká", cls: "bg-gold-600/12 text-gold-700" },
   potvrzeno: { label: "✅ potvrzeno", cls: "bg-leaf/15 text-leaf-700" },
   odmitl: { label: "✖️ odmítl", cls: "bg-red-500/10 text-red-600" },
 };
@@ -126,7 +126,7 @@ export default function SponzoriPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Sponzoři ✨</h1>
+          <h1 className="font-marquee glow-gold text-2xl">Sponzoři ✨</h1>
           <p className="mt-0.5 text-sm text-ink-soft">Koho oslovit, co dává a jak domluva stojí. Klikni na stav: oslovit → čeká → potvrzeno → odmítl.</p>
         </div>
         {canEdit && (
@@ -165,7 +165,7 @@ export default function SponzoriPage() {
                   key={c.id}
                   type="button"
                   onClick={() => setCategory(c.id)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${category === c.id ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${category === c.id ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
                 >
                   {c.emoji} {c.label}
                 </button>
@@ -271,7 +271,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
                 key={c.id}
                 type="button"
                 onClick={() => setCategory(c.id)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${category === c.id ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition ${category === c.id ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
               >
                 {c.emoji} {c.label}
               </button>
@@ -325,7 +325,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
         <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
           {s.who && <span>👤 {s.who}</span>}
           {linksOf(s).map((l, i, arr) => (
-            <a key={i} href={hrefOf(l)} target="_blank" rel="noreferrer" className="break-all text-marigold-700 hover:underline">
+            <a key={i} href={hrefOf(l)} target="_blank" rel="noreferrer" className="break-all text-gold-700 hover:underline">
               🔗 odkaz{arr.length > 1 ? ` ${i + 1}` : ""}
             </a>
           ))}

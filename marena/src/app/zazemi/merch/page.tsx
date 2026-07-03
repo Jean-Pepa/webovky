@@ -46,7 +46,7 @@ export default function MerchPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Merch</h1>
+        <h1 className="font-marquee glow-gold text-2xl">Merch</h1>
         <p className="text-sm text-ink-soft">
           {canManage ? "Nahraj fotky nabídky, sdílej QR kód a sleduj objednávky." : "Nabídka merche a QR kód k objednání."}
         </p>
@@ -62,7 +62,7 @@ export default function MerchPage() {
             🔒 Tento ročník je uzamčený — nabídku jde jen prohlížet.
           </p>
         ) : (
-          <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
+          <div className="flex items-start gap-2 rounded-2xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
             <Icon name="merch" className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
               Nabídku může spravovat jen role <strong>Merch</strong> a správce. Ty máš jen náhled.
@@ -87,7 +87,7 @@ export default function MerchPage() {
         <section className="space-y-3">
           <h2 className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
             Objednávky
-            <span className="grid h-8 min-w-8 place-items-center rounded-full bg-marigold-600 px-2.5 font-display text-base font-bold text-white">
+            <span className="grid h-8 min-w-8 place-items-center rounded-full bg-gold-500 px-2.5 font-display text-base font-bold text-[#1d1d1f]">
               {orders.length}
             </span>
             {pending > 0 && (
@@ -128,7 +128,7 @@ export default function MerchPage() {
               </div>
               <div className="flex justify-between gap-2 border-t border-ink/10 pt-1.5">
                 <dt className="text-ink-soft">Tržba celkem</dt>
-                <dd className="font-display text-base font-bold text-marigold-700">{fmtCZK(revenue)}</dd>
+                <dd className="font-display text-base font-bold text-gold-700">{fmtCZK(revenue)}</dd>
               </div>
               <div className="flex justify-between gap-2">
                 <dt className="text-ink-soft">Z toho vyřízeno</dt>

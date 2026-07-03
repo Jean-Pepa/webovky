@@ -32,12 +32,12 @@ export function Onboarding() {
   }
 
   return (
-    <div className="card relative overflow-hidden border-marigold-200 bg-gradient-to-br from-marigold-50 to-surface p-5">
+    <div className="card relative overflow-hidden border-gold-200 bg-gradient-to-br from-gold-50 to-surface p-5">
       <button onClick={dismiss} className="absolute right-4 top-4 text-ink-soft/60 hover:text-ink" aria-label="Zavřít">
         ✕
       </button>
       <div className="flex items-center gap-2">
-        <span className="grid h-9 w-9 place-items-center rounded-xl bg-marigold-600 text-white">
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-gold-500 text-[#1d1d1f]">
           <Icon name="spark" className="h-5 w-5" />
         </span>
         <div>
@@ -46,7 +46,7 @@ export function Onboarding() {
         </div>
       </div>
 
-      <div className="mt-3 rounded-2xl border border-marigold-200 bg-surface/70 p-3">
+      <div className="mt-3 rounded-2xl border border-gold-200 bg-surface/70 p-3">
         <p className="text-sm font-semibold text-ink">Všechno na jednom místě — žádné další platformy.</p>
         <p className="mt-0.5 text-xs text-ink-soft">
           Konec hledání po Messengeru, WhatsAppu, mailech, Excelech a skupinách. Tým, nástěnka, směny, hlasování,
@@ -61,7 +61,7 @@ export function Onboarding() {
               <span className="grid h-7 w-7 place-items-center rounded-lg bg-paper2 text-ink">
                 <Icon name={s.icon} className="h-4 w-4" />
               </span>
-              <span className="text-xs font-semibold text-marigold-700">{i + 1}.</span>
+              <span className="text-xs font-semibold text-gold-700">{i + 1}.</span>
             </div>
             <h3 className="mt-2 text-sm font-semibold">{s.title}</h3>
             <p className="mt-0.5 text-xs text-ink-soft">{s.text}</p>

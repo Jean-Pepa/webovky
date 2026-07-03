@@ -84,7 +84,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const [pwdOpen, setPwdOpen] = useState(false);
   const [boardUnread, setBoardUnread] = useState(0);
   const [maint, setMaint] = useState<boolean | null>(null); // režim údržby (null = ještě nevíme)
-  const { dark, toggle: toggleTheme } = useZazemiTheme();
+  const { mode: themeMode, cycle: cycleTheme } = useZazemiTheme();
 
   useEffect(() => {
     if (ready && !authed) router.replace("/prihlaseni");
@@ -184,7 +184,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           </div>
           {/* Desktop: přepínač den/noc + heslo (správce) + přepínač ročníku + jméno */}
           <div className="ml-auto hidden items-center gap-2 md:flex">
-            <ThemeToggle dark={dark} onToggle={toggleTheme} />
+            <ThemeToggle mode={themeMode} onCycle={cycleTheme} />
             {isAdmin(me) && (
               <button
                 onClick={() => setPwdOpen(true)}
@@ -200,7 +200,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           </div>
           {/* Mobil: přepínač den/noc (vlevo od hamburgeru) + hamburger */}
           <div className="ml-auto flex items-center gap-1 md:hidden">
-            <ThemeToggle dark={dark} onToggle={toggleTheme} />
+            <ThemeToggle mode={themeMode} onCycle={cycleTheme} />
             <button
               className="inline-flex items-center justify-center rounded-full p-2 text-ink-soft hover:bg-ink/5"
               onClick={() => setMenuOpen((o) => !o)}

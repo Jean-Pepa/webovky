@@ -39,7 +39,7 @@ export default function PrvaciPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Prváci ⭐</h1>
+          <h1 className="font-marquee glow-gold text-2xl">Prváci ⭐</h1>
           <p className="mt-0.5 text-sm text-ink-soft">Seznam prváků, o které celá Mařena je. Zapisuje se ručně.</p>
         </div>
         {canEdit && (
@@ -117,7 +117,7 @@ function FreshmanRow({ f, yearId, canEdit }: { f: Freshman; yearId: string; canE
       <div className="min-w-0 flex-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
         <p className="break-words font-medium">{f.name}</p>
         {f.email && (
-          <a href={`mailto:${f.email}`} className="break-all text-xs text-ink-soft hover:text-marigold-700">
+          <a href={`mailto:${f.email}`} className="break-all text-xs text-ink-soft hover:text-gold-700">
             ✉️ {f.email}
           </a>
         )}

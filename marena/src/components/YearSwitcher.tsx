@@ -63,7 +63,7 @@ export function YearSwitcher() {
                       setOpen(false);
                     }}
                     className={`min-w-0 flex-1 truncate rounded-xl px-3 py-2 text-left text-sm font-medium transition ${
-                      isCurrent ? "bg-marigold-50 text-marigold-700" : "text-ink hover:bg-paper2"
+                      isCurrent ? "bg-gold-50 text-gold-700" : "text-ink hover:bg-paper2"
                     }`}
                   >
                     {y.label} {locked && <span title="uzamčený ročník">🔒</span>}
@@ -92,7 +92,7 @@ export function YearSwitcher() {
                 setAdding(true);
                 setOpen(false);
               }}
-              className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-marigold-700 transition hover:bg-marigold-50"
+              className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-gold-700 transition hover:bg-gold-50"
             >
               + Nový ročník
             </button>
@@ -135,10 +135,10 @@ function NewYearModal({ onClose }: { onClose: () => void }) {
           />
         </div>
         <p className="rounded-xl bg-paper2 px-3 py-2 text-sm text-ink-soft">
-          Heslo pro tento ročník bude <strong className="text-marigold-700">marena{newYear || "…"}</strong>. To rozešleš nové partě.
+          Heslo pro tento ročník bude <strong className="text-gold-700">marena{newYear || "…"}</strong>. To rozešleš nové partě.
         </p>
         <label className="flex items-center gap-2 text-sm text-ink-soft">
-          <input type="checkbox" checked={carry} onChange={(e) => setCarry(e.target.checked)} className="accent-marigold-600" />
+          <input type="checkbox" checked={carry} onChange={(e) => setCarry(e.target.checked)} className="accent-gold-600" />
           Převzít kontakty a program z aktuálního ročníku
         </label>
         <div className="flex items-center gap-2 pt-1">
