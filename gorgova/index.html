@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gorgova · Rybářský průvodce deltou Dunaje</title>
+<meta name="description" content="Detailní rybářský průvodce okolím Agropenzionu Beluga Gorgova v deltě Dunaje — mapa lovišť, druhy ryb, nástrahy, pravidla, počasí a příprava.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎣%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#mapa">Přeskočit na mapu</a>
+
+<header class="topbar" id="top">
+  <div class="topbar-inner">
+    <a class="brand" href="#top">
+      <span class="brand-icon" aria-hidden="true">🎣</span>
+      <span class="brand-text"><strong>Gorgova</strong><small>průvodce deltou Dunaje</small></span>
+    </a>
+    <nav class="mainnav" aria-label="Hlavní navigace">
+      <a href="#prehled">Přehled</a>
+      <a href="#mapa">Mapa</a>
+      <a href="#loviste">Loviště</a>
+      <a href="#ryby">Ryby</a>
+      <a href="#sezona">Sezóna&nbsp;a&nbsp;počasí</a>
+      <a href="#pravidla">Pravidla</a>
+      <a href="#priprava">Příprava</a>
+      <a href="#penzion">Penzion&nbsp;a&nbsp;doprava</a>
+    </nav>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Přepnout světlý/tmavý režim">🌙</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ PŘEHLED ============ -->
+  <section id="prehled" class="hero">
+    <div class="wrap">
+      <p class="hero-kicker">Delta Dunaje · Rumunsko · biosférická rezervace UNESCO</p>
+      <h1>Rybaření kolem Gorgové</h1>
+      <p class="hero-lead" id="heroLead"></p>
+      <div class="stat-row" id="heroStats"></div>
+      <div class="hero-note" id="heroNote"></div>
+    </div>
+  </section>
+
+  <!-- ============ MAPA ============ -->
+  <section id="mapa" class="section section-map">
+    <div class="wrap">
+      <h2>Mapa lovišť</h2>
+      <p class="section-lead" id="mapLead"></p>
+      <div class="filter-row" id="mapFilters" role="group" aria-label="Filtr lovišť podle ryby"></div>
+    </div>
+    <div class="map-shell">
+      <div id="map" aria-label="Interaktivní mapa lovišť v deltě Dunaje"></div>
+    </div>
+    <div class="wrap">
+      <div class="map-legend" id="mapLegend"></div>
+    </div>
+  </section>
+
+  <!-- ============ LOVIŠTĚ ============ -->
+  <section id="loviste" class="section">
+    <div class="wrap">
+      <h2>Loviště podrobně</h2>
+      <p class="section-lead">Seřazeno od nejbližších k penzionu. Štítek u názvu říká, jak dobře je informace ověřená napříč zdroji.</p>
+      <div class="cards" id="spotCards"></div>
+    </div>
+  </section>
+
+  <!-- ============ RYBY ============ -->
+  <section id="ryby" class="section">
+    <div class="wrap">
+      <h2>Ryby delty — na co, jak a kdy</h2>
+      <p class="section-lead" id="fishLead"></p>
+      <div class="cards" id="fishCards"></div>
+    </div>
+  </section>
+
+  <!-- ============ SEZÓNA A POČASÍ ============ -->
+  <section id="sezona" class="section">
+    <div class="wrap">
+      <h2>Sezóna a počasí</h2>
+      <p class="section-lead" id="seasonLead"></p>
+
+      <div class="viz-root">
+        <div class="chart-card">
+          <h3>Teploty v Gorgové po měsících</h3>
+          <p class="chart-sub" id="tempChartSub"></p>
+          <div class="chart" id="tempChart"></div>
+          <details class="table-view"><summary>Zobrazit jako tabulku</summary><div id="tempTable"></div></details>
+        </div>
+
+        <div class="chart-grid">
+          <div class="chart-card">
+            <h3>Srážky</h3>
+            <p class="chart-sub" id="precipChartSub"></p>
+            <div class="chart" id="precipChart"></div>
+          </div>
+          <div class="chart-card">
+            <h3>Kdy co bere</h3>
+            <p class="chart-sub">Aktivita hlavních druhů podle měsíce (souhrn ze zdrojů průvodců).</p>
+            <div class="chart" id="seasonMatrix"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-grid" id="seasonInfo"></div>
+    </div>
+  </section>
+
+  <!-- ============ PRAVIDLA ============ -->
+  <section id="pravidla" class="section">
+    <div class="wrap">
+      <h2>Pravidla a povolenky</h2>
+      <p class="section-lead" id="rulesLead"></p>
+      <div class="rules" id="rulesBlocks"></div>
+    </div>
+  </section>
+
+  <!-- ============ PŘÍPRAVA ============ -->
+  <section id="priprava" class="section">
+    <div class="wrap">
+      <h2>Příprava na cestu</h2>
+      <p class="section-lead">Interaktivní checklisty — zaškrtnuté položky se pamatují v tomto prohlížeči.</p>
+      <div class="checklists" id="checklists"></div>
+    </div>
+  </section>
+
+  <!-- ============ PENZION A DOPRAVA ============ -->
+  <section id="penzion" class="section">
+    <div class="wrap">
+      <h2>Penzion Beluga a jak se tam dostat</h2>
+      <div class="pension" id="pensionBlocks"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div id="footerSources"></div>
+    <p class="footer-note" id="footerNote"></p>
+  </div>
+</footer>
+
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
