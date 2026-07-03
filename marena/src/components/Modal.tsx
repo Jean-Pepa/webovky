@@ -40,7 +40,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
       >
-        {title && <h2 className="mb-4 font-display text-lg font-semibold tracking-tight">{title}</h2>}
+        {title && <h2 className="mb-4 font-display text-[20px] font-semibold tracking-tight">{title}</h2>}
         {children}
       </div>
     </div>,

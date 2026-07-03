@@ -41,7 +41,7 @@ export function Onboarding() {
           <Icon name="spark" className="h-5 w-5" />
         </span>
         <div>
-          <h2 className="font-display text-lg font-semibold tracking-tight">Vítej v zázemí Mařeny</h2>
+          <h2 className="font-display text-[20px] font-semibold tracking-tight">Vítej v zázemí Mařeny</h2>
           <p className="text-sm text-ink-soft">Hlavní místo, kde běží celá organizace. Ve čtyřech krocích jsi v obraze:</p>
         </div>
       </div>
