@@ -76,7 +76,7 @@ export default function KontaktyPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-marquee glow-gold text-2xl">Kontakty &amp; odkazy</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">Kontakty &amp; odkazy</h1>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Přidat kontakt"}

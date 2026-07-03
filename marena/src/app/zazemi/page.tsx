@@ -230,7 +230,7 @@ export default function NastenkaPage() {
       <div className="min-w-0 space-y-5">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <h1 className="font-marquee glow-gold text-2xl">Nástěnka</h1>
+            <h1 className="font-display text-2xl font-semibold tracking-tight">Nástěnka</h1>
           </div>
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
             {open ? "Zavřít" : "+ Přidat info"}

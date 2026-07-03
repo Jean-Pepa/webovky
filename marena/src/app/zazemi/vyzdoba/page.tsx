@@ -55,7 +55,7 @@ export default function VyzdobaPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-marquee glow-gold text-2xl">Výzdoba 🎨</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">Výzdoba</h1>
           <p className="mt-0.5 text-sm text-ink-soft">Nápady a materiál na výzdobu dvora i fakulty. Klikni na stav: nápad → shání se → hotovo.</p>
         </div>
         {canEdit && (

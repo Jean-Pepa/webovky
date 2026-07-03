@@ -46,7 +46,7 @@ export default function MerchPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-marquee glow-gold text-2xl">Merch</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Merch</h1>
         <p className="text-sm text-ink-soft">
           {canManage ? "Nahraj fotky nabídky, sdílej QR kód a sleduj objednávky." : "Nabídka merche a QR kód k objednání."}
         </p>

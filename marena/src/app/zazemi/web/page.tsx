@@ -220,7 +220,7 @@ export default function WebEditorPage() {
     <div className="space-y-5 pb-24">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-marquee glow-gold text-2xl">Správa webu</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">Správa webu</h1>
           <p className="mt-0.5 text-sm text-ink-soft">
             Uprav texty, nadpisy, fotky a novinky na veřejné homepage. Prázdné pole = zůstane výchozí text.
           </p>

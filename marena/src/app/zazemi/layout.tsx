@@ -465,7 +465,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               pathname === "/zazemi" && !sheet ? "text-gold-700" : "text-ink-soft"
             }`}
           >
-            <span className={`relative ${pathname === "/zazemi" && !sheet ? "glow-gold-icon" : ""}`}>
+            <span className="relative">
               <Icon name="board" className="h-6 w-6" />
               {boardUnread > 0 && (
                 <span className="absolute -right-2 -top-1 grid h-4 min-w-[16px] place-items-center rounded-full bg-red-600 px-0.5 text-[9px] font-bold leading-none text-white">
@@ -487,7 +487,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   open || active ? "text-gold-700" : "text-ink-soft"
                 }`}
               >
-                <span className={open || active ? "glow-gold-icon" : ""}>
+                <span>
                   <Icon name={g.icon} className="h-6 w-6" />
                 </span>
                 {g.label}

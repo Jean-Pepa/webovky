@@ -68,7 +68,7 @@ export default function UkolyPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <div>
-        <h1 className="font-marquee glow-gold text-2xl">Úkoly</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Úkoly</h1>
       </div>
 
       {/* progress */}

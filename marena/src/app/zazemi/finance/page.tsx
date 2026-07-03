@@ -208,7 +208,7 @@ export default function FinancePage() {
       </datalist>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-marquee glow-gold text-2xl">Finance</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">Finance</h1>
         </div>
         {canAdd && (
           <div className="flex flex-wrap items-center gap-2">

@@ -85,7 +85,7 @@ export default function KalendarPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-marquee glow-gold text-2xl">Kalendář</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Kalendář</h1>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">

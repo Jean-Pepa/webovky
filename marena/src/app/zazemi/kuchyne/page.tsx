@@ -60,7 +60,7 @@ export default function KuchyneBarPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-marquee glow-gold text-2xl">Kuchyně &amp; bar 🍳🍸</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Kuchyně &amp; bar</h1>
         <div className="inline-flex rounded-full bg-paper2 p-0.5 text-sm">
           {(["kuchyne", "bar"] as Place[]).map((p) => (
             <button

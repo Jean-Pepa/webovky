@@ -54,7 +54,7 @@
   --color-leaf-700: #1f7a36; /* tmavší pro text na světlém tintu (AA) */
   --color-sky: #0071e3; /* Apple modrá */
 
-  --font-sans: "Vafle", "BC Vafle", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: var(--font-sans);
 
@@ -128,18 +128,27 @@ html.theme-anim .input {
   transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 }
 
-/* Font Vafle (BC Vafle) — vlož svůj licencovaný soubor do /public/fonts/.
-   Dokud tam není, web použije systémový fallback (nic se nerozbije). */
+/* Inter (variabilní, OFL) — čistý grotesk ve stylu SF Pro / Stripe. Self-hosted,
+   dva subsety: latin (čárky á é í…) + latin-ext (háčky č ř ž…) = plná čeština.
+   Prohlížeč si podle unicode-range stáhne jen to, co stránka potřebuje. */
 @font-face {
-  font-family: "Vafle";
-  src:
-    url("/fonts/vafle.woff2") format("woff2"),
-    url("/fonts/vafle.woff") format("woff"),
-    url("/fonts/vafle.otf") format("opentype"),
-    url("/fonts/vafle.ttf") format("truetype");
-  font-weight: 100 900;
+  font-family: "Inter";
+  src: url("/fonts/inter-latin.woff2") format("woff2");
+  font-weight: 400 700;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter-latin-ext.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+    U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+    U+2C60-2C7F, U+A720-A7FF;
 }
 
 /* Základní resety patří do @layer base, jinak (jako nezavrstvené) přebíjejí
@@ -178,41 +187,8 @@ html.theme-anim .input {
   letter-spacing: -0.022em;
 }
 
-/* ===== Vegas typografie (jen nadpisy, NIKDY tělo textu) ===== */
-/* Limelight — Art Deco „marquee" (OFL, plná česká diakritika ověřena). */
-@font-face {
-  font-family: "Limelight";
-  src: url("/fonts/limelight.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-/* Monoton — neonové trubice; použitelný jen pro velké nápisy (30 pt+). */
-@font-face {
-  font-family: "Monoton";
-  src: url("/fonts/monoton.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-.font-marquee {
-  font-family: "Limelight", var(--font-sans);
-  font-weight: 400;
-  letter-spacing: 0.01em;
-}
-
-/* Zlatá zář — statická (žádné blikání v zázemí). Ve světle nic, ve tmě neon. */
-.dark .glow-gold {
-  text-shadow: 0 0 8px rgba(255, 217, 77, 0.45), 0 0 22px rgba(244, 183, 31, 0.25);
-}
-.dark .glow-gold-icon {
-  filter: drop-shadow(0 0 5px rgba(255, 217, 77, 0.55));
-}
-/* Zlatý nápis MAŘENA v hlavičce dostane ve tmě neonovou zář (gradient text
-   nemůže mít text-shadow — použije se drop-shadow filtru). */
-.dark .marena-header-gold {
-  filter: drop-shadow(0 0 10px rgba(244, 183, 31, 0.35));
-}
+/* Minimalistická identita (styl Apple/Stripe): žádné dekorativní fonty ani
+   neonové záře v zázemí — osobnost nese zlatý akcent a čistá typografie. */
 
 /* Ponecháno kvůli kompatibilitě — čistý vzhled = bez textury */
 .paper-grain {
