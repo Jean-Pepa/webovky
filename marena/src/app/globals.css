@@ -12,7 +12,21 @@
   --color-ink: #1d1d1f; /* hlavní text (Apple ink) */
   --color-ink-soft: #6e6e73; /* sekundární text */
 
-  /* Akcent — VUT / FA VUT červená (token „marigold" zůstává kvůli kompatibilitě) */
+  /* Zlatý primár — Vegas neon identita (kotveno na zlato nápisu MAŘENA).
+     Kontrasty spočítané: gold-500 + tmavý text = 9,3:1; gold-700 na světlém = 4,6:1. */
+  --color-gold-50: #fdf6e3;
+  --color-gold-100: #fbeec7;
+  --color-gold-200: #f8dd8f;
+  --color-gold-300: #ffd94d;
+  --color-gold-400: #f5c032;
+  --color-gold-500: #f4b71f;
+  --color-gold-600: #e0940a;
+  --color-gold-700: #a25f06;
+  --color-gold-800: #8a5605;
+  --color-gold-900: #6b4204;
+
+  /* Akcent — VUT / FA VUT červená: nově jen doplněk (mazání/varování, jako červený
+     MOTEL neon). Token „marigold" zůstává kvůli kompatibilitě. */
   --color-marigold-50: #fdeef1;
   --color-marigold-100: #fbd8de;
   --color-marigold-200: #f4adb8;
@@ -40,7 +54,7 @@
   --color-leaf-700: #1f7a36; /* tmavší pro text na světlém tintu (AA) */
   --color-sky: #0071e3; /* Apple modrá */
 
-  --font-sans: "Vafle", "BC Vafle", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: var(--font-sans);
 
@@ -62,6 +76,9 @@
   /* Světlé „tinty" (jemné barevné plochy 50/100/200) → tmavé varianty téhož tónu,
      ať na nočním pozadí neřve bílá/růžová. Sytost akcentů (600/700 pro tlačítka)
      necháváme. Automaticky se přepíšou i s průhledností (color-mix). */
+  --color-gold-50: #332913; /* jemná zlatá plocha na tmavé */
+  --color-gold-100: #483a18;
+  --color-gold-200: #5c4a1f;
   --color-marigold-50: #3a1c22; /* jemná červená plocha */
   --color-marigold-100: #48232c;
   --color-marigold-200: #5c2c37;
@@ -86,6 +103,9 @@
 .dark .text-marigold-600 { color: #ef4a62; }
 .dark .text-marigold-700 { color: #f2758b; }
 .dark .text-marigold-800 { color: #f6a2b1; }
+.dark .text-gold-600 { color: #f4b71f; }
+.dark .text-gold-700 { color: #f5c032; }
+.dark .text-gold-800 { color: #ffd94d; }
 .dark .text-red-600 { color: #f26d6d; }
 .dark .text-red-700 { color: #f58a8a; }
 .dark .text-leaf-700 { color: #57d98a; }
@@ -108,18 +128,27 @@ html.theme-anim .input {
   transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 }
 
-/* Font Vafle (BC Vafle) — vlož svůj licencovaný soubor do /public/fonts/.
-   Dokud tam není, web použije systémový fallback (nic se nerozbije). */
+/* Inter (variabilní, OFL) — čistý grotesk ve stylu SF Pro / Stripe. Self-hosted,
+   dva subsety: latin (čárky á é í…) + latin-ext (háčky č ř ž…) = plná čeština.
+   Prohlížeč si podle unicode-range stáhne jen to, co stránka potřebuje. */
 @font-face {
-  font-family: "Vafle";
-  src:
-    url("/fonts/vafle.woff2") format("woff2"),
-    url("/fonts/vafle.woff") format("woff"),
-    url("/fonts/vafle.otf") format("opentype"),
-    url("/fonts/vafle.ttf") format("truetype");
-  font-weight: 100 900;
+  font-family: "Inter";
+  src: url("/fonts/inter-latin.woff2") format("woff2");
+  font-weight: 400 700;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter-latin-ext.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+    U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+    U+2C60-2C7F, U+A720-A7FF;
 }
 
 /* Základní resety patří do @layer base, jinak (jako nezavrstvené) přebíjejí
@@ -157,6 +186,9 @@ html.theme-anim .input {
   font-weight: 600;
   letter-spacing: -0.022em;
 }
+
+/* Minimalistická identita (styl Apple/Stripe): žádné dekorativní fonty ani
+   neonové záře v zázemí — osobnost nese zlatý akcent a čistá typografie. */
 
 /* Ponecháno kvůli kompatibilitě — čistý vzhled = bez textury */
 .paper-grain {
@@ -451,9 +483,11 @@ html.theme-anim .input {
 
 @layer components {
   .btn-primary {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-marigold-600
-      px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-marigold-700
-      active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+    /* Zlaté tlačítko s TMAVÝM textem (9,3:1) — text zůstává tmavý i v nočním
+       režimu (proto literál, ne token ink). Min. výška 44 px (Apple tap target). */
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-gold-500
+      px-5 py-2.5 text-[15px] font-semibold text-[#1d1d1f] ring-1 ring-inset ring-gold-600/50
+      transition-all hover:bg-gold-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
   }
   /* Vegas tlačítko — neonový přechod růžová → fialová (místo červené na homepage). */
   .btn-vegas {
@@ -463,8 +497,8 @@ html.theme-anim .input {
       disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-secondary {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border
-      border-ink/10 bg-surface px-5 py-2.5 text-sm font-medium text-ink transition-all
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border
+      border-ink/10 bg-surface px-5 py-2.5 text-[15px] font-medium text-ink transition-all
       hover:bg-paper2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-ghost {
@@ -478,15 +512,17 @@ html.theme-anim .input {
       disabled:cursor-not-allowed disabled:opacity-50;
   }
   .card {
-    @apply rounded-3xl border border-ink/[0.08] bg-surface;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 8px 24px rgba(0, 0, 0, 0.04);
+    /* 12px rádius (M3 karta = 12dp, iOS grouped ~10pt); tvar nese pozadí,
+       stín jen nepatrný — hloubku dělá kontrast plochy, ne dekorace. */
+    @apply rounded-xl border border-ink/[0.06] bg-surface;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   }
   .input {
-    /* text-base (16px) na mobilu brání automatickému zoomu iOS Safari při
-       zaostření pole; na desktopu zpět na 14px. */
-    @apply w-full rounded-xl border border-ink/10 bg-surface px-3.5 py-2.5 text-base text-ink
-      outline-none transition placeholder:text-ink-soft/50 focus:border-marigold-400
-      focus:ring-4 focus:ring-marigold-500/15 sm:text-sm;
+    /* Pole = lehce zaoblený obdélník (M3: 4–8px), žádný bochánek. text-base
+       (16px) na mobilu brání auto-zoomu iOS Safari; focus = 2px obrys. */
+    @apply w-full rounded-lg border border-ink/15 bg-surface px-3.5 py-2.5 text-base text-ink
+      outline-none transition placeholder:text-ink-soft/50 focus:border-gold-500
+      focus:ring-1 focus:ring-gold-500 sm:text-sm;
   }
   .label {
     @apply mb-1 block text-xs font-medium text-ink-soft;

@@ -76,7 +76,7 @@ export default function KontaktyPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Kontakty &amp; odkazy</h1>
+          <h1 className="font-display text-[28px] font-bold tracking-tight">Kontakty &amp; odkazy</h1>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Přidat kontakt"}
@@ -120,9 +120,9 @@ export default function KontaktyPage() {
               return (
               <section key={name} id={slug(name)} className="scroll-mt-28">
                 <div className="mb-3 flex items-center gap-2">
-                  <h2 className={`font-display text-lg font-semibold ${isSponsor ? "text-marigold-700" : ""}`}>{name}</h2>
+                  <h2 className={`font-display text-[20px] font-semibold ${isSponsor ? "text-gold-700" : ""}`}>{name}</h2>
                   {isSponsor && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-marigold-600 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gold-500 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#1d1d1f]">
                       ★ Hlavní
                     </span>
                   )}
@@ -132,13 +132,13 @@ export default function KontaktyPage() {
                   {items.map((l) => {
                     const href = hrefFor(l.value);
                     return (
-                      <li key={l.id} className={`card flex min-w-0 flex-col p-4 ${isSponsor ? "ring-1 ring-marigold-300" : ""}`}>
+                      <li key={l.id} className={`card flex min-w-0 flex-col p-4 ${isSponsor ? "ring-1 ring-gold-300" : ""}`}>
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="min-w-0 break-words font-display text-base font-semibold">{l.label}</h3>
                           <DeleteButton onConfirm={() => dispatch({ type: "removeLink", yearId: year.id, linkId: l.id })} />
                         </div>
                         {href ? (
-                          <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="mt-0.5 break-all text-sm font-medium text-marigold-700 hover:underline">
+                          <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="mt-0.5 break-all text-sm font-medium text-gold-700 hover:underline">
                             {l.value}
                           </a>
                         ) : (
@@ -165,11 +165,11 @@ export default function KontaktyPage() {
                     key={name}
                     href={`#${slug(name)}`}
                     className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm transition ${
-                      isSponsor ? "font-semibold text-marigold-700 hover:bg-marigold-50" : "text-ink-soft hover:bg-paper2 hover:text-ink"
+                      isSponsor ? "font-semibold text-gold-700 hover:bg-gold-50" : "text-ink-soft hover:bg-paper2 hover:text-ink"
                     }`}
                   >
                     <span className="truncate">{isSponsor ? "★ " : ""}{name}</span>
-                    <span className={`ml-2 shrink-0 rounded-full px-2 text-xs ${isSponsor ? "bg-marigold-600 text-white" : "bg-paper2"}`}>{items.length}</span>
+                    <span className={`ml-2 shrink-0 rounded-full px-2 text-xs ${isSponsor ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2"}`}>{items.length}</span>
                   </a>
                 );
               })}

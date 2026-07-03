@@ -151,12 +151,12 @@ export default function TymPage() {
         {(p.phone || p.email) ? (
           <p className="mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
             {p.phone && (
-              <a href={`tel:${p.phone}`} className="hover:text-marigold-700">
+              <a href={`tel:${p.phone}`} className="hover:text-gold-700">
                 📞 {p.phone}
               </a>
             )}
             {p.email && (
-              <a href={`mailto:${p.email}`} className="min-w-0 break-all hover:text-marigold-700">
+              <a href={`mailto:${p.email}`} className="min-w-0 break-all hover:text-gold-700">
                 ✉️ {p.email}
               </a>
             )}
@@ -190,12 +190,12 @@ export default function TymPage() {
               {sameName(m.name, me) && <span className="chip shrink-0 bg-leaf text-white">ty</span>}
             </p>
             {m.phone && (
-              <a href={`tel:${m.phone}`} className="block truncate text-xs text-ink-soft hover:text-marigold-700">
+              <a href={`tel:${m.phone}`} className="block truncate text-xs text-ink-soft hover:text-gold-700">
                 📞 {m.phone}
               </a>
             )}
             {m.email && (
-              <a href={`mailto:${m.email}`} className="block truncate text-xs text-ink-soft hover:text-marigold-700">
+              <a href={`mailto:${m.email}`} className="block truncate text-xs text-ink-soft hover:text-gold-700">
                 ✉️ {m.email}
               </a>
             )}
@@ -234,7 +234,7 @@ export default function TymPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-display text-base font-semibold">{r.name}</span>
                 {taken ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-marigold-600 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-gold-500 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#1d1d1f]">
                     <Icon name="users" className="h-3.5 w-3.5" />
                     <span className="text-xs leading-none">{people.length}</span>
                   </span>
@@ -269,7 +269,7 @@ export default function TymPage() {
             <div className="space-y-2">
               {lead && <PersonRow p={lead} roleId={r.id} variant="lead" />}
               {helpers.length > 0 && (
-                <div className="ml-3 space-y-2 border-l-2 border-marigold-300 pl-3">
+                <div className="ml-3 space-y-2 border-l-2 border-gold-300 pl-3">
                   {helpers.map((p) => (
                     <PersonRow key={p.id} p={p} roleId={r.id} variant="helper" />
                   ))}
@@ -302,7 +302,7 @@ export default function TymPage() {
             <ul className="mt-3 space-y-1.5 border-t border-ink/[0.06] pt-3 text-sm text-ink-soft">
               {r.duties.map((d, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="text-marigold-600">•</span>
+                  <span className="text-gold-600">•</span>
                   <span>{d}</span>
                 </li>
               ))}
@@ -317,7 +317,7 @@ export default function TymPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Tým &amp; role</h1>
+          <h1 className="font-display text-[28px] font-bold tracking-tight">Tým &amp; role</h1>
           {admin && pendingCount > 0 && (
             <span className="pending-glow inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-sm font-semibold text-white">
               ⏳ {pendingLabel}
@@ -333,7 +333,7 @@ export default function TymPage() {
           {/* Já v týmu */}
           <section className="card p-5">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-lg font-semibold">Já v týmu</h2>
+              <h2 className="font-display text-[20px] font-semibold">Já v týmu</h2>
               {editable && (
                 <button className="btn-secondary" onClick={() => setModal({})}>
                   {myMember ? "Upravit profil" : "Vyplnit profil"}
@@ -376,7 +376,7 @@ export default function TymPage() {
             defaultOpen={q.length > 0}
             className="card p-4 sm:p-5"
             header={
-              <span className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+              <span className="flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
                 Soupiska týmu ({year.members.length})
                 {year.members.filter((m) => m.approved === false).length > 0 && (
                   <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
@@ -420,11 +420,11 @@ export default function TymPage() {
                           {(m.phone || m.email) && (
                             <div className="mt-0.5 break-words text-xs text-ink-soft">
                               {m.phone && (
-                                <a href={`tel:${m.phone}`} className="hover:text-marigold-700">📞 {m.phone}</a>
+                                <a href={`tel:${m.phone}`} className="hover:text-gold-700">📞 {m.phone}</a>
                               )}
                               {m.phone && m.email && <span> · </span>}
                               {m.email && (
-                                <a href={`mailto:${m.email}`} className="break-all hover:text-marigold-700">✉️ {m.email}</a>
+                                <a href={`mailto:${m.email}`} className="break-all hover:text-gold-700">✉️ {m.email}</a>
                               )}
                             </div>
                           )}
@@ -454,7 +454,7 @@ export default function TymPage() {
           {/* Moje funkce nahoře */}
           {mineRoles.length > 0 && (
             <section className="space-y-3">
-              <h2 className="font-display text-lg font-semibold">Moje funkce</h2>
+              <h2 className="font-display text-[20px] font-semibold">Moje funkce</h2>
               <div className="grid items-start gap-3 md:grid-cols-2">
                 {mineRoles.map((r) => (
                   <RoleCard key={r.id} r={r} defaultOpen />
@@ -465,7 +465,7 @@ export default function TymPage() {
 
           {/* Ostatní posty */}
           <section className="space-y-3">
-            <h2 className="font-display text-lg font-semibold">{mineRoles.length > 0 ? "Další posty" : "Posty a co obnášejí"}</h2>
+            <h2 className="font-display text-[20px] font-semibold">{mineRoles.length > 0 ? "Další posty" : "Posty a co obnášejí"}</h2>
             <div className="grid items-start gap-3 md:grid-cols-2">
               {otherRoles.map((r) => (
                 <RoleCard key={`${r.id}-${q.length > 0}`} r={r} defaultOpen={q.length > 0} />
@@ -476,21 +476,21 @@ export default function TymPage() {
 
         {/* Vpravo: počítadlo (kolik lidí má roli z celku) + lidi bez role */}
         <aside className="h-fit min-w-0 space-y-4 lg:sticky lg:top-4">
-          <div className="flex items-center gap-3 rounded-2xl bg-marigold-600 px-5 py-3 text-white shadow-sm">
+          <div className="flex items-center gap-3 rounded-xl bg-gold-500 px-5 py-3 text-[#1d1d1f] shadow-sm">
             <Icon name="users" className="h-8 w-8 shrink-0" />
             <div className="leading-none">
               <div className="font-display text-4xl font-bold tracking-tight">
                 {withRoleCount}
                 <span className="text-2xl font-semibold opacity-80"> z {year.members.length}</span>
               </div>
-              <div className="mt-1 text-xs font-medium uppercase tracking-wide text-white/85">má roli</div>
+              <div className="mt-1 text-xs font-medium uppercase tracking-wide text-[#1d1d1f]/75">má roli</div>
             </div>
           </div>
 
           {/* Lidi, kteří ještě nemají žádnou roli. */}
           <section className="card p-4">
-            <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
-              <Icon name="users" className="h-5 w-5 text-marigold-600" /> Bez role ({roleless.length})
+            <h2 className="mb-3 flex items-center gap-2 font-display text-[20px] font-semibold">
+              <Icon name="users" className="h-5 w-5 text-gold-600" /> Bez role ({roleless.length})
             </h2>
             {roleless.length === 0 ? (
               <p className="text-sm text-ink-soft">Všichni mají roli. 🎉</p>
@@ -527,7 +527,7 @@ export default function TymPage() {
       {celebrate && (
         <div className="pointer-events-none fixed inset-0 z-50 grid place-items-center px-4">
           {celebrate.kind === "taken" ? (
-            <div className="marena-pop max-w-sm rounded-3xl bg-gradient-to-br from-marigold-500 to-plum-600 px-8 py-7 text-center text-white shadow-2xl ring-2 ring-white/30">
+            <div className="marena-pop max-w-sm rounded-2xl bg-gradient-to-br from-plum-700 to-ink px-8 py-7 text-center text-white shadow-2xl ring-2 ring-gold-500/60">
               <div className="text-5xl">🎉</div>
               <p className="mt-2 font-display text-xl font-bold">Mařena ti gratuluje, boží bojovníku!</p>
               <p className="mt-2 text-base">
@@ -536,7 +536,7 @@ export default function TymPage() {
               <p className="mt-1 text-sm text-white/90">Hodně zdaru. 💪</p>
             </div>
           ) : (
-            <div className="marena-pop max-w-sm rounded-3xl bg-gradient-to-br from-plum-600 to-ink px-8 py-7 text-center text-white shadow-2xl ring-2 ring-white/30">
+            <div className="marena-pop max-w-sm rounded-2xl bg-gradient-to-br from-plum-600 to-ink px-8 py-7 text-center text-white shadow-2xl ring-2 ring-white/30">
               <div className="text-5xl">👋</div>
               <p className="mt-2 font-display text-xl font-bold">Funkci jsi uvolnil!</p>
               <p className="mt-2 text-base">
@@ -667,7 +667,7 @@ function AdminEditMemberModal({ member, yearId, onClose }: { member: Member; yea
                   type="button"
                   onClick={() => toggleRole(r.id)}
                   className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-                    on ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-ink/5"
+                    on ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2 text-ink-soft hover:bg-ink/5"
                   }`}
                 >
                   {r.emoji} {r.name}
@@ -804,7 +804,7 @@ function ProfileForm({
                 type="button"
                 onClick={() => setAsLead(false)}
                 className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition ${
-                  !asLead ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft hover:bg-ink/5"
+                  !asLead ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2 text-ink-soft hover:bg-ink/5"
                 }`}
               >
                 Pomocník

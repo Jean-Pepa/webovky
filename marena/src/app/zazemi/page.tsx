@@ -38,7 +38,7 @@ function PollComposer({ draft, setDraft, polls }: { draft: PollDraft; setDraft: 
   const setOpt = (i: number, v: string) => setDraft({ ...draft, options: draft.options.map((x, j) => (j === i ? v : x)) });
   const hasExisting = polls.length > 0;
   return (
-    <div className="rounded-2xl bg-paper2/60 p-3 ring-1 ring-ink/10">
+    <div className="rounded-xl bg-paper2/60 p-3 ring-1 ring-ink/10">
       <label className="flex items-center gap-2 text-sm font-medium text-ink">
         <input
           type="checkbox"
@@ -230,7 +230,7 @@ export default function NastenkaPage() {
       <div className="min-w-0 space-y-5">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <h1 className="font-display text-2xl font-semibold">Nástěnka</h1>
+            <h1 className="font-display text-[28px] font-bold tracking-tight">Nástěnka</h1>
           </div>
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
             {open ? "Zavřít" : "+ Přidat info"}
@@ -311,7 +311,7 @@ export default function NastenkaPage() {
           <Link href="/zazemi/finance" className="card block p-4 transition hover:border-ink/10">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-base font-semibold">💰 Bilance</h2>
-              <span className="text-xs font-medium text-marigold-700">detail →</span>
+              <span className="text-xs font-medium text-gold-700">detail →</span>
             </div>
             <p className={`mt-1 font-display text-2xl font-semibold tracking-tight ${bilance >= 0 ? "text-leaf-700" : "text-red-600"}`}>
               {bilance >= 0 ? "+" : "−"}
@@ -323,7 +323,7 @@ export default function NastenkaPage() {
         <div className="card p-4">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-display text-base font-semibold">📅 Nejbližší termíny</h2>
-            <Link href="/zazemi/kalendar" className="text-xs font-medium text-marigold-700 hover:underline">
+            <Link href="/zazemi/kalendar" className="text-xs font-medium text-gold-700 hover:underline">
               vše →
             </Link>
           </div>
@@ -383,7 +383,7 @@ function PostBody({ body }: { body: string }) {
       </p>
       {(overflow || expanded) && (
         <button
-          className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-marigold-700 hover:underline"
+          className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-gold-700 hover:underline"
           onClick={() => setExpanded((v) => !v)}
         >
           {expanded ? "Sbalit" : "Zobrazit celé"}
@@ -516,7 +516,7 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
 
   if (edit) {
     return (
-      <article className="card space-y-3 p-4 ring-2 ring-marigold-200">
+      <article className="card space-y-3 p-4 ring-2 ring-gold-200">
         <input className="input" placeholder="Nadpis" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
         <textarea className="input min-h-24" placeholder="Co potřebují ostatní vědět?" value={body} onChange={(e) => setBody(e.target.value)} />
         <select className="input max-w-56" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
@@ -553,7 +553,7 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
         </label>
 
         {poll ? (
-          <p className="rounded-2xl bg-paper2/60 px-3 py-2 text-sm text-ink-soft ring-1 ring-ink/10">
+          <p className="rounded-xl bg-paper2/60 px-3 py-2 text-sm text-ink-soft ring-1 ring-ink/10">
             🗳️ Anketa je k příspěvku připojena: „{poll.question}“. Upravit ji můžeš v sekci Hlasování.
           </p>
         ) : (
@@ -575,12 +575,12 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
   return (
     <article
       id={`post-${p.id}`}
-      className={`card scroll-mt-24 p-4 transition-shadow ${p.pinned ? "ring-1 ring-marigold-300" : ""} ${
-        highlight ? "ring-2 ring-marigold-500 shadow-[0_0_0_4px_rgba(253,175,34,0.25)]" : ""
+      className={`card scroll-mt-24 p-4 transition-shadow ${p.pinned ? "ring-1 ring-gold-300" : ""} ${
+        highlight ? "ring-2 ring-gold-500 shadow-[0_0_0_4px_rgba(253,175,34,0.25)]" : ""
       }`}
     >
       <div className="mb-1 flex flex-wrap items-start gap-x-2 gap-y-1 text-xs text-ink-soft">
-        {p.pinned && <span className="chip bg-marigold-600 text-white">📌 Připnuto</span>}
+        {p.pinned && <span className="chip bg-gold-500 text-[#1d1d1f]">📌 Připnuto</span>}
         {role && (
           <span className="chip">
             {role.emoji} {role.name}
@@ -600,22 +600,22 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
                     </div>
                   ))}
                 </div>
-                <button onClick={() => setShowEdits(false)} className="font-medium text-marigold-700 hover:underline">
+                <button onClick={() => setShowEdits(false)} className="font-medium text-gold-700 hover:underline">
                   zobrazit méně
                 </button>
               </>
             ) : (
-              <button onClick={() => setShowEdits(true)} className="font-medium text-marigold-700 hover:underline">
+              <button onClick={() => setShowEdits(true)} className="font-medium text-gold-700 hover:underline">
                 zobrazit více ({edits.length})
               </button>
             ))}
         </div>
       </div>
-      <h3 className="break-words font-display text-lg font-semibold">{p.title}</h3>
+      <h3 className="break-words font-display text-[20px] font-semibold">{p.title}</h3>
       {p.body && <PostBody body={p.body} />}
       {p.photoIds && p.photoIds.length > 0 && <PostPhotos ids={p.photoIds} />}
       {poll && (
-        <div className="mt-3 flex items-center gap-2 rounded-xl bg-marigold-50 px-3 py-2 ring-1 ring-marigold-200">
+        <div className="mt-3 flex items-center gap-2 rounded-xl bg-gold-50 px-3 py-2 ring-1 ring-gold-200">
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">🗳️ {poll.question}</span>
           <Link href={`/zazemi/hlasovani?poll=${poll.id}`} className="btn-primary shrink-0 px-3 py-1.5 text-xs font-bold uppercase tracking-wide">
             HLASOVAT
@@ -640,19 +640,19 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
 function WidgetLinks({ openPolls, myTasks, myShifts }: { openPolls: number; myTasks: number; myShifts: number }) {
   return (
     <div className="grid grid-cols-3 gap-3">
-      <Link href="/zazemi/hlasovani" className="card p-3 transition hover:border-marigold-300">
-        <Icon name="vote" className="h-4 w-4 text-marigold-600" />
-        <div className="mt-1 text-2xl font-bold text-marigold-700">{openPolls}</div>
+      <Link href="/zazemi/hlasovani" className="card p-3 transition hover:border-gold-300">
+        <Icon name="vote" className="h-4 w-4 text-gold-600" />
+        <div className="mt-1 text-2xl font-bold text-gold-700">{openPolls}</div>
         <div className="text-xs text-ink-soft">anket</div>
       </Link>
-      <Link href="/zazemi/ukoly" className="card p-3 transition hover:border-marigold-300">
+      <Link href="/zazemi/ukoly" className="card p-3 transition hover:border-gold-300">
         <Icon name="tasks" className="h-4 w-4 text-plum-600" />
         <div className="mt-1 text-2xl font-bold text-plum-600">{myTasks}</div>
         <div className="text-xs text-ink-soft">úkolů</div>
       </Link>
-      <Link href="/zazemi/provoz" className="card p-3 transition hover:border-marigold-300">
-        <Icon name="ops" className="h-4 w-4 text-marigold-600" />
-        <div className="mt-1 text-2xl font-bold text-marigold-700">{myShifts}</div>
+      <Link href="/zazemi/provoz" className="card p-3 transition hover:border-gold-300">
+        <Icon name="ops" className="h-4 w-4 text-gold-600" />
+        <div className="mt-1 text-2xl font-bold text-gold-700">{myShifts}</div>
         <div className="text-xs text-ink-soft">směn</div>
       </Link>
     </div>

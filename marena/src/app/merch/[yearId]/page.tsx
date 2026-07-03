@@ -237,7 +237,7 @@ export default function MerchOrderPage() {
             ) : (
               <>
                 <section className="space-y-3">
-                  <h1 className="font-display text-lg font-semibold">Vyber si z nabídky</h1>
+                  <h1 className="font-display text-[20px] font-semibold">Vyber si z nabídky</h1>
                   <div className="grid gap-3 sm:grid-cols-2">
                     {products.map((p) => {
                       const curSize = p.sizes.length ? sel[p.id]?.size ?? p.sizes[0] : undefined;
@@ -278,7 +278,7 @@ export default function MerchOrderPage() {
                                         type="button"
                                         onClick={() => setSel((s) => ({ ...s, [p.id]: { ...s[p.id], size: sz } }))}
                                         className={`rounded-full px-3 py-1 text-sm font-medium transition ${
-                                          on ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft ring-1 ring-ink/10 hover:bg-ink/5"
+                                          on ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2 text-ink-soft ring-1 ring-ink/10 hover:bg-ink/5"
                                         }`}
                                       >
                                         {sz}
@@ -301,7 +301,7 @@ export default function MerchOrderPage() {
                                         type="button"
                                         onClick={() => setSel((s) => ({ ...s, [p.id]: { ...s[p.id], color: col } }))}
                                         className={`rounded-full px-3 py-1 text-sm font-medium transition ${
-                                          on ? "bg-marigold-600 text-white" : "bg-paper2 text-ink-soft ring-1 ring-ink/10 hover:bg-ink/5"
+                                          on ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2 text-ink-soft ring-1 ring-ink/10 hover:bg-ink/5"
                                         }`}
                                       >
                                         {col}
@@ -328,8 +328,8 @@ export default function MerchOrderPage() {
                 </section>
 
                 <section className="card space-y-3 p-4">
-                  <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
-                    <Icon name="cart" className="h-5 w-5 text-marigold-600" /> Košík
+                  <h2 className="flex items-center gap-2 font-display text-[20px] font-semibold">
+                    <Icon name="cart" className="h-5 w-5 text-gold-600" /> Košík
                   </h2>
                   {cart.length > 0 ? (
                     <ul className="space-y-1.5 text-sm">

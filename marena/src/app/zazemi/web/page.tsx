@@ -220,7 +220,7 @@ export default function WebEditorPage() {
     <div className="space-y-5 pb-24">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Správa webu</h1>
+          <h1 className="font-display text-[28px] font-bold tracking-tight">Správa webu</h1>
           <p className="mt-0.5 text-sm text-ink-soft">
             Uprav texty, nadpisy, fotky a novinky na veřejné homepage. Prázdné pole = zůstane výchozí text.
           </p>
@@ -243,7 +243,7 @@ export default function WebEditorPage() {
 
       {/* TÉMA WEBU — vzhled homepage (každý ročník může mít jiné) */}
       <section className="card p-4 sm:p-5">
-        <h2 className="font-display text-lg font-semibold">🎨 Téma webu</h2>
+        <h2 className="font-display text-[20px] font-semibold">🎨 Téma webu</h2>
         <p className="mb-3 mt-0.5 text-xs text-ink-soft">
           Vyber vzhled veřejné homepage. Texty, fotky i novinky zůstávají stejné — mění se jen styl. Ulož změny dole.
         </p>
@@ -255,15 +255,15 @@ export default function WebEditorPage() {
                 key={th.id}
                 type="button"
                 onClick={() => setTheme(th.id)}
-                className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition ${
-                  on ? "border-marigold-500 bg-marigold-50 ring-2 ring-marigold-500/30" : "border-ink/10 hover:bg-ink/[0.03]"
+                className={`flex items-start gap-3 rounded-xl border p-4 text-left transition ${
+                  on ? "border-gold-500 bg-gold-50 ring-2 ring-gold-500/30" : "border-ink/10 hover:bg-ink/[0.03]"
                 }`}
               >
                 <span className="text-2xl">{th.emoji}</span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2 font-semibold">
                     {th.name}
-                    {on && <span className="rounded-full bg-marigold-600 px-2 py-0.5 text-[11px] font-semibold text-white">Aktivní</span>}
+                    {on && <span className="rounded-full bg-gold-500 px-2 py-0.5 text-[11px] font-semibold text-[#1d1d1f]">Aktivní</span>}
                   </span>
                   <span className="mt-0.5 block text-xs text-ink-soft">{th.desc}</span>
                 </span>
@@ -277,7 +277,7 @@ export default function WebEditorPage() {
       <Collapsible
         defaultOpen
         className="card p-4 sm:p-5"
-        header={<span className="font-display text-lg font-semibold">📷 Fotky (společné pro všechny jazyky)</span>}
+        header={<span className="font-display text-[20px] font-semibold">📷 Fotky (společné pro všechny jazyky)</span>}
       >
         <p className="mb-3 mt-2 text-xs text-ink-soft">
           Vlož odkaz (URL) na obrázek — např. z hostingu nebo Instagramu. Prázdné = výchozí fotka.
@@ -304,7 +304,7 @@ export default function WebEditorPage() {
       {/* ODKAZ NA INSTAGRAM — společný */}
       <Collapsible
         className="card p-4 sm:p-5"
-        header={<span className="font-display text-lg font-semibold">📸 Instagram odkaz (společný)</span>}
+        header={<span className="font-display text-[20px] font-semibold">📸 Instagram odkaz (společný)</span>}
       >
         <div className="mt-2 grid gap-4 sm:grid-cols-2">
           <Field label="URL profilu" value={c.ig?.url ?? ""} placeholder="https://www.instagram.com/marena2k25" onChange={(v) => setIg("url", v)} />
@@ -313,12 +313,12 @@ export default function WebEditorPage() {
       </Collapsible>
 
       {/* JAZYKOVÉ ZÁLOŽKY PRO TEXTY */}
-      <div className="sticky top-16 z-10 -mx-1 flex flex-wrap gap-1 rounded-2xl bg-paper/90 p-1 backdrop-blur ring-1 ring-ink/5">
+      <div className="sticky top-16 z-10 -mx-1 flex flex-wrap gap-1 rounded-xl bg-paper/90 p-1 backdrop-blur ring-1 ring-ink/5">
         {LANGS.map((l) => (
           <button
             key={l}
             onClick={() => setLang(l)}
-            className={`rounded-xl px-3 py-1.5 text-sm font-medium transition ${lang === l ? "bg-marigold-600 text-white" : "text-ink-soft hover:bg-ink/5"}`}
+            className={`rounded-xl px-3 py-1.5 text-sm font-medium transition ${lang === l ? "bg-gold-500 text-[#1d1d1f]" : "text-ink-soft hover:bg-ink/5"}`}
           >
             {LANG_LABEL[l]}
           </button>
@@ -332,7 +332,7 @@ export default function WebEditorPage() {
           key={g.title}
           defaultOpen={g.title.startsWith("Hero")}
           className="card p-4 sm:p-5"
-          header={<span className="font-display text-lg font-semibold">{g.emoji} {g.title}</span>}
+          header={<span className="font-display text-[20px] font-semibold">{g.emoji} {g.title}</span>}
         >
           <div className="mt-2 grid gap-4">
             {g.fields.map((f) => (
@@ -385,7 +385,7 @@ export default function WebEditorPage() {
       <Collapsible
         defaultOpen
         className="card p-4 sm:p-5"
-        header={<span className="font-display text-lg font-semibold">📰 Novinky ({news.length})</span>}
+        header={<span className="font-display text-[20px] font-semibold">📰 Novinky ({news.length})</span>}
       >
         <div className="mb-3 mt-2 flex items-center justify-between gap-2">
           <p className="text-xs text-ink-soft">Zobrazují se na webu jako dlaždice (nejnovější dej nahoru). Společné pro všechny jazyky.</p>
@@ -398,7 +398,7 @@ export default function WebEditorPage() {
         ) : (
           <div className="space-y-4">
             {news.map((n, i) => (
-              <div key={n.id} className="rounded-2xl border border-ink/10 p-3">
+              <div key={n.id} className="rounded-xl border border-ink/10 p-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <span className="text-xs font-semibold text-ink-soft">Novinka {i + 1}</span>
                   <div className="flex items-center gap-1">

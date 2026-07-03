@@ -200,7 +200,7 @@ export default function FinancePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 tabular-nums">
       <datalist id="fin-cats">
         {CATEGORIES.map((c) => (
           <option key={c} value={c} />
@@ -208,7 +208,7 @@ export default function FinancePage() {
       </datalist>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Finance</h1>
+          <h1 className="font-display text-[28px] font-bold tracking-tight">Finance</h1>
         </div>
         {canAdd && (
           <div className="flex flex-wrap items-center gap-2">
@@ -241,13 +241,13 @@ export default function FinancePage() {
 
       {/* Kdo co smí: každý přidává, upravuje jen správce; zamčený ročník = jen náhled */}
       {!canAdd ? (
-        <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
+        <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
           <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
           <span>Tento ročník je uzamčený — máš jen náhled.</span>
         </div>
       ) : (
         !canEdit && (
-          <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
+          <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
             <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
             <span>Můžeš přidávat položky i kasy. Upravovat a mazat zapsané může jen správce.</span>
           </div>
@@ -264,7 +264,7 @@ export default function FinancePage() {
       {/* Denní kasy */}
       {((year.cashboxes?.length ?? 0) > 0 || canAdd) && (
         <section className="card p-4">
-          <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+          <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
             🧰 Denní kasy
             {(year.cashboxes?.length ?? 0) > 0 && (
               <>
@@ -301,7 +301,7 @@ export default function FinancePage() {
       {/* Výběr (vklady) — kdo dal kolik do společné kasy */}
       {(contributions.length > 0 || canAdd) && (
         <section id="vyber" className="card scroll-mt-20 p-4">
-          <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+          <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
             💰 Výběr (vklady)
             {contributions.length > 0 && (
               <>
@@ -367,7 +367,7 @@ export default function FinancePage() {
       {/* Merch — samostatně (tržby/výdaje z kategorie merch) */}
       {merchItems.length > 0 && (
         <section className="card p-4">
-          <h2 className="mb-3 flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+          <h2 className="mb-3 flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
             🛍️ Merch
             <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-sm">
               <span className="text-xs font-normal text-ink-soft">vloženo</span>
@@ -400,7 +400,7 @@ export default function FinancePage() {
 
       {/* Přidat */}
       {open && (
-        <div id="add-finance" className="card scroll-mt-20 space-y-3 p-4 ring-2 ring-marigold-200">
+        <div id="add-finance" className="card scroll-mt-20 space-y-3 p-4 ring-2 ring-gold-200">
           <div className="inline-flex rounded-full bg-paper2 p-1 text-sm">
             <button onClick={() => setKind("vydaj")} className={`rounded-full px-4 py-1.5 font-medium transition ${kind === "vydaj" ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}>
               − Výdaj
@@ -420,7 +420,7 @@ export default function FinancePage() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 text-sm text-ink-soft">
-              <input type="checkbox" checked={paid} onChange={(e) => setPaid(e.target.checked)} className="h-4 w-4 accent-marigold-600" />
+              <input type="checkbox" checked={paid} onChange={(e) => setPaid(e.target.checked)} className="h-4 w-4 accent-gold-600" />
               {kind === "prijem" ? "Už vybráno / přišlo" : "Už zaplaceno / proplaceno"}
             </label>
             <button className="btn-primary ml-auto" onClick={add}>
@@ -432,7 +432,7 @@ export default function FinancePage() {
 
       {/* Filtr */}
       <div className="space-y-2 pt-2">
-      <h2 className="flex items-center gap-2 border-b-2 border-marigold-600/70 pb-1.5 font-display text-2xl font-bold tracking-tight">
+      <h2 className="flex items-center gap-2 border-b-2 border-gold-600/70 pb-1.5 font-display text-2xl font-bold tracking-tight">
         <span aria-hidden>📊</span> Všechny finance
       </h2>
       <div className="flex flex-wrap items-center gap-2">
@@ -546,9 +546,9 @@ export default function FinancePage() {
             <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-base font-semibold">
               Proplácení po lidech
               {totalOwed > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-marigold-600/10 px-2.5 py-0.5 text-sm">
-                  <span className="text-xs font-normal text-marigold-700">vrátit celkem</span>
-                  <span className="font-bold text-marigold-700">{fmtCZK(totalOwed)}</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-gold-600/10 px-2.5 py-0.5 text-sm">
+                  <span className="text-xs font-normal text-gold-700">vrátit celkem</span>
+                  <span className="font-bold text-gold-700">{fmtCZK(totalOwed)}</span>
                 </span>
               )}
             </h2>
@@ -559,7 +559,7 @@ export default function FinancePage() {
                   <span className="min-w-0 break-words font-medium">{who}</span>
                   <span className="ml-auto flex shrink-0 items-center gap-3">
                     {v.owed > 0 ? (
-                      <span className="font-semibold text-marigold-700">vrátit {fmtCZK(v.owed)}</span>
+                      <span className="font-semibold text-gold-700">vrátit {fmtCZK(v.owed)}</span>
                     ) : (
                       <span className="text-leaf-700">✓ vyrovnáno</span>
                     )}
@@ -672,12 +672,12 @@ function FinanceCard({ item, yearId, canAdd, canEdit }: { item: FinanceItem; yea
         {canEdit ? (
           <button
             onClick={() => s.dispatch({ type: "toggleFinancePaid", yearId, financeId: item.id })}
-            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${item.paid ? "bg-leaf/12 text-leaf-700" : "bg-marigold-600 text-white"}`}
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${item.paid ? "bg-leaf/12 text-leaf-700" : "bg-gold-500 text-[#1d1d1f]"}`}
           >
             {item.paid ? "Zaplaceno" : "Čeká"}
           </button>
         ) : (
-          <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${item.paid ? "bg-leaf/12 text-leaf-700" : "bg-marigold-600 text-white"}`}>
+          <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${item.paid ? "bg-leaf/12 text-leaf-700" : "bg-gold-500 text-[#1d1d1f]"}`}>
             {item.paid ? "Zaplaceno" : "Čeká"}
           </span>
         )}
@@ -741,13 +741,13 @@ function FinanceRow({ item, yearId, canAdd, canEdit }: { item: FinanceItem; year
         {canEdit ? (
           <button
             onClick={() => dispatch({ type: "toggleFinancePaid", yearId, financeId: item.id })}
-            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${item.paid ? "bg-leaf/12 text-leaf-700 hover:bg-leaf/20" : "bg-marigold-600 text-white hover:bg-marigold-700"}`}
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${item.paid ? "bg-leaf/12 text-leaf-700 hover:bg-leaf/20" : "bg-gold-500 text-[#1d1d1f] hover:bg-gold-400"}`}
             title="Přepnout stav"
           >
             {item.paid ? "Zaplaceno" : "Čeká"}
           </button>
         ) : (
-          <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${item.paid ? "bg-leaf/12 text-leaf-700" : "bg-marigold-600 text-white"}`}>
+          <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${item.paid ? "bg-leaf/12 text-leaf-700" : "bg-gold-500 text-[#1d1d1f]"}`}>
             {item.paid ? "Zaplaceno" : "Čeká"}
           </span>
         )}
@@ -931,7 +931,7 @@ function CashboxCard({ box, yearId, canAdd, canEdit }: { box: Cashbox; yearId: s
   }
 
   return (
-    <div className={`rounded-2xl border p-3 ${closed ? "border-leaf/30 bg-leaf/[0.05]" : "border-amber-200 bg-amber-50"}`}>
+    <div className={`rounded-xl border p-3 ${closed ? "border-leaf/30 bg-leaf/[0.05]" : "border-amber-200 bg-amber-50"}`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="flex flex-wrap items-center gap-1.5 font-semibold">

@@ -60,7 +60,7 @@ export default function KuchyneBarPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Kuchyně &amp; bar 🍳🍸</h1>
+        <h1 className="font-display text-[28px] font-bold tracking-tight">Kuchyně &amp; bar</h1>
         <div className="inline-flex rounded-full bg-paper2 p-0.5 text-sm">
           {(["kuchyne", "bar"] as Place[]).map((p) => (
             <button
@@ -134,7 +134,7 @@ function MenuSection({ place, editable, q }: { place: Place; editable: boolean; 
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-display text-lg font-semibold">{place === "bar" ? "🍸 Nápojový lístek" : "🍲 Menu (jídla)"}</h2>
+        <h2 className="font-display text-[20px] font-semibold">{place === "bar" ? "🍸 Nápojový lístek" : "🍲 Menu (jídla)"}</h2>
         {editable && (
           <button className="btn-secondary px-3 py-1.5 text-sm" onClick={() => setOpen((v) => !v)}>
             {open ? "Zavřít" : place === "bar" ? "+ Přidat drink" : "+ Přidat jídlo"}
@@ -265,7 +265,7 @@ function DrinkEdit({ d, place, yearId, onClose }: { d: Drink; place: Place; year
   }
 
   return (
-    <div className="card space-y-3 p-4 ring-2 ring-marigold-200">
+    <div className="card space-y-3 p-4 ring-2 ring-gold-200">
       <div className={`grid gap-2 ${place === "kuchyne" ? "sm:grid-cols-[1fr_7rem_7rem]" : "sm:grid-cols-[1fr_8rem]"}`}>
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Název" />
         <select className="input" value={kind} onChange={(e) => setKind(e.target.value as DrinkKind)}>
@@ -340,7 +340,7 @@ function ShoppingSection({ place, editable, q }: { place: Place; editable: boole
   return (
     <section className="card space-y-3 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-display text-lg font-semibold">
+        <h2 className="font-display text-[20px] font-semibold">
           🛒 Nákupní seznam{items.length > 0 && <span className="ml-2 text-sm font-normal text-ink-soft">{boughtCount}/{items.length} koupeno</span>}
         </h2>
         {editable && boughtCount > 0 && (
@@ -362,7 +362,7 @@ function ShoppingSection({ place, editable, q }: { place: Place; editable: boole
         <ul className="divide-y divide-black/[0.06]">
           {items.map((i) => (
             <li key={i.id} className="flex items-center gap-3 py-2 text-sm">
-              <input type="checkbox" checked={!!i.bought} onChange={() => dispatch({ type: "toggleShoppingBought", yearId: year.id, itemId: i.id })} disabled={!editable} className="h-4 w-4 accent-marigold-600" />
+              <input type="checkbox" checked={!!i.bought} onChange={() => dispatch({ type: "toggleShoppingBought", yearId: year.id, itemId: i.id })} disabled={!editable} className="h-4 w-4 accent-gold-600" />
               <span className={`min-w-0 flex-1 break-words ${i.bought ? "text-ink-soft line-through" : "font-medium"}`}>{i.name}</span>
               {i.qty && <span className="shrink-0 text-xs text-ink-soft">{i.qty}</span>}
               {editable && <DeleteButton onConfirm={() => dispatch({ type: "removeShoppingItem", yearId: year.id, itemId: i.id })} />}
@@ -421,7 +421,7 @@ function FilesSection({ place, editable }: { place: Place; editable: boolean }) 
 
   return (
     <section className="space-y-3">
-      <h2 className="font-display text-lg font-semibold">📎 Soubory (nákupy, menu, recepty)</h2>
+      <h2 className="font-display text-[20px] font-semibold">📎 Soubory (nákupy, menu, recepty)</h2>
       {editable ? (
         <div className="card space-y-3 p-4">
           <div className="flex flex-wrap items-end gap-3">
@@ -444,7 +444,7 @@ function FilesSection({ place, editable }: { place: Place; editable: boolean }) 
           {err && <p className="text-sm text-red-600">{err}</p>}
         </div>
       ) : (
-        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">🔒 Tento ročník je uzamčený — soubory jdou jen prohlížet a stahovat.</p>
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">🔒 Tento ročník je uzamčený — soubory jdou jen prohlížet a stahovat.</p>
       )}
 
       {files.length === 0 ? (
@@ -495,7 +495,7 @@ function KitchenCard({ item, yearId, editable }: { item: KitchenFile; yearId: st
   return (
     <div className="card p-3">
       <div className="flex items-start gap-3">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-marigold-50 text-marigold-700">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gold-50 text-gold-700">
           <Icon name={item.fileKind === "image" ? "image" : "file"} className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">

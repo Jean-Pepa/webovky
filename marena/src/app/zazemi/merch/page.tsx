@@ -46,7 +46,7 @@ export default function MerchPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Merch</h1>
+        <h1 className="font-display text-[28px] font-bold tracking-tight">Merch</h1>
         <p className="text-sm text-ink-soft">
           {canManage ? "Nahraj fotky nabídky, sdílej QR kód a sleduj objednávky." : "Nabídka merche a QR kód k objednání."}
         </p>
@@ -54,15 +54,15 @@ export default function MerchPage() {
 
       {/* Nabídka (fotky merche) */}
       <section className="space-y-3">
-        <h2 className="font-display text-lg font-semibold">Nabídka</h2>
+        <h2 className="font-display text-[20px] font-semibold">Nabídka</h2>
         {canManage ? (
           <AddProduct yearId={year.id} />
         ) : canSeeMerch(year, me) ? (
-          <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             🔒 Tento ročník je uzamčený — nabídku jde jen prohlížet.
           </p>
         ) : (
-          <div className="flex items-start gap-2 rounded-2xl border border-marigold-200 bg-marigold-50 px-4 py-3 text-sm text-marigold-800">
+          <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
             <Icon name="merch" className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
               Nabídku může spravovat jen role <strong>Merch</strong> a správce. Ty máš jen náhled.
@@ -85,9 +85,9 @@ export default function MerchPage() {
       {/* Objednávky + QR */}
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         <section className="space-y-3">
-          <h2 className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+          <h2 className="flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
             Objednávky
-            <span className="grid h-8 min-w-8 place-items-center rounded-full bg-marigold-600 px-2.5 font-display text-base font-bold text-white">
+            <span className="grid h-8 min-w-8 place-items-center rounded-full bg-gold-500 px-2.5 font-display text-base font-bold text-[#1d1d1f]">
               {orders.length}
             </span>
             {pending > 0 && (
@@ -110,7 +110,7 @@ export default function MerchPage() {
         <aside className="space-y-4">
           {/* Souhrn / propočty */}
           <div className="card p-4">
-            <h2 className="mb-2 font-display text-lg font-semibold">Souhrn</h2>
+            <h2 className="mb-2 font-display text-[20px] font-semibold">Souhrn</h2>
             <dl className="space-y-1.5 text-sm">
               <div className="flex justify-between gap-2">
                 <dt className="text-ink-soft">Objednávek</dt>
@@ -128,7 +128,7 @@ export default function MerchPage() {
               </div>
               <div className="flex justify-between gap-2 border-t border-ink/10 pt-1.5">
                 <dt className="text-ink-soft">Tržba celkem</dt>
-                <dd className="font-display text-base font-bold text-marigold-700">{fmtCZK(revenue)}</dd>
+                <dd className="font-display text-base font-bold text-gold-700">{fmtCZK(revenue)}</dd>
               </div>
               <div className="flex justify-between gap-2">
                 <dt className="text-ink-soft">Z toho vyřízeno</dt>
@@ -505,7 +505,7 @@ function QrCard({ yearId }: { yearId: string }) {
 
   return (
     <div className="card space-y-3 p-4 text-center">
-      <h2 className="font-display text-lg font-semibold">QR k objednání</h2>
+      <h2 className="font-display text-[20px] font-semibold">QR k objednání</h2>
       <p className="text-xs text-ink-soft">Naskenuj nebo sdílej odkaz — kdokoli si přes něj objedná z nabídky.</p>
       <div className="grid place-items-center">
         {qr ? (

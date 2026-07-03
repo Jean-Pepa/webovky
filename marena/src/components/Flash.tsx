@@ -38,7 +38,7 @@ export function FlashHost() {
     <div className="pointer-events-none fixed inset-0 z-[60] grid place-items-center px-4">
       <div
         key={msg.id}
-        className="marena-pop flex max-w-[calc(100vw-2rem)] items-center gap-4 rounded-3xl bg-ink px-8 py-6 text-lg font-semibold text-white shadow-2xl ring-1 ring-white/10"
+        className="marena-pop flex max-w-[calc(100vw-2rem)] items-center gap-4 rounded-xl bg-ink px-8 py-6 text-lg font-semibold text-white shadow-2xl ring-1 ring-white/10"
       >
         {msg.emoji && <span className="shrink-0 text-4xl leading-none">{msg.emoji}</span>}
         <span className="min-w-0">{msg.text}</span>

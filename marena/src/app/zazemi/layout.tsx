@@ -84,7 +84,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const [pwdOpen, setPwdOpen] = useState(false);
   const [boardUnread, setBoardUnread] = useState(0);
   const [maint, setMaint] = useState<boolean | null>(null); // režim údržby (null = ještě nevíme)
-  const { dark, toggle: toggleTheme } = useZazemiTheme();
+  const { mode: themeMode, cycle: cycleTheme } = useZazemiTheme();
 
   useEffect(() => {
     if (ready && !authed) router.replace("/prihlaseni");
@@ -184,7 +184,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           </div>
           {/* Desktop: přepínač den/noc + heslo (správce) + přepínač ročníku + jméno */}
           <div className="ml-auto hidden items-center gap-2 md:flex">
-            <ThemeToggle dark={dark} onToggle={toggleTheme} />
+            <ThemeToggle mode={themeMode} onCycle={cycleTheme} />
             {isAdmin(me) && (
               <button
                 onClick={() => setPwdOpen(true)}
@@ -200,7 +200,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           </div>
           {/* Mobil: přepínač den/noc (vlevo od hamburgeru) + hamburger */}
           <div className="ml-auto flex items-center gap-1 md:hidden">
-            <ThemeToggle dark={dark} onToggle={toggleTheme} />
+            <ThemeToggle mode={themeMode} onCycle={cycleTheme} />
             <button
               className="inline-flex items-center justify-center rounded-full p-2 text-ink-soft hover:bg-ink/5"
               onClick={() => setMenuOpen((o) => !o)}
@@ -218,7 +218,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             href="/zazemi"
             onClick={() => setDeskMenu(null)}
             className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-              pathname === "/zazemi" ? "bg-marigold-600 text-white" : "text-ink-soft hover:bg-ink/5"
+              pathname === "/zazemi" ? "bg-gold-500 text-[#1d1d1f]" : "text-ink-soft hover:bg-ink/5"
             }`}
           >
             <Icon name="board" className="h-4 w-4" /> Nástěnka
@@ -237,7 +237,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   onClick={() => setDeskMenu(open ? null : g.id)}
                   aria-expanded={open}
                   className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                    active ? "bg-marigold-600 text-white" : open ? "bg-ink/5 text-ink" : "text-ink-soft hover:bg-ink/5"
+                    active ? "bg-gold-500 text-[#1d1d1f]" : open ? "bg-ink/5 text-ink" : "text-ink-soft hover:bg-ink/5"
                   }`}
                 >
                   <Icon name={g.icon} className="h-4 w-4" /> {g.label}
@@ -247,7 +247,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   <>
                     {/* neviditelná plocha — klik mimo menu ho zavře */}
                     <div className="fixed inset-0 z-30" onClick={() => setDeskMenu(null)} aria-hidden />
-                    <div className="absolute left-0 top-full z-40 mt-1 w-64 rounded-2xl border border-ink/10 bg-surface p-2 shadow-xl">
+                    <div className="absolute left-0 top-full z-40 mt-1 w-64 rounded-xl border border-ink/10 bg-surface p-2 shadow-xl">
                       {g.sections.map((s) => (
                         <div key={s.title} className="mb-1 last:mb-0">
                           <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">{s.title}</p>
@@ -257,7 +257,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                               href={n.href}
                               onClick={() => setDeskMenu(null)}
                               className={`flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm font-medium ${
-                                pathname === n.href ? "bg-marigold-600 text-white" : "text-ink hover:bg-ink/5"
+                                pathname === n.href ? "bg-gold-500 text-[#1d1d1f]" : "text-ink hover:bg-ink/5"
                               }`}
                             >
                               <Icon name={n.icon} className="h-4 w-4" /> {n.label}
@@ -273,7 +273,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           })}
           <Link
             href="/zazemi/almanach"
-            className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-marigold-600 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-marigold-700"
+            className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-gold-500 px-3.5 py-1.5 text-sm font-semibold text-[#1d1d1f] transition-colors hover:bg-gold-400"
           >
             <Icon name="book" className="h-4 w-4" /> Almanach
           </Link>
@@ -328,7 +328,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               <Link
                 href="/zazemi/almanach"
                 onClick={() => setMenuOpen(false)}
-                className="inline-flex items-center gap-2.5 rounded-xl bg-marigold-600 px-3 py-2.5 text-[15px] font-medium text-white"
+                className="inline-flex items-center gap-2.5 rounded-xl bg-gold-500 px-3 py-2.5 text-[15px] font-semibold text-[#1d1d1f]"
               >
                 <Icon name="book" className="h-5 w-5" /> Almanach
               </Link>
@@ -378,7 +378,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           je vidět. Jediná akce je odhlášení, ať člověk neuvízne. */}
       {pendingApproval && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 px-4 backdrop-blur-[1px]">
-          <div className="max-w-sm rounded-2xl bg-amber-500 px-6 py-6 text-center text-white shadow-2xl ring-2 ring-white/30">
+          <div className="max-w-sm rounded-xl bg-amber-500 px-6 py-6 text-center text-white shadow-2xl ring-2 ring-white/30">
             <div className="font-display text-2xl font-bold sm:text-3xl">⏳ Čeká se na schválení</div>
             <div className="mt-2 text-sm text-white/95">
               Jsi v systému, ale dokud tě správce neschválí, nedá se nic ovládat. Mrkni sem za chvíli znovu.
@@ -406,7 +406,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           nápis a nic se nedá ovládat. Správce (může to zase zapnout) je výjimka. */}
       {maint === true && !isAdmin(me) && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-ink/50 px-4 backdrop-blur-[1px]">
-          <div className="max-w-sm rounded-2xl bg-ink px-6 py-6 text-center text-white shadow-2xl ring-2 ring-white/15">
+          <div className="max-w-sm rounded-xl bg-ink px-6 py-6 text-center text-white shadow-2xl ring-2 ring-white/15">
             <div className="text-4xl">🛠️</div>
             <div className="mt-2 font-display text-2xl font-bold sm:text-3xl">Probíhá údržba</div>
             <div className="mt-2 text-sm text-white/85">
@@ -431,7 +431,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           const g = GROUPS.find((x) => x.id === sheet);
           if (!g) return null;
           return (
-            <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 mx-2 rounded-3xl border border-ink/10 bg-surface p-3 shadow-2xl md:hidden">
+            <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 mx-2 rounded-2xl border border-ink/10 bg-surface p-3 shadow-2xl md:hidden">
               {g.sections.map((s) => (
                 <div key={s.title} className="mb-2 last:mb-0">
                   <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">{s.title}</p>
@@ -442,7 +442,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                         href={n.href}
                         onClick={() => setSheet(null)}
                         className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-medium ${
-                          pathname === n.href ? "bg-marigold-600 text-white" : "text-ink hover:bg-ink/5"
+                          pathname === n.href ? "bg-gold-500 text-[#1d1d1f]" : "text-ink hover:bg-ink/5"
                         }`}
                       >
                         <Icon name={n.icon} className="h-5 w-5" /> {n.label}
@@ -455,20 +455,21 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           );
         })()}
 
-      {/* Mobil: spodní lišta — Nástěnka + 2 skupiny, vždy po ruce palcem */}
+      {/* Mobil: spodní lišta (M3 navigation bar) — 64 px, 24px ikony, aktivní
+          stav = jemná zlatá „pilulka" za ikonou, ne přebarvená celá položka. */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-paper/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-        <div className="grid grid-cols-3">
+        <div className="grid h-16 grid-cols-3">
           <Link
             href="/zazemi"
             onClick={() => setSheet(null)}
-            className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold ${
-              pathname === "/zazemi" && !sheet ? "text-marigold-700" : "text-ink-soft"
+            className={`flex flex-col items-center justify-center gap-1 text-[11px] ${
+              pathname === "/zazemi" && !sheet ? "font-semibold text-ink" : "font-medium text-ink-soft"
             }`}
           >
-            <span className="relative">
+            <span className={`relative grid h-8 w-14 place-items-center rounded-full transition-colors ${pathname === "/zazemi" && !sheet ? "bg-gold-100" : ""}`}>
               <Icon name="board" className="h-6 w-6" />
               {boardUnread > 0 && (
-                <span className="absolute -right-2 -top-1 grid h-4 min-w-[16px] place-items-center rounded-full bg-red-600 px-0.5 text-[9px] font-bold leading-none text-white">
+                <span className="absolute right-2 top-0 grid h-4 min-w-[16px] place-items-center rounded-full bg-red-600 px-0.5 text-[9px] font-bold leading-none text-white">
                   {boardUnread}
                 </span>
               )}
@@ -483,11 +484,13 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                 key={g.id}
                 onClick={() => setSheet(open ? null : g.id)}
                 aria-expanded={open}
-                className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold ${
-                  open || active ? "text-marigold-700" : "text-ink-soft"
+                className={`flex flex-col items-center justify-center gap-1 text-[11px] ${
+                  open || active ? "font-semibold text-ink" : "font-medium text-ink-soft"
                 }`}
               >
-                <Icon name={g.icon} className="h-6 w-6" />
+                <span className={`grid h-8 w-14 place-items-center rounded-full transition-colors ${open || active ? "bg-gold-100" : ""}`}>
+                  <Icon name={g.icon} className="h-6 w-6" />
+                </span>
                 {g.label}
               </button>
             );
@@ -654,7 +657,7 @@ function IdentityGate() {
     return (
       <div className="grid min-h-screen place-items-center px-4">
         <div className="card w-full max-w-sm p-7">
-          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-marigold-100 text-2xl">🔑</div>
+          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-gold-100 text-2xl">🔑</div>
           <h1 className="text-center font-display text-xl font-semibold">Přihlášení správce</h1>
           <p className="mt-1 text-center text-sm text-ink-soft">Login a heslo správce.</p>
           <form onSubmit={submitAdmin} className="mt-4 flex flex-col gap-2">
@@ -676,7 +679,7 @@ function IdentityGate() {
   return (
     <div className="grid min-h-screen place-items-center px-4">
       <div className="card w-full max-w-sm p-7">
-        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-marigold-100 text-2xl">👋</div>
+        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-gold-100 text-2xl">👋</div>
         <h1 className="text-center font-display text-xl font-semibold">Vítej v zázemí Mařeny</h1>
 
         {/* Přepínač: už mám účet / zaregistrovat se */}

@@ -68,7 +68,7 @@ export default function UkolyPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-semibold">Úkoly</h1>
+        <h1 className="font-display text-[28px] font-bold tracking-tight">Úkoly</h1>
       </div>
 
       {/* progress */}
@@ -78,7 +78,7 @@ export default function UkolyPage() {
           <span className="text-ink-soft">{pct} %</span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-paper2">
-          <div className="h-full rounded-full bg-marigold-500 transition-all" style={{ width: `${pct}%` }} />
+          <div className="h-full rounded-full bg-gold-500 transition-all" style={{ width: `${pct}%` }} />
         </div>
       </div>
 
@@ -125,7 +125,7 @@ export default function UkolyPage() {
             key={f}
             onClick={() => setFilter(f)}
             className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-              filter === f ? "bg-marigold-600 text-white" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"
+              filter === f ? "bg-gold-500 text-[#1d1d1f]" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"
             }`}
           >
             {label}
@@ -158,7 +158,7 @@ export default function UkolyPage() {
                           dispatch({ type: "toggleTask", yearId: year.id, taskId: t.id });
                           if (nowDone) flash(`Splněno: ${t.title}${me ? ` — ${me}` : ""}`, "🎉");
                         }}
-                        className="h-4 w-4 accent-marigold-600"
+                        className="h-4 w-4 accent-gold-600"
                       />
                       <div className="min-w-0 flex-1">
                         <p className={`text-sm ${t.done ? "text-ink-soft line-through" : "font-medium"}`}>{t.title}</p>

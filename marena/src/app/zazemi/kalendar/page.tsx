@@ -85,7 +85,7 @@ export default function KalendarPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Kalendář</h1>
+        <h1 className="font-display text-[28px] font-bold tracking-tight">Kalendář</h1>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
@@ -93,7 +93,7 @@ export default function KalendarPage() {
         <div className="card p-4">
           <div className="mb-3 flex items-center justify-between">
             <button className="btn-ghost" onClick={() => shift(-1)} aria-label="Předchozí měsíc">←</button>
-            <h2 className="font-display text-lg font-semibold">
+            <h2 className="font-display text-[20px] font-semibold">
               {MONTH_NAMES[vm]} {vy}
             </h2>
             <div className="flex items-center gap-1">
@@ -130,13 +130,13 @@ export default function KalendarPage() {
                   onClick={() => setSelected(date)}
                   className={`min-h-[68px] rounded-xl border p-1.5 text-left transition ${
                     isSel
-                      ? "border-marigold-500 bg-marigold-50 ring-2 ring-marigold-300"
+                      ? "border-gold-500 bg-gold-50 ring-2 ring-gold-300"
                       : evs.length
                         ? `border-ink/10 ${tint} hover:ring-1 hover:ring-ink/15`
                         : "border-ink/[0.05] bg-white hover:bg-paper2"
                   }`}
                 >
-                  <div className={`text-xs font-semibold ${isToday ? "inline-grid h-5 w-5 place-items-center rounded-full bg-marigold-600 text-white" : "text-ink"}`}>
+                  <div className={`text-xs font-semibold ${isToday ? "inline-grid h-5 w-5 place-items-center rounded-full bg-gold-500 text-[#1d1d1f]" : "text-ink"}`}>
                     {d}
                   </div>
                   <div className="mt-1 space-y-0.5">
@@ -189,7 +189,7 @@ export default function KalendarPage() {
                       </div>
                       <p className="mt-1 text-sm font-medium">{e.title}</p>
                       {isRange && (
-                        <p className="text-xs text-marigold-700">📆 {fmtDate(e.date)} – {fmtDate(e.endDate!)}</p>
+                        <p className="text-xs text-gold-700">📆 {fmtDate(e.date)} – {fmtDate(e.endDate!)}</p>
                       )}
                       {e.note && <p className="text-xs text-ink-soft">{e.note}</p>}
                       <p className="mt-1 text-[11px] text-ink-soft">přidal {e.author}</p>
