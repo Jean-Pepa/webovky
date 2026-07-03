@@ -36,9 +36,12 @@
     jezero: { label: "Jezero", color: "#2a78d6", letter: "J" },
     kanal: { label: "Kanál", color: "#1baf7a", letter: "K" },
     rameno: { label: "Rameno Dunaje", color: "#eda100", letter: "R" },
-    laguna: { label: "Laguna / limany", color: "#008300", letter: "L" },
-    more: { label: "Moře / pobřeží", color: "#4a3aa7", letter: "M" }
+    laguna: { label: "Laguna (Razim–Sinoe)", color: "#008300", letter: "L" },
+    chranena: { label: "Přísně chráněná zóna (zákaz)", color: "#d03b3b", letter: "⛔" },
+    orientace: { label: "Orientační bod", color: "#898781", letter: "•" }
   };
+  // typy, které nejsou loviště (nezobrazují se jako karty, na mapě jsou vždy)
+  const NON_SPOT = new Set(["zakladna", "chranena", "orientace"]);
 
   function verBadge(v) {
     return v >= 2
@@ -98,13 +101,16 @@
 
   function pinIcon(spot) {
     const t = TYPE_INFO[spot.type] || TYPE_INFO.jezero;
-    const cls = spot.type === "zakladna" ? "spot-pin home" : "spot-pin";
+    const small = spot.type === "orientace";
+    const cls = "spot-pin" + (spot.type === "zakladna" ? " home" : "") +
+      (spot.type === "chranena" ? " zone" : "") + (small ? " small" : "");
+    const sz = small ? 20 : 30;
     return L.divIcon({
       className: "",
       html: `<div class="${cls}" style="background:${t.color}">${t.letter}</div>`,
-      iconSize: [30, 30],
-      iconAnchor: [15, 15],
-      popupAnchor: [0, -14]
+      iconSize: [sz, sz],
+      iconAnchor: [sz / 2, sz / 2],
+      popupAnchor: [0, -sz / 2 + 1]
     });
   }
 
@@ -113,15 +119,16 @@
   D.spots.forEach((spot) => {
     const m = L.marker([spot.lat, spot.lon], { icon: pinIcon(spot), title: spot.name });
     const t = TYPE_INFO[spot.type] || TYPE_INFO.jezero;
-    const distStr = spot.type === "zakladna" ? "" :
-      ` · ${spot.distanceKm != null ? spot.distanceKm : Math.round(haversineKm(home, spot))} km od penzionu`;
+    const isSpot = !NON_SPOT.has(spot.type);
+    const distStr = (spot.distanceKm != null)
+      ? ` · ${spot.distanceKm} km od penzionu` : "";
     const pop = h("div", null,
       h("h4", null, spot.name),
       h("div", { class: "pop-meta" }, `${t.label}${distStr}`),
-      spot.species.length ? h("div", { class: "pop-species" },
+      spot.species && spot.species.length ? h("div", { class: "pop-species" },
         h("strong", null, "Ryby: "), spot.species.map(speciesName).join(", ")) : null,
       h("div", null, spot.mapNote || spot.description || ""),
-      spot.type !== "zakladna" ? h("div", { style: "margin-top:6px" },
+      isSpot ? h("div", { style: "margin-top:6px" },
         h("a", { href: `#spot-${spot.id}` }, "Podrobnosti ↓")) : null);
     m.bindPopup(pop);
     m.addTo(map);
@@ -143,7 +150,7 @@
   function applyFilter() {
     D.spots.forEach((spot) => {
       const m = markers.get(spot.id);
-      const show = spot.type === "zakladna" || !activeFilter || spot.species.includes(activeFilter);
+      const show = NON_SPOT.has(spot.type) || !activeFilter || (spot.species || []).includes(activeFilter);
       if (show) m.addTo(map); else map.removeLayer(m);
     });
     document.querySelectorAll("#spotCards .card").forEach((card) => {
@@ -163,7 +170,7 @@
 
   /* ---------- karty lovišť ---------- */
   const spotCards = $("#spotCards");
-  D.spots.filter((s) => s.type !== "zakladna").forEach((spot) => {
+  D.spots.filter((s) => !NON_SPOT.has(s.type)).forEach((spot) => {
     const t = TYPE_INFO[spot.type] || TYPE_INFO.jezero;
     const kv = [];
     const add = (dt, dd) => { if (dd) { kv.push(h("dt", null, dt), h("dd", null, dd)); } };
@@ -396,7 +403,7 @@
     const dark = document.documentElement.dataset.theme === "dark";
     const ramp = dark
       ? ["", "#184f95", "#3987e5", "#9ec5f4"]
-      : ["", "#b7d3f6", "#5598e7", "#184f95"];
+      : ["", "#86b6ef", "#3987e5", "#184f95"];
     const table = h("table", { class: "matrix" });
     table.append(h("thead", null, h("tr", null,
       h("th", null, ""), D.seasonMatrix.months.map((mm) => h("th", { scope: "col" }, mm)))));

@@ -149,6 +149,8 @@ a { color: var(--accent-ink); }
   border: 2px solid rgba(255,255,255,.92); box-shadow: 0 2px 6px rgba(0,0,0,.35);
 }
 .spot-pin.home { border-radius: 50%; }
+.spot-pin.zone { border-radius: 50%; font-size: 12px; border-style: dashed; }
+.spot-pin.small { width: 20px; height: 20px; font-size: 11px; border-radius: 50%; opacity: .9; }
 .leaflet-popup-content { font-family: inherit; font-size: .9rem; line-height: 1.5; }
 .leaflet-popup-content h4 { margin: 0 0 4px; font-size: 1rem; }
 .leaflet-popup-content .pop-meta { color: #666; font-size: .8rem; margin-bottom: 6px; }
