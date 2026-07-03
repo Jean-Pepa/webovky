@@ -36,7 +36,7 @@ export function Modal({
     <div className="fixed inset-0 z-50 grid place-items-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div
-        className="relative max-h-[90vh] w-full max-w-md overflow-y-auto overscroll-contain rounded-3xl border border-ink/10 bg-white p-6 shadow-2xl"
+        className="relative max-h-[90vh] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl border border-ink/10 bg-white p-6 shadow-2xl"
         role="dialog"
         aria-modal="true"
       >

@@ -247,7 +247,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   <>
                     {/* neviditelná plocha — klik mimo menu ho zavře */}
                     <div className="fixed inset-0 z-30" onClick={() => setDeskMenu(null)} aria-hidden />
-                    <div className="absolute left-0 top-full z-40 mt-1 w-64 rounded-2xl border border-ink/10 bg-surface p-2 shadow-xl">
+                    <div className="absolute left-0 top-full z-40 mt-1 w-64 rounded-xl border border-ink/10 bg-surface p-2 shadow-xl">
                       {g.sections.map((s) => (
                         <div key={s.title} className="mb-1 last:mb-0">
                           <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">{s.title}</p>
@@ -378,7 +378,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           je vidět. Jediná akce je odhlášení, ať člověk neuvízne. */}
       {pendingApproval && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 px-4 backdrop-blur-[1px]">
-          <div className="max-w-sm rounded-2xl bg-amber-500 px-6 py-6 text-center text-white shadow-2xl ring-2 ring-white/30">
+          <div className="max-w-sm rounded-xl bg-amber-500 px-6 py-6 text-center text-white shadow-2xl ring-2 ring-white/30">
             <div className="font-display text-2xl font-bold sm:text-3xl">⏳ Čeká se na schválení</div>
             <div className="mt-2 text-sm text-white/95">
               Jsi v systému, ale dokud tě správce neschválí, nedá se nic ovládat. Mrkni sem za chvíli znovu.
@@ -406,7 +406,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           nápis a nic se nedá ovládat. Správce (může to zase zapnout) je výjimka. */}
       {maint === true && !isAdmin(me) && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-ink/50 px-4 backdrop-blur-[1px]">
-          <div className="max-w-sm rounded-2xl bg-ink px-6 py-6 text-center text-white shadow-2xl ring-2 ring-white/15">
+          <div className="max-w-sm rounded-xl bg-ink px-6 py-6 text-center text-white shadow-2xl ring-2 ring-white/15">
             <div className="text-4xl">🛠️</div>
             <div className="mt-2 font-display text-2xl font-bold sm:text-3xl">Probíhá údržba</div>
             <div className="mt-2 text-sm text-white/85">
@@ -431,7 +431,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           const g = GROUPS.find((x) => x.id === sheet);
           if (!g) return null;
           return (
-            <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 mx-2 rounded-3xl border border-ink/10 bg-surface p-3 shadow-2xl md:hidden">
+            <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 mx-2 rounded-2xl border border-ink/10 bg-surface p-3 shadow-2xl md:hidden">
               {g.sections.map((s) => (
                 <div key={s.title} className="mb-2 last:mb-0">
                   <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">{s.title}</p>
@@ -455,20 +455,21 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           );
         })()}
 
-      {/* Mobil: spodní lišta — Nástěnka + 2 skupiny, vždy po ruce palcem */}
+      {/* Mobil: spodní lišta (M3 navigation bar) — 64 px, 24px ikony, aktivní
+          stav = jemná zlatá „pilulka" za ikonou, ne přebarvená celá položka. */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-paper/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-        <div className="grid grid-cols-3">
+        <div className="grid h-16 grid-cols-3">
           <Link
             href="/zazemi"
             onClick={() => setSheet(null)}
-            className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold ${
-              pathname === "/zazemi" && !sheet ? "text-gold-700" : "text-ink-soft"
+            className={`flex flex-col items-center justify-center gap-1 text-[11px] ${
+              pathname === "/zazemi" && !sheet ? "font-semibold text-ink" : "font-medium text-ink-soft"
             }`}
           >
-            <span className="relative">
+            <span className={`relative grid h-8 w-14 place-items-center rounded-full transition-colors ${pathname === "/zazemi" && !sheet ? "bg-gold-100" : ""}`}>
               <Icon name="board" className="h-6 w-6" />
               {boardUnread > 0 && (
-                <span className="absolute -right-2 -top-1 grid h-4 min-w-[16px] place-items-center rounded-full bg-red-600 px-0.5 text-[9px] font-bold leading-none text-white">
+                <span className="absolute right-2 top-0 grid h-4 min-w-[16px] place-items-center rounded-full bg-red-600 px-0.5 text-[9px] font-bold leading-none text-white">
                   {boardUnread}
                 </span>
               )}
@@ -483,11 +484,11 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                 key={g.id}
                 onClick={() => setSheet(open ? null : g.id)}
                 aria-expanded={open}
-                className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold ${
-                  open || active ? "text-gold-700" : "text-ink-soft"
+                className={`flex flex-col items-center justify-center gap-1 text-[11px] ${
+                  open || active ? "font-semibold text-ink" : "font-medium text-ink-soft"
                 }`}
               >
-                <span>
+                <span className={`grid h-8 w-14 place-items-center rounded-full transition-colors ${open || active ? "bg-gold-100" : ""}`}>
                   <Icon name={g.icon} className="h-6 w-6" />
                 </span>
                 {g.label}

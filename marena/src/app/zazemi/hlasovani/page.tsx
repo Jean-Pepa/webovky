@@ -69,7 +69,7 @@ export default function HlasovaniPage() {
     <div className="mx-auto max-w-3xl space-y-5">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Hlasování</h1>
+          <h1 className="font-display text-[28px] font-bold tracking-tight">Hlasování</h1>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Nová anketa"}
@@ -149,7 +149,7 @@ function DeadlineField({ value, onChange }: { value?: string; onChange: (v: stri
   }, []);
   const remaining = value ? formatRemaining(value, now) : null;
   return (
-    <div className="rounded-2xl bg-paper2/60 p-3 ring-1 ring-ink/10">
+    <div className="rounded-xl bg-paper2/60 p-3 ring-1 ring-ink/10">
       <p className="mb-2 text-sm font-medium text-ink">⏳ Časový limit (nepovinné) — anketa se pak sama uzavře</p>
       <div className="flex flex-wrap gap-1.5">
         {DEADLINE_PRESETS.map((p) => (
@@ -257,7 +257,7 @@ function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { po
           </Link>
         )}
       </div>
-      <h3 className="font-display text-lg font-semibold">{poll.question}</h3>
+      <h3 className="font-display text-[20px] font-semibold">{poll.question}</h3>
 
       <div className="mt-3 space-y-2">
         {poll.options.map((o) => {
@@ -337,7 +337,7 @@ function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { po
       </div>
 
       {showOverview && (
-        <div className="mt-3 space-y-3 rounded-2xl bg-paper2 p-4">
+        <div className="mt-3 space-y-3 rounded-xl bg-paper2 p-4">
           <p className="text-xs font-semibold text-ink-soft">Kdo hlasoval za co</p>
           {poll.options.map((o) => (
             <div key={o.id}>
@@ -372,7 +372,7 @@ function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { po
 
       {/* Úprava se ukáže až po kliknutí na „Upravit" — rozbalí se pod anketou. */}
       {editing && (
-        <div className="mt-3 space-y-3 rounded-2xl border border-gold-200 bg-gold-50/40 p-4">
+        <div className="mt-3 space-y-3 rounded-xl border border-gold-200 bg-gold-50/40 p-4">
           <p className="text-xs font-semibold text-ink-soft">Úprava ankety</p>
           <input className="input" placeholder="Otázka" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
           <div className="space-y-2">

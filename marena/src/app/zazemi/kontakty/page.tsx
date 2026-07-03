@@ -76,7 +76,7 @@ export default function KontaktyPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Kontakty &amp; odkazy</h1>
+          <h1 className="font-display text-[28px] font-bold tracking-tight">Kontakty &amp; odkazy</h1>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Přidat kontakt"}
@@ -120,7 +120,7 @@ export default function KontaktyPage() {
               return (
               <section key={name} id={slug(name)} className="scroll-mt-28">
                 <div className="mb-3 flex items-center gap-2">
-                  <h2 className={`font-display text-lg font-semibold ${isSponsor ? "text-gold-700" : ""}`}>{name}</h2>
+                  <h2 className={`font-display text-[20px] font-semibold ${isSponsor ? "text-gold-700" : ""}`}>{name}</h2>
                   {isSponsor && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-gold-500 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#1d1d1f]">
                       ★ Hlavní

@@ -317,7 +317,7 @@ export default function TymPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Tým &amp; role</h1>
+          <h1 className="font-display text-[28px] font-bold tracking-tight">Tým &amp; role</h1>
           {admin && pendingCount > 0 && (
             <span className="pending-glow inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-sm font-semibold text-white">
               ⏳ {pendingLabel}
@@ -333,7 +333,7 @@ export default function TymPage() {
           {/* Já v týmu */}
           <section className="card p-5">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-lg font-semibold">Já v týmu</h2>
+              <h2 className="font-display text-[20px] font-semibold">Já v týmu</h2>
               {editable && (
                 <button className="btn-secondary" onClick={() => setModal({})}>
                   {myMember ? "Upravit profil" : "Vyplnit profil"}
@@ -376,7 +376,7 @@ export default function TymPage() {
             defaultOpen={q.length > 0}
             className="card p-4 sm:p-5"
             header={
-              <span className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+              <span className="flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
                 Soupiska týmu ({year.members.length})
                 {year.members.filter((m) => m.approved === false).length > 0 && (
                   <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
@@ -454,7 +454,7 @@ export default function TymPage() {
           {/* Moje funkce nahoře */}
           {mineRoles.length > 0 && (
             <section className="space-y-3">
-              <h2 className="font-display text-lg font-semibold">Moje funkce</h2>
+              <h2 className="font-display text-[20px] font-semibold">Moje funkce</h2>
               <div className="grid items-start gap-3 md:grid-cols-2">
                 {mineRoles.map((r) => (
                   <RoleCard key={r.id} r={r} defaultOpen />
@@ -465,7 +465,7 @@ export default function TymPage() {
 
           {/* Ostatní posty */}
           <section className="space-y-3">
-            <h2 className="font-display text-lg font-semibold">{mineRoles.length > 0 ? "Další posty" : "Posty a co obnášejí"}</h2>
+            <h2 className="font-display text-[20px] font-semibold">{mineRoles.length > 0 ? "Další posty" : "Posty a co obnášejí"}</h2>
             <div className="grid items-start gap-3 md:grid-cols-2">
               {otherRoles.map((r) => (
                 <RoleCard key={`${r.id}-${q.length > 0}`} r={r} defaultOpen={q.length > 0} />
@@ -476,7 +476,7 @@ export default function TymPage() {
 
         {/* Vpravo: počítadlo (kolik lidí má roli z celku) + lidi bez role */}
         <aside className="h-fit min-w-0 space-y-4 lg:sticky lg:top-4">
-          <div className="flex items-center gap-3 rounded-2xl bg-gold-500 px-5 py-3 text-[#1d1d1f] shadow-sm">
+          <div className="flex items-center gap-3 rounded-xl bg-gold-500 px-5 py-3 text-[#1d1d1f] shadow-sm">
             <Icon name="users" className="h-8 w-8 shrink-0" />
             <div className="leading-none">
               <div className="font-display text-4xl font-bold tracking-tight">
@@ -489,7 +489,7 @@ export default function TymPage() {
 
           {/* Lidi, kteří ještě nemají žádnou roli. */}
           <section className="card p-4">
-            <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
+            <h2 className="mb-3 flex items-center gap-2 font-display text-[20px] font-semibold">
               <Icon name="users" className="h-5 w-5 text-gold-600" /> Bez role ({roleless.length})
             </h2>
             {roleless.length === 0 ? (
@@ -527,7 +527,7 @@ export default function TymPage() {
       {celebrate && (
         <div className="pointer-events-none fixed inset-0 z-50 grid place-items-center px-4">
           {celebrate.kind === "taken" ? (
-            <div className="marena-pop max-w-sm rounded-3xl bg-gradient-to-br from-plum-700 to-ink px-8 py-7 text-center text-white shadow-2xl ring-2 ring-gold-500/60">
+            <div className="marena-pop max-w-sm rounded-2xl bg-gradient-to-br from-plum-700 to-ink px-8 py-7 text-center text-white shadow-2xl ring-2 ring-gold-500/60">
               <div className="text-5xl">🎉</div>
               <p className="mt-2 font-display text-xl font-bold">Mařena ti gratuluje, boží bojovníku!</p>
               <p className="mt-2 text-base">
@@ -536,7 +536,7 @@ export default function TymPage() {
               <p className="mt-1 text-sm text-white/90">Hodně zdaru. 💪</p>
             </div>
           ) : (
-            <div className="marena-pop max-w-sm rounded-3xl bg-gradient-to-br from-plum-600 to-ink px-8 py-7 text-center text-white shadow-2xl ring-2 ring-white/30">
+            <div className="marena-pop max-w-sm rounded-2xl bg-gradient-to-br from-plum-600 to-ink px-8 py-7 text-center text-white shadow-2xl ring-2 ring-white/30">
               <div className="text-5xl">👋</div>
               <p className="mt-2 font-display text-xl font-bold">Funkci jsi uvolnil!</p>
               <p className="mt-2 text-base">

@@ -60,7 +60,7 @@ export default function KuchyneBarPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Kuchyně &amp; bar</h1>
+        <h1 className="font-display text-[28px] font-bold tracking-tight">Kuchyně &amp; bar</h1>
         <div className="inline-flex rounded-full bg-paper2 p-0.5 text-sm">
           {(["kuchyne", "bar"] as Place[]).map((p) => (
             <button
@@ -134,7 +134,7 @@ function MenuSection({ place, editable, q }: { place: Place; editable: boolean; 
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-display text-lg font-semibold">{place === "bar" ? "🍸 Nápojový lístek" : "🍲 Menu (jídla)"}</h2>
+        <h2 className="font-display text-[20px] font-semibold">{place === "bar" ? "🍸 Nápojový lístek" : "🍲 Menu (jídla)"}</h2>
         {editable && (
           <button className="btn-secondary px-3 py-1.5 text-sm" onClick={() => setOpen((v) => !v)}>
             {open ? "Zavřít" : place === "bar" ? "+ Přidat drink" : "+ Přidat jídlo"}
@@ -340,7 +340,7 @@ function ShoppingSection({ place, editable, q }: { place: Place; editable: boole
   return (
     <section className="card space-y-3 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-display text-lg font-semibold">
+        <h2 className="font-display text-[20px] font-semibold">
           🛒 Nákupní seznam{items.length > 0 && <span className="ml-2 text-sm font-normal text-ink-soft">{boughtCount}/{items.length} koupeno</span>}
         </h2>
         {editable && boughtCount > 0 && (
@@ -421,7 +421,7 @@ function FilesSection({ place, editable }: { place: Place; editable: boolean }) 
 
   return (
     <section className="space-y-3">
-      <h2 className="font-display text-lg font-semibold">📎 Soubory (nákupy, menu, recepty)</h2>
+      <h2 className="font-display text-[20px] font-semibold">📎 Soubory (nákupy, menu, recepty)</h2>
       {editable ? (
         <div className="card space-y-3 p-4">
           <div className="flex flex-wrap items-end gap-3">
@@ -444,7 +444,7 @@ function FilesSection({ place, editable }: { place: Place; editable: boolean }) 
           {err && <p className="text-sm text-red-600">{err}</p>}
         </div>
       ) : (
-        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">🔒 Tento ročník je uzamčený — soubory jdou jen prohlížet a stahovat.</p>
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">🔒 Tento ročník je uzamčený — soubory jdou jen prohlížet a stahovat.</p>
       )}
 
       {files.length === 0 ? (

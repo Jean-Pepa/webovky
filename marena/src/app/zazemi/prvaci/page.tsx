@@ -39,7 +39,7 @@ export default function PrvaciPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Prváci</h1>
+          <h1 className="font-display text-[28px] font-bold tracking-tight">Prváci</h1>
           <p className="mt-0.5 text-sm text-ink-soft">Seznam prváků, o které celá Mařena je. Zapisuje se ručně.</p>
         </div>
         {canEdit && (

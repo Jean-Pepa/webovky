@@ -85,7 +85,7 @@ export default function KalendarPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Kalendář</h1>
+        <h1 className="font-display text-[28px] font-bold tracking-tight">Kalendář</h1>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
@@ -93,7 +93,7 @@ export default function KalendarPage() {
         <div className="card p-4">
           <div className="mb-3 flex items-center justify-between">
             <button className="btn-ghost" onClick={() => shift(-1)} aria-label="Předchozí měsíc">←</button>
-            <h2 className="font-display text-lg font-semibold">
+            <h2 className="font-display text-[20px] font-semibold">
               {MONTH_NAMES[vm]} {vy}
             </h2>
             <div className="flex items-center gap-1">

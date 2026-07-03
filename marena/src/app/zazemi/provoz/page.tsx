@@ -123,7 +123,7 @@ export default function ProvozPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Provoz &amp; směny</h1>
+          <h1 className="font-display text-[28px] font-bold tracking-tight">Provoz &amp; směny</h1>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Přidat směnu"}
@@ -199,7 +199,7 @@ export default function ProvozPage() {
           <div className="space-y-6">
             {groups.map(([areaName, items]) => (
               <section key={areaName}>
-                <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
+                <h2 className="mb-3 flex items-center gap-2 font-display text-[20px] font-semibold">
                   <span>{areaEmoji(areaName)}</span> {areaName}
                   <span className="chip">{items.length}</span>
                 </h2>

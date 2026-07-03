@@ -15,7 +15,7 @@ export default function AlmanachPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Almanach Mařeny</h1>
+        <h1 className="font-display text-[28px] font-bold tracking-tight">Almanach Mařeny</h1>
         <p className="text-sm text-ink-soft">
           Veškerá nasbíraná moudrost dvou ročníků v jednom dokumentu — interní manuál pro ty, kdo
           Mařenu organizují. Čti, doplňuj a předávej dál.
@@ -41,7 +41,7 @@ export default function AlmanachPage() {
           {ALMANACH.map((s, i) => (
             <section key={s.id} id={s.id} className="scroll-mt-28">
               <div className="flex items-center gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-paper2 text-2xl">{s.emoji}</span>
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-paper2 text-2xl">{s.emoji}</span>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-gold-700">Kapitola {String(i + 1).padStart(2, "0")}</p>
                   <h2 className="font-display text-xl font-semibold tracking-tight">{s.title}</h2>

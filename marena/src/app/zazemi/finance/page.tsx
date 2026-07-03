@@ -200,7 +200,7 @@ export default function FinancePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 tabular-nums">
       <datalist id="fin-cats">
         {CATEGORIES.map((c) => (
           <option key={c} value={c} />
@@ -208,7 +208,7 @@ export default function FinancePage() {
       </datalist>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Finance</h1>
+          <h1 className="font-display text-[28px] font-bold tracking-tight">Finance</h1>
         </div>
         {canAdd && (
           <div className="flex flex-wrap items-center gap-2">
@@ -241,13 +241,13 @@ export default function FinancePage() {
 
       {/* Kdo co smí: každý přidává, upravuje jen správce; zamčený ročník = jen náhled */}
       {!canAdd ? (
-        <div className="flex items-start gap-2 rounded-2xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
+        <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
           <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
           <span>Tento ročník je uzamčený — máš jen náhled.</span>
         </div>
       ) : (
         !canEdit && (
-          <div className="flex items-start gap-2 rounded-2xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
+          <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
             <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
             <span>Můžeš přidávat položky i kasy. Upravovat a mazat zapsané může jen správce.</span>
           </div>
@@ -264,7 +264,7 @@ export default function FinancePage() {
       {/* Denní kasy */}
       {((year.cashboxes?.length ?? 0) > 0 || canAdd) && (
         <section className="card p-4">
-          <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+          <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
             🧰 Denní kasy
             {(year.cashboxes?.length ?? 0) > 0 && (
               <>
@@ -301,7 +301,7 @@ export default function FinancePage() {
       {/* Výběr (vklady) — kdo dal kolik do společné kasy */}
       {(contributions.length > 0 || canAdd) && (
         <section id="vyber" className="card scroll-mt-20 p-4">
-          <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+          <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
             💰 Výběr (vklady)
             {contributions.length > 0 && (
               <>
@@ -367,7 +367,7 @@ export default function FinancePage() {
       {/* Merch — samostatně (tržby/výdaje z kategorie merch) */}
       {merchItems.length > 0 && (
         <section className="card p-4">
-          <h2 className="mb-3 flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+          <h2 className="mb-3 flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
             🛍️ Merch
             <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-sm">
               <span className="text-xs font-normal text-ink-soft">vloženo</span>
@@ -931,7 +931,7 @@ function CashboxCard({ box, yearId, canAdd, canEdit }: { box: Cashbox; yearId: s
   }
 
   return (
-    <div className={`rounded-2xl border p-3 ${closed ? "border-leaf/30 bg-leaf/[0.05]" : "border-amber-200 bg-amber-50"}`}>
+    <div className={`rounded-xl border p-3 ${closed ? "border-leaf/30 bg-leaf/[0.05]" : "border-amber-200 bg-amber-50"}`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="flex flex-wrap items-center gap-1.5 font-semibold">

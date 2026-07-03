@@ -50,7 +50,7 @@ export function YearSwitcher() {
       </button>
 
       {open && (
-        <div className="absolute left-0 right-auto z-40 mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-ink/10 bg-white p-1.5 shadow-xl md:left-auto md:right-0">
+        <div className="absolute left-0 right-auto z-40 mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-ink/10 bg-white p-1.5 shadow-xl md:left-auto md:right-0">
           <ul className="max-h-72 space-y-0.5 overflow-y-auto">
             {db.years.map((y) => {
               const isCurrent = y.id === currentYear?.id;

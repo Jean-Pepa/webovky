@@ -111,7 +111,7 @@ export default function ProgramPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Program</h1>
+          <h1 className="font-display text-[28px] font-bold tracking-tight">Program</h1>
         </div>
         {canEdit && (
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
@@ -121,7 +121,7 @@ export default function ProgramPage() {
       </div>
 
       {!canEdit && (
-        <div className="flex items-start gap-2 rounded-2xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
+        <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
           <Icon name="mic" className="mt-0.5 h-4 w-4 shrink-0" />
           <span>Program vidí každý, upravovat ho může jen kapelník, koordinátor přednášek, bavič a správce.</span>
         </div>
@@ -154,7 +154,7 @@ export default function ProgramPage() {
         <div className="space-y-6">
           {groups.map(([cat, items]) => (
             <section key={cat}>
-              <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
+              <h2 className="mb-3 flex items-center gap-2 font-display text-[20px] font-semibold">
                 <span>{catEmoji(cat)}</span> {cat}
                 <span className="chip">{items.length}</span>
               </h2>
@@ -312,8 +312,8 @@ function CancelButton({ invite, yearId, canEdit }: { invite: Invite; yearId: str
       {ask && (
         <div className="fixed inset-0 z-50 grid place-items-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAsk(false)} aria-hidden />
-          <div className="relative w-full max-w-md rounded-3xl border border-ink/10 bg-white p-6 shadow-2xl" role="dialog" aria-modal="true">
-            <h2 className="mb-4 font-display text-lg font-semibold tracking-tight">Opravdu zrušeno?</h2>
+          <div className="relative w-full max-w-md rounded-xl border border-ink/10 bg-white p-6 shadow-2xl" role="dialog" aria-modal="true">
+            <h2 className="mb-4 font-display text-[20px] font-semibold tracking-tight">Opravdu zrušeno?</h2>
             <p className="text-sm text-ink-soft">
               Opravdu byla <strong className="text-ink">{invite.name}</strong> zrušena? Přesuneme ji mezi odmítnuté (info zůstane).
             </p>

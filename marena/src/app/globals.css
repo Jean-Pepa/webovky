@@ -484,9 +484,9 @@ html.theme-anim .input {
 @layer components {
   .btn-primary {
     /* Zlaté tlačítko s TMAVÝM textem (9,3:1) — text zůstává tmavý i v nočním
-       režimu (proto literál, ne token ink). Okraj dává tvar na světlém pozadí. */
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gold-500
-      px-5 py-2.5 text-sm font-semibold text-[#1d1d1f] ring-1 ring-inset ring-gold-600/50
+       režimu (proto literál, ne token ink). Min. výška 44 px (Apple tap target). */
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-gold-500
+      px-5 py-2.5 text-[15px] font-semibold text-[#1d1d1f] ring-1 ring-inset ring-gold-600/50
       transition-all hover:bg-gold-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
   }
   /* Vegas tlačítko — neonový přechod růžová → fialová (místo červené na homepage). */
@@ -497,8 +497,8 @@ html.theme-anim .input {
       disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-secondary {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border
-      border-ink/10 bg-surface px-5 py-2.5 text-sm font-medium text-ink transition-all
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border
+      border-ink/10 bg-surface px-5 py-2.5 text-[15px] font-medium text-ink transition-all
       hover:bg-paper2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-ghost {
@@ -512,15 +512,17 @@ html.theme-anim .input {
       disabled:cursor-not-allowed disabled:opacity-50;
   }
   .card {
-    @apply rounded-3xl border border-ink/[0.08] bg-surface;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 8px 24px rgba(0, 0, 0, 0.04);
+    /* 12px rádius (M3 karta = 12dp, iOS grouped ~10pt); tvar nese pozadí,
+       stín jen nepatrný — hloubku dělá kontrast plochy, ne dekorace. */
+    @apply rounded-xl border border-ink/[0.06] bg-surface;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   }
   .input {
-    /* text-base (16px) na mobilu brání automatickému zoomu iOS Safari při
-       zaostření pole; na desktopu zpět na 14px. */
-    @apply w-full rounded-xl border border-ink/10 bg-surface px-3.5 py-2.5 text-base text-ink
-      outline-none transition placeholder:text-ink-soft/50 focus:border-gold-400
-      focus:ring-4 focus:ring-gold-500/15 sm:text-sm;
+    /* Pole = lehce zaoblený obdélník (M3: 4–8px), žádný bochánek. text-base
+       (16px) na mobilu brání auto-zoomu iOS Safari; focus = 2px obrys. */
+    @apply w-full rounded-lg border border-ink/15 bg-surface px-3.5 py-2.5 text-base text-ink
+      outline-none transition placeholder:text-ink-soft/50 focus:border-gold-500
+      focus:ring-1 focus:ring-gold-500 sm:text-sm;
   }
   .label {
     @apply mb-1 block text-xs font-medium text-ink-soft;

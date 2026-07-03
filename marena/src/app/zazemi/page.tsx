@@ -38,7 +38,7 @@ function PollComposer({ draft, setDraft, polls }: { draft: PollDraft; setDraft: 
   const setOpt = (i: number, v: string) => setDraft({ ...draft, options: draft.options.map((x, j) => (j === i ? v : x)) });
   const hasExisting = polls.length > 0;
   return (
-    <div className="rounded-2xl bg-paper2/60 p-3 ring-1 ring-ink/10">
+    <div className="rounded-xl bg-paper2/60 p-3 ring-1 ring-ink/10">
       <label className="flex items-center gap-2 text-sm font-medium text-ink">
         <input
           type="checkbox"
@@ -230,7 +230,7 @@ export default function NastenkaPage() {
       <div className="min-w-0 space-y-5">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <h1 className="font-display text-2xl font-semibold tracking-tight">Nástěnka</h1>
+            <h1 className="font-display text-[28px] font-bold tracking-tight">Nástěnka</h1>
           </div>
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
             {open ? "Zavřít" : "+ Přidat info"}
@@ -553,7 +553,7 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
         </label>
 
         {poll ? (
-          <p className="rounded-2xl bg-paper2/60 px-3 py-2 text-sm text-ink-soft ring-1 ring-ink/10">
+          <p className="rounded-xl bg-paper2/60 px-3 py-2 text-sm text-ink-soft ring-1 ring-ink/10">
             🗳️ Anketa je k příspěvku připojena: „{poll.question}“. Upravit ji můžeš v sekci Hlasování.
           </p>
         ) : (
@@ -611,7 +611,7 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
             ))}
         </div>
       </div>
-      <h3 className="break-words font-display text-lg font-semibold">{p.title}</h3>
+      <h3 className="break-words font-display text-[20px] font-semibold">{p.title}</h3>
       {p.body && <PostBody body={p.body} />}
       {p.photoIds && p.photoIds.length > 0 && <PostPhotos ids={p.photoIds} />}
       {poll && (
