@@ -16,35 +16,70 @@ import { FlashHost } from "@/components/Flash";
 import { ThemeToggle, useZazemiTheme } from "@/components/ThemeToggle";
 import { supabaseEnabled } from "@/lib/supabase/config";
 
-// Pořadí podle významových skupin (co patří k sobě, je vedle sebe):
-// komunikace & plán → lidé → festival (program/provoz) → peníze → kontakty.
-const NAV: { href: string; label: string; icon: IconName }[] = [
-  // Komunikace & plánování
-  { href: "/zazemi", label: "Nástěnka", icon: "board" },
-  { href: "/zazemi/hlasovani", label: "Hlasování", icon: "vote" },
-  { href: "/zazemi/kalendar", label: "Kalendář", icon: "calendar" },
-  { href: "/zazemi/ukoly", label: "Úkoly", icon: "tasks" },
-  // Lidé
-  { href: "/zazemi/tym", label: "Tým & role", icon: "users" },
-  { href: "/zazemi/prvaci", label: "Prváci", icon: "star" },
-  // Festival — obsah a provoz
-  { href: "/zazemi/program", label: "Program", icon: "mic" },
-  { href: "/zazemi/provoz", label: "Provoz & směny", icon: "ops" },
-  { href: "/zazemi/kuchyne", label: "Kuchyně & bar", icon: "food" },
-  { href: "/zazemi/vyzdoba", label: "Výzdoba", icon: "palette" },
-  // Peníze a vnější vztahy
-  { href: "/zazemi/sponzori", label: "Sponzoři", icon: "spark" },
-  { href: "/zazemi/merch", label: "Merch", icon: "merch" },
-  { href: "/zazemi/finance", label: "Finance", icon: "finance" },
-  // Reference
-  { href: "/zazemi/kontakty", label: "Kontakty", icon: "contacts" },
+// Navigace: Nástěnka přímo (1 ťuk) + 2 skupiny se sekcemi (2 ťuky na cokoli).
+// Mobil = spodní lišta se 3 topicy, skupina vysune panel; desktop = rozbalovací
+// menu v hlavičce. Nástroje (Almanach, Správa webu…) žijí v hamburgeru.
+type NavItem = { href: string; label: string; icon: IconName };
+type NavGroup = { id: string; label: string; icon: IconName; sections: { title: string; items: NavItem[] }[] };
+
+const GROUPS: NavGroup[] = [
+  {
+    id: "plan",
+    label: "Plán & lidé",
+    icon: "calendar",
+    sections: [
+      {
+        title: "Plán",
+        items: [
+          { href: "/zazemi/hlasovani", label: "Hlasování", icon: "vote" },
+          { href: "/zazemi/kalendar", label: "Kalendář", icon: "calendar" },
+          { href: "/zazemi/ukoly", label: "Úkoly", icon: "tasks" },
+        ],
+      },
+      {
+        title: "Lidé",
+        items: [
+          { href: "/zazemi/tym", label: "Tým & role", icon: "users" },
+          { href: "/zazemi/prvaci", label: "Prváci", icon: "star" },
+          { href: "/zazemi/kontakty", label: "Kontakty", icon: "contacts" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "festival",
+    label: "Festival & peníze",
+    icon: "flag",
+    sections: [
+      {
+        title: "Festival",
+        items: [
+          { href: "/zazemi/program", label: "Program", icon: "mic" },
+          { href: "/zazemi/provoz", label: "Provoz & směny", icon: "ops" },
+          { href: "/zazemi/kuchyne", label: "Kuchyně & bar", icon: "food" },
+          { href: "/zazemi/vyzdoba", label: "Výzdoba", icon: "palette" },
+        ],
+      },
+      {
+        title: "Peníze",
+        items: [
+          { href: "/zazemi/finance", label: "Finance", icon: "finance" },
+          { href: "/zazemi/sponzori", label: "Sponzoři", icon: "spark" },
+          { href: "/zazemi/merch", label: "Merch", icon: "merch" },
+        ],
+      },
+    ],
+  },
 ];
+const groupHrefs = (g: NavGroup) => g.sections.flatMap((s) => s.items.map((i) => i.href));
 
 export default function ZazemiLayout({ children }: { children: React.ReactNode }) {
   const { ready, authed, me, logout, syncError, dismissSyncError, db, currentYear, canEditCurrentYear, pendingApproval } = useStore();
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [sheet, setSheet] = useState<string | null>(null); // otevřená skupina spodní lišty (mobil)
+  const [deskMenu, setDeskMenu] = useState<string | null>(null); // otevřené rozbalovací menu (desktop)
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
   const [boardUnread, setBoardUnread] = useState(0);
@@ -177,25 +212,63 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           </div>
         </div>
 
-        {/* Desktopová navigace */}
-        <nav className="mx-auto hidden max-w-6xl flex-wrap gap-1 px-3 pb-2 md:flex">
-          {NAV.map((n) => {
-            const active = pathname === n.href;
+        {/* Desktopová navigace — Nástěnka + 2 rozbalovací skupiny, nástroje vpravo */}
+        <nav className="mx-auto hidden max-w-6xl flex-wrap items-center gap-1 px-3 pb-2 md:flex">
+          <Link
+            href="/zazemi"
+            onClick={() => setDeskMenu(null)}
+            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+              pathname === "/zazemi" ? "bg-marigold-600 text-white" : "text-ink-soft hover:bg-ink/5"
+            }`}
+          >
+            <Icon name="board" className="h-4 w-4" /> Nástěnka
+            {boardUnread > 0 && (
+              <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-red-600 px-1 text-[11px] font-bold leading-none text-white">
+                {boardUnread}
+              </span>
+            )}
+          </Link>
+          {GROUPS.map((g) => {
+            const active = groupHrefs(g).includes(pathname);
+            const open = deskMenu === g.id;
             return (
-              <Link
-                key={n.href}
-                href={n.href}
-                className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                  active ? "bg-marigold-600 text-white" : "text-ink-soft hover:bg-ink/5"
-                }`}
-              >
-                <Icon name={n.icon} className="h-4 w-4" /> {n.label}
-                {n.href === "/zazemi" && boardUnread > 0 && (
-                  <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-red-600 px-1 text-[11px] font-bold leading-none text-white">
-                    {boardUnread}
-                  </span>
+              <div key={g.id} className="relative">
+                <button
+                  onClick={() => setDeskMenu(open ? null : g.id)}
+                  aria-expanded={open}
+                  className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                    active ? "bg-marigold-600 text-white" : open ? "bg-ink/5 text-ink" : "text-ink-soft hover:bg-ink/5"
+                  }`}
+                >
+                  <Icon name={g.icon} className="h-4 w-4" /> {g.label}
+                  <Icon name="chevron" className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+                </button>
+                {open && (
+                  <>
+                    {/* neviditelná plocha — klik mimo menu ho zavře */}
+                    <div className="fixed inset-0 z-30" onClick={() => setDeskMenu(null)} aria-hidden />
+                    <div className="absolute left-0 top-full z-40 mt-1 w-64 rounded-2xl border border-ink/10 bg-surface p-2 shadow-xl">
+                      {g.sections.map((s) => (
+                        <div key={s.title} className="mb-1 last:mb-0">
+                          <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">{s.title}</p>
+                          {s.items.map((n) => (
+                            <Link
+                              key={n.href}
+                              href={n.href}
+                              onClick={() => setDeskMenu(null)}
+                              className={`flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm font-medium ${
+                                pathname === n.href ? "bg-marigold-600 text-white" : "text-ink hover:bg-ink/5"
+                              }`}
+                            >
+                              <Icon name={n.icon} className="h-4 w-4" /> {n.label}
+                            </Link>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
-              </Link>
+              </div>
             );
           })}
           <Link
@@ -232,9 +305,9 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           </button>
         </nav>
 
-        {/* Mobilní menu (rozbalovací) */}
+        {/* Mobilní menu (hamburger) — už jen nástroje; stránky jsou ve spodní liště */}
         {menuOpen && (
-          <div className="h-[calc(100dvh-3.25rem)] overflow-y-auto border-t border-ink/10 bg-paper px-3 py-3 md:hidden">
+          <div className="max-h-[calc(100dvh-3.25rem)] overflow-y-auto border-t border-ink/10 bg-paper px-3 py-3 md:hidden">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <YearSwitcher />
               <MeBadge />
@@ -252,26 +325,6 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               )}
             </div>
             <nav className="flex flex-col gap-1">
-              {NAV.map((n) => {
-                const active = pathname === n.href;
-                return (
-                  <Link
-                    key={n.href}
-                    href={n.href}
-                    onClick={() => setMenuOpen(false)}
-                    className={`inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-medium transition-colors ${
-                      active ? "bg-marigold-600 text-white" : "text-ink hover:bg-ink/5"
-                    }`}
-                  >
-                    <Icon name={n.icon} className="h-5 w-5" /> {n.label}
-                    {n.href === "/zazemi" && boardUnread > 0 && (
-                      <span className="ml-auto grid h-5 min-w-[20px] place-items-center rounded-full bg-red-600 px-1 text-[11px] font-bold leading-none text-white">
-                        {boardUnread}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
               <Link
                 href="/zazemi/almanach"
                 onClick={() => setMenuOpen(false)}
@@ -369,7 +422,78 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
         </div>
       )}
 
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-6 pb-24 md:pb-6">{children}</main>
+
+      {/* Mobil: ztmavení + vysouvací panel skupiny (nad spodní lištou) */}
+      {sheet && <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setSheet(null)} aria-hidden />}
+      {sheet &&
+        (() => {
+          const g = GROUPS.find((x) => x.id === sheet);
+          if (!g) return null;
+          return (
+            <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 mx-2 rounded-3xl border border-ink/10 bg-surface p-3 shadow-2xl md:hidden">
+              {g.sections.map((s) => (
+                <div key={s.title} className="mb-2 last:mb-0">
+                  <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">{s.title}</p>
+                  <div className="grid gap-1">
+                    {s.items.map((n) => (
+                      <Link
+                        key={n.href}
+                        href={n.href}
+                        onClick={() => setSheet(null)}
+                        className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-medium ${
+                          pathname === n.href ? "bg-marigold-600 text-white" : "text-ink hover:bg-ink/5"
+                        }`}
+                      >
+                        <Icon name={n.icon} className="h-5 w-5" /> {n.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
+      {/* Mobil: spodní lišta — Nástěnka + 2 skupiny, vždy po ruce palcem */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-paper/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+        <div className="grid grid-cols-3">
+          <Link
+            href="/zazemi"
+            onClick={() => setSheet(null)}
+            className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold ${
+              pathname === "/zazemi" && !sheet ? "text-marigold-700" : "text-ink-soft"
+            }`}
+          >
+            <span className="relative">
+              <Icon name="board" className="h-6 w-6" />
+              {boardUnread > 0 && (
+                <span className="absolute -right-2 -top-1 grid h-4 min-w-[16px] place-items-center rounded-full bg-red-600 px-0.5 text-[9px] font-bold leading-none text-white">
+                  {boardUnread}
+                </span>
+              )}
+            </span>
+            Nástěnka
+          </Link>
+          {GROUPS.map((g) => {
+            const active = groupHrefs(g).includes(pathname);
+            const open = sheet === g.id;
+            return (
+              <button
+                key={g.id}
+                onClick={() => setSheet(open ? null : g.id)}
+                aria-expanded={open}
+                className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold ${
+                  open || active ? "text-marigold-700" : "text-ink-soft"
+                }`}
+              >
+                <Icon name={g.icon} className="h-6 w-6" />
+                {g.label}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

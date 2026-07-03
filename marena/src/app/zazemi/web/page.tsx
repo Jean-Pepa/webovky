@@ -425,7 +425,8 @@ export default function WebEditorPage() {
       </Collapsible>
 
       {/* SPODNÍ LIŠTA — Uložit */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-ink/10 bg-surface/95 backdrop-blur">
+      {/* Na mobilu sedí nad spodní navigační lištou, na desktopu u kraje. */}
+      <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 border-t border-ink/10 bg-surface/95 backdrop-blur md:bottom-0">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <div className="text-sm">
             {status === "saving" && <span className="text-ink-soft">Ukládám…</span>}
