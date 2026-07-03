@@ -218,7 +218,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             href="/zazemi"
             onClick={() => setDeskMenu(null)}
             className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-              pathname === "/zazemi" ? "bg-marigold-600 text-white" : "text-ink-soft hover:bg-ink/5"
+              pathname === "/zazemi" ? "bg-gold-500 text-[#1d1d1f]" : "text-ink-soft hover:bg-ink/5"
             }`}
           >
             <Icon name="board" className="h-4 w-4" /> Nástěnka
@@ -237,7 +237,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   onClick={() => setDeskMenu(open ? null : g.id)}
                   aria-expanded={open}
                   className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                    active ? "bg-marigold-600 text-white" : open ? "bg-ink/5 text-ink" : "text-ink-soft hover:bg-ink/5"
+                    active ? "bg-gold-500 text-[#1d1d1f]" : open ? "bg-ink/5 text-ink" : "text-ink-soft hover:bg-ink/5"
                   }`}
                 >
                   <Icon name={g.icon} className="h-4 w-4" /> {g.label}
@@ -257,7 +257,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                               href={n.href}
                               onClick={() => setDeskMenu(null)}
                               className={`flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm font-medium ${
-                                pathname === n.href ? "bg-marigold-600 text-white" : "text-ink hover:bg-ink/5"
+                                pathname === n.href ? "bg-gold-500 text-[#1d1d1f]" : "text-ink hover:bg-ink/5"
                               }`}
                             >
                               <Icon name={n.icon} className="h-4 w-4" /> {n.label}
@@ -273,7 +273,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           })}
           <Link
             href="/zazemi/almanach"
-            className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-marigold-600 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-marigold-700"
+            className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-gold-500 px-3.5 py-1.5 text-sm font-semibold text-[#1d1d1f] transition-colors hover:bg-gold-400"
           >
             <Icon name="book" className="h-4 w-4" /> Almanach
           </Link>
@@ -328,7 +328,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               <Link
                 href="/zazemi/almanach"
                 onClick={() => setMenuOpen(false)}
-                className="inline-flex items-center gap-2.5 rounded-xl bg-marigold-600 px-3 py-2.5 text-[15px] font-medium text-white"
+                className="inline-flex items-center gap-2.5 rounded-xl bg-gold-500 px-3 py-2.5 text-[15px] font-semibold text-[#1d1d1f]"
               >
                 <Icon name="book" className="h-5 w-5" /> Almanach
               </Link>
@@ -442,7 +442,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                         href={n.href}
                         onClick={() => setSheet(null)}
                         className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-medium ${
-                          pathname === n.href ? "bg-marigold-600 text-white" : "text-ink hover:bg-ink/5"
+                          pathname === n.href ? "bg-gold-500 text-[#1d1d1f]" : "text-ink hover:bg-ink/5"
                         }`}
                       >
                         <Icon name={n.icon} className="h-5 w-5" /> {n.label}
@@ -462,10 +462,10 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             href="/zazemi"
             onClick={() => setSheet(null)}
             className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold ${
-              pathname === "/zazemi" && !sheet ? "text-marigold-700" : "text-ink-soft"
+              pathname === "/zazemi" && !sheet ? "text-gold-700" : "text-ink-soft"
             }`}
           >
-            <span className="relative">
+            <span className={`relative ${pathname === "/zazemi" && !sheet ? "glow-gold-icon" : ""}`}>
               <Icon name="board" className="h-6 w-6" />
               {boardUnread > 0 && (
                 <span className="absolute -right-2 -top-1 grid h-4 min-w-[16px] place-items-center rounded-full bg-red-600 px-0.5 text-[9px] font-bold leading-none text-white">
@@ -484,10 +484,12 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                 onClick={() => setSheet(open ? null : g.id)}
                 aria-expanded={open}
                 className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold ${
-                  open || active ? "text-marigold-700" : "text-ink-soft"
+                  open || active ? "text-gold-700" : "text-ink-soft"
                 }`}
               >
-                <Icon name={g.icon} className="h-6 w-6" />
+                <span className={open || active ? "glow-gold-icon" : ""}>
+                  <Icon name={g.icon} className="h-6 w-6" />
+                </span>
                 {g.label}
               </button>
             );
@@ -654,7 +656,7 @@ function IdentityGate() {
     return (
       <div className="grid min-h-screen place-items-center px-4">
         <div className="card w-full max-w-sm p-7">
-          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-marigold-100 text-2xl">🔑</div>
+          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-gold-100 text-2xl">🔑</div>
           <h1 className="text-center font-display text-xl font-semibold">Přihlášení správce</h1>
           <p className="mt-1 text-center text-sm text-ink-soft">Login a heslo správce.</p>
           <form onSubmit={submitAdmin} className="mt-4 flex flex-col gap-2">
@@ -676,7 +678,7 @@ function IdentityGate() {
   return (
     <div className="grid min-h-screen place-items-center px-4">
       <div className="card w-full max-w-sm p-7">
-        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-marigold-100 text-2xl">👋</div>
+        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-gold-100 text-2xl">👋</div>
         <h1 className="text-center font-display text-xl font-semibold">Vítej v zázemí Mařeny</h1>
 
         {/* Přepínač: už mám účet / zaregistrovat se */}

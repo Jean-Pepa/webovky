@@ -69,7 +69,7 @@ export default function HlasovaniPage() {
     <div className="mx-auto max-w-3xl space-y-5">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold">Hlasování</h1>
+          <h1 className="font-marquee glow-gold text-2xl">Hlasování</h1>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Nová anketa"}
@@ -164,7 +164,7 @@ function DeadlineField({ value, onChange }: { value?: string; onChange: (v: stri
         ))}
         <button
           type="button"
-          className={`rounded-full px-3 py-1 text-xs font-medium transition ${value ? "text-ink-soft ring-1 ring-ink/10 hover:bg-ink/5" : "bg-marigold-600 text-white"}`}
+          className={`rounded-full px-3 py-1 text-xs font-medium transition ${value ? "text-ink-soft ring-1 ring-ink/10 hover:bg-ink/5" : "bg-gold-500 text-[#1d1d1f]"}`}
           onClick={() => onChange(undefined)}
         >
           Bez limitu
@@ -230,7 +230,7 @@ function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { po
     <div
       id={`poll-${poll.id}`}
       className={`card scroll-mt-24 p-5 transition-shadow ${closed ? "bg-leaf/[0.04] ring-2 ring-leaf" : ""} ${
-        highlight ? "ring-2 ring-marigold-500 shadow-[0_0_0_4px_rgba(253,175,34,0.25)]" : ""
+        highlight ? "ring-2 ring-gold-500 shadow-[0_0_0_4px_rgba(253,175,34,0.25)]" : ""
       }`}
     >
       <div className="mb-1 flex flex-wrap items-center gap-2 text-xs text-ink-soft">
@@ -238,7 +238,7 @@ function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { po
         <span>· {fmtRelative(poll.createdAt)}</span>
         {poll.multi && <span className="chip">vícevýběr</span>}
         {remaining && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-marigold-50 px-2.5 py-0.5 text-xs font-semibold text-marigold-700 ring-1 ring-marigold-200" title={`Uzavře se ${fmtDateTime(poll.closesAt!)}`}>
+          <span className="inline-flex items-center gap-1 rounded-full bg-gold-50 px-2.5 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-200" title={`Uzavře se ${fmtDateTime(poll.closesAt!)}`}>
             ⏳ zbývá {remaining}
           </span>
         )}
@@ -251,7 +251,7 @@ function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { po
           <Link
             href={`/zazemi?post=${linkedPost.id}`}
             title={`Nástěnka: ${linkedPost.title}`}
-            className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-marigold-100 px-2.5 py-1 text-xs font-medium text-marigold-800 ring-1 ring-marigold-200 transition hover:bg-marigold-200"
+            className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-gold-100 px-2.5 py-1 text-xs font-medium text-gold-800 ring-1 ring-gold-200 transition hover:bg-gold-200"
           >
             📌 Nástěnka
           </Link>
@@ -272,17 +272,17 @@ function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { po
                 flash(`Hlasoval jsi: ${o.label}`, "🗳️");
               }}
               className={`relative block w-full overflow-hidden rounded-xl border px-3 py-2.5 text-left transition ${
-                mine ? "border-marigold-400 bg-marigold-50" : "border-ink/10 bg-white hover:bg-paper2"
+                mine ? "border-gold-400 bg-gold-50" : "border-ink/10 bg-white hover:bg-paper2"
               } ${closed ? "cursor-default" : "cursor-pointer"}`}
             >
               <span
                 aria-hidden
-                className={`absolute inset-y-0 left-0 ${mine ? "bg-marigold-200/60" : "bg-paper2"}`}
+                className={`absolute inset-y-0 left-0 ${mine ? "bg-gold-200/60" : "bg-paper2"}`}
                 style={{ width: `${pct}%` }}
               />
               <span className="relative flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2 text-sm font-medium">
-                  <span className={`grid h-4 w-4 place-items-center border text-[10px] ${poll.multi ? "rounded-[4px]" : "rounded-full"} ${mine ? "border-marigold-600 bg-marigold-600 text-white" : "border-ink/30"}`}>
+                  <span className={`grid h-4 w-4 place-items-center border text-[10px] ${poll.multi ? "rounded-[4px]" : "rounded-full"} ${mine ? "border-gold-600 bg-gold-500 text-[#1d1d1f]" : "border-ink/30"}`}>
                     {mine ? "✓" : ""}
                   </span>
                   {o.label}
@@ -303,7 +303,7 @@ function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { po
             {totalPeople > 0 ? `Zatím nikdo z ${totalPeople} nehlasoval` : "Zatím nikdo nehlasoval"}
           </span>
         ) : (
-          <span className="inline-flex items-center gap-2.5 rounded-full bg-marigold-600 px-4 py-2 text-white shadow-sm">
+          <span className="inline-flex items-center gap-2.5 rounded-full bg-gold-500 px-4 py-2 text-[#1d1d1f] shadow-sm">
             <span className="font-display text-3xl font-bold leading-none tracking-tight">
               {totalVoters}
               {totalPeople > 0 && <span className="text-xl font-semibold opacity-80"> z {totalPeople}</span>}
@@ -372,7 +372,7 @@ function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { po
 
       {/* Úprava se ukáže až po kliknutí na „Upravit" — rozbalí se pod anketou. */}
       {editing && (
-        <div className="mt-3 space-y-3 rounded-2xl border border-marigold-200 bg-marigold-50/40 p-4">
+        <div className="mt-3 space-y-3 rounded-2xl border border-gold-200 bg-gold-50/40 p-4">
           <p className="text-xs font-semibold text-ink-soft">Úprava ankety</p>
           <input className="input" placeholder="Otázka" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
           <div className="space-y-2">

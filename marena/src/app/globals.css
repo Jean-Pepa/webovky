@@ -12,7 +12,21 @@
   --color-ink: #1d1d1f; /* hlavní text (Apple ink) */
   --color-ink-soft: #6e6e73; /* sekundární text */
 
-  /* Akcent — VUT / FA VUT červená (token „marigold" zůstává kvůli kompatibilitě) */
+  /* Zlatý primár — Vegas neon identita (kotveno na zlato nápisu MAŘENA).
+     Kontrasty spočítané: gold-500 + tmavý text = 9,3:1; gold-700 na světlém = 4,6:1. */
+  --color-gold-50: #fdf6e3;
+  --color-gold-100: #fbeec7;
+  --color-gold-200: #f8dd8f;
+  --color-gold-300: #ffd94d;
+  --color-gold-400: #f5c032;
+  --color-gold-500: #f4b71f;
+  --color-gold-600: #e0940a;
+  --color-gold-700: #a25f06;
+  --color-gold-800: #8a5605;
+  --color-gold-900: #6b4204;
+
+  /* Akcent — VUT / FA VUT červená: nově jen doplněk (mazání/varování, jako červený
+     MOTEL neon). Token „marigold" zůstává kvůli kompatibilitě. */
   --color-marigold-50: #fdeef1;
   --color-marigold-100: #fbd8de;
   --color-marigold-200: #f4adb8;
@@ -62,6 +76,9 @@
   /* Světlé „tinty" (jemné barevné plochy 50/100/200) → tmavé varianty téhož tónu,
      ať na nočním pozadí neřve bílá/růžová. Sytost akcentů (600/700 pro tlačítka)
      necháváme. Automaticky se přepíšou i s průhledností (color-mix). */
+  --color-gold-50: #332913; /* jemná zlatá plocha na tmavé */
+  --color-gold-100: #483a18;
+  --color-gold-200: #5c4a1f;
   --color-marigold-50: #3a1c22; /* jemná červená plocha */
   --color-marigold-100: #48232c;
   --color-marigold-200: #5c2c37;
@@ -86,6 +103,9 @@
 .dark .text-marigold-600 { color: #ef4a62; }
 .dark .text-marigold-700 { color: #f2758b; }
 .dark .text-marigold-800 { color: #f6a2b1; }
+.dark .text-gold-600 { color: #f4b71f; }
+.dark .text-gold-700 { color: #f5c032; }
+.dark .text-gold-800 { color: #ffd94d; }
 .dark .text-red-600 { color: #f26d6d; }
 .dark .text-red-700 { color: #f58a8a; }
 .dark .text-leaf-700 { color: #57d98a; }
@@ -156,6 +176,42 @@ html.theme-anim .input {
   font-family: var(--font-display);
   font-weight: 600;
   letter-spacing: -0.022em;
+}
+
+/* ===== Vegas typografie (jen nadpisy, NIKDY tělo textu) ===== */
+/* Limelight — Art Deco „marquee" (OFL, plná česká diakritika ověřena). */
+@font-face {
+  font-family: "Limelight";
+  src: url("/fonts/limelight.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+/* Monoton — neonové trubice; použitelný jen pro velké nápisy (30 pt+). */
+@font-face {
+  font-family: "Monoton";
+  src: url("/fonts/monoton.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+.font-marquee {
+  font-family: "Limelight", var(--font-sans);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Zlatá zář — statická (žádné blikání v zázemí). Ve světle nic, ve tmě neon. */
+.dark .glow-gold {
+  text-shadow: 0 0 8px rgba(255, 217, 77, 0.45), 0 0 22px rgba(244, 183, 31, 0.25);
+}
+.dark .glow-gold-icon {
+  filter: drop-shadow(0 0 5px rgba(255, 217, 77, 0.55));
+}
+/* Zlatý nápis MAŘENA v hlavičce dostane ve tmě neonovou zář (gradient text
+   nemůže mít text-shadow — použije se drop-shadow filtru). */
+.dark .marena-header-gold {
+  filter: drop-shadow(0 0 10px rgba(244, 183, 31, 0.35));
 }
 
 /* Ponecháno kvůli kompatibilitě — čistý vzhled = bez textury */
@@ -451,9 +507,11 @@ html.theme-anim .input {
 
 @layer components {
   .btn-primary {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-marigold-600
-      px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-marigold-700
-      active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+    /* Zlaté tlačítko s TMAVÝM textem (9,3:1) — text zůstává tmavý i v nočním
+       režimu (proto literál, ne token ink). Okraj dává tvar na světlém pozadí. */
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gold-500
+      px-5 py-2.5 text-sm font-semibold text-[#1d1d1f] ring-1 ring-inset ring-gold-600/50
+      transition-all hover:bg-gold-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
   }
   /* Vegas tlačítko — neonový přechod růžová → fialová (místo červené na homepage). */
   .btn-vegas {
@@ -485,8 +543,8 @@ html.theme-anim .input {
     /* text-base (16px) na mobilu brání automatickému zoomu iOS Safari při
        zaostření pole; na desktopu zpět na 14px. */
     @apply w-full rounded-xl border border-ink/10 bg-surface px-3.5 py-2.5 text-base text-ink
-      outline-none transition placeholder:text-ink-soft/50 focus:border-marigold-400
-      focus:ring-4 focus:ring-marigold-500/15 sm:text-sm;
+      outline-none transition placeholder:text-ink-soft/50 focus:border-gold-400
+      focus:ring-4 focus:ring-gold-500/15 sm:text-sm;
   }
   .label {
     @apply mb-1 block text-xs font-medium text-ink-soft;
