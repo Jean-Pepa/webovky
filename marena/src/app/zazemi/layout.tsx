@@ -84,7 +84,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const [pwdOpen, setPwdOpen] = useState(false);
   const [boardUnread, setBoardUnread] = useState(0);
   const [maint, setMaint] = useState<boolean | null>(null); // režim údržby (null = ještě nevíme)
-  const { mode: themeMode, cycle: cycleTheme } = useZazemiTheme();
+  const { dark, toggle: toggleTheme } = useZazemiTheme();
 
   useEffect(() => {
     if (ready && !authed) router.replace("/prihlaseni");
@@ -185,7 +185,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           </div>
           {/* Desktop: přepínač den/noc + heslo (správce) + přepínač ročníku + jméno */}
           <div className="ml-auto hidden items-center gap-2 md:flex">
-            <ThemeToggle mode={themeMode} onCycle={cycleTheme} />
+            <ThemeToggle dark={dark} onToggle={toggleTheme} />
             {isAdmin(me) && (
               <button
                 onClick={() => setPwdOpen(true)}
@@ -201,7 +201,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           </div>
           {/* Mobil: přepínač den/noc (vlevo od hamburgeru) + hamburger */}
           <div className="ml-auto flex items-center gap-1 md:hidden">
-            <ThemeToggle mode={themeMode} onCycle={cycleTheme} />
+            <ThemeToggle dark={dark} onToggle={toggleTheme} />
             <button
               className="inline-flex items-center justify-center rounded-full p-2 text-ink-soft hover:bg-ink/5"
               onClick={() => setMenuOpen((o) => !o)}
@@ -424,7 +424,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
       )}
 
       {/* Spodní odsazení = plovoucí lišta (64 px + 12 px mezera) + bezpečná zóna + rezerva. */}
-      <main className="mx-auto max-w-6xl px-4 py-6 pb-[calc(7.25rem+env(safe-area-inset-bottom))] md:pb-6">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-6 pb-[calc(6.25rem+env(safe-area-inset-bottom))] md:pb-6">{children}</main>
 
       {/* Mobil: ztmavení + vysouvací panel skupiny (nad spodní lištou) */}
       {sheet && <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setSheet(null)} aria-hidden />}
@@ -433,7 +433,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           const g = GROUPS.find((x) => x.id === sheet);
           if (!g) return null;
           return (
-            <div className="fixed inset-x-0 bottom-[calc(6.5rem+env(safe-area-inset-bottom))] z-40 mx-3 rounded-2xl border border-ink/10 bg-surface p-3 shadow-2xl md:hidden">
+            <div className="fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 mx-3 rounded-2xl border border-ink/10 bg-surface p-3 shadow-2xl md:hidden">
               {g.sections.map((s) => (
                 <div key={s.title} className="mb-2 last:mb-0">
                   <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">{s.title}</p>
@@ -460,7 +460,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
       {/* Mobil: plovoucí „bublina" (jako chatové pole) — odsazená od krajů i od
           domovského indikátoru, zaoblená, se stínem. Uvnitř M3: 64 px, 24px ikony,
           aktivní stav = jemná zlatá pilulka za ikonou. */}
-      <nav className="fixed inset-x-3 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-40 rounded-[28px] border border-ink/10 bg-paper/95 shadow-lg backdrop-blur md:hidden">
+      <nav className="fixed inset-x-3 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 rounded-[28px] border-2 border-gold-500 bg-paper/95 shadow-lg backdrop-blur md:hidden">
         <div className="grid h-16 grid-cols-3">
           <Link
             href="/zazemi"
