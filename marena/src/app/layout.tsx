@@ -29,6 +29,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: "#ffffff",
+  // Bez "cover" hlásí iOS env(safe-area-inset-*) nulu a spodní lišta zázemí
+  // se pak bije s domovským indikátorem (swipe pruhem) na iPhonech.
+  viewportFit: "cover",
 };
 
 // Noční režim jen v zázemí. Skript běží ještě před vykreslením, aby při tvrdém
