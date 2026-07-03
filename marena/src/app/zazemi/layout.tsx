@@ -165,7 +165,8 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   return (
     <div className="min-h-screen">
       <FlashHost />
-      <header className="sticky top-0 z-30 border-b border-ink/10 bg-paper/85 backdrop-blur">
+      {/* pt env(safe-area) — v PWA režimu na iPhonu drží obsah pod hodinami/výřezem. */}
+      <header className="sticky top-0 z-30 border-b border-ink/10 bg-paper/85 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-x-4 gap-y-2 px-4 py-3">
           <div className="flex items-baseline gap-2">
             {/* Zlatý „Las Vegas" nápis jako na homepage — bez tmavé cedulky, sytý zlatý přechod je čitelný i na světlém pozadí zázemí. */}
@@ -422,7 +423,8 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
         </div>
       )}
 
-      <main className="mx-auto max-w-6xl px-4 py-6 pb-24 md:pb-6">{children}</main>
+      {/* Spodní odsazení = výška lišty (64 px) + bezpečná zóna iPhonu + rezerva. */}
+      <main className="mx-auto max-w-6xl px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-6">{children}</main>
 
       {/* Mobil: ztmavení + vysouvací panel skupiny (nad spodní lištou) */}
       {sheet && <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setSheet(null)} aria-hidden />}
