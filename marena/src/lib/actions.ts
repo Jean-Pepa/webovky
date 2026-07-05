@@ -31,8 +31,27 @@ export type Action =
   | { type: "approveMember"; yearId: string; memberId: string }
   | { type: "updateMember"; yearId: string; memberId: string; patch: { name?: string; roleIds?: string[]; email?: string; phone?: string; contact?: string; note?: string; approved?: boolean; posOnly?: boolean } }
   | { type: "removeMember"; yearId: string; memberId: string }
-  // Kompletní smazání účtu — vždy člena, volitelně i jeho příspěvky, hlasy a směny.
-  | { type: "purgeMember"; yearId: string; memberId: string; name: string; opts: { posts?: boolean; votes?: boolean; shifts?: boolean } }
+  // Kompletní smazání účtu — vždy člena, volitelně i všechno, co v appce
+  // vytvořil/napsal (po kategoriích; „mentions" jen odebere jméno z cizích záznamů).
+  | {
+      type: "purgeMember";
+      yearId: string;
+      memberId: string;
+      name: string;
+      opts: {
+        posts?: boolean; // příspěvky na nástěnce (autor)
+        polls?: boolean; // založené ankety
+        votes?: boolean; // hlasy v anketách
+        events?: boolean; // události v kalendáři (autor)
+        shifts?: boolean; // přihlášení na směny
+        finances?: boolean; // finanční položky psané na jméno (kdo)
+        contributions?: boolean; // vklady do společné kasy
+        merchOrders?: boolean; // objednávky merche na jméno
+        invites?: boolean; // program — koho přidal (přednášející, kapely…)
+        kitchen?: boolean; // nahrané soubory v kuchyni
+        mentions?: boolean; // jméno u cizích záznamů (řeší / označil / má udělat / upravil)
+      };
+    }
   // Vzít si roli (vytvoří/upraví člena a přidá roli). asLead / první držitel = vedoucí.
   | { type: "takeRole"; yearId: string; memberId?: string; name: string; email?: string; phone?: string; roleId: string; asLead: boolean }
   // Role se nebere napřímo — člen o ni požádá a správce žádost schválí/zamítne.
@@ -284,19 +303,46 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => normalizeLeads({ ...y, members: y.members.filter((m) => m.id !== a.memberId) }));
     case "purgeMember":
       return mapYear(db, a.yearId, (y) => {
+        const his = (v?: string) => !!v && sameName(v, a.name); // je to jeho/její záznam?
         const next: Year = { ...y, members: y.members.filter((m) => m.id !== a.memberId) };
-        if (a.opts.posts) next.posts = next.posts.filter((p) => !sameName(p.author, a.name));
+        if (a.opts.posts) next.posts = next.posts.filter((p) => !his(p.author));
+        if (a.opts.polls) next.polls = next.polls.filter((p) => !his(p.author));
         if (a.opts.votes)
           next.polls = next.polls.map((poll) => ({
             ...poll,
             options: poll.options.map((o) => ({ ...o, voters: o.voters.filter((v) => !sameName(v, a.name)) })),
           }));
+        if (a.opts.events) next.events = next.events.filter((e) => !his(e.author));
         if (a.opts.shifts)
           next.shifts = (y.shifts ?? []).map((s) => ({
             ...s,
             people: s.people.filter((n) => !sameName(n, a.name)),
             backup: (s.backup ?? []).filter((n) => !sameName(n, a.name)),
           }));
+        if (a.opts.finances) next.finances = (y.finances ?? []).filter((f) => !his(f.who));
+        if (a.opts.contributions) next.contributions = (y.contributions ?? []).filter((c) => !his(c.name));
+        if (a.opts.merchOrders) next.merchOrders = (y.merchOrders ?? []).filter((o) => !his(o.name));
+        if (a.opts.invites) next.invites = (y.invites ?? []).filter((i) => !his(i.addedBy));
+        if (a.opts.kitchen) next.kitchen = (y.kitchen ?? []).filter((k) => !his(k.author));
+        if (a.opts.mentions) {
+          // Nic dalšího se nemaže — jen se jméno odebere z cizích záznamů,
+          // kde je napsané jako „kdo to řeší / označil / má udělat / upravil".
+          const un = (v?: string) => (his(v) ? undefined : v);
+          next.sponsors = (y.sponsors ?? []).map((s) => ({ ...s, who: un(s.who) }));
+          next.decor = (y.decor ?? []).map((d) => ({ ...d, who: un(d.who) }));
+          next.invites = (next.invites ?? y.invites ?? []).map((i) => ({
+            ...i,
+            addedBy: un(i.addedBy),
+            contactedBy: un(i.contactedBy),
+            interestBy: un(i.interestBy),
+            cancelledBy: un(i.cancelledBy),
+          }));
+          next.tasks = next.tasks.map((t) => ({ ...t, assignee: un(t.assignee) }));
+          next.posts = next.posts.map((p) => {
+            if (!his(p.editedBy) && !(p.edits ?? []).some((e) => sameName(e.by, a.name))) return p;
+            return { ...p, editedBy: un(p.editedBy), edits: (p.edits ?? []).filter((e) => !sameName(e.by, a.name)) };
+          });
+        }
         return normalizeLeads(next);
       });
     case "takeRole":

@@ -13,6 +13,7 @@ import { ArchiveModal } from "@/components/ArchiveModal";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 import { SupabaseGate } from "@/components/SupabaseGate";
 import { FlashHost } from "@/components/Flash";
+import { AdminApprovals } from "@/components/AdminApprovals";
 import { ThemeToggle, useZazemiTheme } from "@/components/ThemeToggle";
 import { supabaseEnabled } from "@/lib/supabase/config";
 
@@ -395,6 +396,9 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
         )}
       </header>
 
+      {/* Správce: vše, co čeká na schválení (účty + role), svítí hned pod hlavičkou */}
+      <AdminApprovals />
+
       {isAdmin(me) && <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />}
       {isAdmin(me) && <ChangePasswordModal open={pwdOpen} onClose={() => setPwdOpen(false)} />}
 
@@ -497,18 +501,10 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
 
       {/* Mobil: plovoucí „bublina" (jako chatové pole) — odsazená od krajů i od
           domovského indikátoru, zaoblená, se stínem. Uvnitř M3: 64 px, 24px ikony,
-          aktivní stav = jemná zlatá pilulka za ikonou. */}
+          aktivní stav = jemná zlatá pilulka za ikonou. Pomocník u stánku
+          (posOnly) lištu nemá vůbec — na jejím místě jsou stánky v Prodeji. */}
+      {!posOnly && (
       <nav className="fixed inset-x-3 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 rounded-[28px] border-2 border-gold-500 bg-paper/95 shadow-lg backdrop-blur md:hidden">
-        {posOnly ? (
-          // Pomocník u stánku: jediná položka — Prodej
-          <Link
-            href="/zazemi/prodej"
-            onClick={() => setSheet(null)}
-            className="flex h-16 items-center justify-center gap-2 text-[15px] font-semibold text-ink"
-          >
-            <Icon name="cart" className="h-6 w-6" /> Prodej
-          </Link>
-        ) : (
         <div className="grid h-16 grid-cols-3">
           <Link
             href="/zazemi"
@@ -547,8 +543,8 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             );
           })}
         </div>
-        )}
       </nav>
+      )}
     </div>
   );
 }

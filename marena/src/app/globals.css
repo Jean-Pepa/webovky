@@ -481,6 +481,32 @@ html.theme-anim .input {
   }
 }
 
+/* Schvalovaci pruh spravce pod hlavickou — zlaty a svetelny pas („shine")
+   prejizdi zleva doprava, at ho nejde prehlednout. */
+@keyframes marena-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.approve-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.approve-sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 25%, rgba(255, 255, 255, 0.55) 50%, transparent 75%);
+  transform: translateX(-100%);
+  animation: marena-sweep 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .approve-sweep::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 @layer components {
   .btn-primary {
     /* Zlaté tlačítko s TMAVÝM textem (9,3:1) — text zůstává tmavý i v nočním
