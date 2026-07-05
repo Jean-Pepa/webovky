@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
 import { ImageViewer } from "@/components/ImageViewer";
+import Link from "next/link";
 import { SearchBox } from "@/components/SearchBox";
-import { NewOrderButton } from "@/components/OrderFlow";
 import { matchesQuery } from "@/lib/search";
 import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, readFileAsDataUrl, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
@@ -74,10 +74,13 @@ export default function KuchyneBarPage() {
               </button>
             ))}
           </div>
-          {/* Objednávka na místě: obsluha nakliká jídlo a pití, ukáže QR
-              a po zaplacení se tržba propíše do financí (bar / kuchyně).
-              key: při přepnutí ročníku se rozmarkovaná objednávka zahodí. */}
-          {editable && <NewOrderButton key={year.id} mode="gastro" />}
+          {/* Prodej jídla a pití probíhá v jednotné pokladně; tržby se
+              po zaplacení propíšou do financí (bar / kuchyně). */}
+          {editable && (
+            <Link href="/zazemi/prodej" className="btn-primary">
+              🛒 Prodat
+            </Link>
+          )}
         </div>
       </div>
 

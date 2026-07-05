@@ -164,7 +164,9 @@ function settleOrder(y: Year, orderId: string, opts: { paid?: boolean; how?: str
     amount: total,
     category: "merch",
     paid: true,
-    date: order.createdAt.slice(0, 10),
+    // den ZAPLACENÍ, ne vytvoření objednávky — online objednávka zaplacená
+    // při vyzvednutí patří do tržeb dne, kdy peníze přišly
+    date: now().slice(0, 10),
     note: [itemsText, opts.how].filter(Boolean).join(" · "),
     createdAt: now(),
   };

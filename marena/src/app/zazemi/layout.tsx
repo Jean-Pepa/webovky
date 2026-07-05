@@ -63,7 +63,7 @@ const GROUPS: NavGroup[] = [
       {
         title: "Peníze",
         items: [
-          { href: "/zazemi/kasa", label: "Kasa", icon: "cart" },
+          { href: "/zazemi/prodej", label: "Prodej", icon: "cart" },
           { href: "/zazemi/finance", label: "Finance", icon: "finance" },
           { href: "/zazemi/sponzori", label: "Sponzoři", icon: "spark" },
           { href: "/zazemi/merch", label: "Merch", icon: "merch" },

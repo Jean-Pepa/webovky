@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, fmtDateTime, todayISO } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -213,6 +214,11 @@ export default function FinancePage() {
         </div>
         {canAdd && (
           <div className="flex flex-wrap items-center gap-2">
+            {/* Jednotná pokladna: markování, QR platba i hotovost — tržby
+                se sem propíšou po zaplacení, po kategoriích. */}
+            <Link href="/zazemi/prodej" className="btn-primary">
+              🛒 Prodej (kasa)
+            </Link>
             <button
               className="btn-secondary"
               onClick={() => {

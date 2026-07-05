@@ -5,8 +5,8 @@ import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { ImageViewer } from "@/components/ImageViewer";
+import Link from "next/link";
 import { PayQr } from "@/components/PayQr";
-import { NewOrderButton } from "@/components/OrderFlow";
 import { parseAccount } from "@/lib/payment";
 import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
@@ -55,10 +55,13 @@ export default function MerchPage() {
             {canManage ? "Nahraj fotky nabídky, sdílej QR kód a sleduj objednávky." : "Nabídka merche a QR kód k objednání."}
           </p>
         </div>
-        {/* Objednávka na místě: obsluha nakliká, ukáže QR, po zaplacení
-            se objednávka uzamkne jako zaplacená a propíše do financí.
-            key: při přepnutí ročníku se rozmarkovaná objednávka zahodí. */}
-        {canManage && <NewOrderButton key={year.id} mode="merch" />}
+        {/* Prodej na místě probíhá v jednotné pokladně (předvolí merch);
+            zaplacený prodej se sem vrátí jako uzamčená objednávka. */}
+        {canEditCurrentYear && (
+          <Link href="/zazemi/prodej?stand=merch" className="btn-primary">
+            🛒 Prodat na místě
+          </Link>
+        )}
       </div>
 
       {/* Nabídka (fotky merche) */}
@@ -508,6 +511,9 @@ function OrderRow({
         <Modal open={qrOpen} onClose={() => setQrOpen(false)} title={`Platba — ${order.name}`}>
           <div className="space-y-4">
             <PayQr account={account!} amount={total} message={`MARENA MERCH ${itemsText} — ${order.name}`} />
+            <p className="text-center text-xs text-ink-soft">
+              „Zaplaceno“ ťukni, až přijde notifikace tvé banky — obrazovka zákazníka není důkaz.
+            </p>
             <div className="flex gap-2">
               <button
                 className="btn-primary flex-1"
