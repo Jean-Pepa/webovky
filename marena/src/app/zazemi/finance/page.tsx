@@ -173,7 +173,7 @@ export default function FinancePage() {
 
   // Kasy: kolik se ráno vložilo (vklady) a kolik se vydělalo (tržba z uzavřených).
   const kasaOpenings = (year.cashboxes ?? []).reduce((s, c) => s + c.opening, 0);
-  const kasaTrzba = (year.cashboxes ?? []).reduce((s, c) => s + (c.closedAt && c.closing != null ? c.closing - c.opening : 0), 0);
+  const kasaTrzba = (year.cashboxes ?? []).reduce((s, c) => s + (c.closedAt && c.closing != null ? c.closing - c.opening - (c.alreadyRecorded ?? 0) : 0), 0);
 
   async function add() {
     const num = parseAmount(amount);
@@ -928,7 +928,8 @@ function CashboxCard({ box, yearId, canAdd, canEdit }: { box: Cashbox; yearId: s
   const { dispatch } = useStore();
   const [closeVal, setCloseVal] = useState("");
   const closed = !!box.closedAt;
-  const trzba = closed && box.closing != null ? box.closing - box.opening : null;
+  // markovaná hotovost z Prodeje už ve financích je — tržba kasy je jen zbytek
+  const trzba = closed && box.closing != null ? box.closing - box.opening - (box.alreadyRecorded ?? 0) : null;
 
   function close() {
     const n = parseAmount(closeVal);
@@ -960,8 +961,10 @@ function CashboxCard({ box, yearId, canAdd, canEdit }: { box: Cashbox; yearId: s
       {closed ? (
         trzba != null && (
           <p className="mt-1.5 text-sm">
-            Tržba: <span className={`font-display font-bold ${trzba >= 0 ? "text-leaf-700" : "text-red-600"}`}>{fmtCZK(trzba)}</span>
-            <span className="ml-2 text-xs text-ink-soft">✓ zapsáno do financí</span>
+            {box.alreadyRecorded ? "Rozdíl" : "Tržba"}:{" "}
+            <span className={`font-display font-bold ${trzba >= 0 ? "text-leaf-700" : "text-red-600"}`}>{fmtCZK(trzba)}</span>
+            {box.alreadyRecorded ? <span className="ml-2 text-xs text-ink-soft">markováno v Prodeji {fmtCZK(box.alreadyRecorded)}</span> : null}
+            {box.financeId ? <span className="ml-2 text-xs text-ink-soft">✓ zapsáno do financí</span> : <span className="ml-2 text-xs text-ink-soft">bez zápisu (0)</span>}
           </p>
         )
       ) : canAdd ? (

@@ -57,7 +57,9 @@ export type Action =
   | { type: "removeLink"; yearId: string; linkId: string }
   | { type: "addFinance"; yearId: string; kind: FinanceKind; label: string; amount: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string }
   | { type: "openCashbox"; yearId: string; label?: string; opening: number }
-  | { type: "closeCashbox"; yearId: string; cashboxId: string; closing: number }
+  // alreadyRecorded = hotovost už zapsaná ve financích z markování v Prodeji;
+  // do financí pak jde jen rozdíl, aby se stejné peníze nepočítaly dvakrát.
+  | { type: "closeCashbox"; yearId: string; cashboxId: string; closing: number; alreadyRecorded?: number }
   | { type: "removeCashbox"; yearId: string; cashboxId: string }
   | { type: "addContribution"; yearId: string; name: string; amount: number }
   | { type: "toggleContributionReturned"; yearId: string; contributionId: string }
@@ -72,7 +74,7 @@ export type Action =
   | { type: "addSponsor"; yearId: string; name: string; gives?: string; who?: string; links?: string[]; note?: string; category?: SponsorCategory; returning?: boolean }
   | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: SponsorStatus; who?: string; links?: string[]; note?: string; category?: SponsorCategory; returning?: boolean } }
   | { type: "removeSponsor"; yearId: string; sponsorId: string }
-  | { type: "addDrink"; yearId: string; name: string; kind: "koktejl" | "panak" | "snidane" | "obed" | "jine"; place: "bar" | "kuchyne"; day?: "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne" }
+  | { type: "addDrink"; yearId: string; name: string; kind: "koktejl" | "panak" | "snidane" | "obed" | "jine"; place: "bar" | "kuchyne"; day?: "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne"; price?: number }
   | { type: "updateDrink"; yearId: string; drinkId: string; patch: { name?: string; kind?: "koktejl" | "panak" | "snidane" | "obed" | "jine"; day?: "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne" | null; price?: number; note?: string; ingredients?: { name: string; cost: number }[] } }
   | { type: "removeDrink"; yearId: string; drinkId: string }
   | { type: "addMenuEntry"; yearId: string; day: string; meal: "snidane" | "obed" | "jine"; dish: string }
@@ -568,26 +570,33 @@ export function applyAction(db: DB, a: Action): DB {
         const box = (y.cashboxes ?? []).find((c) => c.id === a.cashboxId);
         if (!box || box.closedAt) return y; // neexistuje nebo už uzavřená
         const closing = Math.round(a.closing);
-        const trzba = closing - box.opening; // tržba = večer − ráno
+        const already = Math.max(0, Math.round(a.alreadyRecorded ?? 0));
+        // tržba = večer − ráno; markovaná hotovost už ve financích je,
+        // takže se odečte a zapíše se jen zbytek (nemarkované / rozdíl)
+        const trzba = closing - box.opening - already;
         const closedAt = now();
         const day = box.openedAt.slice(0, 10); // YYYY-MM-DD
-        const financeId = uid("f_");
+        const financeId = trzba !== 0 ? uid("f_") : undefined;
         const lbl = box.label ? ` — ${box.label}` : "";
-        const fin = {
-          id: financeId,
-          kind: (trzba >= 0 ? "prijem" : "vydaj") as FinanceKind,
-          label: `Kasa${lbl}`,
-          amount: Math.abs(trzba),
-          category: "kasa",
-          paid: true,
-          date: day,
-          note: `Kasa${box.label ? " " + box.label : ""}: ráno ${box.opening} Kč (${hhmm(box.openedAt)}) → večer ${closing} Kč (${hhmm(closedAt)}); tržba ${trzba} Kč`,
-          createdAt: now(),
-        };
+        const fin = financeId
+          ? {
+              id: financeId,
+              kind: (trzba >= 0 ? "prijem" : "vydaj") as FinanceKind,
+              label: `Kasa${lbl}`,
+              amount: Math.abs(trzba),
+              category: "kasa",
+              paid: true,
+              date: day,
+              note:
+                `Kasa${box.label ? " " + box.label : ""}: ráno ${box.opening} Kč (${hhmm(box.openedAt)}) → večer ${closing} Kč (${hhmm(closedAt)})` +
+                (already > 0 ? `; markováno v Prodeji ${already} Kč; rozdíl ${trzba} Kč` : `; tržba ${trzba} Kč`),
+              createdAt: now(),
+            }
+          : null;
         return {
           ...y,
-          cashboxes: (y.cashboxes ?? []).map((c) => (c.id === a.cashboxId ? { ...c, closing, closedAt, financeId } : c)),
-          finances: [fin, ...(y.finances ?? [])],
+          cashboxes: (y.cashboxes ?? []).map((c) => (c.id === a.cashboxId ? { ...c, closing, closedAt, financeId, alreadyRecorded: already > 0 ? already : undefined } : c)),
+          finances: fin ? [fin, ...(y.finances ?? [])] : y.finances,
         };
       });
     case "removeCashbox":
@@ -752,7 +761,10 @@ export function applyAction(db: DB, a: Action): DB {
       if (!name) return db;
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        bar: [...(y.bar ?? []), { id: uid("dr_"), place: a.place, name, kind: a.kind, day: a.day, ingredients: [], createdAt: now() }],
+        bar: [
+          ...(y.bar ?? []),
+          { id: uid("dr_"), place: a.place, name, kind: a.kind, day: a.day, price: Number.isFinite(a.price) && a.price! > 0 ? Math.round(a.price!) : undefined, ingredients: [], createdAt: now() },
+        ],
       }));
     }
     case "updateDrink":
