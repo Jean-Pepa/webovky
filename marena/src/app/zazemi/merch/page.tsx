@@ -6,7 +6,7 @@ import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { ImageViewer } from "@/components/ImageViewer";
 import { PayQr } from "@/components/PayQr";
-import { SaleBox } from "@/components/SaleBox";
+import { NewOrderButton } from "@/components/OrderFlow";
 import { parseAccount } from "@/lib/payment";
 import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
@@ -48,11 +48,16 @@ export default function MerchPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-[28px] font-bold tracking-tight">Merch</h1>
-        <p className="text-sm text-ink-soft">
-          {canManage ? "Nahraj fotky nabídky, sdílej QR kód a sleduj objednávky." : "Nabídka merche a QR kód k objednání."}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-[28px] font-bold tracking-tight">Merch</h1>
+          <p className="text-sm text-ink-soft">
+            {canManage ? "Nahraj fotky nabídky, sdílej QR kód a sleduj objednávky." : "Nabídka merche a QR kód k objednání."}
+          </p>
+        </div>
+        {/* Objednávka na místě: obsluha nakliká, ukáže QR, po zaplacení
+            se objednávka uzamkne jako zaplacená a propíše do financí. */}
+        {canManage && <NewOrderButton mode="merch" />}
       </div>
 
       {/* Nabídka (fotky merche) */}
@@ -84,10 +89,6 @@ export default function MerchPage() {
           </div>
         )}
       </section>
-
-      {/* Prodej na místě — markování s QR platbou přímo u merche. Objednávka
-          se po zaplacení rovnou uzamkne jako zaplacená a propíše do financí. */}
-      {canManage && <SaleBox sources={["merch"]} label="Prodej na místě" collapsible />}
 
       {/* Objednávky + QR */}
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
