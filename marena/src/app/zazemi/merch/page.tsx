@@ -5,6 +5,9 @@ import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { ImageViewer } from "@/components/ImageViewer";
+import Link from "next/link";
+import { PayQr } from "@/components/PayQr";
+import { parseAccount } from "@/lib/payment";
 import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { fmtCZK, fmtDateTime } from "@/lib/format";
@@ -45,11 +48,20 @@ export default function MerchPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-[28px] font-bold tracking-tight">Merch</h1>
-        <p className="text-sm text-ink-soft">
-          {canManage ? "Nahraj fotky nabídky, sdílej QR kód a sleduj objednávky." : "Nabídka merche a QR kód k objednání."}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-[28px] font-bold tracking-tight">Merch</h1>
+          <p className="text-sm text-ink-soft">
+            {canManage ? "Nahraj fotky nabídky, sdílej QR kód a sleduj objednávky." : "Nabídka merche a QR kód k objednání."}
+          </p>
+        </div>
+        {/* Prodej na místě probíhá v jednotné pokladně (předvolí merch);
+            zaplacený prodej se sem vrátí jako uzamčená objednávka. */}
+        {canEditCurrentYear && (
+          <Link href="/zazemi/prodej?stand=merch" className="btn-primary">
+            🛒 Prodat na místě
+          </Link>
+        )}
       </div>
 
       {/* Nabídka (fotky merche) */}
@@ -101,7 +113,7 @@ export default function MerchPage() {
           ) : (
             <div className="space-y-2">
               {orders.map((o) => (
-                <OrderRow key={o.id} order={o} yearId={year.id} canManage={canManage} canDelete={canDeleteOrders} total={orderTotal(o, products)} />
+                <OrderRow key={o.id} order={o} yearId={year.id} canManage={canManage} canDelete={canDeleteOrders} canUnlock={canDeleteOrders} total={orderTotal(o, products)} account={year.paymentAccount} />
               ))}
             </div>
           )}
@@ -397,15 +409,22 @@ function OrderRow({
   yearId,
   canManage,
   canDelete,
+  canUnlock,
   total,
+  account,
 }: {
   order: MerchOrder;
   yearId: string;
   canManage: boolean;
   canDelete: boolean;
+  canUnlock: boolean;
   total: number;
+  account?: string;
 }) {
   const { dispatch } = useStore();
+  const [qrOpen, setQrOpen] = useState(false);
+  // QR ukazuje prodávající při předání — jen u nevyřízených objednávek s cenou.
+  const canQr = canManage && !order.done && total > 0 && !!account && !("error" in parseAccount(account));
   const itemsText = order.items
     .map((it) => `${it.qty}× ${it.name}${[it.size, it.color].filter(Boolean).length ? ` (${[it.size, it.color].filter(Boolean).join(" · ")})` : ""}`)
     .join(", ");
@@ -428,7 +447,35 @@ function OrderRow({
         <span className="text-xs text-ink-soft/70">{fmtDateTime(order.createdAt)}</span>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          {canManage ? (
+          {canQr && (
+            <button
+              onClick={() => setQrOpen(true)}
+              className="rounded-full bg-gold-500 px-2.5 py-1 text-xs font-semibold text-[#1d1d1f] transition hover:bg-gold-400"
+              title="Ukázat platební QR zákazníkovi"
+            >
+              QR platba
+            </button>
+          )}
+          {order.paid ? (
+            // Zaplaceno na místě → objednávka je uzamčená; odemkne jen správce.
+            canUnlock ? (
+              <button
+                onClick={() => {
+                  if (window.confirm("Objednávka je zaplacená a uzamčená. Opravdu vrátit na „čeká“? Smaže se i zápis ve financích.")) {
+                    dispatch({ type: "toggleMerchOrderDone", yearId, orderId: order.id });
+                  }
+                }}
+                className="rounded-full bg-leaf/15 px-2.5 py-1 text-xs font-semibold text-leaf-700 transition hover:bg-leaf/25"
+                title="Zaplaceno a uzamčeno — odemknout může jen správce"
+              >
+                🔒 Zaplaceno
+              </button>
+            ) : (
+              <span className="rounded-full bg-leaf/15 px-2.5 py-1 text-xs font-semibold text-leaf-700" title="Zaplaceno a uzamčeno">
+                🔒 Zaplaceno
+              </span>
+            )
+          ) : canManage ? (
             <button
               onClick={() => dispatch({ type: "toggleMerchOrderDone", yearId, orderId: order.id })}
               className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
@@ -457,6 +504,33 @@ function OrderRow({
         {order.note && <span className="text-xs text-ink-soft">· pozn.: {order.note}</span>}
         {total > 0 && <span className="ml-auto font-display font-bold text-ink">{fmtCZK(total)}</span>}
       </div>
+
+      {/* QR pro zaplacení při předání — potvrzením se objednávka uzamkne
+          jako zaplacená a tržba se propíše do financí. */}
+      {canQr && (
+        <Modal open={qrOpen} onClose={() => setQrOpen(false)} title={`Platba — ${order.name}`}>
+          <div className="space-y-4">
+            <PayQr account={account!} amount={total} message={`MARENA MERCH ${itemsText} — ${order.name}`} />
+            <p className="text-center text-xs text-ink-soft">
+              „Zaplaceno“ ťukni, až přijde notifikace tvé banky — obrazovka zákazníka není důkaz.
+            </p>
+            <div className="flex gap-2">
+              <button
+                className="btn-primary flex-1"
+                onClick={() => {
+                  dispatch({ type: "settleMerchOrder", yearId, orderId: order.id, how: "QR platba" });
+                  setQrOpen(false);
+                }}
+              >
+                ✓ Zaplaceno — zapsat
+              </button>
+              <button className="btn-ghost" onClick={() => setQrOpen(false)}>
+                Zavřít
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

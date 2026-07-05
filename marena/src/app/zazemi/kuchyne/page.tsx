@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
 import { ImageViewer } from "@/components/ImageViewer";
+import Link from "next/link";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -61,16 +62,25 @@ export default function KuchyneBarPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-[28px] font-bold tracking-tight">Kuchyně &amp; bar</h1>
-        <div className="inline-flex rounded-full bg-paper2 p-0.5 text-sm">
-          {(["kuchyne", "bar"] as Place[]).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPlace(p)}
-              className={`rounded-full px-4 py-1.5 font-medium transition ${place === p ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}
-            >
-              {p === "kuchyne" ? "🍳 Kuchyně" : "🍸 Bar"}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex rounded-full bg-paper2 p-0.5 text-sm">
+            {(["kuchyne", "bar"] as Place[]).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPlace(p)}
+                className={`rounded-full px-4 py-1.5 font-medium transition ${place === p ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}
+              >
+                {p === "kuchyne" ? "🍳 Kuchyně" : "🍸 Bar"}
+              </button>
+            ))}
+          </div>
+          {/* Prodej jídla a pití probíhá v jednotné pokladně; tržby se
+              po zaplacení propíšou do financí (bar / kuchyně). */}
+          {editable && (
+            <Link href="/zazemi/prodej" className="btn-primary">
+              🛒 Prodat
+            </Link>
+          )}
         </div>
       </div>
 

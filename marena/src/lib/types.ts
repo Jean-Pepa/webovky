@@ -286,6 +286,7 @@ export interface MerchOrder {
   items: MerchOrderItem[]; // co si chce koupit z nabídky
   note?: string; // poznámka (velikost apod.)
   done?: boolean; // vyřízeno (true) / čeká (false/undefined)
+  paid?: boolean; // zaplaceno (QR/hotově) — objednávka je uzamčená, odemkne jen správce
   financeId?: string; // navázaná finanční položka (vznikne při „vyřízeno")
   createdAt: string;
 }
@@ -297,6 +298,7 @@ export interface Year {
   fledaDate?: string; // termín průvodu / Flédy (ISO)
   plannedPeople?: number; // plánovaný počet účastníků (pro kalkulaci financí)
   deposit?: number; // třídní vklad na osobu (Kč)
+  paymentAccount?: string; // účet pro QR platby — český formát (123-456789/0800) nebo IBAN
   members: Member[];
   roleLeads?: Record<string, string>; // roleId → memberId vedoucího (první = vedoucí, ostatní pomocníci)
   posts: Post[];
