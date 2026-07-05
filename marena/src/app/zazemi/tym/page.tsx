@@ -619,37 +619,68 @@ export default function TymPage() {
 // Tabulka „co vše navždy smazat" u jednoho účtu (jen pro správce).
 function PurgeAccountModal({ member, year, onClose }: { member: Member; year: Year; onClose: () => void }) {
   const { dispatch } = useStore();
-  const [posts, setPosts] = useState(true);
-  const [votes, setVotes] = useState(true);
-  const [shifts, setShifts] = useState(true);
   const [busy, setBusy] = useState(false);
   const name = member.name;
+  const his = (v?: string) => !!v && sameName(v, name);
 
-  const postCount = (year.posts ?? []).filter((p) => sameName(p.author, name)).length;
-  const voteCount = (year.polls ?? []).reduce(
-    (s, poll) => s + poll.options.reduce((a, o) => a + o.voters.filter((v) => sameName(v, name)).length, 0),
-    0,
-  );
-  const shiftCount = (year.shifts ?? []).filter(
-    (s) => s.people.some((n) => sameName(n, name)) || (s.backup ?? []).some((n) => sameName(n, name)),
-  ).length;
+  // Kolik čeho po člověku v ročníku zůstává — každá kategorie jde smazat zvlášť.
+  const counts: Record<string, number> = {
+    posts: (year.posts ?? []).filter((p) => his(p.author)).length,
+    polls: (year.polls ?? []).filter((p) => his(p.author)).length,
+    votes: (year.polls ?? []).reduce(
+      (s, poll) => s + poll.options.reduce((a, o) => a + o.voters.filter((v) => sameName(v, name)).length, 0),
+      0,
+    ),
+    events: (year.events ?? []).filter((e) => his(e.author)).length,
+    shifts: (year.shifts ?? []).filter(
+      (s) => s.people.some((n) => sameName(n, name)) || (s.backup ?? []).some((n) => sameName(n, name)),
+    ).length,
+    finances: (year.finances ?? []).filter((f) => his(f.who)).length,
+    contributions: (year.contributions ?? []).filter((c) => his(c.name)).length,
+    merchOrders: (year.merchOrders ?? []).filter((o) => his(o.name)).length,
+    invites: (year.invites ?? []).filter((i) => his(i.addedBy)).length,
+    kitchen: (year.kitchen ?? []).filter((k) => his(k.author)).length,
+    mentions:
+      (year.sponsors ?? []).filter((s) => his(s.who)).length +
+      (year.decor ?? []).filter((d) => his(d.who)).length +
+      (year.invites ?? []).filter((i) => his(i.addedBy) || his(i.contactedBy) || his(i.interestBy) || his(i.cancelledBy)).length +
+      (year.tasks ?? []).filter((t) => his(t.assignee)).length +
+      (year.posts ?? []).filter((p) => his(p.editedBy) || (p.edits ?? []).some((e) => sameName(e.by, name))).length,
+  };
+
+  const ROWS: { key: string; label: string }[] = [
+    { key: "posts", label: "Příspěvky na nástěnce" },
+    { key: "polls", label: "Založené ankety" },
+    { key: "votes", label: "Hlasy v anketách" },
+    { key: "events", label: "Události v kalendáři" },
+    { key: "shifts", label: "Přihlášení na směny" },
+    { key: "finances", label: "Finance psané na jméno" },
+    { key: "contributions", label: "Vklady do společné kasy" },
+    { key: "merchOrders", label: "Objednávky merche" },
+    { key: "invites", label: "Program — koho přidal(a)" },
+    { key: "kitchen", label: "Soubory v kuchyni" },
+    { key: "mentions", label: "Jméno u cizích záznamů (řeší / má udělat / upravil)" },
+  ];
+  const [sel, setSel] = useState<Record<string, boolean>>(() => Object.fromEntries(ROWS.map((r) => [r.key, true])));
+
+  const available = ROWS.filter((r) => counts[r.key] > 0);
+  const allSelected = available.length > 0 && available.every((r) => sel[r.key]);
+  function toggleAll() {
+    const next = !allSelected;
+    setSel((s) => ({ ...s, ...Object.fromEntries(available.map((r) => [r.key, next])) }));
+  }
 
   async function go() {
     setBusy(true);
-    await dispatch({ type: "purgeMember", yearId: year.id, memberId: member.id, name, opts: { posts, votes, shifts } });
+    const opts = Object.fromEntries(ROWS.map((r) => [r.key, !!sel[r.key] && counts[r.key] > 0]));
+    await dispatch({ type: "purgeMember", yearId: year.id, memberId: member.id, name, opts });
     onClose();
   }
-
-  const rows: { checked: boolean; onToggle: () => void; label: string; count: number }[] = [
-    { checked: posts, onToggle: () => setPosts((v) => !v), label: "Příspěvky na nástěnce", count: postCount },
-    { checked: votes, onToggle: () => setVotes((v) => !v), label: "Hlasy v anketách", count: voteCount },
-    { checked: shifts, onToggle: () => setShifts((v) => !v), label: "Přihlášení na směny", count: shiftCount },
-  ];
 
   return (
     <Modal open onClose={onClose} title={`Smazat účet — ${name}`}>
       <p className="mb-3 text-sm text-ink-soft">
-        Vyber, co se má u tohoto člověka <strong>navždy</strong> smazat. Účet (jméno, kontakt, role) se smaže vždy.
+        Vyber, co všechno se má po tomto člověku <strong>navždy</strong> smazat. Účet (jméno, kontakt, role) se smaže vždy.
       </p>
       <div className="space-y-2">
         <div className="flex items-center gap-3 rounded-xl bg-red-50 px-3 py-2.5 text-sm">
@@ -657,20 +688,28 @@ function PurgeAccountModal({ member, year, onClose }: { member: Member; year: Ye
           <span className="flex-1 font-medium">Účet — jméno, kontakt, role</span>
           <span className="shrink-0 text-xs font-medium text-red-600">smaže se vždy</span>
         </div>
-        {rows.map((r) => (
+        {available.length > 0 && (
+          <div className="flex items-center justify-between px-1 pt-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Co dalšího smazat</span>
+            <button type="button" onClick={toggleAll} className="text-xs font-bold text-red-600 hover:underline">
+              {allSelected ? "Zrušit výběr" : "Vybrat vše"}
+            </button>
+          </div>
+        )}
+        {ROWS.map((r) => (
           <label
-            key={r.label}
-            className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm ${r.count === 0 ? "border-ink/[0.06] opacity-50" : "border-ink/10"}`}
+            key={r.key}
+            className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm ${counts[r.key] === 0 ? "border-ink/[0.06] opacity-50" : "border-ink/10"}`}
           >
             <input
               type="checkbox"
-              checked={r.checked && r.count > 0}
-              onChange={r.onToggle}
-              disabled={r.count === 0}
+              checked={!!sel[r.key] && counts[r.key] > 0}
+              onChange={() => setSel((s) => ({ ...s, [r.key]: !s[r.key] }))}
+              disabled={counts[r.key] === 0}
               className="h-4 w-4 accent-red-600"
             />
             <span className="min-w-0 flex-1 break-words">{r.label}</span>
-            <span className="shrink-0 text-xs text-ink-soft">{r.count}×</span>
+            <span className="shrink-0 text-xs text-ink-soft">{counts[r.key]}×</span>
           </label>
         ))}
       </div>
