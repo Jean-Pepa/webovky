@@ -52,7 +52,9 @@ export default function KasaPage() {
         <p className="card p-3 text-sm text-amber-700">⚠️ Správce zatím nenastavil účet pro QR platby — zatím vybírej hotově.</p>
       ) : null}
 
-      <SaleBox sources={[]} allowCustom label="Kasa — prodej na místě" />
+      {/* key: při přepnutí ročníku se účtenka vyprázdní (ať se prodej
+          nezapíše do jiného ročníku, než ve kterém byl namarkovaný) */}
+      <SaleBox key={year.id} sources={[]} allowCustom label="Kasa — prodej na místě" />
     </div>
   );
 }

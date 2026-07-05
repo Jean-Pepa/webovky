@@ -75,8 +75,9 @@ export default function KuchyneBarPage() {
             ))}
           </div>
           {/* Objednávka na místě: obsluha nakliká jídlo a pití, ukáže QR
-              a po zaplacení se tržba propíše do financí (bar / kuchyně). */}
-          {editable && <NewOrderButton mode="gastro" />}
+              a po zaplacení se tržba propíše do financí (bar / kuchyně).
+              key: při přepnutí ročníku se rozmarkovaná objednávka zahodí. */}
+          {editable && <NewOrderButton key={year.id} mode="gastro" />}
         </div>
       </div>
 

@@ -78,13 +78,21 @@ export function NewOrderButton({ mode }: { mode: Mode }) {
   const pickerProduct = picker ? (year.merch ?? []).find((p) => p.id === picker.productId) : undefined;
   const total = lines.reduce((s, l) => s + l.price * l.qty, 0);
   const kinds = [...new Set(lines.map((l) => l.kind))];
-  const qrMessage = `MARENA ${kinds.length === 1 ? KIND_WORD[kinds[0]] : "KASA"} ${lines.map((l) => `${l.qty}X ${lineLabel(l)}`).join(", ")}${
+  const kindsWord =
+    kinds.length === 1
+      ? KIND_WORD[kinds[0]]
+      : kinds.every((k) => k === "bar" || k === "kuchyne")
+        ? "JIDLO A PITI"
+        : "KASA";
+  const qrMessage = `MARENA ${kindsWord} ${lines.map((l) => `${l.qty}X ${lineLabel(l)}`).join(", ")}${
     mode === "merch" && customer.trim() ? ` — ${customer.trim()}` : ""
   }`;
 
+  // Klíč řádku nese i cenu — dvě stejně pojmenované položky s jinou cenou
+  // (druhé „Pivo" na baru) se nesmí slít do jedné.
   function addLine(kind: Kind, name: string, price: number, productId?: string, size?: string, color?: string) {
     setLines((prev) => {
-      const key = `${kind}|${productId ?? name}|${size ?? ""}|${color ?? ""}`;
+      const key = `${kind}|${productId ?? name}|${size ?? ""}|${color ?? ""}|${price}`;
       const i = prev.findIndex((l) => l.key === key);
       if (i >= 0) return prev.map((l, j) => (j === i ? { ...l, qty: l.qty + 1 } : l));
       return [...prev, { key, kind, productId, name, size, color, price, qty: 1 }];
@@ -103,7 +111,7 @@ export function NewOrderButton({ mode }: { mode: Mode }) {
       setPicker({ productId: product.id });
       return;
     }
-    addLine(kind, item.name, item.price, kind === "merch" ? item.id : undefined);
+    addLine(kind, item.name, item.price, item.id);
   }
   function confirmPicker() {
     if (!picker || !pickerProduct) return;
@@ -120,11 +128,12 @@ export function NewOrderButton({ mode }: { mode: Mode }) {
   }
 
   // Merch: objednávka vznikne už při přechodu na QR — dá se nechat
-  // i nezaplacená a vyřídit později ze seznamu objednávek.
-  async function ensureOrder(): Promise<string> {
+  // i nezaplacená a vyřídit později ze seznamu objednávek. Vrací null,
+  // když se založení nepodařilo uložit (výpadek sítě).
+  async function ensureOrder(): Promise<string | null> {
     if (orderId) return orderId;
     const id = uid("mo_");
-    await dispatch({
+    const ok = await dispatch({
       type: "addMerchOrder",
       yearId: year!.id,
       id,
@@ -132,6 +141,7 @@ export function NewOrderButton({ mode }: { mode: Mode }) {
       note: `markoval(a): ${me}`,
       items: lines.map((l) => ({ productId: l.productId!, name: l.name, size: l.size, color: l.color, price: l.price, qty: l.qty })),
     });
+    if (!ok) return null;
     setOrderId(id);
     return id;
   }
@@ -140,13 +150,18 @@ export function NewOrderButton({ mode }: { mode: Mode }) {
     if (lines.length === 0 || busy) return;
     setBusy(true);
     try {
-      if (mode === "merch") await ensureOrder();
+      if (mode === "merch" && !(await ensureOrder())) {
+        flash("Objednávku se nepodařilo uložit — zkontroluj připojení", "⚠️");
+        return;
+      }
       setStep("pay");
     } finally {
       setBusy(false);
     }
   }
 
+  // Zápis prodeje. Hlídá výsledek každého uložení: co se nezapsalo, zůstává
+  // v objednávce, ať se dá po výpadku sítě zkusit znovu (a nic není dvakrát).
   async function settle(how: "qr" | "hotove") {
     if (lines.length === 0 || busy) return;
     const howText = how === "hotove" ? "hotově" : "QR platba";
@@ -154,14 +169,23 @@ export function NewOrderButton({ mode }: { mode: Mode }) {
     try {
       if (mode === "merch") {
         const id = await ensureOrder();
-        await dispatch({ type: "settleMerchOrder", yearId: year!.id, orderId: id, how: howText });
+        if (!id) {
+          flash("Objednávku se nepodařilo uložit — zkontroluj připojení", "⚠️");
+          return;
+        }
+        if (!(await dispatch({ type: "settleMerchOrder", yearId: year!.id, orderId: id, how: howText }))) {
+          flash("Objednávka je založená, ale platba se nezapsala — zkus to znovu", "⚠️");
+          return;
+        }
       } else {
         // Jídlo a pití → příjem po kategoriích, ať ve financích sedí
         // součty za bar i kuchyni zvlášť.
+        const written = new Set<string>();
+        let ok = true;
         for (const kind of ["bar", "kuchyne"] as const) {
           const group = lines.filter((l) => l.kind === kind);
           if (group.length === 0) continue;
-          await dispatch({
+          ok = await dispatch({
             type: "addFinance",
             yearId: year!.id,
             kind: "prijem",
@@ -173,6 +197,13 @@ export function NewOrderButton({ mode }: { mode: Mode }) {
             date: todayISO(),
             note: group.map((l) => `${l.qty}× ${l.name}`).join(", ") + ` · ${howText}`,
           });
+          if (!ok) break;
+          group.forEach((l) => written.add(l.key));
+        }
+        if (!ok) {
+          setLines((prev) => prev.filter((l) => !written.has(l.key)));
+          flash("Nezapsáno — zkontroluj připojení a zkus to znovu", "⚠️");
+          return;
         }
       }
       flash(`Zaplaceno ${fmtCZK(total)} — zapsáno`, "💰");
@@ -188,7 +219,10 @@ export function NewOrderButton({ mode }: { mode: Mode }) {
     if (!orderId || busy) return;
     setBusy(true);
     try {
-      await dispatch({ type: "removeMerchOrder", yearId: year!.id, orderId });
+      if (!(await dispatch({ type: "removeMerchOrder", yearId: year!.id, orderId }))) {
+        flash("Zrušení se nepodařilo uložit — zkontroluj připojení", "⚠️");
+        return;
+      }
       setOrderId(null);
       setStep("pick");
     } finally {

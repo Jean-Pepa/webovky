@@ -56,8 +56,9 @@ export default function MerchPage() {
           </p>
         </div>
         {/* Objednávka na místě: obsluha nakliká, ukáže QR, po zaplacení
-            se objednávka uzamkne jako zaplacená a propíše do financí. */}
-        {canManage && <NewOrderButton mode="merch" />}
+            se objednávka uzamkne jako zaplacená a propíše do financí.
+            key: při přepnutí ročníku se rozmarkovaná objednávka zahodí. */}
+        {canManage && <NewOrderButton key={year.id} mode="merch" />}
       </div>
 
       {/* Nabídka (fotky merche) */}

@@ -31,7 +31,9 @@ interface StoreApi extends StoreState {
   logout: () => Promise<void>;
   setMe: (name: string) => void;
   setCurrentYearId: (id: string) => void;
-  dispatch: (action: Action) => Promise<void>;
+  // Vrací true, když se změna opravdu zapsala (server ji přijal / lokálně
+  // uložena). false = neuloženo (uzamčený ročník, výpadek sítě, odhlášení).
+  dispatch: (action: Action) => Promise<boolean>;
   dismissSyncError: () => void;
 }
 
@@ -175,7 +177,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, currentYearId: id }));
   }, []);
 
-  const dispatch = useCallback(async (action: Action) => {
+  const dispatch = useCallback(async (action: Action): Promise<boolean> => {
     // Zámek starších ročníků: měnit jde jen aktuální ročník (správce vždy).
     const yearId = (action as { yearId?: string }).yearId;
     if (yearId && !isYearEditable(stateRef.current.db, yearId, stateRef.current.me)) {
@@ -183,7 +185,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         ...s,
         syncError: "Tento ročník je uzamčený — jde ho jen prohlížet. Měnit lze jen aktuální (nejnovější) ročník.",
       }));
-      return;
+      return false;
     }
     if (modeRef.current === "server") {
       const res = await fetch("/api/db", {
@@ -194,12 +196,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (res && res.ok) {
         const { db } = (await res.json()) as { db: DB };
         setState((s) => ({ ...s, db, syncError: null, currentYearId: pickYear(db, s.currentYearId) }));
-        return;
+        return true;
       }
       if (res && res.status === 401) {
         // session vypršela → odhlásit; layout přesměruje na /prihlaseni
         setState((s) => ({ ...s, authed: false, syncError: null }));
-        return;
+        return false;
       }
       // Chyba serveru (síť / 5xx / konflikt). NEaplikovat tiše lokálně —
       // to by změnu nikdy nedostalo na server a po reloadu by zmizela.
@@ -207,7 +209,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         ...s,
         syncError: "Změnu se nepodařilo uložit na server. Zkontroluj připojení a zkus to znovu.",
       }));
-      return;
+      return false;
     }
     // lokální (demo) režim — ukládáme do localStorage tohoto prohlížeče
     setState((s) => {
@@ -216,6 +218,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       saveLocalDB(db);
       return { ...s, db, currentYearId: pickYear(db, s.currentYearId) };
     });
+    return true;
   }, []);
 
   const dismissSyncError = useCallback(() => setState((s) => ({ ...s, syncError: null })), []);

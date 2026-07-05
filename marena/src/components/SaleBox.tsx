@@ -49,6 +49,7 @@ export function SaleBox({
   const [qrOpen, setQrOpen] = useState(false);
   const [customName, setCustomName] = useState("");
   const [customPrice, setCustomPrice] = useState("");
+  const [busy, setBusy] = useState(false);
   const year = currentYear;
   if (!year || !canEditCurrentYear) return null;
 
@@ -84,14 +85,22 @@ export function SaleBox({
 
   const total = lines.reduce((s, l) => s + l.price * l.qty, 0);
 
-  // Zpráva pro příjemce v QR: za co se platí (MERCH / BAR / JIDLO / KASA)
+  // Zpráva pro příjemce v QR: za co se platí (MERCH / BAR / JIDLO / …)
   // + položky. Banka ji ukáže ve výpisu, takže je hned vidět účel platby.
   const kinds = [...new Set(lines.map((l) => l.kind))];
-  const qrMessage = `MARENA ${kinds.length === 1 ? KIND_WORD[kinds[0]] : "KASA"} ${lines.map((l) => `${l.qty}X ${l.name}`).join(", ")}`;
+  const kindsWord =
+    kinds.length === 1
+      ? KIND_WORD[kinds[0]]
+      : kinds.every((k) => k === "bar" || k === "kuchyne")
+        ? "JIDLO A PITI"
+        : "KASA";
+  const qrMessage = `MARENA ${kindsWord} ${lines.map((l) => `${l.qty}X ${l.name}`).join(", ")}`;
 
+  // Klíč řádku nese i cenu — dvě stejně pojmenované položky s jinou cenou
+  // (druhé „Pivo", vlastní položka) se nesmí slít do jedné.
   function add(kind: SaleKind, name: string, price: number, productId?: string) {
     setLines((prev) => {
-      const key = `${kind}|${productId ?? name}`;
+      const key = `${kind}|${productId ?? name}|${price}`;
       const i = prev.findIndex((l) => l.key === key);
       if (i >= 0) return prev.map((l, j) => (j === i ? { ...l, qty: l.qty + 1 } : l));
       return [...prev, { key, kind, productId, name, price, qty: 1 }];
@@ -110,53 +119,73 @@ export function SaleBox({
     setCustomPrice("");
   }
 
+  // Zápis prodeje. Hlídá výsledek každého uložení: co se nezapsalo, zůstává
+  // na účtence, ať se dá po výpadku sítě zkusit znovu (a nic se nezapíše dvakrát).
   async function settle(how: "qr" | "hotove") {
-    if (!year || lines.length === 0) return;
-    const howText = how === "hotove" ? "hotově" : "QR platba";
-    const merch = lines.filter((l) => l.kind === "merch");
+    if (!year || lines.length === 0 || busy) return;
+    setBusy(true);
+    try {
+      const howText = how === "hotove" ? "hotově" : "QR platba";
+      const merch = lines.filter((l) => l.kind === "merch");
+      const written = new Set<string>();
+      let ok = true;
 
-    if (merch.length > 0) {
-      const orderId = uid("mo_");
-      await dispatch({
-        type: "addMerchOrder",
-        yearId: year.id,
-        id: orderId,
-        name: label,
-        note: `markoval(a): ${me} · ${howText}`,
-        items: merch.map((l) => ({ productId: l.productId!, name: l.name, price: l.price, qty: l.qty })),
-      });
-      await dispatch({ type: "settleMerchOrder", yearId: year.id, orderId, how: howText });
+      if (merch.length > 0) {
+        const orderId = uid("mo_");
+        ok = await dispatch({
+          type: "addMerchOrder",
+          yearId: year.id,
+          id: orderId,
+          name: label,
+          note: `markoval(a): ${me} · ${howText}`,
+          items: merch.map((l) => ({ productId: l.productId!, name: l.name, price: l.price, qty: l.qty })),
+        });
+        if (ok) ok = await dispatch({ type: "settleMerchOrder", yearId: year.id, orderId, how: howText });
+        if (ok) merch.forEach((l) => written.add(l.key));
+      }
+      // Jídlo, pití a vlastní položky → příjem po kategoriích (bar / kuchyně / kasa),
+      // ať ve financích sedí součty za jednotlivé stánky.
+      for (const kind of ["bar", "kuchyne", "custom"] as const) {
+        if (!ok) break;
+        const group = lines.filter((l) => l.kind === kind);
+        if (group.length === 0) continue;
+        ok = await dispatch({
+          type: "addFinance",
+          yearId: year.id,
+          kind: "prijem",
+          label,
+          amount: group.reduce((s, l) => s + l.price * l.qty, 0),
+          category: KIND_CATEGORY[kind],
+          who: me,
+          paid: true,
+          date: todayISO(),
+          note: group.map((l) => `${l.qty}× ${l.name}`).join(", ") + ` · ${howText}`,
+        });
+        if (ok) group.forEach((l) => written.add(l.key));
+      }
+
+      if (!ok) {
+        setLines((prev) => prev.filter((l) => !written.has(l.key)));
+        flash("Nezapsáno — zkontroluj připojení a zkus to znovu", "⚠️");
+        return;
+      }
+      setLines([]);
+      setQrOpen(false);
+      flash(`Zaplaceno ${fmtCZK(total)} — zapsáno do systému`, "💰");
+    } finally {
+      setBusy(false);
     }
-    // Jídlo, pití a vlastní položky → příjem po kategoriích (bar / kuchyně / kasa),
-    // ať ve financích sedí součty za jednotlivé stánky.
-    for (const kind of ["bar", "kuchyne", "custom"] as const) {
-      const group = lines.filter((l) => l.kind === kind);
-      if (group.length === 0) continue;
-      await dispatch({
-        type: "addFinance",
-        yearId: year.id,
-        kind: "prijem",
-        label,
-        amount: group.reduce((s, l) => s + l.price * l.qty, 0),
-        category: KIND_CATEGORY[kind],
-        who: me,
-        paid: true,
-        date: todayISO(),
-        note: group.map((l) => `${l.qty}× ${l.name}`).join(", ") + ` · ${howText}`,
-      });
-    }
-    setLines([]);
-    setQrOpen(false);
-    flash(`Zaplaceno ${fmtCZK(total)} — zapsáno do systému`, "💰");
   }
 
   return (
     <section className="card p-4 tabular-nums">
       {collapsible ? (
-        <button className="flex w-full items-center justify-between gap-2 text-left" onClick={() => setOpen((o) => !o)}>
-          <h2 className="font-display text-[20px] font-semibold">🛒 Prodej na místě</h2>
-          <span className="rounded-full bg-paper2 px-3 py-1 text-sm font-medium text-ink-soft">{open ? "Skrýt" : "Namarkovat"}</span>
-        </button>
+        <h2 className="font-display text-[20px] font-semibold">
+          <button className="flex w-full items-center justify-between gap-2 text-left" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+            <span>🛒 Prodej na místě</span>
+            <span className="rounded-full bg-paper2 px-3 py-1 text-sm font-medium text-ink-soft">{open ? "Skrýt" : "Namarkovat"}</span>
+          </button>
+        </h2>
       ) : (
         <h2 className="font-display text-[20px] font-semibold">🛒 Prodej na místě</h2>
       )}
@@ -179,7 +208,7 @@ export function SaleBox({
                     {g.items.map((i) => (
                       <button
                         key={i.id}
-                        onClick={() => add(g.kind, i.name, i.price, g.kind === "merch" ? i.id : undefined)}
+                        onClick={() => add(g.kind, i.name, i.price, i.id)}
                         className="flex min-h-11 items-center justify-between gap-2 rounded-lg bg-paper2 px-3 py-2.5 text-left transition hover:bg-gold-100 active:scale-[0.98]"
                       >
                         <span className="min-w-0 truncate text-[15px] font-medium">{i.name}</span>
@@ -204,7 +233,11 @@ export function SaleBox({
           {/* Účtenka */}
           <div className="border-t border-ink/10 pt-3">
             {lines.length === 0 ? (
-              <p className="text-sm text-ink-soft">Účtenka je zatím prázdná — ťukni nahoře na položky.</p>
+              <p className="text-sm text-ink-soft">
+                {grids.some((g) => g.items.length > 0)
+                  ? "Účtenka je zatím prázdná — ťukni nahoře na položky."
+                  : "Účtenka je zatím prázdná — přidej výše, co prodáváš."}
+              </p>
             ) : (
               <div className="divide-y divide-ink/[0.06]">
                 {lines.map((l) => (
@@ -232,10 +265,10 @@ export function SaleBox({
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">
-              <button className="btn-primary flex-1" disabled={total <= 0 || !accountOk} onClick={() => setQrOpen(true)}>
+              <button className="btn-primary flex-1" disabled={total <= 0 || !accountOk || busy} onClick={() => setQrOpen(true)}>
                 <Icon name="vote" className="h-4 w-4" /> QR k platbě
               </button>
-              <button className="btn-secondary flex-1" disabled={total <= 0} onClick={() => settle("hotove")}>
+              <button className="btn-secondary flex-1" disabled={total <= 0 || busy} onClick={() => settle("hotove")}>
                 💵 Hotově — zapsat
               </button>
               {lines.length > 0 && (
@@ -256,7 +289,7 @@ export function SaleBox({
         <div className="space-y-4">
           <PayQr account={account} amount={total} message={qrMessage} />
           <div className="flex gap-2">
-            <button className="btn-primary flex-1" onClick={() => settle("qr")}>
+            <button className="btn-primary flex-1" disabled={busy} onClick={() => settle("qr")}>
               ✓ Zaplaceno — zapsat
             </button>
             <button className="btn-ghost" onClick={() => setQrOpen(false)}>
