@@ -103,7 +103,7 @@ export default function MerchPage() {
           ) : (
             <div className="space-y-2">
               {orders.map((o) => (
-                <OrderRow key={o.id} order={o} yearId={year.id} canManage={canManage} canDelete={canDeleteOrders} total={orderTotal(o, products)} account={year.paymentAccount} />
+                <OrderRow key={o.id} order={o} yearId={year.id} canManage={canManage} canDelete={canDeleteOrders} canUnlock={canDeleteOrders} total={orderTotal(o, products)} account={year.paymentAccount} />
               ))}
             </div>
           )}
@@ -399,6 +399,7 @@ function OrderRow({
   yearId,
   canManage,
   canDelete,
+  canUnlock,
   total,
   account,
 }: {
@@ -406,6 +407,7 @@ function OrderRow({
   yearId: string;
   canManage: boolean;
   canDelete: boolean;
+  canUnlock: boolean;
   total: number;
   account?: string;
 }) {
@@ -444,7 +446,26 @@ function OrderRow({
               QR platba
             </button>
           )}
-          {canManage ? (
+          {order.paid ? (
+            // Zaplaceno na místě → objednávka je uzamčená; odemkne jen správce.
+            canUnlock ? (
+              <button
+                onClick={() => {
+                  if (window.confirm("Objednávka je zaplacená a uzamčená. Opravdu vrátit na „čeká“? Smaže se i zápis ve financích.")) {
+                    dispatch({ type: "toggleMerchOrderDone", yearId, orderId: order.id });
+                  }
+                }}
+                className="rounded-full bg-leaf/15 px-2.5 py-1 text-xs font-semibold text-leaf-700 transition hover:bg-leaf/25"
+                title="Zaplaceno a uzamčeno — odemknout může jen správce"
+              >
+                🔒 Zaplaceno
+              </button>
+            ) : (
+              <span className="rounded-full bg-leaf/15 px-2.5 py-1 text-xs font-semibold text-leaf-700" title="Zaplaceno a uzamčeno">
+                🔒 Zaplaceno
+              </span>
+            )
+          ) : canManage ? (
             <button
               onClick={() => dispatch({ type: "toggleMerchOrderDone", yearId, orderId: order.id })}
               className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
@@ -474,7 +495,8 @@ function OrderRow({
         {total > 0 && <span className="ml-auto font-display font-bold text-ink">{fmtCZK(total)}</span>}
       </div>
 
-      {/* QR pro zaplacení při předání — po zaplacení přepni objednávku na Vyřízeno. */}
+      {/* QR pro zaplacení při předání — potvrzením se objednávka uzamkne
+          jako zaplacená a tržba se propíše do financí. */}
       {canQr && (
         <Modal open={qrOpen} onClose={() => setQrOpen(false)} title={`Platba — ${order.name}`}>
           <div className="space-y-4">
@@ -483,11 +505,11 @@ function OrderRow({
               <button
                 className="btn-primary flex-1"
                 onClick={() => {
-                  dispatch({ type: "toggleMerchOrderDone", yearId, orderId: order.id });
+                  dispatch({ type: "settleMerchOrder", yearId, orderId: order.id, how: "QR platba" });
                   setQrOpen(false);
                 }}
               >
-                ✓ Zaplaceno — vyřízeno
+                ✓ Zaplaceno — zapsat
               </button>
               <button className="btn-ghost" onClick={() => setQrOpen(false)}>
                 Zavřít

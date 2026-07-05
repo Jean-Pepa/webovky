@@ -286,6 +286,7 @@ export interface MerchOrder {
   items: MerchOrderItem[]; // co si chce koupit z nabídky
   note?: string; // poznámka (velikost apod.)
   done?: boolean; // vyřízeno (true) / čeká (false/undefined)
+  paid?: boolean; // zaplaceno (QR/hotově) — objednávka je uzamčená, odemkne jen správce
   financeId?: string; // navázaná finanční položka (vznikne při „vyřízeno")
   createdAt: string;
 }

@@ -113,6 +113,9 @@ export type Action =
   | { type: "removeMerchProduct"; yearId: string; productId: string }
   | { type: "addMerchOrder"; yearId: string; name: string; phone?: string; email?: string; items: MerchOrderItem[]; note?: string; id?: string }
   | { type: "toggleMerchOrderDone"; yearId: string; orderId: string }
+  // Zaplaceno na místě (QR/hotově): vyřídí objednávku, uzamkne ji (paid)
+  // a zapíše tržbu do financí. Odemknout ji pak může jen správce.
+  | { type: "settleMerchOrder"; yearId: string; orderId: string; how?: string }
   | { type: "removeMerchOrder"; yearId: string; orderId: string }
   // Uvolnění místa: smaže všechny fotky/účtenky ročníku (reference v DB; samotné
   // bloby maže klient zvlášť). Texty (finance, popisy) zůstávají.
@@ -139,6 +142,37 @@ function cleanList(arr?: string[]): string[] | undefined {
 // Vrátí novou DB s aplikovanou změnou na daný ročník.
 function mapYear(db: DB, yearId: string, fn: (y: Year) => Year): DB {
   return { ...db, years: db.years.map((y) => (y.id === yearId ? fn(y) : y)) };
+}
+
+// Vyřízení merch objednávky: označí done a zapíše tržbu jako příjem do financí.
+// S `paid` navíc objednávku uzamkne jako zaplacenou (QR/hotově na místě).
+function settleOrder(y: Year, orderId: string, opts: { paid?: boolean; how?: string }): Year {
+  const order = (y.merchOrders ?? []).find((o) => o.id === orderId);
+  if (!order || order.done) return y;
+  const total = order.items.reduce((sum, it) => {
+    const price = it.price ?? (y.merch ?? []).find((p) => p.id === it.productId)?.price ?? 0;
+    return sum + price * it.qty;
+  }, 0);
+  const financeId = uid("f_");
+  const itemsText = order.items
+    .map((it) => `${it.qty}× ${it.name}${[it.size, it.color].filter(Boolean).length ? ` (${[it.size, it.color].filter(Boolean).join(" · ")})` : ""}`)
+    .join(", ");
+  const fin = {
+    id: financeId,
+    kind: "prijem" as FinanceKind,
+    label: `Merch — ${order.name}`,
+    amount: total,
+    category: "merch",
+    paid: true,
+    date: order.createdAt.slice(0, 10),
+    note: [itemsText, opts.how].filter(Boolean).join(" · "),
+    createdAt: now(),
+  };
+  return {
+    ...y,
+    merchOrders: (y.merchOrders ?? []).map((o) => (o.id === orderId ? { ...o, done: true, paid: opts.paid || undefined, financeId } : o)),
+    finances: [fin, ...(y.finances ?? [])],
+  };
 }
 
 // Udrží mapu vedoucích rolí v konzistenci: zahodí neplatné (drží roli nedrží),
@@ -966,40 +1000,16 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => {
         const order = (y.merchOrders ?? []).find((o) => o.id === a.orderId);
         if (!order) return y;
-        if (!order.done) {
-          // vyřízeno → zapiš tržbu objednávky jako příjem do financí
-          const total = order.items.reduce((sum, it) => {
-            const price = it.price ?? (y.merch ?? []).find((p) => p.id === it.productId)?.price ?? 0;
-            return sum + price * it.qty;
-          }, 0);
-          const financeId = uid("f_");
-          const itemsText = order.items
-            .map((it) => `${it.qty}× ${it.name}${[it.size, it.color].filter(Boolean).length ? ` (${[it.size, it.color].filter(Boolean).join(" · ")})` : ""}`)
-            .join(", ");
-          const fin = {
-            id: financeId,
-            kind: "prijem" as FinanceKind,
-            label: `Merch — ${order.name}`,
-            amount: total,
-            category: "merch",
-            paid: true,
-            date: order.createdAt.slice(0, 10),
-            note: itemsText,
-            createdAt: now(),
-          };
-          return {
-            ...y,
-            merchOrders: (y.merchOrders ?? []).map((o) => (o.id === a.orderId ? { ...o, done: true, financeId } : o)),
-            finances: [fin, ...(y.finances ?? [])],
-          };
-        }
-        // zpět na „čeká" → odeber navázaný příjem
+        if (!order.done) return settleOrder(y, a.orderId, {});
+        // zpět na „čeká" → odeber navázaný příjem a zruš i zámek „zaplaceno"
         return {
           ...y,
-          merchOrders: (y.merchOrders ?? []).map((o) => (o.id === a.orderId ? { ...o, done: false, financeId: undefined } : o)),
+          merchOrders: (y.merchOrders ?? []).map((o) => (o.id === a.orderId ? { ...o, done: false, paid: false, financeId: undefined } : o)),
           finances: order.financeId ? (y.finances ?? []).filter((f) => f.id !== order.financeId) : y.finances,
         };
       });
+    case "settleMerchOrder":
+      return mapYear(db, a.yearId, (y) => settleOrder(y, a.orderId, { paid: true, how: a.how }));
     case "removeMerchOrder":
       return mapYear(db, a.yearId, (y) => {
         const order = (y.merchOrders ?? []).find((o) => o.id === a.orderId);

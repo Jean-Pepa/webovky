@@ -68,8 +68,8 @@ export default function KasaPage() {
   }
 
   // Po zaplacení (QR i hotově) se prodej zapíše do systému:
-  //  • merch → objednávka rovnou označená „vyřízeno" (sama vytvoří příjem
-  //    ve financích a odečte se ze skladu),
+  //  • merch → objednávka rovnou vyřízená a uzamčená jako zaplacená (sama
+  //    vytvoří příjem ve financích a odečte se ze skladu),
   //  • jídlo/pití/vlastní → příjem ve financích s rozpisem v poznámce.
   async function settle(how: "qr" | "hotove") {
     if (!year || lines.length === 0) return;
@@ -86,7 +86,7 @@ export default function KasaPage() {
         note: `markoval(a): ${me}${how === "hotove" ? " · hotově" : " · QR platba"}`,
         items: merch.map((l) => ({ productId: l.productId!, name: l.name, price: l.price, qty: l.qty })),
       });
-      await dispatch({ type: "toggleMerchOrderDone", yearId: year.id, orderId });
+      await dispatch({ type: "settleMerchOrder", yearId: year.id, orderId, how: how === "hotove" ? "hotově" : "QR platba" });
     }
     if (rest.length > 0) {
       const amount = rest.reduce((s, l) => s + l.price * l.qty, 0);

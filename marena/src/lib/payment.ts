@@ -58,11 +58,15 @@ export function parseAccount(input: string): ParsedAccount {
 }
 
 // Zpráva pro příjemce: bez diakritiky a hvězdiček (zakázané ve formátu SPD).
+// Znaky mimo ASCII (×, pomlčky…) se přepíší, ať zprávu zobrazí každá banka.
 function sanitizeMsg(msg: string): string {
   return msg
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/×/g, "X")
+    .replace(/[—–·]/g, "-")
     .replace(/\*/g, " ")
+    .replace(/[^\x20-\x7e]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .toUpperCase()
