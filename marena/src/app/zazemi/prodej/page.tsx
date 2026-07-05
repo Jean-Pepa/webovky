@@ -100,7 +100,10 @@ function Pos() {
   const [busy, setBusy] = useState(false);
   const [customName, setCustomName] = useState("");
   const [customPrice, setCustomPrice] = useState("");
+  // Režim úprav nabídky (jen správce): dlaždice se místo markování mažou.
+  const [editNabidka, setEditNabidka] = useState(false);
   const year = currentYear;
+  const admin = isAdmin(me);
 
   // Stánek: z odkazu (?stand=merch) nebo z minula — zařízení u baru
   // zůstává barem (vzor „zamčeného terminálu" z festivalových pokladen).
@@ -157,6 +160,8 @@ function Pos() {
     },
   ].filter((g) => (stand === "vse" ? true : g.kind === stand));
   const showCustom = stand === "vse" || stand === "ostatni";
+  // Přepínač úprav bydlí u první neprázdné sekce nabídky.
+  const firstNonEmpty = grids.findIndex((g) => g.items.length > 0);
 
   // Čekající objednávky merche (z webu i odložené) — platí se tady:
   // QR se jménem objednatele, nebo hotově jedním ťuknutím.
@@ -220,6 +225,27 @@ function Pos() {
     if (!picker || !pickerProduct) return;
     addLine("merch", pickerProduct.name, pickerProduct.price!, pickerProduct.id, picker.size, picker.color);
     setPicker(null);
+  }
+  // Smazání položky z nabídky (jen správce, v režimu Upravit) — maže se
+  // přímo produkt/položka menu, takže zmizí i v Merchi / Kuchyně & bar.
+  async function removeItem(kind: Exclude<Kind, "custom">, item: { id: string; name: string }) {
+    if (!year || busy) return;
+    if (!window.confirm(`Smazat „${item.name}“ z nabídky? Zmizí i v sekci ${kind === "merch" ? "Merch" : "Kuchyně & bar"}.`)) return;
+    setBusy(true);
+    try {
+      const ok = await dispatch(
+        kind === "merch"
+          ? { type: "removeMerchProduct", yearId: year.id, productId: item.id }
+          : { type: "removeDrink", yearId: year.id, drinkId: item.id },
+      );
+      if (!ok) {
+        flash("Smazání se nepodařilo uložit — zkontroluj připojení", "⚠️");
+        return;
+      }
+      flash(`„${item.name}“ smazáno z nabídky`, "🗑️");
+    } finally {
+      setBusy(false);
+    }
   }
   function addCustom() {
     const price = Math.round(Number(customPrice.replace(",", ".")));
@@ -381,19 +407,44 @@ function Pos() {
       )}
 
       {/* Nabídka stánku — nové položky s cenou se tu objeví samy */}
-      {grids.map((g) =>
+      {grids.map((g, gi) =>
         g.items.length > 0 ? (
           <section key={g.kind} className="card p-4">
-            <h2 className="font-display text-[20px] font-semibold">{g.title}</h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-display text-[20px] font-semibold">{g.title}</h2>
+              {/* Úprava nabídky (jen správce): v režimu Upravit dlaždice mažou */}
+              {admin && gi === firstNonEmpty && (
+                <button
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                    editNabidka ? "bg-red-600 text-white hover:bg-red-500" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+                  }`}
+                  aria-pressed={editNabidka}
+                  onClick={() => setEditNabidka((v) => !v)}
+                >
+                  {editNabidka ? "Hotovo" : "Upravit nabídku"}
+                </button>
+              )}
+            </div>
+            {editNabidka && gi === firstNonEmpty && (
+              <p className="mt-1 text-xs text-red-600">Ťuknutím položku smažeš z nabídky (potvrdí se dotazem).</p>
+            )}
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {g.items.map((i) => (
                 <button
                   key={i.id}
-                  onClick={() => tapItem(g.kind, i)}
-                  className={`flex min-h-12 items-center justify-between gap-2 rounded-lg border-l-4 bg-paper2 px-3 py-2.5 text-left transition hover:bg-gold-100 active:scale-[0.98] ${KIND_BORDER[g.kind]}`}
+                  onClick={() => (editNabidka ? removeItem(g.kind, i) : tapItem(g.kind, i))}
+                  className={`flex min-h-12 items-center justify-between gap-2 rounded-lg border-l-4 px-3 py-2.5 text-left transition active:scale-[0.98] ${
+                    editNabidka
+                      ? "bg-red-50 ring-1 ring-red-200 hover:bg-red-100"
+                      : `bg-paper2 hover:bg-gold-100 ${KIND_BORDER[g.kind]}`
+                  } ${editNabidka ? "border-l-red-400" : ""}`}
                 >
                   <span className="min-w-0 truncate text-[15px] font-semibold">{i.name}</span>
-                  <span className="shrink-0 text-sm font-bold text-ink-soft">{fmtCZK(i.price)}</span>
+                  {editNabidka ? (
+                    <span className="shrink-0 text-sm font-bold text-red-600">✕ Smazat</span>
+                  ) : (
+                    <span className="shrink-0 text-sm font-bold text-ink-soft">{fmtCZK(i.price)}</span>
+                  )}
                 </button>
               ))}
             </div>
