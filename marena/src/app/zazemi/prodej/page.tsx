@@ -1,25 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { PayQr } from "@/components/PayQr";
 import { parseAccount } from "@/lib/payment";
-import { fmtCZK, todayISO } from "@/lib/format";
+import { fmtCZK, fmtDateTime, todayISO } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { isAdmin } from "@/lib/admin";
 import { flash } from "@/components/Flash";
-import type { MerchOrder, MerchProduct } from "@/lib/types";
+import type { Cashbox, MerchOrder, MerchProduct } from "@/lib/types";
 
 // Prodej — jednotná pokladna pro celý festival (vzor z restauračních a
-// festivalových POS: Toast, Square, Dotykačka, NFCtron). Obsluha si vybere
-// svůj stánek (zařízení si volbu pamatuje), ťuká položky — nejprodávanější
-// první — a platí se QR platbou nebo hotově, vždy s volbou způsobu.
-// Do financí se zapisuje až PO zaplacení, odděleně po kategoriích
-// (merch / bar / kuchyně / kasa) + kdo markoval a jak bylo placeno,
-// takže se peníze nemíchají. Merch prodej vytvoří rovnou vyřízenou
-// a uzamčenou objednávku (sklad i seznam v Merchi sedí).
+// festivalových POS). Nahoře jen to, co obsluha potřebuje k prodeji:
+// stánek → dlaždice → účtenka → QR/hotově. Dole „Přehled dne": tržby,
+// denní kasa na hotovost a účet pro QR. Do financí se zapisuje až PO
+// zaplacení, po kategoriích (merch/bar/kuchyně/kasa) + kdo a jak platil.
 
 type Kind = "merch" | "bar" | "kuchyne" | "custom";
 type Stand = "vse" | "merch" | "bar" | "kuchyne" | "ostatni";
@@ -37,10 +35,10 @@ type Line = {
 
 const STANDS: { id: Stand; label: string }[] = [
   { id: "vse", label: "Vše" },
-  { id: "merch", label: "Merch" },
-  { id: "bar", label: "Bar" },
-  { id: "kuchyne", label: "Kuchyně" },
-  { id: "ostatni", label: "Ostatní" },
+  { id: "merch", label: "🛍️ Merch" },
+  { id: "bar", label: "🍸 Bar" },
+  { id: "kuchyne", label: "🍳 Kuchyně" },
+  { id: "ostatni", label: "➕ Ostatní" },
 ];
 
 // Slovo do zprávy pro banku, kategorie financí a barva dlaždic (obsluha
@@ -52,6 +50,13 @@ const KIND_BORDER: Record<Kind, string> = {
   bar: "border-l-sky-500",
   kuchyne: "border-l-emerald-500",
   custom: "border-l-zinc-400",
+};
+
+// Kam přidat položky, když je nabídka stánku prázdná.
+const EMPTY_HINT: Record<Exclude<Kind, "custom">, { text: string; href: string; cta: string }> = {
+  merch: { text: "Zatím žádný merch s prodejní cenou.", href: "/zazemi/merch", cta: "Přidat merch" },
+  bar: { text: "Zatím žádné pití s prodejní cenou.", href: "/zazemi/kuchyne", cta: "Přidat drink" },
+  kuchyne: { text: "Zatím žádné jídlo s prodejní cenou.", href: "/zazemi/kuchyne", cta: "Přidat jídlo" },
 };
 
 const LS_STAND = "marena_pos_stand";
@@ -125,17 +130,18 @@ function Pos() {
   const accountOk = !!account && !("error" in parseAccount(account));
 
   // Nabídka po druzích; nejprodávanější dlaždice první (podle prodejů
-  // z tohoto zařízení — barový vzor „top sellers first").
+  // z tohoto zařízení — barový vzor „top sellers first"). Nové položky
+  // s prodejní cenou se tu objeví samy.
   const bySold = (a: { id: string }, b: { id: string }) => (tally[b.id] ?? 0) - (tally[a.id] ?? 0);
   const grids: { kind: Exclude<Kind, "custom">; title: string; items: { id: string; name: string; price: number }[] }[] = [
     {
       kind: "merch" as const,
-      title: "Merch",
+      title: "🛍️ Merch",
       items: (year.merch ?? []).filter((p) => p.price != null && p.price > 0).map((p) => ({ id: p.id, name: p.name, price: p.price! })).sort(bySold),
     },
     {
       kind: "bar" as const,
-      title: "Pití (bar)",
+      title: "🍸 Pití",
       items: (year.bar ?? [])
         .filter((d) => (d.place ?? "bar") === "bar" && d.price != null && d.price > 0)
         .map((d) => ({ id: d.id, name: d.name, price: d.price! }))
@@ -143,7 +149,7 @@ function Pos() {
     },
     {
       kind: "kuchyne" as const,
-      title: "Jídlo (kuchyně)",
+      title: "🍳 Jídlo",
       items: (year.bar ?? [])
         .filter((d) => (d.place ?? "bar") === "kuchyne" && d.price != null && d.price > 0)
         .map((d) => ({ id: d.id, name: d.name, price: d.price! }))
@@ -152,9 +158,8 @@ function Pos() {
   ].filter((g) => (stand === "vse" ? true : g.kind === stand));
   const showCustom = stand === "vse" || stand === "ostatni";
 
-  // Čekající objednávky merche (z webu i odložené z prodeje) — platí se
-  // tady stejně jako u objednávek v Merchi: QR se jménem objednatele,
-  // nebo hotově. Zaplacením se objednávka uzamkne a propíše do financí.
+  // Čekající objednávky merche (z webu i odložené) — platí se tady:
+  // QR se jménem objednatele, nebo hotově jedním ťuknutím.
   const pendingOrders =
     stand === "vse" || stand === "merch"
       ? [...(year.merchOrders ?? [])].filter((o) => !o.done).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -171,8 +176,8 @@ function Pos() {
         : "KASA";
   const qrMessage = `MARENA ${kindsWord} ${lines.map((l) => `${l.qty}X ${lineLabel(l)}`).join(", ")}`;
 
-  // Dnešní tržby z prodeje — celkem + QR vs. hotově (kasař hned vidí,
-  // kolik hotovosti má sedět v kase) + rozpad po kategoriích.
+  // Dnešní tržby z prodeje — celkem + QR vs. hotově (kolik hotovosti má
+  // sedět v kase) + rozpad po kategoriích.
   const today = todayISO();
   const posCats = new Set(["merch", "bar", "kuchyně", "kasa"]);
   const todaySales = (year.finances ?? []).filter(
@@ -312,17 +317,17 @@ function Pos() {
     <div className="mx-auto max-w-3xl space-y-4 tabular-nums">
       <div>
         <h1 className="font-display text-[28px] font-bold tracking-tight">Prodej</h1>
-        <p className="mt-0.5 text-sm text-ink-soft">Ťukni položky, vyber QR nebo hotově, po zaplacení zapiš — finance a sklad se srovnají samy.</p>
+        <p className="mt-0.5 text-sm text-ink-soft">1) vyber stánek · 2) ťukej položky · 3) QR nebo hotově</p>
       </div>
 
       {/* Výběr stánku — zařízení si volbu pamatuje */}
-      <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
         {STANDS.map((s) => (
           <button
             key={s.id}
             onClick={() => pickStand(s.id)}
-            className={`min-h-9 shrink-0 rounded-full px-4 text-sm font-semibold transition ${
-              stand === s.id ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+            className={`min-h-10 shrink-0 rounded-full px-4 text-[15px] font-semibold transition ${
+              stand === s.id ? "bg-gold-500 text-[#1d1d1f] shadow-sm" : "bg-paper2 text-ink-soft hover:bg-gold-100"
             }`}
           >
             {s.label}
@@ -330,61 +335,16 @@ function Pos() {
         ))}
       </div>
 
-      {/* Dnešní tržby — QR vs. hotovost (tolik má sedět v kase) */}
-      {todayTotal > 0 && (
-        <div className="card flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5 text-sm">
-          <span>
-            Dnes <strong className="font-display text-base">{fmtCZK(todayTotal)}</strong>
-          </span>
-          <span className="text-ink-soft">QR {fmtCZK(todayQr)}</span>
-          <span className="text-ink-soft">💵 hotově {fmtCZK(todayCash)}</span>
-          <span className="ml-auto flex flex-wrap gap-1">
-            {todayByCat.map((x) => (
-              <span key={x.cat} className="chip">
-                {x.cat} {fmtCZK(x.sum)}
-              </span>
-            ))}
-          </span>
-        </div>
-      )}
-
-      {!accountOk && (
-        <p className="card p-3 text-sm text-amber-700">
-          ⚠️ {isAdmin(me) ? "Nastav dole účet pro QR platby — do té doby vybírej hotově." : "Správce zatím nenastavil účet pro QR platby — zatím vybírej hotově."}
-        </p>
-      )}
-
-      {/* Nabídka stánku */}
-      {grids.map(
-        (g) =>
-          g.items.length > 0 && (
-            <section key={g.kind} className="card p-4">
-              <h2 className="font-display text-[20px] font-semibold">{g.title}</h2>
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {g.items.map((i) => (
-                  <button
-                    key={i.id}
-                    onClick={() => tapItem(g.kind, i)}
-                    className={`flex min-h-11 items-center justify-between gap-2 rounded-lg border-l-4 bg-paper2 px-3 py-2.5 text-left transition hover:bg-gold-100 active:scale-[0.98] ${KIND_BORDER[g.kind]}`}
-                  >
-                    <span className="min-w-0 truncate text-[15px] font-medium">{i.name}</span>
-                    <span className="shrink-0 text-sm font-semibold text-ink-soft">{fmtCZK(i.price)}</span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          ),
-      )}
-
       {/* Čekající objednávky merche — QR platba se jménem objednatele */}
       {pendingOrders.length > 0 && (
-        <section className="card p-4">
+        <section className="card border-l-4 border-l-amber-400 p-4">
           <h2 className="flex items-center gap-2 font-display text-[20px] font-semibold">
             🧾 Objednávky k zaplacení
             <span className="grid h-7 min-w-7 place-items-center rounded-full bg-gold-500 px-2 font-display text-sm font-bold text-[#1d1d1f]">
               {pendingOrders.length}
             </span>
           </h2>
+          <p className="mt-0.5 text-xs text-ink-soft">Objednávky z webu — při vyzvednutí ukaž QR, nebo vezmi hotovost.</p>
           <div className="mt-1 divide-y divide-ink/[0.06]">
             {pendingOrders.map((o) => {
               const t = orderTotal(o, year.merch ?? []);
@@ -416,6 +376,45 @@ function Pos() {
                 </div>
               );
             })}
+          </div>
+        </section>
+      )}
+
+      {/* Nabídka stánku — nové položky s cenou se tu objeví samy */}
+      {grids.map((g) =>
+        g.items.length > 0 ? (
+          <section key={g.kind} className="card p-4">
+            <h2 className="font-display text-[20px] font-semibold">{g.title}</h2>
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {g.items.map((i) => (
+                <button
+                  key={i.id}
+                  onClick={() => tapItem(g.kind, i)}
+                  className={`flex min-h-12 items-center justify-between gap-2 rounded-lg border-l-4 bg-paper2 px-3 py-2.5 text-left transition hover:bg-gold-100 active:scale-[0.98] ${KIND_BORDER[g.kind]}`}
+                >
+                  <span className="min-w-0 truncate text-[15px] font-semibold">{i.name}</span>
+                  <span className="shrink-0 text-sm font-bold text-ink-soft">{fmtCZK(i.price)}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : stand !== "vse" ? (
+          <section key={g.kind} className="card grid place-items-center gap-2 p-6 text-center">
+            <p className="text-sm text-ink-soft">{EMPTY_HINT[g.kind].text} S cenou se tu objeví sama.</p>
+            <Link href={EMPTY_HINT[g.kind].href} className="btn-secondary">
+              {EMPTY_HINT[g.kind].cta} →
+            </Link>
+          </section>
+        ) : null,
+      )}
+      {stand === "vse" && grids.every((g) => g.items.length === 0) && (
+        <section className="card grid place-items-center gap-2 p-6 text-center">
+          <p className="text-sm text-ink-soft">
+            Nabídka je zatím prázdná. Přidej produkty s prodejní cenou — objeví se tu samy.
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Link href="/zazemi/merch" className="btn-secondary">Přidat merch →</Link>
+            <Link href="/zazemi/kuchyne" className="btn-secondary">Přidat jídlo a pití →</Link>
           </div>
         </section>
       )}
@@ -468,7 +467,7 @@ function Pos() {
       {/* Vlastní položka (vstupné, kelímek…) */}
       {showCustom && (
         <section className="card space-y-2 p-4">
-          <h2 className="font-display text-[20px] font-semibold">Vlastní položka</h2>
+          <h2 className="font-display text-[20px] font-semibold">➕ Vlastní položka</h2>
           <div className="flex flex-wrap items-center gap-2">
             <input className="input min-w-[140px] flex-1" placeholder="Co prodáváš?" value={customName} onChange={(e) => setCustomName(e.target.value)} />
             <input className="input w-28" placeholder="Kč" inputMode="numeric" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addCustom()} />
@@ -519,10 +518,10 @@ function Pos() {
 
         {/* Vždy se volí, jak se platilo: QR, nebo hotově */}
         <div className="mt-3 flex flex-wrap gap-2">
-          <button className="btn-primary flex-1" disabled={total <= 0 || !accountOk || busy} onClick={() => setQrOpen(true)}>
+          <button className="btn-primary min-h-12 flex-1 text-base" disabled={total <= 0 || !accountOk || busy} onClick={() => setQrOpen(true)}>
             <Icon name="vote" className="h-4 w-4" /> QR platba
           </button>
-          <button className="btn-secondary flex-1" disabled={total <= 0 || busy} onClick={() => settle("hotove")}>
+          <button className="btn-secondary min-h-12 flex-1 text-base" disabled={total <= 0 || busy} onClick={() => settle("hotove")}>
             💵 Hotově — zapsat
           </button>
           {lines.length > 0 && (
@@ -531,10 +530,51 @@ function Pos() {
             </button>
           )}
         </div>
+        {total > 0 && !accountOk && (
+          <p className="mt-2 text-xs text-ink-soft">QR platba se odemkne, jakmile správce dole nastaví účet.</p>
+        )}
       </section>
+
+      {/* ---------- Přehled dne (tržby, kasa, účet) ---------- */}
+      <h2 className="pt-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Přehled dne</h2>
+
+      {/* Dnešní tržby — QR vs. hotovost (tolik má sedět v kase) */}
+      <section className="card p-4">
+        <h3 className="font-display text-[20px] font-semibold">📊 Dnešní tržby</h3>
+        {todayTotal === 0 ? (
+          <p className="mt-1 text-sm text-ink-soft">Zatím nic — první prodej se tu hned ukáže.</p>
+        ) : (
+          <>
+            <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
+              <span className="font-display text-[28px] font-bold tracking-tight">{fmtCZK(todayTotal)}</span>
+              <span className="text-sm text-ink-soft">
+                QR <strong className="text-ink">{fmtCZK(todayQr)}</strong>
+              </span>
+              <span className="text-sm text-ink-soft">
+                💵 hotově <strong className="text-ink">{fmtCZK(todayCash)}</strong>
+              </span>
+            </div>
+            {todayByCat.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {todayByCat.map((x) => (
+                  <span key={x.cat} className="chip">
+                    {x.cat} {fmtCZK(x.sum)}
+                  </span>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
+      {/* Denní kasa na hotovost — ranní vklad, večer uzavření */}
+      <DailyKasa year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} todayCash={todayCash} />
 
       {/* Účet pro QR platby (jen správce) */}
       {isAdmin(me) && <AccountSettings account={account} yearId={year.id} />}
+      {!accountOk && !isAdmin(me) && (
+        <p className="card p-3 text-sm text-amber-700">⚠️ Správce zatím nenastavil účet pro QR platby — zatím vybírej hotově.</p>
+      )}
 
       {/* QR platba čekající objednávky — se jménem objednatele ve zprávě */}
       <Modal open={!!payOrder} onClose={() => setPayOrder(null)} title={payOrder ? `Platba — ${payOrder.name}` : ""}>
@@ -581,6 +621,109 @@ function Pos() {
   );
 }
 
+// Denní kasa na hotovost: ráno vklad (na vracení), večer spočítat šuplík
+// a uzavřít. Markovaná hotovost už ve financích je, takže se do financí
+// zapíše jen rozdíl — peníze se nepočítají dvakrát.
+function DailyKasa({ year, todayCash }: { year: { id: string; cashboxes: Cashbox[] }; todayCash: number }) {
+  const { dispatch } = useStore();
+  const [opening, setOpening] = useState("");
+  const [closing, setClosing] = useState("");
+  const [busy, setBusy] = useState(false);
+  const openBox = year.cashboxes.find((c) => !c.closedAt);
+  const today = todayISO();
+  const closedToday = year.cashboxes.find((c) => c.closedAt && c.closedAt.slice(0, 10) === today);
+  const expected = openBox ? openBox.opening + todayCash : 0;
+
+  async function open() {
+    const n = Math.round(Number(opening.replace(/\s/g, "").replace(",", ".")));
+    if (!Number.isFinite(n) || n <= 0 || busy) return;
+    setBusy(true);
+    try {
+      if (!(await dispatch({ type: "openCashbox", yearId: year.id, opening: n }))) {
+        flash("Kasu se nepodařilo uložit — zkontroluj připojení", "⚠️");
+        return;
+      }
+      setOpening("");
+      flash(`Kasa otevřena s vkladem ${fmtCZK(n)}`, "🧰");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function close() {
+    if (!openBox || busy) return;
+    const n = Math.round(Number(closing.replace(/\s/g, "").replace(",", ".")));
+    if (closing.trim() === "" || !Number.isFinite(n)) return;
+    setBusy(true);
+    try {
+      if (!(await dispatch({ type: "closeCashbox", yearId: year.id, cashboxId: openBox.id, closing: n, alreadyRecorded: todayCash }))) {
+        flash("Uzavření se nepodařilo uložit — zkontroluj připojení", "⚠️");
+        return;
+      }
+      setClosing("");
+      const diff = n - expected;
+      flash(diff === 0 ? "Kasa uzavřena — sedí přesně ✓" : `Kasa uzavřena — rozdíl ${diff > 0 ? "+" : "−"}${fmtCZK(Math.abs(diff))} zapsán do financí`, "🧰");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="card space-y-2 p-4">
+      <h3 className="font-display text-[20px] font-semibold">🧰 Denní kasa (hotovost)</h3>
+      {openBox ? (
+        <>
+          <p className="text-sm text-ink-soft">
+            Otevřena {fmtDateTime(openBox.openedAt)} · vklad <strong className="text-ink">{fmtCZK(openBox.opening)}</strong>
+          </p>
+          <p className="text-sm">
+            V kase má být: vklad {fmtCZK(openBox.opening)} + hotově z prodeje {fmtCZK(todayCash)} ={" "}
+            <strong className="font-display text-base">{fmtCZK(expected)}</strong>
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              className="input w-44"
+              inputMode="numeric"
+              placeholder="Spočítáno večer (Kč)"
+              value={closing}
+              onChange={(e) => setClosing(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && close()}
+            />
+            <button className="btn-primary" onClick={close} disabled={!closing.trim() || busy}>
+              Uzavřít kasu
+            </button>
+          </div>
+          <p className="text-xs text-ink-soft">
+            Markovaná hotovost už ve financích je — při uzavření se zapíše jen případný rozdíl.
+          </p>
+        </>
+      ) : (
+        <>
+          {closedToday && (
+            <p className="text-sm text-leaf-700">
+              ✓ Dnešní kasa uzavřena ({fmtCZK(closedToday.opening)} → {fmtCZK(closedToday.closing ?? 0)}).
+            </p>
+          )}
+          <p className="text-sm text-ink-soft">Ráno vlož základ na vracení a otevři kasu — večer ji tu uzavřeš.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              className="input w-44"
+              inputMode="numeric"
+              placeholder="Ranní vklad (Kč)"
+              value={opening}
+              onChange={(e) => setOpening(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && open()}
+            />
+            <button className="btn-primary" onClick={open} disabled={!opening.trim() || busy}>
+              Otevřít kasu
+            </button>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 // Nastavení účtu (jen správce) — přijme český formát i IBAN, hned ověří součty.
 function AccountSettings({ account, yearId }: { account: string; yearId: string }) {
   const { dispatch } = useStore();
@@ -601,7 +744,7 @@ function AccountSettings({ account, yearId }: { account: string; yearId: string 
 
   return (
     <section className="card space-y-2 p-4">
-      <h2 className="font-display text-[20px] font-semibold">🏦 Účet pro QR platby</h2>
+      <h3 className="font-display text-[20px] font-semibold">🏦 Účet pro QR platby</h3>
       <div className="flex flex-wrap items-center gap-2">
         <input
           className="input min-w-[220px] flex-1"

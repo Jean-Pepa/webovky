@@ -125,6 +125,7 @@ export interface Cashbox {
   opening: number; // ranní vklad (Kč)
   openedAt: string; // ISO – kdy se kasa otevřela
   closing?: number; // večerní stav kasy (Kč)
+  alreadyRecorded?: number; // hotovost už zapsaná z markování v Prodeji (do financí jde jen rozdíl)
   closedAt?: string; // ISO – kdy se uzavřela
   financeId?: string; // navázaná finanční položka (tržba)
   createdAt: string;

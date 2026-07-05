@@ -101,6 +101,7 @@ function MenuSection({ place, editable, q }: { place: Place; editable: boolean; 
   const [name, setName] = useState("");
   const [kind, setKind] = useState<DrinkKind>(place === "bar" ? "koktejl" : "obed");
   const [day, setDay] = useState<Weekday | "">(place === "kuchyne" ? "po" : "");
+  const [price, setPrice] = useState("");
   const year = currentYear!;
   const items = (year.bar ?? [])
     .filter((d) => placeOfDrink(d) === place)
@@ -135,8 +136,18 @@ function MenuSection({ place, editable, q }: { place: Place; editable: boolean; 
 
   async function add() {
     if (!name.trim() || !editable) return;
-    await dispatch({ type: "addDrink", yearId: year.id, name: name.trim(), kind, place, day: place === "kuchyne" && day ? day : undefined });
+    const p = Number(price.replace(",", "."));
+    await dispatch({
+      type: "addDrink",
+      yearId: year.id,
+      name: name.trim(),
+      kind,
+      place,
+      day: place === "kuchyne" && day ? day : undefined,
+      price: price.trim() && Number.isFinite(p) && p > 0 ? p : undefined,
+    });
     setName("");
+    setPrice("");
     if (place === "bar") flash("Přidáno na bar", "🍺");
     else flash("Jídlo přidáno do menu", "🍲");
   }
@@ -175,7 +186,16 @@ function MenuSection({ place, editable, q }: { place: Place; editable: boolean; 
               <option value="">— bez dne —</option>
             </select>
           )}
+          <input
+            className="input w-32"
+            inputMode="numeric"
+            placeholder="Prodej (Kč)"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && add()}
+          />
           <button className="btn-primary" onClick={add} disabled={!name.trim()}>+ Přidat</button>
+          <p className="w-full text-xs text-ink-soft">S prodejní cenou se položka hned sama objeví v Prodeji.</p>
         </div>
       )}
 
@@ -208,7 +228,8 @@ function DrinkCard({ d, place, yearId, editable }: { d: Drink; place: Place; yea
   const [edit, setEdit] = useState(false);
   const cost = drinkCost(d);
   const margin = d.price != null ? d.price - cost : null;
-  const showPrice = place === "bar";
+  // prodejní cenu má bar i kuchyně — s cenou se položka prodává v Prodeji
+  const showPrice = true;
 
   if (edit) return <DrinkEdit d={d} place={place} yearId={yearId} onClose={() => setEdit(false)} />;
 
@@ -261,7 +282,8 @@ function DrinkEdit({ d, place, yearId, onClose }: { d: Drink; place: Place; year
   const [note, setNote] = useState(d.note ?? "");
   const [ings, setIngs] = useState<DrinkIngredient[]>(d.ingredients.length ? d.ingredients : []);
   const cost = ings.reduce((s, i) => s + (Number(i.cost) || 0), 0);
-  const showPrice = place === "bar";
+  // prodejní cenu má bar i kuchyně — s cenou se položka prodává v Prodeji
+  const showPrice = true;
 
   const setIng = (idx: number, patch: Partial<DrinkIngredient>) => setIngs((arr) => arr.map((i, x) => (x === idx ? { ...i, ...patch } : i)));
   async function save() {
