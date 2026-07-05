@@ -167,9 +167,16 @@ export default function FinancePage() {
 
   if (!year) return null;
 
-  // Přidávat položky i kasy: role ekonom + hlavní organizátor + správce.
+  // Celé finance (bilance, kasy, všechny položky) vidí jen hlavní
+  // koordinátor & finance + správce. Ostatní mají jen „Moje výdaje":
+  // zapíšou, co zaplatili (propíše se ekonomovi), a vidí jen svoje.
+  if (!canEditSection(year, me, "finance")) {
+    return <MyExpenses yearId={year.id} me={me} items={items} canSubmit={canEditCurrentYear} />;
+  }
+
+  // Přidávat položky i kasy: hlavní koordinátor & finance + správce.
   // Upravovat / mazat / přepínat zaplaceno už jen správce (canEdit).
-  const canAdd = canEditCurrentYear && canEditSection(year, me, "finance");
+  const canAdd = canEditCurrentYear;
   const canEdit = isAdmin(me);
 
   // Kasy: kolik se ráno vložilo (vklady) a kolik se vydělalo (tržba z uzavřených).
@@ -1067,5 +1074,119 @@ function Collapsible({
         <Icon name="chevron" className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
     </>
+  );
+}
+
+// „Moje výdaje" — pohled pro lidi bez finanční role: zapíšou, co zaplatili
+// (propíše se do financí jako výdaj k proplacení, se jménem), a vidí jen
+// svoje položky se stavem proplacení. Zbytek financí nevidí.
+function MyExpenses({ yearId, me, items, canSubmit }: { yearId: string; me: string; items: FinanceItem[]; canSubmit: boolean }) {
+  const { dispatch } = useStore();
+  const [label, setLabel] = useState("");
+  const [amount, setAmount] = useState("");
+  const [date, setDate] = useState(todayISO());
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const mine = items
+    .filter((f) => f.who && normName(f.who) === normName(me))
+    .sort((a, b) => (b.date || b.createdAt).localeCompare(a.date || a.createdAt));
+  const owed = mine.filter((f) => f.kind === "vydaj" && !f.paid).reduce((s, f) => s + f.amount, 0);
+
+  async function submit() {
+    const num = parseAmount(amount);
+    if (!label.trim() || num <= 0 || busy) return;
+    setBusy(true);
+    try {
+      const ok = await dispatch({
+        type: "addFinance",
+        yearId,
+        kind: "vydaj",
+        label: label.trim(),
+        amount: num,
+        who: me,
+        paid: false,
+        date: date || undefined,
+        note: note.trim() || undefined,
+      });
+      if (!ok) {
+        flash("Nepodařilo se uložit — zkontroluj připojení", "⚠️");
+        return;
+      }
+      setLabel("");
+      setAmount("");
+      setNote("");
+      setDate(todayISO());
+      flash("Zapsáno — ekonom to uvidí ve financích", "💸");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-4 tabular-nums">
+      <div>
+        <h1 className="font-display text-[28px] font-bold tracking-tight">Moje výdaje</h1>
+        <p className="mt-0.5 text-sm text-ink-soft">
+          Zaplatil(a) jsi něco za Mařenu? Zapiš to tady — propíše se to do financí a po proplacení se to odškrtne.
+        </p>
+      </div>
+
+      {canSubmit ? (
+        <section className="card space-y-2 p-4">
+          <h2 className="font-display text-[20px] font-semibold">💸 Zapsat výdaj</h2>
+          <input className="input w-full" placeholder="Za co? (např. Kelímky Makro)" value={label} onChange={(e) => setLabel(e.target.value)} />
+          <div className="flex flex-wrap gap-2">
+            <input className="input w-32" inputMode="numeric" placeholder="Kč" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <input className="input w-40" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <input className="input w-full" placeholder="Poznámka (nepovinné)" value={note} onChange={(e) => setNote(e.target.value)} />
+          <button className="btn-primary w-full" onClick={submit} disabled={!label.trim() || !amount.trim() || busy}>
+            Zapsat výdaj
+          </button>
+          <p className="text-xs text-ink-soft">Účtenku si schovej — ekonom si ji může vyžádat k proplacení.</p>
+        </section>
+      ) : (
+        <p className="card p-3 text-sm text-ink-soft">Uzamčený ročník — výdaje jde jen prohlížet.</p>
+      )}
+
+      <section className="card p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-[20px] font-semibold">Moje položky</h2>
+          {owed > 0 && (
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+              čeká na proplacení {fmtCZK(owed)}
+            </span>
+          )}
+        </div>
+        {mine.length === 0 ? (
+          <p className="mt-2 text-sm text-ink-soft">Zatím nic — první zapsaný výdaj se tu objeví.</p>
+        ) : (
+          <div className="mt-1 divide-y divide-ink/[0.06]">
+            {mine.map((f) => (
+              <div key={f.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[15px] font-medium">{f.label}</p>
+                  <p className="text-xs text-ink-soft">
+                    {fmtDate(f.date || f.createdAt)}
+                    {f.note ? ` · ${f.note}` : ""}
+                  </p>
+                </div>
+                <span className="text-[15px] font-semibold">{fmtCZK(f.amount)}</span>
+                {f.kind === "vydaj" ? (
+                  f.paid ? (
+                    <span className="chip bg-leaf/15 text-leaf-700">✓ proplaceno</span>
+                  ) : (
+                    <span className="chip bg-amber-100 text-amber-800">⏳ čeká</span>
+                  )
+                ) : (
+                  <span className="chip">příjem</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
