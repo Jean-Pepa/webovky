@@ -10,6 +10,7 @@ import { parseAccount } from "@/lib/payment";
 import { fmtCZK, fmtDate, fmtDateTime, todayISO } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { isAdmin } from "@/lib/admin";
+import { sameName } from "@/lib/names";
 import { flash } from "@/components/Flash";
 import type { Cashbox, FinanceItem, MerchOrder, MerchProduct } from "@/lib/types";
 
@@ -143,6 +144,8 @@ function Pos() {
   const [editNabidka, setEditNabidka] = useState(false);
   const year = currentYear;
   const admin = isAdmin(me);
+  // Pomocník u stánku nemá spodní navigaci — stánky sedí na jejím místě.
+  const posOnly = !admin && !!currentYear?.members.find((m) => sameName(m.name, me))?.posOnly;
 
   // Stánek: z odkazu (?stand=merch) nebo z minula — zařízení u baru
   // zůstává barem (vzor „zamčeného terminálu" z festivalových pokladen).
@@ -634,15 +637,20 @@ function Pos() {
         )}
       </section>
 
-      {/* Stánky (mobil) — svítící žlutá bublina nad hlavní lištou */}
-      <div className="fixed inset-x-3 bottom-[calc(5.1rem+env(safe-area-inset-bottom))] z-40 md:hidden">
+      {/* Stánky (mobil) — svítící žlutá bublina nad hlavní lištou; pomocník
+          u stánku lištu nemá, takže bublina sedí přímo dole na jejím místě */}
+      <div
+        className={`fixed inset-x-3 z-40 md:hidden ${
+          posOnly ? "bottom-[calc(0.75rem+env(safe-area-inset-bottom))]" : "bottom-[calc(5.1rem+env(safe-area-inset-bottom))]"
+        }`}
+      >
         <div className="mx-auto max-w-3xl">
           <div className="grid grid-cols-3 gap-1 rounded-[28px] bg-gold-500 p-1.5 shadow-[0_0_24px_rgba(244,183,31,0.65)]">
             {STANDS.map((s) => (
               <button
                 key={s.id}
                 onClick={() => pickStand(s.id)}
-                className={`min-h-11 rounded-full text-[15px] font-semibold transition ${
+                className={`${posOnly ? "min-h-14 text-base" : "min-h-11 text-[15px]"} rounded-full font-semibold transition ${
                   stand === s.id ? "bg-[#1d1d1f] text-gold-300" : "text-[#1d1d1f] active:scale-[0.97]"
                 }`}
               >
