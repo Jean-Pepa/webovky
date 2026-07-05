@@ -10,6 +10,7 @@ import { fmtCZK, todayISO } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { isAdmin } from "@/lib/admin";
 import { flash } from "@/components/Flash";
+import type { MerchOrder, MerchProduct } from "@/lib/types";
 
 // Prodej — jednotná pokladna pro celý festival (vzor z restauračních a
 // festivalových POS: Toast, Square, Dotykačka, NFCtron). Obsluha si vybere
@@ -59,6 +60,15 @@ const LS_TALLY = "marena_pos_tally";
 const lineLabel = (l: Line) =>
   `${l.name}${[l.size, l.color].filter(Boolean).length ? ` (${[l.size, l.color].filter(Boolean).join(" · ")})` : ""}`;
 
+// Cena a rozpis objednávky merche — cena ze snapshotu v položce,
+// jinak z aktuální nabídky (kvůli starším objednávkám).
+const orderTotal = (order: MerchOrder, products: MerchProduct[]) =>
+  order.items.reduce((sum, it) => sum + (it.price ?? products.find((p) => p.id === it.productId)?.price ?? 0) * it.qty, 0);
+const orderItemsText = (order: MerchOrder) =>
+  order.items
+    .map((it) => `${it.qty}× ${it.name}${[it.size, it.color].filter(Boolean).length ? ` (${[it.size, it.color].filter(Boolean).join(" · ")})` : ""}`)
+    .join(", ");
+
 export default function ProdejPage() {
   const { currentYear, canEditCurrentYear } = useStore();
   if (!currentYear) return null;
@@ -81,6 +91,7 @@ function Pos() {
   const [tally, setTally] = useState<Record<string, number>>({});
   const [picker, setPicker] = useState<{ productId: string; size?: string; color?: string } | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
+  const [payOrder, setPayOrder] = useState<MerchOrder | null>(null);
   const [busy, setBusy] = useState(false);
   const [customName, setCustomName] = useState("");
   const [customPrice, setCustomPrice] = useState("");
@@ -140,6 +151,14 @@ function Pos() {
     },
   ].filter((g) => (stand === "vse" ? true : g.kind === stand));
   const showCustom = stand === "vse" || stand === "ostatni";
+
+  // Čekající objednávky merche (z webu i odložené z prodeje) — platí se
+  // tady stejně jako u objednávek v Merchi: QR se jménem objednatele,
+  // nebo hotově. Zaplacením se objednávka uzamkne a propíše do financí.
+  const pendingOrders =
+    stand === "vse" || stand === "merch"
+      ? [...(year.merchOrders ?? [])].filter((o) => !o.done).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      : [];
 
   const pickerProduct = picker ? (year.merch ?? []).find((p) => p.id === picker.productId) : undefined;
   const total = lines.reduce((s, l) => s + l.price * l.qty, 0);
@@ -271,6 +290,24 @@ function Pos() {
     }
   }
 
+  // Zaplacení čekající objednávky (z webu / odložené): uzamkne ji jako
+  // zaplacenou a tržba se propíše do financí (kategorie merch).
+  async function settleExistingOrder(order: MerchOrder, how: "qr" | "hotove") {
+    if (!year || busy) return;
+    setBusy(true);
+    try {
+      const howText = how === "hotove" ? "hotově" : "QR platba";
+      if (!(await dispatch({ type: "settleMerchOrder", yearId: year.id, orderId: order.id, how: howText }))) {
+        flash("Nezapsáno — zkontroluj připojení a zkus to znovu", "⚠️");
+        return;
+      }
+      setPayOrder(null);
+      flash(`Zaplaceno ${fmtCZK(orderTotal(order, year.merch ?? []))} (${howText}) — objednávka ${order.name} vyřízena`, "💰");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-4 tabular-nums">
       <div>
@@ -337,6 +374,50 @@ function Pos() {
               </div>
             </section>
           ),
+      )}
+
+      {/* Čekající objednávky merche — QR platba se jménem objednatele */}
+      {pendingOrders.length > 0 && (
+        <section className="card p-4">
+          <h2 className="flex items-center gap-2 font-display text-[20px] font-semibold">
+            🧾 Objednávky k zaplacení
+            <span className="grid h-7 min-w-7 place-items-center rounded-full bg-gold-500 px-2 font-display text-sm font-bold text-[#1d1d1f]">
+              {pendingOrders.length}
+            </span>
+          </h2>
+          <div className="mt-1 divide-y divide-ink/[0.06]">
+            {pendingOrders.map((o) => {
+              const t = orderTotal(o, year.merch ?? []);
+              return (
+                <div key={o.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-semibold">{o.name}</p>
+                    <p className="truncate text-xs text-ink-soft">{orderItemsText(o)}</p>
+                  </div>
+                  <span className="text-[15px] font-semibold">{fmtCZK(t)}</span>
+                  <div className="flex shrink-0 gap-1.5">
+                    {t > 0 && accountOk && (
+                      <button
+                        className="min-h-9 rounded-full bg-gold-500 px-3.5 text-sm font-semibold text-[#1d1d1f] transition hover:bg-gold-400"
+                        disabled={busy}
+                        onClick={() => setPayOrder(o)}
+                      >
+                        QR
+                      </button>
+                    )}
+                    <button
+                      className="min-h-9 rounded-full bg-paper2 px-3.5 text-sm font-semibold transition hover:bg-gold-100"
+                      disabled={busy}
+                      onClick={() => settleExistingOrder(o, "hotove")}
+                    >
+                      💵 Hotově
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       )}
 
       {/* Doptání na velikost/barvu (merch s variantami) */}
@@ -454,6 +535,30 @@ function Pos() {
 
       {/* Účet pro QR platby (jen správce) */}
       {isAdmin(me) && <AccountSettings account={account} yearId={year.id} />}
+
+      {/* QR platba čekající objednávky — se jménem objednatele ve zprávě */}
+      <Modal open={!!payOrder} onClose={() => setPayOrder(null)} title={payOrder ? `Platba — ${payOrder.name}` : ""}>
+        {payOrder && (
+          <div className="space-y-4">
+            <PayQr
+              account={account}
+              amount={orderTotal(payOrder, year.merch ?? [])}
+              message={`MARENA MERCH ${orderItemsText(payOrder)} — ${payOrder.name}`}
+            />
+            <p className="text-center text-xs text-ink-soft">
+              „Zaplaceno“ ťukni, až přijde notifikace tvé banky — obrazovka zákazníka není důkaz.
+            </p>
+            <div className="flex gap-2">
+              <button className="btn-primary flex-1" disabled={busy} onClick={() => settleExistingOrder(payOrder, "qr")}>
+                ✓ Zaplaceno — zapsat
+              </button>
+              <button className="btn-ghost" onClick={() => setPayOrder(null)}>
+                Zrušit
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* QR platba — zákazník skenuje, obsluha po zaplacení potvrdí. */}
       <Modal open={qrOpen} onClose={() => setQrOpen(false)} title="Zaplať naskenováním">
