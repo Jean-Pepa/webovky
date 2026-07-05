@@ -8,12 +8,12 @@ import { sameName } from "./names";
 import type { Year } from "./types";
 
 export const SECTION_ROLES = {
-  finance: ["ekonom"],
+  finance: [], // finance = jen hlavní koordinátor & finance (hlavni) + správce
   sponzori: ["sponzoring"],
   vyzdoba: ["vyzdoba"],
   prvaci: ["prvaci"],
   bar: ["bar"],
-  kuchyne: ["kuchyn"],
+  kuchyne: ["bar"], // kuchyně & bar je jedna role
 } as const;
 
 export type Section = keyof typeof SECTION_ROLES;

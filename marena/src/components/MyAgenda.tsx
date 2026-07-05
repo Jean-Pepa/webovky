@@ -29,13 +29,13 @@ export function MyAgenda() {
   const cards: { href: string; emoji: string; label: string; badge?: string }[] = [];
   if (has("merch") || (admin && pendingOrders > 0))
     cards.push({ href: "/zazemi/merch", emoji: "🛍️", label: "Merch", badge: pendingOrders ? `${pendingOrders} čeká` : undefined });
-  if (has("bar", "kuchyn")) cards.push({ href: "/zazemi/kuchyne", emoji: "🍳", label: "Kuchyně & bar" });
-  if (has("merch", "bar", "kuchyn")) cards.push({ href: "/zazemi/prodej", emoji: "🛒", label: "Prodej" });
-  if (has("ekonom") || (admin && unpaid > 0))
+  if (has("bar")) cards.push({ href: "/zazemi/kuchyne", emoji: "🍳", label: "Kuchyně & bar" });
+  if (has("merch", "bar")) cards.push({ href: "/zazemi/prodej", emoji: "🛒", label: "Prodej" });
+  if (chief || (admin && unpaid > 0))
     cards.push({ href: "/zazemi/finance", emoji: "💰", label: "Finance", badge: unpaid ? `${unpaid} nezaplaceno` : undefined });
   if (has("sponzoring")) cards.push({ href: "/zazemi/sponzori", emoji: "✨", label: "Sponzoři" });
   if (has("vyzdoba")) cards.push({ href: "/zazemi/vyzdoba", emoji: "🎨", label: "Výzdoba" });
-  if (has("program", "kapelnik", "prednasky")) cards.push({ href: "/zazemi/program", emoji: "🎤", label: "Program" });
+  if (has("program", "kapelnik")) cards.push({ href: "/zazemi/program", emoji: "🎤", label: "Program" });
   if (has("prvaci")) cards.push({ href: "/zazemi/prvaci", emoji: "🐣", label: "Prváci" });
   if (myTasks > 0) cards.push({ href: "/zazemi/ukoly", emoji: "✅", label: "Moje úkoly", badge: `${myTasks} nesplněno` });
   if (shift) cards.push({ href: "/zazemi/provoz", emoji: "🕐", label: "Dnešní směna", badge: [shift.area, shift.from].filter(Boolean).join(" · ") });
