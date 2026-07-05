@@ -9,6 +9,7 @@ import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { ImageViewer } from "@/components/ImageViewer";
 import { isAdmin } from "@/lib/admin";
+import { canEditSection } from "@/lib/access";
 import { normName } from "@/lib/names";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
@@ -166,9 +167,9 @@ export default function FinancePage() {
 
   if (!year) return null;
 
-  // Přidávat položky i kasy může každý z aktuálního ročníku (canAdd).
+  // Přidávat položky i kasy: role ekonom + hlavní organizátor + správce.
   // Upravovat / mazat / přepínat zaplaceno už jen správce (canEdit).
-  const canAdd = canEditCurrentYear;
+  const canAdd = canEditCurrentYear && canEditSection(year, me, "finance");
   const canEdit = isAdmin(me);
 
   // Kasy: kolik se ráno vložilo (vklady) a kolik se vydělalo (tržba z uzavřených).

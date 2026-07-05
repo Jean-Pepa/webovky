@@ -24,7 +24,7 @@ const CAT_ORDER = Object.keys(CAT_META);
 const catEmoji = (c: string) => CAT_META[c] ?? "📍";
 
 // Přidávat a upravovat program smí jen tyto role (+ správce). Ostatní jen čtou.
-const PROGRAM_EDIT_ROLES = ["kapelnik", "prednasky", "program"];
+const PROGRAM_EDIT_ROLES = ["kapelnik", "program"];
 function useCanEditProgram(): boolean {
   const { currentYear, me } = useStore();
   if (isAdmin(me)) return true;

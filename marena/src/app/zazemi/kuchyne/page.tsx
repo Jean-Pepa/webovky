@@ -12,6 +12,7 @@ import { compressImage, readFileAsDataUrl, saveReceipt, loadReceipt, deleteRecei
 import { fmtCZK, fmtDate } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { isAdmin } from "@/lib/admin";
+import { canEditSection } from "@/lib/access";
 import { flash } from "@/components/Flash";
 import type { KitchenFile, Drink, DrinkKind, DrinkIngredient, Weekday } from "@/lib/types";
 
@@ -51,12 +52,13 @@ const CATS = ["Nákupy", "Menu", "Ostatní"];
 const MAX_FILE_BYTES = 1_300_000;
 
 export default function KuchyneBarPage() {
-  const { currentYear, canEditCurrentYear } = useStore();
+  const { currentYear, me, canEditCurrentYear } = useStore();
   const [place, setPlace] = useState<Place>("kuchyne");
   const [q, setQ] = useState("");
   const year = currentYear;
   if (!year) return null;
-  const editable = canEditCurrentYear;
+  // akční tlačítka podle záložky: bar → role bar, kuchyně → role kuchyn
+  const editable = canEditCurrentYear && canEditSection(year, me, place === "bar" ? "bar" : "kuchyne");
 
   return (
     <div className="space-y-6">

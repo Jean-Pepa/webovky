@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
+import { canEditSection } from "@/lib/access";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
@@ -16,7 +17,7 @@ const STATUS: Record<DecorStatus, { label: string; cls: string; order: number }>
 const NEXT: Record<DecorStatus, DecorStatus> = { napad: "shani", shani: "hotovo", hotovo: "napad" };
 
 export default function VyzdobaPage() {
-  const { currentYear, dispatch, canEditCurrentYear } = useStore();
+  const { currentYear, me, dispatch, canEditCurrentYear } = useStore();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [title, setTitle] = useState("");
@@ -39,7 +40,7 @@ export default function VyzdobaPage() {
   }, [year]);
 
   if (!year) return null;
-  const canEdit = canEditCurrentYear;
+  const canEdit = canEditCurrentYear && canEditSection(year, me, "vyzdoba");
 
   async function add() {
     if (!title.trim() || !year || !canEdit) return;

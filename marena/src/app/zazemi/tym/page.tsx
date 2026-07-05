@@ -284,7 +284,7 @@ export default function TymPage() {
                 <button className="btn-secondary" onClick={() => removeRoleFromMe(r.id)}>
                   Uvolnit funkci
                 </button>
-              ) : r.id === "ekonom" && !admin ? (
+              ) : r.id === "hlavni" && !admin ? (
                 <span className="text-xs text-ink-soft">🔒 Tuto funkci přiděluje jen správce (Mařena).</span>
               ) : (
                 <button

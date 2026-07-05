@@ -8,6 +8,7 @@ import { fmtDateTime, fmtDayShort, todayISO, fmtCZK } from "@/lib/format";
 import { KINDS } from "@/lib/kinds";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Onboarding } from "@/components/Onboarding";
+import { MyAgenda } from "@/components/MyAgenda";
 import { Icon } from "@/components/Icons";
 import { SearchBox } from "@/components/SearchBox";
 import { ImageViewer } from "@/components/ImageViewer";
@@ -236,6 +237,9 @@ export default function NastenkaPage() {
             {open ? "Zavřít" : "+ Přidat info"}
           </button>
         </div>
+
+        {/* Osobní rozcestník podle rolí — každý má svoje věci na jeden ťuk */}
+        <MyAgenda />
 
         {open && (
           <div className="card space-y-3 p-4">

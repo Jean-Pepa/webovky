@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
+import { canEditSection } from "@/lib/access";
 import { DeleteButton } from "@/components/DeleteButton";
 import { normName } from "@/lib/names";
 import { flash } from "@/components/Flash";
 import type { Freshman } from "@/lib/types";
 
 export default function PrvaciPage() {
-  const { currentYear, dispatch, canEditCurrentYear } = useStore();
+  const { currentYear, me, dispatch, canEditCurrentYear } = useStore();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [name, setName] = useState("");
@@ -24,7 +25,7 @@ export default function PrvaciPage() {
   }, [year, q]);
 
   if (!year) return null;
-  const canEdit = canEditCurrentYear;
+  const canEdit = canEditCurrentYear && canEditSection(year, me, "prvaci");
 
   async function add() {
     if (!name.trim() || !year || !canEdit) return;

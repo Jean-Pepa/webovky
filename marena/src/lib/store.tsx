@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { DB, Year } from "./types";
+import { normalizeDb } from "./migrate";
 import { applyAction, type Action } from "./actions";
 import { seedDB } from "./seed";
 import { isYearEditable, yearFromPassword } from "./years";
@@ -50,7 +51,7 @@ function loadLocalDB(): DB {
     const raw = localStorage.getItem(LS_DB);
     if (raw) {
       const parsed = JSON.parse(raw) as DB;
-      if (parsed && Array.isArray(parsed.years)) return parsed;
+      if (parsed && Array.isArray(parsed.years)) return normalizeDb(parsed);
     }
   } catch {
     /* ignore */
@@ -95,7 +96,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       try {
         const res = await fetch("/api/db", { cache: "no-store" });
         if (res.ok) {
-          const { db } = (await res.json()) as { db: DB };
+          const { db: rawDb } = (await res.json()) as { db: DB };
+          const db = normalizeDb(rawDb);
           modeRef.current = "server";
           setState((s) => ({ ...s, ready: true, mode: "server", configured: true, authed: true, db, me, currentYearId: pickYear(db, savedYear) }));
           return;
@@ -132,7 +134,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     try {
       const dbRes = await fetch("/api/db", { cache: "no-store" });
       if (dbRes.ok) {
-        const db = ((await dbRes.json()) as { db: DB }).db;
+        const db = normalizeDb(((await dbRes.json()) as { db: DB }).db);
         modeRef.current = "server";
         const yearId = wantedYear && db.years.some((y) => y.id === wantedYear) ? wantedYear : pickYear(db, null);
         if (yearId) localStorage.setItem(LS_YEAR, yearId);
@@ -194,7 +196,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(action),
       }).catch(() => null);
       if (res && res.ok) {
-        const { db } = (await res.json()) as { db: DB };
+        const { db: rawDb } = (await res.json()) as { db: DB };
+        const db = normalizeDb(rawDb);
         setState((s) => ({ ...s, db, syncError: null, currentYearId: pickYear(db, s.currentYearId) }));
         return true;
       }
