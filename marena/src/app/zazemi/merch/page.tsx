@@ -478,7 +478,7 @@ function OrderRow({
       {canQr && (
         <Modal open={qrOpen} onClose={() => setQrOpen(false)} title={`Platba — ${order.name}`}>
           <div className="space-y-4">
-            <PayQr account={account!} amount={total} message={`MARENA MERCH ${order.name}`} />
+            <PayQr account={account!} amount={total} message={`MARENA MERCH ${itemsText} — ${order.name}`} />
             <div className="flex gap-2">
               <button
                 className="btn-primary flex-1"

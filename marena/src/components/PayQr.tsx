@@ -20,7 +20,7 @@ export function PayQr({ account, amount, message, size = 240 }: { account: strin
         if (alive) setUrl(null);
         return;
       }
-      QRCode.toDataURL(spdString({ iban: p.iban, amount, message }), {
+      QRCode.toDataURL(spdString({ iban: p.iban, bic: p.bic, amount, message }), {
         width: size,
         margin: 2,
         errorCorrectionLevel: "M",
@@ -43,7 +43,7 @@ export function PayQr({ account, amount, message, size = 240 }: { account: strin
     <div className="flex flex-col items-center gap-2 text-center">
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={url} alt="QR platba" className="rounded-lg bg-[#fff] p-2 ring-1 ring-ink/10" style={{ width: size, height: size }} />
+        <img src={url} alt="QR platba" data-spd={"error" in parsed ? "" : spdString({ iban: parsed.iban, bic: parsed.bic, amount, message })} className="rounded-lg bg-[#fff] p-2 ring-1 ring-ink/10" style={{ width: size, height: size }} />
       ) : (
         <div className="grid place-items-center rounded-lg bg-paper2 text-sm text-ink-soft" style={{ width: size, height: size }}>
           Generuji QR…

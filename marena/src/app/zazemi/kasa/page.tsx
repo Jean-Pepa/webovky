@@ -40,6 +40,12 @@ export default function KasaPage() {
 
   const total = lines.reduce((s, l) => s + l.price * l.qty, 0);
 
+  // Zpráva pro příjemce v QR: za co se platí (MERCH / BAR / JIDLO / KASA) + položky.
+  // Banka to pak ukáže ve výpisu, takže je hned vidět, čeho se platba týká.
+  const kindWord: Record<SaleLine["kind"], string> = { merch: "MERCH", bar: "BAR", kuchyne: "JIDLO", custom: "KASA" };
+  const kinds = [...new Set(lines.map((l) => l.kind))];
+  const qrMessage = `MARENA ${kinds.length === 1 ? kindWord[kinds[0]] : "KASA"} ${lines.map((l) => `${l.qty}X ${l.name}`).join(", ")}`;
+
   function add(kind: SaleLine["kind"], name: string, price: number, productId?: string) {
     setLines((prev) => {
       const key = `${kind}|${productId ?? name}`;
@@ -193,7 +199,7 @@ export default function KasaPage() {
       {/* QR platba — zákazník skenuje, kasař po zaplacení potvrdí zápis. */}
       <Modal open={qrOpen} onClose={() => setQrOpen(false)} title="Zaplať naskenováním">
         <div className="space-y-4">
-          <PayQr account={account} amount={total} message={`MARENA KASA`} />
+          <PayQr account={account} amount={total} message={qrMessage} />
           <div className="flex gap-2">
             <button className="btn-primary flex-1" onClick={() => settle("qr")}>
               ✓ Zaplaceno — zapsat
