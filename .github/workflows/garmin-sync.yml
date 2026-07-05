@@ -1,0 +1,38 @@
+# Automatický denní sync Garmin → Supabase pro trenink-cockpit.
+#
+# DŮLEŽITÉ: naplánované (schedule) workflow spouští GitHub jen z DEFAULT větve (main).
+# Dokud je tenhle soubor jen na pracovní větvi, cron neběží — dá se ale spustit ručně
+# přes „Run workflow" (workflow_dispatch). Umístění na main doladíme v kroku 3.
+#
+# Potřebné secrets (Settings → Secrets and variables → Actions):
+#   GARMIN_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+
+name: Garmin sync
+
+on:
+  schedule:
+    - cron: "0 5 * * *" # 05:00 UTC (~6:00/7:00 dle času v ČR)
+  workflow_dispatch: {}
+
+# Neruš předchozí běh, když se překryjí.
+concurrency:
+  group: garmin-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Instalace závislostí
+        run: pip install -r trenink-cockpit/sync/requirements.txt
+      - name: Sync Garmin → Supabase
+        env:
+          GARMIN_TOKEN: ${{ secrets.GARMIN_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SYNC_LIMIT: "50"
+        run: python trenink-cockpit/sync/garmin_sync.py
