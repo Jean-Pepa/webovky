@@ -7,11 +7,11 @@ import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { PayQr } from "@/components/PayQr";
 import { parseAccount } from "@/lib/payment";
-import { fmtCZK, fmtDateTime, todayISO } from "@/lib/format";
+import { fmtCZK, fmtDate, fmtDateTime, todayISO } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { isAdmin } from "@/lib/admin";
 import { flash } from "@/components/Flash";
-import type { Cashbox, MerchOrder, MerchProduct } from "@/lib/types";
+import type { Cashbox, FinanceItem, MerchOrder, MerchProduct } from "@/lib/types";
 
 // Prodej — jednotná pokladna pro celý festival (vzor z restauračních a
 // festivalových POS). Nahoře jen to, co obsluha potřebuje k prodeji:
@@ -20,7 +20,7 @@ import type { Cashbox, MerchOrder, MerchProduct } from "@/lib/types";
 // zaplacení, po kategoriích (merch/bar/kuchyně/kasa) + kdo a jak platil.
 
 type Kind = "merch" | "bar" | "kuchyne" | "custom";
-type Stand = "vse" | "merch" | "bar" | "kuchyne" | "ostatni";
+type Stand = "merch" | "bar" | "kuchyne";
 
 type Line = {
   key: string;
@@ -34,11 +34,9 @@ type Line = {
 };
 
 const STANDS: { id: Stand; label: string }[] = [
-  { id: "vse", label: "Vše" },
   { id: "merch", label: "🛍️ Merch" },
   { id: "bar", label: "🍸 Bar" },
   { id: "kuchyne", label: "🍳 Kuchyně" },
-  { id: "ostatni", label: "➕ Ostatní" },
 ];
 
 // Slovo do zprávy pro banku, kategorie financí a barva dlaždic (obsluha
@@ -65,6 +63,49 @@ const LS_TALLY = "marena_pos_tally";
 const lineLabel = (l: Line) =>
   `${l.name}${[l.size, l.color].filter(Boolean).length ? ` (${[l.size, l.color].filter(Boolean).join(" · ")})` : ""}`;
 
+// Kategorie financí, které patří prodeji.
+const POS_CATS = new Set(["merch", "bar", "kuchyně", "kasa"]);
+
+// Statistiky nad zápisy z prodeje: tržba (příjmy − výdaje, tedy včetně
+// případného manka z kasy), QR vs. hotovost, kategorie, počet prodejů
+// a nejprodávanější položky (z rozpisu v poznámkách).
+function posStats(list: FinanceItem[]) {
+  let total = 0;
+  let qr = 0;
+  let cash = 0;
+  let count = 0;
+  const byCat = new Map<string, number>();
+  const items = new Map<string, number>();
+  for (const f of list) {
+    const sign = f.kind === "vydaj" ? -1 : 1;
+    total += sign * f.amount;
+    const cat = f.category ?? "";
+    byCat.set(cat, (byCat.get(cat) ?? 0) + sign * f.amount);
+    const note = f.note ?? "";
+    if (sign > 0 && note.includes("QR platba")) qr += f.amount;
+    else if (sign > 0 && note.includes("hotově")) cash += f.amount;
+    if (sign > 0 && note.includes("×")) {
+      count++;
+      for (const part of note.split(" · ")[0].split(", ")) {
+        const m = part.match(/^(\d+)× (.+)$/);
+        if (m) items.set(m[2], (items.get(m[2]) ?? 0) + Number(m[1]));
+      }
+    }
+  }
+  const top = [...items.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([name, qty]) => ({ name, qty }));
+  return {
+    total,
+    qr,
+    cash,
+    count,
+    top,
+    byCat: [...byCat.entries()].filter(([, v]) => v !== 0).map(([cat, sum]) => ({ cat, sum })),
+  };
+}
+
 // Cena a rozpis objednávky merche — cena ze snapshotu v položce,
 // jinak z aktuální nabídky (kvůli starším objednávkám).
 const orderTotal = (order: MerchOrder, products: MerchProduct[]) =>
@@ -90,7 +131,7 @@ export default function ProdejPage() {
 
 function Pos() {
   const { currentYear, me, dispatch } = useStore();
-  const [stand, setStand] = useState<Stand>("vse");
+  const [stand, setStand] = useState<Stand>("merch");
   const [lines, setLines] = useState<Line[]>([]);
   const [lastSale, setLastSale] = useState<Line[] | null>(null);
   const [tally, setTally] = useState<Record<string, number>>({});
@@ -132,6 +173,23 @@ function Pos() {
   const account = year.paymentAccount ?? "";
   const accountOk = !!account && !("error" in parseAccount(account));
 
+  // Nadstavba dne: bez otevřené kasy se neprodává. Nejdřív se založí
+  // nový den (vklad do kasy), po uzavření se den uzamkne a zůstanou
+  // z něj statistiky — brána je i archivem uzavřených dnů.
+  const openBox = (year.cashboxes ?? []).find((c) => !c.closedAt);
+  if (!openBox) {
+    return (
+      <DayGate
+        yearId={year.id}
+        cashboxes={year.cashboxes ?? []}
+        finances={year.finances ?? []}
+        admin={admin}
+        account={account}
+        accountOk={accountOk}
+      />
+    );
+  }
+
   // Nabídka po druzích; nejprodávanější dlaždice první (podle prodejů
   // z tohoto zařízení — barový vzor „top sellers first"). Nové položky
   // s prodejní cenou se tu objeví samy.
@@ -158,15 +216,14 @@ function Pos() {
         .map((d) => ({ id: d.id, name: d.name, price: d.price! }))
         .sort(bySold),
     },
-  ].filter((g) => (stand === "vse" ? true : g.kind === stand));
-  const showCustom = stand === "vse" || stand === "ostatni";
+  ].filter((g) => g.kind === stand);
   // Přepínač úprav bydlí u první neprázdné sekce nabídky.
   const firstNonEmpty = grids.findIndex((g) => g.items.length > 0);
 
   // Čekající objednávky merche (z webu i odložené) — platí se tady:
   // QR se jménem objednatele, nebo hotově jedním ťuknutím.
   const pendingOrders =
-    stand === "vse" || stand === "merch"
+    stand === "merch"
       ? [...(year.merchOrders ?? [])].filter((o) => !o.done).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       : [];
 
@@ -181,20 +238,9 @@ function Pos() {
         : "KASA";
   const qrMessage = `MARENA ${kindsWord} ${lines.map((l) => `${l.qty}X ${lineLabel(l)}`).join(", ")}`;
 
-  // Dnešní tržby z prodeje — celkem + QR vs. hotově (kolik hotovosti má
-  // sedět v kase) + rozpad po kategoriích.
-  const today = todayISO();
-  const posCats = new Set(["merch", "bar", "kuchyně", "kasa"]);
-  const todaySales = (year.finances ?? []).filter(
-    (f) => f.kind === "prijem" && (f.date ?? f.createdAt.slice(0, 10)) === today && posCats.has(f.category ?? ""),
-  );
-  const sumBy = (pred: (note: string) => boolean) => todaySales.filter((f) => pred(f.note ?? "")).reduce((s, f) => s + f.amount, 0);
-  const todayTotal = todaySales.reduce((s, f) => s + f.amount, 0);
-  const todayQr = sumBy((n) => n.includes("QR platba"));
-  const todayCash = sumBy((n) => n.includes("hotově"));
-  const todayByCat = [...posCats]
-    .map((c) => ({ cat: c, sum: todaySales.filter((f) => f.category === c).reduce((s, f) => s + f.amount, 0) }))
-    .filter((x) => x.sum > 0);
+  // Statistiky dne — den je jedna otevřená kasa, počítá se všechno
+  // od jejího založení (i online objednávky zaplacené během dne).
+  const stats = posStats((year.finances ?? []).filter((f) => POS_CATS.has(f.category ?? "") && f.createdAt >= openBox.openedAt));
 
   // Klíč řádku nese id, variantu i cenu — stejně pojmenované položky
   // s jinou cenou se nesmí slít do jedné.
@@ -340,14 +386,22 @@ function Pos() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 tabular-nums">
+    <div className="mx-auto max-w-3xl space-y-4 pb-16 tabular-nums md:pb-0">
       <div>
-        <h1 className="font-display text-[28px] font-bold tracking-tight">Prodej</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="font-display text-[28px] font-bold tracking-tight">Prodej</h1>
+          {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
+          <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} />
+        </div>
         <p className="mt-0.5 text-sm text-ink-soft">1) vyber stánek · 2) ťukej položky · 3) QR nebo hotově</p>
+        {/* Účet pro QR — malý, ať nepřekáží; správce ho upraví ťuknutím */}
+        <div className="mt-1">
+          <AccountChip admin={admin} account={account} accountOk={accountOk} yearId={year.id} />
+        </div>
       </div>
 
-      {/* Výběr stánku — zařízení si volbu pamatuje */}
-      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
+      {/* Výběr stánku (desktop) — na mobilu je dole ve žluté bublině */}
+      <div className="hidden gap-1.5 md:flex">
         {STANDS.map((s) => (
           <button
             key={s.id}
@@ -449,25 +503,14 @@ function Pos() {
               ))}
             </div>
           </section>
-        ) : stand !== "vse" ? (
+        ) : (
           <section key={g.kind} className="card grid place-items-center gap-2 p-6 text-center">
             <p className="text-sm text-ink-soft">{EMPTY_HINT[g.kind].text} S cenou se tu objeví sama.</p>
             <Link href={EMPTY_HINT[g.kind].href} className="btn-secondary">
               {EMPTY_HINT[g.kind].cta} →
             </Link>
           </section>
-        ) : null,
-      )}
-      {stand === "vse" && grids.every((g) => g.items.length === 0) && (
-        <section className="card grid place-items-center gap-2 p-6 text-center">
-          <p className="text-sm text-ink-soft">
-            Nabídka je zatím prázdná. Přidej produkty s prodejní cenou — objeví se tu samy.
-          </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            <Link href="/zazemi/merch" className="btn-secondary">Přidat merch →</Link>
-            <Link href="/zazemi/kuchyne" className="btn-secondary">Přidat jídlo a pití →</Link>
-          </div>
-        </section>
+        ),
       )}
 
       {/* Doptání na velikost/barvu (merch s variantami) */}
@@ -515,19 +558,17 @@ function Pos() {
         </div>
       )}
 
-      {/* Vlastní položka (vstupné, kelímek…) */}
-      {showCustom && (
-        <section className="card space-y-2 p-4">
-          <h2 className="font-display text-[20px] font-semibold">➕ Vlastní položka</h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <input className="input min-w-[140px] flex-1" placeholder="Co prodáváš?" value={customName} onChange={(e) => setCustomName(e.target.value)} />
-            <input className="input w-28" placeholder="Kč" inputMode="numeric" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addCustom()} />
-            <button className="btn-secondary px-4" onClick={addCustom} disabled={!customName.trim() || !customPrice.trim()}>
-              + Přidat
-            </button>
-          </div>
-        </section>
-      )}
+      {/* Vlastní položka (vstupné, kelímek…) — dostupná na každém stánku */}
+      <section className="card space-y-2 p-4">
+        <h2 className="font-display text-[20px] font-semibold">➕ Vlastní položka</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <input className="input min-w-[140px] flex-1" placeholder="Co prodáváš?" value={customName} onChange={(e) => setCustomName(e.target.value)} />
+          <input className="input w-28" placeholder="Kč" inputMode="numeric" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addCustom()} />
+          <button className="btn-secondary px-4" onClick={addCustom} disabled={!customName.trim() || !customPrice.trim()}>
+            + Přidat
+          </button>
+        </div>
+      </section>
 
       {/* Účtenka */}
       <section className="card p-4">
@@ -582,50 +623,68 @@ function Pos() {
           )}
         </div>
         {total > 0 && !accountOk && (
-          <p className="mt-2 text-xs text-ink-soft">QR platba se odemkne, jakmile správce dole nastaví účet.</p>
+          <p className="mt-2 text-xs text-ink-soft">QR platba se odemkne, jakmile správce nahoře nastaví účet.</p>
         )}
       </section>
 
       {/* ---------- Přehled dne (tržby, kasa, účet) ---------- */}
       <h2 className="pt-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Přehled dne</h2>
 
-      {/* Dnešní tržby — QR vs. hotovost (tolik má sedět v kase) */}
+      {/* Statistiky dne — od založení kasy (QR vs. hotovost, kategorie, top) */}
       <section className="card p-4">
-        <h3 className="font-display text-[20px] font-semibold">📊 Dnešní tržby</h3>
-        {todayTotal === 0 ? (
+        <h3 className="font-display text-[20px] font-semibold">📊 Statistiky dne</h3>
+        {stats.total === 0 ? (
           <p className="mt-1 text-sm text-ink-soft">Zatím nic — první prodej se tu hned ukáže.</p>
         ) : (
           <>
             <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
-              <span className="font-display text-[28px] font-bold tracking-tight">{fmtCZK(todayTotal)}</span>
+              <span className="font-display text-[28px] font-bold tracking-tight">{fmtCZK(stats.total)}</span>
               <span className="text-sm text-ink-soft">
-                QR <strong className="text-ink">{fmtCZK(todayQr)}</strong>
+                QR <strong className="text-ink">{fmtCZK(stats.qr)}</strong>
               </span>
               <span className="text-sm text-ink-soft">
-                💵 hotově <strong className="text-ink">{fmtCZK(todayCash)}</strong>
+                💵 hotově <strong className="text-ink">{fmtCZK(stats.cash)}</strong>
+              </span>
+              <span className="text-sm text-ink-soft">
+                {stats.count}× prodej
               </span>
             </div>
-            {todayByCat.length > 0 && (
+            {stats.byCat.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {todayByCat.map((x) => (
+                {stats.byCat.map((x) => (
                   <span key={x.cat} className="chip">
                     {x.cat} {fmtCZK(x.sum)}
                   </span>
                 ))}
               </div>
             )}
+            {stats.top.length > 0 && (
+              <p className="mt-2 text-sm text-ink-soft">
+                Nejprodávanější: {stats.top.map((t) => `${t.qty}× ${t.name}`).join(" · ")}
+              </p>
+            )}
           </>
         )}
       </section>
 
-      {/* Denní kasa na hotovost — ranní vklad, večer uzavření */}
-      <DailyKasa year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} todayCash={todayCash} />
-
-      {/* Účet pro QR platby (jen správce) */}
-      {isAdmin(me) && <AccountSettings account={account} yearId={year.id} />}
-      {!accountOk && !isAdmin(me) && (
-        <p className="card p-3 text-sm text-amber-700">⚠️ Správce zatím nenastavil účet pro QR platby — zatím vybírej hotově.</p>
-      )}
+      {/* Stánky (mobil) — svítící žlutá bublina nad hlavní lištou */}
+      <div className="fixed inset-x-3 bottom-[calc(5.1rem+env(safe-area-inset-bottom))] z-40 md:hidden">
+        <div className="mx-auto max-w-3xl">
+          <div className="grid grid-cols-3 gap-1 rounded-[28px] bg-gold-500 p-1.5 shadow-[0_0_24px_rgba(244,183,31,0.65)]">
+            {STANDS.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => pickStand(s.id)}
+                className={`min-h-11 rounded-full text-[15px] font-semibold transition ${
+                  stand === s.id ? "bg-[#1d1d1f] text-gold-300" : "text-[#1d1d1f] active:scale-[0.97]"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* QR platba čekající objednávky — se jménem objednatele ve zprávě */}
       <Modal open={!!payOrder} onClose={() => setPayOrder(null)} title={payOrder ? `Platba — ${payOrder.name}` : ""}>
@@ -672,11 +731,147 @@ function Pos() {
   );
 }
 
-// Denní kasa na hotovost: ráno vklad (na vracení), večer spočítat šuplík
-// a uzavřít. Markovaná hotovost už ve financích je, takže se do financí
-// zapíše jen rozdíl — peníze se nepočítají dvakrát.
-function DailyKasa({ year, todayCash }: { year: { id: string; cashboxes: Cashbox[] }; todayCash: number }) {
+// Brána dne: bez otevřené kasy se neprodává. Založí nový den (ranní
+// vklad do kasy) a pod tím ukazuje uzamčené (uzavřené) dny se
+// statistikami prodeje — tržby, QR vs. hotovost, kategorie, top položky.
+function DayGate({
+  yearId,
+  cashboxes,
+  finances,
+  admin,
+  account,
+  accountOk,
+}: {
+  yearId: string;
+  cashboxes: Cashbox[];
+  finances: FinanceItem[];
+  admin: boolean;
+  account: string;
+  accountOk: boolean;
+}) {
   const { dispatch } = useStore();
+  const [opening, setOpening] = useState("");
+  const [busy, setBusy] = useState(false);
+  const closed = cashboxes.filter((c) => c.closedAt).sort((a, b) => b.openedAt.localeCompare(a.openedAt));
+
+  async function openDay() {
+    const n = Math.round(Number(opening.replace(/\s/g, "").replace(",", ".")));
+    if (opening.trim() === "" || !Number.isFinite(n) || n < 0 || busy) return;
+    setBusy(true);
+    try {
+      if (!(await dispatch({ type: "openCashbox", yearId, opening: n }))) {
+        flash("Den se nepodařilo založit — zkontroluj připojení", "⚠️");
+        return;
+      }
+      flash(`Den založen — kasa otevřena s vkladem ${fmtCZK(n)}`, "🌞");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-4 tabular-nums">
+      <div>
+        <h1 className="font-display text-[28px] font-bold tracking-tight">Prodej</h1>
+        <p className="mt-0.5 text-sm text-ink-soft">Nový den začíná založením kasy — po uzavření se den uzamkne do statistik.</p>
+        <div className="mt-1">
+          <AccountChip admin={admin} account={account} accountOk={accountOk} yearId={yearId} />
+        </div>
+      </div>
+
+      {/* Založení nového dne — teprve pak se prodává */}
+      <section className="card border-l-4 border-l-gold-500 p-4">
+        <h2 className="font-display text-[20px] font-semibold">🌞 Založit nový den</h2>
+        <p className="mt-1 text-sm text-ink-soft">Vlož základ do kasy na vracení (klidně 0 Kč) a otevři den — pak se prodává.</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <input
+            className="input w-44"
+            inputMode="numeric"
+            placeholder="Ranní vklad (Kč)"
+            value={opening}
+            onChange={(e) => setOpening(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && openDay()}
+          />
+          <button className="btn-primary" onClick={openDay} disabled={!opening.trim() || busy}>
+            Otevřít den
+          </button>
+        </div>
+      </section>
+
+      {/* Archiv: uzamčené dny se statistikami */}
+      <h2 className="pt-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Uzavřené dny</h2>
+      {closed.length === 0 ? (
+        <p className="card p-4 text-sm text-ink-soft">Zatím žádný uzavřený den — po uzavření kasy se tu objeví statistiky.</p>
+      ) : (
+        closed.map((c, i) => {
+          // Den = od otevření kasy do otevření té další (i platby přijaté
+          // po uzavření, třeba QR u vyzvednutí, tak zůstanou u svého dne).
+          const until = closed[i - 1]?.openedAt ?? "￿";
+          const stats = posStats(
+            finances.filter((f) => POS_CATS.has(f.category ?? "") && f.createdAt >= c.openedAt && f.createdAt < until),
+          );
+          return <DayCard key={c.id} box={c} stats={stats} />;
+        })
+      )}
+    </div>
+  );
+}
+
+// Uzamčený den: statistiky prodeje + vyúčtování kasy.
+function DayCard({ box, stats }: { box: Cashbox; stats: ReturnType<typeof posStats> }) {
+  const rozdil = (box.closing ?? 0) - box.opening - (box.alreadyRecorded ?? 0);
+  return (
+    <section className="card p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-display text-base font-semibold">📅 {fmtDate(box.openedAt)}</h3>
+        <span className="chip">🔒 uzamčeno</span>
+      </div>
+      <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
+        <span className="font-display text-[22px] font-bold tracking-tight">{fmtCZK(stats.total)}</span>
+        <span className="text-sm text-ink-soft">
+          QR <strong className="text-ink">{fmtCZK(stats.qr)}</strong>
+        </span>
+        <span className="text-sm text-ink-soft">
+          💵 hotově <strong className="text-ink">{fmtCZK(stats.cash)}</strong>
+        </span>
+        <span className="text-sm text-ink-soft">{stats.count}× prodej</span>
+      </div>
+      {stats.byCat.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {stats.byCat.map((x) => (
+            <span key={x.cat} className="chip">
+              {x.cat} {fmtCZK(x.sum)}
+            </span>
+          ))}
+        </div>
+      )}
+      <p className="mt-2 border-t border-ink/[0.06] pt-2 text-sm text-ink-soft">
+        Kasa: vklad {fmtCZK(box.opening)} → večer {fmtCZK(box.closing ?? 0)}
+        {rozdil === 0 ? (
+          <span className="text-leaf-700"> · sedí ✓</span>
+        ) : (
+          <span className={rozdil > 0 ? "text-leaf-700" : "text-red-600"}>
+            {" "}
+            · rozdíl {rozdil > 0 ? "+" : "−"}{fmtCZK(Math.abs(rozdil))}
+          </span>
+        )}
+      </p>
+      {stats.top.length > 0 && (
+        <p className="mt-1 text-sm text-ink-soft">Nejprodávanější: {stats.top.map((t) => `${t.qty}× ${t.name}`).join(" · ")}</p>
+      )}
+    </section>
+  );
+}
+
+// Jednotná kasa na hotovost pro celý prodej — ovládá se vpravo nahoře:
+// otevře se s ranním vkladem, přes den tlačítko ukazuje, kolik má být
+// v šuplíku, večer se spočítá a uzavře. Markovaná hotovost už ve
+// financích je, takže se při uzavření zapíše jen rozdíl — peníze se
+// nepočítají dvakrát.
+function KasaControl({ year, cashMarked }: { year: { id: string; cashboxes: Cashbox[] }; cashMarked: number }) {
+  const todayCash = cashMarked;
+  const { dispatch } = useStore();
+  const [modal, setModal] = useState(false);
   const [opening, setOpening] = useState("");
   const [closing, setClosing] = useState("");
   const [busy, setBusy] = useState(false);
@@ -695,6 +890,7 @@ function DailyKasa({ year, todayCash }: { year: { id: string; cashboxes: Cashbox
         return;
       }
       setOpening("");
+      setModal(false);
       flash(`Kasa otevřena s vkladem ${fmtCZK(n)}`, "🧰");
     } finally {
       setBusy(false);
@@ -712,6 +908,7 @@ function DailyKasa({ year, todayCash }: { year: { id: string; cashboxes: Cashbox
         return;
       }
       setClosing("");
+      setModal(false);
       const diff = n - expected;
       flash(diff === 0 ? "Kasa uzavřena — sedí přesně ✓" : `Kasa uzavřena — rozdíl ${diff > 0 ? "+" : "−"}${fmtCZK(Math.abs(diff))} zapsán do financí`, "🧰");
     } finally {
@@ -720,67 +917,98 @@ function DailyKasa({ year, todayCash }: { year: { id: string; cashboxes: Cashbox
   }
 
   return (
-    <section className="card space-y-2 p-4">
-      <h3 className="font-display text-[20px] font-semibold">🧰 Denní kasa (hotovost)</h3>
-      {openBox ? (
-        <>
-          <p className="text-sm text-ink-soft">
-            Otevřena {fmtDateTime(openBox.openedAt)} · vklad <strong className="text-ink">{fmtCZK(openBox.opening)}</strong>
-          </p>
-          <p className="text-sm">
-            V kase má být: vklad {fmtCZK(openBox.opening)} + hotově z prodeje {fmtCZK(todayCash)} ={" "}
-            <strong className="font-display text-base">{fmtCZK(expected)}</strong>
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              className="input w-44"
-              inputMode="numeric"
-              placeholder="Spočítáno večer (Kč)"
-              value={closing}
-              onChange={(e) => setClosing(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && close()}
-            />
-            <button className="btn-primary" onClick={close} disabled={!closing.trim() || busy}>
-              Uzavřít kasu
-            </button>
-          </div>
-          <p className="text-xs text-ink-soft">
-            Markovaná hotovost už ve financích je — při uzavření se zapíše jen případný rozdíl.
-          </p>
-        </>
-      ) : (
-        <>
-          {closedToday && (
-            <p className="text-sm text-leaf-700">
-              ✓ Dnešní kasa uzavřena ({fmtCZK(closedToday.opening)} → {fmtCZK(closedToday.closing ?? 0)}).
+    <>
+      <button
+        onClick={() => setModal(true)}
+        className={`flex min-h-11 items-center gap-2 rounded-full px-4 text-[15px] font-semibold transition ${
+          openBox ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-paper2 text-ink hover:bg-gold-100"
+        }`}
+        title={openBox ? "Kasa je otevřená — ťukni pro uzavření" : "Otevřít kasu s ranním vkladem"}
+      >
+        🧰 {openBox ? `V kase ${fmtCZK(expected)}` : "Otevřít kasu"}
+      </button>
+
+      <Modal open={modal} onClose={() => setModal(false)} title={openBox ? "Kasa — uzavření" : "Kasa — otevření"}>
+        {openBox ? (
+          <div className="space-y-3">
+            <p className="text-sm text-ink-soft">
+              Otevřena {fmtDateTime(openBox.openedAt)} · vklad <strong className="text-ink">{fmtCZK(openBox.opening)}</strong>
             </p>
-          )}
-          <p className="text-sm text-ink-soft">Ráno vlož základ na vracení a otevři kasu — večer ji tu uzavřeš.</p>
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              className="input w-44"
-              inputMode="numeric"
-              placeholder="Ranní vklad (Kč)"
-              value={opening}
-              onChange={(e) => setOpening(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && open()}
-            />
-            <button className="btn-primary" onClick={open} disabled={!opening.trim() || busy}>
-              Otevřít kasu
-            </button>
+            <p className="text-sm">
+              V kase má být: vklad {fmtCZK(openBox.opening)} + hotově z prodeje {fmtCZK(todayCash)} ={" "}
+              <strong className="font-display text-base">{fmtCZK(expected)}</strong>
+            </p>
+            <div>
+              <label className="label">Spočítaný stav (Kč)</label>
+              <input
+                className="input"
+                inputMode="numeric"
+                placeholder="např. 2200"
+                value={closing}
+                onChange={(e) => setClosing(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => e.key === "Enter" && close()}
+              />
+            </div>
+            <p className="text-xs text-ink-soft">
+              Markovaná hotovost už ve financích je — při uzavření se zapíše jen případný rozdíl.
+            </p>
+            <div className="flex gap-2 pt-1">
+              <button className="btn-primary flex-1" onClick={close} disabled={!closing.trim() || busy}>
+                Uzavřít kasu
+              </button>
+              <button className="btn-ghost" onClick={() => setModal(false)}>
+                Zavřít
+              </button>
+            </div>
           </div>
-        </>
-      )}
-    </section>
+        ) : (
+          <div className="space-y-3">
+            {closedToday && (
+              <p className="text-sm text-leaf-700">
+                ✓ Dnešní kasa už byla uzavřena ({fmtCZK(closedToday.opening)} → {fmtCZK(closedToday.closing ?? 0)}).
+              </p>
+            )}
+            <p className="text-sm text-ink-soft">
+              Kasa je jednotná pro celý prodej. Vlož základ na vracení a otevři ji — večer ji tu uzavřeš.
+            </p>
+            <div>
+              <label className="label">Ranní vklad (Kč)</label>
+              <input
+                className="input"
+                inputMode="numeric"
+                placeholder="např. 2000"
+                value={opening}
+                onChange={(e) => setOpening(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => e.key === "Enter" && open()}
+              />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button className="btn-primary flex-1" onClick={open} disabled={!opening.trim() || busy}>
+                Otevřít kasu
+              </button>
+              <button className="btn-ghost" onClick={() => setModal(false)}>
+                Zavřít
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </>
   );
 }
 
-// Nastavení účtu (jen správce) — přijme český formát i IBAN, hned ověří součty.
-function AccountSettings({ account, yearId }: { account: string; yearId: string }) {
+// Účet pro QR platby — nahoře jako drobný štítek, ať nepřekáží. Správci
+// se ťuknutím otevře úprava (český formát i IBAN, kontrolní součty).
+function AccountChip({ admin, account, accountOk, yearId }: { admin: boolean; account: string; accountOk: boolean; yearId: string }) {
   const { dispatch } = useStore();
+  const [modal, setModal] = useState(false);
   const [value, setValue] = useState(account);
-  const [saved, setSaved] = useState(false);
   const parsed = value.trim() ? parseAccount(value) : null;
+  const current = accountOk ? parseAccount(account) : null;
+  const short = current && !("error" in current) ? `…${current.iban.slice(-4)}` : "";
+  const label = accountOk ? `🏦 účet ${short} ✓` : "⚠️ účet pro QR nenastaven";
 
   async function save() {
     if (!parsed || "error" in parsed) return;
@@ -788,31 +1016,56 @@ function AccountSettings({ account, yearId }: { account: string; yearId: string 
       flash("Účet se nepodařilo uložit — zkontroluj připojení", "⚠️");
       return;
     }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setModal(false);
     flash("Účet pro platby uložen", "🏦");
   }
 
+  if (!admin) {
+    return (
+      <span className={`text-xs ${accountOk ? "text-ink-soft/80" : "text-amber-700"}`}>
+        {label}
+        {!accountOk && " — vybírej hotově"}
+      </span>
+    );
+  }
   return (
-    <section className="card space-y-2 p-4">
-      <h3 className="font-display text-[20px] font-semibold">🏦 Účet pro QR platby</h3>
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          className="input min-w-[220px] flex-1"
-          placeholder="123456789/0800 nebo IBAN CZ…"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-        />
-        <button className="btn-primary px-4" onClick={save} disabled={!parsed || "error" in parsed}>
-          {saved ? "✓ Uloženo" : "Uložit"}
-        </button>
-      </div>
-      {parsed && ("error" in parsed ? (
-        <p className="text-sm text-red-600">{parsed.error}</p>
-      ) : (
-        <p className="text-sm text-leaf-700">✓ Platný účet · IBAN {parsed.iban}</p>
-      ))}
-      {!value.trim() && <p className="text-sm text-ink-soft">Zadej účet, na který mají chodit platby z prodeje i online objednávek merche.</p>}
-    </section>
+    <>
+      <button
+        className={`rounded-full px-2.5 py-1 text-xs transition ${
+          accountOk ? "bg-paper2 text-ink-soft hover:bg-gold-100" : "bg-amber-100 font-semibold text-amber-800 hover:bg-amber-200"
+        }`}
+        onClick={() => {
+          setValue(account);
+          setModal(true);
+        }}
+      >
+        {label} · upravit
+      </button>
+      <Modal open={modal} onClose={() => setModal(false)} title="🏦 Účet pro QR platby">
+        <div className="space-y-3">
+          <p className="text-sm text-ink-soft">Sem chodí platby z prodeje i online objednávek merche.</p>
+          <input
+            className="input w-full"
+            placeholder="123456789/0800 nebo IBAN CZ…"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            autoFocus
+          />
+          {parsed && ("error" in parsed ? (
+            <p className="text-sm text-red-600">{parsed.error}</p>
+          ) : (
+            <p className="text-sm text-leaf-700">✓ Platný účet · IBAN {parsed.iban}</p>
+          ))}
+          <div className="flex gap-2 pt-1">
+            <button className="btn-primary flex-1" onClick={save} disabled={!parsed || "error" in parsed}>
+              Uložit
+            </button>
+            <button className="btn-ghost" onClick={() => setModal(false)}>
+              Zavřít
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 }
