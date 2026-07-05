@@ -13,6 +13,7 @@ import { ArchiveModal } from "@/components/ArchiveModal";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 import { SupabaseGate } from "@/components/SupabaseGate";
 import { FlashHost } from "@/components/Flash";
+import { AdminApprovals } from "@/components/AdminApprovals";
 import { ThemeToggle, useZazemiTheme } from "@/components/ThemeToggle";
 import { supabaseEnabled } from "@/lib/supabase/config";
 
@@ -394,6 +395,9 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           </div>
         )}
       </header>
+
+      {/* Správce: vše, co čeká na schválení (účty + role), svítí hned pod hlavičkou */}
+      <AdminApprovals />
 
       {isAdmin(me) && <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />}
       {isAdmin(me) && <ChangePasswordModal open={pwdOpen} onClose={() => setPwdOpen(false)} />}
