@@ -6,6 +6,7 @@ import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { PayQr } from "@/components/PayQr";
+import { DeleteButton } from "@/components/DeleteButton";
 import { parseAccount } from "@/lib/payment";
 import { fmtCZK, fmtDate, fmtDateTime, todayISO } from "@/lib/format";
 import { uid } from "@/lib/id";
@@ -139,8 +140,6 @@ function Pos() {
   const [qrOpen, setQrOpen] = useState(false);
   const [payOrder, setPayOrder] = useState<MerchOrder | null>(null);
   const [busy, setBusy] = useState(false);
-  const [customName, setCustomName] = useState("");
-  const [customPrice, setCustomPrice] = useState("");
   // Režim úprav nabídky (jen správce): dlaždice se místo markování mažou.
   const [editNabidka, setEditNabidka] = useState(false);
   const year = currentYear;
@@ -293,14 +292,6 @@ function Pos() {
       setBusy(false);
     }
   }
-  function addCustom() {
-    const price = Math.round(Number(customPrice.replace(",", ".")));
-    if (!customName.trim() || !Number.isFinite(price) || price <= 0) return;
-    addLine("custom", customName.trim(), price);
-    setCustomName("");
-    setCustomPrice("");
-  }
-
   // Zápis prodeje po zaplacení. Hlídá výsledek každého uložení: co se
   // nezapsalo, zůstává na účtence (po výpadku sítě jde zkusit znovu a nic
   // se nezapíše dvakrát). Merch → uzamčená zaplacená objednávka (sklad +
@@ -558,18 +549,6 @@ function Pos() {
         </div>
       )}
 
-      {/* Vlastní položka (vstupné, kelímek…) — dostupná na každém stánku */}
-      <section className="card space-y-2 p-4">
-        <h2 className="font-display text-[20px] font-semibold">➕ Vlastní položka</h2>
-        <div className="flex flex-wrap items-center gap-2">
-          <input className="input min-w-[140px] flex-1" placeholder="Co prodáváš?" value={customName} onChange={(e) => setCustomName(e.target.value)} />
-          <input className="input w-28" placeholder="Kč" inputMode="numeric" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addCustom()} />
-          <button className="btn-secondary px-4" onClick={addCustom} disabled={!customName.trim() || !customPrice.trim()}>
-            + Přidat
-          </button>
-        </div>
-      </section>
-
       {/* Účtenka */}
       <section className="card p-4">
         <div className="flex items-center justify-between gap-2">
@@ -810,21 +789,32 @@ function DayGate({
           const stats = posStats(
             finances.filter((f) => POS_CATS.has(f.category ?? "") && f.createdAt >= c.openedAt && f.createdAt < until),
           );
-          return <DayCard key={c.id} box={c} stats={stats} />;
+          return <DayCard key={c.id} box={c} stats={stats} yearId={yearId} admin={admin} />;
         })
       )}
     </div>
   );
 }
 
-// Uzamčený den: statistiky prodeje + vyúčtování kasy.
-function DayCard({ box, stats }: { box: Cashbox; stats: ReturnType<typeof posStats> }) {
+// Uzamčený den: statistiky prodeje + vyúčtování kasy. Smazat den může
+// jen správce — odstraní kasu dne a její zápis rozdílu ve financích
+// (samotné prodeje ve financích zůstávají).
+function DayCard({ box, stats, yearId, admin }: { box: Cashbox; stats: ReturnType<typeof posStats>; yearId: string; admin: boolean }) {
+  const { dispatch } = useStore();
   const rozdil = (box.closing ?? 0) - box.opening - (box.alreadyRecorded ?? 0);
   return (
     <section className="card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-display text-base font-semibold">📅 {fmtDate(box.openedAt)}</h3>
-        <span className="chip">🔒 uzamčeno</span>
+        <div className="flex items-center gap-2">
+          <span className="chip">🔒 uzamčeno</span>
+          {admin && (
+            <DeleteButton
+              what={`den ${fmtDate(box.openedAt)} (prodeje ve financích zůstanou)`}
+              onConfirm={() => dispatch({ type: "removeCashbox", yearId, cashboxId: box.id })}
+            />
+          )}
+        </div>
       </div>
       <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
         <span className="font-display text-[22px] font-bold tracking-tight">{fmtCZK(stats.total)}</span>
