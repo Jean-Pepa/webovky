@@ -25,7 +25,7 @@ export function defaultRoleTasks(createdAt: string): Task[] {
 
 export type Action =
   | { type: "createYear"; id: string; label?: string; theme?: string; fledaDate?: string; copyFromYearId?: string }
-  | { type: "updateYear"; yearId: string; patch: Partial<Pick<Year, "label" | "theme" | "fledaDate" | "plannedPeople" | "deposit">> }
+  | { type: "updateYear"; yearId: string; patch: Partial<Pick<Year, "label" | "theme" | "fledaDate" | "plannedPeople" | "deposit" | "paymentAccount">> }
   | { type: "deleteYear"; yearId: string }
   | { type: "addMember"; yearId: string; name: string; roleIds: string[]; email?: string; phone?: string; contact?: string; note?: string; approved?: boolean }
   | { type: "approveMember"; yearId: string; memberId: string }
@@ -111,7 +111,7 @@ export type Action =
   | { type: "addMerchProduct"; yearId: string; name: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; note?: string }
   | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; note?: string } }
   | { type: "removeMerchProduct"; yearId: string; productId: string }
-  | { type: "addMerchOrder"; yearId: string; name: string; phone?: string; email?: string; items: MerchOrderItem[]; note?: string }
+  | { type: "addMerchOrder"; yearId: string; name: string; phone?: string; email?: string; items: MerchOrderItem[]; note?: string; id?: string }
   | { type: "toggleMerchOrderDone"; yearId: string; orderId: string }
   | { type: "removeMerchOrder"; yearId: string; orderId: string }
   // Uvolnění místa: smaže všechny fotky/účtenky ročníku (reference v DB; samotné
@@ -943,7 +943,7 @@ export function applyAction(db: DB, a: Action): DB {
         ...y,
         merchOrders: [
           {
-            id: uid("mo_"),
+            id: a.id ?? uid("mo_"),
             name: a.name.trim() || "—",
             phone: a.phone?.trim() || undefined,
             email: a.email?.trim() || undefined,

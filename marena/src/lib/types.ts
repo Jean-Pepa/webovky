@@ -297,6 +297,7 @@ export interface Year {
   fledaDate?: string; // termín průvodu / Flédy (ISO)
   plannedPeople?: number; // plánovaný počet účastníků (pro kalkulaci financí)
   deposit?: number; // třídní vklad na osobu (Kč)
+  paymentAccount?: string; // účet pro QR platby — český formát (123-456789/0800) nebo IBAN
   members: Member[];
   roleLeads?: Record<string, string>; // roleId → memberId vedoucího (první = vedoucí, ostatní pomocníci)
   posts: Post[];
