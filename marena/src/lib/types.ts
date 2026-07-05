@@ -4,12 +4,14 @@
 export interface Member {
   id: string;
   name: string;
-  roleIds: string[]; // posty/funkce, které si člověk vybral (viz lib/roles.ts)
+  roleIds: string[]; // posty/funkce, které člověk drží (schválené správcem)
+  roleRequests?: string[]; // žádosti o role — čekají na schválení správcem
   email?: string;
   phone?: string;
   contact?: string; // starší pole (instagram apod.) — kvůli zpětné kompatibilitě
   note?: string;
   approved?: boolean; // schválení správcem. false = čeká (zamčeno); jinak má přístup
+  posOnly?: boolean; // pomocník u stánku: vidí jen Prodej, zapíná správce v Týmu
   createdAt: string;
 }
 

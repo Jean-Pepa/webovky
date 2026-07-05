@@ -79,20 +79,14 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  // Režim stánku (festival): zařízení ukazuje ve spodní liště jen Prodej.
-  // Jen na tomhle zařízení (localStorage), vypne se stejným tlačítkem.
-  const [kiosk, setKiosk] = useState(false);
+  // Pomocník u stánku: správce členovi v Týmu zapne „jen Prodej" (posOnly) a
+  // člověk pak v zázemí vidí jen Prodej — nic jiného (brigádníci u stánku).
+  const posOnly = !isAdmin(me) && !!currentYear?.members.find((m) => sameName(m.name, me))?.posOnly;
   useEffect(() => {
-    const t = setTimeout(() => setKiosk(localStorage.getItem("marena_kiosk") === "1"), 0);
-    return () => clearTimeout(t);
-  }, []);
-  function toggleKiosk() {
-    const next = !kiosk;
-    setKiosk(next);
-    localStorage.setItem("marena_kiosk", next ? "1" : "");
-    setMenuOpen(false);
-    if (next) router.push("/zazemi/prodej");
-  }
+    if (posOnly && pathname.startsWith("/zazemi") && pathname !== "/zazemi/prodej") {
+      router.replace("/zazemi/prodej");
+    }
+  }, [posOnly, pathname, router]);
   const [sheet, setSheet] = useState<string | null>(null); // otevřená skupina spodní lišty (mobil)
   const [deskMenu, setDeskMenu] = useState<string | null>(null); // otevřené rozbalovací menu (desktop)
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -228,8 +222,26 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           </div>
         </div>
 
-        {/* Desktopová navigace — Nástěnka + 2 rozbalovací skupiny, nástroje vpravo */}
+        {/* Desktopová navigace — Nástěnka + 2 rozbalovací skupiny, nástroje vpravo.
+            Pomocník u stánku (posOnly) vidí jen Prodej + Odhlásit. */}
         <nav className="mx-auto hidden max-w-6xl flex-wrap items-center gap-1 px-3 pb-2 md:flex">
+          {posOnly ? (
+            <>
+              <Link
+                href="/zazemi/prodej"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-gold-500 px-3.5 py-1.5 text-sm font-medium text-[#1d1d1f]"
+              >
+                <Icon name="cart" className="h-4 w-4" /> Prodej
+              </Link>
+              <button
+                onClick={doLogout}
+                className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium text-ink-soft hover:bg-ink/5"
+              >
+                <Icon name="logout" className="h-4 w-4" /> Odhlásit
+              </button>
+            </>
+          ) : (
+            <>
           <Link
             href="/zazemi"
             onClick={() => setDeskMenu(null)}
@@ -319,13 +331,15 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           >
             <Icon name="logout" className="h-4 w-4" /> Odhlásit
           </button>
+            </>
+          )}
         </nav>
 
         {/* Mobilní menu (hamburger) — už jen nástroje; stránky jsou ve spodní liště */}
         {menuOpen && (
           <div className="max-h-[calc(100dvh-3.25rem)] overflow-y-auto border-t border-ink/10 bg-paper px-3 py-3 md:hidden">
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <YearSwitcher />
+              {!posOnly && <YearSwitcher />}
               <MeBadge />
               {isAdmin(me) && <AppPowerToggle maint={maint} onChanged={setMaint} />}
               {isAdmin(me) && (
@@ -341,20 +355,15 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               )}
             </div>
             <nav className="flex flex-col gap-1">
-              <Link
-                href="/zazemi/almanach"
-                onClick={() => setMenuOpen(false)}
-                className="inline-flex items-center gap-2.5 rounded-xl bg-gold-500 px-3 py-2.5 text-[15px] font-semibold text-[#1d1d1f]"
-              >
-                <Icon name="book" className="h-5 w-5" /> Almanach
-              </Link>
-              {/* Festivalová zkratka: mobil u stánku ukazuje jen Prodej */}
-              <button
-                onClick={toggleKiosk}
-                className="inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[15px] font-medium text-ink-soft hover:bg-ink/5"
-              >
-                🛒 {kiosk ? "Vypnout režim stánku" : "Režim stánku (jen Prodej)"}
-              </button>
+              {!posOnly && (
+                <Link
+                  href="/zazemi/almanach"
+                  onClick={() => setMenuOpen(false)}
+                  className="inline-flex items-center gap-2.5 rounded-xl bg-gold-500 px-3 py-2.5 text-[15px] font-semibold text-[#1d1d1f]"
+                >
+                  <Icon name="book" className="h-5 w-5" /> Almanach
+                </Link>
+              )}
               {isAdmin(me) && (
                 <Link
                   href="/zazemi/web"
@@ -445,13 +454,10 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
         </div>
       )}
 
-      {/* Režim stánku — proužek s vypínačem, ať zařízení „neuvízne" */}
-      {kiosk && (
-        <div className="flex items-center justify-center gap-3 border-b border-gold-300 bg-gold-50 px-4 py-1.5 text-center text-xs font-medium text-gold-800 md:hidden">
-          <span>🛒 Režim stánku — lišta ukazuje jen Prodej</span>
-          <button onClick={toggleKiosk} className="font-semibold underline">
-            vypnout
-          </button>
+      {/* Pomocník u stánku — informační proužek (vypnout to může jen správce v Týmu) */}
+      {posOnly && (
+        <div className="flex items-center justify-center gap-2 border-b border-gold-300 bg-gold-50 px-4 py-1.5 text-center text-xs font-medium text-gold-800">
+          <span>🛒 Máš přístup jen k Prodeji</span>
         </div>
       )}
 
@@ -493,8 +499,8 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           domovského indikátoru, zaoblená, se stínem. Uvnitř M3: 64 px, 24px ikony,
           aktivní stav = jemná zlatá pilulka za ikonou. */}
       <nav className="fixed inset-x-3 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 rounded-[28px] border-2 border-gold-500 bg-paper/95 shadow-lg backdrop-blur md:hidden">
-        {kiosk ? (
-          // Režim stánku: jediná položka — Prodej
+        {posOnly ? (
+          // Pomocník u stánku: jediná položka — Prodej
           <Link
             href="/zazemi/prodej"
             onClick={() => setSheet(null)}

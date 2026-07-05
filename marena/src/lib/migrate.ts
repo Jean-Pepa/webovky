@@ -13,9 +13,12 @@ function normalizeYear(y: Year): Year {
 
   const members = y.members.map((m) => {
     const ids = [...new Set(m.roleIds.map(mapId))];
-    if (ids.length === m.roleIds.length && ids.every((v, i) => v === m.roleIds[i])) return m;
+    const reqs = m.roleRequests ? [...new Set(m.roleRequests.map(mapId))] : undefined;
+    const idsSame = ids.length === m.roleIds.length && ids.every((v, i) => v === m.roleIds[i]);
+    const reqsSame = !m.roleRequests || (reqs!.length === m.roleRequests.length && reqs!.every((v, i) => v === m.roleRequests![i]));
+    if (idsSame && reqsSame) return m;
     changed = true;
-    return { ...m, roleIds: ids };
+    return { ...m, roleIds: ids, roleRequests: reqs };
   });
 
   const leads: Record<string, string> = {};
