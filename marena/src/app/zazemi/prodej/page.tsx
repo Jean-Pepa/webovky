@@ -138,7 +138,9 @@ function Pos() {
   const [tally, setTally] = useState<Record<string, number>>({});
   const [picker, setPicker] = useState<{ productId: string; size?: string; color?: string } | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
+  const [cashOpen, setCashOpen] = useState(false); // hotovost za účtenku (kolik dal → kolik vrátit)
   const [payOrder, setPayOrder] = useState<MerchOrder | null>(null);
+  const [cashOrder, setCashOrder] = useState<MerchOrder | null>(null); // hotovost za čekající objednávku
   const [busy, setBusy] = useState(false);
   // Režim úprav nabídky (jen správce): dlaždice se místo markování mažou.
   const [editNabidka, setEditNabidka] = useState(false);
@@ -354,6 +356,7 @@ function Pos() {
       setLastSale(lines);
       setLines([]);
       setQrOpen(false);
+      setCashOpen(false);
       flash(`Zaplaceno ${fmtCZK(total)} (${howText}) — zapsáno`, "💰");
     } finally {
       setBusy(false);
@@ -372,6 +375,7 @@ function Pos() {
         return;
       }
       setPayOrder(null);
+      setCashOrder(null);
       flash(`Zaplaceno ${fmtCZK(orderTotal(order, year.merch ?? []))} (${howText}) — objednávka ${order.name} vyřízena`, "💰");
     } finally {
       setBusy(false);
@@ -427,7 +431,7 @@ function Pos() {
                   <button className="btn-primary px-4 py-2 text-sm" disabled={total <= 0 || !accountOk || busy} onClick={() => setQrOpen(true)}>
                     QR platba
                   </button>
-                  <button className="btn-secondary px-4 py-2 text-sm" disabled={total <= 0 || busy} onClick={() => settle("hotove")}>
+                  <button className="btn-secondary px-4 py-2 text-sm" disabled={total <= 0 || busy} onClick={() => setCashOpen(true)}>
                     💵 Hotově
                   </button>
                   <button className="btn-ghost px-2 py-2 text-sm" onClick={() => setLines([])} aria-label="Vyčistit účtenku" title="Vyčistit">
@@ -490,7 +494,7 @@ function Pos() {
                     <button
                       className="min-h-9 rounded-full bg-paper2 px-3.5 text-sm font-semibold transition hover:bg-gold-100"
                       disabled={busy}
-                      onClick={() => settleExistingOrder(o, "hotove")}
+                      onClick={() => setCashOrder(o)}
                     >
                       💵 Hotově
                     </button>
@@ -702,7 +706,77 @@ function Pos() {
           </div>
         </div>
       </Modal>
+
+      {/* Hotovost za účtenku — kolik dal zákazník → kolik vrátit */}
+      {cashOpen && <CashModal amount={total} busy={busy} onConfirm={() => settle("hotove")} onClose={() => setCashOpen(false)} />}
+      {/* Hotovost za čekající objednávku */}
+      {cashOrder && (
+        <CashModal
+          amount={orderTotal(cashOrder, year.merch ?? [])}
+          busy={busy}
+          onConfirm={() => settleExistingOrder(cashOrder, "hotove")}
+          onClose={() => setCashOrder(null)}
+        />
+      )}
     </div>
+  );
+}
+
+// Platba hotově — stejné okno jako u QR: velká částka, pole „kolik dal
+// zákazník" a hned spočítané vrácení; potvrzuje se „Zaplaceno — zapsat".
+function CashModal({ amount, busy, onConfirm, onClose }: { amount: number; busy: boolean; onConfirm: () => void; onClose: () => void }) {
+  const [given, setGiven] = useState("");
+  const n = Math.round(Number(given.replace(/\s/g, "").replace(",", ".")));
+  const hasGiven = given.trim() !== "" && Number.isFinite(n);
+  const change = hasGiven ? n - amount : null;
+  // Rychlé bankovky: „přesně" + nejbližší papírky nad částkou.
+  const notes = [100, 200, 500, 1000, 2000].filter((v) => v > amount).slice(0, 3);
+
+  return (
+    <Modal open onClose={onClose} title="Platba hotově">
+      <div className="space-y-4">
+        <p className="text-center font-display text-3xl font-bold tracking-tight">{fmtCZK(amount)}</p>
+        <div>
+          <label className="label">Kolik dal zákazník? (Kč)</label>
+          <input
+            className="input"
+            inputMode="numeric"
+            placeholder={`např. ${amount}`}
+            value={given}
+            onChange={(e) => setGiven(e.target.value)}
+            autoFocus
+          />
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            <button type="button" className="chip hover:bg-gold-100" onClick={() => setGiven(String(amount))}>
+              Přesně
+            </button>
+            {notes.map((v) => (
+              <button key={v} type="button" className="chip hover:bg-gold-100" onClick={() => setGiven(String(v))}>
+                {v} Kč
+              </button>
+            ))}
+          </div>
+        </div>
+        {hasGiven &&
+          (change! >= 0 ? (
+            <p className="rounded-xl bg-leaf/10 px-3 py-3 text-center font-display text-xl font-bold text-leaf-700">
+              Vrátit {fmtCZK(change!)}
+            </p>
+          ) : (
+            <p className="rounded-xl bg-red-50 px-3 py-2.5 text-center text-sm font-semibold text-red-600">
+              Chybí {fmtCZK(-change!)} — zákazník dal málo
+            </p>
+          ))}
+        <div className="flex gap-2">
+          <button className="btn-primary flex-1" disabled={busy || (hasGiven && change! < 0)} onClick={onConfirm}>
+            ✓ Zaplaceno — zapsat
+          </button>
+          <button className="btn-ghost" onClick={onClose}>
+            Zrušit
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 

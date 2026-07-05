@@ -86,6 +86,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     stateRef.current = state;
   });
+  // Počítadlo vlastních zápisů — starší odpověď automatické obnovy (viz níž)
+  // se zahodí, aby nepřepsala čerstvě uloženou změnu.
+  const writeSeqRef = useRef(0);
 
   // Načtení identity z localStorage + zjištění režimu (server/local) z API.
   useEffect(() => {
@@ -117,6 +120,58 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setState((s) => ({ ...s, ready: true, mode: "local", configured: false, authed, db: localDb, me, currentYearId: pickYear(localDb, savedYear) }));
     })();
   }, []);
+
+  // Automatická obnova dat (každé 3 s): co zapíše/schválí někdo jiný (třeba
+  // správce na svém zařízení), se tu objeví samo — bez ručního obnovení
+  // stránky. Platí pro VŠECHNO (schválení účtu, rolí, nástěnka, finance…).
+  // Na serveru se stahuje /api/db; v demu se čte localStorage (sladí i dvě
+  // otevřené karty). Na skryté kartě se šetří — obnoví se hned po návratu.
+  useEffect(() => {
+    if (!state.ready || !state.authed) return;
+    let alive = true;
+    let busy = false;
+    const apply = (db: DB) =>
+      setState((s) => {
+        if (!s.authed) return s;
+        if (s.db && JSON.stringify(s.db) === JSON.stringify(db)) return s; // nic nového
+        return { ...s, db, currentYearId: pickYear(db, s.currentYearId) };
+      });
+    const tick = async () => {
+      if (!alive || busy || document.visibilityState === "hidden") return;
+      busy = true;
+      try {
+        if (modeRef.current === "server") {
+          const seq = writeSeqRef.current;
+          const res = await fetch("/api/db", { cache: "no-store" }).catch(() => null);
+          if (!alive || !res) return; // výpadek sítě — zkusí se to za 3 s znovu
+          if (res.status === 401) {
+            // session vypršela → odhlásit (layout přesměruje na přihlášení)
+            setState((s) => (s.authed ? { ...s, authed: false } : s));
+            return;
+          }
+          if (!res.ok) return;
+          const db = normalizeDb(((await res.json()) as { db: DB }).db);
+          // Mezitím proběhl vlastní zápis → tahle (starší) odpověď se zahodí.
+          if (!alive || seq !== writeSeqRef.current) return;
+          apply(db);
+        } else {
+          apply(loadLocalDB());
+        }
+      } finally {
+        busy = false;
+      }
+    };
+    const id = setInterval(tick, 3000);
+    const onVisible = () => document.visibilityState === "visible" && tick();
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", tick);
+    return () => {
+      alive = false;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", tick);
+    };
+  }, [state.ready, state.authed]);
 
   const login = useCallback(async (password: string): Promise<boolean> => {
     const res = await fetch("/api/auth/login", {
@@ -198,6 +253,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (res && res.ok) {
         const { db: rawDb } = (await res.json()) as { db: DB };
         const db = normalizeDb(rawDb);
+        writeSeqRef.current += 1; // vlastní zápis — rozběhnutá automatická obnova se zahodí
         setState((s) => ({ ...s, db, syncError: null, currentYearId: pickYear(db, s.currentYearId) }));
         return true;
       }
