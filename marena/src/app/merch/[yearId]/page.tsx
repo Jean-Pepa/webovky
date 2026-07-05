@@ -8,7 +8,6 @@ import { fmtCZK } from "@/lib/format";
 import { Icon } from "@/components/Icons";
 import { ImageViewer } from "@/components/ImageViewer";
 import { FlashHost, flash } from "@/components/Flash";
-import { PayQr } from "@/components/PayQr";
 import type { DB } from "@/lib/types";
 
 const LS_DB = "marena_db"; // demo režim (localStorage) — stejný klíč jako ve store
@@ -43,7 +42,6 @@ export default function MerchOrderPage() {
   const [status, setStatus] = useState<Status>("loading");
   const [mode, setMode] = useState<"server" | "demo">("server");
   const [label, setLabel] = useState("");
-  const [account, setAccount] = useState<string | null>(null); // účet pro QR platbu (nastavuje správce)
   const [products, setProducts] = useState<PubProduct[]>([]);
   const [sel, setSel] = useState<Record<string, { size?: string; color?: string }>>({});
   const [cart, setCart] = useState<CartLine[]>([]);
@@ -74,11 +72,10 @@ export default function MerchOrderPage() {
       try {
         const res = await fetch(`/api/merch/${yearId}`, { cache: "no-store" });
         if (res.ok) {
-          const j = (await res.json()) as { label: string; products: Partial<PubProduct>[]; account?: string | null };
+          const j = (await res.json()) as { label: string; products: Partial<PubProduct>[] };
           if (!cancelled) {
             setMode("server");
             setLabel(j.label);
-            setAccount(j.account ?? null);
             setProducts(j.products.map(norm));
             setStatus("ready");
           }
@@ -120,7 +117,6 @@ export default function MerchOrderPage() {
         if (!cancelled) {
           setMode("demo");
           setLabel(year.label);
-          setAccount(year.paymentAccount ?? null);
           setProducts(list);
           setStatus("ready");
         }
@@ -230,17 +226,9 @@ export default function MerchOrderPage() {
           <div className="card p-8 text-center">
             <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-leaf/15 text-2xl">✅</div>
             <h1 className="font-display text-xl font-semibold">Děkujeme, objednávka odeslána!</h1>
-            {account && total > 0 ? (
-              <div className="mt-4 flex flex-col items-center gap-1">
-                <p className="text-sm text-ink-soft">Rovnou můžeš zaplatit — naskenuj QR bankovní aplikací:</p>
-                <div className="mt-3">
-                  <PayQr account={account} amount={total} message={`MARENA MERCH ${name}`} />
-                </div>
-                <p className="mt-2 text-xs text-ink-soft">Merch si vyzvedneš na místě; kdyby něco, ozveme se na zadaný kontakt.</p>
-              </div>
-            ) : (
-              <p className="mt-1 text-sm text-ink-soft">Ozveme se ti na zadaný kontakt ohledně vyzvednutí a platby.</p>
-            )}
+            <p className="mt-1 text-sm text-ink-soft">
+              Zaplatíš při vyzvednutí na místě — prodejce ti ukáže QR kód (nebo vezme hotovost). Kdyby něco, ozveme se na zadaný kontakt.
+            </p>
           </div>
         )}
 

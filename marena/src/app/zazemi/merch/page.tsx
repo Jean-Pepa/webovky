@@ -5,6 +5,8 @@ import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { ImageViewer } from "@/components/ImageViewer";
+import { PayQr } from "@/components/PayQr";
+import { parseAccount } from "@/lib/payment";
 import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { fmtCZK, fmtDateTime } from "@/lib/format";
@@ -101,7 +103,7 @@ export default function MerchPage() {
           ) : (
             <div className="space-y-2">
               {orders.map((o) => (
-                <OrderRow key={o.id} order={o} yearId={year.id} canManage={canManage} canDelete={canDeleteOrders} total={orderTotal(o, products)} />
+                <OrderRow key={o.id} order={o} yearId={year.id} canManage={canManage} canDelete={canDeleteOrders} total={orderTotal(o, products)} account={year.paymentAccount} />
               ))}
             </div>
           )}
@@ -398,14 +400,19 @@ function OrderRow({
   canManage,
   canDelete,
   total,
+  account,
 }: {
   order: MerchOrder;
   yearId: string;
   canManage: boolean;
   canDelete: boolean;
   total: number;
+  account?: string;
 }) {
   const { dispatch } = useStore();
+  const [qrOpen, setQrOpen] = useState(false);
+  // QR ukazuje prodávající při předání — jen u nevyřízených objednávek s cenou.
+  const canQr = canManage && !order.done && total > 0 && !!account && !("error" in parseAccount(account));
   const itemsText = order.items
     .map((it) => `${it.qty}× ${it.name}${[it.size, it.color].filter(Boolean).length ? ` (${[it.size, it.color].filter(Boolean).join(" · ")})` : ""}`)
     .join(", ");
@@ -428,6 +435,15 @@ function OrderRow({
         <span className="text-xs text-ink-soft/70">{fmtDateTime(order.createdAt)}</span>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
+          {canQr && (
+            <button
+              onClick={() => setQrOpen(true)}
+              className="rounded-full bg-gold-500 px-2.5 py-1 text-xs font-semibold text-[#1d1d1f] transition hover:bg-gold-400"
+              title="Ukázat platební QR zákazníkovi"
+            >
+              QR platba
+            </button>
+          )}
           {canManage ? (
             <button
               onClick={() => dispatch({ type: "toggleMerchOrderDone", yearId, orderId: order.id })}
@@ -457,6 +473,29 @@ function OrderRow({
         {order.note && <span className="text-xs text-ink-soft">· pozn.: {order.note}</span>}
         {total > 0 && <span className="ml-auto font-display font-bold text-ink">{fmtCZK(total)}</span>}
       </div>
+
+      {/* QR pro zaplacení při předání — po zaplacení přepni objednávku na Vyřízeno. */}
+      {canQr && (
+        <Modal open={qrOpen} onClose={() => setQrOpen(false)} title={`Platba — ${order.name}`}>
+          <div className="space-y-4">
+            <PayQr account={account!} amount={total} message={`MARENA MERCH ${order.name}`} />
+            <div className="flex gap-2">
+              <button
+                className="btn-primary flex-1"
+                onClick={() => {
+                  dispatch({ type: "toggleMerchOrderDone", yearId, orderId: order.id });
+                  setQrOpen(false);
+                }}
+              >
+                ✓ Zaplaceno — vyřízeno
+              </button>
+              <button className="btn-ghost" onClick={() => setQrOpen(false)}>
+                Zavřít
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

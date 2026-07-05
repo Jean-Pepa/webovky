@@ -38,6 +38,5 @@ export async function GET(_req: Request, { params }: { params: Promise<{ yearId:
       };
     }),
   );
-  // Účet pro QR platbu objednávky — je „veřejný" z podstaty (zákazník na něj platí).
-  return NextResponse.json({ label: year.label, products, account: year.paymentAccount ?? null });
+  return NextResponse.json({ label: year.label, products });
 }
