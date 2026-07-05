@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
 import { ImageViewer } from "@/components/ImageViewer";
 import { SearchBox } from "@/components/SearchBox";
+import { SaleBox } from "@/components/SaleBox";
 import { matchesQuery } from "@/lib/search";
 import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, readFileAsDataUrl, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
@@ -75,6 +76,10 @@ export default function KuchyneBarPage() {
       </div>
 
       <SearchBox value={q} onChange={setQ} placeholder="Hledat…" />
+
+      {/* Prodej na místě — markování jídla a pití s QR platbou. Do financí
+          se tržba propíše až po zaplacení (kategorie bar / kuchyně). */}
+      {editable && <SaleBox sources={["kuchyne", "bar"]} label="Prodej na místě" collapsible />}
 
       <MenuSection key={`m-${place}`} place={place} editable={editable} q={q} />
       <ShoppingSection key={`s-${place}`} place={place} editable={editable} q={q} />

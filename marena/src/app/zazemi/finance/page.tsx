@@ -18,6 +18,7 @@ const CATEGORIES = [
   "vklad",
   "kasa",
   "bar",
+  "kuchyně",
   "lístky",
   "výzdoba",
   "přednášející",
