@@ -29,12 +29,15 @@ export type Action =
   | { type: "deleteYear"; yearId: string }
   | { type: "addMember"; yearId: string; name: string; roleIds: string[]; email?: string; phone?: string; contact?: string; note?: string; approved?: boolean }
   | { type: "approveMember"; yearId: string; memberId: string }
-  | { type: "updateMember"; yearId: string; memberId: string; patch: { name?: string; roleIds?: string[]; email?: string; phone?: string; contact?: string; note?: string; approved?: boolean } }
+  | { type: "updateMember"; yearId: string; memberId: string; patch: { name?: string; roleIds?: string[]; email?: string; phone?: string; contact?: string; note?: string; approved?: boolean; posOnly?: boolean } }
   | { type: "removeMember"; yearId: string; memberId: string }
   // Kompletní smazání účtu — vždy člena, volitelně i jeho příspěvky, hlasy a směny.
   | { type: "purgeMember"; yearId: string; memberId: string; name: string; opts: { posts?: boolean; votes?: boolean; shifts?: boolean } }
   // Vzít si roli (vytvoří/upraví člena a přidá roli). asLead / první držitel = vedoucí.
   | { type: "takeRole"; yearId: string; memberId?: string; name: string; email?: string; phone?: string; roleId: string; asLead: boolean }
+  // Role se nebere napřímo — člen o ni požádá a správce žádost schválí/zamítne.
+  | { type: "requestRole"; yearId: string; memberId?: string; name: string; email?: string; phone?: string; roleId: string }
+  | { type: "resolveRoleRequest"; yearId: string; memberId: string; roleId: string; approve: boolean }
   | { type: "setRoleLead"; yearId: string; roleId: string; memberId: string }
   | { type: "addPost"; yearId: string; author: string; roleId?: string; title: string; body: string; pinned?: boolean; photoIds?: string[]; pollId?: string }
   | { type: "updatePost"; yearId: string; postId: string; editedBy: string; patch: { title?: string; body?: string; roleId?: string | null; photoIds?: string[]; pollId?: string } }
@@ -325,6 +328,53 @@ export function applyAction(db: DB, a: Action): DB {
         }
         const leads = { ...(y.roleLeads ?? {}) };
         if (a.asLead || wasEmpty) leads[a.roleId] = memberId; // první držitel nebo výslovná volba = vedoucí
+        return normalizeLeads({ ...y, members, roleLeads: leads });
+      });
+    case "requestRole":
+      return mapYear(db, a.yearId, (y) => {
+        const name = a.name.trim();
+        const target = a.memberId ? y.members.find((m) => m.id === a.memberId) : y.members.find((m) => sameName(m.name, name));
+        if (target) {
+          if (target.roleIds.includes(a.roleId)) return y; // roli už má
+          return {
+            ...y,
+            members: y.members.map((m) =>
+              m.id === target.id
+                ? {
+                    ...m,
+                    email: a.email?.trim() || m.email,
+                    phone: a.phone?.trim() || m.phone,
+                    roleRequests: [...new Set([...(m.roleRequests ?? []), a.roleId])],
+                  }
+                : m,
+            ),
+          };
+        }
+        // nový člověk: profil vznikne hned, role čeká na schválení správcem
+        return {
+          ...y,
+          members: [
+            ...y.members,
+            { id: uid("m_"), name: name || "Anonym", roleIds: [], roleRequests: [a.roleId], email: a.email?.trim() || undefined, phone: a.phone?.trim() || undefined, createdAt: now() },
+          ],
+        };
+      });
+    case "resolveRoleRequest":
+      return mapYear(db, a.yearId, (y) => {
+        const target = y.members.find((m) => m.id === a.memberId);
+        if (!target || !(target.roleRequests ?? []).includes(a.roleId)) return y;
+        const members = y.members.map((m) =>
+          m.id === a.memberId
+            ? {
+                ...m,
+                roleRequests: (m.roleRequests ?? []).filter((r) => r !== a.roleId),
+                roleIds: a.approve && !m.roleIds.includes(a.roleId) ? [...m.roleIds, a.roleId] : m.roleIds,
+              }
+            : m,
+        );
+        // schválený první držitel role se stává vedoucím (jako u takeRole)
+        const leads = { ...(y.roleLeads ?? {}) };
+        if (a.approve && !leads[a.roleId]) leads[a.roleId] = a.memberId;
         return normalizeLeads({ ...y, members, roleLeads: leads });
       });
     case "setRoleLead":

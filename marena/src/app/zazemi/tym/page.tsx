@@ -9,6 +9,7 @@ import { Icon } from "@/components/Icons";
 import { isAdmin } from "@/lib/admin";
 import { sameName } from "@/lib/names";
 import { SearchBox } from "@/components/SearchBox";
+import { flash as toast } from "@/components/Flash";
 import { Collapsible } from "@/components/Collapsible";
 import { matchesQuery } from "@/lib/search";
 import type { Member, Year } from "@/lib/types";
@@ -86,37 +87,57 @@ export default function TymPage() {
     flash(roleId, "released");
   }
 
-  // Kdo už má účet, přidá si další roli na jeden klik (bez vyplňování kontaktu).
+  // Kdo už má účet, žádá o roli na jeden klik. Správce ji dostává rovnou,
+  // ostatním vznikne žádost, kterou správce schválí/zamítne.
   async function takeRoleDirect(roleId: string) {
     if (!myMember) return;
-    await dispatch({
-      type: "takeRole",
-      yearId: year.id,
-      memberId: myMember.id,
-      name: myMember.name,
-      email: myMember.email ?? "",
-      phone: myMember.phone ?? "",
-      roleId,
-      asLead: false,
-    });
-    congratulate(roleId);
+    if (admin) {
+      await dispatch({
+        type: "takeRole",
+        yearId: year.id,
+        memberId: myMember.id,
+        name: myMember.name,
+        email: myMember.email ?? "",
+        phone: myMember.phone ?? "",
+        roleId,
+        asLead: false,
+      });
+      congratulate(roleId);
+      return;
+    }
+    await dispatch({ type: "requestRole", yearId: year.id, memberId: myMember.id, name: myMember.name, roleId });
+    toast("Žádost odeslána — roli ti schválí správce", "⏳");
   }
 
   async function saveProfile(data: { name: string; email: string; phone: string; roleToAdd?: string; asLead?: boolean }) {
     const finalName = data.name.trim() || me;
     if (data.roleToAdd) {
-      // Braní role: jeden atomický krok (vytvoří/upraví člena, přidá roli, určí vedoucího).
-      await dispatch({
-        type: "takeRole",
-        yearId: year.id,
-        memberId: myMember?.id,
-        name: finalName,
-        email: data.email,
-        phone: data.phone,
-        roleId: data.roleToAdd,
-        asLead: !!data.asLead,
-      });
-      congratulate(data.roleToAdd);
+      if (admin) {
+        // Správce si roli bere rovnou (jeden atomický krok).
+        await dispatch({
+          type: "takeRole",
+          yearId: year.id,
+          memberId: myMember?.id,
+          name: finalName,
+          email: data.email,
+          phone: data.phone,
+          roleId: data.roleToAdd,
+          asLead: !!data.asLead,
+        });
+        congratulate(data.roleToAdd);
+      } else {
+        // Ostatní posílají žádost — profil vznikne hned, role po schválení.
+        await dispatch({
+          type: "requestRole",
+          yearId: year.id,
+          memberId: myMember?.id,
+          name: finalName,
+          email: data.email,
+          phone: data.phone,
+          roleId: data.roleToAdd,
+        });
+        toast("Žádost odeslána — roli ti schválí správce", "⏳");
+      }
     } else {
       const existing = year.members.find((m) => sameName(m.name, me));
       if (existing) {
@@ -278,6 +299,35 @@ export default function TymPage() {
             </div>
           )}
 
+          {/* Žádosti o roli — schvaluje správce */}
+          {year.members.some((m) => (m.roleRequests ?? []).includes(r.id)) && (
+            <div className="mt-2 space-y-1.5">
+              {year.members
+                .filter((m) => (m.roleRequests ?? []).includes(r.id))
+                .map((m) => (
+                  <div key={m.id} className="flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 px-2.5 py-1.5 text-sm ring-1 ring-amber-200">
+                    <span className="min-w-0 flex-1 truncate">⏳ <strong>{m.name}</strong> žádá o roli</span>
+                    {admin && (
+                      <span className="flex shrink-0 gap-1.5">
+                        <button
+                          className="rounded-full bg-leaf px-3 py-1 text-xs font-semibold text-white transition hover:opacity-90"
+                          onClick={() => dispatch({ type: "resolveRoleRequest", yearId: year.id, memberId: m.id, roleId: r.id, approve: true })}
+                        >
+                          Schválit
+                        </button>
+                        <button
+                          className="rounded-full bg-paper2 px-3 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+                          onClick={() => dispatch({ type: "resolveRoleRequest", yearId: year.id, memberId: m.id, roleId: r.id, approve: false })}
+                        >
+                          Zamítnout
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                ))}
+            </div>
+          )}
+
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {editable &&
               (mine ? (
@@ -286,6 +336,8 @@ export default function TymPage() {
                 </button>
               ) : r.id === "hlavni" && !admin ? (
                 <span className="text-xs text-ink-soft">🔒 Tuto funkci přiděluje jen správce (Mařena).</span>
+              ) : (myMember?.roleRequests ?? []).includes(r.id) ? (
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">⏳ Žádost čeká na správce</span>
               ) : (
                 <button
                   className={taken ? "btn-secondary" : "btn-primary"}
@@ -439,6 +491,16 @@ export default function TymPage() {
                                 Schválit
                               </button>
                             )}
+                            {/* Pomocník u stánku: uvidí jen Prodej, nic jiného */}
+                            <button
+                              className={`rounded-full px-2.5 py-1.5 text-xs font-semibold transition ${
+                                m.posOnly ? "bg-gold-500 text-[#1d1d1f] hover:bg-gold-400" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+                              }`}
+                              title="Člověk uvidí jen Prodej (pomocník u stánku)"
+                              onClick={() => dispatch({ type: "updateMember", yearId: year.id, memberId: m.id, patch: { posOnly: !m.posOnly } })}
+                            >
+                              🛒 {m.posOnly ? "jen Prodej ✓" : "jen Prodej"}
+                            </button>
                             <button className="btn-danger" onClick={() => setPurge(m)}>
                               Smazat účet
                             </button>
