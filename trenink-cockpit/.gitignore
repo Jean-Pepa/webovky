@@ -19,3 +19,8 @@ npm-debug.log*
 
 # lokální data z Garminu (než se pošlou do Supabase)
 /scripts/*.local.json
+
+# python
+__pycache__/
+*.pyc
+garmin_token.txt
