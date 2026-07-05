@@ -342,7 +342,11 @@ function Pos() {
   return (
     <div className="mx-auto max-w-3xl space-y-4 tabular-nums">
       <div>
-        <h1 className="font-display text-[28px] font-bold tracking-tight">Prodej</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="font-display text-[28px] font-bold tracking-tight">Prodej</h1>
+          {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
+          <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} todayCash={todayCash} />
+        </div>
         <p className="mt-0.5 text-sm text-ink-soft">1) vyber stánek · 2) ťukej položky · 3) QR nebo hotově</p>
       </div>
 
@@ -618,9 +622,6 @@ function Pos() {
         )}
       </section>
 
-      {/* Denní kasa na hotovost — ranní vklad, večer uzavření */}
-      <DailyKasa year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} todayCash={todayCash} />
-
       {/* Účet pro QR platby (jen správce) */}
       {isAdmin(me) && <AccountSettings account={account} yearId={year.id} />}
       {!accountOk && !isAdmin(me) && (
@@ -672,11 +673,14 @@ function Pos() {
   );
 }
 
-// Denní kasa na hotovost: ráno vklad (na vracení), večer spočítat šuplík
-// a uzavřít. Markovaná hotovost už ve financích je, takže se do financí
-// zapíše jen rozdíl — peníze se nepočítají dvakrát.
-function DailyKasa({ year, todayCash }: { year: { id: string; cashboxes: Cashbox[] }; todayCash: number }) {
+// Jednotná kasa na hotovost pro celý prodej — ovládá se vpravo nahoře:
+// otevře se s ranním vkladem, přes den tlačítko ukazuje, kolik má být
+// v šuplíku, večer se spočítá a uzavře. Markovaná hotovost už ve
+// financích je, takže se při uzavření zapíše jen rozdíl — peníze se
+// nepočítají dvakrát.
+function KasaControl({ year, todayCash }: { year: { id: string; cashboxes: Cashbox[] }; todayCash: number }) {
   const { dispatch } = useStore();
+  const [modal, setModal] = useState(false);
   const [opening, setOpening] = useState("");
   const [closing, setClosing] = useState("");
   const [busy, setBusy] = useState(false);
@@ -695,6 +699,7 @@ function DailyKasa({ year, todayCash }: { year: { id: string; cashboxes: Cashbox
         return;
       }
       setOpening("");
+      setModal(false);
       flash(`Kasa otevřena s vkladem ${fmtCZK(n)}`, "🧰");
     } finally {
       setBusy(false);
@@ -712,6 +717,7 @@ function DailyKasa({ year, todayCash }: { year: { id: string; cashboxes: Cashbox
         return;
       }
       setClosing("");
+      setModal(false);
       const diff = n - expected;
       flash(diff === 0 ? "Kasa uzavřena — sedí přesně ✓" : `Kasa uzavřena — rozdíl ${diff > 0 ? "+" : "−"}${fmtCZK(Math.abs(diff))} zapsán do financí`, "🧰");
     } finally {
@@ -720,58 +726,85 @@ function DailyKasa({ year, todayCash }: { year: { id: string; cashboxes: Cashbox
   }
 
   return (
-    <section className="card space-y-2 p-4">
-      <h3 className="font-display text-[20px] font-semibold">🧰 Denní kasa (hotovost)</h3>
-      {openBox ? (
-        <>
-          <p className="text-sm text-ink-soft">
-            Otevřena {fmtDateTime(openBox.openedAt)} · vklad <strong className="text-ink">{fmtCZK(openBox.opening)}</strong>
-          </p>
-          <p className="text-sm">
-            V kase má být: vklad {fmtCZK(openBox.opening)} + hotově z prodeje {fmtCZK(todayCash)} ={" "}
-            <strong className="font-display text-base">{fmtCZK(expected)}</strong>
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              className="input w-44"
-              inputMode="numeric"
-              placeholder="Spočítáno večer (Kč)"
-              value={closing}
-              onChange={(e) => setClosing(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && close()}
-            />
-            <button className="btn-primary" onClick={close} disabled={!closing.trim() || busy}>
-              Uzavřít kasu
-            </button>
-          </div>
-          <p className="text-xs text-ink-soft">
-            Markovaná hotovost už ve financích je — při uzavření se zapíše jen případný rozdíl.
-          </p>
-        </>
-      ) : (
-        <>
-          {closedToday && (
-            <p className="text-sm text-leaf-700">
-              ✓ Dnešní kasa uzavřena ({fmtCZK(closedToday.opening)} → {fmtCZK(closedToday.closing ?? 0)}).
+    <>
+      <button
+        onClick={() => setModal(true)}
+        className={`flex min-h-11 items-center gap-2 rounded-full px-4 text-[15px] font-semibold transition ${
+          openBox ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-paper2 text-ink hover:bg-gold-100"
+        }`}
+        title={openBox ? "Kasa je otevřená — ťukni pro uzavření" : "Otevřít kasu s ranním vkladem"}
+      >
+        🧰 {openBox ? `V kase ${fmtCZK(expected)}` : "Otevřít kasu"}
+      </button>
+
+      <Modal open={modal} onClose={() => setModal(false)} title={openBox ? "Kasa — uzavření" : "Kasa — otevření"}>
+        {openBox ? (
+          <div className="space-y-3">
+            <p className="text-sm text-ink-soft">
+              Otevřena {fmtDateTime(openBox.openedAt)} · vklad <strong className="text-ink">{fmtCZK(openBox.opening)}</strong>
             </p>
-          )}
-          <p className="text-sm text-ink-soft">Ráno vlož základ na vracení a otevři kasu — večer ji tu uzavřeš.</p>
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              className="input w-44"
-              inputMode="numeric"
-              placeholder="Ranní vklad (Kč)"
-              value={opening}
-              onChange={(e) => setOpening(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && open()}
-            />
-            <button className="btn-primary" onClick={open} disabled={!opening.trim() || busy}>
-              Otevřít kasu
-            </button>
+            <p className="text-sm">
+              V kase má být: vklad {fmtCZK(openBox.opening)} + hotově z prodeje {fmtCZK(todayCash)} ={" "}
+              <strong className="font-display text-base">{fmtCZK(expected)}</strong>
+            </p>
+            <div>
+              <label className="label">Spočítaný stav (Kč)</label>
+              <input
+                className="input"
+                inputMode="numeric"
+                placeholder="např. 2200"
+                value={closing}
+                onChange={(e) => setClosing(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => e.key === "Enter" && close()}
+              />
+            </div>
+            <p className="text-xs text-ink-soft">
+              Markovaná hotovost už ve financích je — při uzavření se zapíše jen případný rozdíl.
+            </p>
+            <div className="flex gap-2 pt-1">
+              <button className="btn-primary flex-1" onClick={close} disabled={!closing.trim() || busy}>
+                Uzavřít kasu
+              </button>
+              <button className="btn-ghost" onClick={() => setModal(false)}>
+                Zavřít
+              </button>
+            </div>
           </div>
-        </>
-      )}
-    </section>
+        ) : (
+          <div className="space-y-3">
+            {closedToday && (
+              <p className="text-sm text-leaf-700">
+                ✓ Dnešní kasa už byla uzavřena ({fmtCZK(closedToday.opening)} → {fmtCZK(closedToday.closing ?? 0)}).
+              </p>
+            )}
+            <p className="text-sm text-ink-soft">
+              Kasa je jednotná pro celý prodej. Vlož základ na vracení a otevři ji — večer ji tu uzavřeš.
+            </p>
+            <div>
+              <label className="label">Ranní vklad (Kč)</label>
+              <input
+                className="input"
+                inputMode="numeric"
+                placeholder="např. 2000"
+                value={opening}
+                onChange={(e) => setOpening(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => e.key === "Enter" && open()}
+              />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button className="btn-primary flex-1" onClick={open} disabled={!opening.trim() || busy}>
+                Otevřít kasu
+              </button>
+              <button className="btn-ghost" onClick={() => setModal(false)}>
+                Zavřít
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </>
   );
 }
 
