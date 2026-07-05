@@ -20,7 +20,7 @@ import type { Cashbox, MerchOrder, MerchProduct } from "@/lib/types";
 // zaplacení, po kategoriích (merch/bar/kuchyně/kasa) + kdo a jak platil.
 
 type Kind = "merch" | "bar" | "kuchyne" | "custom";
-type Stand = "vse" | "merch" | "bar" | "kuchyne" | "ostatni";
+type Stand = "merch" | "bar" | "kuchyne";
 
 type Line = {
   key: string;
@@ -34,11 +34,9 @@ type Line = {
 };
 
 const STANDS: { id: Stand; label: string }[] = [
-  { id: "vse", label: "Vše" },
   { id: "merch", label: "🛍️ Merch" },
   { id: "bar", label: "🍸 Bar" },
   { id: "kuchyne", label: "🍳 Kuchyně" },
-  { id: "ostatni", label: "➕ Ostatní" },
 ];
 
 // Slovo do zprávy pro banku, kategorie financí a barva dlaždic (obsluha
@@ -90,7 +88,7 @@ export default function ProdejPage() {
 
 function Pos() {
   const { currentYear, me, dispatch } = useStore();
-  const [stand, setStand] = useState<Stand>("vse");
+  const [stand, setStand] = useState<Stand>("merch");
   const [lines, setLines] = useState<Line[]>([]);
   const [lastSale, setLastSale] = useState<Line[] | null>(null);
   const [tally, setTally] = useState<Record<string, number>>({});
@@ -158,15 +156,14 @@ function Pos() {
         .map((d) => ({ id: d.id, name: d.name, price: d.price! }))
         .sort(bySold),
     },
-  ].filter((g) => (stand === "vse" ? true : g.kind === stand));
-  const showCustom = stand === "vse" || stand === "ostatni";
+  ].filter((g) => g.kind === stand);
   // Přepínač úprav bydlí u první neprázdné sekce nabídky.
   const firstNonEmpty = grids.findIndex((g) => g.items.length > 0);
 
   // Čekající objednávky merche (z webu i odložené) — platí se tady:
   // QR se jménem objednatele, nebo hotově jedním ťuknutím.
   const pendingOrders =
-    stand === "vse" || stand === "merch"
+    stand === "merch"
       ? [...(year.merchOrders ?? [])].filter((o) => !o.done).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       : [];
 
@@ -340,7 +337,7 @@ function Pos() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 tabular-nums">
+    <div className="mx-auto max-w-3xl space-y-4 pb-16 tabular-nums md:pb-0">
       <div>
         <div className="flex items-center justify-between gap-3">
           <h1 className="font-display text-[28px] font-bold tracking-tight">Prodej</h1>
@@ -348,10 +345,14 @@ function Pos() {
           <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} todayCash={todayCash} />
         </div>
         <p className="mt-0.5 text-sm text-ink-soft">1) vyber stánek · 2) ťukej položky · 3) QR nebo hotově</p>
+        {/* Účet pro QR — malý, ať nepřekáží; správce ho upraví ťuknutím */}
+        <div className="mt-1">
+          <AccountChip admin={admin} account={account} accountOk={accountOk} yearId={year.id} />
+        </div>
       </div>
 
-      {/* Výběr stánku — zařízení si volbu pamatuje */}
-      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
+      {/* Výběr stánku (desktop) — na mobilu je dole ve žluté bublině */}
+      <div className="hidden gap-1.5 md:flex">
         {STANDS.map((s) => (
           <button
             key={s.id}
@@ -453,25 +454,14 @@ function Pos() {
               ))}
             </div>
           </section>
-        ) : stand !== "vse" ? (
+        ) : (
           <section key={g.kind} className="card grid place-items-center gap-2 p-6 text-center">
             <p className="text-sm text-ink-soft">{EMPTY_HINT[g.kind].text} S cenou se tu objeví sama.</p>
             <Link href={EMPTY_HINT[g.kind].href} className="btn-secondary">
               {EMPTY_HINT[g.kind].cta} →
             </Link>
           </section>
-        ) : null,
-      )}
-      {stand === "vse" && grids.every((g) => g.items.length === 0) && (
-        <section className="card grid place-items-center gap-2 p-6 text-center">
-          <p className="text-sm text-ink-soft">
-            Nabídka je zatím prázdná. Přidej produkty s prodejní cenou — objeví se tu samy.
-          </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            <Link href="/zazemi/merch" className="btn-secondary">Přidat merch →</Link>
-            <Link href="/zazemi/kuchyne" className="btn-secondary">Přidat jídlo a pití →</Link>
-          </div>
-        </section>
+        ),
       )}
 
       {/* Doptání na velikost/barvu (merch s variantami) */}
@@ -519,19 +509,17 @@ function Pos() {
         </div>
       )}
 
-      {/* Vlastní položka (vstupné, kelímek…) */}
-      {showCustom && (
-        <section className="card space-y-2 p-4">
-          <h2 className="font-display text-[20px] font-semibold">➕ Vlastní položka</h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <input className="input min-w-[140px] flex-1" placeholder="Co prodáváš?" value={customName} onChange={(e) => setCustomName(e.target.value)} />
-            <input className="input w-28" placeholder="Kč" inputMode="numeric" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addCustom()} />
-            <button className="btn-secondary px-4" onClick={addCustom} disabled={!customName.trim() || !customPrice.trim()}>
-              + Přidat
-            </button>
-          </div>
-        </section>
-      )}
+      {/* Vlastní položka (vstupné, kelímek…) — dostupná na každém stánku */}
+      <section className="card space-y-2 p-4">
+        <h2 className="font-display text-[20px] font-semibold">➕ Vlastní položka</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <input className="input min-w-[140px] flex-1" placeholder="Co prodáváš?" value={customName} onChange={(e) => setCustomName(e.target.value)} />
+          <input className="input w-28" placeholder="Kč" inputMode="numeric" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addCustom()} />
+          <button className="btn-secondary px-4" onClick={addCustom} disabled={!customName.trim() || !customPrice.trim()}>
+            + Přidat
+          </button>
+        </div>
+      </section>
 
       {/* Účtenka */}
       <section className="card p-4">
@@ -586,7 +574,7 @@ function Pos() {
           )}
         </div>
         {total > 0 && !accountOk && (
-          <p className="mt-2 text-xs text-ink-soft">QR platba se odemkne, jakmile správce dole nastaví účet.</p>
+          <p className="mt-2 text-xs text-ink-soft">QR platba se odemkne, jakmile správce nahoře nastaví účet.</p>
         )}
       </section>
 
@@ -622,11 +610,24 @@ function Pos() {
         )}
       </section>
 
-      {/* Účet pro QR platby (jen správce) */}
-      {isAdmin(me) && <AccountSettings account={account} yearId={year.id} />}
-      {!accountOk && !isAdmin(me) && (
-        <p className="card p-3 text-sm text-amber-700">⚠️ Správce zatím nenastavil účet pro QR platby — zatím vybírej hotově.</p>
-      )}
+      {/* Stánky (mobil) — svítící žlutá bublina nad hlavní lištou */}
+      <div className="fixed inset-x-3 bottom-[calc(5.1rem+env(safe-area-inset-bottom))] z-40 md:hidden">
+        <div className="mx-auto max-w-3xl">
+          <div className="grid grid-cols-3 gap-1 rounded-[28px] bg-gold-500 p-1.5 shadow-[0_0_24px_rgba(244,183,31,0.65)]">
+            {STANDS.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => pickStand(s.id)}
+                className={`min-h-11 rounded-full text-[15px] font-semibold transition ${
+                  stand === s.id ? "bg-[#1d1d1f] text-gold-300" : "text-[#1d1d1f] active:scale-[0.97]"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* QR platba čekající objednávky — se jménem objednatele ve zprávě */}
       <Modal open={!!payOrder} onClose={() => setPayOrder(null)} title={payOrder ? `Platba — ${payOrder.name}` : ""}>
@@ -808,12 +809,16 @@ function KasaControl({ year, todayCash }: { year: { id: string; cashboxes: Cashb
   );
 }
 
-// Nastavení účtu (jen správce) — přijme český formát i IBAN, hned ověří součty.
-function AccountSettings({ account, yearId }: { account: string; yearId: string }) {
+// Účet pro QR platby — nahoře jako drobný štítek, ať nepřekáží. Správci
+// se ťuknutím otevře úprava (český formát i IBAN, kontrolní součty).
+function AccountChip({ admin, account, accountOk, yearId }: { admin: boolean; account: string; accountOk: boolean; yearId: string }) {
   const { dispatch } = useStore();
+  const [modal, setModal] = useState(false);
   const [value, setValue] = useState(account);
-  const [saved, setSaved] = useState(false);
   const parsed = value.trim() ? parseAccount(value) : null;
+  const current = accountOk ? parseAccount(account) : null;
+  const short = current && !("error" in current) ? `…${current.iban.slice(-4)}` : "";
+  const label = accountOk ? `🏦 účet ${short} ✓` : "⚠️ účet pro QR nenastaven";
 
   async function save() {
     if (!parsed || "error" in parsed) return;
@@ -821,31 +826,56 @@ function AccountSettings({ account, yearId }: { account: string; yearId: string 
       flash("Účet se nepodařilo uložit — zkontroluj připojení", "⚠️");
       return;
     }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setModal(false);
     flash("Účet pro platby uložen", "🏦");
   }
 
+  if (!admin) {
+    return (
+      <span className={`text-xs ${accountOk ? "text-ink-soft/80" : "text-amber-700"}`}>
+        {label}
+        {!accountOk && " — vybírej hotově"}
+      </span>
+    );
+  }
   return (
-    <section className="card space-y-2 p-4">
-      <h3 className="font-display text-[20px] font-semibold">🏦 Účet pro QR platby</h3>
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          className="input min-w-[220px] flex-1"
-          placeholder="123456789/0800 nebo IBAN CZ…"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-        />
-        <button className="btn-primary px-4" onClick={save} disabled={!parsed || "error" in parsed}>
-          {saved ? "✓ Uloženo" : "Uložit"}
-        </button>
-      </div>
-      {parsed && ("error" in parsed ? (
-        <p className="text-sm text-red-600">{parsed.error}</p>
-      ) : (
-        <p className="text-sm text-leaf-700">✓ Platný účet · IBAN {parsed.iban}</p>
-      ))}
-      {!value.trim() && <p className="text-sm text-ink-soft">Zadej účet, na který mají chodit platby z prodeje i online objednávek merche.</p>}
-    </section>
+    <>
+      <button
+        className={`rounded-full px-2.5 py-1 text-xs transition ${
+          accountOk ? "bg-paper2 text-ink-soft hover:bg-gold-100" : "bg-amber-100 font-semibold text-amber-800 hover:bg-amber-200"
+        }`}
+        onClick={() => {
+          setValue(account);
+          setModal(true);
+        }}
+      >
+        {label} · upravit
+      </button>
+      <Modal open={modal} onClose={() => setModal(false)} title="🏦 Účet pro QR platby">
+        <div className="space-y-3">
+          <p className="text-sm text-ink-soft">Sem chodí platby z prodeje i online objednávek merche.</p>
+          <input
+            className="input w-full"
+            placeholder="123456789/0800 nebo IBAN CZ…"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            autoFocus
+          />
+          {parsed && ("error" in parsed ? (
+            <p className="text-sm text-red-600">{parsed.error}</p>
+          ) : (
+            <p className="text-sm text-leaf-700">✓ Platný účet · IBAN {parsed.iban}</p>
+          ))}
+          <div className="flex gap-2 pt-1">
+            <button className="btn-primary flex-1" onClick={save} disabled={!parsed || "error" in parsed}>
+              Uložit
+            </button>
+            <button className="btn-ghost" onClick={() => setModal(false)}>
+              Zavřít
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 }
