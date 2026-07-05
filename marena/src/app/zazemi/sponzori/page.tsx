@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useStore } from "@/lib/store";
+import { canEditSection } from "@/lib/access";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
@@ -72,7 +73,7 @@ const linksOf = (s: Sponsor): string[] => [...(s.links ?? []), ...(s.link ? [s.l
 const hrefOf = (l: string) => (l.startsWith("http") ? l : `https://${l}`);
 
 export default function SponzoriPage() {
-  const { currentYear, dispatch, canEditCurrentYear } = useStore();
+  const { currentYear, me, dispatch, canEditCurrentYear } = useStore();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [gives, setGives] = useState("");
@@ -108,7 +109,7 @@ export default function SponzoriPage() {
   }, [sponsors, filter, q]);
 
   if (!year) return null;
-  const canEdit = canEditCurrentYear;
+  const canEdit = canEditCurrentYear && canEditSection(year, me, "sponzori");
 
   async function add() {
     if (!name.trim() || !year || !canEdit) return;

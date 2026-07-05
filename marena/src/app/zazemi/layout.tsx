@@ -79,6 +79,20 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  // Režim stánku (festival): zařízení ukazuje ve spodní liště jen Prodej.
+  // Jen na tomhle zařízení (localStorage), vypne se stejným tlačítkem.
+  const [kiosk, setKiosk] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setKiosk(localStorage.getItem("marena_kiosk") === "1"), 0);
+    return () => clearTimeout(t);
+  }, []);
+  function toggleKiosk() {
+    const next = !kiosk;
+    setKiosk(next);
+    localStorage.setItem("marena_kiosk", next ? "1" : "");
+    setMenuOpen(false);
+    if (next) router.push("/zazemi/prodej");
+  }
   const [sheet, setSheet] = useState<string | null>(null); // otevřená skupina spodní lišty (mobil)
   const [deskMenu, setDeskMenu] = useState<string | null>(null); // otevřené rozbalovací menu (desktop)
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -334,6 +348,13 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               >
                 <Icon name="book" className="h-5 w-5" /> Almanach
               </Link>
+              {/* Festivalová zkratka: mobil u stánku ukazuje jen Prodej */}
+              <button
+                onClick={toggleKiosk}
+                className="inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[15px] font-medium text-ink-soft hover:bg-ink/5"
+              >
+                🛒 {kiosk ? "Vypnout režim stánku" : "Režim stánku (jen Prodej)"}
+              </button>
               {isAdmin(me) && (
                 <Link
                   href="/zazemi/web"
@@ -424,6 +445,16 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
         </div>
       )}
 
+      {/* Režim stánku — proužek s vypínačem, ať zařízení „neuvízne" */}
+      {kiosk && (
+        <div className="flex items-center justify-center gap-3 border-b border-gold-300 bg-gold-50 px-4 py-1.5 text-center text-xs font-medium text-gold-800 md:hidden">
+          <span>🛒 Režim stánku — lišta ukazuje jen Prodej</span>
+          <button onClick={toggleKiosk} className="font-semibold underline">
+            vypnout
+          </button>
+        </div>
+      )}
+
       {/* Spodní odsazení = plovoucí lišta (64 px + 12 px mezera) + bezpečná zóna + rezerva. */}
       <main className="mx-auto max-w-6xl px-4 py-6 pb-[calc(6.25rem+env(safe-area-inset-bottom))] md:pb-6">{children}</main>
 
@@ -462,6 +493,16 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           domovského indikátoru, zaoblená, se stínem. Uvnitř M3: 64 px, 24px ikony,
           aktivní stav = jemná zlatá pilulka za ikonou. */}
       <nav className="fixed inset-x-3 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 rounded-[28px] border-2 border-gold-500 bg-paper/95 shadow-lg backdrop-blur md:hidden">
+        {kiosk ? (
+          // Režim stánku: jediná položka — Prodej
+          <Link
+            href="/zazemi/prodej"
+            onClick={() => setSheet(null)}
+            className="flex h-16 items-center justify-center gap-2 text-[15px] font-semibold text-ink"
+          >
+            <Icon name="cart" className="h-6 w-6" /> Prodej
+          </Link>
+        ) : (
         <div className="grid h-16 grid-cols-3">
           <Link
             href="/zazemi"
@@ -500,6 +541,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             );
           })}
         </div>
+        )}
       </nav>
     </div>
   );
