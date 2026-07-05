@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
-import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { PayQr } from "@/components/PayQr";
+import { DeleteButton } from "@/components/DeleteButton";
 import { parseAccount } from "@/lib/payment";
 import { fmtCZK, fmtDate, fmtDateTime, todayISO } from "@/lib/format";
 import { uid } from "@/lib/id";
@@ -139,8 +139,6 @@ function Pos() {
   const [qrOpen, setQrOpen] = useState(false);
   const [payOrder, setPayOrder] = useState<MerchOrder | null>(null);
   const [busy, setBusy] = useState(false);
-  const [customName, setCustomName] = useState("");
-  const [customPrice, setCustomPrice] = useState("");
   // Režim úprav nabídky (jen správce): dlaždice se místo markování mažou.
   const [editNabidka, setEditNabidka] = useState(false);
   const year = currentYear;
@@ -293,14 +291,6 @@ function Pos() {
       setBusy(false);
     }
   }
-  function addCustom() {
-    const price = Math.round(Number(customPrice.replace(",", ".")));
-    if (!customName.trim() || !Number.isFinite(price) || price <= 0) return;
-    addLine("custom", customName.trim(), price);
-    setCustomName("");
-    setCustomPrice("");
-  }
-
   // Zápis prodeje po zaplacení. Hlídá výsledek každého uložení: co se
   // nezapsalo, zůstává na účtence (po výpadku sítě jde zkusit znovu a nic
   // se nezapíše dvakrát). Merch → uzamčená zaplacená objednávka (sklad +
@@ -393,12 +383,62 @@ function Pos() {
           {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
           <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} />
         </div>
-        <p className="mt-0.5 text-sm text-ink-soft">1) vyber stánek · 2) ťukej položky · 3) QR nebo hotově</p>
         {/* Účet pro QR — malý, ať nepřekáží; správce ho upraví ťuknutím */}
         <div className="mt-1">
           <AccountChip admin={admin} account={account} accountOk={accountOk} yearId={year.id} />
         </div>
       </div>
+
+      {/* Účtenka — kompaktní, hned pod nadpisem; prázdná se neukazuje */}
+      {(lines.length > 0 || lastSale) && (
+        <section className="card p-3">
+          {lines.length === 0 ? (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm text-ink-soft">Účtenka je prázdná</span>
+              <button className="btn-secondary px-3 py-1.5 text-sm" onClick={() => setLines(lastSale!)}>
+                ↻ Zopakovat poslední
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="divide-y divide-ink/[0.06]">
+                {lines.map((l) => (
+                  <div key={l.key} className="flex min-h-9 items-center gap-2 py-1 text-sm">
+                    <span className="min-w-0 flex-1 truncate font-medium">{lineLabel(l)}</span>
+                    <div className="flex items-center gap-0.5">
+                      <button className="grid h-7 w-7 place-items-center rounded-full bg-paper2 leading-none hover:bg-ink/10" onClick={() => bump(l.key, -1)} aria-label="Ubrat">
+                        −
+                      </button>
+                      <span className="w-6 text-center font-semibold">{l.qty}</span>
+                      <button className="grid h-7 w-7 place-items-center rounded-full bg-paper2 leading-none hover:bg-ink/10" onClick={() => bump(l.key, 1)} aria-label="Přidat">
+                        +
+                      </button>
+                    </div>
+                    <span className="w-16 text-right font-semibold">{fmtCZK(l.price * l.qty)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 flex items-center gap-2 border-t border-ink/10 pt-2">
+                <span className="font-display text-lg font-bold tracking-tight">{fmtCZK(total)}</span>
+                <div className="ml-auto flex items-center gap-1.5">
+                  <button className="btn-primary px-4 py-2 text-sm" disabled={total <= 0 || !accountOk || busy} onClick={() => setQrOpen(true)}>
+                    QR platba
+                  </button>
+                  <button className="btn-secondary px-4 py-2 text-sm" disabled={total <= 0 || busy} onClick={() => settle("hotove")}>
+                    💵 Hotově
+                  </button>
+                  <button className="btn-ghost px-2 py-2 text-sm" onClick={() => setLines([])} aria-label="Vyčistit účtenku" title="Vyčistit">
+                    ✕
+                  </button>
+                </div>
+              </div>
+              {total > 0 && !accountOk && (
+                <p className="mt-1.5 text-xs text-ink-soft">QR platba se odemkne, jakmile správce nahoře nastaví účet.</p>
+              )}
+            </>
+          )}
+        </section>
+      )}
 
       {/* Výběr stánku (desktop) — na mobilu je dole ve žluté bublině */}
       <div className="hidden gap-1.5 md:flex">
@@ -424,7 +464,6 @@ function Pos() {
               {pendingOrders.length}
             </span>
           </h2>
-          <p className="mt-0.5 text-xs text-ink-soft">Objednávky z webu — při vyzvednutí ukaž QR, nebo vezmi hotovost.</p>
           <div className="mt-1 divide-y divide-ink/[0.06]">
             {pendingOrders.map((o) => {
               const t = orderTotal(o, year.merch ?? []);
@@ -479,9 +518,6 @@ function Pos() {
                 </button>
               )}
             </div>
-            {editNabidka && gi === firstNonEmpty && (
-              <p className="mt-1 text-xs text-red-600">Ťuknutím položku smažeš z nabídky (potvrdí se dotazem).</p>
-            )}
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {g.items.map((i) => (
                 <button
@@ -557,75 +593,6 @@ function Pos() {
           </div>
         </div>
       )}
-
-      {/* Vlastní položka (vstupné, kelímek…) — dostupná na každém stánku */}
-      <section className="card space-y-2 p-4">
-        <h2 className="font-display text-[20px] font-semibold">➕ Vlastní položka</h2>
-        <div className="flex flex-wrap items-center gap-2">
-          <input className="input min-w-[140px] flex-1" placeholder="Co prodáváš?" value={customName} onChange={(e) => setCustomName(e.target.value)} />
-          <input className="input w-28" placeholder="Kč" inputMode="numeric" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addCustom()} />
-          <button className="btn-secondary px-4" onClick={addCustom} disabled={!customName.trim() || !customPrice.trim()}>
-            + Přidat
-          </button>
-        </div>
-      </section>
-
-      {/* Účtenka */}
-      <section className="card p-4">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="font-display text-[20px] font-semibold">Účtenka</h2>
-          {lines.length === 0 && lastSale && (
-            <button className="btn-secondary" onClick={() => setLines(lastSale)}>
-              ↻ Zopakovat poslední
-            </button>
-          )}
-        </div>
-        {lines.length === 0 ? (
-          <p className="mt-2 text-sm text-ink-soft">Zatím prázdná — ťukni nahoře na položky.</p>
-        ) : (
-          <div className="mt-2 divide-y divide-ink/[0.06]">
-            {lines.map((l) => (
-              <div key={l.key} className="flex min-h-11 items-center gap-2 py-1.5">
-                <span className="min-w-0 flex-1 truncate text-[15px] font-medium">{lineLabel(l)}</span>
-                <span className="text-sm text-ink-soft">{fmtCZK(l.price)}</span>
-                <div className="flex items-center gap-1">
-                  <button className="grid h-9 w-9 place-items-center rounded-full bg-paper2 text-lg leading-none hover:bg-ink/10" onClick={() => bump(l.key, -1)} aria-label="Ubrat">
-                    −
-                  </button>
-                  <span className="w-7 text-center text-[15px] font-semibold">{l.qty}</span>
-                  <button className="grid h-9 w-9 place-items-center rounded-full bg-paper2 text-lg leading-none hover:bg-ink/10" onClick={() => bump(l.key, 1)} aria-label="Přidat">
-                    +
-                  </button>
-                </div>
-                <span className="w-20 text-right text-[15px] font-semibold">{fmtCZK(l.price * l.qty)}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-3">
-          <span className="text-[15px] font-medium text-ink-soft">Celkem</span>
-          <span className="font-display text-[28px] font-bold tracking-tight">{fmtCZK(total)}</span>
-        </div>
-
-        {/* Vždy se volí, jak se platilo: QR, nebo hotově */}
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button className="btn-primary min-h-12 flex-1 text-base" disabled={total <= 0 || !accountOk || busy} onClick={() => setQrOpen(true)}>
-            <Icon name="vote" className="h-4 w-4" /> QR platba
-          </button>
-          <button className="btn-secondary min-h-12 flex-1 text-base" disabled={total <= 0 || busy} onClick={() => settle("hotove")}>
-            💵 Hotově — zapsat
-          </button>
-          {lines.length > 0 && (
-            <button className="btn-ghost" onClick={() => setLines([])}>
-              Vyčistit
-            </button>
-          )}
-        </div>
-        {total > 0 && !accountOk && (
-          <p className="mt-2 text-xs text-ink-soft">QR platba se odemkne, jakmile správce nahoře nastaví účet.</p>
-        )}
-      </section>
 
       {/* ---------- Přehled dne (tržby, kasa, účet) ---------- */}
       <h2 className="pt-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Přehled dne</h2>
@@ -810,21 +777,32 @@ function DayGate({
           const stats = posStats(
             finances.filter((f) => POS_CATS.has(f.category ?? "") && f.createdAt >= c.openedAt && f.createdAt < until),
           );
-          return <DayCard key={c.id} box={c} stats={stats} />;
+          return <DayCard key={c.id} box={c} stats={stats} yearId={yearId} admin={admin} />;
         })
       )}
     </div>
   );
 }
 
-// Uzamčený den: statistiky prodeje + vyúčtování kasy.
-function DayCard({ box, stats }: { box: Cashbox; stats: ReturnType<typeof posStats> }) {
+// Uzamčený den: statistiky prodeje + vyúčtování kasy. Smazat den může
+// jen správce — odstraní kasu dne a její zápis rozdílu ve financích
+// (samotné prodeje ve financích zůstávají).
+function DayCard({ box, stats, yearId, admin }: { box: Cashbox; stats: ReturnType<typeof posStats>; yearId: string; admin: boolean }) {
+  const { dispatch } = useStore();
   const rozdil = (box.closing ?? 0) - box.opening - (box.alreadyRecorded ?? 0);
   return (
     <section className="card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-display text-base font-semibold">📅 {fmtDate(box.openedAt)}</h3>
-        <span className="chip">🔒 uzamčeno</span>
+        <div className="flex items-center gap-2">
+          <span className="chip">🔒 uzamčeno</span>
+          {admin && (
+            <DeleteButton
+              what={`den ${fmtDate(box.openedAt)} (prodeje ve financích zůstanou)`}
+              onConfirm={() => dispatch({ type: "removeCashbox", yearId, cashboxId: box.id })}
+            />
+          )}
+        </div>
       </div>
       <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
         <span className="font-display text-[22px] font-bold tracking-tight">{fmtCZK(stats.total)}</span>
@@ -925,7 +903,7 @@ function KasaControl({ year, cashMarked }: { year: { id: string; cashboxes: Cash
         }`}
         title={openBox ? "Kasa je otevřená — ťukni pro uzavření" : "Otevřít kasu s ranním vkladem"}
       >
-        🧰 {openBox ? `V kase ${fmtCZK(expected)}` : "Otevřít kasu"}
+        🧰 {openBox ? "Uzavřít kasu" : "Otevřít kasu"}
       </button>
 
       <Modal open={modal} onClose={() => setModal(false)} title={openBox ? "Kasa — uzavření" : "Kasa — otevření"}>
