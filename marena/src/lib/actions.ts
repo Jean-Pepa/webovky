@@ -115,6 +115,7 @@ export type Action =
   | { type: "updateFinance"; yearId: string; financeId: string; patch: { label?: string; amount?: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string; receiptId?: string; receiptIds?: string[] } }
   | { type: "toggleFinancePaid"; yearId: string; financeId: string }
   | { type: "removeFinance"; yearId: string; financeId: string }
+  | { type: "removeSales"; yearId: string; financeIds: string[] }
   | { type: "addShift"; yearId: string; area: string; title?: string; date?: string; from?: string; to?: string; capacity?: number; note?: string }
   | { type: "signShift"; yearId: string; shiftId: string; name: string }
   | { type: "signShiftBackup"; yearId: string; shiftId: string; name: string }
@@ -228,6 +229,17 @@ function normalizeLeads(y: Year): Year {
     if (!leads[rid]) leads[rid] = [...holders].sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0].id;
   }
   return { ...y, roleLeads: leads };
+}
+
+// Smaže dané prodejní zápisy (finance) a uklidí navázané merch objednávky:
+// automatické „Prodej na místě" se smažou úplně, skutečné (z webu) se vrátí
+// mezi nevyřízené. Sdílí Prodej po dnech (mazání dne/položky) i mazání kasy.
+function dropSales(y: Year, dropIds: Set<string>): Year {
+  if (dropIds.size === 0) return y;
+  const merchOrders = (y.merchOrders ?? [])
+    .filter((o) => !(o.financeId && dropIds.has(o.financeId) && o.name === "Prodej na místě"))
+    .map((o) => (o.financeId && dropIds.has(o.financeId) ? { ...o, done: false, paid: false, financeId: undefined } : o));
+  return { ...y, finances: (y.finances ?? []).filter((f) => !dropIds.has(f.id)), merchOrders };
 }
 
 export function applyAction(db: DB, a: Action): DB {
@@ -719,19 +731,12 @@ export function applyAction(db: DB, a: Action): DB {
           (y.finances ?? []).filter((f) => isSale(f) && f.createdAt >= from && f.createdAt < to).map((f) => f.id),
         );
         if (box.financeId) dropIds.add(box.financeId);
-        // Merch objednávky zaplacené v tomto dni: automatické „Prodej na místě"
-        // (markované u kasy) se smažou úplně, skutečné (pojmenované, z webu) se
-        // vrátí mezi nevyřízené — dají se zaplatit znovu.
-        const merchOrders = (y.merchOrders ?? [])
-          .filter((o) => !(o.financeId && dropIds.has(o.financeId) && o.name === "Prodej na místě"))
-          .map((o) => (o.financeId && dropIds.has(o.financeId) ? { ...o, done: false, paid: false, financeId: undefined } : o));
-        return {
-          ...y,
-          cashboxes: boxes.filter((c) => c.id !== a.cashboxId),
-          finances: (y.finances ?? []).filter((f) => !dropIds.has(f.id)),
-          merchOrders,
-        };
+        // Smaž prodeje dne (i s úklidem merch objednávek) a odeber samotnou kasu.
+        return dropSales({ ...y, cashboxes: boxes.filter((c) => c.id !== a.cashboxId) }, dropIds);
       });
+    case "removeSales":
+      // Správce může smazat jednotlivý prodej i celý den z „Prodej po dnech".
+      return mapYear(db, a.yearId, (y) => dropSales(y, new Set(a.financeIds)));
     case "toggleSoldOut":
       return mapYear(db, a.yearId, (y) => ({
         ...y,
