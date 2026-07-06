@@ -459,15 +459,16 @@ function Pos() {
         </div>
       </div>
 
-      {/* Účtenka — kompaktní, hned pod nadpisem; prázdná se neukazuje */}
-      {(lines.length > 0 || lastSale) && (
-        <section className="card p-3">
+      {/* Účtenka — kompaktní, hned pod nadpisem; vidět od začátku (i prázdná) */}
+      <section className="card p-3">
           {lines.length === 0 ? (
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm text-ink-soft">Účtenka je prázdná</span>
-              <button className="btn-secondary px-3 py-1.5 text-sm" onClick={() => setLines(lastSale!)}>
-                ↻ Zopakovat poslední
-              </button>
+              <span className="text-sm text-ink-soft">🧾 Účtenka je prázdná — ťukni na položky</span>
+              {lastSale && (
+                <button className="btn-secondary px-3 py-1.5 text-sm" onClick={() => setLines(lastSale)}>
+                  ↻ Zopakovat poslední
+                </button>
+              )}
             </div>
           ) : (
             <>
@@ -507,8 +508,7 @@ function Pos() {
               )}
             </>
           )}
-        </section>
-      )}
+      </section>
 
       {/* Výběr stánku (desktop) — na mobilu je dole ve žluté bublině */}
       <div className="hidden gap-1.5 md:flex">
