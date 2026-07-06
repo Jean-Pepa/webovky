@@ -129,17 +129,27 @@ const hhmm = (iso: string) => {
 
 // Rolovací historie objednávek — po ťuknutí na tlačítko se rozbalí
 // seznam všech prodejů dne (čas · položky · kategorie · způsob · částka).
-function OrderHistory({ orders }: { orders: PosOrder[] }) {
-  const [open, setOpen] = useState(false);
+function OrderHistory({
+  orders,
+  label = "Historie objednávek",
+  defaultOpen = false,
+  topBorder = true,
+}: {
+  orders: PosOrder[];
+  label?: string;
+  defaultOpen?: boolean;
+  topBorder?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   if (orders.length === 0) return null;
   return (
-    <div className="mt-3 border-t border-ink/[0.06] pt-2">
+    <div className={topBorder ? "mt-3 border-t border-ink/[0.06] pt-2" : ""}>
       <button
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between gap-2 rounded-lg py-1 text-sm font-semibold text-ink-soft transition hover:text-ink"
         aria-expanded={open}
       >
-        <span>🧾 Historie objednávek ({orders.length})</span>
+        <span>🧾 {label} ({orders.length})</span>
         <span className={`text-xs transition-transform ${open ? "rotate-180" : ""}`}>▾</span>
       </button>
       {open && (
@@ -196,6 +206,8 @@ function Pos() {
   const [busy, setBusy] = useState(false);
   // Režim úprav nabídky (jen správce): dlaždice se místo markování mažou.
   const [editNabidka, setEditNabidka] = useState(false);
+  // Režim „Vyprodáno" (kdokoli u kasy): ťuknutím se položka vyprodá/odblokuje.
+  const [soldMode, setSoldMode] = useState(false);
   const year = currentYear;
   const admin = isAdmin(me);
   // Pomocník u stánku nemá spodní navigaci — stánky sedí na jejím místě.
@@ -274,6 +286,34 @@ function Pos() {
   ].filter((g) => g.kind === stand);
   // Přepínač úprav bydlí u první neprázdné sekce nabídky.
   const firstNonEmpty = grids.findIndex((g) => g.items.length > 0);
+
+  // Vyprodáno: ručně (jen pro tuto kasu/den) nebo automaticky u merche podle
+  // skladu (stock − prodáno ≤ 0). Prodané kusy merche počítáme z vyřízených
+  // objednávek. Vyprodaná dlaždice je přeškrtnutá a nejde markovat.
+  const soldOutManual = new Set(openBox.soldOut ?? []);
+  const merchSold = new Map<string, number>();
+  for (const o of year.merchOrders ?? []) {
+    if (!o.done) continue;
+    for (const it of o.items) merchSold.set(it.productId, (merchSold.get(it.productId) ?? 0) + it.qty);
+  }
+  function isSoldOut(kind: Exclude<Kind, "custom">, id: string): boolean {
+    if (soldOutManual.has(id)) return true;
+    if (kind === "merch") {
+      const p = (year!.merch ?? []).find((x) => x.id === id);
+      if (p && p.stock != null && p.stock - (merchSold.get(id) ?? 0) <= 0) return true;
+    }
+    return false;
+  }
+  async function toggleSoldOut(id: string) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const ok = await dispatch({ type: "toggleSoldOut", yearId: year!.id, cashboxId: openBox!.id, itemId: id });
+      if (!ok) flash("Nepodařilo se uložit — zkontroluj připojení", "⚠️");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   // Čekající objednávky merche (z webu i odložené) — platí se tady:
   // QR se jménem objednatele, nebo hotově jedním ťuknutím.
@@ -449,18 +489,49 @@ function Pos() {
         </div>
       </div>
 
-      {/* Účtenka — kompaktní, hned pod nadpisem; prázdná se neukazuje */}
-      {(lines.length > 0 || lastSale) && (
-        <section className="card p-3">
+      {/* Účtenka — kompaktní, hned pod nadpisem; vidět od začátku (i prázdná).
+          Prázdná ukazuje vizuální návod „co ťuknout" ve třech krocích. */}
+      <section className="card p-3">
           {lines.length === 0 ? (
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-sm text-ink-soft">Účtenka je prázdná</span>
-              <button className="btn-secondary px-3 py-1.5 text-sm" onClick={() => setLines(lastSale!)}>
-                ↻ Zopakovat poslední
-              </button>
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-ink-soft">🧾 Účtenka je prázdná</span>
+                {lastSale && (
+                  <button className="btn-secondary px-3 py-1.5 text-sm" onClick={() => setLines(lastSale)}>
+                    ↻ Zopakovat poslední
+                  </button>
+                )}
+              </div>
+              {/* Tři kroky prodeje — obsluha hned vidí, co ťuknout (1. krok svítí zlatě) */}
+              <ol className="flex flex-wrap items-center gap-1.5 text-xs font-medium">
+                <li className="inline-flex items-center gap-1.5 rounded-full bg-gold-100 px-2.5 py-1 text-ink">
+                  <span className="grid h-4 w-4 place-items-center rounded-full bg-gold-500 text-[10px] font-bold text-[#1d1d1f]">1</span>
+                  Ťukni na položky ↓
+                </li>
+                <span aria-hidden className="text-ink-soft/40">→</span>
+                <li className="inline-flex items-center gap-1.5 rounded-full bg-paper2 px-2.5 py-1 text-ink-soft">
+                  <span className="grid h-4 w-4 place-items-center rounded-full bg-ink/10 text-[10px] font-bold">2</span>
+                  Vyber QR / hotově
+                </li>
+                <span aria-hidden className="text-ink-soft/40">→</span>
+                <li className="inline-flex items-center gap-1.5 rounded-full bg-paper2 px-2.5 py-1 text-ink-soft">
+                  <span className="grid h-4 w-4 place-items-center rounded-full bg-ink/10 text-[10px] font-bold">3</span>
+                  Zaplaceno ✓
+                </li>
+              </ol>
             </div>
           ) : (
             <>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-ink-soft">🧾 Účtenka · {lines.reduce((s, l) => s + l.qty, 0)} ks</span>
+                <button
+                  className="rounded-full px-2.5 py-1 text-xs font-medium text-ink-soft transition hover:bg-ink/[0.06] hover:text-ink"
+                  onClick={() => setLines([])}
+                  aria-label="Vyčistit účtenku"
+                >
+                  Vyčistit ✕
+                </button>
+              </div>
               <div className="divide-y divide-ink/[0.06]">
                 {lines.map((l) => (
                   <div key={l.key} className="flex min-h-9 items-center gap-2 py-1 text-sm">
@@ -478,27 +549,28 @@ function Pos() {
                   </div>
                 ))}
               </div>
-              <div className="mt-2 flex items-center gap-2 border-t border-ink/10 pt-2">
-                <span className="font-display text-lg font-bold tracking-tight">{fmtCZK(total)}</span>
-                <div className="ml-auto flex items-center gap-1.5">
-                  <button className="btn-primary px-4 py-2 text-sm" disabled={total <= 0 || !accountOk || busy} onClick={() => setQrOpen(true)}>
+              {/* Platba — velká částka + dvě velká tlačítka vedle sebe, ať je jasné,
+                  co ťuknout dál (QR pro kartu / hotově pro peníze). */}
+              <div className="mt-2 border-t border-ink/10 pt-2">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm text-ink-soft">Celkem</span>
+                  <span className="font-display text-2xl font-bold tracking-tight">{fmtCZK(total)}</span>
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button className="btn-primary min-h-12 text-[15px]" disabled={total <= 0 || !accountOk || busy} onClick={() => setQrOpen(true)}>
                     QR platba
                   </button>
-                  <button className="btn-secondary px-4 py-2 text-sm" disabled={total <= 0 || busy} onClick={() => setCashOpen(true)}>
+                  <button className="btn-secondary min-h-12 text-[15px]" disabled={total <= 0 || busy} onClick={() => setCashOpen(true)}>
                     💵 Hotově
                   </button>
-                  <button className="btn-ghost px-2 py-2 text-sm" onClick={() => setLines([])} aria-label="Vyčistit účtenku" title="Vyčistit">
-                    ✕
-                  </button>
                 </div>
+                {total > 0 && !accountOk && (
+                  <p className="mt-1.5 text-center text-xs text-ink-soft">QR platba se odemkne, jakmile správce nahoře nastaví účet.</p>
+                )}
               </div>
-              {total > 0 && !accountOk && (
-                <p className="mt-1.5 text-xs text-ink-soft">QR platba se odemkne, jakmile správce nahoře nastaví účet.</p>
-              )}
             </>
           )}
-        </section>
-      )}
+      </section>
 
       {/* Výběr stánku (desktop) — na mobilu je dole ve žluté bublině */}
       <div className="hidden gap-1.5 md:flex">
@@ -563,40 +635,82 @@ function Pos() {
       {grids.map((g, gi) =>
         g.items.length > 0 ? (
           <section key={g.kind} className="card p-4">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-display text-[20px] font-semibold">{g.title}</h2>
-              {/* Úprava nabídky (jen správce): v režimu Upravit dlaždice mažou */}
-              {admin && gi === firstNonEmpty && (
-                <button
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                    editNabidka ? "bg-red-600 text-white hover:bg-red-500" : "bg-paper2 text-ink-soft hover:bg-gold-100"
-                  }`}
-                  aria-pressed={editNabidka}
-                  onClick={() => setEditNabidka((v) => !v)}
-                >
-                  {editNabidka ? "Hotovo" : "Upravit nabídku"}
-                </button>
+              {gi === firstNonEmpty && (
+                <div className="flex items-center gap-1.5">
+                  {/* Vyprodáno (kdokoli u kasy): ťuknutím se položka vyprodá/odblokuje — jen pro tento den */}
+                  <button
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      soldMode ? "bg-ink text-white hover:bg-ink/90" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+                    }`}
+                    aria-pressed={soldMode}
+                    onClick={() => {
+                      setSoldMode((v) => !v);
+                      setEditNabidka(false);
+                    }}
+                  >
+                    {soldMode ? "Hotovo" : "🚫 Vyprodáno"}
+                  </button>
+                  {/* Úprava nabídky (jen správce): v režimu Upravit dlaždice mažou */}
+                  {admin && (
+                    <button
+                      className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                        editNabidka ? "bg-red-600 text-white hover:bg-red-500" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+                      }`}
+                      aria-pressed={editNabidka}
+                      onClick={() => {
+                        setEditNabidka((v) => !v);
+                        setSoldMode(false);
+                      }}
+                    >
+                      {editNabidka ? "Hotovo" : "Upravit nabídku"}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
+            {soldMode && gi === firstNonEmpty && (
+              <p className="mt-2 text-xs text-ink-soft">Ťukni na položku, která došla — přeškrtne se a nepůjde markovat (platí jen pro dnešní kasu).</p>
+            )}
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {g.items.map((i) => (
-                <button
-                  key={i.id}
-                  onClick={() => (editNabidka ? removeItem(g.kind, i) : tapItem(g.kind, i))}
-                  className={`flex min-h-12 items-center justify-between gap-2 rounded-lg border-l-4 px-3 py-2.5 text-left transition active:scale-[0.98] ${
-                    editNabidka
-                      ? "bg-red-50 ring-1 ring-red-200 hover:bg-red-100"
-                      : `bg-paper2 hover:bg-gold-100 ${KIND_BORDER[g.kind]}`
-                  } ${editNabidka ? "border-l-red-400" : ""}`}
-                >
-                  <span className="min-w-0 truncate text-[15px] font-semibold">{i.name}</span>
-                  {editNabidka ? (
-                    <span className="shrink-0 text-sm font-bold text-red-600">✕ Smazat</span>
-                  ) : (
-                    <span className="shrink-0 text-sm font-bold text-ink-soft">{fmtCZK(i.price)}</span>
-                  )}
-                </button>
-              ))}
+              {g.items.map((i) => {
+                const sold = isSoldOut(g.kind, i.id);
+                const manualSold = soldOutManual.has(i.id);
+                const stockSold = sold && !manualSold; // vyprodáno skladem (merch) — ručně nejde vrátit
+                return (
+                  <button
+                    key={i.id}
+                    onClick={() =>
+                      editNabidka ? removeItem(g.kind, i) : soldMode ? toggleSoldOut(i.id) : tapItem(g.kind, i)
+                    }
+                    disabled={soldMode ? stockSold || busy : editNabidka ? false : sold}
+                    className={`flex min-h-14 items-center justify-between gap-2 rounded-lg border-l-4 px-3 py-2.5 text-left transition active:scale-[0.97] disabled:active:scale-100 ${
+                      editNabidka
+                        ? "border-l-red-400 bg-red-50 ring-1 ring-red-200 hover:bg-red-100"
+                        : sold
+                          ? "border-l-ink/20 bg-paper2/50 opacity-60"
+                          : `bg-paper2 hover:bg-gold-100 ${KIND_BORDER[g.kind]}`
+                    } ${soldMode ? "ring-1 ring-ink/15" : ""}`}
+                  >
+                    <span className={`min-w-0 truncate text-[15px] font-semibold ${sold ? "text-ink-soft line-through" : ""}`}>{i.name}</span>
+                    {editNabidka ? (
+                      <span className="shrink-0 text-sm font-bold text-red-600">✕ Smazat</span>
+                    ) : soldMode ? (
+                      <span className={`shrink-0 text-sm font-bold ${stockSold ? "text-ink-soft" : manualSold ? "text-leaf-700" : "text-ink-soft"}`}>
+                        {stockSold ? "📦 sklad 0" : manualSold ? "↩︎ Vrátit" : "🚫 Vyprodat"}
+                      </span>
+                    ) : sold ? (
+                      <span className="shrink-0 text-sm font-bold text-ink-soft">✕ Vyprodáno</span>
+                    ) : (
+                      // Cena jako zdvižená „přidávací" pilulka s +, ať je jasné, že ťuknutí položku přidá.
+                      <span className="shrink-0 rounded-full bg-surface px-2.5 py-1 text-sm font-bold text-ink shadow-sm ring-1 ring-ink/5">
+                        + {fmtCZK(i.price)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </section>
         ) : (
@@ -654,46 +768,57 @@ function Pos() {
         </div>
       )}
 
-      {/* ---------- Přehled dne (tržby, kasa, účet) ---------- */}
+      {/* ---------- Přehled dne ---------- */}
       <h2 className="pt-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Přehled dne</h2>
 
-      {/* Statistiky dne — od založení kasy (QR vs. hotovost, kategorie, top) */}
-      <section className="card p-4">
-        <h3 className="font-display text-[20px] font-semibold">📊 Statistiky dne</h3>
-        {stats.total === 0 ? (
-          <p className="mt-1 text-sm text-ink-soft">Zatím nic — první prodej se tu hned ukáže.</p>
-        ) : (
-          <>
-            <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
-              <span className="font-display text-[28px] font-bold tracking-tight">{fmtCZK(stats.total)}</span>
-              <span className="text-sm text-ink-soft">
-                QR <strong className="text-ink">{fmtCZK(stats.qr)}</strong>
-              </span>
-              <span className="text-sm text-ink-soft">
-                💵 hotově <strong className="text-ink">{fmtCZK(stats.cash)}</strong>
-              </span>
-              <span className="text-sm text-ink-soft">
-                {stats.count}× prodej
-              </span>
-            </div>
-            {stats.byCat.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {stats.byCat.map((x) => (
-                  <span key={x.cat} className="chip">
-                    {x.cat} {fmtCZK(x.sum)}
-                  </span>
-                ))}
+      {/* Statistiky (čísla) jen správci; ostatní vidí jen historii objednávek. */}
+      {admin ? (
+        <section className="card p-4">
+          <h3 className="font-display text-[20px] font-semibold">📊 Statistiky dne</h3>
+          {stats.total === 0 ? (
+            <p className="mt-1 text-sm text-ink-soft">Zatím nic — první prodej se tu hned ukáže.</p>
+          ) : (
+            <>
+              <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
+                <span className="font-display text-[28px] font-bold tracking-tight">{fmtCZK(stats.total)}</span>
+                <span className="text-sm text-ink-soft">
+                  QR <strong className="text-ink">{fmtCZK(stats.qr)}</strong>
+                </span>
+                <span className="text-sm text-ink-soft">
+                  💵 hotově <strong className="text-ink">{fmtCZK(stats.cash)}</strong>
+                </span>
+                <span className="text-sm text-ink-soft">{stats.count}× prodej</span>
               </div>
-            )}
-            {stats.top.length > 0 && (
-              <p className="mt-2 text-sm text-ink-soft">
-                Nejprodávanější: {stats.top.map((t) => `${t.qty}× ${t.name}`).join(" · ")}
-              </p>
-            )}
-            <OrderHistory orders={posOrders(dayFinances)} />
-          </>
-        )}
-      </section>
+              {stats.byCat.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {stats.byCat.map((x) => (
+                    <span key={x.cat} className="chip">
+                      {x.cat} {fmtCZK(x.sum)}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {stats.top.length > 0 && (
+                <p className="mt-2 text-sm text-ink-soft">
+                  Nejprodávanější: {stats.top.map((t) => `${t.qty}× ${t.name}`).join(" · ")}
+                </p>
+              )}
+              <OrderHistory orders={posOrders(dayFinances)} />
+            </>
+          )}
+        </section>
+      ) : (
+        <section className="card p-4">
+          {posOrders(dayFinances).length === 0 ? (
+            <>
+              <h3 className="font-display text-[20px] font-semibold">🧾 Objednávky dne</h3>
+              <p className="mt-1 text-sm text-ink-soft">Zatím žádná objednávka — první prodej se tu hned ukáže.</p>
+            </>
+          ) : (
+            <OrderHistory orders={posOrders(dayFinances)} label="Objednávky dne" defaultOpen topBorder={false} />
+          )}
+        </section>
+      )}
 
       {/* Stánky (mobil) — svítící žlutá bublina nad hlavní lištou; pomocník
           u stánku lištu nemá, takže bublina sedí přímo dole na jejím místě */}

@@ -130,6 +130,7 @@ export interface Cashbox {
   alreadyRecorded?: number; // hotovost už zapsaná z markování v Prodeji (do financí jde jen rozdíl)
   closedAt?: string; // ISO – kdy se uzavřela
   financeId?: string; // navázaná finanční položka (tržba)
+  soldOut?: string[]; // ručně vyprodané položky (id merche/pití) — platí jen pro tento den/kasu
   createdAt: string;
 }
 
