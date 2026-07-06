@@ -16,6 +16,15 @@ import { uid } from "@/lib/id";
 import { flash } from "@/components/Flash";
 import type { FinanceItem, FinanceKind, Cashbox, Contribution } from "@/lib/types";
 
+// Stav jednoho vkladu — pro barvy, filtry i souhrny.
+function contributionState(c: Contribution): "zaplatil" | "nezaplatil" | "pulka" | "vraceno" {
+  if (c.returned) return "vraceno";
+  const owes = c.pledged != null && c.pledged > c.amount ? c.pledged - c.amount : 0;
+  if (c.amount === 0 && owes > 0) return "nezaplatil";
+  if (c.amount > 0 && owes > 0) return "pulka";
+  return "zaplatil";
+}
+
 const CATEGORIES = [
   "vklad",
   "kasa",
@@ -59,14 +68,12 @@ export default function FinancePage() {
   const [catFilter, setCatFilter] = useState<string>("");
   const [q, setQ] = useState(""); // vyhledávání podle popisu
 
-  // Výběr (vklady) – rychlé přidání přispěvatele.
-  const [ctName, setCtName] = useState("");
-  const [ctEmail, setCtEmail] = useState("");
-  const [ctAmount, setCtAmount] = useState("");
-  const [ctPledged, setCtPledged] = useState(""); // splátky: kolik má dát celkem (nepovinné)
-  // Seznam dopředu: jména (+ e-maily) po řádcích; platby se pak jen odklikávají.
+  // Výběr (vklady) — hromadné vložení: všechna jména naráz + částka; rozdělí se
+  // na jednotlivé lidi (kontakt se doplní zpětně úpravou).
   const [bulkText, setBulkText] = useState("");
   const [bulkPledged, setBulkPledged] = useState("");
+  const [ctFilter, setCtFilter] = useState<"vse" | "zaplatil" | "nezaplatil" | "pulka">("vse");
+  const [editCt, setEditCt] = useState<Contribution | null>(null); // úprava jména/kontaktu/částky
 
   const [kind, setKind] = useState<FinanceKind>("vydaj");
   const [label, setLabel] = useState("");
@@ -82,22 +89,27 @@ export default function FinancePage() {
   const items = useMemo(() => year?.finances ?? [], [year]);
   const contributions = useMemo(() => year?.contributions ?? [], [year]);
 
-  // Výběr: kolik je aktuálně v balíku (nevrácené), kolik se už vrátilo,
-  // kolik zbývá doplatit a kolik lidí má zaplaceno celé (v balíku je jen
-  // skutečně zaplacené — sliby se nikam nepočítají).
+  // Výběr: kolik je v balíku (nevrácené), kolik se vrátilo, kolik zbývá doplatit
+  // a počty po stavech (do balíku jde jen skutečně zaplacené — sliby ne).
   const vyber = useMemo(() => {
     let inPool = 0,
       returned = 0,
-      owed = 0,
-      paidCount = 0;
+      owed = 0;
+    const counts = { vse: contributions.length, zaplatil: 0, nezaplatil: 0, pulka: 0, vraceno: 0 };
     for (const c of contributions) {
       if (c.returned) returned += c.amount;
       else inPool += c.amount;
       if (!c.returned && c.pledged != null && c.pledged > c.amount) owed += c.pledged - c.amount;
-      if (c.amount > 0 && (c.pledged == null || c.amount >= c.pledged)) paidCount++;
+      counts[contributionState(c)]++;
     }
-    return { inPool, returned, owed, paidCount, total: inPool + returned };
+    return { inPool, returned, owed, paidCount: counts.zaplatil, counts, total: inPool + returned };
   }, [contributions]);
+
+  // Seznam podle zvoleného filtru (řazení řeší až výpis).
+  const filteredContributions = useMemo(
+    () => (ctFilter === "vse" ? contributions : contributions.filter((c) => contributionState(c) === ctFilter)),
+    [contributions, ctFilter],
+  );
 
   const totals = useMemo(() => {
     let prijmy = 0,
@@ -211,25 +223,14 @@ export default function FinancePage() {
     flash("Položka přidána", "💰");
   }
 
-  async function addContribution() {
-    const num = parseAmount(ctAmount);
-    if (!ctName.trim() || num <= 0 || !year || !canAdd) return;
-    const pledged = ctPledged.trim() ? parseAmount(ctPledged) : undefined;
-    await dispatch({ type: "addContribution", yearId: year.id, name: ctName.trim(), email: ctEmail.trim() || undefined, amount: num, pledged });
-    setCtName("");
-    setCtEmail("");
-    setCtAmount("");
-    setCtPledged("");
-    flash(pledged && pledged > num ? `Splátka zapsána — zbývá doplatit ${fmtCZK(pledged - num)}` : "Výběr zapsán", "💸");
-  }
-
-  // Seznam dopředu: každý řádek „Jméno Příjmení, email“ → založí se s 0 Kč
-  // a slíbenou částkou; platby (celé/půlka) se pak odklikávají u jmen.
+  // Hromadné vložení: všechna jména naráz (každé na řádek, e-mail nepovinný) +
+  // částka pro všechny → rozdělí se na jednotlivé lidi s 0 Kč a slíbenou částkou.
+  // Kontakt se doplní zpětně úpravou. Platby (celé/půlka/doplatil) se odklikávají.
   async function addBulkContributions() {
     if (!year || !canAdd) return;
     const per = bulkPledged.trim() ? parseAmount(bulkPledged) : (year.deposit ?? 0);
     if (per <= 0) {
-      flash("Vyplň, kolik má každý dát (Kč)", "⚠️");
+      flash("Vyplň částku, kolik se vybírá od každého (Kč)", "⚠️");
       return;
     }
     const norm = (s: string) => s.trim().toLowerCase();
@@ -244,7 +245,7 @@ export default function FinancePage() {
       if (await dispatch({ type: "addContribution", yearId: year.id, name, email, amount: 0, pledged: per })) added++;
     }
     setBulkText("");
-    flash(added > 0 ? `Založeno ${added} lidí — plať se odklikává u jmen` : "Nikdo nový nepřibyl (jména už v seznamu jsou)", added > 0 ? "📋" : "ℹ️");
+    flash(added > 0 ? `Přidáno ${added} lidí — platby se odklikávají u jmen` : "Nikdo nový nepřibyl (jména už v seznamu jsou)", added > 0 ? "📋" : "ℹ️");
   }
 
   // Doplnit tým: všichni ze soupisky, kteří v seznamu výběru ještě nejsou.
@@ -397,105 +398,90 @@ export default function FinancePage() {
             )}
           </h2>
           <p className="mb-3 text-xs text-ink-soft">
-            Seznam jde připravit dopředu (jména + e-maily) a platby pak jen odklikávat — dal celé / půlku / doplatil. Do balíku se počítá
-            jen skutečně zaplacené. Na konci u každého odklikni Vráceno.
+            Vlož všechna jména naráz a částku, kolik se vybírá — rozdělí se na jednotlivé lidi. Platby pak jen odklikáváš (celé / půlku /
+            doplatil), e-mail a telefon doplníš u každého zpětně přes „Upravit“. Do balíku se počítá jen skutečně zaplacené.
           </p>
+          {/* Hromadné vložení — všechna jména naráz + částka pro všechny */}
           {canAdd && vyberOpen && (
-            <div className="mb-3 space-y-3">
-              <div className="flex flex-wrap gap-2">
+            <div className="mb-4 rounded-xl border border-gold-200 bg-gold-50/40 p-3">
+              <label className="mb-1 block text-xs font-semibold text-ink-soft">Jména — každé na svůj řádek</label>
+              <textarea
+                className="input min-h-28"
+                placeholder={"Adam Pavlík\nJana Nováková\nPetr Malý\n…"}
+                value={bulkText}
+                onChange={(e) => setBulkText(e.target.value)}
+                autoFocus
+              />
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 <input
-                  className="input min-w-[140px] flex-1"
-                  placeholder="Jméno a příjmení"
-                  value={ctName}
-                  onChange={(e) => setCtName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && document.getElementById("ct-amount")?.focus()}
-                  autoFocus
-                />
-                <input
-                  className="input min-w-[140px] flex-1"
-                  type="email"
-                  placeholder="E-mail (nepovinné)"
-                  value={ctEmail}
-                  onChange={(e) => setCtEmail(e.target.value)}
-                />
-                <input
-                  id="ct-amount"
-                  className="input w-28"
+                  className="input w-full sm:w-52"
                   inputMode="numeric"
-                  placeholder="Zaplatil (Kč)"
-                  value={ctAmount}
-                  onChange={(e) => setCtAmount(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addContribution()}
+                  placeholder={`Kolik se vybírá (${year.deposit ?? 2000} Kč)`}
+                  value={bulkPledged}
+                  onChange={(e) => setBulkPledged(e.target.value)}
                 />
-                <input
-                  className="input w-40"
-                  inputMode="numeric"
-                  placeholder="Má dát celkem (Kč)"
-                  title="Nepovinné — vyplň jen u splátky (např. zaplatil 1000 z 2000)"
-                  value={ctPledged}
-                  onChange={(e) => setCtPledged(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addContribution()}
-                />
-                <button className="btn-primary" onClick={addContribution} disabled={!ctName.trim() || !ctAmount.trim()}>
+                <button className="btn-primary" onClick={addBulkContributions} disabled={!bulkText.trim()}>
                   + Přidat
                 </button>
-              </div>
-              {/* Seznam dopředu — všichni najednou, platby se pak odklikávají */}
-              <div className="rounded-xl bg-paper2/60 p-3">
-                <p className="mb-2 text-xs font-semibold text-ink-soft">
-                  📋 Připravit seznam dopředu — založí se s 0 Kč a pak u každého jen ťukneš „Dal celé“ nebo „Půlku“
-                </p>
-                <textarea
-                  className="input min-h-24"
-                  placeholder={"Každý řádek jeden člověk (e-mail nepovinný):\nJana Nováková, jana@email.cz\nPetr Malý"}
-                  value={bulkText}
-                  onChange={(e) => setBulkText(e.target.value)}
-                />
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <input
-                    className="input w-44"
-                    inputMode="numeric"
-                    placeholder={`Má dát každý (${year.deposit ?? 2000} Kč)`}
-                    value={bulkPledged}
-                    onChange={(e) => setBulkPledged(e.target.value)}
-                  />
-                  <button className="btn-secondary" onClick={addBulkContributions} disabled={!bulkText.trim()}>
-                    Založit seznam
+                {teamToAdd.length > 0 && (
+                  <button
+                    className="btn-ghost"
+                    onClick={addTeamContributions}
+                    title="Přidá všechny ze soupisky týmu (i s e-maily), kteří v seznamu ještě nejsou"
+                  >
+                    👥 Doplnit tým ({teamToAdd.length})
                   </button>
-                  {teamToAdd.length > 0 && (
-                    <button
-                      className="btn-ghost"
-                      onClick={addTeamContributions}
-                      title="Přidá všechny ze soupisky týmu (i s e-maily), kteří v seznamu ještě nejsou"
-                    >
-                      👥 Doplnit tým ({teamToAdd.length})
-                    </button>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           )}
           {contributions.length === 0 ? (
             <p className="text-sm text-ink-soft">
-              {canAdd ? "Zatím nikdo. Klikni nahoře na + Výběr a zapiš, kdo dal do výběru." : "Zatím nikdo."}
+              {canAdd ? "Zatím nikdo. Klikni nahoře na „+ Výběr“ a vlož jména naráz." : "Zatím nikdo."}
             </p>
           ) : (
-            <Collapsible peekClass="max-h-[280px]" expandable={contributions.length > 3} total={contributions.length}>
-              <ul className="space-y-2">
-                {[...contributions]
-                  .sort(
-                    (a, b) =>
-                      // nezaplacení nahoru, vrácení dolů, pak abecedně
-                      Number(!!a.returned) - Number(!!b.returned) ||
-                      Number(a.amount > 0) - Number(b.amount > 0) ||
-                      a.name.localeCompare(b.name, "cs"),
-                  )
-                  .map((c) => (
-                    <ContributionRow key={c.id} c={c} yearId={year.id} canEdit={canEdit} />
-                  ))}
-              </ul>
-            </Collapsible>
+            <>
+              {/* Filtry podle stavu platby */}
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {([
+                  ["vse", "Vše", vyber.counts.vse],
+                  ["zaplatil", "✓ Zaplatili", vyber.counts.zaplatil],
+                  ["nezaplatil", "🔴 Nezaplatili", vyber.counts.nezaplatil],
+                  ["pulka", "½ Půlku", vyber.counts.pulka],
+                ] as [typeof ctFilter, string, number][]).map(([f, l, n]) => (
+                  <button
+                    key={f}
+                    onClick={() => setCtFilter(f)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      ctFilter === f ? "bg-ink text-white" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"
+                    }`}
+                  >
+                    {l} <span className={ctFilter === f ? "opacity-80" : "opacity-60"}>{n}</span>
+                  </button>
+                ))}
+              </div>
+              {filteredContributions.length === 0 ? (
+                <p className="py-4 text-center text-sm text-ink-soft">V tomto filtru nikdo není.</p>
+              ) : (
+                <Collapsible peekClass="max-h-[320px]" expandable={filteredContributions.length > 4} total={filteredContributions.length}>
+                  <ul className="space-y-2">
+                    {[...filteredContributions]
+                      .sort(
+                        (a, b) =>
+                          // nezaplacení nahoru, vrácení dolů, pak abecedně
+                          Number(!!a.returned) - Number(!!b.returned) ||
+                          Number(a.amount > 0) - Number(b.amount > 0) ||
+                          a.name.localeCompare(b.name, "cs"),
+                      )
+                      .map((c) => (
+                        <ContributionRow key={c.id} c={c} yearId={year.id} canEdit={canEdit} onEdit={() => setEditCt(c)} />
+                      ))}
+                  </ul>
+                </Collapsible>
+              )}
+            </>
           )}
+          {editCt && <ContributionEditModal c={editCt} yearId={year.id} onClose={() => setEditCt(null)} />}
         </section>
       )}
 
@@ -1033,7 +1019,7 @@ function ReceiptControl({ item, yearId, canAdd, canEdit }: { item: FinanceItem; 
 // Karta výběru (vkladu) — přehledná na mobilu: jméno + e-mail nahoře, zaplacená
 // částka vpravo, barevný stavový pruh a dole akce. Po „Vrátit" se karta uzamkne
 // (nedá se nic měnit, jen smazat).
-function ContributionRow({ c, yearId, canEdit }: { c: Contribution; yearId: string; canEdit: boolean }) {
+function ContributionRow({ c, yearId, canEdit, onEdit }: { c: Contribution; yearId: string; canEdit: boolean; onEdit?: () => void }) {
   const { dispatch } = useStore();
   const [askReturn, setAskReturn] = useState(false);
   // Zbývá doplatit; „nothingYet" = založený dopředu, zatím nedal nic.
@@ -1061,6 +1047,11 @@ function ContributionRow({ c, yearId, canEdit }: { c: Contribution; yearId: stri
           {c.email && (
             <a href={`mailto:${c.email}`} className="mt-0.5 block break-all text-xs text-ink-soft hover:text-gold-700">
               ✉️ {c.email}
+            </a>
+          )}
+          {c.phone && (
+            <a href={`tel:${c.phone}`} className="mt-0.5 block break-all text-xs text-ink-soft hover:text-gold-700">
+              📞 {c.phone}
             </a>
           )}
         </div>
@@ -1134,6 +1125,16 @@ function ContributionRow({ c, yearId, canEdit }: { c: Contribution; yearId: stri
                   ↩︎ Vrátit
                 </button>
               )}
+              {/* Upravit: doplnit e-mail, telefon, opravit jméno / částku */}
+              {onEdit && (
+                <button
+                  onClick={onEdit}
+                  className="rounded-full bg-paper2 px-3 py-1.5 text-sm font-medium text-ink-soft transition hover:bg-ink/5"
+                  title="Upravit jméno, e-mail, telefon nebo částku"
+                >
+                  ✏️ Upravit
+                </button>
+              )}
               {/* U nezaplacených jde rovnou smazat; u zaplacených se maže až po vrácení. */}
               {nothingYet && (
                 <DeleteButton onConfirm={() => dispatch({ type: "removeContribution", yearId, contributionId: c.id })} what={`vklad — ${c.name}`} />
@@ -1165,6 +1166,77 @@ function ContributionRow({ c, yearId, canEdit }: { c: Contribution; yearId: stri
         </div>
       </Modal>
     </li>
+  );
+}
+
+// Úprava vkladu (zpětně) — doplnit e-mail a telefon, opravit jméno, částku
+// nebo slíbenou částku. Placení/splátky/vrácení řeší tlačítka na kartě.
+function ContributionEditModal({ c, yearId, onClose }: { c: Contribution; yearId: string; onClose: () => void }) {
+  const { dispatch } = useStore();
+  const [name, setName] = useState(c.name);
+  const [email, setEmail] = useState(c.email ?? "");
+  const [phone, setPhone] = useState(c.phone ?? "");
+  const [amount, setAmount] = useState(String(c.amount));
+  const [pledged, setPledged] = useState(c.pledged != null ? String(c.pledged) : "");
+
+  async function save() {
+    if (!name.trim()) return;
+    await dispatch({
+      type: "updateContribution",
+      yearId,
+      contributionId: c.id,
+      patch: {
+        name: name.trim(),
+        email,
+        phone,
+        amount: parseAmount(amount),
+        pledged: pledged.trim() ? parseAmount(pledged) : null,
+      },
+    });
+    onClose();
+  }
+
+  return (
+    <Modal open onClose={onClose} title={`Upravit — ${c.name}`}>
+      <div className="space-y-3">
+        <div>
+          <label className="label">Jméno a příjmení</label>
+          <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+        </div>
+        <div>
+          <label className="label">E-mail</label>
+          <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ty@email.cz" />
+        </div>
+        <div>
+          <label className="label">Telefon</label>
+          <input className="input" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+420…" />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="label">Zaplatil (Kč)</label>
+            <input className="input" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Má dát celkem</label>
+            <input
+              className="input"
+              inputMode="numeric"
+              value={pledged}
+              onChange={(e) => setPledged(e.target.value)}
+              placeholder="prázdné = platí celé"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-2 pt-1">
+          <button className="btn-primary flex-1" onClick={save} disabled={!name.trim()}>
+            Uložit
+          </button>
+          <button className="btn-ghost" onClick={onClose}>
+            Zrušit
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
