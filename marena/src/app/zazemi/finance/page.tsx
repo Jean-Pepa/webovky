@@ -312,7 +312,8 @@ export default function FinancePage() {
         )}
       </div>
 
-      {/* Přehled — malým písmem, vedle sebe hned pod hlavičkou */}
+      {/* Přehled — malým písmem, vedle sebe hned pod hlavičkou. „V kase" =
+          kolik reálně zbývá na společném účtu (klesne při proplacení výdaje). */}
       <div className="flex items-stretch overflow-hidden rounded-xl border border-ink/[0.06] bg-surface text-center">
         {[
           { label: "Příjmy", value: totals.prijmy, cls: "text-leaf-700", sign: "+" },
@@ -323,10 +324,16 @@ export default function FinancePage() {
             cls: totals.bilance >= 0 ? "text-leaf-700" : "text-red-600",
             sign: totals.bilance >= 0 ? "+" : "−",
           },
+          {
+            label: "V kase",
+            value: Math.abs(totals.kasa),
+            cls: totals.kasa >= 0 ? "text-ink" : "text-red-600",
+            sign: totals.kasa >= 0 ? "" : "−",
+          },
         ].map((c, i) => (
-          <div key={c.label} className={`flex-1 px-2 py-2 ${i > 0 ? "border-l border-ink/[0.06]" : ""}`}>
-            <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">{c.label}</p>
-            <p className={`font-display text-[13px] font-bold leading-tight sm:text-sm ${c.cls}`}>
+          <div key={c.label} className={`flex-1 px-1.5 py-2 ${i > 0 ? "border-l border-ink/[0.06]" : ""}`}>
+            <p className="text-[9px] font-medium uppercase tracking-wide text-ink-soft sm:text-[10px]">{c.label}</p>
+            <p className={`font-display text-[12px] font-bold leading-tight sm:text-sm ${c.cls}`}>
               {c.sign}
               {fmtCZK(c.value)}
             </p>

@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { isAdmin } from "@/lib/admin";
 import { roleById } from "@/lib/roles";
 import { fmtCZK } from "@/lib/format";
+import { flash } from "@/components/Flash";
 import { ApproveAccountModal } from "@/components/ApproveAccountModal";
 import type { Member } from "@/lib/types";
 
@@ -91,7 +92,10 @@ export function AdminApprovals() {
                 </span>
                 <button
                   className="shrink-0 rounded-full bg-leaf px-4 py-1.5 text-sm font-bold text-white transition hover:opacity-90"
-                  onClick={() => dispatch({ type: "toggleFinancePaid", yearId: year.id, financeId: f.id })}
+                  onClick={async () => {
+                    const ok = await dispatch({ type: "toggleFinancePaid", yearId: year.id, financeId: f.id });
+                    if (ok) flash(`Proplaceno ${fmtCZK(f.amount)} — ${f.who}. Odečteno ze společného účtu (v kase).`, "💸");
+                  }}
                 >
                   Proplatit
                 </button>
