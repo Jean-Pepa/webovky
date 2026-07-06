@@ -107,6 +107,58 @@ function posStats(list: FinanceItem[]) {
   };
 }
 
+// Historie objednávek dne — jednotlivé prodeje (zápisy s rozpisem „×")
+// od nejnovějšího. Slouží do rolovacího seznamu ve statistikách i archivu.
+type PosOrder = { id: string; at: string; cat: string; items: string; amount: number; how: string };
+function posOrders(list: FinanceItem[]): PosOrder[] {
+  return list
+    .filter((f) => f.kind === "prijem" && (f.note ?? "").includes("×"))
+    .map((f) => {
+      const note = f.note ?? "";
+      const items = note.split(" · ")[0];
+      const how = note.includes("QR platba") ? "QR" : note.includes("hotově") ? "hotově" : "";
+      return { id: f.id, at: f.createdAt, cat: f.category ?? "", items, amount: f.amount, how };
+    })
+    .sort((a, b) => b.at.localeCompare(a.at));
+}
+
+const hhmm = (iso: string) => {
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? "" : `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
+
+// Rolovací historie objednávek — po ťuknutí na tlačítko se rozbalí
+// seznam všech prodejů dne (čas · položky · kategorie · způsob · částka).
+function OrderHistory({ orders }: { orders: PosOrder[] }) {
+  const [open, setOpen] = useState(false);
+  if (orders.length === 0) return null;
+  return (
+    <div className="mt-3 border-t border-ink/[0.06] pt-2">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-2 rounded-lg py-1 text-sm font-semibold text-ink-soft transition hover:text-ink"
+        aria-expanded={open}
+      >
+        <span>🧾 Historie objednávek ({orders.length})</span>
+        <span className={`text-xs transition-transform ${open ? "rotate-180" : ""}`}>▾</span>
+      </button>
+      {open && (
+        <ul className="mt-2 max-h-72 space-y-1 overflow-y-auto pr-1">
+          {orders.map((o) => (
+            <li key={o.id} className="flex items-center gap-2 rounded-lg bg-paper2/60 px-2.5 py-1.5 text-sm">
+              <span className="shrink-0 tabular-nums text-xs text-ink-soft">{hhmm(o.at)}</span>
+              <span className="min-w-0 flex-1 truncate">{o.items}</span>
+              {o.cat && <span className="chip shrink-0 text-[11px]">{o.cat}</span>}
+              {o.how && <span className="shrink-0 text-xs text-ink-soft">{o.how === "QR" ? "QR" : "💵"}</span>}
+              <span className="shrink-0 font-semibold tabular-nums">{fmtCZK(o.amount)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 // Cena a rozpis objednávky merche — cena ze snapshotu v položce,
 // jinak z aktuální nabídky (kvůli starším objednávkám).
 const orderTotal = (order: MerchOrder, products: MerchProduct[]) =>
@@ -243,7 +295,8 @@ function Pos() {
 
   // Statistiky dne — den je jedna otevřená kasa, počítá se všechno
   // od jejího založení (i online objednávky zaplacené během dne).
-  const stats = posStats((year.finances ?? []).filter((f) => POS_CATS.has(f.category ?? "") && f.createdAt >= openBox.openedAt));
+  const dayFinances = (year.finances ?? []).filter((f) => POS_CATS.has(f.category ?? "") && f.createdAt >= openBox.openedAt);
+  const stats = posStats(dayFinances);
 
   // Klíč řádku nese id, variantu i cenu — stejně pojmenované položky
   // s jinou cenou se nesmí slít do jedné.
@@ -637,6 +690,7 @@ function Pos() {
                 Nejprodávanější: {stats.top.map((t) => `${t.qty}× ${t.name}`).join(" · ")}
               </p>
             )}
+            <OrderHistory orders={posOrders(dayFinances)} />
           </>
         )}
       </section>
@@ -856,10 +910,9 @@ function DayGate({
           // Den = od otevření kasy do otevření té další (i platby přijaté
           // po uzavření, třeba QR u vyzvednutí, tak zůstanou u svého dne).
           const until = closed[i - 1]?.openedAt ?? "￿";
-          const stats = posStats(
-            finances.filter((f) => POS_CATS.has(f.category ?? "") && f.createdAt >= c.openedAt && f.createdAt < until),
-          );
-          return <DayCard key={c.id} box={c} stats={stats} yearId={yearId} admin={admin} />;
+          const dayFin = finances.filter((f) => POS_CATS.has(f.category ?? "") && f.createdAt >= c.openedAt && f.createdAt < until);
+          const stats = posStats(dayFin);
+          return <DayCard key={c.id} box={c} stats={stats} orders={posOrders(dayFin)} yearId={yearId} admin={admin} />;
         })
       )}
     </div>
@@ -869,7 +922,7 @@ function DayGate({
 // Uzamčený den: statistiky prodeje + vyúčtování kasy. Smazat den může
 // jen správce — odstraní kasu dne a její zápis rozdílu ve financích
 // (samotné prodeje ve financích zůstávají).
-function DayCard({ box, stats, yearId, admin }: { box: Cashbox; stats: ReturnType<typeof posStats>; yearId: string; admin: boolean }) {
+function DayCard({ box, stats, orders, yearId, admin }: { box: Cashbox; stats: ReturnType<typeof posStats>; orders: PosOrder[]; yearId: string; admin: boolean }) {
   const { dispatch } = useStore();
   const rozdil = (box.closing ?? 0) - box.opening - (box.alreadyRecorded ?? 0);
   return (
@@ -919,6 +972,7 @@ function DayCard({ box, stats, yearId, admin }: { box: Cashbox; stats: ReturnTyp
       {stats.top.length > 0 && (
         <p className="mt-1 text-sm text-ink-soft">Nejprodávanější: {stats.top.map((t) => `${t.qty}× ${t.name}`).join(" · ")}</p>
       )}
+      <OrderHistory orders={orders} />
     </section>
   );
 }
