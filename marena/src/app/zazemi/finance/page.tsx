@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, fmtDateTime, todayISO } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -298,22 +297,16 @@ export default function FinancePage() {
               </button>
             )}
             {tab === "vse" && (
-              <>
-                {/* Jednotná pokladna — tržby se sem propíšou po zaplacení, po kategoriích. */}
-                <Link href="/zazemi/prodej" className="btn-secondary">
-                  🛒 Prodej (kasa)
-                </Link>
-                <button
-                  className="btn-primary"
-                  onClick={() => {
-                    const opening = !open;
-                    setOpen(opening);
-                    if (opening) setTimeout(() => document.getElementById("add-finance")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
-                  }}
-                >
-                  {open ? "Zavřít" : "+ Přidat položku"}
-                </button>
-              </>
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  const opening = !open;
+                  setOpen(opening);
+                  if (opening) setTimeout(() => document.getElementById("add-finance")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                }}
+              >
+                {open ? "Zavřít" : "+ Přidat položku"}
+              </button>
             )}
           </div>
         )}
