@@ -459,19 +459,49 @@ function Pos() {
         </div>
       </div>
 
-      {/* Účtenka — kompaktní, hned pod nadpisem; vidět od začátku (i prázdná) */}
+      {/* Účtenka — kompaktní, hned pod nadpisem; vidět od začátku (i prázdná).
+          Prázdná ukazuje vizuální návod „co ťuknout" ve třech krocích. */}
       <section className="card p-3">
           {lines.length === 0 ? (
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-sm text-ink-soft">🧾 Účtenka je prázdná — ťukni na položky</span>
-              {lastSale && (
-                <button className="btn-secondary px-3 py-1.5 text-sm" onClick={() => setLines(lastSale)}>
-                  ↻ Zopakovat poslední
-                </button>
-              )}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-ink-soft">🧾 Účtenka je prázdná</span>
+                {lastSale && (
+                  <button className="btn-secondary px-3 py-1.5 text-sm" onClick={() => setLines(lastSale)}>
+                    ↻ Zopakovat poslední
+                  </button>
+                )}
+              </div>
+              {/* Tři kroky prodeje — obsluha hned vidí, co ťuknout (1. krok svítí zlatě) */}
+              <ol className="flex flex-wrap items-center gap-1.5 text-xs font-medium">
+                <li className="inline-flex items-center gap-1.5 rounded-full bg-gold-100 px-2.5 py-1 text-ink">
+                  <span className="grid h-4 w-4 place-items-center rounded-full bg-gold-500 text-[10px] font-bold text-[#1d1d1f]">1</span>
+                  Ťukni na položky ↓
+                </li>
+                <span aria-hidden className="text-ink-soft/40">→</span>
+                <li className="inline-flex items-center gap-1.5 rounded-full bg-paper2 px-2.5 py-1 text-ink-soft">
+                  <span className="grid h-4 w-4 place-items-center rounded-full bg-ink/10 text-[10px] font-bold">2</span>
+                  Vyber QR / hotově
+                </li>
+                <span aria-hidden className="text-ink-soft/40">→</span>
+                <li className="inline-flex items-center gap-1.5 rounded-full bg-paper2 px-2.5 py-1 text-ink-soft">
+                  <span className="grid h-4 w-4 place-items-center rounded-full bg-ink/10 text-[10px] font-bold">3</span>
+                  Zaplaceno ✓
+                </li>
+              </ol>
             </div>
           ) : (
             <>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-ink-soft">🧾 Účtenka · {lines.reduce((s, l) => s + l.qty, 0)} ks</span>
+                <button
+                  className="rounded-full px-2.5 py-1 text-xs font-medium text-ink-soft transition hover:bg-ink/[0.06] hover:text-ink"
+                  onClick={() => setLines([])}
+                  aria-label="Vyčistit účtenku"
+                >
+                  Vyčistit ✕
+                </button>
+              </div>
               <div className="divide-y divide-ink/[0.06]">
                 {lines.map((l) => (
                   <div key={l.key} className="flex min-h-9 items-center gap-2 py-1 text-sm">
@@ -489,23 +519,25 @@ function Pos() {
                   </div>
                 ))}
               </div>
-              <div className="mt-2 flex items-center gap-2 border-t border-ink/10 pt-2">
-                <span className="font-display text-lg font-bold tracking-tight">{fmtCZK(total)}</span>
-                <div className="ml-auto flex items-center gap-1.5">
-                  <button className="btn-primary px-4 py-2 text-sm" disabled={total <= 0 || !accountOk || busy} onClick={() => setQrOpen(true)}>
+              {/* Platba — velká částka + dvě velká tlačítka vedle sebe, ať je jasné,
+                  co ťuknout dál (QR pro kartu / hotově pro peníze). */}
+              <div className="mt-2 border-t border-ink/10 pt-2">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm text-ink-soft">Celkem</span>
+                  <span className="font-display text-2xl font-bold tracking-tight">{fmtCZK(total)}</span>
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button className="btn-primary min-h-12 text-[15px]" disabled={total <= 0 || !accountOk || busy} onClick={() => setQrOpen(true)}>
                     QR platba
                   </button>
-                  <button className="btn-secondary px-4 py-2 text-sm" disabled={total <= 0 || busy} onClick={() => setCashOpen(true)}>
+                  <button className="btn-secondary min-h-12 text-[15px]" disabled={total <= 0 || busy} onClick={() => setCashOpen(true)}>
                     💵 Hotově
                   </button>
-                  <button className="btn-ghost px-2 py-2 text-sm" onClick={() => setLines([])} aria-label="Vyčistit účtenku" title="Vyčistit">
-                    ✕
-                  </button>
                 </div>
+                {total > 0 && !accountOk && (
+                  <p className="mt-1.5 text-center text-xs text-ink-soft">QR platba se odemkne, jakmile správce nahoře nastaví účet.</p>
+                )}
               </div>
-              {total > 0 && !accountOk && (
-                <p className="mt-1.5 text-xs text-ink-soft">QR platba se odemkne, jakmile správce nahoře nastaví účet.</p>
-              )}
             </>
           )}
       </section>
@@ -593,17 +625,20 @@ function Pos() {
                 <button
                   key={i.id}
                   onClick={() => (editNabidka ? removeItem(g.kind, i) : tapItem(g.kind, i))}
-                  className={`flex min-h-12 items-center justify-between gap-2 rounded-lg border-l-4 px-3 py-2.5 text-left transition active:scale-[0.98] ${
+                  className={`flex min-h-14 items-center justify-between gap-2 rounded-lg border-l-4 px-3 py-2.5 text-left transition active:scale-[0.97] ${
                     editNabidka
-                      ? "bg-red-50 ring-1 ring-red-200 hover:bg-red-100"
+                      ? "border-l-red-400 bg-red-50 ring-1 ring-red-200 hover:bg-red-100"
                       : `bg-paper2 hover:bg-gold-100 ${KIND_BORDER[g.kind]}`
-                  } ${editNabidka ? "border-l-red-400" : ""}`}
+                  }`}
                 >
                   <span className="min-w-0 truncate text-[15px] font-semibold">{i.name}</span>
                   {editNabidka ? (
                     <span className="shrink-0 text-sm font-bold text-red-600">✕ Smazat</span>
                   ) : (
-                    <span className="shrink-0 text-sm font-bold text-ink-soft">{fmtCZK(i.price)}</span>
+                    // Cena jako zdvižená „přidávací" pilulka s +, ať je jasné, že ťuknutí položku přidá.
+                    <span className="shrink-0 rounded-full bg-surface px-2.5 py-1 text-sm font-bold text-ink shadow-sm ring-1 ring-ink/5">
+                      + {fmtCZK(i.price)}
+                    </span>
                   )}
                 </button>
               ))}
