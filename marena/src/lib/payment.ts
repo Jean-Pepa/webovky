@@ -26,7 +26,7 @@ function ibanChecksumOk(iban: string): boolean {
   return mod97(numeric) === 1;
 }
 
-export type ParsedAccount = { iban: string; bic?: string; display: string } | { error: string };
+export type ParsedAccount = { iban: string; bic?: string; display: string; warning?: string } | { error: string };
 
 // Přijme „123456789/0800", „19-123456789/0800" i hotový IBAN kterékoli země
 // („CZ65 0800 …", „LT34 3250 …" — třeba Revolut). Za IBAN jde připojit BIC
@@ -41,7 +41,16 @@ export function parseAccount(input: string): ParsedAccount {
   if (/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(ibanPart)) {
     if (!ibanChecksumOk(ibanPart)) return { error: "IBAN nesedí (překlep v číslici?)." };
     if (bicPart && !/^[A-Z0-9]{8}([A-Z0-9]{3})?$/.test(bicPart)) return { error: "BIC/SWIFT má 8 nebo 11 znaků (např. REVOLT21)." };
-    return { iban: ibanPart, bic: bicPart || undefined, display: ibanPart.replace(/(.{4})/g, "$1 ").trim() };
+    // Zahraniční (ne-CZ) IBAN bez BIC → česká banka v QR nedokáže určit banku.
+    const foreignNoBic = !bicPart && !ibanPart.startsWith("CZ");
+    return {
+      iban: ibanPart,
+      bic: bicPart || undefined,
+      display: ibanPart.replace(/(.{4})/g, "$1 ").trim(),
+      warning: foreignNoBic
+        ? "Zahraniční účet (IBAN) bez BIC/SWIFT — česká banka ho v QR často nenačte. Přidej za IBAN „+BIC“, u Revolutu +REVOLT21."
+        : undefined,
+    };
   }
 
   // Český formát: [předčíslí-]číslo/kód banky
