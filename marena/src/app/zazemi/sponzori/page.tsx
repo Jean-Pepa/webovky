@@ -4,6 +4,7 @@ import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useStore } from "@/lib/store";
 import { canEditSection } from "@/lib/access";
 import { isAdmin } from "@/lib/admin";
+import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
@@ -119,6 +120,9 @@ export default function SponzoriPage() {
 
   return (
     <div className="space-y-5">
+      {canEditCurrentYear && !canEdit && (
+        <ReadOnlyBanner>Sponzory máš jen k náhledu — upravovat je může jen správce a příslušná role.</ReadOnlyBanner>
+      )}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-[28px] font-bold tracking-tight">Sponzoři</h1>

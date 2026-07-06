@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { canEditSection } from "@/lib/access";
+import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { DeleteButton } from "@/components/DeleteButton";
 import { normName } from "@/lib/names";
 import { flash } from "@/components/Flash";
@@ -38,6 +39,9 @@ export default function PrvaciPage() {
 
   return (
     <div className="space-y-5">
+      {canEditCurrentYear && !canEdit && (
+        <ReadOnlyBanner>Prváky máš jen k náhledu — upravovat je může jen správce a příslušná role.</ReadOnlyBanner>
+      )}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-[28px] font-bold tracking-tight">Prváci</h1>

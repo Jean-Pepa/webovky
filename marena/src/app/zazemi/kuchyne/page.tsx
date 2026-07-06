@@ -13,6 +13,7 @@ import { fmtCZK, fmtDate } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { isAdmin } from "@/lib/admin";
 import { canEditSection } from "@/lib/access";
+import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { flash } from "@/components/Flash";
 import type { KitchenFile, Drink, DrinkKind, DrinkIngredient, Weekday } from "@/lib/types";
 
@@ -62,6 +63,9 @@ export default function KuchyneBarPage() {
 
   return (
     <div className="space-y-6">
+      {canEditCurrentYear && !editable && (
+        <ReadOnlyBanner>Kuchyni a bar máš jen k náhledu — upravovat je může jen správce a příslušná role.</ReadOnlyBanner>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-[28px] font-bold tracking-tight">Kuchyně &amp; bar</h1>
         <div className="flex flex-wrap items-center gap-2">
