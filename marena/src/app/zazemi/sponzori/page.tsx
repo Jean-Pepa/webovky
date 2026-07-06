@@ -3,6 +3,7 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useStore } from "@/lib/store";
 import { canEditSection } from "@/lib/access";
+import { isAdmin } from "@/lib/admin";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
@@ -41,13 +42,6 @@ function LinksEditor({ links, setLinks }: { links: string[]; setLinks: Dispatch<
   );
 }
 
-const STATUS: Record<SponsorStatus, { label: string; cls: string }> = {
-  oslovit: { label: "📋 oslovit", cls: "bg-paper2 text-ink-soft" },
-  ceka: { label: "⏳ čeká", cls: "bg-gold-600/12 text-gold-700" },
-  potvrzeno: { label: "✅ potvrzeno", cls: "bg-leaf/15 text-leaf-700" },
-  odmitl: { label: "✖️ odmítl", cls: "bg-red-500/10 text-red-600" },
-};
-const NEXT: Record<SponsorStatus, SponsorStatus> = { oslovit: "ceka", ceka: "potvrzeno", potvrzeno: "odmitl", odmitl: "oslovit" };
 // Pořadí skupin: „čeká" nahoře, pak „potvrzeno", pak „oslovit", „odmítl" úplně dole.
 const GROUP: Record<SponsorStatus, number> = { ceka: 0, potvrzeno: 1, oslovit: 2, odmitl: 3 };
 
@@ -128,7 +122,7 @@ export default function SponzoriPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-[28px] font-bold tracking-tight">Sponzoři</h1>
-          <p className="mt-0.5 text-sm text-ink-soft">Koho oslovit, co dává a jak domluva stojí. Klikni na stav: oslovit → čeká → potvrzeno → odmítl.</p>
+          <p className="mt-0.5 text-sm text-ink-soft">Koho oslovit a co dává. Oslov a pak označ, jak domluva dopadla — ano (potvrzeno) / ne (odmítl).</p>
         </div>
         {canEdit && (
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
@@ -238,7 +232,7 @@ export default function SponzoriPage() {
 }
 
 function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdit: boolean }) {
-  const { dispatch } = useStore();
+  const { dispatch, me } = useStore();
   const [edit, setEdit] = useState(false);
   const [name, setName] = useState(s.name);
   const [gives, setGives] = useState(s.gives ?? "");
@@ -302,45 +296,104 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
     );
   }
 
+  // Stavové akce jako u Programu: „Osloveno?" (oslovit ↔ čeká) + domluva ano/ne
+  // (čeká → potvrzeno / odmítl). Po rozhodnutí zamčeno — mění jen správce.
+  const admin = isAdmin(me);
+  const contacted = s.status !== "oslovit";
+  const decided = s.status === "potvrzeno" || s.status === "odmitl";
+  const lockContact = decided && !admin;
+  const lockDecide = decided && !admin;
+  const setStatus = (status: SponsorStatus) => canEdit && dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { status } });
+
   return (
-    <li className="card flex items-start gap-3 p-3">
-      <button
-        onClick={() => canEdit && dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { status: NEXT[s.status] } })}
-        disabled={!canEdit}
-        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition ${STATUS[s.status].cls} ${canEdit ? "hover:opacity-80" : ""}`}
-        title={canEdit ? "Klikni pro změnu stavu" : undefined}
-      >
-        {STATUS[s.status].label}
-      </button>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <p className="break-words font-medium">{s.name}</p>
-          {s.returning && <span className="rounded-full bg-plum-600/10 px-2 py-0.5 text-[11px] font-medium text-plum-700">🔁 stálý</span>}
-          {s.category && (
-            <span className="rounded-full bg-paper2 px-2 py-0.5 text-[11px] font-medium text-ink-soft">
-              {CAT[s.category].emoji} {CAT[s.category].label}
-            </span>
-          )}
-        </div>
-        {s.gives && <p className="break-words text-sm text-leaf-700">dává: {s.gives}</p>}
+    <li className={`card p-3 ${s.status === "potvrzeno" ? "bg-leaf/[0.05]" : s.status === "odmitl" ? "bg-red-500/[0.04]" : ""}`}>
+      {/* Jméno + odznaky + odkaz */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <p className="break-words font-medium">{s.name}</p>
+        {s.returning && <span className="rounded-full bg-plum-600/10 px-2 py-0.5 text-[11px] font-medium text-plum-700">🔁 stálý</span>}
+        {s.category && (
+          <span className="rounded-full bg-paper2 px-2 py-0.5 text-[11px] font-medium text-ink-soft">
+            {CAT[s.category].emoji} {CAT[s.category].label}
+          </span>
+        )}
+        {linksOf(s).map((l, i, arr) => (
+          <a key={i} href={hrefOf(l)} target="_blank" rel="noreferrer" className="break-all text-xs font-medium text-gold-700 hover:underline">
+            🔗 odkaz{arr.length > 1 ? ` ${i + 1}` : ""} ↗
+          </a>
+        ))}
+      </div>
+
+      {/* Co dává + kdo řeší + poznámka */}
+      {s.gives && <p className="mt-1 break-words text-sm text-leaf-700">🎁 dává: {s.gives}</p>}
+      {(s.who || s.note) && (
         <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
           {s.who && <span>👤 {s.who}</span>}
-          {linksOf(s).map((l, i, arr) => (
-            <a key={i} href={hrefOf(l)} target="_blank" rel="noreferrer" className="break-all text-gold-700 hover:underline">
-              🔗 odkaz{arr.length > 1 ? ` ${i + 1}` : ""}
-            </a>
-          ))}
           {s.note && <span className="break-words">📝 {s.note}</span>}
         </div>
-      </div>
-      {canEdit && (
-        <div className="flex shrink-0 items-center gap-1">
-          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>
-            Upravit
-          </button>
-          <DeleteButton onConfirm={() => dispatch({ type: "removeSponsor", yearId, sponsorId: s.id })} />
-        </div>
       )}
+
+      {/* Stavová tlačítka (jako Program): Osloveno + domluva ano/ne */}
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {canEdit ? (
+          <button
+            disabled={lockContact}
+            onClick={() => setStatus(contacted ? "oslovit" : "ceka")}
+            title={lockContact ? "Rozhodnuto — změnit může jen správce" : undefined}
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+              contacted ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-paper2 text-ink-soft hover:bg-ink/5"
+            } ${lockContact ? "cursor-not-allowed opacity-60 hover:bg-leaf/15" : ""}`}
+          >
+            {contacted ? "Osloveno ✓" : "Oslovit"}
+          </button>
+        ) : (
+          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${contacted ? "bg-leaf/15 text-leaf-700" : "bg-paper2 text-ink-soft"}`}>
+            {contacted ? "Osloveno ✓" : "Neosloveno"}
+          </span>
+        )}
+
+        {/* Stav domluvy */}
+        {s.status === "ceka" && <span className="inline-flex rounded-full bg-gold-100 px-2.5 py-1 text-xs font-medium text-gold-800">⏳ čeká</span>}
+        {s.status === "potvrzeno" && (
+          <span className="inline-flex rounded-full bg-leaf/15 px-2.5 py-1 text-xs font-semibold text-leaf-700 ring-1 ring-inset ring-leaf/40">✅ potvrzeno</span>
+        )}
+        {s.status === "odmitl" && <span className="inline-flex rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600">👎 odmítl</span>}
+
+        {/* Domluva ano/ne — po oslovení */}
+        {canEdit && contacted && (
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-ink-soft">domluva?</span>
+            <div className="flex gap-1" title={lockDecide ? "Rozhodnuto — změnit může jen správce" : undefined}>
+              <button
+                disabled={lockDecide}
+                onClick={() => setStatus(s.status === "potvrzeno" ? "ceka" : "potvrzeno")}
+                className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+                  s.status === "potvrzeno" ? "bg-leaf text-white" : "bg-leaf/10 text-leaf-700 hover:bg-leaf/20"
+                } ${lockDecide ? "cursor-not-allowed opacity-60" : ""}`}
+              >
+                ano
+              </button>
+              <button
+                disabled={lockDecide}
+                onClick={() => setStatus(s.status === "odmitl" ? "ceka" : "odmitl")}
+                className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+                  s.status === "odmitl" ? "bg-red-500 text-white" : "bg-red-500/10 text-red-600 hover:bg-red-500/20"
+                } ${lockDecide ? "cursor-not-allowed opacity-60" : ""}`}
+              >
+                ne
+              </button>
+            </div>
+          </div>
+        )}
+
+        {canEdit && (
+          <div className="ml-auto flex items-center gap-1 self-start">
+            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>
+              Upravit
+            </button>
+            <DeleteButton onConfirm={() => dispatch({ type: "removeSponsor", yearId, sponsorId: s.id })} />
+          </div>
+        )}
+      </div>
     </li>
   );
 }
