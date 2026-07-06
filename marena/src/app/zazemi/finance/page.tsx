@@ -264,7 +264,8 @@ export default function FinancePage() {
 
   // Kasy: kolik se ráno vložilo (vklady) a kolik se vydělalo (tržba z uzavřených).
   const kasaOpenings = (year.cashboxes ?? []).reduce((s, c) => s + c.opening, 0);
-  const kasaTrzba = (year.cashboxes ?? []).reduce((s, c) => s + (c.closedAt && c.closing != null ? c.closing - c.opening - (c.alreadyRecorded ?? 0) : 0), 0);
+  // Tržba kas = kolik se přes kasy prodalo (QR + hotově), NE rozdíl při uzávěrce.
+  const kasaTrzba = (year.cashboxes ?? []).reduce((s, c) => s + posStats(boxDayFinances(year.finances ?? [], c, year.cashboxes ?? [])).takings, 0);
 
   async function add() {
     const num = parseAmount(amount);
@@ -1441,9 +1442,12 @@ function CashboxCard({
         </div>
       </div>
 
-      {/* Tržba vlevo, platby (QR + hotově) pohromadě vpravo */}
+      {/* Tržba vlevo (zeleně — kolik se zatím vydělalo), platby vpravo */}
       <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <span className="font-display text-[22px] font-bold tracking-tight">{fmtCZK(stats.total)}</span>
+        <span className="flex items-baseline gap-2">
+          <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">Tržba</span>
+          <span className="font-display text-[22px] font-bold tracking-tight text-leaf-700">{fmtCZK(stats.takings)}</span>
+        </span>
         <PayBreakdown qr={stats.qr} cash={stats.cash} count={stats.count} />
       </div>
 

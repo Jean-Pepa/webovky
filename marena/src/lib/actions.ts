@@ -140,8 +140,8 @@ export type Action =
   | { type: "addKitchenFile"; yearId: string; label: string; category: string; blobId: string; fileKind: "image" | "file"; fileName?: string; note?: string; author: string; place?: "bar" | "kuchyne" }
   | { type: "removeKitchenFile"; yearId: string; fileId: string }
   // Merch — nabídka produktů (správce / role merch) a objednávky (veřejná stránka).
-  | { type: "addMerchProduct"; yearId: string; name: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; note?: string }
-  | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; note?: string } }
+  | { type: "addMerchProduct"; yearId: string; name: string; price?: number; cost?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; note?: string }
+  | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; cost?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; note?: string } }
   | { type: "removeMerchProduct"; yearId: string; productId: string }
   | { type: "addMerchOrder"; yearId: string; name: string; phone?: string; email?: string; items: MerchOrderItem[]; note?: string; id?: string }
   | { type: "toggleMerchOrderDone"; yearId: string; orderId: string }
@@ -1128,6 +1128,7 @@ export function applyAction(db: DB, a: Action): DB {
             id: uid("mp_"),
             name: a.name.trim() || "Bez názvu",
             price: Number.isFinite(a.price) ? a.price : undefined,
+            cost: Number.isFinite(a.cost) ? a.cost : undefined,
             blobId: a.blobId,
             sizes: cleanList(a.sizes),
             colors: cleanList(a.colors),
@@ -1148,6 +1149,7 @@ export function applyAction(db: DB, a: Action): DB {
             ...q,
             name: q.name !== undefined ? q.name.trim() || p.name : p.name,
             price: "price" in q ? (Number.isFinite(q.price) ? q.price : undefined) : p.price,
+            cost: "cost" in q ? (Number.isFinite(q.cost) ? q.cost : undefined) : p.cost,
             sizes: "sizes" in q ? cleanList(q.sizes) : p.sizes,
             colors: "colors" in q ? cleanList(q.colors) : p.colors,
             stock: "stock" in q ? (Number.isFinite(q.stock) ? q.stock : undefined) : p.stock,
