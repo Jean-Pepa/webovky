@@ -605,7 +605,7 @@ function Pos() {
                       editNabidka ? removeItem(g.kind, i) : soldMode ? toggleSoldOut(i.id) : tapItem(g.kind, i)
                     }
                     disabled={soldMode ? stockSold || busy : editNabidka ? false : sold}
-                    className={`flex min-h-14 items-center justify-between gap-2 rounded-lg border-l-4 px-3 py-2.5 text-left transition active:scale-[0.97] disabled:active:scale-100 ${
+                    className={`flex min-h-14 flex-col items-start justify-center gap-0.5 rounded-lg border-l-4 px-3 py-2 text-left transition active:scale-[0.97] disabled:active:scale-100 ${
                       editNabidka
                         ? "border-l-red-400 bg-red-50 ring-1 ring-red-200 hover:bg-red-100"
                         : sold
@@ -613,22 +613,20 @@ function Pos() {
                           : `bg-paper2 hover:bg-gold-100 ${KIND_BORDER[g.kind]}`
                     } ${soldMode ? "ring-1 ring-ink/15" : ""}`}
                   >
-                    <span className={`min-w-0 truncate text-[15px] font-semibold ${sold ? "text-ink-soft line-through" : ""}`}>{i.name}</span>
+                    {/* Hlavní je NÁZEV (přes celou šířku); cena a „zbývá" jsou malé pod ním. */}
+                    <span className={`w-full truncate text-[15px] font-semibold leading-tight ${sold ? "text-ink-soft line-through" : ""}`}>{i.name}</span>
                     {editNabidka ? (
-                      <span className="shrink-0 text-sm font-bold text-red-600">✕ Smazat</span>
+                      <span className="text-xs font-bold text-red-600">✕ Smazat z nabídky</span>
                     ) : soldMode ? (
-                      <span className={`shrink-0 text-sm font-bold ${stockSold ? "text-ink-soft" : manualSold ? "text-leaf-700" : "text-ink-soft"}`}>
+                      <span className={`text-xs font-bold ${stockSold ? "text-ink-soft" : manualSold ? "text-leaf-700" : "text-ink-soft"}`}>
                         {stockSold ? "📦 sklad 0" : manualSold ? "↩︎ Vrátit" : "🚫 Vyprodat"}
                       </span>
                     ) : sold ? (
-                      <span className="shrink-0 text-sm font-bold text-ink-soft">✕ Vyprodáno</span>
+                      <span className="text-xs font-bold text-ink-soft">✕ Vyprodáno</span>
                     ) : (
-                      // Cena jako zdvižená „přidávací" pilulka s +; u merche se skladem i „zbývá N".
-                      <span className="flex shrink-0 items-center gap-1.5">
-                        {left != null && <span className="text-[11px] font-medium text-ink-soft">zbývá {left}</span>}
-                        <span className="rounded-full bg-surface px-2.5 py-1 text-sm font-bold text-ink shadow-sm ring-1 ring-ink/5">
-                          + {fmtCZK(i.price)}
-                        </span>
+                      <span className="flex w-full items-center gap-2 text-xs">
+                        <span className="font-semibold text-ink-soft">+ {fmtCZK(i.price)}</span>
+                        {left != null && <span className="ml-auto font-medium text-ink-soft/80">zbývá {left}</span>}
                       </span>
                     )}
                   </button>
