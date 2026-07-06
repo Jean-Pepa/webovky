@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, fmtDateTime, todayISO } from "@/lib/format";
+import { posStats, posOrders, boxDayFinances, DayCard, OrderHistory, PayBreakdown } from "@/lib/pos";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
@@ -221,9 +222,14 @@ export default function FinancePage() {
     [items],
   );
 
-  // Prodeje sečtené po dnech: kasa (bar/kuchyně/kasa) zvlášť, merch zvlášť.
-  const posSaleDays = useMemo(() => buildSaleDays(items, (c) => c !== "merch"), [items]);
+  // Merch prodeje po dnech (do pohledu Merch). Kasové prodeje (bar/kuchyně/kasa)
+  // se ukazují přímo v denních kartách kasy; „bez kasy" jsou jen prodeje, které
+  // nespadají pod žádnou kasu (starší data) — ty jdou samostatně, ať jdou smazat.
   const merchSaleDays = useMemo(() => buildSaleDays(items, (c) => c === "merch"), [items]);
+  const orphanSaleDays = useMemo(() => {
+    const boxes = year?.cashboxes ?? [];
+    return buildSaleDays(items.filter((f) => !boxes.some((b) => b.openedAt <= f.createdAt)), (c) => c !== "merch");
+  }, [items, year]);
 
   const rows = useMemo(() => {
     return items
@@ -460,20 +466,27 @@ export default function FinancePage() {
               return <p className="text-sm text-ink-soft">Zatím žádná kasa. Klikni nahoře na tlačítko + Kasa.</p>;
             if (boxes.length === 0) return <p className="py-4 text-center text-sm text-ink-soft">Žádná kasa neodpovídá hledání.</p>;
             return (
-              <Collapsible peekClass="max-h-[150px]" expandable={boxes.length > 1} total={boxes.length}>
-                <div className="space-y-2">
-                  {boxes.map((c) => (
-                    <CashboxCard key={c.id} box={c} yearId={year.id} canAdd={canAdd} canEdit={canEdit} />
-                  ))}
+              <Collapsible peekClass="max-h-[620px]" expandable={boxes.length > 2} total={boxes.length}>
+                <div className="space-y-3">
+                  {boxes.map((c) => {
+                    // Denní karta = stejná evidence jako v Prodeji (tržba, QR/hotově,
+                    // kategorie, historie objednávek). Otevřená kasa má navíc uzávěrku.
+                    const dayFin = boxDayFinances(year.finances ?? [], c, year.cashboxes ?? []);
+                    return c.closedAt ? (
+                      <DayCard key={c.id} box={c} stats={posStats(dayFin)} orders={posOrders(dayFin)} yearId={year.id} admin={canEdit} />
+                    ) : (
+                      <CashboxCard key={c.id} box={c} stats={posStats(dayFin)} orders={posOrders(dayFin)} yearId={year.id} canAdd={canAdd} canEdit={canEdit} />
+                    );
+                  })}
                 </div>
               </Collapsible>
             );
           })()}
         </section>
       )}
-      {/* Prodej po dnech — jednotlivé markované platby sečtené do kasy za den */}
-      {tab === "kasy" && posSaleDays.length > 0 && (
-        <SalesByDay days={posSaleDays} title="🧾 Prodej po dnech" q={q} canDelete={canEdit} yearId={year.id} />
+      {/* Prodej bez kasy — starší prodeje, které nespadají pod žádnou kasu (jdou smazat) */}
+      {tab === "kasy" && orphanSaleDays.length > 0 && (
+        <SalesByDay days={orphanSaleDays} title="🧾 Prodej bez kasy" q={q} canDelete={canEdit} yearId={year.id} />
       )}
 
       {/* ===== POHLED: VÝBĚR (vklady) ===== */}
@@ -1374,73 +1387,99 @@ function ContributionEditModal({ c, yearId, onClose }: { c: Contribution; yearId
   );
 }
 
-// Denní kasa: ráno vklad → večer stav; tržba se po uzavření zapíše do financí.
-function CashboxCard({ box, yearId, canAdd, canEdit }: { box: Cashbox; yearId: string; canAdd: boolean; canEdit: boolean }) {
+// Otevřená denní kasa: stejná evidence jako v Prodeji (tržba, QR/hotově vedle
+// sebe, kategorie, historie objednávek) + večerní uzávěrka. Markovaná hotovost
+// se při uzavření nepočítá dvakrát (odečte se jako alreadyRecorded).
+function CashboxCard({
+  box,
+  stats,
+  orders,
+  yearId,
+  canAdd,
+  canEdit,
+}: {
+  box: Cashbox;
+  stats: ReturnType<typeof posStats>;
+  orders: ReturnType<typeof posOrders>;
+  yearId: string;
+  canAdd: boolean;
+  canEdit: boolean;
+}) {
   const { dispatch } = useStore();
   const [closeVal, setCloseVal] = useState("");
-  const closed = !!box.closedAt;
-  // markovaná hotovost z Prodeje už ve financích je — tržba kasy je jen zbytek
-  const trzba = closed && box.closing != null ? box.closing - box.opening - (box.alreadyRecorded ?? 0) : null;
+  const expected = box.opening + stats.cash; // co má být večer v šuplíku
 
   function close() {
     const n = parseAmount(closeVal);
     if (closeVal.trim() === "" || !Number.isFinite(n)) return;
-    dispatch({ type: "closeCashbox", yearId, cashboxId: box.id, closing: n });
+    dispatch({ type: "closeCashbox", yearId, cashboxId: box.id, closing: n, alreadyRecorded: stats.cash });
     setCloseVal("");
   }
 
   return (
-    <div className={`rounded-xl border p-3 ${closed ? "border-leaf/30 bg-leaf/[0.05]" : "border-amber-200 bg-amber-50"}`}>
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="flex flex-wrap items-center gap-1.5 font-semibold">
-            Kasa{box.label ? ` — ${box.label}` : ""}
-            {closed ? (
-              <span className="chip bg-leaf/15 text-leaf-700">uzavřeno</span>
-            ) : (
-              <span className="chip bg-amber-100 text-amber-800">otevřeno</span>
-            )}
-          </p>
-          <p className="text-xs text-ink-soft">
-            Ráno {fmtCZK(box.opening)} · {fmtDateTime(box.openedAt)}
-            {closed && box.closing != null && ` → Večer ${fmtCZK(box.closing)} · ${fmtDateTime(box.closedAt!)}`}
-          </p>
+    <section className="card border-l-4 border-l-amber-300 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-display text-base font-semibold">
+          📅 {fmtDate(box.openedAt)}
+          {box.label ? <span className="ml-1.5 font-normal text-ink-soft">· {box.label}</span> : null}
+        </h3>
+        <div className="flex items-center gap-2">
+          <span className="chip bg-amber-100 text-amber-800">🟢 otevřeno</span>
+          {canEdit && (
+            <DeleteButton
+              what={`kasu ${fmtDate(box.openedAt)} — smaže i všechny prodeje toho dne`}
+              onConfirm={() => dispatch({ type: "removeCashbox", yearId, cashboxId: box.id })}
+            />
+          )}
         </div>
-        {canEdit && (
-          <DeleteButton
-            what={`kasu ${fmtDate(box.openedAt)} — smaže i všechny prodeje toho dne`}
-            onConfirm={() => dispatch({ type: "removeCashbox", yearId, cashboxId: box.id })}
-          />
-        )}
       </div>
 
-      {closed ? (
-        trzba != null && (
-          <p className="mt-1.5 text-sm">
-            {box.alreadyRecorded ? "Rozdíl" : "Tržba"}:{" "}
-            <span className={`font-display font-bold ${trzba >= 0 ? "text-leaf-700" : "text-red-600"}`}>{fmtCZK(trzba)}</span>
-            {box.alreadyRecorded ? <span className="ml-2 text-xs text-ink-soft">markováno v Prodeji {fmtCZK(box.alreadyRecorded)}</span> : null}
-            {box.financeId ? <span className="ml-2 text-xs text-ink-soft">✓ zapsáno do financí</span> : <span className="ml-2 text-xs text-ink-soft">bez zápisu (0)</span>}
-          </p>
-        )
-      ) : canAdd ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <input
-            className="input w-44"
-            inputMode="numeric"
-            placeholder="Večer v kase (Kč)"
-            value={closeVal}
-            onChange={(e) => setCloseVal(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && close()}
-          />
-          <button className="btn-primary" onClick={close} disabled={!closeVal.trim()}>
-            Uzavřít a zapsat tržbu
-          </button>
+      {/* Tržba vlevo, platby (QR + hotově) pohromadě vpravo */}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <span className="font-display text-[22px] font-bold tracking-tight">{fmtCZK(stats.total)}</span>
+        <PayBreakdown qr={stats.qr} cash={stats.cash} count={stats.count} />
+      </div>
+
+      {stats.byCat.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {stats.byCat.map((x) => (
+            <span key={x.cat} className="chip">
+              {x.cat} {fmtCZK(x.sum)}
+            </span>
+          ))}
         </div>
-      ) : (
-        <p className="mt-1 text-xs text-ink-soft">Kasa je otevřená.</p>
       )}
-    </div>
+
+      <OrderHistory orders={orders} canDelete={canEdit} yearId={yearId} />
+
+      {/* Večerní uzávěrka */}
+      <div className="mt-3 border-t border-ink/[0.06] pt-2">
+        <p className="text-sm text-ink-soft">Ráno vklad {fmtCZK(box.opening)} · {fmtDateTime(box.openedAt)}</p>
+        {canAdd ? (
+          <>
+            <p className="mt-1 text-sm">
+              V kase má být: vklad {fmtCZK(box.opening)} + hotově {fmtCZK(stats.cash)} ={" "}
+              <strong className="font-display">{fmtCZK(expected)}</strong>
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <input
+                className="input w-44"
+                inputMode="numeric"
+                placeholder="Večer v kase (Kč)"
+                value={closeVal}
+                onChange={(e) => setCloseVal(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && close()}
+              />
+              <button className="btn-primary" onClick={close} disabled={!closeVal.trim()}>
+                Uzavřít a zapsat tržbu
+              </button>
+            </div>
+          </>
+        ) : (
+          <p className="mt-1 text-xs text-ink-soft">Kasa je otevřená.</p>
+        )}
+      </div>
+    </section>
   );
 }
 

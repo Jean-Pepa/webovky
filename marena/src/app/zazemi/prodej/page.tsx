@@ -5,13 +5,13 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { Modal } from "@/components/Modal";
 import { PayQr } from "@/components/PayQr";
-import { DeleteButton } from "@/components/DeleteButton";
 import { parseAccount } from "@/lib/payment";
-import { fmtCZK, fmtDate, fmtDateTime, todayISO } from "@/lib/format";
+import { fmtCZK, fmtDateTime, todayISO } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { isAdmin } from "@/lib/admin";
 import { sameName } from "@/lib/names";
 import { flash } from "@/components/Flash";
+import { POS_CATS, posStats, posOrders, OrderHistory, DayCard, boxDayFinances } from "@/lib/pos";
 import type { Cashbox, FinanceItem, MerchOrder, MerchProduct } from "@/lib/types";
 
 // Prodej — jednotná pokladna pro celý festival (vzor z restauračních a
@@ -64,110 +64,8 @@ const LS_TALLY = "marena_pos_tally";
 const lineLabel = (l: Line) =>
   `${l.name}${[l.size, l.color].filter(Boolean).length ? ` (${[l.size, l.color].filter(Boolean).join(" · ")})` : ""}`;
 
-// Kategorie financí, které patří prodeji.
-const POS_CATS = new Set(["merch", "bar", "kuchyně", "kasa"]);
-
-// Statistiky nad zápisy z prodeje: tržba (příjmy − výdaje, tedy včetně
-// případného manka z kasy), QR vs. hotovost, kategorie, počet prodejů
-// a nejprodávanější položky (z rozpisu v poznámkách).
-function posStats(list: FinanceItem[]) {
-  let total = 0;
-  let qr = 0;
-  let cash = 0;
-  let count = 0;
-  const byCat = new Map<string, number>();
-  const items = new Map<string, number>();
-  for (const f of list) {
-    const sign = f.kind === "vydaj" ? -1 : 1;
-    total += sign * f.amount;
-    const cat = f.category ?? "";
-    byCat.set(cat, (byCat.get(cat) ?? 0) + sign * f.amount);
-    const note = f.note ?? "";
-    if (sign > 0 && note.includes("QR platba")) qr += f.amount;
-    else if (sign > 0 && note.includes("hotově")) cash += f.amount;
-    if (sign > 0 && note.includes("×")) {
-      count++;
-      for (const part of note.split(" · ")[0].split(", ")) {
-        const m = part.match(/^(\d+)× (.+)$/);
-        if (m) items.set(m[2], (items.get(m[2]) ?? 0) + Number(m[1]));
-      }
-    }
-  }
-  const top = [...items.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
-    .map(([name, qty]) => ({ name, qty }));
-  return {
-    total,
-    qr,
-    cash,
-    count,
-    top,
-    byCat: [...byCat.entries()].filter(([, v]) => v !== 0).map(([cat, sum]) => ({ cat, sum })),
-  };
-}
-
-// Historie objednávek dne — jednotlivé prodeje (zápisy s rozpisem „×")
-// od nejnovějšího. Slouží do rolovacího seznamu ve statistikách i archivu.
-type PosOrder = { id: string; at: string; cat: string; items: string; amount: number; how: string };
-function posOrders(list: FinanceItem[]): PosOrder[] {
-  return list
-    .filter((f) => f.kind === "prijem" && (f.note ?? "").includes("×"))
-    .map((f) => {
-      const note = f.note ?? "";
-      const items = note.split(" · ")[0];
-      const how = note.includes("QR platba") ? "QR" : note.includes("hotově") ? "hotově" : "";
-      return { id: f.id, at: f.createdAt, cat: f.category ?? "", items, amount: f.amount, how };
-    })
-    .sort((a, b) => b.at.localeCompare(a.at));
-}
-
-const hhmm = (iso: string) => {
-  const d = new Date(iso);
-  return isNaN(d.getTime()) ? "" : `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-};
-
-// Rolovací historie objednávek — po ťuknutí na tlačítko se rozbalí
-// seznam všech prodejů dne (čas · položky · kategorie · způsob · částka).
-function OrderHistory({
-  orders,
-  label = "Historie objednávek",
-  defaultOpen = false,
-  topBorder = true,
-}: {
-  orders: PosOrder[];
-  label?: string;
-  defaultOpen?: boolean;
-  topBorder?: boolean;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  if (orders.length === 0) return null;
-  return (
-    <div className={topBorder ? "mt-3 border-t border-ink/[0.06] pt-2" : ""}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-2 rounded-lg py-1 text-sm font-semibold text-ink-soft transition hover:text-ink"
-        aria-expanded={open}
-      >
-        <span>🧾 {label} ({orders.length})</span>
-        <span className={`text-xs transition-transform ${open ? "rotate-180" : ""}`}>▾</span>
-      </button>
-      {open && (
-        <ul className="mt-2 max-h-72 space-y-1 overflow-y-auto pr-1">
-          {orders.map((o) => (
-            <li key={o.id} className="flex items-center gap-2 rounded-lg bg-paper2/60 px-2.5 py-1.5 text-sm">
-              <span className="shrink-0 tabular-nums text-xs text-ink-soft">{hhmm(o.at)}</span>
-              <span className="min-w-0 flex-1 truncate">{o.items}</span>
-              {o.cat && <span className="chip shrink-0 text-[11px]">{o.cat}</span>}
-              {o.how && <span className="shrink-0 text-xs text-ink-soft">{o.how === "QR" ? "QR" : "💵"}</span>}
-              <span className="shrink-0 font-semibold tabular-nums">{fmtCZK(o.amount)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
+// POS statistiky, historie objednávek i denní karta jsou sdílené s Financemi
+// (viz @/lib/pos), ať je kasa evidovaná všude stejně.
 
 // Cena a rozpis objednávky merche — cena ze snapshotu v položce,
 // jinak z aktuální nabídky (kvůli starším objednávkám).
@@ -761,7 +659,7 @@ function Pos() {
             <p className="mt-1 text-sm text-ink-soft">Zatím žádná objednávka — první prodej se tu hned ukáže.</p>
           </>
         ) : (
-          <OrderHistory orders={posOrders(dayFinances)} label="Objednávky dne" defaultOpen topBorder={false} />
+          <OrderHistory orders={posOrders(dayFinances)} label="Objednávky dne" defaultOpen topBorder={false} canDelete={admin} yearId={year.id} />
         )}
       </section>
 
@@ -976,76 +874,15 @@ function DayGate({
       {closed.length === 0 ? (
         <p className="card p-4 text-sm text-ink-soft">Zatím žádný uzavřený den — po uzavření kasy se tu objeví statistiky.</p>
       ) : (
-        closed.map((c, i) => {
-          // Den = od otevření kasy do otevření té další (i platby přijaté
-          // po uzavření, třeba QR u vyzvednutí, tak zůstanou u svého dne).
-          const until = closed[i - 1]?.openedAt ?? "￿";
-          const dayFin = finances.filter((f) => POS_CATS.has(f.category ?? "") && f.createdAt >= c.openedAt && f.createdAt < until);
-          const stats = posStats(dayFin);
-          return <DayCard key={c.id} box={c} stats={stats} orders={posOrders(dayFin)} yearId={yearId} admin={admin} />;
+        closed.map((c) => {
+          const dayFin = boxDayFinances(finances, c, cashboxes);
+          return <DayCard key={c.id} box={c} stats={posStats(dayFin)} orders={posOrders(dayFin)} yearId={yearId} admin={admin} />;
         })
       )}
     </div>
   );
 }
 
-// Uzamčený den: statistiky prodeje + vyúčtování kasy. Smazat den může
-// jen správce — odstraní kasu dne a její zápis rozdílu ve financích
-// (samotné prodeje ve financích zůstávají).
-function DayCard({ box, stats, orders, yearId, admin }: { box: Cashbox; stats: ReturnType<typeof posStats>; orders: PosOrder[]; yearId: string; admin: boolean }) {
-  const { dispatch } = useStore();
-  const rozdil = (box.closing ?? 0) - box.opening - (box.alreadyRecorded ?? 0);
-  return (
-    <section className="card p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-display text-base font-semibold">📅 {fmtDate(box.openedAt)}</h3>
-        <div className="flex items-center gap-2">
-          <span className="chip">🔒 uzamčeno</span>
-          {admin && (
-            <DeleteButton
-              what={`den ${fmtDate(box.openedAt)} — smaže i všechny prodeje toho dne (všude)`}
-              onConfirm={() => dispatch({ type: "removeCashbox", yearId, cashboxId: box.id })}
-            />
-          )}
-        </div>
-      </div>
-      <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
-        <span className="font-display text-[22px] font-bold tracking-tight">{fmtCZK(stats.total)}</span>
-        <span className="text-sm text-ink-soft">
-          QR <strong className="text-ink">{fmtCZK(stats.qr)}</strong>
-        </span>
-        <span className="text-sm text-ink-soft">
-          💵 hotově <strong className="text-ink">{fmtCZK(stats.cash)}</strong>
-        </span>
-        <span className="text-sm text-ink-soft">{stats.count}× prodej</span>
-      </div>
-      {stats.byCat.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {stats.byCat.map((x) => (
-            <span key={x.cat} className="chip">
-              {x.cat} {fmtCZK(x.sum)}
-            </span>
-          ))}
-        </div>
-      )}
-      <p className="mt-2 border-t border-ink/[0.06] pt-2 text-sm text-ink-soft">
-        Kasa: vklad {fmtCZK(box.opening)} → večer {fmtCZK(box.closing ?? 0)}
-        {rozdil === 0 ? (
-          <span className="text-leaf-700"> · sedí ✓</span>
-        ) : (
-          <span className={rozdil > 0 ? "text-leaf-700" : "text-red-600"}>
-            {" "}
-            · rozdíl {rozdil > 0 ? "+" : "−"}{fmtCZK(Math.abs(rozdil))}
-          </span>
-        )}
-      </p>
-      {stats.top.length > 0 && (
-        <p className="mt-1 text-sm text-ink-soft">Nejprodávanější: {stats.top.map((t) => `${t.qty}× ${t.name}`).join(" · ")}</p>
-      )}
-      <OrderHistory orders={orders} />
-    </section>
-  );
-}
 
 // Jednotná kasa na hotovost pro celý prodej — ovládá se vpravo nahoře:
 // otevře se s ranním vkladem, přes den tlačítko ukazuje, kolik má být
