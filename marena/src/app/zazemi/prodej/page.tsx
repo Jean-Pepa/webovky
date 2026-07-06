@@ -206,6 +206,8 @@ function Pos() {
   const [busy, setBusy] = useState(false);
   // Režim úprav nabídky (jen správce): dlaždice se místo markování mažou.
   const [editNabidka, setEditNabidka] = useState(false);
+  // Režim „Vyprodáno" (kdokoli u kasy): ťuknutím se položka vyprodá/odblokuje.
+  const [soldMode, setSoldMode] = useState(false);
   const year = currentYear;
   const admin = isAdmin(me);
   // Pomocník u stánku nemá spodní navigaci — stánky sedí na jejím místě.
@@ -284,6 +286,34 @@ function Pos() {
   ].filter((g) => g.kind === stand);
   // Přepínač úprav bydlí u první neprázdné sekce nabídky.
   const firstNonEmpty = grids.findIndex((g) => g.items.length > 0);
+
+  // Vyprodáno: ručně (jen pro tuto kasu/den) nebo automaticky u merche podle
+  // skladu (stock − prodáno ≤ 0). Prodané kusy merche počítáme z vyřízených
+  // objednávek. Vyprodaná dlaždice je přeškrtnutá a nejde markovat.
+  const soldOutManual = new Set(openBox.soldOut ?? []);
+  const merchSold = new Map<string, number>();
+  for (const o of year.merchOrders ?? []) {
+    if (!o.done) continue;
+    for (const it of o.items) merchSold.set(it.productId, (merchSold.get(it.productId) ?? 0) + it.qty);
+  }
+  function isSoldOut(kind: Exclude<Kind, "custom">, id: string): boolean {
+    if (soldOutManual.has(id)) return true;
+    if (kind === "merch") {
+      const p = (year!.merch ?? []).find((x) => x.id === id);
+      if (p && p.stock != null && p.stock - (merchSold.get(id) ?? 0) <= 0) return true;
+    }
+    return false;
+  }
+  async function toggleSoldOut(id: string) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const ok = await dispatch({ type: "toggleSoldOut", yearId: year!.id, cashboxId: openBox!.id, itemId: id });
+      if (!ok) flash("Nepodařilo se uložit — zkontroluj připojení", "⚠️");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   // Čekající objednávky merche (z webu i odložené) — platí se tady:
   // QR se jménem objednatele, nebo hotově jedním ťuknutím.
@@ -605,43 +635,82 @@ function Pos() {
       {grids.map((g, gi) =>
         g.items.length > 0 ? (
           <section key={g.kind} className="card p-4">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-display text-[20px] font-semibold">{g.title}</h2>
-              {/* Úprava nabídky (jen správce): v režimu Upravit dlaždice mažou */}
-              {admin && gi === firstNonEmpty && (
-                <button
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                    editNabidka ? "bg-red-600 text-white hover:bg-red-500" : "bg-paper2 text-ink-soft hover:bg-gold-100"
-                  }`}
-                  aria-pressed={editNabidka}
-                  onClick={() => setEditNabidka((v) => !v)}
-                >
-                  {editNabidka ? "Hotovo" : "Upravit nabídku"}
-                </button>
+              {gi === firstNonEmpty && (
+                <div className="flex items-center gap-1.5">
+                  {/* Vyprodáno (kdokoli u kasy): ťuknutím se položka vyprodá/odblokuje — jen pro tento den */}
+                  <button
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      soldMode ? "bg-ink text-white hover:bg-ink/90" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+                    }`}
+                    aria-pressed={soldMode}
+                    onClick={() => {
+                      setSoldMode((v) => !v);
+                      setEditNabidka(false);
+                    }}
+                  >
+                    {soldMode ? "Hotovo" : "🚫 Vyprodáno"}
+                  </button>
+                  {/* Úprava nabídky (jen správce): v režimu Upravit dlaždice mažou */}
+                  {admin && (
+                    <button
+                      className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                        editNabidka ? "bg-red-600 text-white hover:bg-red-500" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+                      }`}
+                      aria-pressed={editNabidka}
+                      onClick={() => {
+                        setEditNabidka((v) => !v);
+                        setSoldMode(false);
+                      }}
+                    >
+                      {editNabidka ? "Hotovo" : "Upravit nabídku"}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
+            {soldMode && gi === firstNonEmpty && (
+              <p className="mt-2 text-xs text-ink-soft">Ťukni na položku, která došla — přeškrtne se a nepůjde markovat (platí jen pro dnešní kasu).</p>
+            )}
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {g.items.map((i) => (
-                <button
-                  key={i.id}
-                  onClick={() => (editNabidka ? removeItem(g.kind, i) : tapItem(g.kind, i))}
-                  className={`flex min-h-14 items-center justify-between gap-2 rounded-lg border-l-4 px-3 py-2.5 text-left transition active:scale-[0.97] ${
-                    editNabidka
-                      ? "border-l-red-400 bg-red-50 ring-1 ring-red-200 hover:bg-red-100"
-                      : `bg-paper2 hover:bg-gold-100 ${KIND_BORDER[g.kind]}`
-                  }`}
-                >
-                  <span className="min-w-0 truncate text-[15px] font-semibold">{i.name}</span>
-                  {editNabidka ? (
-                    <span className="shrink-0 text-sm font-bold text-red-600">✕ Smazat</span>
-                  ) : (
-                    // Cena jako zdvižená „přidávací" pilulka s +, ať je jasné, že ťuknutí položku přidá.
-                    <span className="shrink-0 rounded-full bg-surface px-2.5 py-1 text-sm font-bold text-ink shadow-sm ring-1 ring-ink/5">
-                      + {fmtCZK(i.price)}
-                    </span>
-                  )}
-                </button>
-              ))}
+              {g.items.map((i) => {
+                const sold = isSoldOut(g.kind, i.id);
+                const manualSold = soldOutManual.has(i.id);
+                const stockSold = sold && !manualSold; // vyprodáno skladem (merch) — ručně nejde vrátit
+                return (
+                  <button
+                    key={i.id}
+                    onClick={() =>
+                      editNabidka ? removeItem(g.kind, i) : soldMode ? toggleSoldOut(i.id) : tapItem(g.kind, i)
+                    }
+                    disabled={soldMode ? stockSold || busy : editNabidka ? false : sold}
+                    className={`flex min-h-14 items-center justify-between gap-2 rounded-lg border-l-4 px-3 py-2.5 text-left transition active:scale-[0.97] disabled:active:scale-100 ${
+                      editNabidka
+                        ? "border-l-red-400 bg-red-50 ring-1 ring-red-200 hover:bg-red-100"
+                        : sold
+                          ? "border-l-ink/20 bg-paper2/50 opacity-60"
+                          : `bg-paper2 hover:bg-gold-100 ${KIND_BORDER[g.kind]}`
+                    } ${soldMode ? "ring-1 ring-ink/15" : ""}`}
+                  >
+                    <span className={`min-w-0 truncate text-[15px] font-semibold ${sold ? "text-ink-soft line-through" : ""}`}>{i.name}</span>
+                    {editNabidka ? (
+                      <span className="shrink-0 text-sm font-bold text-red-600">✕ Smazat</span>
+                    ) : soldMode ? (
+                      <span className={`shrink-0 text-sm font-bold ${stockSold ? "text-ink-soft" : manualSold ? "text-leaf-700" : "text-ink-soft"}`}>
+                        {stockSold ? "📦 sklad 0" : manualSold ? "↩︎ Vrátit" : "🚫 Vyprodat"}
+                      </span>
+                    ) : sold ? (
+                      <span className="shrink-0 text-sm font-bold text-ink-soft">✕ Vyprodáno</span>
+                    ) : (
+                      // Cena jako zdvižená „přidávací" pilulka s +, ať je jasné, že ťuknutí položku přidá.
+                      <span className="shrink-0 rounded-full bg-surface px-2.5 py-1 text-sm font-bold text-ink shadow-sm ring-1 ring-ink/5">
+                        + {fmtCZK(i.price)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </section>
         ) : (

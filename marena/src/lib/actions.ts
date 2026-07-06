@@ -83,6 +83,8 @@ export type Action =
   // do financí pak jde jen rozdíl, aby se stejné peníze nepočítaly dvakrát.
   | { type: "closeCashbox"; yearId: string; cashboxId: string; closing: number; alreadyRecorded?: number }
   | { type: "removeCashbox"; yearId: string; cashboxId: string }
+  // Vyprodáno (ručně) — přepne položku (merch/pití/jídlo) jako vyprodanou; platí jen pro danou kasu/den.
+  | { type: "toggleSoldOut"; yearId: string; cashboxId: string; itemId: string }
   // pledged = kolik má dát celkem (amount = kolik zaplatil teď; 0 = založeno dopředu)
   | { type: "addContribution"; yearId: string; name: string; amount: number; pledged?: number; email?: string }
   // Přičte platbu (např. „dal půlku"); po dosažení slíbené částky je zaplaceno.
@@ -709,6 +711,16 @@ export function applyAction(db: DB, a: Action): DB {
           finances: box?.financeId ? (y.finances ?? []).filter((f) => f.id !== box.financeId) : y.finances,
         };
       });
+    case "toggleSoldOut":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        cashboxes: (y.cashboxes ?? []).map((c) => {
+          if (c.id !== a.cashboxId) return c;
+          const cur = c.soldOut ?? [];
+          const next = cur.includes(a.itemId) ? cur.filter((x) => x !== a.itemId) : [...cur, a.itemId];
+          return { ...c, soldOut: next.length ? next : undefined };
+        }),
+      }));
 
     case "addContribution": {
       const name = a.name.trim();

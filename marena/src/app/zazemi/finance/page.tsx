@@ -58,13 +58,54 @@ function receiptsOf(item: FinanceItem): string[] {
   return item.receiptId ? [item.receiptId] : [];
 }
 
+// Jednotlivý markovaný prodej z Prodeje nebo merche — pozná se podle rozpisu „×"
+// v poznámce (např. „2× Guláš · hotově"). Tyto se ve financích neukazují
+// samostatně (zahltily by přehled), ale sčítají se po dnech do „Prodej po dnech" —
+// tedy do kasy za daný den.
+const isPosSale = (f: FinanceItem) =>
+  f.kind === "prijem" &&
+  (f.note ?? "").includes("×") &&
+  (f.label === "Prodej na místě" || f.label.startsWith("Merch"));
+
+const saleHow = (note?: string) =>
+  (note ?? "").includes("QR platba") ? "QR" : (note ?? "").includes("hotově") ? "hotově" : "";
+
+const hhmmFin = (iso: string) => {
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? "" : `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
+
+type SaleOrder = { id: string; at: string; items: string; cat: string; how: string; amount: number };
+type SaleDay = { day: string; total: number; qr: number; cash: number; count: number; orders: SaleOrder[] };
+
+// Prodeje (markované platby) sečtené po dnech. `catOk` vybere jen relevantní
+// kategorie — Kasy berou bar/kuchyni/kasu, Merch jen merch.
+function buildSaleDays(items: FinanceItem[], catOk: (cat: string) => boolean): SaleDay[] {
+  const map = new Map<string, SaleDay>();
+  for (const f of items) {
+    if (!isPosSale(f) || !catOk(f.category ?? "")) continue;
+    const day = (f.date || f.createdAt).slice(0, 10);
+    const g = map.get(day) ?? { day, total: 0, qr: 0, cash: 0, count: 0, orders: [] };
+    const how = saleHow(f.note);
+    g.total += f.amount;
+    g.count += 1;
+    if (how === "QR") g.qr += f.amount;
+    else if (how === "hotově") g.cash += f.amount;
+    g.orders.push({ id: f.id, at: f.createdAt, items: (f.note ?? "").split(" · ")[0], cat: f.category ?? "", how, amount: f.amount });
+    map.set(day, g);
+  }
+  return [...map.values()]
+    .map((g) => ({ ...g, orders: g.orders.sort((a, b) => b.at.localeCompare(a.at)) }))
+    .sort((a, b) => b.day.localeCompare(a.day));
+}
+
 export default function FinancePage() {
   const { currentYear, me, dispatch, canEditCurrentYear } = useStore();
   const [open, setOpen] = useState(false);
   const [kasaOpen, setKasaOpen] = useState(false);
   const [vyberOpen, setVyberOpen] = useState(false);
-  // Hlavní přepínač financí (svítící lišta jako v Prodeji): 3 pohledy.
-  const [tab, setTab] = useState<"vse" | "kasy" | "vyber">("vse");
+  // Hlavní přepínač financí (svítící lišta jako v Prodeji): 4 pohledy.
+  const [tab, setTab] = useState<"vse" | "kasy" | "merch" | "vyber">("vse");
   const [filter, setFilter] = useState<Filter>("vse");
   const [catFilter, setCatFilter] = useState<string>("");
   const [q, setQ] = useState(""); // vyhledávání podle popisu
@@ -173,13 +214,21 @@ export default function FinancePage() {
     () => items.filter((f) => f.category === "merch" && f.kind === "vydaj").reduce((s, f) => s + f.amount, 0),
     [items],
   );
-  const merchItems = useMemo(
-    () => items.filter((f) => f.category === "merch").sort((a, b) => (b.date || b.createdAt).localeCompare(a.date || a.createdAt)),
+  // Do seznamu merche jen „neprodejní" položky (nákupy zboží, refundace…).
+  // Jednotlivé prodeje merche (rozpis „×") se sčítají po dnech v „Prodej po dnech".
+  const merchExtras = useMemo(
+    () => items.filter((f) => f.category === "merch" && !isPosSale(f)).sort((a, b) => (b.date || b.createdAt).localeCompare(a.date || a.createdAt)),
     [items],
   );
 
+  // Prodeje sečtené po dnech: kasa (bar/kuchyně/kasa) zvlášť, merch zvlášť.
+  const posSaleDays = useMemo(() => buildSaleDays(items, (c) => c !== "merch"), [items]);
+  const merchSaleDays = useMemo(() => buildSaleDays(items, (c) => c === "merch"), [items]);
+
   const rows = useMemo(() => {
     return items
+      // Jednotlivé prodeje sem nepatří — jsou sečtené po dnech v „Prodej po dnech".
+      .filter((f) => !isPosSale(f))
       .filter((f) => {
         if (filter === "prijem") return f.kind === "prijem";
         if (filter === "vydaj") return f.kind === "vydaj";
@@ -379,7 +428,7 @@ export default function FinancePage() {
       {/* Vyhledávání — hned pod přehledem, nad obsahem pohledu (mění se podle pohledu) */}
       <input
         className="w-full rounded-full border border-ink/10 bg-white px-4 py-2 text-sm placeholder:text-ink-soft/60"
-        placeholder={tab === "vyber" ? "🔎 Hledat člověka…" : tab === "kasy" ? "🔎 Hledat kasu…" : "🔎 Hledat v položkách…"}
+        placeholder={tab === "vyber" ? "🔎 Hledat člověka…" : tab === "kasy" ? "🔎 Hledat kasu / den…" : tab === "merch" ? "🔎 Hledat v merchi…" : "🔎 Hledat v položkách…"}
         value={q}
         onChange={(e) => setQ(e.target.value)}
       />
@@ -421,6 +470,10 @@ export default function FinancePage() {
             );
           })()}
         </section>
+      )}
+      {/* Prodej po dnech — jednotlivé markované platby sečtené do kasy za den */}
+      {tab === "kasy" && posSaleDays.length > 0 && (
+        <SalesByDay days={posSaleDays} title="🧾 Prodej po dnech" q={q} />
       )}
 
       {/* ===== POHLED: VÝBĚR (vklady) ===== */}
@@ -537,41 +590,58 @@ export default function FinancePage() {
         </section>
       )}
 
+      {/* ===== POHLED: MERCH ===== */}
+      {tab === "merch" && (
+        merchExpense > 0 || merchTotal > 0 || merchExtras.length > 0 || merchSaleDays.length > 0 ? (
+          <div className="space-y-4">
+            {/* Souhrn merche — kolik se vložilo (nákup zboží) a kolik se vydělalo */}
+            <section className="card p-4">
+              <h2 className="flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
+                🛍️ Merch
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-sm">
+                  <span className="text-xs font-normal text-ink-soft">vloženo</span>
+                  <span className="font-bold text-ink">−{fmtCZK(merchExpense)}</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf/12 px-2.5 py-0.5 text-sm">
+                  <span className="text-xs font-normal text-leaf-700">zpátky</span>
+                  <span className="font-bold text-leaf-700">+{fmtCZK(merchTotal)}</span>
+                </span>
+              </h2>
+            </section>
+            {/* Prodeje merche sečtené po dnech (jednotlivé platby uvnitř) */}
+            <SalesByDay days={merchSaleDays} title="🧾 Prodeje po dnech" q={q} />
+            {/* Nákupy zboží a ostatní (neprodejní položky kategorie merch) */}
+            {merchExtras.length > 0 && (
+              <section className="card p-4">
+                <h2 className="mb-2 font-display text-[20px] font-semibold">📦 Nákupy a ostatní</h2>
+                <Collapsible peekClass="max-h-[220px]" expandable={merchExtras.length > 3} total={merchExtras.length}>
+                  <div className="space-y-2">
+                    {merchExtras.map((f) => (
+                      <div key={f.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 rounded-xl border border-ink/[0.05] bg-paper2/40 px-3 py-2 text-sm">
+                        <span className="font-semibold">{f.label}</span>
+                        {f.note && <span className="text-xs text-ink-soft">· {f.note}</span>}
+                        <span className="text-xs text-ink-soft/70">{fmtDate(f.date || f.createdAt)}</span>
+                        <span className={`ml-auto font-display font-bold ${f.kind === "prijem" ? "text-leaf-700" : "text-ink"}`}>
+                          {f.kind === "prijem" ? "+" : "−"}
+                          {fmtCZK(f.amount)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </Collapsible>
+              </section>
+            )}
+          </div>
+        ) : (
+          <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+            Zatím žádný merch. Prodeje se sem zapíšou z Prodeje, nákupy zboží přidáš ve „Všechny finance“ (kategorie merch).
+          </div>
+        )
+      )}
+
       {/* ===== POHLED: VŠECHNY FINANCE ===== */}
       {tab === "vse" && (
       <>
-      {/* Merch — samostatně (tržby/výdaje z kategorie merch) */}
-      {merchItems.length > 0 && (
-        <section className="card p-4">
-          <h2 className="mb-3 flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
-            🛍️ Merch
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-sm">
-              <span className="text-xs font-normal text-ink-soft">vloženo</span>
-              <span className="font-bold text-ink">−{fmtCZK(merchExpense)}</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf/12 px-2.5 py-0.5 text-sm">
-              <span className="text-xs font-normal text-leaf-700">zpátky</span>
-              <span className="font-bold text-leaf-700">+{fmtCZK(merchTotal)}</span>
-            </span>
-          </h2>
-          <Collapsible peekClass="max-h-[150px]" expandable={merchItems.length > 2} total={merchItems.length}>
-            <div className="space-y-2">
-              {merchItems.map((f) => (
-                <div key={f.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 rounded-xl border border-ink/[0.05] bg-paper2/40 px-3 py-2 text-sm">
-                  <span className="font-semibold">{f.label}</span>
-                  {f.note && <span className="text-xs text-ink-soft">· {f.note}</span>}
-                  <span className="text-xs text-ink-soft/70">{fmtDate(f.date || f.createdAt)}</span>
-                  <span className={`ml-auto font-display font-bold ${f.kind === "prijem" ? "text-leaf-700" : "text-ink"}`}>
-                    {f.kind === "prijem" ? "+" : "−"}
-                    {fmtCZK(f.amount)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Collapsible>
-        </section>
-      )}
-
       {/* Přidat */}
       {open && (
         <div id="add-finance" className="card scroll-mt-20 space-y-3 p-4 ring-2 ring-gold-200">
@@ -748,7 +818,7 @@ export default function FinancePage() {
       {/* Svítící zlatá lišta (mobil) — 3 hlavní pohledy, jako stánky v Prodeji */}
       <div className="fixed inset-x-3 bottom-[calc(5.1rem+env(safe-area-inset-bottom))] z-40 md:hidden">
         <div className="mx-auto max-w-3xl">
-          <div className="grid grid-cols-3 gap-1 rounded-[28px] bg-gold-500 p-1.5 shadow-[0_0_24px_rgba(244,183,31,0.65)]">
+          <div className="grid grid-cols-4 gap-1 rounded-[28px] bg-gold-500 p-1.5 shadow-[0_0_24px_rgba(244,183,31,0.65)]">
             {FIN_TABS.map((t) => (
               <button
                 key={t.id}
@@ -756,7 +826,7 @@ export default function FinancePage() {
               setTab(t.id);
               setQ("");
             }}
-                className={`flex min-h-12 flex-col items-center justify-center rounded-[22px] px-1 text-[13px] font-semibold leading-tight transition ${
+                className={`flex min-h-12 flex-col items-center justify-center rounded-[22px] px-0.5 text-[11px] font-semibold leading-tight transition ${
                   tab === t.id ? "bg-[#1d1d1f] text-gold-300" : "text-[#1d1d1f] active:scale-[0.97]"
                 }`}
               >
@@ -771,10 +841,11 @@ export default function FinancePage() {
   );
 }
 
-// 3 hlavní pohledy financí (svítící lišta jako stánky v Prodeji).
-const FIN_TABS: { id: "vse" | "kasy" | "vyber"; emoji: string; label: string }[] = [
+// 4 hlavní pohledy financí (svítící lišta jako stánky v Prodeji).
+const FIN_TABS: { id: "vse" | "kasy" | "merch" | "vyber"; emoji: string; label: string }[] = [
   { id: "vse", emoji: "📊", label: "Všechny finance" },
   { id: "kasy", emoji: "🧰", label: "Kasy" },
+  { id: "merch", emoji: "🛍️", label: "Merch" },
   { id: "vyber", emoji: "💰", label: "Výběr" },
 ];
 
@@ -1446,6 +1517,72 @@ function Collapsible({
         <Icon name="chevron" className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
     </>
+  );
+}
+
+// Prodej po dnech — jednotlivé markované platby (z Prodeje / merche) sečtené
+// do jednoho dne (kasa dne). Ťuknutím na den se rozbalí rozpis plateb.
+function SalesByDay({ days, title, q }: { days: SaleDay[]; title: string; q: string }) {
+  if (days.length === 0) return null;
+  const view = q.trim() ? days.filter((d) => normName(fmtDate(d.day)).includes(normName(q))) : days;
+  const count = days.reduce((s, d) => s + d.count, 0);
+  const sum = days.reduce((s, d) => s + d.total, 0);
+  return (
+    <section className="card p-4">
+      <h2 className="flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
+        {title}
+        <span className="chip">{count}×</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf/12 px-2.5 py-0.5 text-sm">
+          <span className="text-xs font-normal text-leaf-700">celkem</span>
+          <span className="font-bold text-leaf-700">+{fmtCZK(sum)}</span>
+        </span>
+      </h2>
+      {view.length === 0 ? (
+        <p className="py-3 text-center text-sm text-ink-soft">Žádný den neodpovídá hledání.</p>
+      ) : (
+        <div className="mt-3 space-y-2">
+          {view.map((d) => (
+            <SaleDayRow key={d.day} d={d} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function SaleDayRow({ d }: { d: SaleDay }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="overflow-hidden rounded-xl border border-ink/[0.06] bg-paper2/40">
+      <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-2 px-3 py-2.5 text-left" aria-expanded={open}>
+        <span className="font-semibold">📅 {fmtDate(d.day)}</span>
+        <span className="chip">{d.count}×</span>
+        <span className="ml-auto flex items-center gap-2">
+          {(d.qr > 0 || d.cash > 0) && (
+            <span className="hidden text-xs text-ink-soft sm:inline">
+              {d.qr > 0 && `QR ${fmtCZK(d.qr)}`}
+              {d.qr > 0 && d.cash > 0 && " · "}
+              {d.cash > 0 && `💵 ${fmtCZK(d.cash)}`}
+            </span>
+          )}
+          <span className="font-display font-bold text-leaf-700">+{fmtCZK(d.total)}</span>
+          <span className={`text-xs transition-transform ${open ? "rotate-180" : ""}`}>▾</span>
+        </span>
+      </button>
+      {open && (
+        <ul className="max-h-72 space-y-1 overflow-y-auto border-t border-ink/[0.06] px-3 py-2">
+          {d.orders.map((o) => (
+            <li key={o.id} className="flex items-center gap-2 rounded-lg bg-surface px-2.5 py-1.5 text-sm">
+              <span className="shrink-0 tabular-nums text-xs text-ink-soft">{hhmmFin(o.at)}</span>
+              <span className="min-w-0 flex-1 truncate">{o.items}</span>
+              {o.cat && <span className="chip shrink-0 text-[11px]">{o.cat}</span>}
+              {o.how && <span className="shrink-0 text-xs text-ink-soft">{o.how === "QR" ? "QR" : "💵"}</span>}
+              <span className="shrink-0 font-semibold tabular-nums">{fmtCZK(o.amount)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
