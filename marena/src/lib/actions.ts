@@ -704,11 +704,32 @@ export function applyAction(db: DB, a: Action): DB {
       });
     case "removeCashbox":
       return mapYear(db, a.yearId, (y) => {
-        const box = (y.cashboxes ?? []).find((c) => c.id === a.cashboxId);
+        const boxes = y.cashboxes ?? [];
+        const box = boxes.find((c) => c.id === a.cashboxId);
+        if (!box) return y;
+        // Den kasy = od jejího otevření do otevření další kasy (i platby přijaté
+        // po uzavření, třeba QR u vyzvednutí, tak patří ke svému dni). Smazání
+        // kasy tedy smaže i všechny prodeje toho dne — všude (Prodej i Finance).
+        const from = box.openedAt;
+        const to = boxes.filter((c) => c.id !== box.id && c.openedAt > from).reduce((min, c) => (c.openedAt < min ? c.openedAt : min), "￿");
+        // Markovaný prodej (Prodej i merch) pozná rozpis „×" v poznámce.
+        const isSale = (f: { kind: string; note?: string; label: string }) =>
+          f.kind === "prijem" && (f.note ?? "").includes("×") && (f.label === "Prodej na místě" || f.label.startsWith("Merch"));
+        const dropIds = new Set(
+          (y.finances ?? []).filter((f) => isSale(f) && f.createdAt >= from && f.createdAt < to).map((f) => f.id),
+        );
+        if (box.financeId) dropIds.add(box.financeId);
+        // Merch objednávky zaplacené v tomto dni: automatické „Prodej na místě"
+        // (markované u kasy) se smažou úplně, skutečné (pojmenované, z webu) se
+        // vrátí mezi nevyřízené — dají se zaplatit znovu.
+        const merchOrders = (y.merchOrders ?? [])
+          .filter((o) => !(o.financeId && dropIds.has(o.financeId) && o.name === "Prodej na místě"))
+          .map((o) => (o.financeId && dropIds.has(o.financeId) ? { ...o, done: false, paid: false, financeId: undefined } : o));
         return {
           ...y,
-          cashboxes: (y.cashboxes ?? []).filter((c) => c.id !== a.cashboxId),
-          finances: box?.financeId ? (y.finances ?? []).filter((f) => f.id !== box.financeId) : y.finances,
+          cashboxes: boxes.filter((c) => c.id !== a.cashboxId),
+          finances: (y.finances ?? []).filter((f) => !dropIds.has(f.id)),
+          merchOrders,
         };
       });
     case "toggleSoldOut":

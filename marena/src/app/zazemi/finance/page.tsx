@@ -1406,7 +1406,12 @@ function CashboxCard({ box, yearId, canAdd, canEdit }: { box: Cashbox; yearId: s
             {closed && box.closing != null && ` → Večer ${fmtCZK(box.closing)} · ${fmtDateTime(box.closedAt!)}`}
           </p>
         </div>
-        {canEdit && <DeleteButton onConfirm={() => dispatch({ type: "removeCashbox", yearId, cashboxId: box.id })} />}
+        {canEdit && (
+          <DeleteButton
+            what={`kasu ${fmtDate(box.openedAt)} — smaže i všechny prodeje toho dne`}
+            onConfirm={() => dispatch({ type: "removeCashbox", yearId, cashboxId: box.id })}
+          />
+        )}
       </div>
 
       {closed ? (
