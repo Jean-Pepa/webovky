@@ -493,32 +493,13 @@ function Pos() {
           Prázdná ukazuje vizuální návod „co ťuknout" ve třech krocích. */}
       <section className="card p-3">
           {lines.length === 0 ? (
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-ink-soft">🧾 Účtenka je prázdná</span>
-                {lastSale && (
-                  <button className="btn-secondary px-3 py-1.5 text-sm" onClick={() => setLines(lastSale)}>
-                    ↻ Zopakovat poslední
-                  </button>
-                )}
-              </div>
-              {/* Tři kroky prodeje — obsluha hned vidí, co ťuknout (1. krok svítí zlatě) */}
-              <ol className="flex flex-wrap items-center gap-1.5 text-xs font-medium">
-                <li className="inline-flex items-center gap-1.5 rounded-full bg-gold-100 px-2.5 py-1 text-ink">
-                  <span className="grid h-4 w-4 place-items-center rounded-full bg-gold-500 text-[10px] font-bold text-[#1d1d1f]">1</span>
-                  Ťukni na položky ↓
-                </li>
-                <span aria-hidden className="text-ink-soft/40">→</span>
-                <li className="inline-flex items-center gap-1.5 rounded-full bg-paper2 px-2.5 py-1 text-ink-soft">
-                  <span className="grid h-4 w-4 place-items-center rounded-full bg-ink/10 text-[10px] font-bold">2</span>
-                  Vyber QR / hotově
-                </li>
-                <span aria-hidden className="text-ink-soft/40">→</span>
-                <li className="inline-flex items-center gap-1.5 rounded-full bg-paper2 px-2.5 py-1 text-ink-soft">
-                  <span className="grid h-4 w-4 place-items-center rounded-full bg-ink/10 text-[10px] font-bold">3</span>
-                  Zaplaceno ✓
-                </li>
-              </ol>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-semibold text-ink-soft">🧾 Účtenka je prázdná — ťukni na položky</span>
+              {lastSale && (
+                <button className="btn-secondary px-3 py-1.5 text-sm" onClick={() => setLines(lastSale)}>
+                  ↻ Zopakovat poslední
+                </button>
+              )}
             </div>
           ) : (
             <>
@@ -771,54 +752,18 @@ function Pos() {
       {/* ---------- Přehled dne ---------- */}
       <h2 className="pt-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Přehled dne</h2>
 
-      {/* Statistiky (čísla) jen správci; ostatní vidí jen historii objednávek. */}
-      {admin ? (
-        <section className="card p-4">
-          <h3 className="font-display text-[20px] font-semibold">📊 Statistiky dne</h3>
-          {stats.total === 0 ? (
-            <p className="mt-1 text-sm text-ink-soft">Zatím nic — první prodej se tu hned ukáže.</p>
-          ) : (
-            <>
-              <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
-                <span className="font-display text-[28px] font-bold tracking-tight">{fmtCZK(stats.total)}</span>
-                <span className="text-sm text-ink-soft">
-                  QR <strong className="text-ink">{fmtCZK(stats.qr)}</strong>
-                </span>
-                <span className="text-sm text-ink-soft">
-                  💵 hotově <strong className="text-ink">{fmtCZK(stats.cash)}</strong>
-                </span>
-                <span className="text-sm text-ink-soft">{stats.count}× prodej</span>
-              </div>
-              {stats.byCat.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {stats.byCat.map((x) => (
-                    <span key={x.cat} className="chip">
-                      {x.cat} {fmtCZK(x.sum)}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {stats.top.length > 0 && (
-                <p className="mt-2 text-sm text-ink-soft">
-                  Nejprodávanější: {stats.top.map((t) => `${t.qty}× ${t.name}`).join(" · ")}
-                </p>
-              )}
-              <OrderHistory orders={posOrders(dayFinances)} />
-            </>
-          )}
-        </section>
-      ) : (
-        <section className="card p-4">
-          {posOrders(dayFinances).length === 0 ? (
-            <>
-              <h3 className="font-display text-[20px] font-semibold">🧾 Objednávky dne</h3>
-              <p className="mt-1 text-sm text-ink-soft">Zatím žádná objednávka — první prodej se tu hned ukáže.</p>
-            </>
-          ) : (
-            <OrderHistory orders={posOrders(dayFinances)} label="Objednávky dne" defaultOpen topBorder={false} />
-          )}
-        </section>
-      )}
+      {/* U otevřené kasy jen historie objednávek — čísla (statistiky dne) jsou
+          ve Financích a v archivu uzavřených dnů, ať obsluhu nerozptylují. */}
+      <section className="card p-4">
+        {posOrders(dayFinances).length === 0 ? (
+          <>
+            <h3 className="font-display text-[20px] font-semibold">🧾 Objednávky dne</h3>
+            <p className="mt-1 text-sm text-ink-soft">Zatím žádná objednávka — první prodej se tu hned ukáže.</p>
+          </>
+        ) : (
+          <OrderHistory orders={posOrders(dayFinances)} label="Objednávky dne" defaultOpen topBorder={false} />
+        )}
+      </section>
 
       {/* Stánky (mobil) — svítící žlutá bublina nad hlavní lištou; pomocník
           u stánku lištu nemá, takže bublina sedí přímo dole na jejím místě */}
@@ -1058,7 +1003,7 @@ function DayCard({ box, stats, orders, yearId, admin }: { box: Cashbox; stats: R
           <span className="chip">🔒 uzamčeno</span>
           {admin && (
             <DeleteButton
-              what={`den ${fmtDate(box.openedAt)} (prodeje ve financích zůstanou)`}
+              what={`den ${fmtDate(box.openedAt)} — smaže i všechny prodeje toho dne (všude)`}
               onConfirm={() => dispatch({ type: "removeCashbox", yearId, cashboxId: box.id })}
             />
           )}
