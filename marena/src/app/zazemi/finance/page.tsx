@@ -403,9 +403,6 @@ export default function FinancePage() {
               </>
             )}
           </h2>
-          <p className="mb-3 text-xs text-ink-soft">
-            Ráno zapiš vklad (na vracení), večer doplň stav v kase — tržba (večer − ráno) se sama zapíše do financí.
-          </p>
           {(() => {
             const boxes = [...(year.cashboxes ?? [])]
               .filter((c) => (q.trim() ? normName(`${c.label ?? ""} ${fmtDate(c.openedAt)}`).includes(normName(q)) : true))
@@ -456,10 +453,6 @@ export default function FinancePage() {
               </>
             )}
           </h2>
-          <p className="mb-3 text-xs text-ink-soft">
-            Vlož všechna jména naráz a částku, kolik se vybírá — rozdělí se na jednotlivé lidi. Platby pak jen odklikáváš (celé / půlku /
-            doplatil), e-mail a telefon doplníš u každého zpětně přes „Upravit“. Do balíku se počítá jen skutečně zaplacené.
-          </p>
           {/* Hromadné vložení — všechna jména naráz + částka pro všechny */}
           {canAdd && vyberOpen && (
             <div className="mb-4 rounded-xl border border-gold-200 bg-gold-50/40 p-3">
