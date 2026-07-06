@@ -64,6 +64,8 @@ export default function FinancePage() {
   const [open, setOpen] = useState(false);
   const [kasaOpen, setKasaOpen] = useState(false);
   const [vyberOpen, setVyberOpen] = useState(false);
+  // Hlavní přepínač financí (svítící lišta jako v Prodeji): 3 pohledy.
+  const [tab, setTab] = useState<"vse" | "kasy" | "vyber">("vse");
   const [filter, setFilter] = useState<Filter>("vse");
   const [catFilter, setCatFilter] = useState<string>("");
   const [q, setQ] = useState(""); // vyhledávání podle popisu
@@ -265,7 +267,7 @@ export default function FinancePage() {
   }
 
   return (
-    <div className="space-y-6 tabular-nums">
+    <div className="space-y-6 pb-24 tabular-nums md:pb-0">
       <datalist id="fin-cats">
         {CATEGORIES.map((c) => (
           <option key={c} value={c} />
@@ -285,25 +287,33 @@ export default function FinancePage() {
             <button
               className="btn-secondary"
               onClick={() => {
+                setTab("vyber");
                 const opening = !vyberOpen;
                 setVyberOpen(opening);
                 if (opening) setTimeout(() => document.getElementById("vyber")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
               }}
             >
-              {vyberOpen ? "Zavřít" : "+ Výběr"}
+              {tab === "vyber" && vyberOpen ? "Zavřít" : "+ Výběr"}
             </button>
-            <button className="btn-secondary" onClick={() => setKasaOpen(true)}>
+            <button
+              className="btn-secondary"
+              onClick={() => {
+                setTab("kasy");
+                setKasaOpen(true);
+              }}
+            >
               + Kasa
             </button>
             <button
               className="btn-primary"
               onClick={() => {
+                setTab("vse");
                 const opening = !open;
                 setOpen(opening);
                 if (opening) setTimeout(() => document.getElementById("add-finance")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
               }}
             >
-              {open ? "Zavřít" : "+ Přidat položku"}
+              {tab === "vse" && open ? "Zavřít" : "+ Přidat položku"}
             </button>
           </div>
         )}
@@ -331,8 +341,24 @@ export default function FinancePage() {
         <SummaryCard label="Bilance" value={totals.bilance} sub={`v kase ${fmtCZK(totals.kasa)} · otevřené ${fmtCZK(totals.otevreno)}`} tone="bilance" />
       </div>
 
-      {/* Denní kasy */}
-      {((year.cashboxes?.length ?? 0) > 0 || canAdd) && (
+      {/* Přepínač financí (desktop) — na mobilu je dole ve svítící zlaté liště */}
+      <div className="hidden gap-1.5 md:flex">
+        {FIN_TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${
+              tab === t.id ? "bg-gold-500 text-[#1d1d1f] shadow-sm" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+            }`}
+          >
+            {t.emoji} {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ===== POHLED: KASY ===== */}
+      {tab === "kasy" &&
+      ((year.cashboxes?.length ?? 0) > 0 || canAdd) && (
         <section className="card p-4">
           <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
             🧰 Denní kasy
@@ -368,8 +394,9 @@ export default function FinancePage() {
         </section>
       )}
 
-      {/* Výběr (vklady) — kdo dal kolik do společné kasy */}
-      {(contributions.length > 0 || canAdd) && (
+      {/* ===== POHLED: VÝBĚR (vklady) ===== */}
+      {tab === "vyber" &&
+      (contributions.length > 0 || canAdd) && (
         <section id="vyber" className="card scroll-mt-20 p-4">
           <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
             💰 Výběr (vklady)
@@ -485,6 +512,9 @@ export default function FinancePage() {
         </section>
       )}
 
+      {/* ===== POHLED: VŠECHNY FINANCE ===== */}
+      {tab === "vse" && (
+      <>
       {/* Merch — samostatně (tržby/výdaje z kategorie merch) */}
       {merchItems.length > 0 && (
         <section className="card p-4">
@@ -516,8 +546,6 @@ export default function FinancePage() {
           </Collapsible>
         </section>
       )}
-
-      <NewKasaModal open={kasaOpen} yearId={year.id} onClose={() => setKasaOpen(false)} />
 
       {/* Přidat */}
       {open && (
@@ -692,9 +720,41 @@ export default function FinancePage() {
           </div>
         )}
       </div>
+      </>
+      )}
+
+      {/* Kasa modal — vždy dostupný (i z pohledu Kasy) */}
+      <NewKasaModal open={kasaOpen} yearId={year.id} onClose={() => setKasaOpen(false)} />
+
+      {/* Svítící zlatá lišta (mobil) — 3 hlavní pohledy, jako stánky v Prodeji */}
+      <div className="fixed inset-x-3 bottom-[calc(5.1rem+env(safe-area-inset-bottom))] z-40 md:hidden">
+        <div className="mx-auto max-w-3xl">
+          <div className="grid grid-cols-3 gap-1 rounded-[28px] bg-gold-500 p-1.5 shadow-[0_0_24px_rgba(244,183,31,0.65)]">
+            {FIN_TABS.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`flex min-h-12 flex-col items-center justify-center rounded-[22px] px-1 text-[13px] font-semibold leading-tight transition ${
+                  tab === t.id ? "bg-[#1d1d1f] text-gold-300" : "text-[#1d1d1f] active:scale-[0.97]"
+                }`}
+              >
+                <span className="text-base leading-none">{t.emoji}</span>
+                <span className="mt-0.5 text-center">{t.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
+
+// 3 hlavní pohledy financí (svítící lišta jako stánky v Prodeji).
+const FIN_TABS: { id: "vse" | "kasy" | "vyber"; emoji: string; label: string }[] = [
+  { id: "vse", emoji: "📊", label: "Všechny finance" },
+  { id: "kasy", emoji: "🧰", label: "Kasy" },
+  { id: "vyber", emoji: "💰", label: "Výběr" },
+];
 
 function itemsOpen(items: FinanceItem[], kind: FinanceKind): number {
   return items.filter((i) => i.kind === kind && !i.paid).reduce((s, i) => s + i.amount, 0);
