@@ -41,7 +41,7 @@ const CATEGORIES = [
   "ostatní",
 ];
 
-type Filter = "vse" | "prijem" | "vydaj" | "nezaplaceno";
+type Filter = "vse" | "zaplaceno" | "nezaplaceno";
 
 function parseAmount(s: string): number {
   const n = Number(s.replace(/\s/g, "").replace(",", "."));
@@ -108,7 +108,6 @@ export default function FinancePage() {
   // Hlavní přepínač financí (svítící lišta jako v Prodeji): 4 pohledy.
   const [tab, setTab] = useState<"vse" | "kasy" | "merch" | "vyber">("vse");
   const [filter, setFilter] = useState<Filter>("vse");
-  const [catFilter, setCatFilter] = useState<string>("");
   const [q, setQ] = useState(""); // vyhledávání podle popisu
 
   // Výběr (vklady) — hromadné vložení: všechna jména naráz + částka; rozdělí se
@@ -210,11 +209,18 @@ export default function FinancePage() {
     () => items.filter((f) => f.category === "merch" && f.kind === "prijem").reduce((s, f) => s + f.amount, 0),
     [items],
   );
-  // Kolik jsme do merche vložili (výdaje) a kolik se vrátilo (příjmy).
+  // Kolik jsme do merche vložili: výdaje kategorie „merch" + pořízení zboží
+  // podle nabídky (nákupní cena × skladem). Tak „vloženo" sedí i když se
+  // nákup zapíše jen u produktu (kolik kusů + za kolik), ne jako výdaj.
   const merchExpense = useMemo(
     () => items.filter((f) => f.category === "merch" && f.kind === "vydaj").reduce((s, f) => s + f.amount, 0),
     [items],
   );
+  const merchInvest = useMemo(
+    () => (year?.merch ?? []).reduce((s, p) => s + (p.cost != null && p.stock != null ? p.cost * p.stock : 0), 0),
+    [year],
+  );
+  const merchIn = merchExpense + merchInvest;
   // Do seznamu merche jen „neprodejní" položky (nákupy zboží, refundace…).
   // Jednotlivé prodeje merche (rozpis „×") se sčítají po dnech v „Prodej po dnech".
   const merchExtras = useMemo(
@@ -238,15 +244,13 @@ export default function FinancePage() {
       // Jednotlivé prodeje sem nepatří — jsou sečtené po dnech v „Prodej po dnech".
       .filter((f) => !isPosSale(f))
       .filter((f) => {
-        if (filter === "prijem") return f.kind === "prijem";
-        if (filter === "vydaj") return f.kind === "vydaj";
+        if (filter === "zaplaceno") return f.paid;
         if (filter === "nezaplaceno") return !f.paid;
         return true;
       })
-      .filter((f) => (catFilter ? (f.category || "bez kategorie") === catFilter : true))
       .filter((f) => (q.trim() ? normName(f.label).includes(normName(q)) : true))
       .sort((a, b) => (b.date || b.createdAt).localeCompare(a.date || a.createdAt));
-  }, [items, filter, catFilter, q]);
+  }, [items, filter, q]);
 
   if (!year) return null;
 
@@ -266,6 +270,9 @@ export default function FinancePage() {
   const kasaOpenings = (year.cashboxes ?? []).reduce((s, c) => s + c.opening, 0);
   // Tržba kas = kolik se přes kasy prodalo (QR + hotově), NE rozdíl při uzávěrce.
   const kasaTrzba = (year.cashboxes ?? []).reduce((s, c) => s + posStats(boxDayFinances(year.finances ?? [], c, year.cashboxes ?? [])).takings, 0);
+  // Rozdíl kas = manko/přebytek při uzávěrkách (uzavřené kasy).
+  const kasaDiff = (year.cashboxes ?? []).reduce((s, c) => s + (c.closedAt && c.closing != null ? c.closing - c.opening - (c.alreadyRecorded ?? 0) : 0), 0);
+  const merchProfit = merchTotal - merchIn; // zisk z merche (výdělek − vloženo)
 
   async function add() {
     const num = parseAmount(amount);
@@ -372,50 +379,6 @@ export default function FinancePage() {
         )}
       </div>
 
-      {/* Přehled — malým písmem, vedle sebe hned pod hlavičkou. „V kase" =
-          kolik reálně zbývá na společném účtu (klesne při proplacení výdaje). */}
-      <div className="flex items-stretch overflow-hidden rounded-xl border border-ink/[0.06] bg-surface text-center">
-        {[
-          { label: "Příjmy", value: totals.prijmy, cls: "text-leaf-700", sign: "+" },
-          { label: "Výdaje", value: totals.vydaje, cls: "text-ink", sign: "−" },
-          {
-            label: "Bilance",
-            value: Math.abs(totals.bilance),
-            cls: totals.bilance >= 0 ? "text-leaf-700" : "text-red-600",
-            sign: totals.bilance >= 0 ? "+" : "−",
-          },
-          {
-            label: "V kase",
-            value: Math.abs(totals.kasa),
-            cls: totals.kasa >= 0 ? "text-ink" : "text-red-600",
-            sign: totals.kasa >= 0 ? "" : "−",
-          },
-        ].map((c, i) => (
-          <div key={c.label} className={`flex-1 px-1.5 py-2 ${i > 0 ? "border-l border-ink/[0.06]" : ""}`}>
-            <p className="text-[9px] font-medium uppercase tracking-wide text-ink-soft sm:text-[10px]">{c.label}</p>
-            <p className={`font-display text-[12px] font-bold leading-tight sm:text-sm ${c.cls}`}>
-              {c.sign}
-              {fmtCZK(c.value)}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* Kdo co smí: každý přidává, upravuje jen správce; zamčený ročník = jen náhled */}
-      {!canAdd ? (
-        <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
-          <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>Tento ročník je uzamčený — máš jen náhled.</span>
-        </div>
-      ) : (
-        !canEdit && (
-          <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
-            <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>Můžeš přidávat položky i kasy. Upravovat a mazat zapsané může jen správce.</span>
-          </div>
-        )
-      )}
-
       {/* Přepínač financí (desktop) — na mobilu je dole ve svítící zlaté liště */}
       <div className="hidden gap-1.5 md:flex">
         {FIN_TABS.map((t) => (
@@ -434,7 +397,7 @@ export default function FinancePage() {
         ))}
       </div>
 
-      {/* Vyhledávání — velké, přes celou šířku, hned pod přehledem (mění se podle pohledu) */}
+      {/* Vyhledávání — velké, přes celou šířku, hned pod nadpisem (mění se podle pohledu) */}
       <input
         className="w-full rounded-2xl border-2 border-ink/10 bg-white px-5 py-4 text-base shadow-sm outline-none transition placeholder:text-ink-soft/60 focus:border-gold-500 focus:ring-1 focus:ring-gold-500"
         placeholder={tab === "vyber" ? "🔎 Hledat člověka…" : tab === "kasy" ? "🔎 Hledat kasu / den…" : tab === "merch" ? "🔎 Hledat v merchi…" : "🔎 Hledat v položkách…"}
@@ -442,25 +405,57 @@ export default function FinancePage() {
         onChange={(e) => setQ(e.target.value)}
       />
 
+      {/* Základní přehled podle pohledu — jednoduše a jasně, hned pod hledáním
+          (kasa / merch / výběr / vše zvlášť: výdělek, vklady, bilance). */}
+      <SummaryStrip
+        cells={
+          tab === "kasy"
+            ? [
+                { label: "Tržba", text: `+${fmtCZK(kasaTrzba)}`, cls: "text-leaf-700" },
+                { label: "Vklady", text: fmtCZK(kasaOpenings) },
+                { label: "Rozdíl", text: `${kasaDiff >= 0 ? "+" : "−"}${fmtCZK(Math.abs(kasaDiff))}`, cls: kasaDiff >= 0 ? "text-leaf-700" : "text-red-600" },
+              ]
+            : tab === "merch"
+              ? [
+                  { label: "Výdělek", text: `+${fmtCZK(merchTotal)}`, cls: "text-leaf-700" },
+                  { label: "Vloženo", text: `−${fmtCZK(merchIn)}` },
+                  { label: "Zisk", text: `${merchProfit >= 0 ? "+" : "−"}${fmtCZK(Math.abs(merchProfit))}`, cls: merchProfit >= 0 ? "text-leaf-700" : "text-red-600" },
+                ]
+              : tab === "vyber"
+                ? [
+                    { label: "V balíku", text: `+${fmtCZK(vyber.inPool)}`, cls: "text-leaf-700" },
+                    { label: "Zbývá doplatit", text: fmtCZK(vyber.owed), cls: vyber.owed > 0 ? "text-amber-800" : "text-ink" },
+                    { label: "Zaplatili", text: `${vyber.paidCount}/${contributions.length}` },
+                  ]
+                : [
+                    { label: "Příjmy", text: `+${fmtCZK(totals.prijmy)}`, cls: "text-leaf-700" },
+                    { label: "Výdaje", text: `−${fmtCZK(totals.vydaje)}` },
+                    { label: "Bilance", text: `${totals.bilance >= 0 ? "+" : "−"}${fmtCZK(Math.abs(totals.bilance))}`, cls: totals.bilance >= 0 ? "text-leaf-700" : "text-red-600" },
+                    { label: "V kase", text: `${totals.kasa >= 0 ? "" : "−"}${fmtCZK(Math.abs(totals.kasa))}`, cls: totals.kasa >= 0 ? "text-ink" : "text-red-600" },
+                  ]
+        }
+      />
+
+      {/* Kdo co smí: každý přidává, upravuje jen správce; zamčený ročník = jen náhled */}
+      {!canAdd ? (
+        <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
+          <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>Tento ročník je uzamčený — máš jen náhled.</span>
+        </div>
+      ) : (
+        !canEdit && (
+          <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
+            <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>Můžeš přidávat položky i kasy. Upravovat a mazat zapsané může jen správce.</span>
+          </div>
+        )
+      )}
+
       {/* ===== POHLED: KASY ===== */}
       {tab === "kasy" &&
       ((year.cashboxes?.length ?? 0) > 0 || canAdd) && (
         <section className="card p-4">
-          <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
-            🧰 Denní kasy
-            {(year.cashboxes?.length ?? 0) > 0 && (
-              <>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-sm">
-                  <span className="text-xs font-normal text-ink-soft">vloženo</span>
-                  <span className="font-bold text-ink">{fmtCZK(kasaOpenings)}</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf/12 px-2.5 py-0.5 text-sm">
-                  <span className="text-xs font-normal text-leaf-700">tržba</span>
-                  <span className="font-bold text-leaf-700">+{fmtCZK(kasaTrzba)}</span>
-                </span>
-              </>
-            )}
-          </h2>
+          <h2 className="mb-1 font-display text-[20px] font-semibold">🧰 Denní kasy</h2>
           {(() => {
             const boxes = [...(year.cashboxes ?? [])]
               .filter((c) => (q.trim() ? normName(`${c.label ?? ""} ${fmtDate(c.openedAt)}`).includes(normName(q)) : true))
@@ -498,28 +493,11 @@ export default function FinancePage() {
         <section id="vyber" className="card scroll-mt-20 p-4">
           <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
             💰 Výběr (vklady)
-            {contributions.length > 0 && (
-              <>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf/12 px-2.5 py-0.5 text-sm">
-                  <span className="text-xs font-normal text-leaf-700">v balíku</span>
-                  <span className="font-bold text-leaf-700">+{fmtCZK(vyber.inPool)}</span>
-                </span>
-                {vyber.owed > 0 && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-sm">
-                    <span className="text-xs font-normal text-amber-800">zbývá doplatit</span>
-                    <span className="font-bold text-amber-800">{fmtCZK(vyber.owed)}</span>
-                  </span>
-                )}
-                {vyber.returned > 0 && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-sm">
-                    <span className="text-xs font-normal text-ink-soft">vráceno</span>
-                    <span className="font-bold text-ink">−{fmtCZK(vyber.returned)}</span>
-                  </span>
-                )}
-                <span className="chip" title="Kolik lidí už zaplatilo celé">
-                  ✓ {vyber.paidCount}/{contributions.length} zaplatilo
-                </span>
-              </>
+            {vyber.returned > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-sm">
+                <span className="text-xs font-normal text-ink-soft">vráceno</span>
+                <span className="font-bold text-ink">−{fmtCZK(vyber.returned)}</span>
+              </span>
             )}
           </h2>
           {/* Hromadné vložení — všechna jména naráz + částka pro všechny */}
@@ -608,22 +586,8 @@ export default function FinancePage() {
 
       {/* ===== POHLED: MERCH ===== */}
       {tab === "merch" && (
-        merchExpense > 0 || merchTotal > 0 || merchExtras.length > 0 || merchSaleDays.length > 0 ? (
+        merchIn > 0 || merchTotal > 0 || merchExtras.length > 0 || merchSaleDays.length > 0 ? (
           <div className="space-y-4">
-            {/* Souhrn merche — kolik se vložilo (nákup zboží) a kolik se vydělalo */}
-            <section className="card p-4">
-              <h2 className="flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
-                🛍️ Merch
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-sm">
-                  <span className="text-xs font-normal text-ink-soft">vloženo</span>
-                  <span className="font-bold text-ink">−{fmtCZK(merchExpense)}</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf/12 px-2.5 py-0.5 text-sm">
-                  <span className="text-xs font-normal text-leaf-700">zpátky</span>
-                  <span className="font-bold text-leaf-700">+{fmtCZK(merchTotal)}</span>
-                </span>
-              </h2>
-            </section>
             {/* Prodeje merche sečtené po dnech (jednotlivé platby uvnitř) */}
             <SalesByDay days={merchSaleDays} title="🧾 Prodeje po dnech" q={q} canDelete={canEdit} yearId={year.id} />
             {/* Nákupy zboží a ostatní (neprodejní položky kategorie merch) */}
@@ -658,9 +622,27 @@ export default function FinancePage() {
       {/* ===== POHLED: VŠECHNY FINANCE ===== */}
       {tab === "vse" && (
       <>
-      {/* Výdělek z prodeje a merche — sečtený po dnech, ať je vidět i tady
-          (jednotlivé platby zůstávají v Kasách/Merchi, tady jen souhrn dne). */}
-      {(filter === "vse" || filter === "prijem") && !catFilter && allSaleDays.length > 0 && (
+      {/* Tlačítka (filtr) — jen Vše / Zaplacené / Nezaplacené */}
+      <div className="flex flex-wrap items-center gap-2">
+        {([
+          ["vse", "Vše"],
+          ["zaplaceno", "Zaplacené"],
+          ["nezaplaceno", "Nezaplacené"],
+        ] as [Filter, string][]).map(([f, l]) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+              filter === f ? "bg-ink text-white" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"
+            }`}
+          >
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {/* Výdělek z prodeje a merche — sečtený po dnech (jednotlivé platby v Kasách/Merchi) */}
+      {filter !== "nezaplaceno" && allSaleDays.length > 0 && (
         <SalesByDay days={allSaleDays} title="🧾 Výdělek z prodeje a merche" q={q} canDelete={canEdit} yearId={year.id} />
       )}
       {/* Přidat */}
@@ -695,56 +677,13 @@ export default function FinancePage() {
         </div>
       )}
 
-      {/* Filtr */}
-      <div className="space-y-2 pt-2">
-      <h2 className="flex items-center gap-2 border-b-2 border-gold-600/70 pb-1.5 font-display text-2xl font-bold tracking-tight">
-        <span aria-hidden>📊</span> Všechny finance
-      </h2>
-      <div className="flex flex-wrap items-center gap-2">
-        {([
-          ["vse", "Vše"],
-          ["prijem", "Příjmy"],
-          ["vydaj", "Výdaje"],
-          ["nezaplaceno", "Nezaplacené"],
-        ] as [Filter, string][]).map(([f, l]) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${filter === f ? "bg-ink text-white" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"}`}
-          >
-            {l}
-          </button>
-        ))}
-        {/* Záložky pro kategorie merch a kasa — stejný vzhled jako ostatní */}
-        {([
-          ["merch", "Merch"],
-          ["kasa", "Kasy"],
-        ] as [string, string][]).map(([cat, l]) => (
-          <button
-            key={cat}
-            onClick={() => setCatFilter((c) => (c === cat ? "" : cat))}
-            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${catFilter === cat ? "bg-ink text-white" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"}`}
-          >
-            {l}
-          </button>
-        ))}
-        {byCategory.length > 0 && (
-          <select className="ml-auto rounded-full border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink-soft" value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
-            <option value="">Všechny kategorie</option>
-            {byCategory.map(([cat]) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-      </div>
+      {/* Seznam položek (výdaje, vklady…) */}
+      <h2 className="border-b-2 border-gold-600/70 pb-1.5 font-display text-lg font-semibold tracking-tight">Položky</h2>
 
       {/* Tabulka */}
       {rows.length === 0 ? (
         <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
-          {q.trim() || filter !== "vse" || catFilter ? "Nic neodpovídá filtru ani hledání." : "Zatím žádné položky. Přidej první vklad nebo výdaj."}
+          {q.trim() || filter !== "vse" ? "Nic neodpovídá filtru ani hledání." : "Zatím žádné položky. Přidej první vklad nebo výdaj."}
         </div>
       ) : (
         <div className="card overflow-hidden">
@@ -869,6 +808,21 @@ const FIN_TABS: { id: "vse" | "kasy" | "merch" | "vyber"; emoji: string; label: 
   { id: "merch", emoji: "🛍️", label: "Merch" },
   { id: "vyber", emoji: "💰", label: "Výběr" },
 ];
+
+// Základní přehled pohledu (výdělek / vklady / bilance) — buňky vedle sebe,
+// přes celou šířku, hned pod hledáním. Text i barvu si volí každý pohled sám.
+function SummaryStrip({ cells }: { cells: { label: string; text: string; cls?: string }[] }) {
+  return (
+    <div className="flex items-stretch overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface text-center shadow-sm">
+      {cells.map((c, i) => (
+        <div key={c.label} className={`flex-1 px-2 py-3 ${i > 0 ? "border-l border-ink/[0.06]" : ""}`}>
+          <p className="text-[9px] font-medium uppercase tracking-wide text-ink-soft sm:text-[10px]">{c.label}</p>
+          <p className={`mt-0.5 font-display text-sm font-bold leading-tight sm:text-base ${c.cls ?? "text-ink"}`}>{c.text}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // Sdílený stav řádku financí — používá ho tabulkový řádek (desktop) i karta (mobil).
 function useFinanceRow(item: FinanceItem, yearId: string) {
