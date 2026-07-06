@@ -194,11 +194,22 @@ function Pos() {
     if (!o.done) continue;
     for (const it of o.items) merchSold.set(it.productId, (merchSold.get(it.productId) ?? 0) + it.qty);
   }
+  // Kolik kusů merche už leží v účtence (i nezaplacené) — počítá se proti skladu,
+  // ať se nedá namarkovat víc, než je skladem.
+  const inCart = new Map<string, number>();
+  for (const l of lines) if (l.kind === "merch" && l.productId) inCart.set(l.productId, (inCart.get(l.productId) ?? 0) + l.qty);
+  // Zbývá skladem (merch se zadaným skladem): stock − prodáno − v účtence.
+  // null = neomezeně (produkt bez skladu).
+  function merchLeft(id: string): number | null {
+    const p = (year!.merch ?? []).find((x) => x.id === id);
+    if (!p || p.stock == null) return null;
+    return p.stock - (merchSold.get(id) ?? 0) - (inCart.get(id) ?? 0);
+  }
   function isSoldOut(kind: Exclude<Kind, "custom">, id: string): boolean {
     if (soldOutManual.has(id)) return true;
     if (kind === "merch") {
-      const p = (year!.merch ?? []).find((x) => x.id === id);
-      if (p && p.stock != null && p.stock - (merchSold.get(id) ?? 0) <= 0) return true;
+      const left = merchLeft(id);
+      if (left != null && left <= 0) return true;
     }
     return false;
   }
@@ -254,6 +265,8 @@ function Pos() {
   // Ťuknutí na dlaždici: merch s velikostmi/barvami se doptá (chipy),
   // všechno ostatní letí rovnou do účtenky.
   function tapItem(kind: Kind, item: { id: string; name: string; price: number }) {
+    // Pojistka: vyprodané / na skladě už nic (i s ohledem na účtenku) se nepřidá.
+    if (kind !== "custom" && isSoldOut(kind, item.id)) return;
     const product = kind === "merch" ? (year!.merch ?? []).find((p) => p.id === item.id) : undefined;
     if (product && ((product.sizes?.length ?? 0) > 0 || (product.colors?.length ?? 0) > 0)) {
       setPicker({ productId: product.id });
@@ -263,6 +276,13 @@ function Pos() {
   }
   function confirmPicker() {
     if (!picker || !pickerProduct) return;
+    // Pojistka na sklad: víc než je skladem (po započtení účtenky) nejde přidat.
+    const left = merchLeft(pickerProduct.id);
+    if (left != null && left <= 0) {
+      setPicker(null);
+      flash("Vyprodáno — na skladě už nic není", "📦");
+      return;
+    }
     addLine("merch", pickerProduct.name, pickerProduct.price!, pickerProduct.id, picker.size, picker.color);
     setPicker(null);
   }
@@ -557,6 +577,7 @@ function Pos() {
                 const sold = isSoldOut(g.kind, i.id);
                 const manualSold = soldOutManual.has(i.id);
                 const stockSold = sold && !manualSold; // vyprodáno skladem (merch) — ručně nejde vrátit
+                const left = g.kind === "merch" ? merchLeft(i.id) : null; // zbývá skladem (null = neomezeně)
                 return (
                   <button
                     key={i.id}
@@ -582,9 +603,12 @@ function Pos() {
                     ) : sold ? (
                       <span className="shrink-0 text-sm font-bold text-ink-soft">✕ Vyprodáno</span>
                     ) : (
-                      // Cena jako zdvižená „přidávací" pilulka s +, ať je jasné, že ťuknutí položku přidá.
-                      <span className="shrink-0 rounded-full bg-surface px-2.5 py-1 text-sm font-bold text-ink shadow-sm ring-1 ring-ink/5">
-                        + {fmtCZK(i.price)}
+                      // Cena jako zdvižená „přidávací" pilulka s +; u merche se skladem i „zbývá N".
+                      <span className="flex shrink-0 items-center gap-1.5">
+                        {left != null && <span className="text-[11px] font-medium text-ink-soft">zbývá {left}</span>}
+                        <span className="rounded-full bg-surface px-2.5 py-1 text-sm font-bold text-ink shadow-sm ring-1 ring-ink/5">
+                          + {fmtCZK(i.price)}
+                        </span>
                       </span>
                     )}
                   </button>
