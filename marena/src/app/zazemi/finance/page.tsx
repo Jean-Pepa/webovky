@@ -8,6 +8,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { ImageViewer } from "@/components/ImageViewer";
+import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { isAdmin } from "@/lib/admin";
 import { normName } from "@/lib/names";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
@@ -332,6 +333,11 @@ export default function FinancePage() {
           <option key={c} value={c} />
         ))}
       </datalist>
+      {/* Upozornění „jen náhled" úplně nahoře, červeně (uzamčený ročník řeší
+          globální proužek v layoutu). */}
+      {canEditCurrentYear && !canEdit && (
+        <ReadOnlyBanner>Finance máš jen k náhledu — přidávat a měnit je může jen správce.</ReadOnlyBanner>
+      )}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-[28px] font-bold tracking-tight">Finance</h1>
@@ -429,17 +435,6 @@ export default function FinancePage() {
         }
       />
 
-      {/* Finance vidí každý; měnit může jen správce (a jen odemčený ročník). */}
-      {!canEdit && (
-        <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
-          <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>
-            {!canEditCurrentYear
-              ? "🔒 Uzamčený ročník — finance jde jen prohlížet."
-              : "👀 Finance máš jen k náhledu — přidávat a měnit je může jen správce."}
-          </span>
-        </div>
-      )}
 
       {/* ===== POHLED: KASY ===== */}
       {tab === "kasy" &&

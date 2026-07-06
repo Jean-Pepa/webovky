@@ -13,6 +13,7 @@ import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/re
 import { fmtCZK, fmtDateTime } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { canSeeMerch, variantKey, productVariants } from "@/lib/merch";
+import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { isAdmin } from "@/lib/admin";
 import { flash } from "@/components/Flash";
 import type { MerchProduct, MerchOrder } from "@/lib/types";
@@ -114,6 +115,11 @@ export default function MerchPage() {
 
   return (
     <div className="space-y-6">
+      {/* Upozornění „jen náhled" úplně nahoře, červeně (uzamčený ročník řeší
+          globální proužek v layoutu). */}
+      {canEditCurrentYear && !canManage && (
+        <ReadOnlyBanner>Merch máš jen k náhledu — spravovat nabídku může jen role Merch a správce.</ReadOnlyBanner>
+      )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="font-display text-[28px] font-bold tracking-tight">Merch</h1>
@@ -133,20 +139,7 @@ export default function MerchPage() {
       {/* Nabídka (fotky merche) */}
       <section className="space-y-3">
         <h2 className="font-display text-[20px] font-semibold">Nabídka</h2>
-        {canManage ? (
-          <AddProduct yearId={year.id} />
-        ) : canSeeMerch(year, me) ? (
-          <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            🔒 Tento ročník je uzamčený — nabídku jde jen prohlížet.
-          </p>
-        ) : (
-          <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
-            <Icon name="merch" className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>
-              Nabídku může spravovat jen role <strong>Merch</strong> a správce. Ty máš jen náhled.
-            </span>
-          </div>
-        )}
+        {canManage && <AddProduct yearId={year.id} />}
         {products.length === 0 ? (
           <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
             {canManage ? "Zatím žádný merch. Nahraj první kousek." : "Zatím tu není žádný merch."}

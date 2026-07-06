@@ -6,7 +6,7 @@ import { isAdmin } from "@/lib/admin";
 import { sameName } from "@/lib/names";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
-import { Icon } from "@/components/Icons";
+import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { flash } from "@/components/Flash";
 import { matchesQuery } from "@/lib/search";
 import type { Invite, Interest } from "@/lib/types";
@@ -109,6 +109,10 @@ export default function ProgramPage() {
         ))}
       </datalist>
 
+      {!canEdit && (
+        <ReadOnlyBanner>Program vidí každý, upravovat ho může jen kapelník, koordinátor přednášek, bavič a správce.</ReadOnlyBanner>
+      )}
+
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-[28px] font-bold tracking-tight">Program</h1>
@@ -119,13 +123,6 @@ export default function ProgramPage() {
           </button>
         )}
       </div>
-
-      {!canEdit && (
-        <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
-          <Icon name="mic" className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>Program vidí každý, upravovat ho může jen kapelník, koordinátor přednášek, bavič a správce.</span>
-        </div>
-      )}
 
       <SearchBox value={q} onChange={setQ} placeholder="Hledat v programu…" />
 
