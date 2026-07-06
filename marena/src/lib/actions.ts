@@ -83,7 +83,10 @@ export type Action =
   // do financí pak jde jen rozdíl, aby se stejné peníze nepočítaly dvakrát.
   | { type: "closeCashbox"; yearId: string; cashboxId: string; closing: number; alreadyRecorded?: number }
   | { type: "removeCashbox"; yearId: string; cashboxId: string }
-  | { type: "addContribution"; yearId: string; name: string; amount: number }
+  // pledged = splátky: kolik má dát celkem (amount = kolik zaplatil teď)
+  | { type: "addContribution"; yearId: string; name: string; amount: number; pledged?: number }
+  // Doplatil zbytek splátky — amount se dorovná na slíbenou částku.
+  | { type: "settleContribution"; yearId: string; contributionId: string }
   | { type: "toggleContributionReturned"; yearId: string; contributionId: string }
   | { type: "updateContribution"; yearId: string; contributionId: string; patch: { name?: string; amount?: number } }
   | { type: "removeContribution"; yearId: string; contributionId: string }
@@ -709,11 +712,20 @@ export function applyAction(db: DB, a: Action): DB {
       const name = a.name.trim();
       const amount = Math.round(a.amount);
       if (!name || amount <= 0) return db;
+      // Splátka jen když je slíbená částka vyšší než zaplacená.
+      const pledged = a.pledged != null && Math.round(a.pledged) > amount ? Math.round(a.pledged) : undefined;
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        contributions: [...(y.contributions ?? []), { id: uid("ct_"), name, amount, createdAt: now() }],
+        contributions: [...(y.contributions ?? []), { id: uid("ct_"), name, amount, pledged, createdAt: now() }],
       }));
     }
+    case "settleContribution":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        contributions: (y.contributions ?? []).map((c) =>
+          c.id === a.contributionId && c.pledged != null && c.pledged > c.amount ? { ...c, amount: c.pledged, pledged: undefined } : c,
+        ),
+      }));
     case "toggleContributionReturned":
       return mapYear(db, a.yearId, (y) => ({
         ...y,

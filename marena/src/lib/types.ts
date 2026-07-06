@@ -138,7 +138,8 @@ export interface Cashbox {
 export interface Contribution {
   id: string;
   name: string; // jméno (a příjmení) přispěvatele
-  amount: number; // kolik dal (Kč)
+  amount: number; // kolik už zaplatil (Kč)
+  pledged?: number; // splátky: kolik má dát celkem; chybí = zaplaceno celé najednou
   returned?: boolean; // na konci vráceno
   returnedAt?: string; // ISO – kdy se vrátilo
   createdAt: string;

@@ -62,6 +62,7 @@ export default function FinancePage() {
   // Výběr (vklady) – rychlé přidání přispěvatele.
   const [ctName, setCtName] = useState("");
   const [ctAmount, setCtAmount] = useState("");
+  const [ctPledged, setCtPledged] = useState(""); // splátky: kolik má dát celkem (nepovinné)
 
   const [kind, setKind] = useState<FinanceKind>("vydaj");
   const [label, setLabel] = useState("");
@@ -77,15 +78,18 @@ export default function FinancePage() {
   const items = useMemo(() => year?.finances ?? [], [year]);
   const contributions = useMemo(() => year?.contributions ?? [], [year]);
 
-  // Výběr: kolik je aktuálně v balíku (nevrácené) a kolik se už vrátilo.
+  // Výběr: kolik je aktuálně v balíku (nevrácené), kolik se už vrátilo
+  // a kolik zbývá doplatit na splátkách (v balíku je jen skutečně zaplacené).
   const vyber = useMemo(() => {
     let inPool = 0,
-      returned = 0;
+      returned = 0,
+      owed = 0;
     for (const c of contributions) {
       if (c.returned) returned += c.amount;
       else inPool += c.amount;
+      if (!c.returned && c.pledged != null && c.pledged > c.amount) owed += c.pledged - c.amount;
     }
-    return { inPool, returned, total: inPool + returned };
+    return { inPool, returned, owed, total: inPool + returned };
   }, [contributions]);
 
   const totals = useMemo(() => {
@@ -203,10 +207,12 @@ export default function FinancePage() {
   async function addContribution() {
     const num = parseAmount(ctAmount);
     if (!ctName.trim() || num <= 0 || !year || !canAdd) return;
-    await dispatch({ type: "addContribution", yearId: year.id, name: ctName.trim(), amount: num });
+    const pledged = ctPledged.trim() ? parseAmount(ctPledged) : undefined;
+    await dispatch({ type: "addContribution", yearId: year.id, name: ctName.trim(), amount: num, pledged });
     setCtName("");
     setCtAmount("");
-    flash("Výběr zapsán", "💸");
+    setCtPledged("");
+    flash(pledged && pledged > num ? `Splátka zapsána — zbývá doplatit ${fmtCZK(pledged - num)}` : "Výběr zapsán", "💸");
   }
 
   return (
@@ -324,6 +330,12 @@ export default function FinancePage() {
                   <span className="text-xs font-normal text-leaf-700">v balíku</span>
                   <span className="font-bold text-leaf-700">+{fmtCZK(vyber.inPool)}</span>
                 </span>
+                {vyber.owed > 0 && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-sm">
+                    <span className="text-xs font-normal text-amber-800">zbývá doplatit</span>
+                    <span className="font-bold text-amber-800">{fmtCZK(vyber.owed)}</span>
+                  </span>
+                )}
                 {vyber.returned > 0 && (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-sm">
                     <span className="text-xs font-normal text-ink-soft">vráceno</span>
@@ -335,7 +347,8 @@ export default function FinancePage() {
             )}
           </h2>
           <p className="mb-3 text-xs text-ink-soft">
-            Zapiš, kdo dal kolik do společné kasy. Nevrácené se počítá do celkového balíku. Na konci u každého odklikni Vráceno.
+            Zapiš, kdo dal kolik do společné kasy. Jde to i na splátky — vyplň „má dát celkem“ a po doplacení klikni Doplatil. Nevrácené se
+            počítá do celkového balíku. Na konci u každého odklikni Vráceno.
           </p>
           {canAdd && vyberOpen && (
             <div className="mb-3 flex flex-wrap gap-2">
@@ -351,9 +364,18 @@ export default function FinancePage() {
                 id="ct-amount"
                 className="input w-28"
                 inputMode="numeric"
-                placeholder="Částka"
+                placeholder="Zaplatil (Kč)"
                 value={ctAmount}
                 onChange={(e) => setCtAmount(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addContribution()}
+              />
+              <input
+                className="input w-40"
+                inputMode="numeric"
+                placeholder="Má dát celkem (Kč)"
+                title="Nepovinné — vyplň jen u splátky (např. zaplatil 1000 z 2000)"
+                value={ctPledged}
+                onChange={(e) => setCtPledged(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addContribution()}
               />
               <button className="btn-primary" onClick={addContribution} disabled={!ctName.trim() || !ctAmount.trim()}>
@@ -913,10 +935,31 @@ function ReceiptControl({ item, yearId, canAdd, canEdit }: { item: FinanceItem; 
 // Řádek výběru (vkladu) — jméno + částka + (pro správce) Vráceno / smazat.
 function ContributionRow({ c, yearId, canEdit }: { c: Contribution; yearId: string; canEdit: boolean }) {
   const { dispatch } = useStore();
+  // Splátka: zaplatil zatím jen část slíbené částky — zbytek se hlídá tady.
+  const owes = c.pledged != null && c.pledged > c.amount ? c.pledged - c.amount : 0;
   return (
-    <li className="flex items-center gap-3 py-2">
-      <p className={`min-w-0 flex-1 break-words font-medium ${c.returned ? "text-ink-soft line-through" : ""}`}>{c.name}</p>
-      <span className={`shrink-0 font-display font-semibold ${c.returned ? "text-ink-soft line-through" : "text-leaf-700"}`}>{fmtCZK(c.amount)}</span>
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+      <p className={`min-w-0 flex-1 break-words font-medium ${c.returned ? "text-ink-soft line-through" : ""}`}>
+        {c.name}
+        {owes > 0 && (
+          <span className="ml-2 inline-block rounded-full bg-amber-100 px-2 py-0.5 align-middle text-[11px] font-semibold text-amber-800">
+            ⏳ splátka — zbývá {fmtCZK(owes)}
+          </span>
+        )}
+      </p>
+      <span className={`shrink-0 font-display font-semibold ${c.returned ? "text-ink-soft line-through" : "text-leaf-700"}`}>
+        {fmtCZK(c.amount)}
+        {owes > 0 && <span className="font-sans text-xs font-normal text-ink-soft"> z {fmtCZK(c.pledged!)}</span>}
+      </span>
+      {canEdit && owes > 0 && !c.returned && (
+        <button
+          onClick={() => dispatch({ type: "settleContribution", yearId, contributionId: c.id })}
+          className="shrink-0 rounded-full bg-leaf px-2.5 py-1 text-xs font-semibold text-white transition hover:opacity-90"
+          title={`Doplatil zbytek ${fmtCZK(owes)} — vklad bude celých ${fmtCZK(c.pledged!)}`}
+        >
+          ✓ Doplatil
+        </button>
+      )}
       {canEdit && (
         <button
           onClick={() => dispatch({ type: "toggleContributionReturned", yearId, contributionId: c.id })}
