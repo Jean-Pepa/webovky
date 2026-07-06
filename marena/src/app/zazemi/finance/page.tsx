@@ -106,11 +106,13 @@ export default function FinancePage() {
     return { inPool, returned, owed, paidCount: counts.zaplatil, counts, total: inPool + returned };
   }, [contributions]);
 
-  // Seznam podle zvoleného filtru (řazení řeší až výpis).
-  const filteredContributions = useMemo(
-    () => (ctFilter === "vse" ? contributions : contributions.filter((c) => contributionState(c) === ctFilter)),
-    [contributions, ctFilter],
-  );
+  // Seznam podle zvoleného filtru + hledání (jméno / e-mail / telefon).
+  const filteredContributions = useMemo(() => {
+    const byState = ctFilter === "vse" ? contributions : contributions.filter((c) => contributionState(c) === ctFilter);
+    if (!q.trim()) return byState;
+    const needle = normName(q);
+    return byState.filter((c) => normName(`${c.name} ${c.email ?? ""} ${c.phone ?? ""}`).includes(needle));
+  }, [contributions, ctFilter, q]);
 
   const totals = useMemo(() => {
     let prijmy = 0,
@@ -361,7 +363,10 @@ export default function FinancePage() {
         {FIN_TABS.map((t) => (
           <button
             key={t.id}
-            onClick={() => setTab(t.id)}
+            onClick={() => {
+              setTab(t.id);
+              setQ("");
+            }}
             className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${
               tab === t.id ? "bg-gold-500 text-[#1d1d1f] shadow-sm" : "bg-paper2 text-ink-soft hover:bg-gold-100"
             }`}
@@ -370,6 +375,14 @@ export default function FinancePage() {
           </button>
         ))}
       </div>
+
+      {/* Vyhledávání — hned pod přehledem, nad obsahem pohledu (mění se podle pohledu) */}
+      <input
+        className="w-full rounded-full border border-ink/10 bg-white px-4 py-2 text-sm placeholder:text-ink-soft/60"
+        placeholder={tab === "vyber" ? "🔎 Hledat člověka…" : tab === "kasy" ? "🔎 Hledat kasu…" : "🔎 Hledat v položkách…"}
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+      />
 
       {/* ===== POHLED: KASY ===== */}
       {tab === "kasy" &&
@@ -390,22 +403,23 @@ export default function FinancePage() {
               </>
             )}
           </h2>
-          <p className="mb-3 text-xs text-ink-soft">
-            Ráno zapiš vklad (na vracení), večer doplň stav v kase — tržba (večer − ráno) se sama zapíše do financí.
-          </p>
-          {(year.cashboxes?.length ?? 0) === 0 ? (
-            <p className="text-sm text-ink-soft">Zatím žádná kasa. Klikni nahoře na tlačítko + Kasa.</p>
-          ) : (
-            <Collapsible peekClass="max-h-[150px]" expandable={(year.cashboxes?.length ?? 0) > 1} total={year.cashboxes?.length ?? 0}>
-              <div className="space-y-2">
-                {[...(year.cashboxes ?? [])]
-                  .sort((a, b) => b.openedAt.localeCompare(a.openedAt))
-                  .map((c) => (
+          {(() => {
+            const boxes = [...(year.cashboxes ?? [])]
+              .filter((c) => (q.trim() ? normName(`${c.label ?? ""} ${fmtDate(c.openedAt)}`).includes(normName(q)) : true))
+              .sort((a, b) => b.openedAt.localeCompare(a.openedAt));
+            if ((year.cashboxes?.length ?? 0) === 0)
+              return <p className="text-sm text-ink-soft">Zatím žádná kasa. Klikni nahoře na tlačítko + Kasa.</p>;
+            if (boxes.length === 0) return <p className="py-4 text-center text-sm text-ink-soft">Žádná kasa neodpovídá hledání.</p>;
+            return (
+              <Collapsible peekClass="max-h-[150px]" expandable={boxes.length > 1} total={boxes.length}>
+                <div className="space-y-2">
+                  {boxes.map((c) => (
                     <CashboxCard key={c.id} box={c} yearId={year.id} canAdd={canAdd} canEdit={canEdit} />
                   ))}
-              </div>
-            </Collapsible>
-          )}
+                </div>
+              </Collapsible>
+            );
+          })()}
         </section>
       )}
 
@@ -439,10 +453,6 @@ export default function FinancePage() {
               </>
             )}
           </h2>
-          <p className="mb-3 text-xs text-ink-soft">
-            Vlož všechna jména naráz a částku, kolik se vybírá — rozdělí se na jednotlivé lidi. Platby pak jen odklikáváš (celé / půlku /
-            doplatil), e-mail a telefon doplníš u každého zpětně přes „Upravit“. Do balíku se počítá jen skutečně zaplacené.
-          </p>
           {/* Hromadné vložení — všechna jména naráz + částka pro všechny */}
           {canAdd && vyberOpen && (
             <div className="mb-4 rounded-xl border border-gold-200 bg-gold-50/40 p-3">
@@ -627,14 +637,8 @@ export default function FinancePage() {
             {l}
           </button>
         ))}
-        <input
-          className="ml-auto w-44 rounded-full border border-ink/10 bg-white px-3.5 py-1.5 text-sm sm:w-52"
-          placeholder="🔎 Hledat v popisu…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
         {byCategory.length > 0 && (
-          <select className="rounded-full border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink-soft" value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
+          <select className="ml-auto rounded-full border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink-soft" value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
             <option value="">Všechny kategorie</option>
             {byCategory.map(([cat]) => (
               <option key={cat} value={cat}>
@@ -748,7 +752,10 @@ export default function FinancePage() {
             {FIN_TABS.map((t) => (
               <button
                 key={t.id}
-                onClick={() => setTab(t.id)}
+                onClick={() => {
+              setTab(t.id);
+              setQ("");
+            }}
                 className={`flex min-h-12 flex-col items-center justify-center rounded-[22px] px-1 text-[13px] font-semibold leading-tight transition ${
                   tab === t.id ? "bg-[#1d1d1f] text-gold-300" : "text-[#1d1d1f] active:scale-[0.97]"
                 }`}
