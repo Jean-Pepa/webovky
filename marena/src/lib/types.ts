@@ -272,7 +272,8 @@ export interface MerchProduct {
   blobId?: string; // foto produktu (ukládá se zvlášť, ne v hlavní DB)
   sizes?: string[]; // nabízené velikosti (S, M, L…) — zadává správce / role merch
   colors?: string[]; // nabízené barvy
-  stock?: number; // kolik kusů máme skladem (prázdné = neomezeně); zbývá = stock − prodáno
+  stock?: number; // kolik kusů máme skladem celkem (prázdné = neomezeně); u variant = součet
+  variantStock?: Record<string, number>; // sklad po variantách: klíč „velikost|barva" → počet kusů
   note?: string; // další detaily (materiál apod.)
   createdAt: string;
 }

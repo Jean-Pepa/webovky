@@ -10,6 +10,7 @@ import { fmtCZK, fmtDateTime, todayISO } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { isAdmin } from "@/lib/admin";
 import { sameName } from "@/lib/names";
+import { variantKey } from "@/lib/merch";
 import { flash } from "@/components/Flash";
 import { POS_CATS, posStats, posOrders, OrderHistory, DayCard, boxDayFinances } from "@/lib/pos";
 import type { Cashbox, FinanceItem, MerchOrder, MerchProduct } from "@/lib/types";
@@ -205,6 +206,24 @@ function Pos() {
     if (!p || p.stock == null) return null;
     return p.stock - (merchSold.get(id) ?? 0) - (inCart.get(id) ?? 0);
   }
+  // Sklad po variantách (velikost·barva): prodáno + v účtence po variantě.
+  const soldVar = new Map<string, number>(); // `${productId}::velikost|barva` → prodáno
+  for (const o of year.merchOrders ?? []) if (o.done) for (const it of o.items) {
+    const kk = `${it.productId}::${variantKey(it.size, it.color)}`;
+    soldVar.set(kk, (soldVar.get(kk) ?? 0) + it.qty);
+  }
+  const cartVar = new Map<string, number>();
+  for (const l of lines) if (l.kind === "merch" && l.productId) {
+    const kk = `${l.productId}::${variantKey(l.size, l.color)}`;
+    cartVar.set(kk, (cartVar.get(kk) ?? 0) + l.qty);
+  }
+  // Zbývá konkrétní varianty (null = varianta bez skladu → neomezeně).
+  function variantLeft(product: MerchProduct, size?: string, color?: string): number | null {
+    if (!product.variantStock) return null;
+    const k = variantKey(size, color);
+    const kk = `${product.id}::${k}`;
+    return (product.variantStock[k] ?? 0) - (soldVar.get(kk) ?? 0) - (cartVar.get(kk) ?? 0);
+  }
   function isSoldOut(kind: Exclude<Kind, "custom">, id: string): boolean {
     if (soldOutManual.has(id)) return true;
     if (kind === "merch") {
@@ -276,11 +295,12 @@ function Pos() {
   }
   function confirmPicker() {
     if (!picker || !pickerProduct) return;
-    // Pojistka na sklad: víc než je skladem (po započtení účtenky) nejde přidat.
-    const left = merchLeft(pickerProduct.id);
+    // Pojistka na sklad: po variantě i celkově — víc než je skladem nejde přidat.
+    const vLeft = variantLeft(pickerProduct, picker.size, picker.color);
+    const left = vLeft != null ? vLeft : merchLeft(pickerProduct.id);
     if (left != null && left <= 0) {
       setPicker(null);
-      flash("Vyprodáno — na skladě už nic není", "📦");
+      flash("Vyprodáno — této varianty už není skladem", "📦");
       return;
     }
     addLine("merch", pickerProduct.name, pickerProduct.price!, pickerProduct.id, picker.size, picker.color);
@@ -626,50 +646,87 @@ function Pos() {
         ),
       )}
 
-      {/* Doptání na velikost/barvu (merch s variantami) */}
-      {picker && pickerProduct && (
-        <div className="card border border-gold-300 bg-gold-50 p-4">
-          <p className="text-sm font-semibold">{pickerProduct.name}</p>
-          {(pickerProduct.sizes?.length ?? 0) > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {pickerProduct.sizes!.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setPicker((p) => p && { ...p, size: p.size === s ? undefined : s })}
-                  className={`min-h-9 rounded-full px-3 text-sm font-semibold transition ${
-                    picker.size === s ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2 hover:bg-gold-100"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
+      {/* Doptání na velikost/barvu (merch s variantami) — u varianty se skladem
+          se ukazuje „zbývá N" a vyprodané varianty nejdou vybrat. */}
+      {picker && pickerProduct && (() => {
+        const p = pickerProduct;
+        const szs = p.sizes ?? [];
+        const cols = p.colors ?? [];
+        const hasVS = !!p.variantStock;
+        // Zbývá pro velikost (s ohledem na zvolenou barvu / součet přes barvy).
+        const sizeLeft = (s: string): number | null =>
+          !hasVS ? null : cols.length === 0 ? variantLeft(p, s, undefined) : picker.color ? variantLeft(p, s, picker.color) : cols.reduce((a, c) => a + (variantLeft(p, s, c) ?? 0), 0);
+        const colorLeft = (c: string): number | null =>
+          !hasVS ? null : szs.length === 0 ? variantLeft(p, undefined, c) : picker.size ? variantLeft(p, picker.size, c) : szs.reduce((a, s) => a + (variantLeft(p, s, c) ?? 0), 0);
+        const selLeft = variantLeft(p, picker.size, picker.color);
+        const sizeMissing = szs.length > 0 && !picker.size;
+        const colorMissing = cols.length > 0 && !picker.color;
+        const soldSel = !sizeMissing && !colorMissing && selLeft != null && selLeft <= 0;
+        return (
+          <div className="card border border-gold-300 bg-gold-50 p-4">
+            <p className="text-sm font-semibold">{p.name}</p>
+            {szs.length > 0 && (
+              <>
+                <p className="mt-2 text-xs font-medium text-ink-soft">Velikost</p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {szs.map((s) => {
+                    const left = sizeLeft(s);
+                    const off = left != null && left <= 0;
+                    return (
+                      <button
+                        key={s}
+                        disabled={off}
+                        onClick={() => setPicker((pp) => pp && { ...pp, size: pp.size === s ? undefined : s })}
+                        className={`min-h-9 rounded-full px-3 text-sm font-semibold transition ${
+                          off ? "bg-paper2 text-ink-soft/50 line-through" : picker.size === s ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2 hover:bg-gold-100"
+                        }`}
+                      >
+                        {s}{left != null && ` · ${Math.max(0, left)}`}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+            {cols.length > 0 && (
+              <>
+                <p className="mt-2 text-xs font-medium text-ink-soft">Barva</p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {cols.map((c) => {
+                    const left = colorLeft(c);
+                    const off = left != null && left <= 0;
+                    return (
+                      <button
+                        key={c}
+                        disabled={off}
+                        onClick={() => setPicker((pp) => pp && { ...pp, color: pp.color === c ? undefined : c })}
+                        className={`min-h-9 rounded-full px-3 text-sm font-semibold transition ${
+                          off ? "bg-paper2 text-ink-soft/50 line-through" : picker.color === c ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2 hover:bg-gold-100"
+                        }`}
+                      >
+                        {c}{left != null && ` · ${Math.max(0, left)}`}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+            {selLeft != null && !sizeMissing && !colorMissing && (
+              <p className={`mt-2 text-xs font-semibold ${soldSel ? "text-red-600" : "text-leaf-700"}`}>
+                {soldSel ? "Tato varianta je vyprodaná" : `Zbývá skladem: ${selLeft}`}
+              </p>
+            )}
+            <div className="mt-2 flex gap-2">
+              <button className="btn-primary flex-1" onClick={confirmPicker} disabled={sizeMissing || colorMissing || soldSel || busy}>
+                Přidat na účtenku
+              </button>
+              <button className="btn-ghost" onClick={() => setPicker(null)}>
+                Zrušit
+              </button>
             </div>
-          )}
-          {(pickerProduct.colors?.length ?? 0) > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {pickerProduct.colors!.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setPicker((p) => p && { ...p, color: p.color === c ? undefined : c })}
-                  className={`min-h-9 rounded-full px-3 text-sm font-semibold transition ${
-                    picker.color === c ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2 hover:bg-gold-100"
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="mt-2 flex gap-2">
-            <button className="btn-primary flex-1" onClick={confirmPicker} disabled={(pickerProduct.sizes?.length ?? 0) > 0 && !picker.size}>
-              Přidat na účtenku
-            </button>
-            <button className="btn-ghost" onClick={() => setPicker(null)}>
-              Zrušit
-            </button>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ---------- Přehled dne ---------- */}
       <h2 className="pt-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Přehled dne</h2>

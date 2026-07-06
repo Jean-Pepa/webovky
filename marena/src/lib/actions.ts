@@ -140,8 +140,8 @@ export type Action =
   | { type: "addKitchenFile"; yearId: string; label: string; category: string; blobId: string; fileKind: "image" | "file"; fileName?: string; note?: string; author: string; place?: "bar" | "kuchyne" }
   | { type: "removeKitchenFile"; yearId: string; fileId: string }
   // Merch — nabídka produktů (správce / role merch) a objednávky (veřejná stránka).
-  | { type: "addMerchProduct"; yearId: string; name: string; price?: number; cost?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; note?: string }
-  | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; cost?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; note?: string } }
+  | { type: "addMerchProduct"; yearId: string; name: string; price?: number; cost?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; variantStock?: Record<string, number>; note?: string }
+  | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; cost?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; variantStock?: Record<string, number>; note?: string } }
   | { type: "removeMerchProduct"; yearId: string; productId: string }
   | { type: "addMerchOrder"; yearId: string; name: string; phone?: string; email?: string; items: MerchOrderItem[]; note?: string; id?: string }
   | { type: "toggleMerchOrderDone"; yearId: string; orderId: string }
@@ -169,6 +169,19 @@ function cleanList(arr?: string[]): string[] | undefined {
   if (!arr) return undefined;
   const out = arr.map((s) => s.trim()).filter(Boolean);
   return out.length ? out : undefined;
+}
+
+// Sklad po variantách: nechá jen platná nezáporná čísla; prázdný objekt → undefined.
+function cleanVariantStock(vs?: Record<string, number>): Record<string, number> | undefined {
+  if (!vs) return undefined;
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(vs)) if (Number.isFinite(v) && v >= 0) out[k] = Math.round(v);
+  return Object.keys(out).length ? out : undefined;
+}
+// Součet skladu z variant (celkový sklad produktu s variantami).
+function variantStockSum(vs?: Record<string, number>): number | undefined {
+  if (!vs) return undefined;
+  return Object.values(vs).reduce((s, n) => s + n, 0);
 }
 
 // Vrátí novou DB s aplikovanou změnou na daný ročník.
@@ -1132,7 +1145,9 @@ export function applyAction(db: DB, a: Action): DB {
             blobId: a.blobId,
             sizes: cleanList(a.sizes),
             colors: cleanList(a.colors),
-            stock: Number.isFinite(a.stock) ? a.stock : undefined,
+            // Sklad po variantách (má přednost) → celkový sklad je jejich součet.
+            variantStock: cleanVariantStock(a.variantStock),
+            stock: variantStockSum(cleanVariantStock(a.variantStock)) ?? (Number.isFinite(a.stock) ? a.stock : undefined),
             note: a.note?.trim() || undefined,
             createdAt: now(),
           },
@@ -1144,6 +1159,8 @@ export function applyAction(db: DB, a: Action): DB {
         merch: (y.merch ?? []).map((p) => {
           if (p.id !== a.productId) return p;
           const q = a.patch;
+          // Sklad po variantách má přednost → celkový sklad je jejich součet.
+          const nextVariant = "variantStock" in q ? cleanVariantStock(q.variantStock) : p.variantStock;
           return {
             ...p,
             ...q,
@@ -1152,7 +1169,15 @@ export function applyAction(db: DB, a: Action): DB {
             cost: "cost" in q ? (Number.isFinite(q.cost) ? q.cost : undefined) : p.cost,
             sizes: "sizes" in q ? cleanList(q.sizes) : p.sizes,
             colors: "colors" in q ? cleanList(q.colors) : p.colors,
-            stock: "stock" in q ? (Number.isFinite(q.stock) ? q.stock : undefined) : p.stock,
+            variantStock: nextVariant,
+            stock:
+              nextVariant != null
+                ? variantStockSum(nextVariant)
+                : "stock" in q
+                  ? (Number.isFinite(q.stock) ? q.stock : undefined)
+                  : "variantStock" in q
+                    ? undefined
+                    : p.stock,
             note: "note" in q ? q.note?.trim() || undefined : p.note,
           };
         }),

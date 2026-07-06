@@ -12,7 +12,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { fmtCZK, fmtDateTime } from "@/lib/format";
 import { uid } from "@/lib/id";
-import { canSeeMerch } from "@/lib/merch";
+import { canSeeMerch, variantKey, productVariants } from "@/lib/merch";
 import { isAdmin } from "@/lib/admin";
 import { flash } from "@/components/Flash";
 import type { MerchProduct, MerchOrder } from "@/lib/types";
@@ -23,6 +23,56 @@ function margin(price: number, cost: number): { value: number; pct: number | nul
   if (!Number.isFinite(price) || !Number.isFinite(cost)) return null;
   const value = price - cost;
   return { value, pct: price > 0 ? Math.round((value / price) * 100) : null };
+}
+
+// Sklad po variantách (velikost × barva) — mřížka číselných polí. Rodič drží
+// textové vstupy, při uložení je přes collectVariantStock převede na čísla.
+function VariantStockGrid({
+  sizes,
+  colors,
+  value,
+  onChange,
+}: {
+  sizes: string[];
+  colors: string[];
+  value: Record<string, string>;
+  onChange: (key: string, v: string) => void;
+}) {
+  const variants = productVariants({ sizes, colors });
+  if (variants.length === 0) return null;
+  const total = variants.reduce((s, v) => s + (parseInt((value[v.key] ?? "").replace(/\s/g, ""), 10) || 0), 0);
+  return (
+    <div>
+      <label className="label">Skladem po velikostech / barvách (ks)</label>
+      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+        {variants.map((v) => (
+          <label key={v.key} className="flex items-center gap-1.5 rounded-lg bg-paper2 px-2 py-1.5">
+            <span className="min-w-0 flex-1 truncate text-xs font-medium">{v.label}</span>
+            <input
+              className="w-12 shrink-0 rounded-md border border-ink/15 bg-surface px-1.5 py-1 text-center text-sm outline-none focus:border-gold-500"
+              inputMode="numeric"
+              placeholder="0"
+              value={value[v.key] ?? ""}
+              onChange={(e) => onChange(v.key, e.target.value)}
+            />
+          </label>
+        ))}
+      </div>
+      <p className="mt-1 text-xs text-ink-soft">
+        Celkem skladem <strong className="text-ink">{total} ks</strong> · prázdné = 0 kusů. Nech vše prázdné = neomezeně.
+      </p>
+    </div>
+  );
+}
+
+// Textové vstupy mřížky → číselný objekt skladu (jen vyplněné/platné).
+function collectVariantStock(sizes: string[], colors: string[], value: Record<string, string>): Record<string, number> | undefined {
+  const out: Record<string, number> = {};
+  for (const v of productVariants({ sizes, colors })) {
+    const n = parseInt((value[v.key] ?? "").replace(/\s/g, ""), 10);
+    if (Number.isFinite(n) && n >= 0) out[v.key] = n;
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 // Cena objednávky = součet (cena za kus × počet). Cena se bere ze snapshotu
@@ -50,9 +100,17 @@ export default function MerchPage() {
   const totalQty = orders.reduce((s, o) => s + o.items.reduce((q, it) => q + it.qty, 0), 0);
   const revenue = orders.reduce((s, o) => s + orderTotal(o, products), 0);
   const doneRevenue = orders.filter((o) => o.done).reduce((s, o) => s + orderTotal(o, products), 0);
-  // Prodáno na produkt — pro „skladem / zbývá" přímo u karty.
+  // Prodáno na produkt (a po variantách) — pro „skladem / zbývá" přímo u karty.
   const soldByProduct = new Map<string, number>();
-  for (const o of orders) for (const it of o.items) soldByProduct.set(it.productId, (soldByProduct.get(it.productId) ?? 0) + it.qty);
+  const soldByVariant = new Map<string, Map<string, number>>();
+  for (const o of orders)
+    for (const it of o.items) {
+      soldByProduct.set(it.productId, (soldByProduct.get(it.productId) ?? 0) + it.qty);
+      const m = soldByVariant.get(it.productId) ?? new Map<string, number>();
+      const k = variantKey(it.size, it.color);
+      m.set(k, (m.get(k) ?? 0) + it.qty);
+      soldByVariant.set(it.productId, m);
+    }
 
   return (
     <div className="space-y-6">
@@ -96,7 +154,7 @@ export default function MerchPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((p) => (
-              <ProductCard key={p.id} product={p} yearId={year.id} editable={canManage} sold={soldByProduct.get(p.id) ?? 0} />
+              <ProductCard key={p.id} product={p} yearId={year.id} editable={canManage} sold={soldByProduct.get(p.id) ?? 0} soldVariant={soldByVariant.get(p.id)} />
             ))}
           </div>
         )}
@@ -178,11 +236,14 @@ function AddProduct({ yearId }: { yearId: string }) {
   const [cost, setCost] = useState("");
   const [sizes, setSizes] = useState("");
   const [colors, setColors] = useState("");
+  const [vstock, setVstock] = useState<Record<string, string>>({});
   const [note, setNote] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const marginHint = margin(parseInt(price.replace(/\s/g, ""), 10), parseInt(cost.replace(/\s/g, ""), 10));
+  const sizeList = parseList(sizes);
+  const colorList = parseList(colors);
 
   async function add() {
     if (!name.trim()) {
@@ -212,8 +273,9 @@ function AddProduct({ yearId }: { yearId: string }) {
         price: Number.isFinite(priceNum) ? priceNum : undefined,
         cost: Number.isFinite(costNum) ? costNum : undefined,
         blobId,
-        sizes: parseList(sizes),
-        colors: parseList(colors),
+        sizes: sizeList,
+        colors: colorList,
+        variantStock: collectVariantStock(sizeList, colorList, vstock),
         note,
       });
       setName("");
@@ -221,6 +283,7 @@ function AddProduct({ yearId }: { yearId: string }) {
       setCost("");
       setSizes("");
       setColors("");
+      setVstock({});
       setNote("");
       setFile(null);
       flash("Produkt přidán", "👕");
@@ -248,6 +311,9 @@ function AddProduct({ yearId }: { yearId: string }) {
         <input className="input" placeholder="Velikosti přes čárku (S, M, L, XL)" value={sizes} onChange={(e) => setSizes(e.target.value)} />
         <input className="input" placeholder="Barvy přes čárku (černá, bílá)" value={colors} onChange={(e) => setColors(e.target.value)} />
       </div>
+      {(sizeList.length > 0 || colorList.length > 0) && (
+        <VariantStockGrid sizes={sizeList} colors={colorList} value={vstock} onChange={(k, v) => setVstock((s) => ({ ...s, [k]: v }))} />
+      )}
       <input className="input" placeholder="Poznámka (materiál apod. — nepovinné)" value={note} onChange={(e) => setNote(e.target.value)} />
       <div className="flex flex-wrap items-center gap-3">
         <label className="btn-secondary cursor-pointer">
@@ -265,10 +331,14 @@ function AddProduct({ yearId }: { yearId: string }) {
   );
 }
 
-function ProductCard({ product, yearId, editable, sold }: { product: MerchProduct; yearId: string; editable: boolean; sold: number }) {
+function ProductCard({ product, yearId, editable, sold, soldVariant }: { product: MerchProduct; yearId: string; editable: boolean; sold: number; soldVariant?: Map<string, number> }) {
   const { dispatch, configured } = useStore();
   const remaining = product.stock != null ? product.stock - sold : null;
   const soldOut = remaining != null && remaining <= 0;
+  // Zbývá po variantách (velikost·barva): sklad varianty − prodáno varianty.
+  const variantRemaining = product.variantStock
+    ? productVariants(product).map((v) => ({ label: v.label, left: (product.variantStock?.[v.key] ?? 0) - (soldVariant?.get(v.key) ?? 0) }))
+    : [];
   const [img, setImg] = useState<string | null>(null);
   const [viewIdx, setViewIdx] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
@@ -343,22 +413,39 @@ function ProductCard({ product, yearId, editable, sold }: { product: MerchProduc
         {product.note && <p className="mt-1 text-xs text-ink-soft">{product.note}</p>}
 
         {/* Sklad přímo u produktu: nastavení + prodáno/zbývá/vyprodáno */}
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-ink/[0.05] pt-2 text-xs text-ink-soft">
-          {editable ? (
-            <span className="flex items-center gap-1">
-              Skladem <StockInput product={product} yearId={yearId} />
-            </span>
-          ) : product.stock != null ? (
-            <span>Skladem: {product.stock}</span>
-          ) : (
-            <span>Skladem: neomezeně</span>
+        <div className="mt-2 border-t border-ink/[0.05] pt-2 text-xs text-ink-soft">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {product.variantStock ? (
+              <span>Skladem: {product.stock ?? 0}{editable ? " (uprav po variantách)" : ""}</span>
+            ) : editable ? (
+              <span className="flex items-center gap-1">
+                Skladem <StockInput product={product} yearId={yearId} />
+              </span>
+            ) : product.stock != null ? (
+              <span>Skladem: {product.stock}</span>
+            ) : (
+              <span>Skladem: neomezeně</span>
+            )}
+            <span>prodáno: {sold}</span>
+            {soldOut ? (
+              <span className="rounded-full bg-red-100 px-2 py-0.5 font-bold text-red-700">Vyprodáno</span>
+            ) : remaining != null ? (
+              <span className="rounded-full bg-leaf/15 px-2 py-0.5 font-semibold text-leaf-700">zbývá {remaining}</span>
+            ) : null}
+          </div>
+          {/* Zbývá po velikostech/barvách */}
+          {variantRemaining.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {variantRemaining.map((v) => (
+                <span
+                  key={v.label}
+                  className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${v.left <= 0 ? "bg-red-100 text-red-700" : "bg-leaf/12 text-leaf-700"}`}
+                >
+                  {v.label}: {v.left <= 0 ? "0" : v.left}
+                </span>
+              ))}
+            </div>
           )}
-          <span>prodáno: {sold}</span>
-          {soldOut ? (
-            <span className="rounded-full bg-red-100 px-2 py-0.5 font-bold text-red-700">Vyprodáno</span>
-          ) : remaining != null ? (
-            <span className="rounded-full bg-leaf/15 px-2 py-0.5 font-semibold text-leaf-700">zbývá {remaining}</span>
-          ) : null}
         </div>
       </div>
 
@@ -377,7 +464,13 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
   const [sizes, setSizes] = useState((product.sizes ?? []).join(", "));
   const [colors, setColors] = useState((product.colors ?? []).join(", "));
   const [stock, setStock] = useState(product.stock != null ? String(product.stock) : "");
+  const [vstock, setVstock] = useState<Record<string, string>>(
+    Object.fromEntries(Object.entries(product.variantStock ?? {}).map(([k, v]) => [k, String(v)])),
+  );
   const [note, setNote] = useState(product.note ?? "");
+  const sizeList = parseList(sizes);
+  const colorList = parseList(colors);
+  const hasVar = sizeList.length > 0 || colorList.length > 0;
 
   async function save() {
     const priceNum = parseInt(price.replace(/\s/g, ""), 10);
@@ -391,9 +484,13 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
         name: name.trim() || product.name,
         price: Number.isFinite(priceNum) ? priceNum : undefined,
         cost: Number.isFinite(costNum) ? costNum : undefined,
-        sizes: parseList(sizes),
-        colors: parseList(colors),
-        stock: Number.isFinite(stockNum) ? stockNum : undefined,
+        sizes: sizeList,
+        colors: colorList,
+        // Varianty → sklad po variantách (celkový sklad dopočítá reducer); bez
+        // variant → jeden celkový sklad, varianty se vyčistí.
+        ...(hasVar
+          ? { variantStock: collectVariantStock(sizeList, colorList, vstock) }
+          : { variantStock: undefined, stock: Number.isFinite(stockNum) ? stockNum : undefined }),
         note,
       },
     });
@@ -433,10 +530,14 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
           <label className="label">Barvy (přes čárku)</label>
           <input className="input" placeholder="černá, bílá" value={colors} onChange={(e) => setColors(e.target.value)} />
         </div>
-        <div>
-          <label className="label">Skladem (ks) — prázdné = neomezeně</label>
-          <input className="input" inputMode="numeric" placeholder="např. 50" value={stock} onChange={(e) => setStock(e.target.value)} />
-        </div>
+        {hasVar ? (
+          <VariantStockGrid sizes={sizeList} colors={colorList} value={vstock} onChange={(k, v) => setVstock((s) => ({ ...s, [k]: v }))} />
+        ) : (
+          <div>
+            <label className="label">Skladem (ks) — prázdné = neomezeně</label>
+            <input className="input" inputMode="numeric" placeholder="např. 50" value={stock} onChange={(e) => setStock(e.target.value)} />
+          </div>
+        )}
         <div>
           <label className="label">Poznámka</label>
           <input className="input" value={note} onChange={(e) => setNote(e.target.value)} />
