@@ -83,9 +83,11 @@ export type Action =
   // do financí pak jde jen rozdíl, aby se stejné peníze nepočítaly dvakrát.
   | { type: "closeCashbox"; yearId: string; cashboxId: string; closing: number; alreadyRecorded?: number }
   | { type: "removeCashbox"; yearId: string; cashboxId: string }
-  // pledged = splátky: kolik má dát celkem (amount = kolik zaplatil teď)
-  | { type: "addContribution"; yearId: string; name: string; amount: number; pledged?: number }
-  // Doplatil zbytek splátky — amount se dorovná na slíbenou částku.
+  // pledged = kolik má dát celkem (amount = kolik zaplatil teď; 0 = založeno dopředu)
+  | { type: "addContribution"; yearId: string; name: string; amount: number; pledged?: number; email?: string }
+  // Přičte platbu (např. „dal půlku"); po dosažení slíbené částky je zaplaceno.
+  | { type: "payContribution"; yearId: string; contributionId: string; amount: number }
+  // Doplatil zbytek — amount se dorovná na slíbenou částku.
   | { type: "settleContribution"; yearId: string; contributionId: string }
   | { type: "toggleContributionReturned"; yearId: string; contributionId: string }
   | { type: "updateContribution"; yearId: string; contributionId: string; patch: { name?: string; amount?: number } }
@@ -710,15 +712,27 @@ export function applyAction(db: DB, a: Action): DB {
 
     case "addContribution": {
       const name = a.name.trim();
-      const amount = Math.round(a.amount);
-      if (!name || amount <= 0) return db;
-      // Splátka jen když je slíbená částka vyšší než zaplacená.
+      const amount = Math.max(0, Math.round(a.amount));
+      // Slíbená částka se drží, jen dokud je vyšší než zaplacená.
       const pledged = a.pledged != null && Math.round(a.pledged) > amount ? Math.round(a.pledged) : undefined;
+      // 0 Kč jde zapsat jen jako „založeno dopředu" (se slíbenou částkou).
+      if (!name || (amount <= 0 && !pledged)) return db;
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        contributions: [...(y.contributions ?? []), { id: uid("ct_"), name, amount, pledged, createdAt: now() }],
+        contributions: [...(y.contributions ?? []), { id: uid("ct_"), name, email: a.email?.trim() || undefined, amount, pledged, createdAt: now() }],
       }));
     }
+    case "payContribution":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        contributions: (y.contributions ?? []).map((c) => {
+          if (c.id !== a.contributionId) return c;
+          const add = Math.round(a.amount);
+          if (add <= 0) return c;
+          const amount = c.amount + add;
+          return { ...c, amount, pledged: c.pledged != null && amount >= c.pledged ? undefined : c.pledged };
+        }),
+      }));
     case "settleContribution":
       return mapYear(db, a.yearId, (y) => ({
         ...y,
