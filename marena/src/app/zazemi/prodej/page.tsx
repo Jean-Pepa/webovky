@@ -129,17 +129,27 @@ const hhmm = (iso: string) => {
 
 // Rolovací historie objednávek — po ťuknutí na tlačítko se rozbalí
 // seznam všech prodejů dne (čas · položky · kategorie · způsob · částka).
-function OrderHistory({ orders }: { orders: PosOrder[] }) {
-  const [open, setOpen] = useState(false);
+function OrderHistory({
+  orders,
+  label = "Historie objednávek",
+  defaultOpen = false,
+  topBorder = true,
+}: {
+  orders: PosOrder[];
+  label?: string;
+  defaultOpen?: boolean;
+  topBorder?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   if (orders.length === 0) return null;
   return (
-    <div className="mt-3 border-t border-ink/[0.06] pt-2">
+    <div className={topBorder ? "mt-3 border-t border-ink/[0.06] pt-2" : ""}>
       <button
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between gap-2 rounded-lg py-1 text-sm font-semibold text-ink-soft transition hover:text-ink"
         aria-expanded={open}
       >
-        <span>🧾 Historie objednávek ({orders.length})</span>
+        <span>🧾 {label} ({orders.length})</span>
         <span className={`text-xs transition-transform ${open ? "rotate-180" : ""}`}>▾</span>
       </button>
       {open && (
@@ -654,46 +664,57 @@ function Pos() {
         </div>
       )}
 
-      {/* ---------- Přehled dne (tržby, kasa, účet) ---------- */}
+      {/* ---------- Přehled dne ---------- */}
       <h2 className="pt-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Přehled dne</h2>
 
-      {/* Statistiky dne — od založení kasy (QR vs. hotovost, kategorie, top) */}
-      <section className="card p-4">
-        <h3 className="font-display text-[20px] font-semibold">📊 Statistiky dne</h3>
-        {stats.total === 0 ? (
-          <p className="mt-1 text-sm text-ink-soft">Zatím nic — první prodej se tu hned ukáže.</p>
-        ) : (
-          <>
-            <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
-              <span className="font-display text-[28px] font-bold tracking-tight">{fmtCZK(stats.total)}</span>
-              <span className="text-sm text-ink-soft">
-                QR <strong className="text-ink">{fmtCZK(stats.qr)}</strong>
-              </span>
-              <span className="text-sm text-ink-soft">
-                💵 hotově <strong className="text-ink">{fmtCZK(stats.cash)}</strong>
-              </span>
-              <span className="text-sm text-ink-soft">
-                {stats.count}× prodej
-              </span>
-            </div>
-            {stats.byCat.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {stats.byCat.map((x) => (
-                  <span key={x.cat} className="chip">
-                    {x.cat} {fmtCZK(x.sum)}
-                  </span>
-                ))}
+      {/* Statistiky (čísla) jen správci; ostatní vidí jen historii objednávek. */}
+      {admin ? (
+        <section className="card p-4">
+          <h3 className="font-display text-[20px] font-semibold">📊 Statistiky dne</h3>
+          {stats.total === 0 ? (
+            <p className="mt-1 text-sm text-ink-soft">Zatím nic — první prodej se tu hned ukáže.</p>
+          ) : (
+            <>
+              <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
+                <span className="font-display text-[28px] font-bold tracking-tight">{fmtCZK(stats.total)}</span>
+                <span className="text-sm text-ink-soft">
+                  QR <strong className="text-ink">{fmtCZK(stats.qr)}</strong>
+                </span>
+                <span className="text-sm text-ink-soft">
+                  💵 hotově <strong className="text-ink">{fmtCZK(stats.cash)}</strong>
+                </span>
+                <span className="text-sm text-ink-soft">{stats.count}× prodej</span>
               </div>
-            )}
-            {stats.top.length > 0 && (
-              <p className="mt-2 text-sm text-ink-soft">
-                Nejprodávanější: {stats.top.map((t) => `${t.qty}× ${t.name}`).join(" · ")}
-              </p>
-            )}
-            <OrderHistory orders={posOrders(dayFinances)} />
-          </>
-        )}
-      </section>
+              {stats.byCat.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {stats.byCat.map((x) => (
+                    <span key={x.cat} className="chip">
+                      {x.cat} {fmtCZK(x.sum)}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {stats.top.length > 0 && (
+                <p className="mt-2 text-sm text-ink-soft">
+                  Nejprodávanější: {stats.top.map((t) => `${t.qty}× ${t.name}`).join(" · ")}
+                </p>
+              )}
+              <OrderHistory orders={posOrders(dayFinances)} />
+            </>
+          )}
+        </section>
+      ) : (
+        <section className="card p-4">
+          {posOrders(dayFinances).length === 0 ? (
+            <>
+              <h3 className="font-display text-[20px] font-semibold">🧾 Objednávky dne</h3>
+              <p className="mt-1 text-sm text-ink-soft">Zatím žádná objednávka — první prodej se tu hned ukáže.</p>
+            </>
+          ) : (
+            <OrderHistory orders={posOrders(dayFinances)} label="Objednávky dne" defaultOpen topBorder={false} />
+          )}
+        </section>
+      )}
 
       {/* Stánky (mobil) — svítící žlutá bublina nad hlavní lištou; pomocník
           u stánku lištu nemá, takže bublina sedí přímo dole na jejím místě */}
