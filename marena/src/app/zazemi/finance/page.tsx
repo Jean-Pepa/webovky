@@ -480,10 +480,16 @@ export default function FinancePage() {
               {canAdd ? "Zatím nikdo. Klikni nahoře na + Výběr a zapiš, kdo dal do výběru." : "Zatím nikdo."}
             </p>
           ) : (
-            <Collapsible peekClass="max-h-[168px]" expandable={contributions.length > 3} total={contributions.length}>
-              <ul className="divide-y divide-black/[0.06]">
+            <Collapsible peekClass="max-h-[280px]" expandable={contributions.length > 3} total={contributions.length}>
+              <ul className="space-y-2">
                 {[...contributions]
-                  .sort((a, b) => Number(!!a.returned) - Number(!!b.returned) || a.name.localeCompare(b.name, "cs"))
+                  .sort(
+                    (a, b) =>
+                      // nezaplacení nahoru, vrácení dolů, pak abecedně
+                      Number(!!a.returned) - Number(!!b.returned) ||
+                      Number(a.amount > 0) - Number(b.amount > 0) ||
+                      a.name.localeCompare(b.name, "cs"),
+                  )
                   .map((c) => (
                     <ContributionRow key={c.id} c={c} yearId={year.id} canEdit={canEdit} />
                   ))}
@@ -1024,72 +1030,140 @@ function ReceiptControl({ item, yearId, canAdd, canEdit }: { item: FinanceItem; 
   );
 }
 
-// Řádek výběru (vkladu) — jméno + částka + (pro správce) Vráceno / smazat.
+// Karta výběru (vkladu) — přehledná na mobilu: jméno + e-mail nahoře, zaplacená
+// částka vpravo, barevný stavový pruh a dole akce. Po „Vrátit" se karta uzamkne
+// (nedá se nic měnit, jen smazat).
 function ContributionRow({ c, yearId, canEdit }: { c: Contribution; yearId: string; canEdit: boolean }) {
   const { dispatch } = useStore();
-  // Zbývá doplatit (splátka), nebo celá částka (založený dopředu, zatím nedal nic).
+  const [askReturn, setAskReturn] = useState(false);
+  // Zbývá doplatit; „nothingYet" = založený dopředu, zatím nedal nic.
   const owes = c.pledged != null && c.pledged > c.amount ? c.pledged - c.amount : 0;
   const nothingYet = c.amount === 0 && owes > 0;
+  const partial = c.amount > 0 && owes > 0;
+  const fullyPaid = c.amount > 0 && owes === 0;
+
+  // Barva karty + částky podle stavu.
+  const card = c.returned
+    ? "border-ink/10 bg-paper2/50"
+    : nothingYet
+      ? "border-red-200 bg-red-50/60"
+      : partial
+        ? "border-amber-200 bg-amber-50/60"
+        : "border-leaf/30 bg-leaf/[0.06]";
+  const amountColor = c.returned ? "text-ink-soft" : nothingYet ? "text-red-600" : partial ? "text-amber-700" : "text-leaf-700";
+
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
-      <div className="min-w-0 flex-1">
-        <p className={`break-words font-medium ${c.returned ? "text-ink-soft line-through" : ""}`}>
-          {c.name}
-          {owes > 0 && (
-            <span
-              className={`ml-2 inline-block rounded-full px-2 py-0.5 align-middle text-[11px] font-semibold ${
-                nothingYet ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800"
-              }`}
-            >
-              {nothingYet ? `⏳ nezaplaceno — má dát ${fmtCZK(c.pledged!)}` : `⏳ splátka — zbývá ${fmtCZK(owes)}`}
-            </span>
+    <li className={`rounded-xl border p-3 ${card}`}>
+      {/* Jméno + e-mail vlevo, zaplaceno / slíbeno vpravo */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className={`font-semibold leading-tight ${c.returned ? "text-ink-soft line-through" : "text-ink"}`}>{c.name}</p>
+          {c.email && (
+            <a href={`mailto:${c.email}`} className="mt-0.5 block break-all text-xs text-ink-soft hover:text-gold-700">
+              ✉️ {c.email}
+            </a>
           )}
-        </p>
-        {c.email && <p className="break-all text-xs text-ink-soft">✉️ {c.email}</p>}
+        </div>
+        <div className="shrink-0 text-right leading-tight">
+          <p className={`font-display text-lg font-bold ${amountColor}`}>{fmtCZK(c.amount)}</p>
+          {c.pledged != null && <p className="text-[11px] text-ink-soft">z {fmtCZK(c.pledged)}</p>}
+        </div>
       </div>
-      <span
-        className={`shrink-0 font-display font-semibold ${c.returned ? "text-ink-soft line-through" : nothingYet ? "text-ink-soft" : "text-leaf-700"}`}
-      >
-        {fmtCZK(c.amount)}
-        {owes > 0 && <span className="font-sans text-xs font-normal text-ink-soft"> z {fmtCZK(c.pledged!)}</span>}
-      </span>
-      {canEdit && nothingYet && !c.returned && (
-        <span className="flex shrink-0 gap-1.5">
+
+      {/* Stavový pruh */}
+      <div className="mt-2">
+        {c.returned ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-ink/[0.06] px-2.5 py-1 text-xs font-semibold text-ink-soft">
+            🔒 Vráceno — uzamčeno
+          </span>
+        ) : nothingYet ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
+            🔴 Nezaplaceno
+          </span>
+        ) : partial ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+            ⏳ Splátka — zbývá {fmtCZK(owes)}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full bg-leaf/15 px-2.5 py-1 text-xs font-semibold text-leaf-700">
+            ✓ Zaplaceno
+          </span>
+        )}
+      </div>
+
+      {/* Akce (jen správce). Po vrácení je karta uzamčená — jen smazat. */}
+      {canEdit && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          {c.returned ? (
+            <DeleteButton onConfirm={() => dispatch({ type: "removeContribution", yearId, contributionId: c.id })} what={`vklad — ${c.name}`} />
+          ) : (
+            <>
+              {nothingYet && (
+                <>
+                  <button
+                    onClick={() => dispatch({ type: "settleContribution", yearId, contributionId: c.id })}
+                    className="rounded-full bg-leaf px-3 py-1.5 text-sm font-semibold text-white transition hover:opacity-90"
+                    title={`Zaplatil celých ${fmtCZK(c.pledged!)}`}
+                  >
+                    💰 Dal celé
+                  </button>
+                  <button
+                    onClick={() => dispatch({ type: "payContribution", yearId, contributionId: c.id, amount: Math.round(c.pledged! / 2) })}
+                    className="rounded-full bg-amber-200/70 px-3 py-1.5 text-sm font-semibold text-amber-900 transition hover:bg-amber-200"
+                    title={`Zaplatil půlku (${fmtCZK(Math.round(c.pledged! / 2))}) — zbytek se hlídá`}
+                  >
+                    ½ Půlku
+                  </button>
+                </>
+              )}
+              {partial && (
+                <button
+                  onClick={() => dispatch({ type: "settleContribution", yearId, contributionId: c.id })}
+                  className="rounded-full bg-leaf px-3 py-1.5 text-sm font-semibold text-white transition hover:opacity-90"
+                  title={`Doplatil zbytek ${fmtCZK(owes)} — vklad bude celých ${fmtCZK(c.pledged!)}`}
+                >
+                  ✓ Doplatil
+                </button>
+              )}
+              {(fullyPaid || partial) && (
+                <button
+                  onClick={() => setAskReturn(true)}
+                  className="rounded-full bg-paper2 px-3 py-1.5 text-sm font-medium text-ink-soft transition hover:bg-ink/5"
+                  title="Vrátit vklad — karta se uzamkne"
+                >
+                  ↩︎ Vrátit
+                </button>
+              )}
+              {/* U nezaplacených jde rovnou smazat; u zaplacených se maže až po vrácení. */}
+              {nothingYet && (
+                <DeleteButton onConfirm={() => dispatch({ type: "removeContribution", yearId, contributionId: c.id })} what={`vklad — ${c.name}`} />
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Potvrzení vrácení — upozorní, že se karta uzamkne */}
+      <Modal open={askReturn} onClose={() => setAskReturn(false)} title={`Vrátit vklad — ${c.name}`}>
+        <p className="text-sm text-ink-soft">
+          Označit jako <strong className="text-ink">vrácené</strong>? Karta se <strong className="text-ink">uzamkne</strong> — nepůjde už
+          měnit ani doplácet, jen smazat.
+        </p>
+        <div className="mt-4 flex items-center gap-2">
           <button
-            onClick={() => dispatch({ type: "settleContribution", yearId, contributionId: c.id })}
-            className="rounded-full bg-leaf px-2.5 py-1 text-xs font-semibold text-white transition hover:opacity-90"
-            title={`Zaplatil celých ${fmtCZK(c.pledged!)}`}
+            className="btn-primary flex-1"
+            onClick={() => {
+              dispatch({ type: "toggleContributionReturned", yearId, contributionId: c.id });
+              setAskReturn(false);
+            }}
           >
-            💰 Dal celé
+            Ano, vrátit a uzamknout
           </button>
-          <button
-            onClick={() => dispatch({ type: "payContribution", yearId, contributionId: c.id, amount: Math.round(c.pledged! / 2) })}
-            className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 transition hover:bg-amber-200"
-            title={`Zaplatil půlku (${fmtCZK(Math.round(c.pledged! / 2))}) — zbytek se hlídá`}
-          >
-            Půlku
+          <button className="btn-ghost" onClick={() => setAskReturn(false)}>
+            Zrušit
           </button>
-        </span>
-      )}
-      {canEdit && !nothingYet && owes > 0 && !c.returned && (
-        <button
-          onClick={() => dispatch({ type: "settleContribution", yearId, contributionId: c.id })}
-          className="shrink-0 rounded-full bg-leaf px-2.5 py-1 text-xs font-semibold text-white transition hover:opacity-90"
-          title={`Doplatil zbytek ${fmtCZK(owes)} — vklad bude celých ${fmtCZK(c.pledged!)}`}
-        >
-          ✓ Doplatil
-        </button>
-      )}
-      {canEdit && (c.amount > 0 || c.returned) && (
-        <button
-          onClick={() => dispatch({ type: "toggleContributionReturned", yearId, contributionId: c.id })}
-          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition ${c.returned ? "bg-leaf/12 text-leaf-700 hover:bg-leaf/20" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
-          title={c.returned ? "Označit jako nevrácené" : "Označit jako vrácené"}
-        >
-          {c.returned ? "Vráceno ✓" : "Vrátit"}
-        </button>
-      )}
-      {canEdit && <DeleteButton onConfirm={() => dispatch({ type: "removeContribution", yearId, contributionId: c.id })} />}
+        </div>
+      </Modal>
     </li>
   );
 }
