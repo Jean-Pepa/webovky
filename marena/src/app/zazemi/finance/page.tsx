@@ -226,6 +226,8 @@ export default function FinancePage() {
   // se ukazují přímo v denních kartách kasy; „bez kasy" jsou jen prodeje, které
   // nespadají pod žádnou kasu (starší data) — ty jdou samostatně, ať jdou smazat.
   const merchSaleDays = useMemo(() => buildSaleDays(items, (c) => c === "merch"), [items]);
+  // Výdělek z prodeje i merche po dnech — ať je vidět i ve „Všechny finance".
+  const allSaleDays = useMemo(() => buildSaleDays(items, () => true), [items]);
   const orphanSaleDays = useMemo(() => {
     const boxes = year?.cashboxes ?? [];
     return buildSaleDays(items.filter((f) => !boxes.some((b) => b.openedAt <= f.createdAt)), (c) => c !== "merch");
@@ -431,9 +433,9 @@ export default function FinancePage() {
         ))}
       </div>
 
-      {/* Vyhledávání — hned pod přehledem, nad obsahem pohledu (mění se podle pohledu) */}
+      {/* Vyhledávání — velké, přes celou šířku, hned pod přehledem (mění se podle pohledu) */}
       <input
-        className="w-full rounded-full border border-ink/10 bg-white px-4 py-2 text-sm placeholder:text-ink-soft/60"
+        className="w-full rounded-2xl border-2 border-ink/10 bg-white px-5 py-4 text-base shadow-sm outline-none transition placeholder:text-ink-soft/60 focus:border-gold-500 focus:ring-1 focus:ring-gold-500"
         placeholder={tab === "vyber" ? "🔎 Hledat člověka…" : tab === "kasy" ? "🔎 Hledat kasu / den…" : tab === "merch" ? "🔎 Hledat v merchi…" : "🔎 Hledat v položkách…"}
         value={q}
         onChange={(e) => setQ(e.target.value)}
@@ -655,6 +657,11 @@ export default function FinancePage() {
       {/* ===== POHLED: VŠECHNY FINANCE ===== */}
       {tab === "vse" && (
       <>
+      {/* Výdělek z prodeje a merche — sečtený po dnech, ať je vidět i tady
+          (jednotlivé platby zůstávají v Kasách/Merchi, tady jen souhrn dne). */}
+      {(filter === "vse" || filter === "prijem") && !catFilter && allSaleDays.length > 0 && (
+        <SalesByDay days={allSaleDays} title="🧾 Výdělek z prodeje a merche" q={q} canDelete={canEdit} yearId={year.id} />
+      )}
       {/* Přidat */}
       {open && (
         <div id="add-finance" className="card scroll-mt-20 space-y-3 p-4 ring-2 ring-gold-200">
