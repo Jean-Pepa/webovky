@@ -90,7 +90,7 @@ export type Action =
   // Doplatil zbytek — amount se dorovná na slíbenou částku.
   | { type: "settleContribution"; yearId: string; contributionId: string }
   | { type: "toggleContributionReturned"; yearId: string; contributionId: string }
-  | { type: "updateContribution"; yearId: string; contributionId: string; patch: { name?: string; amount?: number } }
+  | { type: "updateContribution"; yearId: string; contributionId: string; patch: { name?: string; amount?: number; pledged?: number | null; email?: string; phone?: string } }
   | { type: "removeContribution"; yearId: string; contributionId: string }
   | { type: "addFreshman"; yearId: string; name: string; email?: string; note?: string }
   | { type: "updateFreshman"; yearId: string; freshmanId: string; patch: { name?: string; email?: string; note?: string } }
@@ -750,11 +750,22 @@ export function applyAction(db: DB, a: Action): DB {
     case "updateContribution":
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        contributions: (y.contributions ?? []).map((c) =>
-          c.id === a.contributionId
-            ? { ...c, name: a.patch.name?.trim() || c.name, amount: a.patch.amount != null ? Math.round(a.patch.amount) : c.amount }
-            : c,
-        ),
+        contributions: (y.contributions ?? []).map((c) => {
+          if (c.id !== a.contributionId) return c;
+          const p = a.patch;
+          const amount = p.amount != null ? Math.max(0, Math.round(p.amount)) : c.amount;
+          // pledged: null = smazat (platí celé); jinak drž jen když je vyšší než zaplacené
+          const pledged =
+            p.pledged === null ? undefined : p.pledged != null ? (Math.round(p.pledged) > amount ? Math.round(p.pledged) : undefined) : c.pledged;
+          return {
+            ...c,
+            name: p.name?.trim() || c.name,
+            email: p.email !== undefined ? p.email.trim() || undefined : c.email,
+            phone: p.phone !== undefined ? p.phone.trim() || undefined : c.phone,
+            amount,
+            pledged,
+          };
+        }),
       }));
     case "removeContribution":
       return mapYear(db, a.yearId, (y) => ({
