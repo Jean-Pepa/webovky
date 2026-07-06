@@ -473,7 +473,7 @@ export default function FinancePage() {
       )}
       {/* Prodej po dnech — jednotlivé markované platby sečtené do kasy za den */}
       {tab === "kasy" && posSaleDays.length > 0 && (
-        <SalesByDay days={posSaleDays} title="🧾 Prodej po dnech" q={q} />
+        <SalesByDay days={posSaleDays} title="🧾 Prodej po dnech" q={q} canDelete={canEdit} yearId={year.id} />
       )}
 
       {/* ===== POHLED: VÝBĚR (vklady) ===== */}
@@ -609,7 +609,7 @@ export default function FinancePage() {
               </h2>
             </section>
             {/* Prodeje merche sečtené po dnech (jednotlivé platby uvnitř) */}
-            <SalesByDay days={merchSaleDays} title="🧾 Prodeje po dnech" q={q} />
+            <SalesByDay days={merchSaleDays} title="🧾 Prodeje po dnech" q={q} canDelete={canEdit} yearId={year.id} />
             {/* Nákupy zboží a ostatní (neprodejní položky kategorie merch) */}
             {merchExtras.length > 0 && (
               <section className="card p-4">
@@ -1527,7 +1527,7 @@ function Collapsible({
 
 // Prodej po dnech — jednotlivé markované platby (z Prodeje / merche) sečtené
 // do jednoho dne (kasa dne). Ťuknutím na den se rozbalí rozpis plateb.
-function SalesByDay({ days, title, q }: { days: SaleDay[]; title: string; q: string }) {
+function SalesByDay({ days, title, q, canDelete, yearId }: { days: SaleDay[]; title: string; q: string; canDelete: boolean; yearId: string }) {
   if (days.length === 0) return null;
   const view = q.trim() ? days.filter((d) => normName(fmtDate(d.day)).includes(normName(q))) : days;
   const count = days.reduce((s, d) => s + d.count, 0);
@@ -1547,7 +1547,7 @@ function SalesByDay({ days, title, q }: { days: SaleDay[]; title: string; q: str
       ) : (
         <div className="mt-3 space-y-2">
           {view.map((d) => (
-            <SaleDayRow key={d.day} d={d} />
+            <SaleDayRow key={d.day} d={d} canDelete={canDelete} yearId={yearId} />
           ))}
         </div>
       )}
@@ -1555,7 +1555,8 @@ function SalesByDay({ days, title, q }: { days: SaleDay[]; title: string; q: str
   );
 }
 
-function SaleDayRow({ d }: { d: SaleDay }) {
+function SaleDayRow({ d, canDelete, yearId }: { d: SaleDay; canDelete: boolean; yearId: string }) {
+  const { dispatch } = useStore();
   const [open, setOpen] = useState(false);
   return (
     <div className="overflow-hidden rounded-xl border border-ink/[0.06] bg-paper2/40">
@@ -1575,19 +1576,70 @@ function SaleDayRow({ d }: { d: SaleDay }) {
         </span>
       </button>
       {open && (
-        <ul className="max-h-72 space-y-1 overflow-y-auto border-t border-ink/[0.06] px-3 py-2">
-          {d.orders.map((o) => (
-            <li key={o.id} className="flex items-center gap-2 rounded-lg bg-surface px-2.5 py-1.5 text-sm">
-              <span className="shrink-0 tabular-nums text-xs text-ink-soft">{hhmmFin(o.at)}</span>
-              <span className="min-w-0 flex-1 truncate">{o.items}</span>
-              {o.cat && <span className="chip shrink-0 text-[11px]">{o.cat}</span>}
-              {o.how && <span className="shrink-0 text-xs text-ink-soft">{o.how === "QR" ? "QR" : "💵"}</span>}
-              <span className="shrink-0 font-semibold tabular-nums">{fmtCZK(o.amount)}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="border-t border-ink/[0.06]">
+          <ul className="max-h-72 space-y-1 overflow-y-auto px-3 py-2">
+            {d.orders.map((o) => (
+              <SaleLine key={o.id} o={o} canDelete={canDelete} yearId={yearId} />
+            ))}
+          </ul>
+          {/* Správce může smazat celý den (prodej se odečte z tržeb). */}
+          {canDelete && (
+            <div className="flex justify-end border-t border-ink/[0.06] px-3 py-2">
+              <DeleteButton
+                label="Smazat celý den"
+                what={`všechny prodeje dne ${fmtDate(d.day)} (${d.count}×, ${fmtCZK(d.total)})`}
+                onConfirm={() => dispatch({ type: "removeSales", yearId, financeIds: d.orders.map((o) => o.id) })}
+              />
+            </div>
+          )}
+        </div>
       )}
     </div>
+  );
+}
+
+// Jeden prodej v rozpisu dne. Správce ho může smazat (✕ s potvrzením) —
+// odečte se z tržeb a případná navázaná merch objednávka se uklidí.
+function SaleLine({ o, canDelete, yearId }: { o: SaleOrder; canDelete: boolean; yearId: string }) {
+  const { dispatch } = useStore();
+  const [ask, setAsk] = useState(false);
+  return (
+    <li className="flex items-center gap-2 rounded-lg bg-surface px-2.5 py-1.5 text-sm">
+      <span className="shrink-0 tabular-nums text-xs text-ink-soft">{hhmmFin(o.at)}</span>
+      <span className="min-w-0 flex-1 truncate">{o.items}</span>
+      {o.cat && <span className="chip shrink-0 text-[11px]">{o.cat}</span>}
+      {o.how && <span className="shrink-0 text-xs text-ink-soft">{o.how === "QR" ? "QR" : "💵"}</span>}
+      <span className="shrink-0 font-semibold tabular-nums">{fmtCZK(o.amount)}</span>
+      {canDelete && (
+        <button
+          onClick={() => setAsk(true)}
+          className="shrink-0 rounded-full px-1 leading-none text-ink-soft/70 transition hover:text-red-600"
+          aria-label="Smazat prodej"
+          title="Smazat prodej"
+        >
+          ✕
+        </button>
+      )}
+      <Modal open={ask} onClose={() => setAsk(false)} title="Smazat prodej?">
+        <p className="text-sm text-ink-soft">
+          Smazat prodej <strong className="text-ink">{o.items}</strong> ({fmtCZK(o.amount)})? Odečte se z tržeb a nejde to vrátit.
+        </p>
+        <div className="mt-4 flex items-center gap-2">
+          <button
+            className="btn-primary flex-1"
+            onClick={() => {
+              dispatch({ type: "removeSales", yearId, financeIds: [o.id] });
+              setAsk(false);
+            }}
+          >
+            Ano, smazat
+          </button>
+          <button className="btn-ghost" onClick={() => setAsk(false)}>
+            Ne
+          </button>
+        </div>
+      </Modal>
+    </li>
   );
 }
 
