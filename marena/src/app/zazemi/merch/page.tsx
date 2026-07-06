@@ -17,6 +17,14 @@ import { isAdmin } from "@/lib/admin";
 import { flash } from "@/components/Flash";
 import type { MerchProduct, MerchOrder } from "@/lib/types";
 
+// Marže na kus = prodejní − nákupní cena (+ procento z prodejní). Vrací null,
+// pokud některá cena chybí — pak se marže nezobrazí.
+function margin(price: number, cost: number): { value: number; pct: number | null } | null {
+  if (!Number.isFinite(price) || !Number.isFinite(cost)) return null;
+  const value = price - cost;
+  return { value, pct: price > 0 ? Math.round((value / price) * 100) : null };
+}
+
 // Cena objednávky = součet (cena za kus × počet). Cena se bere ze snapshotu
 // v položce, jinak z aktuální nabídky (kvůli starším objednávkám).
 function orderTotal(order: MerchOrder, products: MerchProduct[]): number {
@@ -167,12 +175,14 @@ function AddProduct({ yearId }: { yearId: string }) {
   const { dispatch, configured } = useStore();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [cost, setCost] = useState("");
   const [sizes, setSizes] = useState("");
   const [colors, setColors] = useState("");
   const [note, setNote] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const marginHint = margin(parseInt(price.replace(/\s/g, ""), 10), parseInt(cost.replace(/\s/g, ""), 10));
 
   async function add() {
     if (!name.trim()) {
@@ -194,11 +204,13 @@ function AddProduct({ yearId }: { yearId: string }) {
         }
       }
       const priceNum = parseInt(price.replace(/\s/g, ""), 10);
+      const costNum = parseInt(cost.replace(/\s/g, ""), 10);
       await dispatch({
         type: "addMerchProduct",
         yearId,
         name,
         price: Number.isFinite(priceNum) ? priceNum : undefined,
+        cost: Number.isFinite(costNum) ? costNum : undefined,
         blobId,
         sizes: parseList(sizes),
         colors: parseList(colors),
@@ -206,6 +218,7 @@ function AddProduct({ yearId }: { yearId: string }) {
       });
       setName("");
       setPrice("");
+      setCost("");
       setSizes("");
       setColors("");
       setNote("");
@@ -220,10 +233,17 @@ function AddProduct({ yearId }: { yearId: string }) {
 
   return (
     <div className="card space-y-2 p-4">
+      <input className="input" placeholder="Název (např. Tričko Mařena 2026)" value={name} onChange={(e) => setName(e.target.value)} />
       <div className="grid gap-2 sm:grid-cols-2">
-        <input className="input" placeholder="Název (např. Tričko Mařena 2026)" value={name} onChange={(e) => setName(e.target.value)} />
-        <input className="input" inputMode="numeric" placeholder="Cena (Kč)" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <input className="input" inputMode="numeric" placeholder="Prodejní cena (Kč)" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <input className="input" inputMode="numeric" placeholder="Nákupní cena (Kč) — pro marži" value={cost} onChange={(e) => setCost(e.target.value)} />
       </div>
+      {marginHint && (
+        <p className={`text-xs font-medium ${marginHint.value >= 0 ? "text-leaf-700" : "text-red-600"}`}>
+          Marže {marginHint.value >= 0 ? "+" : "−"}{fmtCZK(Math.abs(marginHint.value))}
+          {marginHint.pct != null ? ` (${marginHint.pct} %)` : ""} na kus
+        </p>
+      )}
       <div className="grid gap-2 sm:grid-cols-2">
         <input className="input" placeholder="Velikosti přes čárku (S, M, L, XL)" value={sizes} onChange={(e) => setSizes(e.target.value)} />
         <input className="input" placeholder="Barvy přes čárku (černá, bílá)" value={colors} onChange={(e) => setColors(e.target.value)} />
@@ -282,7 +302,20 @@ function ProductCard({ product, yearId, editable, sold }: { product: MerchProduc
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="break-words font-semibold">{product.name}</p>
-            {product.price != null && <p className="text-sm text-ink-soft">{fmtCZK(product.price)}</p>}
+            {product.price != null && (
+              <p className="text-sm">
+                <span className="font-semibold text-leaf-700">{fmtCZK(product.price)}</span>
+                {product.cost != null && <span className="text-ink-soft"> · nákup {fmtCZK(product.cost)}</span>}
+              </p>
+            )}
+            {(() => {
+              const m = product.price != null && product.cost != null ? margin(product.price, product.cost) : null;
+              return m ? (
+                <p className={`text-xs font-medium ${m.value >= 0 ? "text-leaf-700" : "text-red-600"}`}>
+                  marže {m.value >= 0 ? "+" : "−"}{fmtCZK(Math.abs(m.value))}{m.pct != null ? ` (${m.pct} %)` : ""} / ks
+                </p>
+              ) : null;
+            })()}
           </div>
           {editable && (
             <div className="flex shrink-0 items-center gap-1">
@@ -340,6 +373,7 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
   const { dispatch } = useStore();
   const [name, setName] = useState(product.name);
   const [price, setPrice] = useState(product.price != null ? String(product.price) : "");
+  const [cost, setCost] = useState(product.cost != null ? String(product.cost) : "");
   const [sizes, setSizes] = useState((product.sizes ?? []).join(", "));
   const [colors, setColors] = useState((product.colors ?? []).join(", "));
   const [stock, setStock] = useState(product.stock != null ? String(product.stock) : "");
@@ -347,6 +381,7 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
 
   async function save() {
     const priceNum = parseInt(price.replace(/\s/g, ""), 10);
+    const costNum = parseInt(cost.replace(/\s/g, ""), 10);
     const stockNum = parseInt(stock.replace(/\s/g, ""), 10);
     await dispatch({
       type: "updateMerchProduct",
@@ -355,6 +390,7 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
       patch: {
         name: name.trim() || product.name,
         price: Number.isFinite(priceNum) ? priceNum : undefined,
+        cost: Number.isFinite(costNum) ? costNum : undefined,
         sizes: parseList(sizes),
         colors: parseList(colors),
         stock: Number.isFinite(stockNum) ? stockNum : undefined,
@@ -371,10 +407,24 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
           <label className="label">Název</label>
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
         </div>
-        <div>
-          <label className="label">Cena (Kč)</label>
-          <input className="input" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="label">Prodejní cena (Kč)</label>
+            <input className="input" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Nákupní cena (Kč)</label>
+            <input className="input" inputMode="numeric" placeholder="pro marži" value={cost} onChange={(e) => setCost(e.target.value)} />
+          </div>
         </div>
+        {(() => {
+          const m = margin(parseInt(price.replace(/\s/g, ""), 10), parseInt(cost.replace(/\s/g, ""), 10));
+          return m ? (
+            <p className={`text-xs font-medium ${m.value >= 0 ? "text-leaf-700" : "text-red-600"}`}>
+              Marže {m.value >= 0 ? "+" : "−"}{fmtCZK(Math.abs(m.value))}{m.pct != null ? ` (${m.pct} %)` : ""} na kus
+            </p>
+          ) : null;
+        })()}
         <div>
           <label className="label">Velikosti (přes čárku)</label>
           <input className="input" placeholder="S, M, L, XL" value={sizes} onChange={(e) => setSizes(e.target.value)} />

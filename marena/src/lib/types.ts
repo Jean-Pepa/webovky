@@ -267,7 +267,8 @@ export interface Invite {
 export interface MerchProduct {
   id: string;
   name: string; // např. „Tričko Mařena 2026", „Mikina", „Plátěnka"
-  price?: number; // cena v Kč
+  price?: number; // prodejní cena v Kč
+  cost?: number; // pořizovací (nákupní) cena v Kč — pro výpočet marže
   blobId?: string; // foto produktu (ukládá se zvlášť, ne v hlavní DB)
   sizes?: string[]; // nabízené velikosti (S, M, L…) — zadává správce / role merch
   colors?: string[]; // nabízené barvy

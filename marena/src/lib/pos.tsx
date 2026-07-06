@@ -23,12 +23,14 @@ export function posStats(list: FinanceItem[]) {
   let qr = 0;
   let cash = 0;
   let count = 0;
+  let kasaAdj = 0; // rekonciliace kasy (kategorie „kasa" — manko/přebytek), NENÍ tržba
   const byCat = new Map<string, number>();
   const items = new Map<string, number>();
   for (const f of list) {
     const sign = f.kind === "vydaj" ? -1 : 1;
     total += sign * f.amount;
     const cat = f.category ?? "";
+    if (cat === "kasa") kasaAdj += sign * f.amount;
     byCat.set(cat, (byCat.get(cat) ?? 0) + sign * f.amount);
     const note = f.note ?? "";
     if (sign > 0 && note.includes("QR platba")) qr += f.amount;
@@ -47,6 +49,8 @@ export function posStats(list: FinanceItem[]) {
     .map(([name, qty]) => ({ name, qty }));
   return {
     total,
+    // Tržba = prodej (QR + hotově), bez rekonciliace kasy. Přesně to, co se prodalo.
+    takings: total - kasaAdj,
     qr,
     cash,
     count,
@@ -224,9 +228,12 @@ export function DayCard({
         </div>
       </div>
 
-      {/* Tržba vlevo, platby (QR + hotově) pohromadě vpravo */}
+      {/* Tržba vlevo (zeleně — kolik se vydělalo), platby (QR + hotově) vpravo */}
       <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <span className="font-display text-[22px] font-bold tracking-tight">{fmtCZK(stats.total)}</span>
+        <span className="flex items-baseline gap-2">
+          <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">Tržba</span>
+          <span className="font-display text-[22px] font-bold tracking-tight text-leaf-700">{fmtCZK(stats.takings)}</span>
+        </span>
         <PayBreakdown qr={stats.qr} cash={stats.cash} count={stats.count} />
       </div>
 
