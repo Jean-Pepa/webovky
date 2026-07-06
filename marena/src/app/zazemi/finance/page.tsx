@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, fmtDateTime, todayISO } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -279,44 +278,60 @@ export default function FinancePage() {
         </div>
         {canAdd && (
           <div className="flex flex-wrap items-center gap-2">
-            {/* Jednotná pokladna: markování, QR platba i hotovost — tržby
-                se sem propíšou po zaplacení, po kategoriích. */}
-            <Link href="/zazemi/prodej" className="btn-primary">
-              🛒 Prodej (kasa)
-            </Link>
-            <button
-              className="btn-secondary"
-              onClick={() => {
-                setTab("vyber");
-                const opening = !vyberOpen;
-                setVyberOpen(opening);
-                if (opening) setTimeout(() => document.getElementById("vyber")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
-              }}
-            >
-              {tab === "vyber" && vyberOpen ? "Zavřít" : "+ Výběr"}
-            </button>
-            <button
-              className="btn-secondary"
-              onClick={() => {
-                setTab("kasy");
-                setKasaOpen(true);
-              }}
-            >
-              + Kasa
-            </button>
-            <button
-              className="btn-primary"
-              onClick={() => {
-                setTab("vse");
-                const opening = !open;
-                setOpen(opening);
-                if (opening) setTimeout(() => document.getElementById("add-finance")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
-              }}
-            >
-              {tab === "vse" && open ? "Zavřít" : "+ Přidat položku"}
-            </button>
+            {/* Kontextové tlačítko podle zvoleného pohledu (Kasy → +Kasa, Výběr → +Výběr…). */}
+            {tab === "vyber" && (
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  const opening = !vyberOpen;
+                  setVyberOpen(opening);
+                  if (opening) setTimeout(() => document.getElementById("vyber")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                }}
+              >
+                {vyberOpen ? "Zavřít" : "+ Výběr"}
+              </button>
+            )}
+            {tab === "kasy" && (
+              <button className="btn-primary" onClick={() => setKasaOpen(true)}>
+                + Kasa
+              </button>
+            )}
+            {tab === "vse" && (
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  const opening = !open;
+                  setOpen(opening);
+                  if (opening) setTimeout(() => document.getElementById("add-finance")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                }}
+              >
+                {open ? "Zavřít" : "+ Přidat položku"}
+              </button>
+            )}
           </div>
         )}
+      </div>
+
+      {/* Přehled — malým písmem, vedle sebe hned pod hlavičkou */}
+      <div className="flex items-stretch overflow-hidden rounded-xl border border-ink/[0.06] bg-surface text-center">
+        {[
+          { label: "Příjmy", value: totals.prijmy, cls: "text-leaf-700", sign: "+" },
+          { label: "Výdaje", value: totals.vydaje, cls: "text-ink", sign: "−" },
+          {
+            label: "Bilance",
+            value: Math.abs(totals.bilance),
+            cls: totals.bilance >= 0 ? "text-leaf-700" : "text-red-600",
+            sign: totals.bilance >= 0 ? "+" : "−",
+          },
+        ].map((c, i) => (
+          <div key={c.label} className={`flex-1 px-2 py-2 ${i > 0 ? "border-l border-ink/[0.06]" : ""}`}>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">{c.label}</p>
+            <p className={`font-display text-[13px] font-bold leading-tight sm:text-sm ${c.cls}`}>
+              {c.sign}
+              {fmtCZK(c.value)}
+            </p>
+          </div>
+        ))}
       </div>
 
       {/* Kdo co smí: každý přidává, upravuje jen správce; zamčený ročník = jen náhled */}
@@ -333,13 +348,6 @@ export default function FinancePage() {
           </div>
         )
       )}
-
-      {/* Souhrn */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <SummaryCard label="Příjmy" value={totals.prijmy} sub={`vybráno ${fmtCZK(totals.prijmy - itemsOpen(items, "prijem"))}`} tone="prijem" />
-        <SummaryCard label="Výdaje" value={totals.vydaje} sub={`zaplaceno ${fmtCZK(totals.vydaje - itemsOpen(items, "vydaj"))}`} tone="vydaj" />
-        <SummaryCard label="Bilance" value={totals.bilance} sub={`v kase ${fmtCZK(totals.kasa)} · otevřené ${fmtCZK(totals.otevreno)}`} tone="bilance" />
-      </div>
 
       {/* Přepínač financí (desktop) — na mobilu je dole ve svítící zlaté liště */}
       <div className="hidden gap-1.5 md:flex">
@@ -755,25 +763,6 @@ const FIN_TABS: { id: "vse" | "kasy" | "vyber"; emoji: string; label: string }[]
   { id: "kasy", emoji: "🧰", label: "Kasy" },
   { id: "vyber", emoji: "💰", label: "Výběr" },
 ];
-
-function itemsOpen(items: FinanceItem[], kind: FinanceKind): number {
-  return items.filter((i) => i.kind === kind && !i.paid).reduce((s, i) => s + i.amount, 0);
-}
-
-function SummaryCard({ label, value, sub, tone }: { label: string; value: number; sub: string; tone: "prijem" | "vydaj" | "bilance" }) {
-  const color = tone === "prijem" ? "text-leaf-700" : tone === "vydaj" ? "text-ink" : value >= 0 ? "text-leaf-700" : "text-red-600";
-  const prefix = tone === "prijem" ? "+" : tone === "vydaj" ? "−" : value >= 0 ? "+" : "−";
-  return (
-    <div className="card p-5">
-      <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">{label}</p>
-      <p className={`mt-1 font-display text-2xl font-semibold tracking-tight ${color}`}>
-        {prefix}
-        {fmtCZK(Math.abs(value))}
-      </p>
-      <p className="mt-1 text-xs text-ink-soft">{sub}</p>
-    </div>
-  );
-}
 
 // Sdílený stav řádku financí — používá ho tabulkový řádek (desktop) i karta (mobil).
 function useFinanceRow(item: FinanceItem, yearId: string) {
