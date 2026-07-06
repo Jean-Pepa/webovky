@@ -1103,10 +1103,13 @@ function AccountChip({ admin, account, accountOk, yearId }: { admin: boolean; ac
       </button>
       <Modal open={modal} onClose={() => setModal(false)} title="🏦 Účet pro QR platby">
         <div className="space-y-3">
-          <p className="text-sm text-ink-soft">Sem chodí platby z prodeje i online objednávek merche.</p>
+          <p className="text-sm text-ink-soft">
+            Sem chodí platby z prodeje i online objednávek merche. Zahraniční účet (IBAN, třeba Revolut) potřebuje na konci{" "}
+            <strong className="text-ink">+BIC</strong> — jinak ho česká banka v QR nenačte.
+          </p>
           <input
             className="input w-full"
-            placeholder="123456789/0800 nebo IBAN CZ…"
+            placeholder="123456789/0800 · IBAN CZ… · nebo LT34…5656+REVOLT21"
             value={value}
             onChange={(e) => setValue(e.target.value)}
             autoFocus
@@ -1114,7 +1117,15 @@ function AccountChip({ admin, account, accountOk, yearId }: { admin: boolean; ac
           {parsed && ("error" in parsed ? (
             <p className="text-sm text-red-600">{parsed.error}</p>
           ) : (
-            <p className="text-sm text-leaf-700">✓ Platný účet · IBAN {parsed.iban}</p>
+            <>
+              <p className="text-sm text-leaf-700">
+                ✓ Platný účet · IBAN {parsed.iban}
+                {parsed.bic ? ` · BIC ${parsed.bic}` : ""}
+              </p>
+              {parsed.warning && (
+                <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 ring-1 ring-amber-200">⚠️ {parsed.warning}</p>
+              )}
+            </>
           ))}
           <div className="flex gap-2 pt-1">
             <button className="btn-primary flex-1" onClick={save} disabled={!parsed || "error" in parsed}>

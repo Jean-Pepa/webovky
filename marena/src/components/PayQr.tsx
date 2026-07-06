@@ -53,6 +53,9 @@ export function PayQr({ account, amount, message, size = 240 }: { account: strin
       <p className="text-sm text-ink-soft">
         Naskenuj bankovní aplikací · účet {parsed.display}
       </p>
+      {parsed.warning && (
+        <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 ring-1 ring-amber-200">⚠️ {parsed.warning}</p>
+      )}
     </div>
   );
 }
