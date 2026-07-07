@@ -22,7 +22,10 @@ export function MyAgenda() {
 
   const pendingOrders = (year.merchOrders ?? []).filter((o) => !o.done).length;
   const unpaid = (year.finances ?? []).filter((f) => !f.paid).length;
-  const myTasks = (year.tasks ?? []).filter((t) => !t.done && t.roleId && roles.includes(t.roleId)).length;
+  // Moje úkoly = nesplněné úkoly přiřazené mně jménem (i z nástěnky) nebo mojí roli.
+  const myTasks = (year.tasks ?? []).filter(
+    (t) => !t.done && ((t.assignee && sameName(t.assignee, me)) || (t.roleId && roles.includes(t.roleId))),
+  ).length;
   const today = todayISO();
   const shift = (year.shifts ?? []).find((s) => s.date === today && s.people.some((p) => sameName(p, me)));
 

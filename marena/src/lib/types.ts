@@ -75,6 +75,7 @@ export interface Task {
   assignee?: string;
   done: boolean;
   due?: string; // ISO datum
+  fromPostId?: string; // úkol vznikl z příspěvku na nástěnce (zpětný odkaz)
   createdAt: string;
 }
 
