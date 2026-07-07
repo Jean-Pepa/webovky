@@ -1,5 +1,6 @@
 import type { DB } from "./types";
 import { defaultRoleTasks } from "./actions";
+import { almanachMilestoneEvents } from "./milestones";
 
 // Výchozí stav při prvním spuštění. Jeden rozjetý ročník s úkoly rozdanými na
 // role, milníky z manuálu, kontakty ve složkách a uvítací nástěnkou.
@@ -47,11 +48,7 @@ export function seedDB(): DB {
             ],
           },
         ],
-        events: [
-          { id: "seed_e1", date: `${year}-06-15`, title: "Zamluvit Flédu co nejdřív + vyřešit datum", kind: "deadline", author: "Mařena", createdAt: t },
-          { id: "seed_e2", date: `${year}-08-15`, title: "Průvod: povolení min. 30 dní předem (odbor dopravy)", kind: "pruvod", author: "Mařena", createdAt: t },
-          { id: "seed_e3", date: `${year}-09-10`, title: "Spustit merch eshop (prvních pár dní školy)", kind: "deadline", author: "Mařena", createdAt: t },
-        ],
+        events: almanachMilestoneEvents(year, t),
         tasks: defaultRoleTasks(t),
         links: [
           { id: "seed_l1", label: "Soňa Lisoňová", value: "sona.lisonova@fa.vut.cz", folder: "Fakulta", note: "Klíčová spojka — technika, zvukař, banner. Ozvat se až bude datum a program.", createdAt: t },
