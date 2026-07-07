@@ -425,6 +425,7 @@ export default function FinancePage() {
                     { label: "V balíku", text: `+${fmtCZK(vyber.inPool)}`, cls: "text-leaf-700" },
                     { label: "Zbývá doplatit", text: fmtCZK(vyber.owed), cls: vyber.owed > 0 ? "text-amber-800" : "text-ink" },
                     { label: "Zaplatili", text: `${vyber.paidCount}/${contributions.length}` },
+                    { label: "½ Zčásti", text: `${vyber.counts.pulka}`, cls: vyber.counts.pulka > 0 ? "text-amber-700" : "text-ink" },
                   ]
                 : [
                     { label: "Příjmy", text: `+${fmtCZK(totals.prijmy)}`, cls: "text-leaf-700" },
