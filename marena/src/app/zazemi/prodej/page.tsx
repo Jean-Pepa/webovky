@@ -417,7 +417,7 @@ function Pos() {
     <div className="mx-auto max-w-3xl space-y-4 pb-16 tabular-nums md:pb-0">
       <div>
         <div className="flex items-center justify-between gap-3">
-          <h1 className="font-display text-[28px] font-bold tracking-tight">Prodej</h1>
+          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Prodej</h1>
           {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
           <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} />
         </div>
@@ -922,7 +922,7 @@ function DayGate({
   return (
     <div className="mx-auto max-w-3xl space-y-4 tabular-nums">
       <div>
-        <h1 className="font-display text-[28px] font-bold tracking-tight">Prodej</h1>
+        <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Prodej</h1>
         <p className="mt-0.5 text-sm text-ink-soft">Nový den začíná založením kasy — po uzavření se den uzamkne do statistik.</p>
         <div className="mt-1">
           <AccountChip admin={admin} account={account} accountOk={accountOk} yearId={yearId} />

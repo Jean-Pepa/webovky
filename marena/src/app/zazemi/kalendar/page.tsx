@@ -93,7 +93,7 @@ export default function KalendarPage() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-[28px] font-bold tracking-tight">Kalendář</h1>
+        <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Kalendář</h1>
         {isAdmin(me) && canEditCurrentYear && missingMilestones.length > 0 && (
           <button
             className="btn-secondary px-3 py-2 text-sm"

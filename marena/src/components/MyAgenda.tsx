@@ -53,7 +53,7 @@ export function MyAgenda() {
   if (cards.length === 0) return null;
 
   return (
-    <section>
+    <section className="agenda-pulse p-3">
       <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Moje agenda</h2>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {cards.map((c) => {

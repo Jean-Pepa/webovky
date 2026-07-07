@@ -371,7 +371,7 @@ export default function TymPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-display text-[28px] font-bold tracking-tight">Tým &amp; role</h1>
+          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Tým &amp; role</h1>
           {admin && pendingCount > 0 && (
             <span className="pending-glow inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-sm font-semibold text-white">
               ⏳ {pendingLabel}

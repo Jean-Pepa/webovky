@@ -67,7 +67,7 @@ export default function KuchyneBarPage() {
         <ReadOnlyBanner>Kuchyni a bar máš jen k náhledu — upravovat je může jen správce a příslušná role.</ReadOnlyBanner>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-[28px] font-bold tracking-tight">Kuchyně &amp; bar</h1>
+        <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Kuchyně &amp; bar</h1>
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex rounded-full bg-paper2 p-0.5 text-sm">
             {(["kuchyne", "bar"] as Place[]).map((p) => (
