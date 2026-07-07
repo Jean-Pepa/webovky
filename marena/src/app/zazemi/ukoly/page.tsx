@@ -55,17 +55,21 @@ export default function UkolyPage() {
     });
   }, [year, filter, q]);
 
-  // seskupení podle role
+  // Nejdřív jen prvních pár úkolů, zbytek se dorolová tlačítkem „Zobrazit více".
+  const PEEK = 3;
+  const shownTasks = useMemo(() => (allOpen ? tasks : tasks.slice(0, PEEK)), [tasks, allOpen]);
+
+  // seskupení podle role (jen zobrazené úkoly)
   const grouped = useMemo(() => {
     const map = new Map<string, typeof tasks>();
-    for (const t of tasks) {
+    for (const t of shownTasks) {
       const key = t.roleId || "_none";
       const arr = map.get(key) || [];
       arr.push(t);
       map.set(key, arr);
     }
     return map;
-  }, [tasks]);
+  }, [shownTasks]);
 
   if (!year) return null;
 
@@ -186,68 +190,70 @@ export default function UkolyPage() {
         </div>
       )}
 
-      {/* ===== VŠECHNY ÚKOLY (přehled celého týmu) — sbalitelné rolovací šipkou ===== */}
+      {/* ===== VŠECHNY ÚKOLY (přehled celého týmu) — ukáže pár, zbytek se dorolová ===== */}
       <div className="space-y-3 pt-1">
-        <button
-          type="button"
-          onClick={() => setAllOpen((v) => !v)}
-          aria-expanded={allOpen}
-          className="flex w-full items-center justify-between gap-2 text-left"
-        >
-          <h2 className="font-display text-[19px] font-bold">
-            📋 Všechny úkoly <span className="text-sm font-normal text-ink-soft">({total})</span>
-          </h2>
-          <Icon name="chevron" className={`h-5 w-5 shrink-0 text-ink-soft transition-transform ${allOpen ? "rotate-180" : ""}`} />
-        </button>
+        <h2 className="font-display text-[19px] font-bold">
+          📋 Všechny úkoly <span className="text-sm font-normal text-ink-soft">({total})</span>
+        </h2>
+        <p className="text-sm text-ink-soft">
+          Úkoly přibývají hlavně z <Link href="/zazemi" className="font-medium text-gold-700 hover:underline">Nástěnky</Link> — napiš tam, kdo a co má udělat, a propíše se to sem.
+        </p>
 
-        {allOpen && (
+        <SearchBox value={q} onChange={setQ} placeholder="Hledat úkol…" />
+
+        <div className="flex flex-wrap gap-2">
+          {([
+            ["nehotove", "Nehotové"],
+            ["hotove", "Hotové"],
+            ["vse", "Vše"],
+          ] as [Filter, string][]).map(([f, label]) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+                filter === f ? "bg-gold-500 text-[#1d1d1f]" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tasks.length === 0 ? (
+          <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+            {q.trim() ? "Nic neodpovídá hledání." : "Nic tu není. 🎉"}
+          </div>
+        ) : (
           <>
-            <p className="text-sm text-ink-soft">
-              Úkoly přibývají hlavně z <Link href="/zazemi" className="font-medium text-gold-700 hover:underline">Nástěnky</Link> — napiš tam, kdo a co má udělat, a propíše se to sem.
-            </p>
-
-            <SearchBox value={q} onChange={setQ} placeholder="Hledat úkol…" />
-
-            <div className="flex flex-wrap gap-2">
-              {([
-                ["nehotove", "Nehotové"],
-                ["hotove", "Hotové"],
-                ["vse", "Vše"],
-              ] as [Filter, string][]).map(([f, label]) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-                    filter === f ? "bg-gold-500 text-[#1d1d1f]" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="space-y-4">
+              {[...grouped.entries()].map(([key, items]) => {
+                const role = key === "_none" ? null : roleById(key);
+                return (
+                  <div key={key} className="card overflow-hidden">
+                    <div className="border-b border-ink/10 bg-paper2/60 px-4 py-2 text-sm font-semibold">
+                      {role ? `${role.emoji} ${role.name}` : "📋 Bez role"}
+                    </div>
+                    <ul className="divide-y divide-ink/10">
+                      {items.map((t) => (
+                        <TaskItem key={t.id} t={t} onToggle={onToggle} onDelete={onDelete} />
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
             </div>
 
-            {tasks.length === 0 ? (
-              <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
-                {q.trim() ? "Nic neodpovídá hledání." : "Nic tu není. 🎉"}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {[...grouped.entries()].map(([key, items]) => {
-                  const role = key === "_none" ? null : roleById(key);
-                  return (
-                    <div key={key} className="card overflow-hidden">
-                      <div className="border-b border-ink/10 bg-paper2/60 px-4 py-2 text-sm font-semibold">
-                        {role ? `${role.emoji} ${role.name}` : "📋 Bez role"}
-                      </div>
-                      <ul className="divide-y divide-ink/10">
-                        {items.map((t) => (
-                          <TaskItem key={t.id} t={t} onToggle={onToggle} onDelete={onDelete} />
-                        ))}
-                      </ul>
-                    </div>
-                  );
-                })}
-              </div>
+            {/* Rolovačka na další úkoly — ukázalo se prvních PEEK, zbytek se dorolová */}
+            {tasks.length > PEEK && (
+              <button
+                type="button"
+                onClick={() => setAllOpen((v) => !v)}
+                aria-expanded={allOpen}
+                className="mx-auto flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-medium text-gold-700 ring-1 ring-ink/10 transition hover:bg-paper2"
+              >
+                {allOpen ? "Zobrazit méně" : `Zobrazit další (${tasks.length - PEEK})`}
+                <Icon name="chevron" className={`h-4 w-4 transition-transform ${allOpen ? "rotate-180" : ""}`} />
+              </button>
             )}
           </>
         )}
