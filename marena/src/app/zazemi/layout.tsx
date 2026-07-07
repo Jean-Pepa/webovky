@@ -80,14 +80,23 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  // Pomocník u stánku: správce členovi v Týmu zapne „jen Prodej" (posOnly) a
-  // člověk pak v zázemí vidí jen Prodej — nic jiného (brigádníci u stánku).
-  const posOnly = !isAdmin(me) && !!currentYear?.members.find((m) => sameName(m.name, me))?.posOnly;
+  // Omezení přístupu (nastavuje správce v Týmu):
+  //  • posOnly = pomocník u stánku → vidí jen Prodej.
+  //  • vyberOnly = výběrčí vkladů → vidí jen Finance → Výběr.
+  // Obojí jsou brigádníci, kteří nemají vidět zbytek zázemí.
+  const meMember = currentYear?.members.find((m) => sameName(m.name, me));
+  const posOnly = !isAdmin(me) && !!meMember?.posOnly;
+  const vyberOnly = !isAdmin(me) && !posOnly && !!meMember?.vyberOnly;
+  const restricted = posOnly || vyberOnly;
+  const restrictHref = vyberOnly ? "/zazemi/finance" : "/zazemi/prodej";
+  const restrictLabel = vyberOnly ? "Výběr" : "Prodej";
+  const restrictIcon: IconName = vyberOnly ? "finance" : "cart";
+  const restrictBadge = vyberOnly ? "💰 Máš přístup jen k výběru peněz" : "🛒 Máš přístup jen k Prodeji";
   useEffect(() => {
-    if (posOnly && pathname.startsWith("/zazemi") && pathname !== "/zazemi/prodej") {
-      router.replace("/zazemi/prodej");
+    if (restricted && pathname.startsWith("/zazemi") && pathname !== restrictHref) {
+      router.replace(restrictHref);
     }
-  }, [posOnly, pathname, router]);
+  }, [restricted, restrictHref, pathname, router]);
   const [sheet, setSheet] = useState<string | null>(null); // otevřená skupina spodní lišty (mobil)
   const [deskMenu, setDeskMenu] = useState<string | null>(null); // otevřené rozbalovací menu (desktop)
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -159,9 +168,8 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   } else {
     // Bez kompletního záznamu (jméno + e-mail + telefon) se do týmu nevstoupí.
     // Platí pro nové, smazané i členy s neúplným kontaktem (kromě správce).
-    const myMember = currentYear?.members.find((m) => sameName(m.name, me));
-    const incompleteContact = !!myMember && (!myMember.email?.trim() || !myMember.phone?.trim());
-    if (!me || (currentYear && canEditCurrentYear && !isAdmin(me) && (!myMember || incompleteContact))) return <IdentityGate />;
+    const incompleteContact = !!meMember && (!meMember.email?.trim() || !meMember.phone?.trim());
+    if (!me || (currentYear && canEditCurrentYear && !isAdmin(me) && (!meMember || incompleteContact))) return <IdentityGate />;
   }
 
   async function doLogout() {
@@ -226,13 +234,13 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
         {/* Desktopová navigace — Nástěnka + 2 rozbalovací skupiny, nástroje vpravo.
             Pomocník u stánku (posOnly) vidí jen Prodej + Odhlásit. */}
         <nav className="mx-auto hidden max-w-6xl flex-wrap items-center gap-1 px-3 pb-2 md:flex">
-          {posOnly ? (
+          {restricted ? (
             <>
               <Link
-                href="/zazemi/prodej"
+                href={restrictHref}
                 className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-gold-500 px-3.5 py-1.5 text-sm font-medium text-[#1d1d1f]"
               >
-                <Icon name="cart" className="h-4 w-4" /> Prodej
+                <Icon name={restrictIcon} className="h-4 w-4" /> {restrictLabel}
               </Link>
               <button
                 onClick={doLogout}
@@ -340,7 +348,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
         {menuOpen && (
           <div className="max-h-[calc(100dvh-3.25rem)] overflow-y-auto border-t border-ink/10 bg-paper px-3 py-3 md:hidden">
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              {!posOnly && <YearSwitcher />}
+              {!restricted && <YearSwitcher />}
               <MeBadge />
               {isAdmin(me) && <AppPowerToggle maint={maint} onChanged={setMaint} />}
               {isAdmin(me) && (
@@ -356,7 +364,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               )}
             </div>
             <nav className="flex flex-col gap-1">
-              {!posOnly && (
+              {!restricted && (
                 <Link
                   href="/zazemi/almanach"
                   onClick={() => setMenuOpen(false)}
@@ -457,10 +465,10 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
         </div>
       )}
 
-      {/* Pomocník u stánku — informační proužek (vypnout to může jen správce v Týmu) */}
-      {posOnly && (
+      {/* Brigádník s omezeným přístupem — informační proužek (mění to jen správce v Týmu) */}
+      {restricted && (
         <div className="flex items-center justify-center gap-2 border-b border-gold-300 bg-gold-50 px-4 py-1.5 text-center text-xs font-medium text-gold-800">
-          <span>🛒 Máš přístup jen k Prodeji</span>
+          <span>{restrictBadge}</span>
         </div>
       )}
 
@@ -500,9 +508,9 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
 
       {/* Mobil: plovoucí „bublina" (jako chatové pole) — odsazená od krajů i od
           domovského indikátoru, zaoblená, se stínem. Uvnitř M3: 64 px, 24px ikony,
-          aktivní stav = jemná zlatá pilulka za ikonou. Pomocník u stánku
-          (posOnly) lištu nemá vůbec — na jejím místě jsou stánky v Prodeji. */}
-      {!posOnly && (
+          aktivní stav = jemná zlatá pilulka za ikonou. Brigádník s omezeným
+          přístupem (posOnly/vyberOnly) lištu nemá — vidí jen svou jednu sekci. */}
+      {!restricted && (
       <nav className="fixed inset-x-3 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 rounded-[28px] border-2 border-gold-500 bg-paper/95 shadow-lg backdrop-blur md:hidden">
         <div className="grid h-16 grid-cols-3">
           <Link

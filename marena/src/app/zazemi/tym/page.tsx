@@ -24,6 +24,8 @@ export default function TymPage() {
   const [modal, setModal] = useState<{ roleToAdd?: string } | null>(null);
   // Správce (Mařena) může upravit libovolného člena.
   const [editMember, setEditMember] = useState<Member | null>(null);
+  // Správce mění role člena ve vyskakovacím okně (přidat / vyměnit / odebrat).
+  const [rolesFor, setRolesFor] = useState<Member | null>(null);
   // Vyskakovací okno po výběru / uvolnění role (zmizí za 3 s).
   const [celebrate, setCelebrate] = useState<{ role: string; kind: "taken" | "released" } | null>(null);
   const celebrateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -463,8 +465,9 @@ export default function TymPage() {
                     // Vybrané role člověka (bez duplikátů, přeložené na názvy).
                     const roleNames = [...new Set(m.roleIds.map((id) => roleById(id)?.name).filter(Boolean) as string[])];
                     return (
-                      <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
-                        <div className="min-w-0 flex-1">
+                      <li key={m.id} className="space-y-2 py-2.5">
+                        {/* Info přes celou šířku — role, telefon i e-mail se zobrazí CELÉ */}
+                        <div>
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium">{m.name}</span>
                             {pending ? (
@@ -474,27 +477,27 @@ export default function TymPage() {
                             )}
                           </div>
                           {/* Vybraná role (malým písmem) — nebo že žádnou nemá */}
-                          <p className="mt-0.5 truncate text-xs">
+                          <p className="mt-0.5 text-xs">
                             {roleNames.length ? (
                               <span className="text-ink-soft">🎭 {roleNames.join(" · ")}</span>
                             ) : (
                               <span className="italic text-ink-soft/70">bez role</span>
                             )}
                           </p>
-                          {/* Kontakt — telefon i e-mail každý na jednom řádku (dlouhé se ořízne) */}
+                          {/* Kontakt — telefon i e-mail celé, každý na svém řádku */}
                           {m.phone && (
-                            <a href={`tel:${m.phone}`} className="mt-0.5 block truncate text-xs text-ink-soft hover:text-gold-700">
+                            <a href={`tel:${m.phone}`} className="mt-0.5 block text-xs text-ink-soft hover:text-gold-700">
                               📞 {m.phone}
                             </a>
                           )}
                           {m.email && (
-                            <a href={`mailto:${m.email}`} className="mt-0.5 block truncate text-xs text-ink-soft hover:text-gold-700">
+                            <a href={`mailto:${m.email}`} className="mt-0.5 block break-all text-xs text-ink-soft hover:text-gold-700">
                               ✉️ {m.email}
                             </a>
                           )}
                         </div>
                         {admin && (
-                          <div className="flex shrink-0 items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             {pending && (
                               <button
                                 className="rounded-full bg-leaf px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
@@ -509,9 +512,27 @@ export default function TymPage() {
                                 m.posOnly ? "bg-gold-500 text-[#1d1d1f] hover:bg-gold-400" : "bg-paper2 text-ink-soft hover:bg-gold-100"
                               }`}
                               title="Člověk uvidí jen Prodej (pomocník u stánku)"
-                              onClick={() => dispatch({ type: "updateMember", yearId: year.id, memberId: m.id, patch: { posOnly: !m.posOnly } })}
+                              onClick={() => dispatch({ type: "updateMember", yearId: year.id, memberId: m.id, patch: { posOnly: !m.posOnly, vyberOnly: false } })}
                             >
                               🛒 {m.posOnly ? "jen Prodej ✓" : "jen Prodej"}
+                            </button>
+                            {/* Výběrčí vkladů: uvidí jen Finance → Výběr */}
+                            <button
+                              className={`rounded-full px-2.5 py-1.5 text-xs font-semibold transition ${
+                                m.vyberOnly ? "bg-gold-500 text-[#1d1d1f] hover:bg-gold-400" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+                              }`}
+                              title="Člověk uvidí jen Finance → Výběr (výběrčí vkladů)"
+                              onClick={() => dispatch({ type: "updateMember", yearId: year.id, memberId: m.id, patch: { vyberOnly: !m.vyberOnly, posOnly: false } })}
+                            >
+                              💰 {m.vyberOnly ? "jen Výběr ✓" : "jen Výběr"}
+                            </button>
+                            {/* Změnit role — vyskakovací okno (přidat / vyměnit / odebrat) */}
+                            <button
+                              className="rounded-full bg-plum-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-plum-700"
+                              title="Změnit role člena — přidat, vyměnit nebo úplně odebrat"
+                              onClick={() => setRolesFor(m)}
+                            >
+                              🎭 Změnit role
                             </button>
                             <button className="btn-danger" onClick={() => setPurge(m)}>
                               Smazat účet
@@ -595,6 +616,7 @@ export default function TymPage() {
       />
 
       {editMember && <AdminEditMemberModal member={editMember} yearId={year.id} onClose={() => setEditMember(null)} />}
+      {rolesFor && <ChangeRolesModal key={rolesFor.id} member={rolesFor} yearId={year.id} onClose={() => setRolesFor(null)} />}
       {purge && <PurgeAccountModal key={purge.id} member={purge} year={year} onClose={() => setPurge(null)} />}
       {approve && <ApproveAccountModal key={approve.id} member={approve} yearId={year.id} onClose={() => setApprove(null)} />}
 
@@ -798,6 +820,100 @@ function AdminEditMemberModal({ member, yearId, onClose }: { member: Member; yea
             Zrušit
           </button>
         </div>
+      </div>
+    </Modal>
+  );
+}
+
+// Změna rolí jednoho člena (jen správce) — vyskakovací okno uprostřed.
+// Klikáním se role přidávají/odebírají (i víc najednou), „Odebrat všechny"
+// je nechá bez role. Uloží se až tlačítkem.
+function ChangeRolesModal({ member, yearId, onClose }: { member: Member; yearId: string; onClose: () => void }) {
+  const { dispatch } = useStore();
+  const [roleIds, setRoleIds] = useState<string[]>(member.roleIds);
+  const [busy, setBusy] = useState(false);
+
+  function toggle(id: string) {
+    setRoleIds((arr) => (arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]));
+  }
+
+  const chosen = ROLES.filter((r) => roleIds.includes(r.id));
+  // Nezměněno? Tlačítko „Uložit" ať nesvádí, když se nic nevybralo jinak.
+  const dirty = roleIds.length !== member.roleIds.length || roleIds.some((id) => !member.roleIds.includes(id));
+
+  async function save() {
+    if (busy) return;
+    setBusy(true);
+    await dispatch({ type: "updateMember", yearId, memberId: member.id, patch: { roleIds } });
+    setBusy(false);
+    toast(roleIds.length === 0 ? `${member.name} je teď bez role` : `Role uloženy — ${member.name}`, "🎭");
+    onClose();
+  }
+
+  return (
+    <Modal open onClose={onClose} title={`Změnit role — ${member.name}`}>
+      <p className="mb-3 text-sm text-ink-soft">
+        Chceš změnit role u <strong className="text-ink">{member.name}</strong>? Klikáním roli přidáš nebo odebereš — člověk jich může mít i víc najednou.
+      </p>
+
+      {/* Aktuální výběr — klikem na křížek roli hned pustíš */}
+      <div className="mb-3 rounded-xl bg-paper2 px-3 py-2.5">
+        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Vybrané role</p>
+        {chosen.length === 0 ? (
+          <p className="text-sm italic text-ink-soft/70">Zatím bez role</p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {chosen.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => toggle(r.id)}
+                title="Odebrat tuto roli"
+                className="inline-flex items-center gap-1 rounded-full bg-gold-500 px-2.5 py-1 text-xs font-semibold text-[#1d1d1f] transition hover:bg-gold-400"
+              >
+                {r.emoji} {r.name} <span className="text-sm leading-none">×</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Všechny role — klik = přidat/odebrat */}
+      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Klikni pro přidání / odebrání</p>
+      <div className="flex flex-wrap gap-1.5">
+        {ROLES.map((r) => {
+          const on = roleIds.includes(r.id);
+          return (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => toggle(r.id)}
+              className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                on ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2 text-ink-soft hover:bg-ink/5"
+              }`}
+            >
+              {r.emoji} {r.name} {on && "✓"}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button className="btn-primary flex-1" onClick={save} disabled={busy || !dirty}>
+          {busy ? "Ukládám…" : "Uložit role"}
+        </button>
+        {roleIds.length > 0 && (
+          <button
+            type="button"
+            className="rounded-full bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+            onClick={() => setRoleIds([])}
+          >
+            Odebrat všechny
+          </button>
+        )}
+        <button type="button" className="btn-ghost" onClick={onClose}>
+          Zrušit
+        </button>
       </div>
     </Modal>
   );

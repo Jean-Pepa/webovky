@@ -11,7 +11,7 @@ import { ImageViewer } from "@/components/ImageViewer";
 import { SearchClear } from "@/components/SearchBox";
 import { isAdmin } from "@/lib/admin";
 import { canEditSection } from "@/lib/access";
-import { normName } from "@/lib/names";
+import { normName, sameName } from "@/lib/names";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
 import { flash } from "@/components/Flash";
@@ -107,7 +107,8 @@ export default function FinancePage() {
   const [kasaOpen, setKasaOpen] = useState(false);
   const [vyberOpen, setVyberOpen] = useState(false);
   // Hlavní přepínač financí (svítící lišta jako v Prodeji): 4 pohledy.
-  const [tab, setTab] = useState<"vse" | "kasy" | "merch" | "vyber">("vse");
+  // (výběrčí vkladů má pohled napevno na „vyber" — viz `tab` níže)
+  const [tabState, setTab] = useState<"vse" | "kasy" | "merch" | "vyber">("vse");
   const [filter, setFilter] = useState<Filter>("vse");
   const [q, setQ] = useState(""); // vyhledávání podle popisu
 
@@ -117,6 +118,7 @@ export default function FinancePage() {
   const [bulkPledged, setBulkPledged] = useState("");
   const [ctFilter, setCtFilter] = useState<"vse" | "zaplatil" | "nezaplatil" | "pulka">("vse");
   const [editCt, setEditCt] = useState<Contribution | null>(null); // úprava jména/kontaktu/částky
+  const [recentOpen, setRecentOpen] = useState(false); // „Naposledy zaplatili" — 2 + rolovačka
 
   const [kind, setKind] = useState<FinanceKind>("vydaj");
   const [label, setLabel] = useState("");
@@ -162,7 +164,7 @@ export default function FinancePage() {
       contributions
         .filter((c) => c.paidAt && !c.returned)
         .sort((a, b) => (b.paidAt as string).localeCompare(a.paidAt as string))
-        .slice(0, 6),
+        .slice(0, 12),
     [contributions],
   );
 
@@ -265,16 +267,24 @@ export default function FinancePage() {
 
   if (!year) return null;
 
+  // Výběrčí vkladů (vyberOnly): správce mu v Týmu zapnul „jen Výběr". Vidí
+  // napevno jen pohled Výběr a smí odklikávat platby (jako by měl finanční roli).
+  const vyberOnly = !isAdmin(me) && !!year.members.find((m) => sameName(m.name, me))?.vyberOnly;
+  const tab = vyberOnly ? "vyber" : tabState;
+
   // Celé finance (bilance, kasy, všechny položky) vidí jen hlavní
   // koordinátor & finance + správce. Ostatní mají jen „Moje výdaje":
   // zapíšou, co zaplatili (propíše se ekonomovi), a vidí jen svoje.
-  if (!canEditSection(year, me, "finance")) {
+  // Výběrčí (vyberOnly) tuto bránu obchází — potřebuje pohled Výběr.
+  if (!canEditSection(year, me, "finance") && !vyberOnly) {
     return <MyExpenses yearId={year.id} me={me} items={items} canSubmit={canEditCurrentYear} />;
   }
 
   // Přidávat položky i kasy: hlavní koordinátor & finance + správce.
   // Upravovat / mazat / přepínat zaplaceno už jen správce (canEdit).
-  const canAdd = canEditCurrentYear;
+  // Výběrčí (vyberOnly) je jen pozorovatel — nic nepřidává ani nemění, jen
+  // sleduje, kdo a kdy zaplatil.
+  const canAdd = canEditCurrentYear && !vyberOnly;
   const canEdit = isAdmin(me);
 
   // Kasy: kolik se ráno vložilo (vklady) a kolik se vydělalo (tržba z uzavřených).
@@ -390,23 +400,26 @@ export default function FinancePage() {
         )}
       </div>
 
-      {/* Přepínač financí (desktop) — na mobilu je dole ve svítící zlaté liště */}
-      <div className="hidden gap-1.5 md:flex">
-        {FIN_TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => {
-              setTab(t.id);
-              setQ("");
-            }}
-            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${
-              tab === t.id ? "bg-gold-500 text-[#1d1d1f] shadow-sm" : "bg-paper2 text-ink-soft hover:bg-gold-100"
-            }`}
-          >
-            {t.emoji} {t.label}
-          </button>
-        ))}
-      </div>
+      {/* Přepínač financí (desktop) — na mobilu je dole ve svítící zlaté liště.
+          Výběrčí (vyberOnly) přepínač nemá — má jen pohled Výběr. */}
+      {!vyberOnly && (
+        <div className="hidden gap-1.5 md:flex">
+          {FIN_TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => {
+                setTab(t.id);
+                setQ("");
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                tab === t.id ? "bg-gold-500 text-[#1d1d1f] shadow-sm" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+              }`}
+            >
+              {t.emoji} {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Vyhledávání — velké, přes celou šířku, hned pod nadpisem (mění se podle pohledu) */}
       <div className="relative">
@@ -452,8 +465,14 @@ export default function FinancePage() {
         }
       />
 
-      {/* Kdo co smí: každý (s finanční rolí) přidává, upravuje jen správce; zamčený ročník = jen náhled */}
-      {!canAdd ? (
+      {/* Kdo co smí: výběrčí jen sleduje; jinak každý (s finanční rolí) přidává,
+          upravuje jen správce; zamčený ročník = jen náhled */}
+      {vyberOnly ? (
+        <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
+          <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>Máš jen náhled — vidíš, kdo a kdy zaplatil. Zapisovat platby může ekonom nebo správce.</span>
+        </div>
+      ) : !canAdd ? (
         <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
           <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
           <span>Tento ročník je uzamčený — máš jen náhled.</span>
@@ -505,7 +524,7 @@ export default function FinancePage() {
 
       {/* ===== POHLED: VÝBĚR (vklady) ===== */}
       {tab === "vyber" &&
-      (contributions.length > 0 || canAdd) && (
+      (contributions.length > 0 || canAdd || vyberOnly) && (
         <section id="vyber" className="card scroll-mt-20 p-4">
           <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
             💰 Výběr (vklady)
@@ -517,12 +536,12 @@ export default function FinancePage() {
             )}
           </h2>
 
-          {/* Kdo zaplatil naposled — přehled příchozích plateb (různé hodiny/dny) */}
+          {/* Kdo zaplatil naposled — 2 nejnovější + rolovačka na další */}
           {recentPaid.length > 0 && (
             <div className="mb-4 rounded-xl border border-ink/10 bg-surface p-3">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">🕐 Naposledy zaplatili</p>
               <ul className="space-y-1.5">
-                {recentPaid.map((c, i) => (
+                {(recentOpen ? recentPaid : recentPaid.slice(0, 2)).map((c, i) => (
                   <li key={c.id} className="flex items-center gap-2 text-sm">
                     <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-paper2 text-[11px] font-bold text-ink-soft">{i + 1}</span>
                     <span className="min-w-0 flex-1 truncate font-medium">{c.name}</span>
@@ -533,6 +552,17 @@ export default function FinancePage() {
                   </li>
                 ))}
               </ul>
+              {recentPaid.length > 2 && (
+                <button
+                  type="button"
+                  onClick={() => setRecentOpen((v) => !v)}
+                  aria-expanded={recentOpen}
+                  className="mt-2 flex items-center gap-1 text-xs font-medium text-gold-700 hover:underline"
+                >
+                  {recentOpen ? "Zobrazit méně" : `Zobrazit další (${recentPaid.length - 2})`}
+                  <Icon name="chevron" className={`h-3.5 w-3.5 transition-transform ${recentOpen ? "rotate-180" : ""}`} />
+                </button>
+              )}
             </div>
           )}
 
@@ -811,7 +841,9 @@ export default function FinancePage() {
       {/* Kasa modal — vždy dostupný (i z pohledu Kasy) */}
       <NewKasaModal open={kasaOpen} yearId={year.id} onClose={() => setKasaOpen(false)} />
 
-      {/* Svítící zlatá lišta (mobil) — 3 hlavní pohledy, jako stánky v Prodeji */}
+      {/* Svítící zlatá lišta (mobil) — 4 hlavní pohledy, jako stánky v Prodeji.
+          Výběrčí (vyberOnly) lištu nemá — má jen pohled Výběr. */}
+      {!vyberOnly && (
       <div className="fixed inset-x-3 bottom-[calc(5.1rem+env(safe-area-inset-bottom))] z-40 md:hidden">
         <div className="mx-auto max-w-3xl">
           <div className="grid grid-cols-4 gap-1 rounded-[28px] bg-gold-500 p-1.5 shadow-[0_0_24px_rgba(244,183,31,0.65)]">
@@ -833,6 +865,7 @@ export default function FinancePage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

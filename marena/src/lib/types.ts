@@ -12,6 +12,7 @@ export interface Member {
   note?: string;
   approved?: boolean; // schválení správcem. false = čeká (zamčeno); jinak má přístup
   posOnly?: boolean; // pomocník u stánku: vidí jen Prodej, zapíná správce v Týmu
+  vyberOnly?: boolean; // výběrčí vkladů: vidí jen Finance → Výběr, zapíná správce v Týmu
   createdAt: string;
 }
 
