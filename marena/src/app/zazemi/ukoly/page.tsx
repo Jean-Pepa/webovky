@@ -1,12 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { ROLES, roleById } from "@/lib/roles";
 import { fmtDate } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
+import { isAdmin } from "@/lib/admin";
+import { sameName } from "@/lib/names";
 import { flash } from "@/components/Flash";
 
 type Filter = "vse" | "moje" | "nehotove" | "hotove";
@@ -15,6 +18,7 @@ export default function UkolyPage() {
   const { currentYear, me, dispatch } = useStore();
   const [filter, setFilter] = useState<Filter>("nehotove");
   const [q, setQ] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [roleId, setRoleId] = useState("");
   const [assignee, setAssignee] = useState("");
@@ -30,7 +34,7 @@ export default function UkolyPage() {
     return year.tasks.filter((t) => {
       const roleName = t.roleId ? roleById(t.roleId)?.name : undefined;
       if (!matchesQuery(q, t.title, t.assignee, roleName)) return false;
-      if (filter === "moje") return !t.done && (t.assignee === me || (!!t.roleId && myRoleIds.includes(t.roleId)));
+      if (filter === "moje") return !t.done && ((!!t.assignee && sameName(t.assignee, me)) || (!!t.roleId && myRoleIds.includes(t.roleId)));
       if (filter === "nehotove") return !t.done;
       if (filter === "hotove") return t.done;
       return true;
@@ -65,11 +69,27 @@ export default function UkolyPage() {
     flash("Úkol přidán", "✅");
   }
 
+  async function clearAll() {
+    if (!year) return;
+    if (!window.confirm(`Smazat všech ${year.tasks.length} úkolů? Nedá se to vrátit.`)) return;
+    await dispatch({ type: "clearTasks", yearId: year.id });
+    flash("Úkoly smazány", "🧹");
+  }
+
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-display text-[28px] font-bold tracking-tight">Úkoly</h1>
+        {isAdmin(me) && total > 0 && (
+          <button className="btn-ghost px-3 py-1.5 text-xs text-red-600" onClick={clearAll}>
+            Smazat všechny úkoly
+          </button>
+        )}
       </div>
+
+      <p className="text-sm text-ink-soft">
+        Úkoly přibývají hlavně z <Link href="/zazemi" className="font-medium text-gold-700 hover:underline">Nástěnky</Link> — napiš tam, kdo a co má udělat, a propíše se to sem. Odškrtnutí se ukáže i u příspěvku.
+      </p>
 
       {/* progress */}
       <div className="card p-4">
@@ -82,33 +102,44 @@ export default function UkolyPage() {
         </div>
       </div>
 
-      {/* přidat úkol */}
-      <div className="card space-y-2 p-4">
-        <input className="input" placeholder="Nový úkol (např. Obvolat aulu kvůli souběhu)" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
-        <div className="grid gap-2 sm:grid-cols-3">
-          <select className="input" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
-            <option value="">Role (nepovinné)</option>
-            {ROLES.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.emoji} {r.name}
-              </option>
-            ))}
-          </select>
-          <select className="input" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
-            <option value="">Kdo? (nepovinné)</option>
-            <option value={me}>Já ({me})</option>
-            {year.members.filter((m) => m.name !== me).map((m) => (
-              <option key={m.id} value={m.name}>
-                {m.name}
-              </option>
-            ))}
-          </select>
-          <input type="date" className="input" value={due} onChange={(e) => setDue(e.target.value)} />
-        </div>
-        <button className="btn-primary" onClick={add}>
+      {/* přidat úkol — formulář se rozbalí až po kliknutí na tlačítko */}
+      {!addOpen ? (
+        <button className="btn-primary w-fit" onClick={() => setAddOpen(true)}>
           + Přidat úkol
         </button>
-      </div>
+      ) : (
+        <div className="card space-y-2 p-4">
+          <input className="input" placeholder="Nový úkol (např. Obvolat aulu kvůli souběhu)" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} autoFocus />
+          <div className="grid gap-2 sm:grid-cols-3">
+            <select className="input" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
+              <option value="">Role (nepovinné)</option>
+              {ROLES.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.emoji} {r.name}
+                </option>
+              ))}
+            </select>
+            <select className="input" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+              <option value="">Kdo? (nepovinné)</option>
+              <option value={me}>Já ({me})</option>
+              {year.members.filter((m) => m.name !== me).map((m) => (
+                <option key={m.id} value={m.name}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+            <input type="date" className="input" value={due} onChange={(e) => setDue(e.target.value)} />
+          </div>
+          <div className="flex gap-2">
+            <button className="btn-primary" onClick={add} disabled={!title.trim()}>
+              Přidat úkol
+            </button>
+            <button className="btn-ghost" onClick={() => setAddOpen(false)}>
+              Zavřít
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* hledání */}
       <SearchBox value={q} onChange={setQ} placeholder="Hledat úkol…" />
@@ -165,6 +196,11 @@ export default function UkolyPage() {
                         <div className="flex flex-wrap items-center gap-2 text-xs text-ink-soft">
                           {t.assignee && <span>👤 {t.assignee}</span>}
                           {t.due && <span>📅 {fmtDate(t.due)}</span>}
+                          {t.fromPostId && (
+                            <Link href={`/zazemi?post=${t.fromPostId}`} className="font-medium text-gold-700 hover:underline">
+                              📌 z nástěnky
+                            </Link>
+                          )}
                         </div>
                       </div>
                       <DeleteButton onConfirm={() => dispatch({ type: "removeTask", yearId: year.id, taskId: t.id })} />

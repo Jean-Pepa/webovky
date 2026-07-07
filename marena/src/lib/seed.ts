@@ -1,5 +1,4 @@
 import type { DB } from "./types";
-import { defaultRoleTasks } from "./actions";
 import { almanachMilestoneEvents } from "./milestones";
 
 // Výchozí stav při prvním spuštění. Jeden rozjetý ročník s úkoly rozdanými na
@@ -49,7 +48,7 @@ export function seedDB(): DB {
           },
         ],
         events: almanachMilestoneEvents(year, t),
-        tasks: defaultRoleTasks(t),
+        tasks: [],
         links: [
           { id: "seed_l1", label: "Soňa Lisoňová", value: "sona.lisonova@fa.vut.cz", folder: "Fakulta", note: "Klíčová spojka — technika, zvukař, banner. Ozvat se až bude datum a program.", createdAt: t },
           { id: "seed_l2", label: "Vrátnice FA", value: "—", folder: "Fakulta", note: "Hlásit příjezdy externistů, otevření do půlnoci.", createdAt: t },

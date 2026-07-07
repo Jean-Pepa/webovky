@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
-import { ROLES, roleById } from "@/lib/roles";
+import { roleById } from "@/lib/roles";
 import { fmtDateTime, fmtDayShort, todayISO, fmtCZK } from "@/lib/format";
 import { KINDS } from "@/lib/kinds";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -119,11 +119,56 @@ function PollComposer({ draft, setDraft, polls }: { draft: PollDraft; setDraft: 
   );
 }
 
+// Koncept úkolů připojených k příspěvku — každý řádek = co udělat + kdo.
+// Po zveřejnění se z nich stanou úkoly v sekci Úkoly (propojené zpět přes fromPostId).
+type TaskRow = { text: string; who: string };
+type TaskDraft = { on: boolean; rows: TaskRow[] };
+const emptyTasks: TaskDraft = { on: false, rows: [{ text: "", who: "" }] };
+const resolveTasks = (d: TaskDraft): TaskRow[] =>
+  d.on ? d.rows.map((r) => ({ text: r.text.trim(), who: r.who.trim() })).filter((r) => r.text) : [];
+
+// Editor úkolů — „kdo a co má udělat". Sdílený mezi přidáním a úpravou příspěvku.
+function TaskComposer({ draft, setDraft, title = "✅ Přidat úkol (propíše se do sekce Úkoly)" }: { draft: TaskDraft; setDraft: (d: TaskDraft) => void; title?: string }) {
+  const setRow = (i: number, patch: Partial<TaskRow>) => setDraft({ ...draft, rows: draft.rows.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
+  return (
+    <div className="rounded-xl bg-paper2/60 p-3 ring-1 ring-ink/10">
+      <label className="flex items-center gap-2 text-sm font-medium text-ink">
+        <input type="checkbox" checked={draft.on} onChange={(e) => setDraft({ ...draft, on: e.target.checked })} />
+        {title}
+      </label>
+      {draft.on && (
+        <div className="mt-3 space-y-2">
+          <p className="text-xs text-ink-soft">Napiš, co je potřeba udělat a kdo to má na starost. Odškrtnutím se úkol splní tady i v Úkolech.</p>
+          {draft.rows.map((r, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input className="input flex-1" placeholder="Co udělat? (např. Povolení průvodu)" value={r.text} onChange={(e) => setRow(i, { text: e.target.value })} />
+              <input className="input w-24 sm:w-36" placeholder="Kdo?" value={r.who} onChange={(e) => setRow(i, { who: e.target.value })} />
+              {draft.rows.length > 1 && (
+                <button
+                  type="button"
+                  className="btn-ghost px-2"
+                  aria-label={`Odebrat úkol ${i + 1}`}
+                  title="Odebrat úkol"
+                  onClick={() => setDraft({ ...draft, rows: draft.rows.filter((_, j) => j !== i) })}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
+          <button type="button" className="btn-ghost" onClick={() => setDraft({ ...draft, rows: [...draft.rows, { text: "", who: "" }] })}>
+            + Další úkol
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function NastenkaPage() {
   const { currentYear, me, dispatch, configured } = useStore();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [roleId, setRoleId] = useState("");
   const [pinned, setPinned] = useState(false);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -131,6 +176,7 @@ export default function NastenkaPage() {
   const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
   const [uploading, setUploading] = useState(false);
   const [pollDraft, setPollDraft] = useState<PollDraft>(emptyPoll);
+  const [taskDraft, setTaskDraft] = useState<TaskDraft>(emptyTasks);
   // Když přijdeme z ankety přes ?post=<id>, doscrollujeme a příspěvek na chvíli zvýrazníme.
   const [highlightPost, setHighlightPost] = useState<string | null>(null);
 
@@ -213,15 +259,22 @@ export default function NastenkaPage() {
       pollId = uid("v_");
       await dispatch({ type: "addPoll", yearId: year.id, author: me, question: choice.question, options: choice.options, multi: choice.multi, id: pollId });
     }
-    await dispatch({ type: "addPost", yearId: year.id, author: me, roleId: roleId || undefined, title, body, pinned, photoIds: photos.map((p) => p.id), pollId });
+    // Příspěvek s vlastním id, ať na něj mohou úkoly navázat (fromPostId).
+    const postId = uid("p_");
+    await dispatch({ type: "addPost", yearId: year.id, id: postId, author: me, title, body, pinned, photoIds: photos.map((p) => p.id), pollId });
+    // Volitelné úkoly — propíšou se do sekce Úkoly a zůstanou navázané na příspěvek.
+    const tasks = resolveTasks(taskDraft);
+    for (const tk of tasks) {
+      await dispatch({ type: "addTask", yearId: year.id, title: tk.text, assignee: tk.who || undefined, fromPostId: postId });
+    }
     setTitle("");
     setBody("");
-    setRoleId("");
     setPinned(false);
     setPhotos([]);
     setPollDraft(emptyPoll);
+    setTaskDraft(emptyTasks);
     setOpen(false);
-    flash(choice ? "Příspěvek i anketa přidány" : "Příspěvek přidán", choice ? "🗳️" : "📌");
+    flash(tasks.length ? `Příspěvek přidán · ${tasks.length} úkol${tasks.length > 1 ? "y" : ""} v Úkolech` : choice ? "Příspěvek i anketa přidány" : "Příspěvek přidán", tasks.length ? "✅" : choice ? "🗳️" : "📌");
   }
 
   return (
@@ -271,16 +324,9 @@ export default function NastenkaPage() {
             </label>
 
             <PollComposer draft={pollDraft} setDraft={setPollDraft} polls={year.polls} />
+            <TaskComposer draft={taskDraft} setDraft={setTaskDraft} />
 
             <div className="flex flex-wrap items-center gap-3">
-              <select className="input max-w-56" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
-                <option value="">Za jakou roli? (nepovinné)</option>
-                {ROLES.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.emoji} {r.name}
-                  </option>
-                ))}
-              </select>
               <label className="flex items-center gap-2 text-sm text-ink-soft">
                 <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} />
                 Připnout nahoru
@@ -444,12 +490,16 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
   const [showEdits, setShowEdits] = useState(false);
   const [title, setTitle] = useState(p.title);
   const [body, setBody] = useState(p.body);
-  const [roleId, setRoleId] = useState(p.roleId ?? "");
   const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
   const [uploading, setUploading] = useState(false);
   const [pollDraft, setPollDraft] = useState<PollDraft>(emptyPoll);
+  const [taskDraft, setTaskDraft] = useState<TaskDraft>(emptyTasks);
   // Připojená anketa (pokud existuje) — kvůli tlačítku „Hlasování".
   const poll = p.pollId ? currentYear?.polls.find((pl) => pl.id === p.pollId) : undefined;
+  // Úkoly navázané na tenhle příspěvek (přes fromPostId) — checklist rovnou na nástěnce.
+  const postTasks = (currentYear?.tasks ?? []).filter((t) => t.fromPostId === p.id);
+  // Všechny úkoly příspěvku hotové → příspěvek se rozsvítí zeleně.
+  const allTasksDone = postTasks.length > 0 && postTasks.every((t) => t.done);
   // Historie úprav (nová), s fallbackem na stará data (jen poslední úprava).
   const edits = p.edits ?? (p.editedBy && p.editedAt ? [{ by: p.editedBy, at: p.editedAt }] : []);
   const canEdit = true; // úpravu nástěnky smí každý (kdo má přístup do zázemí)
@@ -459,8 +509,8 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
   async function startEdit() {
     setTitle(p.title);
     setBody(p.body);
-    setRoleId(p.roleId ?? "");
     setPollDraft(emptyPoll);
+    setTaskDraft(emptyTasks);
     // Načti existující obrázky, ať je jde v úpravě vidět, odebrat i doplnit.
     const existing: { id: string; url: string }[] = [];
     for (const id of p.photoIds ?? []) {
@@ -495,10 +545,9 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
     if (!title.trim()) return;
     // Anketu jde doplnit jen když žádná ŽIVÁ připojená není. Pokud byla připojená
     // anketa mezitím smazána (mrtvý odkaz), odpojíme ji.
-    const patch: { title: string; body: string; roleId: string | null; photoIds: string[]; pollId?: string } = {
+    const patch: { title: string; body: string; photoIds: string[]; pollId?: string } = {
       title,
       body,
-      roleId: roleId || null,
       photoIds: photos.map((x) => x.id),
     };
     if (!poll) {
@@ -514,8 +563,14 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
       }
     }
     await dispatch({ type: "updatePost", yearId, postId: p.id, editedBy: me, patch });
+    // Nově dopsané úkoly se navážou na tenhle příspěvek a objeví se v Úkolech.
+    const newTasks = resolveTasks(taskDraft);
+    for (const tk of newTasks) {
+      await dispatch({ type: "addTask", yearId, title: tk.text, assignee: tk.who || undefined, fromPostId: p.id });
+    }
     setEdit(false);
     if (patch.pollId) flash("Anketa připojena k příspěvku", "🗳️");
+    else if (newTasks.length) flash(`Přidáno ${newTasks.length} úkol${newTasks.length > 1 ? "y" : ""}`, "✅");
   }
 
   if (edit) {
@@ -523,14 +578,31 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
       <article className="card space-y-3 p-4 ring-2 ring-gold-200">
         <input className="input" placeholder="Nadpis" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
         <textarea className="input min-h-24" placeholder="Co potřebují ostatní vědět?" value={body} onChange={(e) => setBody(e.target.value)} />
-        <select className="input max-w-56" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
-          <option value="">Za jakou roli? (nepovinné)</option>
-          {ROLES.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.emoji} {r.name}
-            </option>
-          ))}
-        </select>
+
+        {/* Existující úkoly z příspěvku — jen náhled + smazání; odškrtává se v Úkolech */}
+        {postTasks.length > 0 && (
+          <ul className="space-y-1 rounded-xl bg-paper2/50 p-3 ring-1 ring-ink/10">
+            {postTasks.map((t) => (
+              <li key={t.id} className="flex items-center gap-2">
+                <span
+                  aria-hidden
+                  className={`grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border text-[11px] font-bold leading-none ${
+                    t.done ? "border-leaf bg-leaf text-white" : "border-ink/30 bg-white"
+                  }`}
+                >
+                  {t.done ? "✓" : ""}
+                </span>
+                <span className={`min-w-0 flex-1 text-sm ${t.done ? "text-ink-soft line-through" : "font-medium"}`}>
+                  {t.title}
+                  {t.assignee ? <span className="text-ink-soft"> — {t.assignee}</span> : null}
+                </span>
+                <button type="button" className="btn-ghost px-2 py-0.5 text-xs" onClick={() => dispatch({ type: "removeTask", yearId, taskId: t.id })}>
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {/* Obrázky — existující i nově přidané */}
         {photos.length > 0 && (
@@ -563,6 +635,7 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
         ) : (
           <PollComposer draft={pollDraft} setDraft={setPollDraft} polls={currentYear?.polls ?? []} />
         )}
+        <TaskComposer draft={taskDraft} setDraft={setTaskDraft} title={postTasks.length ? "✅ Přidat další úkol" : "✅ Přidat úkol (propíše se do sekce Úkoly)"} />
 
         <div className="flex gap-2">
           <button className="btn-primary py-2 text-sm" onClick={save} disabled={!title.trim()}>
@@ -579,8 +652,14 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
   return (
     <article
       id={`post-${p.id}`}
-      className={`card scroll-mt-24 p-4 transition-shadow ${p.pinned ? "ring-1 ring-gold-300" : ""} ${
-        highlight ? "ring-2 ring-gold-500 shadow-[0_0_0_4px_rgba(253,175,34,0.25)]" : ""
+      className={`card scroll-mt-24 p-4 transition-shadow ${
+        highlight
+          ? "ring-2 ring-gold-500 shadow-[0_0_0_4px_rgba(253,175,34,0.25)]"
+          : allTasksDone
+            ? "border-leaf/50 bg-leaf/[0.05] ring-1 ring-leaf/40"
+            : p.pinned
+              ? "ring-1 ring-gold-300"
+              : ""
       }`}
     >
       <div className="mb-1 flex flex-wrap items-start gap-x-2 gap-y-1 text-xs text-ink-soft">
@@ -617,6 +696,37 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
       </div>
       <h3 className="break-words font-display text-[20px] font-semibold">{p.title}</h3>
       {p.body && <PostBody body={p.body} />}
+      {/* Úkoly z příspěvku — jen náhled; odškrtává se v sekci Úkoly (tady se needituje) */}
+      {postTasks.length > 0 && (
+        <div className={`mt-3 rounded-xl p-3 ring-1 ${allTasksDone ? "bg-leaf/10 ring-leaf/40" : "bg-paper2/50 ring-ink/10"}`}>
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <p className={`text-xs font-semibold uppercase tracking-wide ${allTasksDone ? "text-leaf-700" : "text-ink-soft"}`}>
+              {allTasksDone ? "✅ Hotovo" : "✅ Úkoly"} ({postTasks.filter((t) => t.done).length}/{postTasks.length})
+            </p>
+            <Link href="/zazemi/ukoly" className="shrink-0 text-xs font-medium text-gold-700 hover:underline">
+              Odškrtnout v Úkolech →
+            </Link>
+          </div>
+          <ul className="space-y-1">
+            {postTasks.map((t) => (
+              <li key={t.id} className="flex items-center gap-2">
+                <span
+                  aria-hidden
+                  className={`grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border text-[11px] font-bold leading-none ${
+                    t.done ? "border-leaf bg-leaf text-white" : "border-ink/30 bg-white"
+                  }`}
+                >
+                  {t.done ? "✓" : ""}
+                </span>
+                <span className={`min-w-0 flex-1 text-sm ${t.done ? "text-ink-soft line-through" : "font-medium"}`}>
+                  {t.title}
+                  {t.assignee ? <span className="text-ink-soft"> — {t.assignee}</span> : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {p.photoIds && p.photoIds.length > 0 && <PostPhotos ids={p.photoIds} />}
       {poll && (
         <div className="mt-3 flex items-center gap-2 rounded-xl bg-gold-50 px-3 py-2 ring-1 ring-gold-200">

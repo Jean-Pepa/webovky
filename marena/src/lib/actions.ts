@@ -59,7 +59,7 @@ export type Action =
   | { type: "requestRole"; yearId: string; memberId?: string; name: string; email?: string; phone?: string; roleId: string }
   | { type: "resolveRoleRequest"; yearId: string; memberId: string; roleId: string; approve: boolean }
   | { type: "setRoleLead"; yearId: string; roleId: string; memberId: string }
-  | { type: "addPost"; yearId: string; author: string; roleId?: string; title: string; body: string; pinned?: boolean; photoIds?: string[]; pollId?: string }
+  | { type: "addPost"; yearId: string; id?: string; author: string; roleId?: string; title: string; body: string; pinned?: boolean; photoIds?: string[]; pollId?: string }
   | { type: "updatePost"; yearId: string; postId: string; editedBy: string; patch: { title?: string; body?: string; roleId?: string | null; photoIds?: string[]; pollId?: string } }
   | { type: "togglePin"; yearId: string; postId: string }
   | { type: "removePost"; yearId: string; postId: string }
@@ -74,9 +74,10 @@ export type Action =
   | { type: "updateEvent"; yearId: string; eventId: string; patch: { title?: string; date?: string; endDate?: string; time?: string; kind?: EventKind; note?: string } }
   | { type: "removeEvent"; yearId: string; eventId: string }
   | { type: "addMilestones"; yearId: string; author: string }
-  | { type: "addTask"; yearId: string; title: string; roleId?: string; assignee?: string; due?: string }
+  | { type: "addTask"; yearId: string; id?: string; title: string; roleId?: string; assignee?: string; due?: string; fromPostId?: string }
   | { type: "toggleTask"; yearId: string; taskId: string }
   | { type: "removeTask"; yearId: string; taskId: string }
+  | { type: "clearTasks"; yearId: string }
   | { type: "addLink"; yearId: string; label: string; value: string; folder?: string; note?: string }
   | { type: "removeLink"; yearId: string; linkId: string }
   | { type: "addFinance"; yearId: string; kind: FinanceKind; label: string; amount: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string }
@@ -464,7 +465,7 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => ({
         ...y,
         posts: [
-          { id: uid("p_"), author: a.author.trim() || "Anonym", roleId: a.roleId, title: a.title.trim(), body: a.body.trim(), pinned: a.pinned ?? false, photoIds: a.photoIds?.length ? a.photoIds : undefined, pollId: a.pollId || undefined, createdAt: now() },
+          { id: a.id ?? uid("p_"), author: a.author.trim() || "Anonym", roleId: a.roleId, title: a.title.trim(), body: a.body.trim(), pinned: a.pinned ?? false, photoIds: a.photoIds?.length ? a.photoIds : undefined, pollId: a.pollId || undefined, createdAt: now() },
           ...y.posts,
         ],
       }));
@@ -631,7 +632,7 @@ export function applyAction(db: DB, a: Action): DB {
         ...y,
         tasks: [
           ...y.tasks,
-          { id: uid("t_"), title: a.title.trim(), roleId: a.roleId, assignee: a.assignee?.trim() || undefined, due: a.due || undefined, done: false, createdAt: now() },
+          { id: a.id ?? uid("t_"), title: a.title.trim(), roleId: a.roleId, assignee: a.assignee?.trim() || undefined, due: a.due || undefined, fromPostId: a.fromPostId || undefined, done: false, createdAt: now() },
         ],
       }));
     case "toggleTask":
@@ -641,6 +642,8 @@ export function applyAction(db: DB, a: Action): DB {
       }));
     case "removeTask":
       return mapYear(db, a.yearId, (y) => ({ ...y, tasks: y.tasks.filter((t) => t.id !== a.taskId) }));
+    case "clearTasks":
+      return mapYear(db, a.yearId, (y) => ({ ...y, tasks: [] }));
 
     case "addLink":
       return mapYear(db, a.yearId, (y) => ({
