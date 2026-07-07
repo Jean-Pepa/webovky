@@ -788,7 +788,8 @@ export function applyAction(db: DB, a: Action): DB {
       if (!name || (amount <= 0 && !pledged)) return db;
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        contributions: [...(y.contributions ?? []), { id: uid("ct_"), name, email: a.email?.trim() || undefined, amount, pledged, createdAt: now() }],
+        // paidAt = kdy naposledy zaplatil; při založení jen když rovnou něco dal.
+        contributions: [...(y.contributions ?? []), { id: uid("ct_"), name, email: a.email?.trim() || undefined, amount, pledged, paidAt: amount > 0 ? now() : undefined, createdAt: now() }],
       }));
     }
     case "payContribution":
@@ -799,14 +800,14 @@ export function applyAction(db: DB, a: Action): DB {
           const add = Math.round(a.amount);
           if (add <= 0) return c;
           const amount = c.amount + add;
-          return { ...c, amount, pledged: c.pledged != null && amount >= c.pledged ? undefined : c.pledged };
+          return { ...c, amount, pledged: c.pledged != null && amount >= c.pledged ? undefined : c.pledged, paidAt: now() };
         }),
       }));
     case "settleContribution":
       return mapYear(db, a.yearId, (y) => ({
         ...y,
         contributions: (y.contributions ?? []).map((c) =>
-          c.id === a.contributionId && c.pledged != null && c.pledged > c.amount ? { ...c, amount: c.pledged, pledged: undefined } : c,
+          c.id === a.contributionId && c.pledged != null && c.pledged > c.amount ? { ...c, amount: c.pledged, pledged: undefined, paidAt: now() } : c,
         ),
       }));
     case "toggleContributionReturned":
@@ -833,6 +834,8 @@ export function applyAction(db: DB, a: Action): DB {
             phone: p.phone !== undefined ? p.phone.trim() || undefined : c.phone,
             amount,
             pledged,
+            // Ruční navýšení částky = zaplatil teď.
+            paidAt: amount > c.amount ? now() : c.paidAt,
           };
         }),
       }));
