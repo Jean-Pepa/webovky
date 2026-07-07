@@ -558,3 +558,11 @@ html.theme-anim .input {
       text-ink-soft;
   }
 }
+
+/* Nativní křížek u <input type="search"> schováme — všude používáme vlastní
+   sjednocený křížek (SearchClear), ať se na iOS/Chrome nedublují. */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}

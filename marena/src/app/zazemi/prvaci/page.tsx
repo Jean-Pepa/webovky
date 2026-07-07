@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { canEditSection } from "@/lib/access";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
+import { SearchClear } from "@/components/SearchBox";
 import { DeleteButton } from "@/components/DeleteButton";
 import { normName } from "@/lib/names";
 import { flash } from "@/components/Flash";
@@ -68,7 +69,10 @@ export default function PrvaciPage() {
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <input className="input max-w-xs" placeholder="🔎 Hledat…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="relative max-w-xs flex-1">
+          <input type="search" className={`input w-full ${q ? "pr-10" : ""}`} placeholder="🔎 Hledat…" value={q} onChange={(e) => setQ(e.target.value)} />
+          {q && <SearchClear onClear={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2" />}
+        </div>
         <span className="text-sm text-ink-soft">
           {q ? `${list.length} z ${year.freshmen?.length ?? 0}` : `${year.freshmen?.length ?? 0} prváků`}
         </span>
