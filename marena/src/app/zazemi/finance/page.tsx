@@ -11,7 +11,7 @@ import { ImageViewer } from "@/components/ImageViewer";
 import { SearchClear } from "@/components/SearchBox";
 import { isAdmin } from "@/lib/admin";
 import { canEditSection } from "@/lib/access";
-import { normName } from "@/lib/names";
+import { normName, sameName } from "@/lib/names";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
 import { flash } from "@/components/Flash";
@@ -107,7 +107,8 @@ export default function FinancePage() {
   const [kasaOpen, setKasaOpen] = useState(false);
   const [vyberOpen, setVyberOpen] = useState(false);
   // Hlavní přepínač financí (svítící lišta jako v Prodeji): 4 pohledy.
-  const [tab, setTab] = useState<"vse" | "kasy" | "merch" | "vyber">("vse");
+  // (výběrčí vkladů má pohled napevno na „vyber" — viz `tab` níže)
+  const [tabState, setTab] = useState<"vse" | "kasy" | "merch" | "vyber">("vse");
   const [filter, setFilter] = useState<Filter>("vse");
   const [q, setQ] = useState(""); // vyhledávání podle popisu
 
@@ -266,17 +267,24 @@ export default function FinancePage() {
 
   if (!year) return null;
 
+  // Výběrčí vkladů (vyberOnly): správce mu v Týmu zapnul „jen Výběr". Vidí
+  // napevno jen pohled Výběr a smí odklikávat platby (jako by měl finanční roli).
+  const vyberOnly = !isAdmin(me) && !!year.members.find((m) => sameName(m.name, me))?.vyberOnly;
+  const tab = vyberOnly ? "vyber" : tabState;
+
   // Celé finance (bilance, kasy, všechny položky) vidí jen hlavní
   // koordinátor & finance + správce. Ostatní mají jen „Moje výdaje":
   // zapíšou, co zaplatili (propíše se ekonomovi), a vidí jen svoje.
-  if (!canEditSection(year, me, "finance")) {
+  // Výběrčí (vyberOnly) tuto bránu obchází — potřebuje pohled Výběr.
+  if (!canEditSection(year, me, "finance") && !vyberOnly) {
     return <MyExpenses yearId={year.id} me={me} items={items} canSubmit={canEditCurrentYear} />;
   }
 
   // Přidávat položky i kasy: hlavní koordinátor & finance + správce.
   // Upravovat / mazat / přepínat zaplaceno už jen správce (canEdit).
+  // Výběrčí smí odklikávat platby ve Výběru (canEdit), víc mu stejně nepustíme.
   const canAdd = canEditCurrentYear;
-  const canEdit = isAdmin(me);
+  const canEdit = isAdmin(me) || vyberOnly;
 
   // Kasy: kolik se ráno vložilo (vklady) a kolik se vydělalo (tržba z uzavřených).
   const kasaOpenings = (year.cashboxes ?? []).reduce((s, c) => s + c.opening, 0);
@@ -391,23 +399,26 @@ export default function FinancePage() {
         )}
       </div>
 
-      {/* Přepínač financí (desktop) — na mobilu je dole ve svítící zlaté liště */}
-      <div className="hidden gap-1.5 md:flex">
-        {FIN_TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => {
-              setTab(t.id);
-              setQ("");
-            }}
-            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${
-              tab === t.id ? "bg-gold-500 text-[#1d1d1f] shadow-sm" : "bg-paper2 text-ink-soft hover:bg-gold-100"
-            }`}
-          >
-            {t.emoji} {t.label}
-          </button>
-        ))}
-      </div>
+      {/* Přepínač financí (desktop) — na mobilu je dole ve svítící zlaté liště.
+          Výběrčí (vyberOnly) přepínač nemá — má jen pohled Výběr. */}
+      {!vyberOnly && (
+        <div className="hidden gap-1.5 md:flex">
+          {FIN_TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => {
+                setTab(t.id);
+                setQ("");
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                tab === t.id ? "bg-gold-500 text-[#1d1d1f] shadow-sm" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+              }`}
+            >
+              {t.emoji} {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Vyhledávání — velké, přes celou šířku, hned pod nadpisem (mění se podle pohledu) */}
       <div className="relative">
@@ -823,7 +834,9 @@ export default function FinancePage() {
       {/* Kasa modal — vždy dostupný (i z pohledu Kasy) */}
       <NewKasaModal open={kasaOpen} yearId={year.id} onClose={() => setKasaOpen(false)} />
 
-      {/* Svítící zlatá lišta (mobil) — 3 hlavní pohledy, jako stánky v Prodeji */}
+      {/* Svítící zlatá lišta (mobil) — 4 hlavní pohledy, jako stánky v Prodeji.
+          Výběrčí (vyberOnly) lištu nemá — má jen pohled Výběr. */}
+      {!vyberOnly && (
       <div className="fixed inset-x-3 bottom-[calc(5.1rem+env(safe-area-inset-bottom))] z-40 md:hidden">
         <div className="mx-auto max-w-3xl">
           <div className="grid grid-cols-4 gap-1 rounded-[28px] bg-gold-500 p-1.5 shadow-[0_0_24px_rgba(244,183,31,0.65)]">
@@ -845,6 +858,7 @@ export default function FinancePage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

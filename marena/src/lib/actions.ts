@@ -30,7 +30,7 @@ export type Action =
   | { type: "deleteYear"; yearId: string }
   | { type: "addMember"; yearId: string; name: string; roleIds: string[]; email?: string; phone?: string; contact?: string; note?: string; approved?: boolean }
   | { type: "approveMember"; yearId: string; memberId: string }
-  | { type: "updateMember"; yearId: string; memberId: string; patch: { name?: string; roleIds?: string[]; email?: string; phone?: string; contact?: string; note?: string; approved?: boolean; posOnly?: boolean } }
+  | { type: "updateMember"; yearId: string; memberId: string; patch: { name?: string; roleIds?: string[]; email?: string; phone?: string; contact?: string; note?: string; approved?: boolean; posOnly?: boolean; vyberOnly?: boolean } }
   | { type: "removeMember"; yearId: string; memberId: string }
   // Kompletní smazání účtu — vždy člena, volitelně i všechno, co v appce
   // vytvořil/napsal (po kategoriích; „mentions" jen odebere jméno z cizích záznamů).
