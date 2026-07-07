@@ -7,6 +7,7 @@ import { fmtDate, todayISO } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
 import { isAdmin } from "@/lib/admin";
+import { missingMilestoneEvents } from "@/lib/milestones";
 import { flash } from "@/components/Flash";
 import type { CalEvent, EventKind } from "@/lib/types";
 
@@ -34,7 +35,7 @@ function enumerateDates(start: string, end: string): string[] {
 }
 
 export default function KalendarPage() {
-  const { currentYear, me, dispatch } = useStore();
+  const { currentYear, me, dispatch, canEditCurrentYear } = useStore();
   const now = new Date();
   const [vy, setVy] = useState(now.getFullYear());
   const [vm, setVm] = useState(now.getMonth());
@@ -42,6 +43,13 @@ export default function KalendarPage() {
   const [editing, setEditing] = useState<CalEvent | null>(null);
 
   const year = currentYear;
+
+  // Milníky z almanachu, které v kalendáři ještě chybí (pro tlačítko „Doplnit").
+  const missingMilestones = useMemo(() => {
+    if (!year) return [];
+    const yr = /^\d{4}$/.test(year.id) ? Number(year.id) : new Date(year.createdAt).getFullYear();
+    return missingMilestoneEvents(year.events, yr, "");
+  }, [year]);
 
   // Mapa den → události. Vícedenní (od–do) se zařadí do každého dne rozsahu.
   const byDate = useMemo(() => {
@@ -84,8 +92,20 @@ export default function KalendarPage() {
 
   return (
     <div className="space-y-5">
-      <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-[28px] font-bold tracking-tight">Kalendář</h1>
+        {isAdmin(me) && canEditCurrentYear && missingMilestones.length > 0 && (
+          <button
+            className="btn-secondary px-3 py-2 text-sm"
+            title="Doplní do kalendáře termíny z almanachu (kdy co začít dělat), které tu ještě nejsou."
+            onClick={async () => {
+              await dispatch({ type: "addMilestones", yearId: year.id, author: me });
+              flash(`Doplněno ${missingMilestones.length} milníků z almanachu`, "📅");
+            }}
+          >
+            📅 Doplnit milníky z almanachu ({missingMilestones.length})
+          </button>
+        )}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">

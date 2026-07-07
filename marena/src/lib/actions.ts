@@ -5,6 +5,7 @@ import type { DB, Year, Member, EventKind, FinanceKind, Task, Invite, MerchOrder
 import { uid } from "./id";
 import { ROLE_TASKS } from "./roleTasks";
 import { sameName } from "./names";
+import { missingMilestoneEvents } from "./milestones";
 
 // Ořež a vyhoď prázdné odkazy; když nezbude žádný, vrať undefined.
 function cleanLinks(links?: string[]): string[] | undefined {
@@ -72,6 +73,7 @@ export type Action =
   | { type: "addEvent"; yearId: string; date: string; endDate?: string; time?: string; title: string; kind: EventKind; note?: string; author: string }
   | { type: "updateEvent"; yearId: string; eventId: string; patch: { title?: string; date?: string; endDate?: string; time?: string; kind?: EventKind; note?: string } }
   | { type: "removeEvent"; yearId: string; eventId: string }
+  | { type: "addMilestones"; yearId: string; author: string }
   | { type: "addTask"; yearId: string; title: string; roleId?: string; assignee?: string; due?: string }
   | { type: "toggleTask"; yearId: string; taskId: string }
   | { type: "removeTask"; yearId: string; taskId: string }
@@ -615,6 +617,14 @@ export function applyAction(db: DB, a: Action): DB {
       }));
     case "removeEvent":
       return mapYear(db, a.yearId, (y) => ({ ...y, events: y.events.filter((e) => e.id !== a.eventId) }));
+    case "addMilestones":
+      // Doplní do kalendáře milníky z almanachu, které tam ještě nejsou
+      // (deduplikace podle id i názvu, ať nevznikají duplikáty).
+      return mapYear(db, a.yearId, (y) => {
+        const yr = /^\d{4}$/.test(y.id) ? Number(y.id) : Number((y.label.match(/\d{4}/) ?? [])[0]) || new Date(y.createdAt).getFullYear();
+        const missing = missingMilestoneEvents(y.events, yr, now(), a.author.trim() || "Mařena");
+        return missing.length ? { ...y, events: [...y.events, ...missing] } : y;
+      });
 
     case "addTask":
       return mapYear(db, a.yearId, (y) => ({
