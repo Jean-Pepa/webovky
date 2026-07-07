@@ -282,9 +282,10 @@ export default function FinancePage() {
 
   // Přidávat položky i kasy: hlavní koordinátor & finance + správce.
   // Upravovat / mazat / přepínat zaplaceno už jen správce (canEdit).
-  // Výběrčí smí odklikávat platby ve Výběru (canEdit), víc mu stejně nepustíme.
-  const canAdd = canEditCurrentYear;
-  const canEdit = isAdmin(me) || vyberOnly;
+  // Výběrčí (vyberOnly) je jen pozorovatel — nic nepřidává ani nemění, jen
+  // sleduje, kdo a kdy zaplatil.
+  const canAdd = canEditCurrentYear && !vyberOnly;
+  const canEdit = isAdmin(me);
 
   // Kasy: kolik se ráno vložilo (vklady) a kolik se vydělalo (tržba z uzavřených).
   const kasaOpenings = (year.cashboxes ?? []).reduce((s, c) => s + c.opening, 0);
@@ -464,8 +465,14 @@ export default function FinancePage() {
         }
       />
 
-      {/* Kdo co smí: každý (s finanční rolí) přidává, upravuje jen správce; zamčený ročník = jen náhled */}
-      {!canAdd ? (
+      {/* Kdo co smí: výběrčí jen sleduje; jinak každý (s finanční rolí) přidává,
+          upravuje jen správce; zamčený ročník = jen náhled */}
+      {vyberOnly ? (
+        <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
+          <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>Máš jen náhled — vidíš, kdo a kdy zaplatil. Zapisovat platby může ekonom nebo správce.</span>
+        </div>
+      ) : !canAdd ? (
         <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
           <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
           <span>Tento ročník je uzamčený — máš jen náhled.</span>
@@ -517,7 +524,7 @@ export default function FinancePage() {
 
       {/* ===== POHLED: VÝBĚR (vklady) ===== */}
       {tab === "vyber" &&
-      (contributions.length > 0 || canAdd) && (
+      (contributions.length > 0 || canAdd || vyberOnly) && (
         <section id="vyber" className="card scroll-mt-20 p-4">
           <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
             💰 Výběr (vklady)
