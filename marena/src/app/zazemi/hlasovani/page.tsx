@@ -69,7 +69,7 @@ export default function HlasovaniPage() {
     <div className="mx-auto max-w-3xl space-y-5">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-bold tracking-tight">Hlasování</h1>
+          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Hlasování</h1>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Nová anketa"}

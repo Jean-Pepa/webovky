@@ -125,7 +125,7 @@ export default function SponzoriPage() {
       )}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-bold tracking-tight">Sponzoři</h1>
+          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Sponzoři</h1>
           <p className="mt-0.5 text-sm text-ink-soft">Koho oslovit a co dává. Oslov a pak označ, jak domluva dopadla — ano (potvrzeno) / ne (odmítl).</p>
         </div>
         {canEdit && (

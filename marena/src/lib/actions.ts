@@ -498,7 +498,12 @@ export function applyAction(db: DB, a: Action): DB {
         posts: y.posts.map((p) => (p.id === a.postId ? { ...p, pinned: !p.pinned } : p)),
       }));
     case "removePost":
-      return mapYear(db, a.yearId, (y) => ({ ...y, posts: y.posts.filter((p) => p.id !== a.postId) }));
+      // Smazání příspěvku smaže i úkoly, které z něj vznikly (fromPostId).
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        posts: y.posts.filter((p) => p.id !== a.postId),
+        tasks: y.tasks.filter((t) => t.fromPostId !== a.postId),
+      }));
 
     case "addPoll":
       return mapYear(db, a.yearId, (y) => ({

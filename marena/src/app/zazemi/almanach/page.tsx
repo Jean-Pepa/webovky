@@ -15,7 +15,7 @@ export default function AlmanachPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-[28px] font-bold tracking-tight">Almanach Mařeny</h1>
+        <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Almanach Mařeny</h1>
         <p className="text-sm text-ink-soft">
           Veškerá nasbíraná moudrost dvou ročníků v jednom dokumentu — interní manuál pro ty, kdo
           Mařenu organizují. Čti, doplňuj a předávej dál.

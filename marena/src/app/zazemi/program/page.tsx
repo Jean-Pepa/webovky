@@ -115,7 +115,7 @@ export default function ProgramPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-bold tracking-tight">Program</h1>
+          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Program</h1>
         </div>
         {canEdit && (
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>

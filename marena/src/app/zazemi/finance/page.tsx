@@ -342,7 +342,7 @@ export default function FinancePage() {
       </datalist>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-bold tracking-tight">Finance</h1>
+          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Finance</h1>
         </div>
         {canAdd && (
           <div className="flex flex-wrap items-center gap-2">
@@ -1702,7 +1702,7 @@ function MyExpenses({ yearId, me, items, canSubmit }: { yearId: string; me: stri
   return (
     <div className="mx-auto max-w-2xl space-y-4 tabular-nums">
       <div>
-        <h1 className="font-display text-[28px] font-bold tracking-tight">Moje výdaje</h1>
+        <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Moje výdaje</h1>
         <p className="mt-0.5 text-sm text-ink-soft">
           Zaplatil(a) jsi něco za Mařenu? Zapiš to tady — propíše se to do financí a po proplacení se to odškrtne.
         </p>
