@@ -8,6 +8,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { ImageViewer } from "@/components/ImageViewer";
+import { SearchClear } from "@/components/SearchBox";
 import { isAdmin } from "@/lib/admin";
 import { canEditSection } from "@/lib/access";
 import { normName } from "@/lib/names";
@@ -398,12 +399,16 @@ export default function FinancePage() {
       </div>
 
       {/* Vyhledávání — velké, přes celou šířku, hned pod nadpisem (mění se podle pohledu) */}
-      <input
-        className="w-full rounded-2xl border-2 border-ink/10 bg-white px-5 py-4 text-base shadow-sm outline-none transition placeholder:text-ink-soft/60 focus:border-gold-500 focus:ring-1 focus:ring-gold-500"
-        placeholder={tab === "vyber" ? "🔎 Hledat člověka…" : tab === "kasy" ? "🔎 Hledat kasu / den…" : tab === "merch" ? "🔎 Hledat v merchi…" : "🔎 Hledat v položkách…"}
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-      />
+      <div className="relative">
+        <input
+          type="search"
+          className={`w-full rounded-2xl border-2 border-ink/10 bg-white px-5 py-4 text-base shadow-sm outline-none transition placeholder:text-ink-soft/60 focus:border-gold-500 focus:ring-1 focus:ring-gold-500 ${q ? "pr-14" : ""}`}
+          placeholder={tab === "vyber" ? "🔎 Hledat člověka…" : tab === "kasy" ? "🔎 Hledat kasu / den…" : tab === "merch" ? "🔎 Hledat v merchi…" : "🔎 Hledat v položkách…"}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        {q && <SearchClear onClear={() => setQ("")} className="absolute right-4 top-1/2 h-6 w-6 -translate-y-1/2" />}
+      </div>
 
       {/* Základní přehled podle pohledu — jednoduše a jasně, hned pod hledáním
           (kasa / merch / výběr / vše zvlášť: výdělek, vklady, bilance). */}
