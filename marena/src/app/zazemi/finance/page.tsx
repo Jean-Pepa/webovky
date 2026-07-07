@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
-import { fmtCZK, fmtDate, fmtDateTime, todayISO } from "@/lib/format";
+import { fmtCZK, fmtDate, fmtDateTime, fmtRelative, todayISO } from "@/lib/format";
 import { posStats, posOrders, boxDayFinances, DayCard, OrderHistory, PayBreakdown } from "@/lib/pos";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
@@ -155,6 +155,16 @@ export default function FinancePage() {
     const needle = normName(q);
     return byState.filter((c) => normName(`${c.name} ${c.email ?? ""} ${c.phone ?? ""}`).includes(needle));
   }, [contributions, ctFilter, q]);
+
+  // Kdo zaplatil naposled — přehled, když chodí peníze v různé hodiny/dny.
+  const recentPaid = useMemo(
+    () =>
+      contributions
+        .filter((c) => c.paidAt && !c.returned)
+        .sort((a, b) => (b.paidAt as string).localeCompare(a.paidAt as string))
+        .slice(0, 6),
+    [contributions],
+  );
 
   const totals = useMemo(() => {
     let prijmy = 0,
@@ -506,6 +516,26 @@ export default function FinancePage() {
               </span>
             )}
           </h2>
+
+          {/* Kdo zaplatil naposled — přehled příchozích plateb (různé hodiny/dny) */}
+          {recentPaid.length > 0 && (
+            <div className="mb-4 rounded-xl border border-ink/10 bg-surface p-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">🕐 Naposledy zaplatili</p>
+              <ul className="space-y-1.5">
+                {recentPaid.map((c, i) => (
+                  <li key={c.id} className="flex items-center gap-2 text-sm">
+                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-paper2 text-[11px] font-bold text-ink-soft">{i + 1}</span>
+                    <span className="min-w-0 flex-1 truncate font-medium">{c.name}</span>
+                    <span className="shrink-0 font-semibold text-leaf-700">+{fmtCZK(c.amount)}</span>
+                    <span className="shrink-0 whitespace-nowrap text-xs text-ink-soft" title={fmtDateTime(c.paidAt)}>
+                      {fmtRelative(c.paidAt!)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Hromadné vložení — všechna jména naráz + částka pro všechny */}
           {canAdd && vyberOpen && (
             <div className="mb-4 rounded-xl border border-gold-200 bg-gold-50/40 p-3">
@@ -1176,8 +1206,8 @@ function ContributionRow({ c, yearId, canEdit, onEdit }: { c: Contribution; year
         </div>
       </div>
 
-      {/* Stavový pruh */}
-      <div className="mt-2">
+      {/* Stavový pruh + kdy naposledy zaplatil */}
+      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
         {c.returned ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-ink/[0.06] px-2.5 py-1 text-xs font-semibold text-ink-soft">
             🔒 Vráceno — uzamčeno
@@ -1193,6 +1223,11 @@ function ContributionRow({ c, yearId, canEdit, onEdit }: { c: Contribution; year
         ) : (
           <span className="inline-flex items-center gap-1 rounded-full bg-leaf/15 px-2.5 py-1 text-xs font-semibold text-leaf-700">
             ✓ Zaplaceno
+          </span>
+        )}
+        {c.paidAt && !c.returned && !nothingYet && (
+          <span className="text-[11px] text-ink-soft" title={fmtDateTime(c.paidAt)}>
+            🕐 zaplatil {fmtRelative(c.paidAt)}
           </span>
         )}
       </div>

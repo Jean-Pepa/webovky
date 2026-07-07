@@ -460,6 +460,8 @@ export default function TymPage() {
                   })
                   .map((m) => {
                     const pending = m.approved === false;
+                    // Vybrané role člověka (bez duplikátů, přeložené na názvy).
+                    const roleNames = [...new Set(m.roleIds.map((id) => roleById(id)?.name).filter(Boolean) as string[])];
                     return (
                       <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
                         <div className="min-w-0 flex-1">
@@ -471,16 +473,24 @@ export default function TymPage() {
                               <span className="shrink-0 rounded-full bg-leaf/15 px-2 py-0.5 text-xs font-semibold text-leaf-700">✓ Schváleno</span>
                             )}
                           </div>
-                          {(m.phone || m.email) && (
-                            <div className="mt-0.5 break-words text-xs text-ink-soft">
-                              {m.phone && (
-                                <a href={`tel:${m.phone}`} className="hover:text-gold-700">📞 {m.phone}</a>
-                              )}
-                              {m.phone && m.email && <span> · </span>}
-                              {m.email && (
-                                <a href={`mailto:${m.email}`} className="break-all hover:text-gold-700">✉️ {m.email}</a>
-                              )}
-                            </div>
+                          {/* Vybraná role (malým písmem) — nebo že žádnou nemá */}
+                          <p className="mt-0.5 truncate text-xs">
+                            {roleNames.length ? (
+                              <span className="text-ink-soft">🎭 {roleNames.join(" · ")}</span>
+                            ) : (
+                              <span className="italic text-ink-soft/70">bez role</span>
+                            )}
+                          </p>
+                          {/* Kontakt — telefon i e-mail každý na jednom řádku (dlouhé se ořízne) */}
+                          {m.phone && (
+                            <a href={`tel:${m.phone}`} className="mt-0.5 block truncate text-xs text-ink-soft hover:text-gold-700">
+                              📞 {m.phone}
+                            </a>
+                          )}
+                          {m.email && (
+                            <a href={`mailto:${m.email}`} className="mt-0.5 block truncate text-xs text-ink-soft hover:text-gold-700">
+                              ✉️ {m.email}
+                            </a>
                           )}
                         </div>
                         {admin && (

@@ -146,6 +146,7 @@ export interface Contribution {
   pledged?: number; // kolik má dát celkem; chybí = zaplaceno celé najednou
   returned?: boolean; // na konci vráceno
   returnedAt?: string; // ISO – kdy se vrátilo
+  paidAt?: string; // ISO – kdy naposledy zaplatil (poslední navýšení částky)
   createdAt: string;
 }
 
