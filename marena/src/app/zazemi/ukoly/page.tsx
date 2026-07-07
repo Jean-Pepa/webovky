@@ -67,9 +67,12 @@ export default function UkolyPage() {
 
   if (!year) return null;
 
-  const done = year.tasks.filter((t) => t.done).length;
-  const total = year.tasks.length;
-  const pct = total ? Math.round((done / total) * 100) : 0;
+  const total = year.tasks.length; // celkový počet — jen pro tlačítko „Smazat všechny"
+  // Postup „Hotovo x/x" počítáme z úkolů přihlášené osoby (moje úkoly).
+  const myAll = year.tasks.filter((t) => isMine(t.assignee, t.roleId));
+  const myDone = myAll.filter((t) => t.done).length;
+  const myTotal = myAll.length;
+  const myPct = myTotal ? Math.round((myDone / myTotal) * 100) : 0;
 
   async function add() {
     if (!title.trim() || !year) return;
@@ -117,8 +120,22 @@ export default function UkolyPage() {
             {myOpen.length ? `${myOpen.length} k splnění` : "vše hotovo ✅"}
           </span>
         </div>
+        {/* Postup mých úkolů — Hotovo x/x pro mě */}
+        {myTotal > 0 && (
+          <div className="border-b border-ink/10 px-4 py-3">
+            <div className="mb-1 flex items-center justify-between text-sm">
+              <span className="font-medium">Hotovo {myDone} z {myTotal}</span>
+              <span className="text-ink-soft">{myPct} %</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-paper2">
+              <div className="h-full rounded-full bg-gold-500 transition-all" style={{ width: `${myPct}%` }} />
+            </div>
+          </div>
+        )}
         {myOpen.length === 0 ? (
-          <p className="px-4 py-6 text-center text-sm text-ink-soft">Nemáš žádný otevřený úkol. Paráda! 🎉</p>
+          <p className="px-4 py-6 text-center text-sm text-ink-soft">
+            {myTotal > 0 ? "Všechno splněno. Paráda! 🎉" : "Nemáš žádný přiřazený úkol."}
+          </p>
         ) : (
           <ul className="divide-y divide-ink/10">
             {myOpen.map((t) => (
@@ -127,17 +144,6 @@ export default function UkolyPage() {
           </ul>
         )}
       </section>
-
-      {/* progress */}
-      <div className="card p-4">
-        <div className="mb-1 flex items-center justify-between text-sm">
-          <span className="font-medium">Hotovo {done} z {total}</span>
-          <span className="text-ink-soft">{pct} %</span>
-        </div>
-        <div className="h-2 overflow-hidden rounded-full bg-paper2">
-          <div className="h-full rounded-full bg-gold-500 transition-all" style={{ width: `${pct}%` }} />
-        </div>
-      </div>
 
       {/* přidat úkol — formulář se rozbalí až po kliknutí na tlačítko */}
       {!addOpen ? (
