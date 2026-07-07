@@ -463,8 +463,9 @@ export default function TymPage() {
                     // Vybrané role člověka (bez duplikátů, přeložené na názvy).
                     const roleNames = [...new Set(m.roleIds.map((id) => roleById(id)?.name).filter(Boolean) as string[])];
                     return (
-                      <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
-                        <div className="min-w-0 flex-1">
+                      <li key={m.id} className="space-y-2 py-2.5">
+                        {/* Info přes celou šířku — role, telefon i e-mail se zobrazí CELÉ */}
+                        <div>
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium">{m.name}</span>
                             {pending ? (
@@ -474,27 +475,27 @@ export default function TymPage() {
                             )}
                           </div>
                           {/* Vybraná role (malým písmem) — nebo že žádnou nemá */}
-                          <p className="mt-0.5 truncate text-xs">
+                          <p className="mt-0.5 text-xs">
                             {roleNames.length ? (
                               <span className="text-ink-soft">🎭 {roleNames.join(" · ")}</span>
                             ) : (
                               <span className="italic text-ink-soft/70">bez role</span>
                             )}
                           </p>
-                          {/* Kontakt — telefon i e-mail každý na jednom řádku (dlouhé se ořízne) */}
+                          {/* Kontakt — telefon i e-mail celé, každý na svém řádku */}
                           {m.phone && (
-                            <a href={`tel:${m.phone}`} className="mt-0.5 block truncate text-xs text-ink-soft hover:text-gold-700">
+                            <a href={`tel:${m.phone}`} className="mt-0.5 block text-xs text-ink-soft hover:text-gold-700">
                               📞 {m.phone}
                             </a>
                           )}
                           {m.email && (
-                            <a href={`mailto:${m.email}`} className="mt-0.5 block truncate text-xs text-ink-soft hover:text-gold-700">
+                            <a href={`mailto:${m.email}`} className="mt-0.5 block break-all text-xs text-ink-soft hover:text-gold-700">
                               ✉️ {m.email}
                             </a>
                           )}
                         </div>
                         {admin && (
-                          <div className="flex shrink-0 items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             {pending && (
                               <button
                                 className="rounded-full bg-leaf px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"

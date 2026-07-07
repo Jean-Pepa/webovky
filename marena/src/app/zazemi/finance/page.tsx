@@ -117,6 +117,7 @@ export default function FinancePage() {
   const [bulkPledged, setBulkPledged] = useState("");
   const [ctFilter, setCtFilter] = useState<"vse" | "zaplatil" | "nezaplatil" | "pulka">("vse");
   const [editCt, setEditCt] = useState<Contribution | null>(null); // úprava jména/kontaktu/částky
+  const [recentOpen, setRecentOpen] = useState(false); // „Naposledy zaplatili" — 2 + rolovačka
 
   const [kind, setKind] = useState<FinanceKind>("vydaj");
   const [label, setLabel] = useState("");
@@ -162,7 +163,7 @@ export default function FinancePage() {
       contributions
         .filter((c) => c.paidAt && !c.returned)
         .sort((a, b) => (b.paidAt as string).localeCompare(a.paidAt as string))
-        .slice(0, 6),
+        .slice(0, 12),
     [contributions],
   );
 
@@ -517,12 +518,12 @@ export default function FinancePage() {
             )}
           </h2>
 
-          {/* Kdo zaplatil naposled — přehled příchozích plateb (různé hodiny/dny) */}
+          {/* Kdo zaplatil naposled — 2 nejnovější + rolovačka na další */}
           {recentPaid.length > 0 && (
             <div className="mb-4 rounded-xl border border-ink/10 bg-surface p-3">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">🕐 Naposledy zaplatili</p>
               <ul className="space-y-1.5">
-                {recentPaid.map((c, i) => (
+                {(recentOpen ? recentPaid : recentPaid.slice(0, 2)).map((c, i) => (
                   <li key={c.id} className="flex items-center gap-2 text-sm">
                     <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-paper2 text-[11px] font-bold text-ink-soft">{i + 1}</span>
                     <span className="min-w-0 flex-1 truncate font-medium">{c.name}</span>
@@ -533,6 +534,17 @@ export default function FinancePage() {
                   </li>
                 ))}
               </ul>
+              {recentPaid.length > 2 && (
+                <button
+                  type="button"
+                  onClick={() => setRecentOpen((v) => !v)}
+                  aria-expanded={recentOpen}
+                  className="mt-2 flex items-center gap-1 text-xs font-medium text-gold-700 hover:underline"
+                >
+                  {recentOpen ? "Zobrazit méně" : `Zobrazit další (${recentPaid.length - 2})`}
+                  <Icon name="chevron" className={`h-3.5 w-3.5 transition-transform ${recentOpen ? "rotate-180" : ""}`} />
+                </button>
+              )}
             </div>
           )}
 
