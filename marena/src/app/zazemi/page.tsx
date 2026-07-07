@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { roleById } from "@/lib/roles";
@@ -128,8 +128,10 @@ const resolveTasks = (d: TaskDraft): TaskRow[] =>
   d.on ? d.rows.map((r) => ({ text: r.text.trim(), who: r.who.trim() })).filter((r) => r.text) : [];
 
 // Editor úkolů — „kdo a co má udělat". Sdílený mezi přidáním a úpravou příspěvku.
-function TaskComposer({ draft, setDraft, title = "✅ Přidat úkol (propíše se do sekce Úkoly)" }: { draft: TaskDraft; setDraft: (d: TaskDraft) => void; title?: string }) {
+// `names` = jména z týmu pro našeptávač u pole „Kdo?".
+function TaskComposer({ draft, setDraft, names = [], title = "✅ Přidat úkol (propíše se do sekce Úkoly)" }: { draft: TaskDraft; setDraft: (d: TaskDraft) => void; names?: string[]; title?: string }) {
   const setRow = (i: number, patch: Partial<TaskRow>) => setDraft({ ...draft, rows: draft.rows.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
+  const listId = "who-" + useId().replace(/:/g, "");
   return (
     <div className="rounded-xl bg-paper2/60 p-3 ring-1 ring-ink/10">
       <label className="flex items-center gap-2 text-sm font-medium text-ink">
@@ -139,10 +141,24 @@ function TaskComposer({ draft, setDraft, title = "✅ Přidat úkol (propíše s
       {draft.on && (
         <div className="mt-3 space-y-2">
           <p className="text-xs text-ink-soft">Napiš, co je potřeba udělat a kdo to má na starost. Odškrtnutím se úkol splní tady i v Úkolech.</p>
+          {names.length > 0 && (
+            <datalist id={listId}>
+              {names.map((n) => (
+                <option key={n} value={n} />
+              ))}
+            </datalist>
+          )}
           {draft.rows.map((r, i) => (
             <div key={i} className="flex items-center gap-2">
               <input className="input flex-1" placeholder="Co udělat? (např. Povolení průvodu)" value={r.text} onChange={(e) => setRow(i, { text: e.target.value })} />
-              <input className="input w-24 sm:w-36" placeholder="Kdo?" value={r.who} onChange={(e) => setRow(i, { who: e.target.value })} />
+              <input
+                className="input w-24 sm:w-36"
+                placeholder="Kdo?"
+                list={names.length ? listId : undefined}
+                autoComplete="off"
+                value={r.who}
+                onChange={(e) => setRow(i, { who: e.target.value })}
+              />
               {draft.rows.length > 1 && (
                 <button
                   type="button"
@@ -204,6 +220,12 @@ export default function NastenkaPage() {
   }
 
   const year = currentYear;
+
+  // Jména z týmu pro našeptávač u „Kdo?" v úkolech (bez duplikátů, abecedně).
+  const memberNames = useMemo(
+    () => [...new Set((year?.members ?? []).map((m) => m.name.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "cs")),
+    [year],
+  );
 
   const posts = useMemo(() => {
     if (!year) return [];
@@ -324,7 +346,7 @@ export default function NastenkaPage() {
             </label>
 
             <PollComposer draft={pollDraft} setDraft={setPollDraft} polls={year.polls} />
-            <TaskComposer draft={taskDraft} setDraft={setTaskDraft} />
+            <TaskComposer draft={taskDraft} setDraft={setTaskDraft} names={memberNames} />
 
             <div className="flex flex-wrap items-center gap-3">
               <label className="flex items-center gap-2 text-sm text-ink-soft">
@@ -500,6 +522,8 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
   const postTasks = (currentYear?.tasks ?? []).filter((t) => t.fromPostId === p.id);
   // Všechny úkoly příspěvku hotové → příspěvek se rozsvítí zeleně.
   const allTasksDone = postTasks.length > 0 && postTasks.every((t) => t.done);
+  // Jména z týmu pro našeptávač u „Kdo?".
+  const memberNames = [...new Set((currentYear?.members ?? []).map((m) => m.name.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "cs"));
   // Historie úprav (nová), s fallbackem na stará data (jen poslední úprava).
   const edits = p.edits ?? (p.editedBy && p.editedAt ? [{ by: p.editedBy, at: p.editedAt }] : []);
   const canEdit = true; // úpravu nástěnky smí každý (kdo má přístup do zázemí)
@@ -635,7 +659,7 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
         ) : (
           <PollComposer draft={pollDraft} setDraft={setPollDraft} polls={currentYear?.polls ?? []} />
         )}
-        <TaskComposer draft={taskDraft} setDraft={setTaskDraft} title={postTasks.length ? "✅ Přidat další úkol" : "✅ Přidat úkol (propíše se do sekce Úkoly)"} />
+        <TaskComposer draft={taskDraft} setDraft={setTaskDraft} names={memberNames} title={postTasks.length ? "✅ Přidat další úkol" : "✅ Přidat úkol (propíše se do sekce Úkoly)"} />
 
         <div className="flex gap-2">
           <button className="btn-primary py-2 text-sm" onClick={save} disabled={!title.trim()}>
