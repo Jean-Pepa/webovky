@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { roleById } from "@/lib/roles";
@@ -128,10 +128,9 @@ const resolveTasks = (d: TaskDraft): TaskRow[] =>
   d.on ? d.rows.map((r) => ({ text: r.text.trim(), who: r.who.trim() })).filter((r) => r.text) : [];
 
 // Editor úkolů — „kdo a co má udělat". Sdílený mezi přidáním a úpravou příspěvku.
-// `names` = jména z týmu pro našeptávač u pole „Kdo?".
+// `names` = jména z týmu do rozbalovacího výběru „Kdo?" (klik = rovnou seznam, bez psaní).
 function TaskComposer({ draft, setDraft, names = [], title = "✅ Přidat úkol (propíše se do sekce Úkoly)" }: { draft: TaskDraft; setDraft: (d: TaskDraft) => void; names?: string[]; title?: string }) {
   const setRow = (i: number, patch: Partial<TaskRow>) => setDraft({ ...draft, rows: draft.rows.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
-  const listId = "who-" + useId().replace(/:/g, "");
   return (
     <div className="rounded-xl bg-paper2/60 p-3 ring-1 ring-ink/10">
       <label className="flex items-center gap-2 text-sm font-medium text-ink">
@@ -140,25 +139,18 @@ function TaskComposer({ draft, setDraft, names = [], title = "✅ Přidat úkol 
       </label>
       {draft.on && (
         <div className="mt-3 space-y-2">
-          <p className="text-xs text-ink-soft">Napiš, co je potřeba udělat a kdo to má na starost. Odškrtnutím se úkol splní tady i v Úkolech.</p>
-          {names.length > 0 && (
-            <datalist id={listId}>
-              {names.map((n) => (
-                <option key={n} value={n} />
-              ))}
-            </datalist>
-          )}
+          <p className="text-xs text-ink-soft">Napiš, co je potřeba udělat a vyber, kdo to má na starost. Odškrtnutím se úkol splní tady i v Úkolech.</p>
           {draft.rows.map((r, i) => (
             <div key={i} className="flex items-center gap-2">
               <input className="input flex-1" placeholder="Co udělat? (např. Povolení průvodu)" value={r.text} onChange={(e) => setRow(i, { text: e.target.value })} />
-              <input
-                className="input w-24 sm:w-36"
-                placeholder="Kdo?"
-                list={names.length ? listId : undefined}
-                autoComplete="off"
-                value={r.who}
-                onChange={(e) => setRow(i, { who: e.target.value })}
-              />
+              <select className="input w-28 shrink-0 sm:w-40" value={r.who} onChange={(e) => setRow(i, { who: e.target.value })}>
+                <option value="">Kdo?</option>
+                {names.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
               {draft.rows.length > 1 && (
                 <button
                   type="button"
