@@ -498,17 +498,13 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
   const poll = p.pollId ? currentYear?.polls.find((pl) => pl.id === p.pollId) : undefined;
   // Úkoly navázané na tenhle příspěvek (přes fromPostId) — checklist rovnou na nástěnce.
   const postTasks = (currentYear?.tasks ?? []).filter((t) => t.fromPostId === p.id);
+  // Všechny úkoly příspěvku hotové → příspěvek se rozsvítí zeleně.
+  const allTasksDone = postTasks.length > 0 && postTasks.every((t) => t.done);
   // Historie úprav (nová), s fallbackem na stará data (jen poslední úprava).
   const edits = p.edits ?? (p.editedBy && p.editedAt ? [{ by: p.editedBy, at: p.editedAt }] : []);
   const canEdit = true; // úpravu nástěnky smí každý (kdo má přístup do zázemí)
   const canDelete = isAdmin(me); // mazat smí jen správce (Mařena)
   const role = roleById(p.roleId);
-
-  function toggleTask(taskId: string, title: string, done: boolean) {
-    const nowDone = !done;
-    dispatch({ type: "toggleTask", yearId, taskId });
-    if (nowDone) flash(`Splněno: ${title}${me ? ` — ${me}` : ""}`, "🎉");
-  }
 
   async function startEdit() {
     setTitle(p.title);
@@ -583,12 +579,19 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
         <input className="input" placeholder="Nadpis" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
         <textarea className="input min-h-24" placeholder="Co potřebují ostatní vědět?" value={body} onChange={(e) => setBody(e.target.value)} />
 
-        {/* Existující úkoly z příspěvku — odškrtávají se rovnou tady */}
+        {/* Existující úkoly z příspěvku — jen náhled + smazání; odškrtává se v Úkolech */}
         {postTasks.length > 0 && (
           <ul className="space-y-1 rounded-xl bg-paper2/50 p-3 ring-1 ring-ink/10">
             {postTasks.map((t) => (
               <li key={t.id} className="flex items-center gap-2">
-                <input type="checkbox" checked={t.done} onChange={() => toggleTask(t.id, t.title, t.done)} className="h-4 w-4 shrink-0 accent-leaf" />
+                <span
+                  aria-hidden
+                  className={`grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border text-[11px] font-bold leading-none ${
+                    t.done ? "border-leaf bg-leaf text-white" : "border-ink/30 bg-white"
+                  }`}
+                >
+                  {t.done ? "✓" : ""}
+                </span>
                 <span className={`min-w-0 flex-1 text-sm ${t.done ? "text-ink-soft line-through" : "font-medium"}`}>
                   {t.title}
                   {t.assignee ? <span className="text-ink-soft"> — {t.assignee}</span> : null}
@@ -649,8 +652,14 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
   return (
     <article
       id={`post-${p.id}`}
-      className={`card scroll-mt-24 p-4 transition-shadow ${p.pinned ? "ring-1 ring-gold-300" : ""} ${
-        highlight ? "ring-2 ring-gold-500 shadow-[0_0_0_4px_rgba(253,175,34,0.25)]" : ""
+      className={`card scroll-mt-24 p-4 transition-shadow ${
+        highlight
+          ? "ring-2 ring-gold-500 shadow-[0_0_0_4px_rgba(253,175,34,0.25)]"
+          : allTasksDone
+            ? "border-leaf/50 bg-leaf/[0.05] ring-1 ring-leaf/40"
+            : p.pinned
+              ? "ring-1 ring-gold-300"
+              : ""
       }`}
     >
       <div className="mb-1 flex flex-wrap items-start gap-x-2 gap-y-1 text-xs text-ink-soft">
@@ -687,31 +696,32 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
       </div>
       <h3 className="break-words font-display text-[20px] font-semibold">{p.title}</h3>
       {p.body && <PostBody body={p.body} />}
-      {/* Úkoly z příspěvku — checklist rovnou na nástěnce; odškrtnutí = fajfka i v Úkolech */}
+      {/* Úkoly z příspěvku — jen náhled; odškrtává se v sekci Úkoly (tady se needituje) */}
       {postTasks.length > 0 && (
-        <div className="mt-3 rounded-xl bg-paper2/50 p-3 ring-1 ring-ink/10">
+        <div className={`mt-3 rounded-xl p-3 ring-1 ${allTasksDone ? "bg-leaf/10 ring-leaf/40" : "bg-paper2/50 ring-ink/10"}`}>
           <div className="mb-1.5 flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
-              ✅ Úkoly ({postTasks.filter((t) => t.done).length}/{postTasks.length})
+            <p className={`text-xs font-semibold uppercase tracking-wide ${allTasksDone ? "text-leaf-700" : "text-ink-soft"}`}>
+              {allTasksDone ? "✅ Hotovo" : "✅ Úkoly"} ({postTasks.filter((t) => t.done).length}/{postTasks.length})
             </p>
             <Link href="/zazemi/ukoly" className="shrink-0 text-xs font-medium text-gold-700 hover:underline">
-              Úkoly →
+              Odškrtnout v Úkolech →
             </Link>
           </div>
           <ul className="space-y-1">
             {postTasks.map((t) => (
               <li key={t.id} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={t.done}
-                  onChange={() => toggleTask(t.id, t.title, t.done)}
-                  className="h-4 w-4 shrink-0 accent-leaf"
-                />
+                <span
+                  aria-hidden
+                  className={`grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border text-[11px] font-bold leading-none ${
+                    t.done ? "border-leaf bg-leaf text-white" : "border-ink/30 bg-white"
+                  }`}
+                >
+                  {t.done ? "✓" : ""}
+                </span>
                 <span className={`min-w-0 flex-1 text-sm ${t.done ? "text-ink-soft line-through" : "font-medium"}`}>
                   {t.title}
                   {t.assignee ? <span className="text-ink-soft"> — {t.assignee}</span> : null}
                 </span>
-                {t.done && <span aria-hidden>✅</span>}
               </li>
             ))}
           </ul>

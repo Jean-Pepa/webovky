@@ -18,6 +18,7 @@ export default function UkolyPage() {
   const { currentYear, me, dispatch } = useStore();
   const [filter, setFilter] = useState<Filter>("nehotove");
   const [q, setQ] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [roleId, setRoleId] = useState("");
   const [assignee, setAssignee] = useState("");
@@ -101,33 +102,44 @@ export default function UkolyPage() {
         </div>
       </div>
 
-      {/* přidat úkol */}
-      <div className="card space-y-2 p-4">
-        <input className="input" placeholder="Nový úkol (např. Obvolat aulu kvůli souběhu)" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
-        <div className="grid gap-2 sm:grid-cols-3">
-          <select className="input" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
-            <option value="">Role (nepovinné)</option>
-            {ROLES.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.emoji} {r.name}
-              </option>
-            ))}
-          </select>
-          <select className="input" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
-            <option value="">Kdo? (nepovinné)</option>
-            <option value={me}>Já ({me})</option>
-            {year.members.filter((m) => m.name !== me).map((m) => (
-              <option key={m.id} value={m.name}>
-                {m.name}
-              </option>
-            ))}
-          </select>
-          <input type="date" className="input" value={due} onChange={(e) => setDue(e.target.value)} />
-        </div>
-        <button className="btn-primary" onClick={add}>
+      {/* přidat úkol — formulář se rozbalí až po kliknutí na tlačítko */}
+      {!addOpen ? (
+        <button className="btn-primary w-fit" onClick={() => setAddOpen(true)}>
           + Přidat úkol
         </button>
-      </div>
+      ) : (
+        <div className="card space-y-2 p-4">
+          <input className="input" placeholder="Nový úkol (např. Obvolat aulu kvůli souběhu)" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} autoFocus />
+          <div className="grid gap-2 sm:grid-cols-3">
+            <select className="input" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
+              <option value="">Role (nepovinné)</option>
+              {ROLES.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.emoji} {r.name}
+                </option>
+              ))}
+            </select>
+            <select className="input" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+              <option value="">Kdo? (nepovinné)</option>
+              <option value={me}>Já ({me})</option>
+              {year.members.filter((m) => m.name !== me).map((m) => (
+                <option key={m.id} value={m.name}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+            <input type="date" className="input" value={due} onChange={(e) => setDue(e.target.value)} />
+          </div>
+          <div className="flex gap-2">
+            <button className="btn-primary" onClick={add} disabled={!title.trim()}>
+              Přidat úkol
+            </button>
+            <button className="btn-ghost" onClick={() => setAddOpen(false)}>
+              Zavřít
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* hledání */}
       <SearchBox value={q} onChange={setQ} placeholder="Hledat úkol…" />
