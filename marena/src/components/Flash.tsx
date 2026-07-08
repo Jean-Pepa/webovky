@@ -38,10 +38,14 @@ export function FlashHost() {
     <div className="pointer-events-none fixed inset-0 z-[60] grid place-items-center px-4">
       <div
         key={msg.id}
-        className="marena-pop flex max-w-[calc(100vw-2rem)] items-center gap-4 rounded-xl bg-ink px-8 py-6 text-lg font-semibold text-white shadow-2xl ring-1 ring-white/10"
+        className="marena-pop flex max-w-[calc(100vw-2rem)] items-center gap-3.5 rounded-2xl bg-surface px-6 py-4 shadow-[0_24px_70px_-18px_rgba(0,0,0,0.45)] ring-1 ring-ink/10"
       >
-        {msg.emoji && <span className="shrink-0 text-4xl leading-none">{msg.emoji}</span>}
-        <span className="min-w-0">{msg.text}</span>
+        {msg.emoji && (
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gold-500/15 text-2xl leading-none ring-1 ring-gold-500/30">
+            {msg.emoji}
+          </span>
+        )}
+        <span className="min-w-0 text-[15px] font-semibold leading-snug text-ink">{msg.text}</span>
       </div>
     </div>
   );

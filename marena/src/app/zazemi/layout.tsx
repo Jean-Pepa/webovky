@@ -124,13 +124,14 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
     const roles = meMember?.roleIds ?? [];
     return roles.includes("hlavni") || gate.some((r) => roles.includes(r));
   };
-  // Stav tlačítka sekce: aktivní (zlaté) → upravitelné (tmavé s podsvícením)
-  // → jen náhled (světle šedé). Základní třídy (rozměry) si drží každé místo samo.
+  // Stav tlačítka sekce: aktivní (plné zlaté) → upravitelné (světlé, jemně
+  // podsvícené zlatou) → jen náhled (světle šedé). Základní třídy (rozměry) si
+  // drží každé místo samo. Zlatý nádech je průhledný, ať sedí i v tmavém režimu.
   const navItemCls = (href: string): string =>
     pathname === href
       ? "bg-gold-500 text-[#1d1d1f]"
       : canEditNav(href)
-        ? "bg-ink text-white ring-1 ring-gold-400/40 shadow-[0_0_12px_-3px_rgba(244,183,31,0.7)] hover:bg-ink/90"
+        ? "bg-gold-500/15 text-ink ring-1 ring-gold-500/40 shadow-[0_0_12px_-3px_rgba(244,183,31,0.5)] hover:bg-gold-500/25"
         : "text-ink-soft/45 hover:bg-ink/5";
   const [sheet, setSheet] = useState<string | null>(null); // otevřená skupina spodní lišty (mobil)
   const [deskMenu, setDeskMenu] = useState<string | null>(null); // otevřené rozbalovací menu (desktop)
