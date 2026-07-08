@@ -9,10 +9,12 @@ import { parseAccount } from "@/lib/payment";
 import { fmtCZK, fmtDateTime, todayISO } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { isAdmin } from "@/lib/admin";
+import { canEditProdej } from "@/lib/access";
 import { sameName } from "@/lib/names";
 import { variantKey } from "@/lib/merch";
 import { flash } from "@/components/Flash";
-import { POS_CATS, posStats, posOrders, OrderHistory, DayCard, boxDayFinances } from "@/lib/pos";
+import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
+import { POS_CATS, posStats, posOrders, OrderHistory, PayBreakdown, DayCard, boxDayFinances } from "@/lib/pos";
 import type { Cashbox, FinanceItem, MerchOrder, MerchProduct } from "@/lib/types";
 
 // Prodej — jednotná pokladna pro celý festival (vzor z restauračních a
@@ -78,7 +80,7 @@ const orderItemsText = (order: MerchOrder) =>
     .join(", ");
 
 export default function ProdejPage() {
-  const { currentYear, canEditCurrentYear } = useStore();
+  const { currentYear, me, canEditCurrentYear } = useStore();
   if (!currentYear) return null;
   if (!canEditCurrentYear) {
     return (
@@ -87,8 +89,67 @@ export default function ProdejPage() {
       </div>
     );
   }
+  // Prodej obsluhuje jen správce a lidé s rolí „jen Prodej"; ostatní jen náhled.
+  if (!canEditProdej(currentYear, me)) {
+    return <ProdejReadOnly key={currentYear.id} />;
+  }
   // key: při přepnutí ročníku se rozmarkovaná účtenka zahodí.
   return <Pos key={currentYear.id} />;
+}
+
+// Náhled prodeje pro členy bez práv (nemají roli „jen Prodej" ani nejsou správce).
+// Ovládat kasu nemůžou, ale vidí, jak se prodává: dnešní tržbu, objednávky dne
+// a uzavřené dny. Úplně nahoře červená blikající lišta, že jde jen o náhled.
+function ProdejReadOnly() {
+  const { currentYear } = useStore();
+  const year = currentYear;
+  if (!year) return null;
+  const cashboxes = year.cashboxes ?? [];
+  const finances = year.finances ?? [];
+  const openBox = cashboxes.find((c) => !c.closedAt);
+  const closed = [...cashboxes]
+    .filter((c) => c.closedAt)
+    .sort((a, b) => (b.closedAt ?? "").localeCompare(a.closedAt ?? ""));
+  const openFin = openBox ? boxDayFinances(finances, openBox, cashboxes) : [];
+  const openStats = openBox ? posStats(openFin) : null;
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-4 tabular-nums">
+      <ReadOnlyBanner>
+        Prodej máš jen k náhledu — kasu obsluhuje jen správce a lidé s rolí „jen Prodej“.
+      </ReadOnlyBanner>
+      <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Prodej</h1>
+
+      {/* Dnešní prodej — jen čísla, bez markování */}
+      {openBox && openStats ? (
+        <section className="card p-4">
+          <h2 className="font-display text-[20px] font-semibold">🧾 Dnešní prodej</h2>
+          <p className="mt-1 font-display text-2xl font-bold tracking-tight text-leaf-700">+{fmtCZK(openStats.takings)}</p>
+          <div className="mt-2">
+            <PayBreakdown qr={openStats.qr} cash={openStats.cash} count={openStats.count} />
+          </div>
+          {posOrders(openFin).length > 0 && (
+            <div className="mt-3">
+              <OrderHistory orders={posOrders(openFin)} label="Objednávky dne" defaultOpen topBorder canDelete={false} yearId={year.id} />
+            </div>
+          )}
+        </section>
+      ) : (
+        <p className="card p-4 text-sm text-ink-soft">Právě není otevřený žádný prodejní den.</p>
+      )}
+
+      {/* Uzavřené dny — statistiky, jen ke čtení */}
+      <h2 className="pt-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Uzavřené dny</h2>
+      {closed.length === 0 ? (
+        <p className="card p-4 text-sm text-ink-soft">Zatím žádný uzavřený den.</p>
+      ) : (
+        closed.map((c) => {
+          const dayFin = boxDayFinances(finances, c, cashboxes);
+          return <DayCard key={c.id} box={c} stats={posStats(dayFin)} orders={posOrders(dayFin)} yearId={year.id} admin={false} />;
+        })
+      )}
+    </div>
+  );
 }
 
 function Pos() {
