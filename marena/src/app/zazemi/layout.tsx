@@ -75,6 +75,20 @@ const GROUPS: NavGroup[] = [
 ];
 const groupHrefs = (g: NavGroup) => g.sections.flatMap((s) => s.items.map((i) => i.href));
 
+// Sekce vázané na roli: kdo ji nedrží (a není správce ani hlavní organizátor),
+// má tam jen náhled. Ostatní sekce (nástěnka, kalendář, úkoly, kontakty…) může
+// doplňovat každý. Podle toho se v navigaci tlačítko rozsvítí (tmavě) nebo
+// zešedne. Drží se to v jednom smyslu s canEditSection / gatingem sekcí.
+const SECTION_EDIT_ROLES: Record<string, string[]> = {
+  "/zazemi/finance": [], // jen hlavní koordinátor & finance + správce
+  "/zazemi/sponzori": ["sponzoring"],
+  "/zazemi/vyzdoba": ["vyzdoba"],
+  "/zazemi/prvaci": ["prvaci"],
+  "/zazemi/kuchyne": ["bar"],
+  "/zazemi/program": ["program", "kapelnik"],
+  "/zazemi/merch": ["merch"],
+};
+
 export default function ZazemiLayout({ children }: { children: React.ReactNode }) {
   const { ready, authed, me, logout, syncError, dismissSyncError, db, currentYear, canEditCurrentYear, pendingApproval } = useStore();
   const router = useRouter();
@@ -97,6 +111,24 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
       router.replace(restrictHref);
     }
   }, [restricted, restrictHref, pathname, router]);
+
+  // Může tuhle sekci člověk upravovat? (drží roli / je správce / hlavní).
+  // Podle toho se tlačítko v navigaci rozsvítí tmavě, nebo zůstane světle šedé.
+  const canEditNav = (href: string): boolean => {
+    if (isAdmin(me)) return true;
+    const gate = SECTION_EDIT_ROLES[href];
+    if (!gate) return true; // sekce bez role — přispívá každý
+    const roles = meMember?.roleIds ?? [];
+    return roles.includes("hlavni") || gate.some((r) => roles.includes(r));
+  };
+  // Stav tlačítka sekce: aktivní (zlaté) → upravitelné (tmavé s podsvícením)
+  // → jen náhled (světle šedé). Základní třídy (rozměry) si drží každé místo samo.
+  const navItemCls = (href: string): string =>
+    pathname === href
+      ? "bg-gold-500 text-[#1d1d1f]"
+      : canEditNav(href)
+        ? "bg-ink text-white ring-1 ring-gold-400/40 shadow-[0_0_12px_-3px_rgba(244,183,31,0.7)] hover:bg-ink/90"
+        : "text-ink-soft/45 hover:bg-ink/5";
   const [sheet, setSheet] = useState<string | null>(null); // otevřená skupina spodní lišty (mobil)
   const [deskMenu, setDeskMenu] = useState<string | null>(null); // otevřené rozbalovací menu (desktop)
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -293,9 +325,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                               key={n.href}
                               href={n.href}
                               onClick={() => setDeskMenu(null)}
-                              className={`flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm font-medium ${
-                                pathname === n.href ? "bg-gold-500 text-[#1d1d1f]" : "text-ink hover:bg-ink/5"
-                              }`}
+                              className={`flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm font-medium transition ${navItemCls(n.href)}`}
                             >
                               <Icon name={n.icon} className="h-4 w-4" /> {n.label}
                             </Link>
@@ -492,9 +522,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                         key={n.href}
                         href={n.href}
                         onClick={() => setSheet(null)}
-                        className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-medium ${
-                          pathname === n.href ? "bg-gold-500 text-[#1d1d1f]" : "text-ink hover:bg-ink/5"
-                        }`}
+                        className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-medium transition ${navItemCls(n.href)}`}
                       >
                         <Icon name={n.icon} className="h-5 w-5" /> {n.label}
                       </Link>
