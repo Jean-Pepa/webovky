@@ -231,7 +231,12 @@ export default function TymPage() {
             <button className="btn-ghost px-1.5 py-0.5 text-[11px]" onClick={() => setEditMember(m)} title="Upravit člena">
               Upravit
             </button>
-            <DeleteButton onConfirm={() => dispatch({ type: "removeMember", yearId: year.id, memberId: m.id })} />
+            <DeleteButton
+              onConfirm={async () => {
+                const ok = await dispatch({ type: "removeMember", yearId: year.id, memberId: m.id });
+                if (ok) toast(`Účet „${m.name}“ byl smazán`, "🗑️");
+              }}
+            />
           </div>
         )}
       </div>
@@ -705,8 +710,9 @@ function PurgeAccountModal({ member, year, onClose }: { member: Member; year: Ye
   async function go() {
     setBusy(true);
     const opts = Object.fromEntries(ROWS.map((r) => [r.key, !!sel[r.key] && counts[r.key] > 0]));
-    await dispatch({ type: "purgeMember", yearId: year.id, memberId: member.id, name, opts });
+    const ok = await dispatch({ type: "purgeMember", yearId: year.id, memberId: member.id, name, opts });
     onClose();
+    if (ok) toast(`Účet „${name}“ byl smazán`, "🗑️");
   }
 
   return (
