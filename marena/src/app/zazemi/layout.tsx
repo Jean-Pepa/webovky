@@ -126,15 +126,15 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   };
   // Stav tlačítka sekce:
   //  • vybraná (aktuální) sekce → celé políčko podsvícené světle žlutou,
-  //  • ostatní, které smím upravovat → jen text „neonově" podsvícený zlatou (bez výplně),
-  //  • bez role → světle šedé.
-  // Rozměry si drží každé místo samo. Barvy jsou průhledné → sedí i v tmavém režimu.
+  //  • ostatní, které smím upravovat → tmavý (černý) text bez výplně,
+  //  • bez role → světlejší šedá.
+  // Rozměry si drží každé místo samo. Barvy jsou tematické → sedí i v tmavém režimu.
   const navItemCls = (href: string): string =>
     pathname === href
       ? "bg-gold-500/15 text-ink ring-1 ring-gold-500/45 shadow-[0_0_12px_-3px_rgba(244,183,31,0.55)]"
       : canEditNav(href)
-        ? "text-gold-600 [text-shadow:0_0_9px_rgba(244,183,31,0.65)] hover:bg-gold-500/10"
-        : "text-ink-soft/45 hover:bg-ink/5";
+        ? "text-ink hover:bg-ink/5"
+        : "text-ink-soft/30 hover:bg-ink/5";
   const [sheet, setSheet] = useState<string | null>(null); // otevřená skupina spodní lišty (mobil)
   const [deskMenu, setDeskMenu] = useState<string | null>(null); // otevřené rozbalovací menu (desktop)
   const [archiveOpen, setArchiveOpen] = useState(false);
