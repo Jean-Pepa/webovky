@@ -77,11 +77,10 @@ const GROUPS: NavGroup[] = [
 const groupHrefs = (g: NavGroup) => g.sections.flatMap((s) => s.items.map((i) => i.href));
 
 // Sekce vázané na roli: kdo ji nedrží (a není správce ani hlavní organizátor),
-// má tam jen náhled. Ostatní sekce (nástěnka, kalendář, úkoly, kontakty…) může
-// doplňovat každý. Podle toho se v navigaci tlačítko rozsvítí (tmavě) nebo
-// zešedne. Drží se to v jednom smyslu s canEditSection / gatingem sekcí.
+// má tam jen náhled → v navigaci je světle šedá. Ostatní sekce (nástěnka,
+// kalendář, úkoly, kontakty…) doplňuje každý → černá. Finance jsou černé vždy —
+// i bez role tam každý zapisuje „Moje výdaje".
 const SECTION_EDIT_ROLES: Record<string, string[]> = {
-  "/zazemi/finance": [], // jen hlavní koordinátor & finance + správce
   "/zazemi/sponzori": ["sponzoring"],
   "/zazemi/vyzdoba": ["vyzdoba"],
   "/zazemi/prvaci": ["prvaci"],
@@ -113,20 +112,20 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
     }
   }, [restricted, restrictHref, pathname, router]);
 
-  // Může tuhle sekci člověk upravovat? (drží roli / je správce / hlavní).
-  // Podle toho se tlačítko v navigaci rozsvítí tmavě, nebo zůstane světle šedé.
+  // Smí člověk tuhle sekci upravovat? (drží roli / správce / hlavní). Finance a
+  // sekce bez rolové vazby nemají „gate" → černé pro všechny.
   const canEditNav = (href: string): boolean => {
     if (isAdmin(me)) return true;
     // Prodej obsluhuje jen správce a „jen Prodej" (posOnly) — ostatní jen náhled.
     if (href === "/zazemi/prodej") return !!meMember?.posOnly;
     const gate = SECTION_EDIT_ROLES[href];
-    if (!gate) return true; // sekce bez role — přispívá každý
+    if (!gate) return true; // sekce bez role (vč. Financí) — černá pro všechny
     const roles = meMember?.roleIds ?? [];
     return roles.includes("hlavni") || gate.some((r) => roles.includes(r));
   };
-  // Stav tlačítka sekce:
+  // Stav tlačítka sekce v navigaci:
   //  • vybraná (aktuální) sekce → celé políčko podsvícené světle žlutou,
-  //  • ostatní, které smím upravovat → tmavý (černý) text bez výplně,
+  //  • kterou smím upravovat (vč. Financí) → normální černý text,
   //  • bez role → světlejší šedá.
   // Rozměry si drží každé místo samo. Barvy jsou tematické → sedí i v tmavém režimu.
   const navItemCls = (href: string): string =>
