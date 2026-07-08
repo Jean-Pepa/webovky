@@ -195,9 +195,6 @@ export default function UkolyPage() {
         <h2 className="font-display text-[19px] font-bold">
           📋 Všechny úkoly <span className="text-sm font-normal text-ink-soft">({total})</span>
         </h2>
-        <p className="text-sm text-ink-soft">
-          Úkoly přibývají hlavně z <Link href="/zazemi" className="font-medium text-gold-700 hover:underline">Nástěnky</Link> — napiš tam, kdo a co má udělat, a propíše se to sem.
-        </p>
 
         <SearchBox value={q} onChange={setQ} placeholder="Hledat úkol…" />
 
