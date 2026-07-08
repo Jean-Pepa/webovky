@@ -116,6 +116,8 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   // Podle toho se tlačítko v navigaci rozsvítí tmavě, nebo zůstane světle šedé.
   const canEditNav = (href: string): boolean => {
     if (isAdmin(me)) return true;
+    // Prodej obsluhuje jen správce a „jen Prodej" (posOnly) — ostatní jen náhled.
+    if (href === "/zazemi/prodej") return !!meMember?.posOnly;
     const gate = SECTION_EDIT_ROLES[href];
     if (!gate) return true; // sekce bez role — přispívá každý
     const roles = meMember?.roleIds ?? [];
