@@ -16,6 +16,7 @@ import { FlashHost } from "@/components/Flash";
 import { AdminApprovals } from "@/components/AdminApprovals";
 import { ThemeToggle, useZazemiTheme } from "@/components/ThemeToggle";
 import { supabaseEnabled } from "@/lib/supabase/config";
+import type { Post } from "@/lib/types";
 
 // Navigace: Nástěnka přímo (1 ťuk) + 2 skupiny se sekcemi (2 ťuky na cokoli).
 // Mobil = spodní lišta se 3 topicy, skupina vysune panel; desktop = rozbalovací
@@ -442,6 +443,9 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
       {isAdmin(me) && <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />}
       {isAdmin(me) && <ChangePasswordModal open={pwdOpen} onClose={() => setPwdOpen(false)} />}
 
+      {/* Po znovuotevření appky upozorni na nový příspěvek na nástěnce */}
+      <NewPostAlert />
+
       {currentYear && !canEditCurrentYear && !pendingApproval && (
         <div className="flex items-center justify-center gap-2 border-b border-red-300 bg-red-50 px-4 py-2 text-center text-xs font-semibold text-red-700">
           <span>🔒 {currentYear.label} je uzamčený ročník — jde jen prohlížet. Měnit lze jen aktuální (nejnovější) ročník.</span>
@@ -594,6 +598,109 @@ function MeBadge() {
     <span className="chip" title="Tvoje jméno">
       👤 {me}
     </span>
+  );
+}
+
+// Upozornění na nový příspěvek na nástěnce. Vyskočí na střed obrazovky při
+// znovuotevření appky (návrat na záložku/okno), když je něco nového od
+// posledního zobrazení nástěnky. Po zavření se dotyčné příspěvky na nástěnce
+// probliknou červeně (~3 s) — id se předá přes sessionStorage.
+function NewPostAlert() {
+  const { currentYear, me } = useStore();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [newPost, setNewPost] = useState<Post | null>(null);
+
+  useEffect(() => {
+    if (!currentYear) return;
+    const yid = currentYear.id;
+    const posts = currentYear.posts ?? [];
+    const unreadPosts = () => {
+      let seen = "";
+      try {
+        seen = localStorage.getItem(`marena_board_seen_${yid}`) || "";
+      } catch {
+        /* ignore */
+      }
+      return posts.filter((p) => p.createdAt > seen && !sameName(p.author, me));
+    };
+    const check = () => {
+      if (document.visibilityState !== "visible") return;
+      // Na samotné nástěnce neotravuj — příspěvky jsou rovnou vidět.
+      if (window.location.pathname === "/zazemi") return;
+      const unread = unreadPosts();
+      if (!unread.length) return;
+      const newest = unread.reduce((a, b) => (a.createdAt > b.createdAt ? a : b));
+      let prompted = "";
+      try {
+        prompted = localStorage.getItem(`marena_board_prompted_${yid}`) || "";
+      } catch {
+        /* ignore */
+      }
+      if (newest.createdAt <= prompted) return; // na tohle už jsme upozornili
+      setNewPost(newest);
+    };
+    check();
+    const onVis = () => document.visibilityState === "visible" && check();
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", check);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", check);
+    };
+  }, [currentYear, me, pathname]);
+
+  if (!newPost || !currentYear) return null;
+  const yid = currentYear.id;
+
+  const remember = () => {
+    try {
+      localStorage.setItem(`marena_board_prompted_${yid}`, newPost.createdAt);
+    } catch {
+      /* ignore */
+    }
+  };
+  const showOnBoard = () => {
+    // Všechny nepřečtené příspěvky problikni; když nic, aspoň ten oznámený.
+    let seen = "";
+    try {
+      seen = localStorage.getItem(`marena_board_seen_${yid}`) || "";
+    } catch {
+      /* ignore */
+    }
+    const ids = (currentYear.posts ?? []).filter((p) => p.createdAt > seen && !sameName(p.author, me)).map((p) => p.id);
+    try {
+      sessionStorage.setItem(`marena_board_flash_${yid}`, JSON.stringify(ids.length ? ids : [newPost.id]));
+    } catch {
+      /* ignore */
+    }
+    remember();
+    setNewPost(null);
+    router.push("/zazemi");
+  };
+  const close = () => {
+    remember();
+    setNewPost(null);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 px-4 backdrop-blur-[1px]">
+      <div className="marena-pop w-full max-w-sm rounded-2xl bg-surface px-6 py-6 text-center shadow-2xl ring-2 ring-gold-500/50">
+        <div className="text-4xl">🔔</div>
+        <h2 className="mt-2 font-display text-xl font-bold">Něco nového na nástěnce</h2>
+        <p className="mt-1 text-sm text-ink-soft">Přibyl nový příspěvek:</p>
+        <p className="mt-2 break-words rounded-xl bg-paper2 px-3 py-2 font-semibold text-ink">{newPost.title}</p>
+        <p className="mt-1 text-xs text-ink-soft">od {newPost.author}</p>
+        <div className="mt-4 flex gap-2">
+          <button className="btn-primary flex-1" onClick={showOnBoard}>
+            Zobrazit na nástěnce
+          </button>
+          <button className="btn-ghost" onClick={close}>
+            Zavřít
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

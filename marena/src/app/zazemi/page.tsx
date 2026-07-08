@@ -14,6 +14,7 @@ import { SearchBox } from "@/components/SearchBox";
 import { ImageViewer } from "@/components/ImageViewer";
 import { matchesQuery } from "@/lib/search";
 import { isAdmin } from "@/lib/admin";
+import { sameName } from "@/lib/names";
 import { flash } from "@/components/Flash";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
@@ -187,6 +188,9 @@ export default function NastenkaPage() {
   const [taskDraft, setTaskDraft] = useState<TaskDraft>(emptyTasks);
   // Když přijdeme z ankety přes ?post=<id>, doscrollujeme a příspěvek na chvíli zvýrazníme.
   const [highlightPost, setHighlightPost] = useState<string | null>(null);
+  // „Něco nového na nástěnce" (okno v layoutu) sem po zavření pošle id příspěvků
+  // k probliknutí — bliknou červeně ~3 s (viz sessionStorage níže).
+  const [flashIds, setFlashIds] = useState<Set<string>>(() => new Set());
 
   async function onPickPhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -259,6 +263,33 @@ export default function NastenkaPage() {
       clearTimeout(clear);
     };
   }, [year?.id]);
+
+  // Po zavření okna „něco nového na nástěnce" (v layoutu) sem přijdou id
+  // nových příspěvků — bliknou červeně ohraničené ~3 s a první se doscrolluje.
+  const yearId = year?.id;
+  useEffect(() => {
+    if (!yearId) return;
+    let ids: string[] = [];
+    try {
+      const k = `marena_board_flash_${yearId}`;
+      const raw = sessionStorage.getItem(k);
+      if (raw) {
+        ids = JSON.parse(raw);
+        sessionStorage.removeItem(k);
+      }
+    } catch {
+      /* ignore */
+    }
+    if (!ids.length) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFlashIds(new Set(ids));
+    const scroll = setTimeout(() => document.getElementById(`post-${ids[0]}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
+    const clear = setTimeout(() => setFlashIds(new Set()), 3000);
+    return () => {
+      clearTimeout(scroll);
+      clearTimeout(clear);
+    };
+  }, [yearId]);
 
   if (!year) return null;
 
@@ -363,7 +394,7 @@ export default function NastenkaPage() {
         ) : (
           <div className="space-y-3">
             {filteredPosts.map((p) => (
-              <PostCard key={p.id} post={p} yearId={year.id} highlight={highlightPost === p.id} />
+              <PostCard key={p.id} post={p} yearId={year.id} highlight={highlightPost === p.id} flash={flashIds.has(p.id)} />
             ))}
           </div>
         )}
@@ -498,7 +529,7 @@ function PostPhotos({ ids }: { ids: string[] }) {
   );
 }
 
-function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; highlight?: boolean }) {
+function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post; yearId: string; highlight?: boolean; flash?: boolean }) {
   const { me, dispatch, configured, currentYear } = useStore();
   const [edit, setEdit] = useState(false);
   const [showEdits, setShowEdits] = useState(false);
@@ -514,6 +545,14 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
   const postTasks = (currentYear?.tasks ?? []).filter((t) => t.fromPostId === p.id);
   // Všechny úkoly příspěvku hotové → příspěvek se rozsvítí zeleně.
   const allTasksDone = postTasks.length > 0 && postTasks.every((t) => t.done);
+  // Moje úkoly z tohoto příspěvku (podle jména). Dokud mám nějaký nesplněný,
+  // bliká mi celá zpráva červeně dokola; jakmile mám všechny hotové, blik zhasne
+  // a ukáže se pochvala. (Odškrtává se v Úkolech, tady je to jen náhled.)
+  const myPostTasks = postTasks.filter((t) => t.assignee && sameName(t.assignee, me));
+  const myUndone = myPostTasks.filter((t) => !t.done).length;
+  const myAllDone = myPostTasks.length > 0 && myUndone === 0;
+  // Červené blikající ohraničení: moje nesplněné úkoly, nebo nový příspěvek (3 s).
+  const blink = myUndone > 0 || !!flashNew;
   // Jména z týmu pro našeptávač u „Kdo?".
   const memberNames = [...new Set((currentYear?.members ?? []).map((m) => m.name.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "cs"));
   // Historie úprav (nová), s fallbackem na stará data (jen poslední úprava).
@@ -669,13 +708,15 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
     <article
       id={`post-${p.id}`}
       className={`card scroll-mt-24 p-4 transition-shadow ${
-        highlight
-          ? "ring-2 ring-gold-500 shadow-[0_0_0_4px_rgba(253,175,34,0.25)]"
-          : allTasksDone
-            ? "border-leaf/50 bg-leaf/[0.05] ring-1 ring-leaf/40"
-            : p.pinned
-              ? "ring-1 ring-gold-300"
-              : ""
+        blink
+          ? "readonly-pulse border-2 border-red-500"
+          : highlight
+            ? "ring-2 ring-gold-500 shadow-[0_0_0_4px_rgba(253,175,34,0.25)]"
+            : allTasksDone
+              ? "border-leaf/50 bg-leaf/[0.05] ring-1 ring-leaf/40"
+              : p.pinned
+                ? "ring-1 ring-gold-300"
+                : ""
       }`}
     >
       <div className="mb-1 flex flex-wrap items-start gap-x-2 gap-y-1 text-xs text-ink-soft">
@@ -741,6 +782,12 @@ function PostCard({ post: p, yearId, highlight }: { post: Post; yearId: string; 
               </li>
             ))}
           </ul>
+          {/* Když mám všechny svoje úkoly z příspěvku hotové → pochvala (blik zhasne). */}
+          {myAllDone && (
+            <p className="mt-2 rounded-lg bg-leaf/15 px-2.5 py-1.5 text-xs font-semibold text-leaf-700">
+              🎉 Splnil(a) jsi zatím všechny dosavadní úkoly z tohoto příspěvku.
+            </p>
+          )}
         </div>
       )}
       {p.photoIds && p.photoIds.length > 0 && <PostPhotos ids={p.photoIds} />}
