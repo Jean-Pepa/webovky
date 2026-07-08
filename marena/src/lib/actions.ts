@@ -76,6 +76,7 @@ export type Action =
   | { type: "addMilestones"; yearId: string; author: string }
   | { type: "addTask"; yearId: string; id?: string; title: string; roleId?: string; assignee?: string; due?: string; fromPostId?: string }
   | { type: "toggleTask"; yearId: string; taskId: string }
+  | { type: "updateTask"; yearId: string; taskId: string; patch: { title?: string; roleId?: string; assignee?: string; due?: string } }
   | { type: "removeTask"; yearId: string; taskId: string }
   | { type: "clearTasks"; yearId: string }
   | { type: "addLink"; yearId: string; label: string; value: string; folder?: string; note?: string }
@@ -644,6 +645,21 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => ({
         ...y,
         tasks: y.tasks.map((t) => (t.id === a.taskId ? { ...t, done: !t.done } : t)),
+      }));
+    case "updateTask":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        tasks: y.tasks.map((t) =>
+          t.id === a.taskId
+            ? {
+                ...t,
+                title: a.patch.title?.trim() || t.title,
+                roleId: a.patch.roleId || undefined,
+                assignee: a.patch.assignee?.trim() || undefined,
+                due: a.patch.due || undefined,
+              }
+            : t,
+        ),
       }));
     case "removeTask":
       return mapYear(db, a.yearId, (y) => ({ ...y, tasks: y.tasks.filter((t) => t.id !== a.taskId) }));
