@@ -76,20 +76,6 @@ const GROUPS: NavGroup[] = [
 ];
 const groupHrefs = (g: NavGroup) => g.sections.flatMap((s) => s.items.map((i) => i.href));
 
-// Sekce vázané na roli: kdo ji nedrží (a není správce ani hlavní organizátor),
-// má tam jen náhled. Ostatní sekce (nástěnka, kalendář, úkoly, kontakty…) může
-// doplňovat každý. Podle toho se v navigaci tlačítko rozsvítí (tmavě) nebo
-// zešedne. Drží se to v jednom smyslu s canEditSection / gatingem sekcí.
-const SECTION_EDIT_ROLES: Record<string, string[]> = {
-  "/zazemi/finance": [], // jen hlavní koordinátor & finance + správce
-  "/zazemi/sponzori": ["sponzoring"],
-  "/zazemi/vyzdoba": ["vyzdoba"],
-  "/zazemi/prvaci": ["prvaci"],
-  "/zazemi/kuchyne": ["bar"],
-  "/zazemi/program": ["program", "kapelnik"],
-  "/zazemi/merch": ["merch"],
-};
-
 export default function ZazemiLayout({ children }: { children: React.ReactNode }) {
   const { ready, authed, me, logout, syncError, dismissSyncError, db, currentYear, canEditCurrentYear, pendingApproval } = useStore();
   const router = useRouter();
@@ -113,28 +99,14 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
     }
   }, [restricted, restrictHref, pathname, router]);
 
-  // Může tuhle sekci člověk upravovat? (drží roli / je správce / hlavní).
-  // Podle toho se tlačítko v navigaci rozsvítí tmavě, nebo zůstane světle šedé.
-  const canEditNav = (href: string): boolean => {
-    if (isAdmin(me)) return true;
-    // Prodej obsluhuje jen správce a „jen Prodej" (posOnly) — ostatní jen náhled.
-    if (href === "/zazemi/prodej") return !!meMember?.posOnly;
-    const gate = SECTION_EDIT_ROLES[href];
-    if (!gate) return true; // sekce bez role — přispívá každý
-    const roles = meMember?.roleIds ?? [];
-    return roles.includes("hlavni") || gate.some((r) => roles.includes(r));
-  };
-  // Stav tlačítka sekce:
+  // Stav tlačítka sekce v navigaci:
   //  • vybraná (aktuální) sekce → celé políčko podsvícené světle žlutou,
-  //  • ostatní, které smím upravovat → tmavý (černý) text bez výplně,
-  //  • bez role → světlejší šedá.
+  //  • ostatní → normální černý text (všechny stejně, bez rozlišení role).
   // Rozměry si drží každé místo samo. Barvy jsou tematické → sedí i v tmavém režimu.
   const navItemCls = (href: string): string =>
     pathname === href
       ? "bg-gold-500/15 text-ink ring-1 ring-gold-500/45 shadow-[0_0_12px_-3px_rgba(244,183,31,0.55)]"
-      : canEditNav(href)
-        ? "text-ink hover:bg-ink/5"
-        : "text-ink-soft/30 hover:bg-ink/5";
+      : "text-ink hover:bg-ink/5";
   const [sheet, setSheet] = useState<string | null>(null); // otevřená skupina spodní lišty (mobil)
   const [deskMenu, setDeskMenu] = useState<string | null>(null); // otevřené rozbalovací menu (desktop)
   const [archiveOpen, setArchiveOpen] = useState(false);
