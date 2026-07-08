@@ -106,6 +106,12 @@ export default function UkolyPage() {
     if (!year) return;
     dispatch({ type: "removeTask", yearId: year.id, taskId: id });
   }
+  // Úpravu úkolu (text, role, kdo, termín) smí jen správce.
+  function onUpdate(id: string, patch: { title?: string; roleId?: string; assignee?: string; due?: string }) {
+    if (!year) return;
+    dispatch({ type: "updateTask", yearId: year.id, taskId: id, patch });
+    flash("Úkol upraven", "✏️");
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -145,7 +151,7 @@ export default function UkolyPage() {
         ) : (
           <ul className="divide-y divide-ink/10">
             {myOpen.map((t) => (
-              <TaskItem key={t.id} t={t} big onToggle={onToggle} onDelete={onDelete} />
+              <TaskItem key={t.id} t={t} big admin={isAdmin(me)} members={year.members} me={me} onToggle={onToggle} onDelete={onDelete} onUpdate={onUpdate} />
             ))}
           </ul>
         )}
@@ -232,7 +238,7 @@ export default function UkolyPage() {
                     </div>
                     <ul className="divide-y divide-ink/10">
                       {items.map((t) => (
-                        <TaskItem key={t.id} t={t} onToggle={onToggle} onDelete={onDelete} />
+                        <TaskItem key={t.id} t={t} admin={isAdmin(me)} members={year.members} me={me} onToggle={onToggle} onDelete={onDelete} onUpdate={onUpdate} />
                       ))}
                     </ul>
                   </div>
@@ -261,17 +267,84 @@ export default function UkolyPage() {
 
 // Řádek úkolu s velkým, jasným zaškrtávátkem — ať je hned vidět, kde se
 // odškrtává splnění. `big` = větší text/box pro sekci „Moje úkoly".
+// Správce (admin) má navíc „Upravit" — inline změní text, roli, kdo i termín.
 function TaskItem({
   t,
   big,
+  admin,
+  members,
+  me,
   onToggle,
   onDelete,
+  onUpdate,
 }: {
-  t: { id: string; title: string; done: boolean; assignee?: string; due?: string; fromPostId?: string };
+  t: { id: string; title: string; done: boolean; roleId?: string; assignee?: string; due?: string; fromPostId?: string };
   big?: boolean;
+  admin?: boolean;
+  members?: { id: string; name: string }[];
+  me?: string;
   onToggle: (id: string, title: string, done: boolean) => void;
   onDelete: (id: string) => void;
+  onUpdate?: (id: string, patch: { title?: string; roleId?: string; assignee?: string; due?: string }) => void;
 }) {
+  const [edit, setEdit] = useState(false);
+  const [title, setTitle] = useState(t.title);
+  const [roleId, setRoleId] = useState(t.roleId ?? "");
+  const [assignee, setAssignee] = useState(t.assignee ?? "");
+  const [due, setDue] = useState(t.due ?? "");
+
+  // Jména do výběru „Kdo?" — členové týmu + případný ručně zadaný řešitel.
+  const names = [...new Set([...(t.assignee ? [t.assignee] : []), ...(members ?? []).map((m) => m.name)])];
+
+  function startEdit() {
+    setTitle(t.title);
+    setRoleId(t.roleId ?? "");
+    setAssignee(t.assignee ?? "");
+    setDue(t.due ?? "");
+    setEdit(true);
+  }
+  function save() {
+    if (!title.trim()) return;
+    onUpdate?.(t.id, { title: title.trim(), roleId: roleId || undefined, assignee: assignee.trim() || undefined, due: due || undefined });
+    setEdit(false);
+  }
+
+  if (edit) {
+    return (
+      <li className="space-y-2 bg-paper2/40 px-4 py-3">
+        <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Úkol" autoFocus />
+        <div className="grid gap-2 sm:grid-cols-3">
+          <select className="input" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
+            <option value="">Bez role</option>
+            {ROLES.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.emoji} {r.name}
+              </option>
+            ))}
+          </select>
+          <select className="input" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+            <option value="">Kdo? (nikdo)</option>
+            {names.map((n) => (
+              <option key={n} value={n}>
+                {n}
+                {me && sameName(n, me) ? " (já)" : ""}
+              </option>
+            ))}
+          </select>
+          <input type="date" className="input" value={due} onChange={(e) => setDue(e.target.value)} />
+        </div>
+        <div className="flex gap-2">
+          <button className="btn-primary px-3 py-1.5 text-sm" onClick={save} disabled={!title.trim()}>
+            Uložit
+          </button>
+          <button className="btn-ghost px-2 py-1.5 text-sm" onClick={() => setEdit(false)}>
+            Zrušit
+          </button>
+        </div>
+      </li>
+    );
+  }
+
   return (
     <li className={`flex items-center gap-3 px-4 ${big ? "py-3.5" : "py-2.5"}`}>
       <button
@@ -298,6 +371,11 @@ function TaskItem({
           )}
         </div>
       </div>
+      {admin && onUpdate && (
+        <button className="btn-ghost shrink-0 px-2 py-1 text-xs" onClick={startEdit}>
+          Upravit
+        </button>
+      )}
       <DeleteButton onConfirm={() => onDelete(t.id)} />
     </li>
   );
