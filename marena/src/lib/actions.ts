@@ -113,6 +113,7 @@ export type Action =
   | { type: "setDecorZoneMembers"; yearId: string; zoneId: string; members: string[] }
   | { type: "setDecorRules"; yearId: string; text: string }
   | { type: "setDecorPlan"; yearId: string; ids: string[] }
+  | { type: "setDecorPlanDesc"; yearId: string; text: string }
   | { type: "addSponsor"; yearId: string; name: string; gives?: string; who?: string; links?: string[]; note?: string; category?: SponsorCategory; returning?: boolean }
   | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: SponsorStatus; who?: string; links?: string[]; note?: string; category?: SponsorCategory; returning?: boolean } }
   | { type: "removeSponsor"; yearId: string; sponsorId: string }
@@ -992,6 +993,8 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => ({ ...y, decorRules: a.text.trim() || undefined }));
     case "setDecorPlan":
       return mapYear(db, a.yearId, (y) => ({ ...y, decorPlanIds: a.ids }));
+    case "setDecorPlanDesc":
+      return mapYear(db, a.yearId, (y) => ({ ...y, decorPlanDesc: a.text.trim() || undefined }));
 
     case "addSponsor": {
       const name = a.name.trim();

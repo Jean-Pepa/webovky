@@ -343,6 +343,7 @@ export interface Year {
   decorZones?: DecorZone[]; // výzdoba – zóny prostoru (kdo co spravuje)
   decorRules?: string; // výzdoba – pravidla, co se musí dodržet
   decorPlanIds?: string[]; // výzdoba – fotky plánku s rozdělením na zóny
+  decorPlanDesc?: string; // výzdoba – popis k plánku zón
   sponsors?: Sponsor[]; // sponzoři – koho oslovit, co dává, stav
   bar?: Drink[]; // bar – ceník drinků s recepturou
   menu?: MenuEntry[]; // kuchyně – denní menu

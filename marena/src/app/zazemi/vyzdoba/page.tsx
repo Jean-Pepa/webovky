@@ -238,11 +238,14 @@ function RulesCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
   );
 }
 
-// Plánek — fotky prostoru s vyznačenými zónami.
+// Plánek — fotky prostoru s vyznačenými zónami + volitelný popis.
 function PlanCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
   const { dispatch } = useStore();
+  const [edit, setEdit] = useState(false);
+  const [text, setText] = useState(year.decorPlanDesc ?? "");
   const ids = year.decorPlanIds ?? [];
-  if (!canEdit && ids.length === 0) return null;
+  const desc = year.decorPlanDesc;
+  if (!canEdit && ids.length === 0 && !desc) return null;
   return (
     <section className="card p-4">
       <h2 className="font-display text-[19px] font-bold">🗺️ Plánek zón</h2>
@@ -255,6 +258,31 @@ function PlanCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
           thumb="h-32 w-32"
           onChange={(next) => dispatch({ type: "setDecorPlan", yearId: year.id, ids: next })}
         />
+      </div>
+      {/* Popis k plánku (jako mají zóny) */}
+      <div className="mt-3">
+        {edit && canEdit ? (
+          <div className="space-y-2">
+            <textarea className="input min-h-20" value={text} onChange={(e) => setText(e.target.value)} placeholder="Popis plánku — jak jsou zóny rozdělené…" autoFocus />
+            <div className="flex gap-2">
+              <button className="btn-primary py-1.5 text-xs" onClick={() => { dispatch({ type: "setDecorPlanDesc", yearId: year.id, text }); setEdit(false); flash("Popis plánku uložen", "🗺️"); }}>
+                Uložit popis
+              </button>
+              <button className="btn-ghost py-1.5 text-xs" onClick={() => { setText(desc ?? ""); setEdit(false); }}>Zrušit</button>
+            </div>
+          </div>
+        ) : desc ? (
+          <p className={`whitespace-pre-wrap rounded-lg bg-paper2/50 px-3 py-2 text-sm text-ink-soft ${canEdit ? "cursor-pointer hover:text-ink" : ""}`} onClick={() => canEdit && (setText(desc), setEdit(true))}>
+            {desc}
+          </p>
+        ) : canEdit ? (
+          <button
+            className="inline-flex items-center gap-1 rounded-lg border border-dashed border-gold-500/60 bg-gold-50 px-3 py-2 text-sm font-semibold text-gold-700 transition hover:bg-gold-100"
+            onClick={() => { setText(""); setEdit(true); }}
+          >
+            ✍️ Přidat popis
+          </button>
+        ) : null}
       </div>
     </section>
   );
