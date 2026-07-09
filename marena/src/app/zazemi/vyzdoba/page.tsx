@@ -78,7 +78,6 @@ export default function VyzdobaPage() {
       )}
       <div>
         <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Výzdoba</h1>
-        <p className="mt-0.5 text-sm text-ink-soft">Pravidla, plánek, zóny a materiál. Prostor rozdělený na zóny — každou spravuje pár lidí.</p>
       </div>
 
       {/* Pravidla */}

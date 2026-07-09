@@ -984,7 +984,6 @@ function DayGate({
     <div className="mx-auto max-w-3xl space-y-4 tabular-nums">
       <div>
         <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Prodej</h1>
-        <p className="mt-0.5 text-sm text-ink-soft">Nový den začíná založením kasy — po uzavření se den uzamkne do statistik.</p>
         <div className="mt-1">
           <AccountChip admin={admin} account={account} accountOk={accountOk} yearId={yearId} />
         </div>

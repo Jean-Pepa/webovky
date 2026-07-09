@@ -123,9 +123,6 @@ export default function MerchPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Merch</h1>
-          <p className="text-sm text-ink-soft">
-            {canManage ? "Nahraj fotky nabídky, sdílej QR kód a sleduj objednávky." : "Nabídka merche a QR kód k objednání."}
-          </p>
         </div>
         {/* Prodej na místě probíhá v jednotné pokladně (předvolí merch);
             zaplacený prodej se sem vrátí jako uzamčená objednávka. */}
