@@ -42,6 +42,7 @@ export default function VyzdobaPage() {
   const [who, setWho] = useState("");
   const [link, setLink] = useState("");
   const [note, setNote] = useState("");
+  const [zone, setZone] = useState(""); // zóna zvolená rovnou při přidávání nápadu
 
   const year = currentYear;
   const list = useMemo(
@@ -60,15 +61,18 @@ export default function VyzdobaPage() {
     canEditCurrentYear &&
     (isAdmin(me) || (myMember?.roleIds.includes("hlavni") ?? false) || (!!myMember && vyzdobaLeadId(year) === myMember.id));
   const zones = year.decorZones ?? [];
+  // Zóny, kde jsem přihlášený — do nich si můžu vzít volný materiál.
+  const myZones = zones.filter((z) => z.members.some((m) => sameName(m, me)));
 
   async function add() {
     if (!title.trim() || !year || !canEdit) return;
-    await dispatch({ type: "addDecor", yearId: year.id, title: title.trim(), who, link, note });
+    await dispatch({ type: "addDecor", yearId: year.id, title: title.trim(), who, link, note, zoneId: zone || undefined });
     setTitle("");
     setWho("");
     setLink("");
     setNote("");
-    flash("Nápad přidán", "🎨");
+    setZone("");
+    flash(zone ? "Nápad přidán do zóny" : "Nápad přidán", "🎨");
   }
 
   return (
@@ -118,6 +122,17 @@ export default function VyzdobaPage() {
               <input className="input" placeholder="Odkaz (nepovinné)" value={link} onChange={(e) => setLink(e.target.value)} />
             </div>
             <input className="input" placeholder="Poznámka" value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
+            {zones.length > 0 && (
+              <label className="flex items-center gap-2 text-sm text-ink-soft">
+                <span className="shrink-0 font-medium">📍 Zóna:</span>
+                <select className="min-w-0 flex-1 rounded-lg border border-ink/15 bg-white px-2 py-1.5 text-sm" value={zone} onChange={(e) => setZone(e.target.value)}>
+                  <option value="">Volné (bez zóny)</option>
+                  {zones.map((z) => (
+                    <option key={z.id} value={z.id}>{z.name}</option>
+                  ))}
+                </select>
+              </label>
+            )}
             <div className="flex gap-2">
               <button className="btn-primary py-2 text-sm" onClick={add} disabled={!title.trim()}>
                 + Přidat nápad
@@ -138,7 +153,7 @@ export default function VyzdobaPage() {
         ) : (
           <ul className="space-y-2">
             {list.map((d) => (
-              <DecorRow key={d.id} d={d} yearId={year.id} canEdit={canEdit} admin={isAdmin(me)} zones={zones} />
+              <DecorRow key={d.id} d={d} yearId={year.id} canEdit={canEdit} admin={isAdmin(me)} zones={zones} myZones={myZones} isLead={isLead} />
             ))}
           </ul>
         )}
@@ -470,7 +485,7 @@ function ZoneCard({ zone, year, canEdit, isLead, me }: { zone: DecorZone; year: 
   );
 }
 
-function DecorRow({ d, yearId, canEdit, admin, zones }: { d: Decor; yearId: string; canEdit: boolean; admin?: boolean; zones: DecorZone[] }) {
+function DecorRow({ d, yearId, canEdit, admin, zones, myZones, isLead }: { d: Decor; yearId: string; canEdit: boolean; admin?: boolean; zones: DecorZone[]; myZones: DecorZone[]; isLead: boolean }) {
   const { dispatch } = useStore();
   const [edit, setEdit] = useState(false);
   const [askDone, setAskDone] = useState(false); // potvrzení „hotovo → uzamknout"
@@ -569,26 +584,57 @@ function DecorRow({ d, yearId, canEdit, admin, zones }: { d: Decor; yearId: stri
         </div>
       )}
 
-      {/* Zóna — přiřazení materiálu (nebo volné) */}
-      {canEdit ? (
-        <label className="flex items-center gap-2 text-xs text-ink-soft">
-          <span className="shrink-0">📍 Zóna:</span>
+      {/* Zóna — viditelná tlačítka: volné ⇄ vzít do své zóny; vedoucí přiřadí kamkoli */}
+      <div className="flex flex-wrap items-center gap-2 pt-0.5">
+        {d.zoneId ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-gold-600/12 px-2.5 py-1 text-xs font-bold text-gold-700">
+            📍 {zoneName ?? "Zóna"}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full bg-paper2 px-2.5 py-1 text-xs font-semibold text-ink-soft">
+            📍 Volné
+          </span>
+        )}
+
+        {/* Přiřazené: uvolnit zpět mezi volné */}
+        {canEdit && d.zoneId && (
+          <button
+            className="rounded-full border border-ink/15 bg-white px-3 py-1 text-xs font-semibold text-ink-soft transition hover:bg-ink/5"
+            onClick={() => { dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { zoneId: null } }); flash("Uvolněno — je volné", "📍"); }}
+          >
+            Uvolnit
+          </button>
+        )}
+
+        {/* Volné: vzít do své zóny (jedno tlačítko na každou moji zónu) */}
+        {canEdit &&
+          !d.zoneId &&
+          myZones.map((z) => (
+            <button
+              key={z.id}
+              className="rounded-full border border-leaf/50 bg-leaf/10 px-3 py-1.5 text-xs font-bold text-leaf-700 transition hover:bg-leaf/20"
+              onClick={() => { dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { zoneId: z.id } }); flash(`Vzato do zóny „${z.name}"`, "📍"); }}
+            >
+              ➕ Vzít do „{z.name}&ldquo;
+            </button>
+          ))}
+
+        {/* Vedoucí výzdoby: může položku přiřadit do libovolné zóny */}
+        {canEdit && isLead && zones.length > 0 && (
           <select
-            className="min-w-0 flex-1 rounded-lg border border-ink/15 bg-white px-2 py-1 text-xs"
+            className="min-w-0 rounded-full border border-ink/15 bg-white px-2.5 py-1 text-xs text-ink-soft"
             value={d.zoneId ?? ""}
             onChange={(e) => dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { zoneId: e.target.value || null } })}
           >
-            <option value="">Volné (bez zóny)</option>
+            <option value="">↪︎ přiřadit do zóny…</option>
             {zones.map((z) => (
               <option key={z.id} value={z.id}>
                 {z.name}
               </option>
             ))}
           </select>
-        </label>
-      ) : (
-        d.zoneId && <p className="text-xs text-ink-soft">📍 {zoneName ?? "Zóna"}</p>
-      )}
+        )}
+      </div>
 
       {/* Potvrzení „hotovo" — pak se to uzamkne */}
       <Modal open={askDone} onClose={() => setAskDone(false)} title="Označit jako hotovo?">
