@@ -202,10 +202,35 @@ export default function VyzdobaPage() {
   );
 }
 
-// Pravidla — textový blok „co se musí dodržet". Píše vedoucí/správce.
+// Přehledně naformátovaná pravidla — úvodní odstavce + odrážky (řádky s „-").
+function RulesView({ text }: { text: string }) {
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const intro = lines.filter((l) => !/^[-–—•]/.test(l));
+  const bullets = lines.filter((l) => /^[-–—•]/.test(l)).map((l) => l.replace(/^[-–—•]\s*/, ""));
+  return (
+    <div className="space-y-3">
+      {intro.map((p, i) => (
+        <p key={i} className="text-sm font-medium text-ink">{p}</p>
+      ))}
+      {bullets.length > 0 && (
+        <ul className="space-y-2">
+          {bullets.map((b, i) => (
+            <li key={i} className="flex gap-2 rounded-lg bg-paper2/50 px-3 py-2 text-sm text-ink-soft">
+              <span aria-hidden className="mt-0.5 shrink-0 font-bold text-gold-600">•</span>
+              <span className="min-w-0">{b}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// Pravidla — na kartě jen výzva „přečti si", text se ukáže ve velkém okně.
 function RulesCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
   const { dispatch } = useStore();
   const [edit, setEdit] = useState(false);
+  const [openRules, setOpenRules] = useState(false);
   const [text, setText] = useState(year.decorRules ?? "");
   const rules = year.decorRules;
   if (!canEdit && !rules) return null;
@@ -230,10 +255,24 @@ function RulesCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
           </div>
         </div>
       ) : rules ? (
-        <p className="mt-2 whitespace-pre-wrap text-sm text-ink-soft">{rules}</p>
+        <div className="mt-2 space-y-3">
+          <p className="text-sm text-ink-soft">Než začneš tvořit, přečti si prosím pravidla — ať se vyhneme zbytečným problémům.</p>
+          <button className="btn-primary w-full py-2.5 text-sm" onClick={() => setOpenRules(true)}>
+            📖 Přečíst pravidla
+          </button>
+        </div>
       ) : (
         <p className="mt-2 text-sm text-ink-soft/70">Zatím žádná pravidla.</p>
       )}
+
+      <Modal open={openRules} onClose={() => setOpenRules(false)} title="📋 Pravidla výzdoby">
+        <div className="space-y-4">
+          {rules ? <RulesView text={rules} /> : <p className="text-sm text-ink-soft">Zatím žádná pravidla.</p>}
+          <button className="btn-primary w-full py-2.5" onClick={() => setOpenRules(false)}>
+            Zavřít
+          </button>
+        </div>
+      </Modal>
     </section>
   );
 }
