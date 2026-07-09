@@ -410,7 +410,12 @@ function ZoneCard({ zone, year, canEdit, isLead, me }: { zone: DecorZone; year: 
                 {zone.description}
               </p>
             ) : canEditZone ? (
-              <button className="text-xs font-medium text-gold-700 hover:underline" onClick={() => { setDesc(""); setEditDesc(true); }}>+ Přidat popis</button>
+              <button
+                className="inline-flex items-center gap-1 rounded-lg border border-dashed border-gold-500/60 bg-gold-50 px-3 py-2 text-sm font-semibold text-gold-700 transition hover:bg-gold-100"
+                onClick={() => { setDesc(""); setEditDesc(true); }}
+              >
+                ✍️ Přidat popis
+              </button>
             ) : null}
           </div>
         </div>
@@ -437,8 +442,11 @@ function ZoneCard({ zone, year, canEdit, isLead, me }: { zone: DecorZone; year: 
             </div>
           )}
           {total > 0 && (
-            <Link href="/zazemi/ukoly" className="mt-1.5 inline-block text-xs font-medium text-gold-700 hover:underline">
-              Odškrtnout v Úkolech →
+            <Link
+              href="/zazemi/ukoly"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-gold-500/50 bg-gold-50 px-3.5 py-2 text-sm font-semibold text-gold-700 shadow-sm transition hover:bg-gold-100"
+            >
+              ✅ Odškrtnout v Úkolech →
             </Link>
           )}
         </div>
