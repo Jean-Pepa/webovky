@@ -1,17 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { canEditSection } from "@/lib/access";
 import { isAdmin } from "@/lib/admin";
+import { sameName } from "@/lib/names";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
 import { WhoSelect } from "@/components/WhoSelect";
+import { ImageBoard } from "@/components/ImageBoard";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
 import { flash } from "@/components/Flash";
-import type { Decor, DecorStatus } from "@/lib/types";
+import type { Decor, DecorStatus, DecorZone, Year } from "@/lib/types";
 
 const STATUS: Record<DecorStatus, { label: string; cls: string; order: number }> = {
   napad: { label: "💡 nápad", cls: "bg-paper2 text-ink-soft", order: 0 },
@@ -19,6 +22,16 @@ const STATUS: Record<DecorStatus, { label: string; cls: string; order: number }>
   hotovo: { label: "✅ hotovo", cls: "bg-leaf/15 text-leaf-700", order: 2 },
 };
 const NEXT: Record<DecorStatus, DecorStatus> = { napad: "shani", shani: "hotovo", hotovo: "napad" };
+
+// Vedoucí výzdoby = výslovně určený vedoucí role „vyzdoba" (roleLeads), jinak
+// nejdřív zapsaný držitel role. Ten zóny zakládá a velí jim (+ správce/hlavní).
+function vyzdobaLeadId(year: Year): string | undefined {
+  const holders = year.members.filter((m) => m.roleIds.includes("vyzdoba"));
+  if (!holders.length) return undefined;
+  const explicit = year.roleLeads?.vyzdoba;
+  if (explicit && holders.some((h) => h.id === explicit)) return explicit;
+  return [...holders].sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0].id;
+}
 
 export default function VyzdobaPage() {
   const { currentYear, me, dispatch, canEditCurrentYear } = useStore();
@@ -37,14 +50,15 @@ export default function VyzdobaPage() {
         .sort((a, b) => STATUS[a.status].order - STATUS[b.status].order || a.createdAt.localeCompare(b.createdAt)),
     [year, q],
   );
-  const counts = useMemo(() => {
-    const c = { napad: 0, shani: 0, hotovo: 0 } as Record<DecorStatus, number>;
-    for (const d of year?.decor ?? []) c[d.status]++;
-    return c;
-  }, [year]);
 
   if (!year) return null;
+  const myMember = year.members.find((m) => sameName(m.name, me));
   const canEdit = canEditCurrentYear && canEditSection(year, me, "vyzdoba");
+  // Vedoucí: správce, hlavní organizátor, nebo určený vedoucí role Výzdoba.
+  const isLead =
+    canEditCurrentYear &&
+    (isAdmin(me) || (myMember?.roleIds.includes("hlavni") ?? false) || (!!myMember && vyzdobaLeadId(year) === myMember.id));
+  const zones = year.decorZones ?? [];
 
   async function add() {
     if (!title.trim() || !year || !canEdit) return;
@@ -57,82 +71,346 @@ export default function VyzdobaPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {canEditCurrentYear && !canEdit && (
         <ReadOnlyBanner>Výzdobu máš jen k náhledu — upravovat ji může jen správce a příslušná role.</ReadOnlyBanner>
       )}
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Výzdoba</h1>
-          <p className="mt-0.5 text-sm text-ink-soft">Nápady a materiál na výzdobu dvora i fakulty. Klikni na stav: nápad → shání se → hotovo.</p>
-        </div>
-        {canEdit && (
-          <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
-            {open ? "Zavřít" : "+ Přidat nápad"}
-          </button>
-        )}
+      <div>
+        <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Výzdoba</h1>
+        <p className="mt-0.5 text-sm text-ink-soft">Pravidla, plánek, zóny a materiál. Prostor rozdělený na zóny — každou spravuje pár lidí.</p>
       </div>
 
-      {(year.decor?.length ?? 0) > 0 && (
-        <SearchBox value={q} onChange={setQ} placeholder="Hledat výzdobu…" />
-      )}
+      {/* Pravidla */}
+      <RulesCard year={year} canEdit={isLead} />
 
-      {open && canEdit && (
-        <div className="card space-y-2 p-4">
-          <input
-            className="input"
-            placeholder="Nápad / materiál (např. Luxfery z Bazoše, LED pásky…)"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && add()}
-            autoFocus
-          />
-          <div className="grid gap-2 sm:grid-cols-2">
-            <WhoSelect value={who} onChange={setWho} placeholder="Kdo shání? (nepovinné)" />
-            <input className="input" placeholder="Odkaz (nepovinné)" value={link} onChange={(e) => setLink(e.target.value)} />
-          </div>
-          <input
-            className="input"
-            placeholder="Poznámka"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && add()}
-          />
-          <div className="flex gap-2">
-            <button className="btn-primary py-2 text-sm" onClick={add} disabled={!title.trim()}>
-              + Přidat nápad
+      {/* Plánek zón */}
+      <PlanCard year={year} canEdit={isLead} />
+
+      {/* Zóny */}
+      <ZonesSection year={year} canEdit={canEdit} isLead={isLead} me={me} />
+
+      {/* Materiál a nápady */}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-[19px] font-bold">🎨 Materiál a nápady</h2>
+          {canEdit && (
+            <button className="btn-primary px-3 py-1.5 text-sm" onClick={() => setOpen((v) => !v)}>
+              {open ? "Zavřít" : "+ Přidat nápad"}
             </button>
-            <button className="btn-ghost py-2 text-sm" onClick={() => setOpen(false)}>Zrušit</button>
+          )}
+        </div>
+        <p className="text-xs text-ink-soft">Klikni na stav: nápad → shání se → hotovo. Každou položku můžeš přiřadit k zóně, nebo nechat volnou.</p>
+
+        {(year.decor?.length ?? 0) > 0 && <SearchBox value={q} onChange={setQ} placeholder="Hledat materiál…" />}
+
+        {open && canEdit && (
+          <div className="card space-y-2 p-4">
+            <input
+              className="input"
+              placeholder="Nápad / materiál (např. Luxfery z Bazoše, LED pásky…)"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && add()}
+              autoFocus
+            />
+            <div className="grid gap-2 sm:grid-cols-2">
+              <WhoSelect value={who} onChange={setWho} placeholder="Kdo shání? (nepovinné)" />
+              <input className="input" placeholder="Odkaz (nepovinné)" value={link} onChange={(e) => setLink(e.target.value)} />
+            </div>
+            <input className="input" placeholder="Poznámka" value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
+            <div className="flex gap-2">
+              <button className="btn-primary py-2 text-sm" onClick={add} disabled={!title.trim()}>
+                + Přidat nápad
+              </button>
+              <button className="btn-ghost py-2 text-sm" onClick={() => setOpen(false)}>
+                Zrušit
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {(year.decor?.length ?? 0) > 0 && (
-        <div className="flex flex-wrap gap-2 text-sm">
-          <span className="chip">{STATUS.napad.label} {counts.napad}</span>
-          <span className="chip">{STATUS.shani.label} {counts.shani}</span>
-          <span className="chip">{STATUS.hotovo.label} {counts.hotovo}</span>
-        </div>
-      )}
-
-      {(year.decor?.length ?? 0) === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
-          {canEdit ? "Zatím žádné nápady. Přidej první nahoře." : "Zatím žádné nápady."}
-        </div>
-      ) : list.length === 0 && q.trim() ? (
-        <p className="text-sm text-ink-soft">Nic neodpovídá hledání.</p>
-      ) : (
-        <ul className="space-y-2">
-          {list.map((d) => (
-            <DecorRow key={d.id} d={d} yearId={year.id} canEdit={canEdit} admin={isAdmin(me)} />
-          ))}
-        </ul>
-      )}
+        {(year.decor?.length ?? 0) === 0 ? (
+          <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+            {canEdit ? "Zatím žádný materiál. Přidej první nahoře." : "Zatím žádný materiál."}
+          </div>
+        ) : list.length === 0 && q.trim() ? (
+          <p className="text-sm text-ink-soft">Nic neodpovídá hledání.</p>
+        ) : (
+          <ul className="space-y-2">
+            {list.map((d) => (
+              <DecorRow key={d.id} d={d} yearId={year.id} canEdit={canEdit} admin={isAdmin(me)} zones={zones} />
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
 
-function DecorRow({ d, yearId, canEdit, admin }: { d: Decor; yearId: string; canEdit: boolean; admin?: boolean }) {
+// Pravidla — textový blok „co se musí dodržet". Píše vedoucí/správce.
+function RulesCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
+  const { dispatch } = useStore();
+  const [edit, setEdit] = useState(false);
+  const [text, setText] = useState(year.decorRules ?? "");
+  const rules = year.decorRules;
+  if (!canEdit && !rules) return null;
+  return (
+    <section className="card p-4">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-display text-[19px] font-bold">📋 Pravidla</h2>
+        {canEdit && !edit && (
+          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => { setText(year.decorRules ?? ""); setEdit(true); }}>
+            {rules ? "Upravit" : "+ Přidat"}
+          </button>
+        )}
+      </div>
+      {edit ? (
+        <div className="mt-2 space-y-2">
+          <textarea className="input min-h-28" value={text} onChange={(e) => setText(e.target.value)} placeholder="Co se musí při výzdobě dodržet (materiály, bezpečnost, termíny…)" autoFocus />
+          <div className="flex gap-2">
+            <button className="btn-primary py-2 text-sm" onClick={() => { dispatch({ type: "setDecorRules", yearId: year.id, text }); setEdit(false); flash("Pravidla uložena", "📋"); }}>
+              Uložit
+            </button>
+            <button className="btn-ghost py-2 text-sm" onClick={() => setEdit(false)}>Zrušit</button>
+          </div>
+        </div>
+      ) : rules ? (
+        <p className="mt-2 whitespace-pre-wrap text-sm text-ink-soft">{rules}</p>
+      ) : (
+        <p className="mt-2 text-sm text-ink-soft/70">Zatím žádná pravidla.</p>
+      )}
+    </section>
+  );
+}
+
+// Plánek — fotky prostoru s vyznačenými zónami.
+function PlanCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
+  const { dispatch } = useStore();
+  const ids = year.decorPlanIds ?? [];
+  if (!canEdit && ids.length === 0) return null;
+  return (
+    <section className="card p-4">
+      <h2 className="font-display text-[19px] font-bold">🗺️ Plánek zón</h2>
+      <p className="mt-0.5 text-xs text-ink-soft">Fotka prostoru s rozdělením na zóny.</p>
+      <div className="mt-2">
+        <ImageBoard
+          ids={ids}
+          canEdit={canEdit}
+          addLabel="Přidat plánek"
+          thumb="h-32 w-32"
+          onChange={(next) => dispatch({ type: "setDecorPlan", yearId: year.id, ids: next })}
+        />
+      </div>
+    </section>
+  );
+}
+
+// Sekce Zóny — vedoucí přidává zóny, každá je karta (ZoneCard).
+function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: boolean; isLead: boolean; me: string }) {
+  const { dispatch } = useStore();
+  const [name, setName] = useState("");
+  const zones = year.decorZones ?? [];
+  function addZone() {
+    if (!name.trim()) return;
+    dispatch({ type: "addDecorZone", yearId: year.id, name: name.trim() });
+    setName("");
+    flash("Zóna přidána", "📍");
+  }
+  return (
+    <section className="space-y-3">
+      <h2 className="font-display text-[19px] font-bold">📍 Zóny</h2>
+      {isLead && (
+        <div className="flex gap-2">
+          <input className="input" placeholder="Nová zóna (např. Vstup, Dvůr, Aula)" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addZone()} />
+          <button className="btn-primary shrink-0" onClick={addZone} disabled={!name.trim()}>+ Zóna</button>
+        </div>
+      )}
+      {zones.length === 0 ? (
+        <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">Zatím žádné zóny.{isLead ? " Přidej první nahoře." : ""}</div>
+      ) : (
+        <div className="grid items-start gap-3 md:grid-cols-2">
+          {zones.map((z) => (
+            <ZoneCard key={z.id} zone={z} year={year} canEdit={canEdit} isLead={isLead} me={me} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// Jedna zóna — kdo spravuje (přihlášení), referenční obrázek + popis, úkoly zóny
+// (svítí členům v Moje agenda) a přiřazený materiál.
+function ZoneCard({ zone, year, canEdit, isLead, me }: { zone: DecorZone; year: Year; canEdit: boolean; isLead: boolean; me: string }) {
+  const { dispatch } = useStore();
+  const [editName, setEditName] = useState(false);
+  const [name, setName] = useState(zone.name);
+  const [desc, setDesc] = useState(zone.description ?? "");
+  const [editDesc, setEditDesc] = useState(false);
+  const [taskText, setTaskText] = useState("");
+  const [manage, setManage] = useState(false);
+
+  const iAmIn = zone.members.some((m) => sameName(m, me));
+  const canEditZone = isLead || (canEdit && iAmIn); // přispívat do zóny (obrázek, popis)
+  const zoneTasks = year.tasks.filter((t) => t.zoneId === zone.id);
+  const zoneMaterial = (year.decor ?? []).filter((d) => d.zoneId === zone.id);
+  const doneTasks = zoneTasks.filter((t) => t.done).length;
+
+  function addZoneTask() {
+    if (!taskText.trim()) return;
+    dispatch({ type: "addTask", yearId: year.id, title: taskText.trim(), zoneId: zone.id, roleId: "vyzdoba" });
+    setTaskText("");
+    flash(`Úkol pro zónu „${zone.name}" — svítí členům v agendě`, "✅");
+  }
+
+  return (
+    <section className="card space-y-3 p-4">
+      {/* Název + akce vedoucího */}
+      <div className="flex items-start justify-between gap-2">
+        {editName && isLead ? (
+          <div className="flex flex-1 gap-2">
+            <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+            <button className="btn-primary shrink-0 px-2.5 py-1 text-xs" onClick={() => { dispatch({ type: "updateDecorZone", yearId: year.id, zoneId: zone.id, patch: { name } }); setEditName(false); }}>
+              OK
+            </button>
+          </div>
+        ) : (
+          <h3 className="font-display text-lg font-semibold">📍 {zone.name}</h3>
+        )}
+        {isLead && !editName && (
+          <div className="flex shrink-0 items-center gap-1">
+            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => { setName(zone.name); setEditName(true); }}>Přejmenovat</button>
+            <DeleteButton onConfirm={() => dispatch({ type: "removeDecorZone", yearId: year.id, zoneId: zone.id })} />
+          </div>
+        )}
+      </div>
+
+      {/* Kdo spravuje */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Kdo spravuje</p>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          {zone.members.length === 0 && <span className="text-sm italic text-ink-soft/70">zatím nikdo</span>}
+          {zone.members.map((m) => (
+            <span key={m} className={`chip ${sameName(m, me) ? "bg-leaf text-white" : ""}`}>
+              {m}
+              {isLead && (
+                <button onClick={() => dispatch({ type: "leaveDecorZone", yearId: year.id, zoneId: zone.id, name: m })} className="ml-1 opacity-70 hover:opacity-100" aria-label="Odebrat ze zóny">
+                  ×
+                </button>
+              )}
+            </span>
+          ))}
+        </div>
+        {canEdit && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {iAmIn ? (
+              <button className="rounded-full bg-paper2 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50" onClick={() => dispatch({ type: "leaveDecorZone", yearId: year.id, zoneId: zone.id, name: me })}>
+                Odhlásit se
+              </button>
+            ) : (
+              <button className="btn-primary px-2.5 py-1 text-xs" onClick={() => { dispatch({ type: "joinDecorZone", yearId: year.id, zoneId: zone.id, name: me }); flash(`Přihlášen do zóny „${zone.name}"`, "📍"); }}>
+                Přihlásit se do zóny
+              </button>
+            )}
+            {isLead && (
+              <button className="btn-ghost px-2.5 py-1 text-xs" onClick={() => setManage((v) => !v)}>
+                {manage ? "Hotovo" : "+ Přidat člověka"}
+              </button>
+            )}
+          </div>
+        )}
+        {isLead && manage && (
+          <div className="mt-2">
+            <WhoSelect
+              value=""
+              onChange={(v) => v && dispatch({ type: "joinDecorZone", yearId: year.id, zoneId: zone.id, name: v })}
+              placeholder="Přidat člena do zóny…"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Referenční obrázek + popis */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Jak si to představujeme</p>
+        <div className="mt-1 space-y-2">
+          <ImageBoard
+            ids={zone.refImageIds ?? []}
+            canEdit={canEditZone}
+            addLabel="Ref. obrázek"
+            onChange={(next) => dispatch({ type: "updateDecorZone", yearId: year.id, zoneId: zone.id, patch: { refImageIds: next } })}
+          />
+          {editDesc && canEditZone ? (
+            <div className="space-y-2">
+              <textarea className="input min-h-20" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Popis představy zóny…" autoFocus />
+              <div className="flex gap-2">
+                <button className="btn-primary py-1.5 text-xs" onClick={() => { dispatch({ type: "updateDecorZone", yearId: year.id, zoneId: zone.id, patch: { description: desc } }); setEditDesc(false); }}>
+                  Uložit popis
+                </button>
+                <button className="btn-ghost py-1.5 text-xs" onClick={() => setEditDesc(false)}>Zrušit</button>
+              </div>
+            </div>
+          ) : zone.description ? (
+            <p
+              className={`whitespace-pre-wrap text-sm text-ink-soft ${canEditZone ? "cursor-pointer hover:text-ink" : ""}`}
+              onClick={() => canEditZone && (setDesc(zone.description ?? ""), setEditDesc(true))}
+            >
+              {zone.description}
+            </p>
+          ) : canEditZone ? (
+            <button className="text-xs font-medium text-gold-700 hover:underline" onClick={() => { setDesc(""); setEditDesc(true); }}>+ Přidat popis</button>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Úkoly zóny */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft">
+          Úkoly zóny {zoneTasks.length > 0 && <span className="text-ink-soft/70">({doneTasks}/{zoneTasks.length})</span>}
+        </p>
+        {zoneTasks.length > 0 ? (
+          <ul className="mt-1 space-y-1">
+            {zoneTasks.map((t) => (
+              <li key={t.id} className="flex items-center gap-2 text-sm">
+                <span className={`grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border text-[11px] font-bold leading-none ${t.done ? "border-leaf bg-leaf text-white" : "border-ink/30 bg-white text-transparent"}`}>✓</span>
+                <span className={t.done ? "text-ink-soft line-through" : "font-medium"}>{t.title}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-1 text-sm text-ink-soft/70">Zatím žádné úkoly.</p>
+        )}
+        {isLead && (
+          <div className="mt-2 flex gap-2">
+            <input className="input" placeholder="Nový úkol pro zónu…" value={taskText} onChange={(e) => setTaskText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addZoneTask()} />
+            <button className="btn-primary shrink-0 px-2.5 py-1 text-xs" onClick={addZoneTask} disabled={!taskText.trim()}>+ Úkol</button>
+          </div>
+        )}
+        {zoneTasks.length > 0 && (
+          <Link href="/zazemi/ukoly" className="mt-1.5 inline-block text-xs font-medium text-gold-700 hover:underline">
+            Odškrtnout v Úkolech →
+          </Link>
+        )}
+      </div>
+
+      {/* Materiál zóny */}
+      {zoneMaterial.length > 0 && (
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Materiál zóny</p>
+          <ul className="mt-1 space-y-1">
+            {zoneMaterial.map((d) => (
+              <li key={d.id} className="flex items-center gap-2 text-sm">
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS[d.status].cls}`}>{STATUS[d.status].label}</span>
+                <span className={d.status === "hotovo" ? "text-ink-soft line-through" : ""}>{d.title}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function DecorRow({ d, yearId, canEdit, admin, zones }: { d: Decor; yearId: string; canEdit: boolean; admin?: boolean; zones: DecorZone[] }) {
   const { dispatch } = useStore();
   const [edit, setEdit] = useState(false);
   const [askDone, setAskDone] = useState(false); // potvrzení „hotovo → uzamknout"
@@ -141,6 +419,7 @@ function DecorRow({ d, yearId, canEdit, admin }: { d: Decor; yearId: string; can
   const [link, setLink] = useState(d.link ?? "");
   const [note, setNote] = useState(d.note ?? "");
   const locked = d.status === "hotovo"; // hotové je uzamčené, dokud se neodemkne
+  const zoneName = zones.find((z) => z.id === d.zoneId)?.name;
 
   async function save() {
     await dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { title, who, link, note } });
@@ -156,8 +435,6 @@ function DecorRow({ d, yearId, canEdit, admin }: { d: Decor; yearId: string; can
     }
     dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { status: NEXT[d.status] } });
   }
-  // Po změně stavu se řádek přesune (seznam se řadí podle stavu) — doscrolluj
-  // k němu, ať to nevypadá, že „zmizel".
   function scrollToSelf() {
     setTimeout(() => document.getElementById(`decor-${d.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
   }
@@ -167,8 +444,6 @@ function DecorRow({ d, yearId, canEdit, admin }: { d: Decor; yearId: string; can
     flash("Hotovo — uzamčeno 🔒", "✅");
     scrollToSelf();
   }
-  // Reset (jen správce) — uzamčené hotové vrátí na začátek (nápad). Položka se
-  // nemaže, jen změní stav a přesune se mezi nápady (nahoru) — doscrollujeme k ní.
   function reset() {
     dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { status: "napad" } });
     flash("Resetováno na nápad — je mezi nápady nahoře", "🔄");
@@ -207,24 +482,21 @@ function DecorRow({ d, yearId, canEdit, admin }: { d: Decor; yearId: string; can
         </button>
         {canEdit && (
           <div className="ml-auto flex shrink-0 items-center gap-1">
-            {/* Reset (jen správce) — odemkne hotové a vrátí na nápad */}
             {locked && admin && (
               <button className="btn-ghost px-2 py-1 text-xs font-semibold text-gold-700" onClick={reset} title="Resetovat na nápad (odemknout)">
                 🔄 Reset
               </button>
             )}
-            {!locked && (
-              <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>Upravit</button>
-            )}
+            {!locked && <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>Upravit</button>}
             <DeleteButton onConfirm={() => dispatch({ type: "removeDecor", yearId, decorId: d.id })} />
           </div>
         )}
       </div>
 
-      {/* Název přes celou šířku — méně se láme */}
+      {/* Název přes celou šířku */}
       <p className={`break-words font-medium ${d.status === "hotovo" ? "text-ink-soft line-through" : ""}`}>{d.title}</p>
 
-      {/* Kdo shání / odkaz / poznámka — vždy pod názvem, zarovnané */}
+      {/* Kdo shání / odkaz / poznámka */}
       {(d.who || d.link || d.note) && (
         <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
           {d.who && <span>👤 {d.who}</span>}
@@ -235,6 +507,27 @@ function DecorRow({ d, yearId, canEdit, admin }: { d: Decor; yearId: string; can
           )}
           {d.note && <span className="break-words">📝 {d.note}</span>}
         </div>
+      )}
+
+      {/* Zóna — přiřazení materiálu (nebo volné) */}
+      {canEdit ? (
+        <label className="flex items-center gap-2 text-xs text-ink-soft">
+          <span className="shrink-0">📍 Zóna:</span>
+          <select
+            className="min-w-0 flex-1 rounded-lg border border-ink/15 bg-white px-2 py-1 text-xs"
+            value={d.zoneId ?? ""}
+            onChange={(e) => dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { zoneId: e.target.value || null } })}
+          >
+            <option value="">Volné (bez zóny)</option>
+            {zones.map((z) => (
+              <option key={z.id} value={z.id}>
+                {z.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        d.zoneId && <p className="text-xs text-ink-soft">📍 {zoneName ?? "Zóna"}</p>
       )}
 
       {/* Potvrzení „hotovo" — pak se to uzamkne */}

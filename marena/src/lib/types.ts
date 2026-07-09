@@ -77,6 +77,7 @@ export interface Task {
   done: boolean;
   due?: string; // ISO datum
   fromPostId?: string; // úkol vznikl z příspěvku na nástěnce (zpětný odkaz)
+  zoneId?: string; // úkol pro celou výzdobnou zónu (svítí všem přihlášeným v zóně)
   createdAt: string;
 }
 
@@ -199,6 +200,19 @@ export interface Decor {
   who?: string; // kdo to má na starost / shání
   link?: string; // odkaz (bazoš, eshop…)
   note?: string;
+  zoneId?: string; // přiřazení k výzdobné zóně (nevyplněno = volné, bez zóny)
+  createdAt: string;
+}
+
+// Výzdobná zóna — kus prostoru (Vstup, Dvůr, Aula…), který spravuje pár lidí.
+// Přihlásí se do ní (members), přidají referenční obrázek + popis a řeší její
+// materiál. Vedoucí výzdoby zóny zakládá a zadává jim úkoly (Task.zoneId).
+export interface DecorZone {
+  id: string;
+  name: string; // název zóny (Vstup, Dvůr…)
+  members: string[]; // jména přihlášených, kdo zónu spravují
+  refImageIds?: string[]; // referenční obrázky (jak si to představují)
+  description?: string; // popis představy zóny
   createdAt: string;
 }
 
@@ -323,6 +337,9 @@ export interface Year {
   contributions?: Contribution[]; // výběr – kdo dal kolik do společné kasy (vklady)
   freshmen?: Freshman[]; // prváci – ruční seznam účastníků
   decor?: Decor[]; // výzdoba – nápady a materiál
+  decorZones?: DecorZone[]; // výzdoba – zóny prostoru (kdo co spravuje)
+  decorRules?: string; // výzdoba – pravidla, co se musí dodržet
+  decorPlanIds?: string[]; // výzdoba – fotky plánku s rozdělením na zóny
   sponsors?: Sponsor[]; // sponzoři – koho oslovit, co dává, stav
   bar?: Drink[]; // bar – ceník drinků s recepturou
   menu?: MenuEntry[]; // kuchyně – denní menu

@@ -30,16 +30,21 @@ export default function UkolyPage() {
 
   // Moje role v tomto ročníku — úkoly těchto rolí beru jako „moje".
   const myRoleIds = useMemo(() => year?.members.find((m) => m.name === me)?.roleIds ?? [], [year, me]);
+  // Výzdobné zóny, ve kterých jsem přihlášený — úkoly té zóny jsou taky „moje".
+  const myZoneIds = useMemo(
+    () => (year?.decorZones ?? []).filter((z) => z.members.some((m) => sameName(m, me))).map((z) => z.id),
+    [year, me],
+  );
 
-  // Moje = přiřazené mně jménem (i z nástěnky) nebo mojí roli.
-  const isMine = (assignee?: string, roleId?: string) =>
-    (!!assignee && sameName(assignee, me)) || (!!roleId && myRoleIds.includes(roleId));
+  // Moje = přiřazené mně jménem (i z nástěnky), mojí roli, nebo mojí výzdobné zóně.
+  const isMine = (assignee?: string, roleId?: string, zoneId?: string) =>
+    (!!assignee && sameName(assignee, me)) || (!!roleId && myRoleIds.includes(roleId)) || (!!zoneId && myZoneIds.includes(zoneId));
 
   // Moje nesplněné úkoly — nahoře, jako první, co uživatele zajímá.
   const myOpen = useMemo(() => {
     if (!year) return [];
     return year.tasks
-      .filter((t) => !t.done && isMine(t.assignee, t.roleId))
+      .filter((t) => !t.done && isMine(t.assignee, t.roleId, t.zoneId))
       .sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999") || a.title.localeCompare(b.title, "cs"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, me, myRoleIds]);
@@ -75,7 +80,7 @@ export default function UkolyPage() {
 
   const total = year.tasks.length; // celkový počet — jen pro tlačítko „Smazat všechny"
   // Postup „Hotovo x/x" počítáme z úkolů přihlášené osoby (moje úkoly).
-  const myAll = year.tasks.filter((t) => isMine(t.assignee, t.roleId));
+  const myAll = year.tasks.filter((t) => isMine(t.assignee, t.roleId, t.zoneId));
   const myDone = myAll.filter((t) => t.done).length;
   const myTotal = myAll.length;
   const myPct = myTotal ? Math.round((myDone / myTotal) * 100) : 0;
