@@ -764,7 +764,8 @@ function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post;
               Odškrtnout v Úkolech →
             </Link>
           </div>
-          <ul className="space-y-1">
+          {/* Nad 10 úkolů se seznam scrolluje, ať příspěvek nebobtná přes celou obrazovku. */}
+          <ul className={`space-y-1 ${postTasks.length > 10 ? "max-h-60 overflow-y-auto overscroll-contain pr-1" : ""}`}>
             {postTasks.map((t) => (
               <li key={t.id} className="flex items-center gap-2">
                 <span
@@ -782,6 +783,9 @@ function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post;
               </li>
             ))}
           </ul>
+          {postTasks.length > 10 && (
+            <p className="mt-1.5 text-center text-[11px] text-ink-soft/70">↕ {postTasks.length} úkolů — seznam se roluje</p>
+          )}
           {/* Když mám všechny svoje úkoly z příspěvku hotové → pochvala (blik zhasne). */}
           {myAllDone && (
             <p className="mt-2 rounded-lg bg-leaf/15 px-2.5 py-1.5 text-xs font-semibold text-leaf-700">
