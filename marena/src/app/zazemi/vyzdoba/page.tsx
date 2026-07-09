@@ -264,14 +264,20 @@ function PlanCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
 function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: boolean; isLead: boolean; me: string }) {
   const { dispatch } = useStore();
   const [name, setName] = useState("");
+  const [desc, setDesc] = useState(""); // volitelný popis nové zóny (jako mají zóny uvnitř)
+  const [descOpen, setDescOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const zones = year.decorZones ?? [];
   const involved = new Set(zones.flatMap((z) => z.members.map((m) => m.toLowerCase()))).size;
   const zoneWord = zones.length === 1 ? "zóna" : zones.length >= 2 && zones.length <= 4 ? "zóny" : "zón";
   function addZone() {
     if (!name.trim()) return;
-    dispatch({ type: "addDecorZone", yearId: year.id, name: name.trim() });
+    const zid = uid("dz_");
+    dispatch({ type: "addDecorZone", yearId: year.id, name: name.trim(), id: zid });
+    if (desc.trim()) dispatch({ type: "updateDecorZone", yearId: year.id, zoneId: zid, patch: { description: desc.trim() } });
     setName("");
+    setDesc("");
+    setDescOpen(false);
     flash("Zóna přidána", "📍");
   }
   return (
@@ -292,11 +298,23 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
         </div>
       </div>
       {isLead && addOpen && (
-        <div className="flex gap-2">
-          <input className="input" placeholder="Nová zóna (např. Vstup, Dvůr, Aula)" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addZone()} autoFocus />
-          <button className="btn-primary shrink-0" onClick={addZone} disabled={!name.trim()}>
-            Přidat
-          </button>
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <input className="input" placeholder="Nová zóna (např. Vstup, Dvůr, Aula)" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addZone()} autoFocus />
+            <button className="btn-primary shrink-0" onClick={addZone} disabled={!name.trim()}>
+              Přidat
+            </button>
+          </div>
+          {descOpen ? (
+            <textarea className="input min-h-20" placeholder="Popis zóny — jak si to představujeme…" value={desc} onChange={(e) => setDesc(e.target.value)} autoFocus />
+          ) : (
+            <button
+              className="inline-flex items-center gap-1 rounded-lg border border-dashed border-gold-500/60 bg-gold-50 px-3 py-1.5 text-xs font-semibold text-gold-700 transition hover:bg-gold-100"
+              onClick={() => setDescOpen(true)}
+            >
+              ✍️ Přidat popis
+            </button>
+          )}
         </div>
       )}
       {zones.length === 0 ? (
