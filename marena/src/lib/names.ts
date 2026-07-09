@@ -15,3 +15,10 @@ export function sameName(a: string, b: string): boolean {
   const na = normName(a);
   return na !== "" && na === normName(b);
 }
+
+// Úkol může mít víc řešitelů — jména oddělená čárkou („Petr, Jana").
+// Vrátí true, když je `me` mezi nimi.
+export function assigneeHas(assignee: string | undefined, me: string): boolean {
+  if (!assignee) return false;
+  return assignee.split(",").some((n) => sameName(n, me));
+}

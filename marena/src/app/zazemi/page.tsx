@@ -14,7 +14,7 @@ import { SearchBox } from "@/components/SearchBox";
 import { ImageViewer } from "@/components/ImageViewer";
 import { matchesQuery } from "@/lib/search";
 import { isAdmin } from "@/lib/admin";
-import { sameName } from "@/lib/names";
+import { sameName, assigneeHas } from "@/lib/names";
 import { flash } from "@/components/Flash";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
@@ -122,11 +122,11 @@ function PollComposer({ draft, setDraft, polls }: { draft: PollDraft; setDraft: 
 
 // Koncept úkolů připojených k příspěvku — každý řádek = co udělat + kdo.
 // Po zveřejnění se z nich stanou úkoly v sekci Úkoly (propojené zpět přes fromPostId).
-type TaskRow = { text: string; who: string };
+type TaskRow = { text: string; who: string[] }; // who = jeden nebo víc řešitelů
 type TaskDraft = { on: boolean; rows: TaskRow[] };
-const emptyTasks: TaskDraft = { on: false, rows: [{ text: "", who: "" }] };
-const resolveTasks = (d: TaskDraft): TaskRow[] =>
-  d.on ? d.rows.map((r) => ({ text: r.text.trim(), who: r.who.trim() })).filter((r) => r.text) : [];
+const emptyTasks: TaskDraft = { on: false, rows: [{ text: "", who: [] }] };
+const resolveTasks = (d: TaskDraft): { text: string; who: string }[] =>
+  d.on ? d.rows.map((r) => ({ text: r.text.trim(), who: r.who.join(", ") })).filter((r) => r.text) : [];
 
 // Editor úkolů — „kdo a co má udělat". Sdílený mezi přidáním a úpravou příspěvku.
 // `names` = jména z týmu do rozbalovacího výběru „Kdo?" (klik = rovnou seznam, bez psaní).
@@ -139,32 +139,58 @@ function TaskComposer({ draft, setDraft, names = [], title = "✅ Přidat úkol 
         {title}
       </label>
       {draft.on && (
-        <div className="mt-3 space-y-2">
+        <div className="mt-3 space-y-3">
           {draft.rows.map((r, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <input className="input flex-1" placeholder="Co udělat? (např. Povolení průvodu)" value={r.text} onChange={(e) => setRow(i, { text: e.target.value })} />
-              <select className="input w-28 shrink-0 sm:w-40" value={r.who} onChange={(e) => setRow(i, { who: e.target.value })}>
-                <option value="">Kdo?</option>
-                {names.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-              {draft.rows.length > 1 && (
-                <button
-                  type="button"
-                  className="btn-ghost px-2"
-                  aria-label={`Odebrat úkol ${i + 1}`}
-                  title="Odebrat úkol"
-                  onClick={() => setDraft({ ...draft, rows: draft.rows.filter((_, j) => j !== i) })}
+            <div key={i} className="rounded-lg bg-white/60 p-2 ring-1 ring-ink/10">
+              <div className="flex items-center gap-2">
+                <input className="input flex-1" placeholder="Co udělat? (např. Povolení průvodu)" value={r.text} onChange={(e) => setRow(i, { text: e.target.value })} />
+                {/* Výběr přidává lidi — k jednomu úkolu jich může být víc. */}
+                <select
+                  className="input w-28 shrink-0 sm:w-40"
+                  value=""
+                  onChange={(e) => {
+                    const n = e.target.value;
+                    if (n && !r.who.some((w) => sameName(w, n))) setRow(i, { who: [...r.who, n] });
+                  }}
                 >
-                  ✕
-                </button>
+                  <option value="">+ Kdo?</option>
+                  {names.filter((n) => !r.who.some((w) => sameName(w, n))).map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+                {draft.rows.length > 1 && (
+                  <button
+                    type="button"
+                    className="btn-ghost px-2"
+                    aria-label={`Odebrat úkol ${i + 1}`}
+                    onClick={() => setDraft({ ...draft, rows: draft.rows.filter((_, j) => j !== i) })}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              {r.who.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {r.who.map((w) => (
+                    <span key={w} className="chip inline-flex items-center gap-1">
+                      {w}
+                      <button
+                        type="button"
+                        onClick={() => setRow(i, { who: r.who.filter((x) => x !== w) })}
+                        className="opacity-70 hover:opacity-100"
+                        aria-label={`Odebrat ${w}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
           ))}
-          <button type="button" className="btn-ghost" onClick={() => setDraft({ ...draft, rows: [...draft.rows, { text: "", who: "" }] })}>
+          <button type="button" className="btn-ghost" onClick={() => setDraft({ ...draft, rows: [...draft.rows, { text: "", who: [] }] })}>
             + Další úkol
           </button>
         </div>
@@ -242,7 +268,7 @@ export default function NastenkaPage() {
   }, [year]);
 
   const openPolls = year?.polls.filter((p) => !isPollClosed(p)).length ?? 0;
-  const myTasks = year?.tasks.filter((t) => !t.done && (t.assignee === me || !t.assignee)).length ?? 0;
+  const myTasks = year?.tasks.filter((t) => !t.done && (assigneeHas(t.assignee, me) || !t.assignee)).length ?? 0;
   const myShifts = (year?.shifts ?? []).filter((s) => s.people.includes(me)).length;
 
   const contribInPool = (year?.contributions ?? []).filter((c) => !c.returned).reduce((s, c) => s + c.amount, 0);
@@ -549,7 +575,7 @@ function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post;
   // Moje úkoly z tohoto příspěvku (podle jména). Dokud mám nějaký nesplněný,
   // bliká mi celá zpráva červeně dokola; jakmile mám všechny hotové, blik zhasne
   // a ukáže se pochvala. (Odškrtává se v Úkolech, tady je to jen náhled.)
-  const myPostTasks = postTasks.filter((t) => t.assignee && sameName(t.assignee, me));
+  const myPostTasks = postTasks.filter((t) => assigneeHas(t.assignee, me));
   const myUndone = myPostTasks.filter((t) => !t.done).length;
   const myAllDone = myPostTasks.length > 0 && myUndone === 0;
   // Červené blikající ohraničení: moje nesplněné úkoly, nebo nový příspěvek (3 s).

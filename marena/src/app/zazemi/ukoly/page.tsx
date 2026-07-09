@@ -10,7 +10,7 @@ import { SearchBox } from "@/components/SearchBox";
 import { Icon } from "@/components/Icons";
 import { matchesQuery } from "@/lib/search";
 import { isAdmin } from "@/lib/admin";
-import { sameName } from "@/lib/names";
+import { sameName, assigneeHas } from "@/lib/names";
 import { flash } from "@/components/Flash";
 
 type Filter = "vse" | "nehotove" | "hotove";
@@ -38,7 +38,7 @@ export default function UkolyPage() {
 
   // Moje = přiřazené mně jménem (i z nástěnky), mojí roli, nebo mojí výzdobné zóně.
   const isMine = (assignee?: string, roleId?: string, zoneId?: string) =>
-    (!!assignee && sameName(assignee, me)) || (!!roleId && myRoleIds.includes(roleId)) || (!!zoneId && myZoneIds.includes(zoneId));
+    assigneeHas(assignee, me) || (!!roleId && myRoleIds.includes(roleId)) || (!!zoneId && myZoneIds.includes(zoneId));
 
   // Moje nesplněné úkoly — nahoře, jako první, co uživatele zajímá.
   const myOpen = useMemo(() => {

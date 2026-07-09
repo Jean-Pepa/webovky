@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { isAdmin } from "@/lib/admin";
 import { myRoleIds } from "@/lib/access";
-import { sameName } from "@/lib/names";
+import { sameName, assigneeHas } from "@/lib/names";
 import { todayISO } from "@/lib/format";
 
 // Moje agenda — osobní rozcestník na nástěnce podle rolí: každý má svoje
@@ -26,7 +26,7 @@ export function MyAgenda() {
   const myZoneIds = (year.decorZones ?? []).filter((z) => z.members.some((m) => sameName(m, me))).map((z) => z.id);
   // Moje úkoly = přiřazené mně jménem (i z nástěnky), mojí roli, nebo mojí výzdobné zóně.
   const myTasks = (year.tasks ?? []).filter(
-    (t) => (t.assignee && sameName(t.assignee, me)) || (t.roleId && roles.includes(t.roleId)) || (t.zoneId && myZoneIds.includes(t.zoneId)),
+    (t) => assigneeHas(t.assignee, me) || (t.roleId && roles.includes(t.roleId)) || (t.zoneId && myZoneIds.includes(t.zoneId)),
   );
   const myUndone = myTasks.filter((t) => !t.done).length;
   const today = todayISO();
