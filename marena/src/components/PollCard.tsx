@@ -65,7 +65,7 @@ export function DeadlineField({ value, onChange }: { value?: string; onChange: (
   );
 }
 
-export function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost }: { poll: Poll; yearId: string; me: string; totalPeople: number; highlight?: boolean; linkedPost?: { id: string; title: string } }) {
+export function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost, canVote = true }: { poll: Poll; yearId: string; me: string; totalPeople: number; highlight?: boolean; linkedPost?: { id: string; title: string }; canVote?: boolean }) {
   const { dispatch } = useStore();
   const [showOverview, setShowOverview] = useState(false);
   const totalVoters = new Set(poll.options.flatMap((o) => o.voters)).size;
@@ -145,14 +145,14 @@ export function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost 
           return (
             <button
               key={o.id}
-              disabled={closed}
+              disabled={closed || !canVote}
               onClick={async () => {
                 await dispatch({ type: "vote", yearId, pollId: poll.id, optionId: o.id, voter: me });
                 flash(`Hlasoval jsi: ${o.label}`, "🗳️");
               }}
               className={`relative block w-full overflow-hidden rounded-xl border px-3 py-2.5 text-left transition ${
                 mine ? "border-gold-400 bg-gold-50" : "border-ink/10 bg-white hover:bg-paper2"
-              } ${closed ? "cursor-default" : "cursor-pointer"}`}
+              } ${closed || !canVote ? "cursor-default" : "cursor-pointer"}`}
             >
               <span
                 aria-hidden
@@ -175,6 +175,8 @@ export function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost 
           );
         })}
       </div>
+
+      {!canVote && !closed && <p className="mt-2 text-xs text-ink-soft">Tuhle anketu můžeš jen sledovat — hlasovat smí jen výzdobáři.</p>}
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         {totalVoters === 0 ? (

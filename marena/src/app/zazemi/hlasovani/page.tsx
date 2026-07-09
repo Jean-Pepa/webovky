@@ -50,8 +50,11 @@ export default function HlasovaniPage() {
     flash("Anketa vytvořena", "🗳️");
   }
 
-  // Ankety výzdoby jsou jen pro výzdobáře (a správce) — ostatní je tu nevidí.
-  const canSeeVyzdoba = isAdmin(me) || myRoleIds(year, me).includes("vyzdoba");
+  // Ankety výzdoby jsou jen pro výzdobáře (a správce) — ostatní je tu nevidí,
+  // číslo „z N" počítá jen výzdobáře a hlasovat můžou taky jen oni.
+  const iAmVyzdobar = myRoleIds(year, me).includes("vyzdoba");
+  const canSeeVyzdoba = isAdmin(me) || iAmVyzdobar;
+  const vyzdobariCount = year.members.filter((m) => m.roleIds.includes("vyzdoba")).length;
   const polls = [...year.polls]
     .filter((p) => p.tag !== "vyzdoba" || canSeeVyzdoba)
     .sort((a, b) => {
@@ -125,7 +128,17 @@ export default function HlasovaniPage() {
         </div>
       ) : (
         polls.map((p) => (
-          <PollCard key={p.id} poll={p} yearId={year.id} me={me} totalPeople={year.members.length} highlight={highlight === p.id} linkedPost={postByPoll.get(p.id)} />
+          <PollCard
+            key={p.id}
+            poll={p}
+            yearId={year.id}
+            me={me}
+            // Výzdoba ankety počítají jen výzdobáře a hlasovat můžou jen oni.
+            totalPeople={p.tag === "vyzdoba" ? vyzdobariCount : year.members.length}
+            canVote={p.tag !== "vyzdoba" || iAmVyzdobar}
+            highlight={highlight === p.id}
+            linkedPost={postByPoll.get(p.id)}
+          />
         ))
       )}
     </div>
