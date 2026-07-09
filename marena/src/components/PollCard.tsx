@@ -109,7 +109,7 @@ export function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost 
     <div
       id={`poll-${poll.id}`}
       className={`card scroll-mt-24 p-5 transition-shadow ${closed ? "bg-leaf/[0.04] ring-2 ring-leaf" : ""} ${
-        highlight ? "ring-2 ring-gold-500 shadow-[0_0_0_4px_rgba(253,175,34,0.25)]" : ""
+        highlight ? "ring-2 ring-red-500 shadow-[0_0_0_4px_rgba(239,68,68,0.3)]" : ""
       }`}
     >
       <div className="mb-1 flex flex-wrap items-center gap-2 text-xs text-ink-soft">

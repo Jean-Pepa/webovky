@@ -15,7 +15,7 @@ import { Collapsible } from "@/components/Collapsible";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
 import { flash } from "@/components/Flash";
-import { PollCard, DeadlineField } from "@/components/PollCard";
+import { DeadlineField } from "@/components/PollCard";
 import { isPollClosed } from "@/lib/poll";
 import type { Decor, DecorStatus, DecorZone, Year } from "@/lib/types";
 
@@ -367,10 +367,36 @@ function TeamVoting({ year, canEdit, me }: { year: Year; canEdit: boolean; me: s
           Zatím žádné hlasování.{canEdit ? " Založ první rozhodnutí týmu." : ""}
         </div>
       ) : (
-        <div className="space-y-3">
-          {polls.map((p) => (
-            <PollCard key={p.id} poll={p} yearId={year.id} me={me} totalPeople={year.members.length} />
-          ))}
+        <div className="space-y-2">
+          {polls.map((p) => {
+            const closed = isPollClosed(p);
+            const voted = p.options.some((o) => o.voters.some((v) => sameName(v, me)));
+            const votes = new Set(p.options.flatMap((o) => o.voters)).size;
+            return (
+              <div key={p.id} className={`card flex flex-wrap items-center gap-3 p-3.5 ${voted && !closed ? "bg-leaf/[0.05] ring-1 ring-leaf/40" : ""}`}>
+                <div className="min-w-0 flex-1">
+                  <p className="break-words font-medium">🗳️ {p.question}</p>
+                  <p className="mt-0.5 text-xs text-ink-soft">
+                    {votes === 0 ? "zatím nikdo nehlasoval" : `${votes} ${votes === 1 ? "hlas" : votes <= 4 ? "hlasy" : "hlasů"}`}
+                    {closed ? " · uzavřeno" : ""}
+                  </p>
+                </div>
+                {closed ? (
+                  <Link href={`/zazemi/hlasovani?poll=${p.id}`} className="shrink-0 rounded-full bg-paper2 px-3.5 py-2 text-xs font-semibold text-ink-soft transition hover:bg-ink/5">
+                    Výsledek →
+                  </Link>
+                ) : voted ? (
+                  <span className="badge-closed-glow inline-flex shrink-0 items-center gap-1.5 rounded-full border border-leaf/50 bg-leaf/15 px-3.5 py-2 text-xs font-bold text-leaf-700">
+                    ✅ Hlasoval jsi
+                  </span>
+                ) : (
+                  <Link href={`/zazemi/hlasovani?poll=${p.id}`} className="pending-glow inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gold-500 px-4 py-2 text-xs font-bold text-[#1d1d1f] transition hover:bg-gold-400">
+                    🗳️ Hlasovat →
+                  </Link>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </section>
