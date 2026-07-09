@@ -25,6 +25,8 @@ export interface Post {
   pinned: boolean;
   photoIds?: string[]; // přiložené obrázky (blob id, načítá se přes loadReceipt)
   pollId?: string; // připojená anketa (žije v sekci Hlasování, odkaz z příspěvku)
+  // Prioritní zpráva — komu „svítí" v Moje agendě (všichni / role / konkrétní lidé).
+  priority?: { all?: boolean; roles?: string[]; people?: string[] };
   createdAt: string;
   editedBy?: string; // kdo naposledy upravil (autor založení se nemění) — legacy
   editedAt?: string; // ISO – kdy se naposledy upravilo — legacy
@@ -341,6 +343,7 @@ export interface Year {
   decorZones?: DecorZone[]; // výzdoba – zóny prostoru (kdo co spravuje)
   decorRules?: string; // výzdoba – pravidla, co se musí dodržet
   decorPlanIds?: string[]; // výzdoba – fotky plánku s rozdělením na zóny
+  decorPlanDesc?: string; // výzdoba – popis k plánku zón
   sponsors?: Sponsor[]; // sponzoři – koho oslovit, co dává, stav
   bar?: Drink[]; // bar – ceník drinků s recepturou
   menu?: MenuEntry[]; // kuchyně – denní menu

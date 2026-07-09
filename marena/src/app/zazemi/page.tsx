@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
-import { roleById } from "@/lib/roles";
+import { roleById, ROLES } from "@/lib/roles";
+import { Modal } from "@/components/Modal";
 import { fmtDateTime, fmtDayShort, todayISO, fmtCZK } from "@/lib/format";
 import { KINDS } from "@/lib/kinds";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -14,7 +15,7 @@ import { SearchBox } from "@/components/SearchBox";
 import { ImageViewer } from "@/components/ImageViewer";
 import { matchesQuery } from "@/lib/search";
 import { isAdmin } from "@/lib/admin";
-import { sameName } from "@/lib/names";
+import { sameName, assigneeHas } from "@/lib/names";
 import { flash } from "@/components/Flash";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
@@ -122,11 +123,11 @@ function PollComposer({ draft, setDraft, polls }: { draft: PollDraft; setDraft: 
 
 // Koncept úkolů připojených k příspěvku — každý řádek = co udělat + kdo.
 // Po zveřejnění se z nich stanou úkoly v sekci Úkoly (propojené zpět přes fromPostId).
-type TaskRow = { text: string; who: string };
+type TaskRow = { text: string; who: string[] }; // who = jeden nebo víc řešitelů
 type TaskDraft = { on: boolean; rows: TaskRow[] };
-const emptyTasks: TaskDraft = { on: false, rows: [{ text: "", who: "" }] };
-const resolveTasks = (d: TaskDraft): TaskRow[] =>
-  d.on ? d.rows.map((r) => ({ text: r.text.trim(), who: r.who.trim() })).filter((r) => r.text) : [];
+const emptyTasks: TaskDraft = { on: false, rows: [{ text: "", who: [] }] };
+const resolveTasks = (d: TaskDraft): { text: string; who: string }[] =>
+  d.on ? d.rows.map((r) => ({ text: r.text.trim(), who: r.who.join(", ") })).filter((r) => r.text) : [];
 
 // Editor úkolů — „kdo a co má udělat". Sdílený mezi přidáním a úpravou příspěvku.
 // `names` = jména z týmu do rozbalovacího výběru „Kdo?" (klik = rovnou seznam, bez psaní).
@@ -139,37 +140,178 @@ function TaskComposer({ draft, setDraft, names = [], title = "✅ Přidat úkol 
         {title}
       </label>
       {draft.on && (
-        <div className="mt-3 space-y-2">
+        <div className="mt-3 space-y-3">
           {draft.rows.map((r, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <input className="input flex-1" placeholder="Co udělat? (např. Povolení průvodu)" value={r.text} onChange={(e) => setRow(i, { text: e.target.value })} />
-              <select className="input w-28 shrink-0 sm:w-40" value={r.who} onChange={(e) => setRow(i, { who: e.target.value })}>
-                <option value="">Kdo?</option>
-                {names.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-              {draft.rows.length > 1 && (
-                <button
-                  type="button"
-                  className="btn-ghost px-2"
-                  aria-label={`Odebrat úkol ${i + 1}`}
-                  title="Odebrat úkol"
-                  onClick={() => setDraft({ ...draft, rows: draft.rows.filter((_, j) => j !== i) })}
+            <div key={i} className="rounded-lg bg-white/60 p-2 ring-1 ring-ink/10">
+              <div className="flex items-center gap-2">
+                <input className="input flex-1" placeholder="Co udělat? (např. Povolení průvodu)" value={r.text} onChange={(e) => setRow(i, { text: e.target.value })} />
+                {/* Výběr přidává lidi — k jednomu úkolu jich může být víc. */}
+                <select
+                  className="input w-28 shrink-0 sm:w-40"
+                  value=""
+                  onChange={(e) => {
+                    const n = e.target.value;
+                    if (n && !r.who.some((w) => sameName(w, n))) setRow(i, { who: [...r.who, n] });
+                  }}
                 >
-                  ✕
-                </button>
+                  <option value="">+ Kdo?</option>
+                  {names.filter((n) => !r.who.some((w) => sameName(w, n))).map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+                {draft.rows.length > 1 && (
+                  <button
+                    type="button"
+                    className="btn-ghost px-2"
+                    aria-label={`Odebrat úkol ${i + 1}`}
+                    onClick={() => setDraft({ ...draft, rows: draft.rows.filter((_, j) => j !== i) })}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              {r.who.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {r.who.map((w) => (
+                    <span key={w} className="chip inline-flex items-center gap-1">
+                      {w}
+                      <button
+                        type="button"
+                        onClick={() => setRow(i, { who: r.who.filter((x) => x !== w) })}
+                        className="opacity-70 hover:opacity-100"
+                        aria-label={`Odebrat ${w}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
           ))}
-          <button type="button" className="btn-ghost" onClick={() => setDraft({ ...draft, rows: [...draft.rows, { text: "", who: "" }] })}>
+          <button type="button" className="btn-ghost" onClick={() => setDraft({ ...draft, rows: [...draft.rows, { text: "", who: [] }] })}>
             + Další úkol
           </button>
         </div>
       )}
     </div>
+  );
+}
+
+// Krátký popisek prioritizace pro tlačítko (Všichni / názvy rolí + jména lidí).
+function priorityLabel(p: { all: boolean; roles: string[]; people: string[] }): string {
+  if (p.all) return "všichni";
+  const parts = p.roles.map((rid) => roleById(rid)?.name ?? rid).concat(p.people);
+  return parts.join(", ") || "nikdo";
+}
+
+// Středový modal „Pro koho prioritizovat?" — všichni / role (víc) / lidé (víc).
+function PriorityModal({
+  open,
+  onClose,
+  value,
+  onChange,
+  members,
+}: {
+  open: boolean;
+  onClose: () => void;
+  value: { all: boolean; roles: string[]; people: string[] };
+  onChange: (v: { all: boolean; roles: string[]; people: string[] }) => void;
+  members: { id: string; name: string }[];
+}) {
+  const toggleRole = (rid: string) =>
+    onChange({ ...value, all: false, roles: value.roles.includes(rid) ? value.roles.filter((r) => r !== rid) : [...value.roles, rid] });
+  const addPerson = (name: string) => {
+    if (name && !value.people.some((p) => sameName(p, name))) onChange({ ...value, all: false, people: [...value.people, name] });
+  };
+  const removePerson = (name: string) => onChange({ ...value, people: value.people.filter((p) => p !== name) });
+  return (
+    <Modal open={open} onClose={onClose} title="📣 Pro koho zpráva svítí?">
+      <div className="space-y-4">
+        <p className="text-sm text-ink-soft">Vybraným bude zpráva blikat v Moje agendě, dokud si ji nepřečtou.</p>
+
+        {/* Všichni */}
+        <button
+          type="button"
+          onClick={() => onChange({ all: !value.all, roles: [], people: [] })}
+          className={`flex w-full items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition ${
+            value.all ? "border-marigold-500 bg-marigold-50 text-marigold-700" : "border-ink/15 text-ink hover:bg-ink/5"
+          }`}
+        >
+          <span className={`grid h-5 w-5 place-items-center rounded-full border-2 text-[11px] ${value.all ? "border-marigold-500 bg-marigold-500 text-white" : "border-ink/30"}`}>
+            {value.all ? "✓" : ""}
+          </span>
+          👥 Všichni
+        </button>
+
+        {/* Role / týmy */}
+        <div>
+          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-soft">Týmy / role</p>
+          <div className="flex flex-wrap gap-1.5">
+            {ROLES.map((r) => {
+              const on = value.roles.includes(r.id);
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => toggleRole(r.id)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition ${
+                    on ? "bg-marigold-500 text-white ring-marigold-500" : "text-ink-soft ring-ink/15 hover:bg-ink/5"
+                  }`}
+                >
+                  {r.emoji} {r.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Konkrétní lidé */}
+        <div>
+          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-soft">Konkrétní lidé</p>
+          {value.people.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {value.people.map((p) => (
+                <span key={p} className="chip inline-flex items-center gap-1">
+                  {p}
+                  <button type="button" onClick={() => removePerson(p)} className="opacity-70 hover:opacity-100" aria-label={`Odebrat ${p}`}>
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <select
+            className="input"
+            value=""
+            onChange={(e) => {
+              addPerson(e.target.value);
+              e.target.value = "";
+            }}
+          >
+            <option value="">+ Přidat člověka…</option>
+            {members
+              .filter((m) => !value.people.some((p) => sameName(p, m.name)))
+              .map((m) => (
+                <option key={m.id} value={m.name}>
+                  {m.name}
+                </option>
+              ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2 pt-1">
+          <button className="btn-ghost flex-1" onClick={() => onChange({ all: false, roles: [], people: [] })}>
+            Zrušit prioritu
+          </button>
+          <button className="btn-primary flex-1" onClick={onClose}>
+            Hotovo
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -185,6 +327,10 @@ export default function NastenkaPage() {
   const [uploading, setUploading] = useState(false);
   const [pollDraft, setPollDraft] = useState<PollDraft>(emptyPoll);
   const [taskDraft, setTaskDraft] = useState<TaskDraft>(emptyTasks);
+  // Prioritní zpráva — komu má „svítit" v Moje agendě (všichni / role / lidé).
+  const [priority, setPriority] = useState<{ all: boolean; roles: string[]; people: string[] }>({ all: false, roles: [], people: [] });
+  const [priorityOpen, setPriorityOpen] = useState(false);
+  const hasPriority = priority.all || priority.roles.length > 0 || priority.people.length > 0;
   // Když přijdeme z ankety přes ?post=<id>, doscrollujeme a příspěvek na chvíli zvýrazníme.
   const [highlightPost, setHighlightPost] = useState<string | null>(null);
   // „Něco nového na nástěnce" (okno v layoutu) sem po zavření pošle id příspěvků
@@ -242,7 +388,7 @@ export default function NastenkaPage() {
   }, [year]);
 
   const openPolls = year?.polls.filter((p) => !isPollClosed(p)).length ?? 0;
-  const myTasks = year?.tasks.filter((t) => !t.done && (t.assignee === me || !t.assignee)).length ?? 0;
+  const myTasks = year?.tasks.filter((t) => !t.done && (assigneeHas(t.assignee, me) || !t.assignee)).length ?? 0;
   const myShifts = (year?.shifts ?? []).filter((s) => s.people.includes(me)).length;
 
   const contribInPool = (year?.contributions ?? []).filter((c) => !c.returned).reduce((s, c) => s + c.amount, 0);
@@ -262,6 +408,13 @@ export default function NastenkaPage() {
       clearTimeout(clear);
     };
   }, [year?.id]);
+
+  // Otevření prioritní zprávy z Moje agendy — doscrolluje a červeně ji ohraničí (~2,6 s).
+  function openPost(id: string) {
+    setHighlightPost(id);
+    setTimeout(() => document.getElementById(`post-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 60);
+    setTimeout(() => setHighlightPost(null), 2600);
+  }
 
   // Po zavření okna „něco nového na nástěnce" (v layoutu) sem přijdou id
   // nových příspěvků — bliknou červeně ohraničené ~3 s a první se doscrolluje.
@@ -305,7 +458,18 @@ export default function NastenkaPage() {
     }
     // Příspěvek s vlastním id, ať na něj mohou úkoly navázat (fromPostId).
     const postId = uid("p_");
-    await dispatch({ type: "addPost", yearId: year.id, id: postId, author: me, title, body, pinned, photoIds: photos.map((p) => p.id), pollId });
+    await dispatch({
+      type: "addPost",
+      yearId: year.id,
+      id: postId,
+      author: me,
+      title,
+      body,
+      pinned,
+      photoIds: photos.map((p) => p.id),
+      pollId,
+      priority: hasPriority ? { all: priority.all, roles: priority.all ? [] : priority.roles, people: priority.all ? [] : priority.people } : undefined,
+    });
     // Volitelné úkoly — propíšou se do sekce Úkoly a zůstanou navázané na příspěvek.
     const tasks = resolveTasks(taskDraft);
     for (const tk of tasks) {
@@ -317,6 +481,7 @@ export default function NastenkaPage() {
     setPhotos([]);
     setPollDraft(emptyPoll);
     setTaskDraft(emptyTasks);
+    setPriority({ all: false, roles: [], people: [] });
     setOpen(false);
     flash(tasks.length ? `Příspěvek přidán · ${tasks.length} úkol${tasks.length > 1 ? "y" : ""} v Úkolech` : choice ? "Příspěvek i anketa přidány" : "Příspěvek přidán", tasks.length ? "✅" : choice ? "🗳️" : "📌");
   }
@@ -336,7 +501,7 @@ export default function NastenkaPage() {
         </div>
 
         {/* Osobní rozcestník podle rolí — každý má svoje věci na jeden ťuk */}
-        <MyAgenda />
+        <MyAgenda onOpenPost={openPost} />
 
         {open && (
           <div className="card space-y-3 p-4">
@@ -370,6 +535,21 @@ export default function NastenkaPage() {
             <PollComposer draft={pollDraft} setDraft={setPollDraft} polls={year.polls} />
             <TaskComposer draft={taskDraft} setDraft={setTaskDraft} names={memberNames} />
 
+            {/* Prioritizace — komu má zpráva „svítit" v Moje agendě */}
+            <button
+              type="button"
+              onClick={() => setPriorityOpen(true)}
+              className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium ring-1 transition ${
+                hasPriority ? "bg-marigold-50 text-marigold-700 ring-marigold-500/40" : "bg-paper2/60 text-ink-soft ring-ink/10 hover:bg-ink/5"
+              }`}
+            >
+              <span>📣</span>
+              <span className="min-w-0 flex-1 text-left">
+                {hasPriority ? `Prioritní pro: ${priorityLabel(priority)}` : "Prioritizovat zprávu (komu má svítit)"}
+              </span>
+              <span className="shrink-0 text-xs font-semibold">{hasPriority ? "Změnit" : "Nastavit"}</span>
+            </button>
+
             <div className="flex flex-wrap items-center gap-3">
               <label className="flex items-center gap-2 text-sm text-ink-soft">
                 <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} />
@@ -381,6 +561,14 @@ export default function NastenkaPage() {
             </div>
           </div>
         )}
+
+        <PriorityModal
+          open={priorityOpen}
+          onClose={() => setPriorityOpen(false)}
+          value={priority}
+          onChange={setPriority}
+          members={year.members}
+        />
 
         {posts.length > 0 && (
           <SearchBox value={q} onChange={setQ} placeholder="Hledat v nástěnce…" />
@@ -542,14 +730,14 @@ function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post;
   const poll = p.pollId ? currentYear?.polls.find((pl) => pl.id === p.pollId) : undefined;
   // Úkoly navázané na tenhle příspěvek (přes fromPostId) — checklist rovnou na nástěnce.
   const postTasks = (currentYear?.tasks ?? []).filter((t) => t.fromPostId === p.id);
-  // Delší seznam úkolů se sbalí za klikací šipku (rozbalí se na kliknutí).
-  const [tasksOpen, setTasksOpen] = useState(postTasks.length <= 10);
+  // Delší seznam úkolů (nad 3) se sbalí za klikací šipku; po rozbalení se roluje.
+  const [tasksOpen, setTasksOpen] = useState(postTasks.length <= 3);
   // Všechny úkoly příspěvku hotové → příspěvek se rozsvítí zeleně.
   const allTasksDone = postTasks.length > 0 && postTasks.every((t) => t.done);
   // Moje úkoly z tohoto příspěvku (podle jména). Dokud mám nějaký nesplněný,
   // bliká mi celá zpráva červeně dokola; jakmile mám všechny hotové, blik zhasne
   // a ukáže se pochvala. (Odškrtává se v Úkolech, tady je to jen náhled.)
-  const myPostTasks = postTasks.filter((t) => t.assignee && sameName(t.assignee, me));
+  const myPostTasks = postTasks.filter((t) => assigneeHas(t.assignee, me));
   const myUndone = myPostTasks.filter((t) => !t.done).length;
   const myAllDone = myPostTasks.length > 0 && myUndone === 0;
   // Červené blikající ohraničení: moje nesplněné úkoly, nebo nový příspěvek (3 s).
@@ -712,7 +900,7 @@ function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post;
         blink
           ? "readonly-pulse border-2 border-red-500"
           : highlight
-            ? "ring-2 ring-gold-500 shadow-[0_0_0_4px_rgba(253,175,34,0.25)]"
+            ? "ring-2 ring-red-500 shadow-[0_0_0_4px_rgba(239,68,68,0.3)]"
             : allTasksDone
               ? "border-leaf/50 bg-leaf/[0.05] ring-1 ring-leaf/40"
               : p.pinned
@@ -773,7 +961,7 @@ function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post;
             </Link>
           </div>
           {tasksOpen ? (
-            <ul className="space-y-1">
+            <ul className={`space-y-1 ${postTasks.length > 3 ? "max-h-20 overflow-y-auto overscroll-contain pr-1" : ""}`}>
               {postTasks.map((t) => (
                 <li key={t.id} className="flex items-center gap-2">
                   <span

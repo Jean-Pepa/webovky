@@ -59,7 +59,7 @@ export type Action =
   | { type: "requestRole"; yearId: string; memberId?: string; name: string; email?: string; phone?: string; roleId: string }
   | { type: "resolveRoleRequest"; yearId: string; memberId: string; roleId: string; approve: boolean }
   | { type: "setRoleLead"; yearId: string; roleId: string; memberId: string }
-  | { type: "addPost"; yearId: string; id?: string; author: string; roleId?: string; title: string; body: string; pinned?: boolean; photoIds?: string[]; pollId?: string }
+  | { type: "addPost"; yearId: string; id?: string; author: string; roleId?: string; title: string; body: string; pinned?: boolean; photoIds?: string[]; pollId?: string; priority?: { all?: boolean; roles?: string[]; people?: string[] } }
   | { type: "updatePost"; yearId: string; postId: string; editedBy: string; patch: { title?: string; body?: string; roleId?: string | null; photoIds?: string[]; pollId?: string } }
   | { type: "togglePin"; yearId: string; postId: string }
   | { type: "removePost"; yearId: string; postId: string }
@@ -105,7 +105,7 @@ export type Action =
   | { type: "updateDecor"; yearId: string; decorId: string; patch: { title?: string; status?: "napad" | "shani" | "hotovo"; who?: string; link?: string; note?: string; zoneId?: string | null } }
   | { type: "removeDecor"; yearId: string; decorId: string }
   // Výzdobné zóny + plánek + pravidla
-  | { type: "addDecorZone"; yearId: string; name: string }
+  | { type: "addDecorZone"; yearId: string; name: string; id?: string }
   | { type: "updateDecorZone"; yearId: string; zoneId: string; patch: { name?: string; description?: string; refImageIds?: string[] } }
   | { type: "removeDecorZone"; yearId: string; zoneId: string }
   | { type: "joinDecorZone"; yearId: string; zoneId: string; name: string }
@@ -113,6 +113,7 @@ export type Action =
   | { type: "setDecorZoneMembers"; yearId: string; zoneId: string; members: string[] }
   | { type: "setDecorRules"; yearId: string; text: string }
   | { type: "setDecorPlan"; yearId: string; ids: string[] }
+  | { type: "setDecorPlanDesc"; yearId: string; text: string }
   | { type: "addSponsor"; yearId: string; name: string; gives?: string; who?: string; links?: string[]; note?: string; category?: SponsorCategory; returning?: boolean }
   | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: SponsorStatus; who?: string; links?: string[]; note?: string; category?: SponsorCategory; returning?: boolean } }
   | { type: "removeSponsor"; yearId: string; sponsorId: string }
@@ -475,7 +476,7 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => ({
         ...y,
         posts: [
-          { id: a.id ?? uid("p_"), author: a.author.trim() || "Anonym", roleId: a.roleId, title: a.title.trim(), body: a.body.trim(), pinned: a.pinned ?? false, photoIds: a.photoIds?.length ? a.photoIds : undefined, pollId: a.pollId || undefined, createdAt: now() },
+          { id: a.id ?? uid("p_"), author: a.author.trim() || "Anonym", roleId: a.roleId, title: a.title.trim(), body: a.body.trim(), pinned: a.pinned ?? false, photoIds: a.photoIds?.length ? a.photoIds : undefined, pollId: a.pollId || undefined, priority: a.priority && (a.priority.all || a.priority.roles?.length || a.priority.people?.length) ? a.priority : undefined, createdAt: now() },
           ...y.posts,
         ],
       }));
@@ -944,7 +945,7 @@ export function applyAction(db: DB, a: Action): DB {
       if (!name) return db;
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        decorZones: [...(y.decorZones ?? []), { id: uid("dz_"), name, members: [], createdAt: now() }],
+        decorZones: [...(y.decorZones ?? []), { id: a.id ?? uid("dz_"), name, members: [], createdAt: now() }],
       }));
     }
     case "updateDecorZone":
@@ -992,6 +993,8 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => ({ ...y, decorRules: a.text.trim() || undefined }));
     case "setDecorPlan":
       return mapYear(db, a.yearId, (y) => ({ ...y, decorPlanIds: a.ids }));
+    case "setDecorPlanDesc":
+      return mapYear(db, a.yearId, (y) => ({ ...y, decorPlanDesc: a.text.trim() || undefined }));
 
     case "addSponsor": {
       const name = a.name.trim();

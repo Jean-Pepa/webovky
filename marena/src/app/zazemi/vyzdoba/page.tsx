@@ -6,6 +6,7 @@ import { useStore } from "@/lib/store";
 import { canEditSection } from "@/lib/access";
 import { isAdmin } from "@/lib/admin";
 import { sameName } from "@/lib/names";
+import { uid } from "@/lib/id";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
@@ -45,6 +46,8 @@ export default function VyzdobaPage() {
   const [link, setLink] = useState("");
   const [note, setNote] = useState("");
   const [zone, setZone] = useState(""); // zóna zvolená rovnou při přidávání nápadu
+  const [addNewZone, setAddNewZone] = useState(false); // inline „nová zóna" v okně přidání
+  const [addNewZoneName, setAddNewZoneName] = useState("");
 
   const year = currentYear;
   const list = useMemo(
@@ -65,6 +68,18 @@ export default function VyzdobaPage() {
   const zones = year.decorZones ?? [];
   // Zóny, kde jsem přihlášený — do nich si můžu vzít volný materiál.
   const myZones = zones.filter((z) => z.members.some((m) => sameName(m, me)));
+
+  // Založí novou zónu a rovnou ji předvybere pro přidávaný nápad.
+  function createZoneForAdd() {
+    const name = addNewZoneName.trim();
+    if (!name || !year) return;
+    const zid = uid("dz_");
+    dispatch({ type: "addDecorZone", yearId: year.id, name, id: zid });
+    setZone(zid);
+    setAddNewZone(false);
+    setAddNewZoneName("");
+    flash(`Zóna „${name}" vytvořena`, "📍");
+  }
 
   async function add() {
     if (!title.trim() || !year || !canEdit) return;
@@ -126,7 +141,7 @@ export default function VyzdobaPage() {
               <input className="input" placeholder="Odkaz (nepovinné)" value={link} onChange={(e) => setLink(e.target.value)} />
             </div>
             <input className="input" placeholder="Poznámka" value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
-            {zones.length > 0 && (
+            <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm text-ink-soft">
                 <span className="shrink-0 font-medium">📍 Zóna:</span>
                 <select className="min-w-0 flex-1 rounded-lg border border-ink/15 bg-white px-2 py-1.5 text-sm" value={zone} onChange={(e) => setZone(e.target.value)}>
@@ -136,7 +151,28 @@ export default function VyzdobaPage() {
                   ))}
                 </select>
               </label>
-            )}
+              {addNewZone ? (
+                <div className="flex gap-2">
+                  <input
+                    className="input"
+                    placeholder="Název nové zóny"
+                    value={addNewZoneName}
+                    onChange={(e) => setAddNewZoneName(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && createZoneForAdd()}
+                    autoFocus
+                  />
+                  <button className="btn-primary shrink-0 px-3 text-sm" onClick={createZoneForAdd} disabled={!addNewZoneName.trim()}>OK</button>
+                  <button className="btn-ghost shrink-0 px-2 text-sm" onClick={() => { setAddNewZone(false); setAddNewZoneName(""); }}>Zrušit</button>
+                </div>
+              ) : (
+                <button
+                  className="rounded-lg border border-dashed border-gold-500/60 bg-gold-50 px-3 py-1.5 text-xs font-semibold text-gold-700 transition hover:bg-gold-100"
+                  onClick={() => setAddNewZone(true)}
+                >
+                  ➕ Nová zóna
+                </button>
+              )}
+            </div>
             <div className="flex gap-2">
               <button className="btn-primary py-2 text-sm" onClick={add} disabled={!title.trim()}>
                 + Přidat nápad
@@ -157,7 +193,7 @@ export default function VyzdobaPage() {
         ) : (
           <ul className="space-y-2">
             {list.map((d) => (
-              <DecorRow key={d.id} d={d} yearId={year.id} canEdit={canEdit} admin={isAdmin(me)} zones={zones} myZones={myZones} isLead={isLead} />
+              <DecorRow key={d.id} d={d} yearId={year.id} canEdit={canEdit} admin={isAdmin(me)} zones={zones} myZones={myZones} />
             ))}
           </ul>
         )}
@@ -202,11 +238,14 @@ function RulesCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
   );
 }
 
-// Plánek — fotky prostoru s vyznačenými zónami.
+// Plánek — fotky prostoru s vyznačenými zónami + volitelný popis.
 function PlanCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
   const { dispatch } = useStore();
+  const [edit, setEdit] = useState(false);
+  const [text, setText] = useState(year.decorPlanDesc ?? "");
   const ids = year.decorPlanIds ?? [];
-  if (!canEdit && ids.length === 0) return null;
+  const desc = year.decorPlanDesc;
+  if (!canEdit && ids.length === 0 && !desc) return null;
   return (
     <section className="card p-4">
       <h2 className="font-display text-[19px] font-bold">🗺️ Plánek zón</h2>
@@ -220,6 +259,31 @@ function PlanCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
           onChange={(next) => dispatch({ type: "setDecorPlan", yearId: year.id, ids: next })}
         />
       </div>
+      {/* Popis k plánku (jako mají zóny) */}
+      <div className="mt-3">
+        {edit && canEdit ? (
+          <div className="space-y-2">
+            <textarea className="input min-h-20" value={text} onChange={(e) => setText(e.target.value)} placeholder="Popis plánku — jak jsou zóny rozdělené…" autoFocus />
+            <div className="flex gap-2">
+              <button className="btn-primary py-1.5 text-xs" onClick={() => { dispatch({ type: "setDecorPlanDesc", yearId: year.id, text }); setEdit(false); flash("Popis plánku uložen", "🗺️"); }}>
+                Uložit popis
+              </button>
+              <button className="btn-ghost py-1.5 text-xs" onClick={() => { setText(desc ?? ""); setEdit(false); }}>Zrušit</button>
+            </div>
+          </div>
+        ) : desc ? (
+          <p className={`whitespace-pre-wrap rounded-lg bg-paper2/50 px-3 py-2 text-sm text-ink-soft ${canEdit ? "cursor-pointer hover:text-ink" : ""}`} onClick={() => canEdit && (setText(desc), setEdit(true))}>
+            {desc}
+          </p>
+        ) : canEdit ? (
+          <button
+            className="inline-flex items-center gap-1 rounded-lg border border-dashed border-gold-500/60 bg-gold-50 px-3 py-2 text-sm font-semibold text-gold-700 transition hover:bg-gold-100"
+            onClick={() => { setText(""); setEdit(true); }}
+          >
+            ✍️ Přidat popis
+          </button>
+        ) : null}
+      </div>
     </section>
   );
 }
@@ -228,14 +292,20 @@ function PlanCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
 function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: boolean; isLead: boolean; me: string }) {
   const { dispatch } = useStore();
   const [name, setName] = useState("");
+  const [desc, setDesc] = useState(""); // volitelný popis nové zóny (jako mají zóny uvnitř)
+  const [descOpen, setDescOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const zones = year.decorZones ?? [];
   const involved = new Set(zones.flatMap((z) => z.members.map((m) => m.toLowerCase()))).size;
   const zoneWord = zones.length === 1 ? "zóna" : zones.length >= 2 && zones.length <= 4 ? "zóny" : "zón";
   function addZone() {
     if (!name.trim()) return;
-    dispatch({ type: "addDecorZone", yearId: year.id, name: name.trim() });
+    const zid = uid("dz_");
+    dispatch({ type: "addDecorZone", yearId: year.id, name: name.trim(), id: zid });
+    if (desc.trim()) dispatch({ type: "updateDecorZone", yearId: year.id, zoneId: zid, patch: { description: desc.trim() } });
     setName("");
+    setDesc("");
+    setDescOpen(false);
     flash("Zóna přidána", "📍");
   }
   return (
@@ -256,11 +326,23 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
         </div>
       </div>
       {isLead && addOpen && (
-        <div className="flex gap-2">
-          <input className="input" placeholder="Nová zóna (např. Vstup, Dvůr, Aula)" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addZone()} autoFocus />
-          <button className="btn-primary shrink-0" onClick={addZone} disabled={!name.trim()}>
-            Přidat
-          </button>
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <input className="input" placeholder="Nová zóna (např. Vstup, Dvůr, Aula)" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addZone()} autoFocus />
+            <button className="btn-primary shrink-0" onClick={addZone} disabled={!name.trim()}>
+              Přidat
+            </button>
+          </div>
+          {descOpen ? (
+            <textarea className="input min-h-20" placeholder="Popis zóny — jak si to představujeme…" value={desc} onChange={(e) => setDesc(e.target.value)} autoFocus />
+          ) : (
+            <button
+              className="inline-flex items-center gap-1 rounded-lg border border-dashed border-gold-500/60 bg-gold-50 px-3 py-1.5 text-xs font-semibold text-gold-700 transition hover:bg-gold-100"
+              onClick={() => setDescOpen(true)}
+            >
+              ✍️ Přidat popis
+            </button>
+          )}
         </div>
       )}
       {zones.length === 0 ? (
@@ -308,7 +390,9 @@ function TeamVoting({ year, canEdit, me }: { year: Year; canEdit: boolean; me: s
     flash("Anketa vytvořena — je i v Hlasování", "🗳️");
   }
 
-  if (!canEdit && polls.length === 0) return null;
+  // Hlasování výzdoby je jen pro výzdobáře (a správce/vedoucího) — kdo nesmí
+  // upravovat výzdobu, sekci vůbec nevidí.
+  if (!canEdit) return null;
 
   return (
     <section className="space-y-3">
@@ -609,7 +693,7 @@ function ZoneCard({ zone, year, canEdit, isLead, me }: { zone: DecorZone; year: 
   );
 }
 
-function DecorRow({ d, yearId, canEdit, admin, zones, myZones, isLead }: { d: Decor; yearId: string; canEdit: boolean; admin?: boolean; zones: DecorZone[]; myZones: DecorZone[]; isLead: boolean }) {
+function DecorRow({ d, yearId, canEdit, admin, zones, myZones }: { d: Decor; yearId: string; canEdit: boolean; admin?: boolean; zones: DecorZone[]; myZones: DecorZone[] }) {
   const { dispatch } = useStore();
   const [edit, setEdit] = useState(false);
   const [askDone, setAskDone] = useState(false); // potvrzení „hotovo → uzamknout"
@@ -617,12 +701,25 @@ function DecorRow({ d, yearId, canEdit, admin, zones, myZones, isLead }: { d: De
   const [who, setWho] = useState(d.who ?? "");
   const [link, setLink] = useState(d.link ?? "");
   const [note, setNote] = useState(d.note ?? "");
+  const [newZone, setNewZone] = useState(false); // inline „nová zóna" rovnou od materiálu
+  const [newZoneName, setNewZoneName] = useState("");
   const locked = d.status === "hotovo"; // hotové je uzamčené, dokud se neodemkne
   const zoneName = zones.find((z) => z.id === d.zoneId)?.name;
 
   async function save() {
     await dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { title, who, link, note } });
     setEdit(false);
+  }
+  // Založí novou zónu a rovnou k ní materiál přiřadí (funguje i bez existujících zón).
+  function createZoneAndAssign() {
+    const name = newZoneName.trim();
+    if (!name) return;
+    const zid = uid("dz_");
+    dispatch({ type: "addDecorZone", yearId, name, id: zid });
+    dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { zoneId: zid } });
+    flash(`Zóna „${name}" vytvořena a přiřazena`, "📍");
+    setNewZone(false);
+    setNewZoneName("");
   }
   // Klik na stav: nápad → shání se rovnou; před „hotovo" se to potvrdí a pak
   // se uzamkne. Hotové už samo neroluje zpět (šlo by jen omylem).
@@ -743,8 +840,8 @@ function DecorRow({ d, yearId, canEdit, admin, zones, myZones, isLead }: { d: De
             </button>
           ))}
 
-        {/* Vedoucí výzdoby: může položku přiřadit do libovolné zóny */}
-        {canEdit && isLead && zones.length > 0 && (
+        {/* Přiřadit do libovolné zóny — může kdokoli z týmu (editor) */}
+        {canEdit && zones.length > 0 && (
           <select
             className="min-w-0 rounded-full border border-ink/15 bg-white px-2.5 py-1 text-xs text-ink-soft"
             value={d.zoneId ?? ""}
@@ -758,6 +855,34 @@ function DecorRow({ d, yearId, canEdit, admin, zones, myZones, isLead }: { d: De
             ))}
           </select>
         )}
+
+        {/* Nová zóna rovnou od materiálu — funguje i když ještě žádná není */}
+        {canEdit &&
+          (newZone ? (
+            <span className="inline-flex items-center gap-1">
+              <input
+                className="w-32 rounded-full border border-ink/15 bg-white px-2.5 py-1 text-xs"
+                placeholder="Název zóny"
+                value={newZoneName}
+                onChange={(e) => setNewZoneName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && createZoneAndAssign()}
+                autoFocus
+              />
+              <button className="rounded-full bg-gold-500 px-2.5 py-1 text-xs font-bold text-[#1d1d1f]" onClick={createZoneAndAssign} disabled={!newZoneName.trim()}>
+                OK
+              </button>
+              <button className="rounded-full px-1.5 py-1 text-xs text-ink-soft" onClick={() => { setNewZone(false); setNewZoneName(""); }} aria-label="Zrušit">
+                ✕
+              </button>
+            </span>
+          ) : (
+            <button
+              className="rounded-full border border-dashed border-gold-500/60 bg-gold-50 px-2.5 py-1 text-xs font-semibold text-gold-700 transition hover:bg-gold-100"
+              onClick={() => setNewZone(true)}
+            >
+              ➕ Nová zóna
+            </button>
+          ))}
       </div>
 
       {/* Potvrzení „hotovo" — pak se to uzamkne */}
