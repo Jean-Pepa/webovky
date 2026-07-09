@@ -37,6 +37,18 @@ export function ImageViewer({
     onIndex((index + delta + count) % count);
   };
 
+  // Stažení obrázku do zařízení. Obrázky jsou data URL, takže anchor s
+  // atributem download zabere; příponu odhadneme z MIME v data URL.
+  const download = (src: string) => {
+    const ext = src.startsWith("data:image/png") ? "png" : src.startsWith("data:image/webp") ? "webp" : "jpg";
+    const a = document.createElement("a");
+    a.href = src;
+    a.download = `marena-obrazek.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
   return (
     <Modal open={index !== null} onClose={() => onIndex(null)} title={title}>
       {index !== null && images[index] && (
@@ -44,6 +56,14 @@ export function ImageViewer({
           <div className="relative">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={images[index]} alt="obrázek" className="max-h-[68vh] w-full rounded-xl object-contain" />
+            {/* Křížek na rychlé zavření z fotky (roh obrázku). */}
+            <button
+              onClick={() => onIndex(null)}
+              aria-label="Zavřít"
+              className="absolute right-1.5 top-1.5 grid h-9 w-9 place-items-center rounded-full bg-ink/70 text-lg leading-none text-white shadow-lg transition hover:bg-ink"
+            >
+              ✕
+            </button>
             {many && (
               <>
                 <button
@@ -64,7 +84,10 @@ export function ImageViewer({
             )}
           </div>
           {many && <p className="mt-2 text-center text-sm text-ink-soft">{index + 1} / {count}</p>}
-          <div className="mt-3 flex justify-center">
+          <div className="mt-3 flex justify-center gap-2">
+            <button onClick={() => download(images[index])} className="btn-ghost px-5">
+              ⬇︎ Stáhnout
+            </button>
             <button onClick={() => onIndex(null)} className="btn-primary px-8">
               Zavřít
             </button>
