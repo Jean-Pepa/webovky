@@ -22,8 +22,12 @@ export function MyAgenda() {
 
   const pendingOrders = (year.merchOrders ?? []).filter((o) => !o.done).length;
   const unpaid = (year.finances ?? []).filter((f) => !f.paid).length;
-  // Moje úkoly = úkoly přiřazené mně jménem (i z nástěnky) nebo mojí roli.
-  const myTasks = (year.tasks ?? []).filter((t) => (t.assignee && sameName(t.assignee, me)) || (t.roleId && roles.includes(t.roleId)));
+  // Výzdobné zóny, kde jsem přihlášený — úkoly té zóny jsou taky moje.
+  const myZoneIds = (year.decorZones ?? []).filter((z) => z.members.some((m) => sameName(m, me))).map((z) => z.id);
+  // Moje úkoly = přiřazené mně jménem (i z nástěnky), mojí roli, nebo mojí výzdobné zóně.
+  const myTasks = (year.tasks ?? []).filter(
+    (t) => (t.assignee && sameName(t.assignee, me)) || (t.roleId && roles.includes(t.roleId)) || (t.zoneId && myZoneIds.includes(t.zoneId)),
+  );
   const myUndone = myTasks.filter((t) => !t.done).length;
   const today = todayISO();
   const shift = (year.shifts ?? []).find((s) => s.date === today && s.people.some((p) => sameName(p, me)));

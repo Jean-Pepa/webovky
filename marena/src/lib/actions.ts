@@ -74,7 +74,7 @@ export type Action =
   | { type: "updateEvent"; yearId: string; eventId: string; patch: { title?: string; date?: string; endDate?: string; time?: string; kind?: EventKind; note?: string } }
   | { type: "removeEvent"; yearId: string; eventId: string }
   | { type: "addMilestones"; yearId: string; author: string }
-  | { type: "addTask"; yearId: string; id?: string; title: string; roleId?: string; assignee?: string; due?: string; fromPostId?: string }
+  | { type: "addTask"; yearId: string; id?: string; title: string; roleId?: string; assignee?: string; due?: string; fromPostId?: string; zoneId?: string }
   | { type: "toggleTask"; yearId: string; taskId: string }
   | { type: "updateTask"; yearId: string; taskId: string; patch: { title?: string; roleId?: string; assignee?: string; due?: string } }
   | { type: "removeTask"; yearId: string; taskId: string }
@@ -101,9 +101,18 @@ export type Action =
   | { type: "addFreshman"; yearId: string; name: string; email?: string; note?: string }
   | { type: "updateFreshman"; yearId: string; freshmanId: string; patch: { name?: string; email?: string; note?: string } }
   | { type: "removeFreshman"; yearId: string; freshmanId: string }
-  | { type: "addDecor"; yearId: string; title: string; who?: string; link?: string; note?: string }
-  | { type: "updateDecor"; yearId: string; decorId: string; patch: { title?: string; status?: "napad" | "shani" | "hotovo"; who?: string; link?: string; note?: string } }
+  | { type: "addDecor"; yearId: string; title: string; who?: string; link?: string; note?: string; zoneId?: string }
+  | { type: "updateDecor"; yearId: string; decorId: string; patch: { title?: string; status?: "napad" | "shani" | "hotovo"; who?: string; link?: string; note?: string; zoneId?: string | null } }
   | { type: "removeDecor"; yearId: string; decorId: string }
+  // Výzdobné zóny + plánek + pravidla
+  | { type: "addDecorZone"; yearId: string; name: string }
+  | { type: "updateDecorZone"; yearId: string; zoneId: string; patch: { name?: string; description?: string; refImageIds?: string[] } }
+  | { type: "removeDecorZone"; yearId: string; zoneId: string }
+  | { type: "joinDecorZone"; yearId: string; zoneId: string; name: string }
+  | { type: "leaveDecorZone"; yearId: string; zoneId: string; name: string }
+  | { type: "setDecorZoneMembers"; yearId: string; zoneId: string; members: string[] }
+  | { type: "setDecorRules"; yearId: string; text: string }
+  | { type: "setDecorPlan"; yearId: string; ids: string[] }
   | { type: "addSponsor"; yearId: string; name: string; gives?: string; who?: string; links?: string[]; note?: string; category?: SponsorCategory; returning?: boolean }
   | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: SponsorStatus; who?: string; links?: string[]; note?: string; category?: SponsorCategory; returning?: boolean } }
   | { type: "removeSponsor"; yearId: string; sponsorId: string }
@@ -638,7 +647,7 @@ export function applyAction(db: DB, a: Action): DB {
         ...y,
         tasks: [
           ...y.tasks,
-          { id: a.id ?? uid("t_"), title: a.title.trim(), roleId: a.roleId, assignee: a.assignee?.trim() || undefined, due: a.due || undefined, fromPostId: a.fromPostId || undefined, done: false, createdAt: now() },
+          { id: a.id ?? uid("t_"), title: a.title.trim(), roleId: a.roleId, assignee: a.assignee?.trim() || undefined, due: a.due || undefined, fromPostId: a.fromPostId || undefined, zoneId: a.zoneId || undefined, done: false, createdAt: now() },
         ],
       }));
     case "toggleTask":
@@ -898,6 +907,7 @@ export function applyAction(db: DB, a: Action): DB {
             who: a.who?.trim() || undefined,
             link: a.link?.trim() || undefined,
             note: a.note?.trim() || undefined,
+            zoneId: a.zoneId || undefined,
             createdAt: now(),
           },
         ],
@@ -915,6 +925,8 @@ export function applyAction(db: DB, a: Action): DB {
                 who: a.patch.who !== undefined ? a.patch.who.trim() || undefined : d.who,
                 link: a.patch.link !== undefined ? a.patch.link.trim() || undefined : d.link,
                 note: a.patch.note !== undefined ? a.patch.note.trim() || undefined : d.note,
+                // zoneId: null = odebrat ze zóny (volné), string = přiřadit, undefined = beze změny
+                zoneId: a.patch.zoneId === undefined ? d.zoneId : a.patch.zoneId || undefined,
               }
             : d,
         ),
@@ -924,6 +936,61 @@ export function applyAction(db: DB, a: Action): DB {
         ...y,
         decor: (y.decor ?? []).filter((d) => d.id !== a.decorId),
       }));
+
+    // ===== Výzdobné zóny =====
+    case "addDecorZone": {
+      const name = a.name.trim();
+      if (!name) return db;
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        decorZones: [...(y.decorZones ?? []), { id: uid("dz_"), name, members: [], createdAt: now() }],
+      }));
+    }
+    case "updateDecorZone":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        decorZones: (y.decorZones ?? []).map((z) =>
+          z.id === a.zoneId
+            ? {
+                ...z,
+                name: a.patch.name?.trim() || z.name,
+                description: a.patch.description !== undefined ? a.patch.description.trim() || undefined : z.description,
+                refImageIds: a.patch.refImageIds !== undefined ? a.patch.refImageIds : z.refImageIds,
+              }
+            : z,
+        ),
+      }));
+    case "removeDecorZone":
+      // Zónu smaž a její materiál i úkoly odpoj (zůstanou, jen bez zóny).
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        decorZones: (y.decorZones ?? []).filter((z) => z.id !== a.zoneId),
+        decor: (y.decor ?? []).map((d) => (d.zoneId === a.zoneId ? { ...d, zoneId: undefined } : d)),
+        tasks: y.tasks.map((t) => (t.zoneId === a.zoneId ? { ...t, zoneId: undefined } : t)),
+      }));
+    case "joinDecorZone":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        decorZones: (y.decorZones ?? []).map((z) =>
+          z.id === a.zoneId && !z.members.some((m) => sameName(m, a.name)) ? { ...z, members: [...z.members, a.name] } : z,
+        ),
+      }));
+    case "leaveDecorZone":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        decorZones: (y.decorZones ?? []).map((z) =>
+          z.id === a.zoneId ? { ...z, members: z.members.filter((m) => !sameName(m, a.name)) } : z,
+        ),
+      }));
+    case "setDecorZoneMembers":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        decorZones: (y.decorZones ?? []).map((z) => (z.id === a.zoneId ? { ...z, members: a.members } : z)),
+      }));
+    case "setDecorRules":
+      return mapYear(db, a.yearId, (y) => ({ ...y, decorRules: a.text.trim() || undefined }));
+    case "setDecorPlan":
+      return mapYear(db, a.yearId, (y) => ({ ...y, decorPlanIds: a.ids }));
 
     case "addSponsor": {
       const name = a.name.trim();
