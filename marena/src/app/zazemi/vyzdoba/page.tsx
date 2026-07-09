@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { canEditSection } from "@/lib/access";
@@ -12,6 +12,8 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
 import { WhoSelect } from "@/components/WhoSelect";
 import { ImageBoard } from "@/components/ImageBoard";
+import { ImageViewer } from "@/components/ImageViewer";
+import { loadReceipt } from "@/lib/receipts";
 import { Collapsible } from "@/components/Collapsible";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
@@ -277,52 +279,108 @@ function RulesCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
   );
 }
 
-// Plánek — fotky prostoru s vyznačenými zónami + volitelný popis.
+// Plánky velké a na celou šířku (celý obrázek, ne oříznutý) — klik zvětší na fullscreen.
+function PlanImages({ ids }: { ids: string[] }) {
+  const { configured } = useStore();
+  const [urls, setUrls] = useState<Record<string, string>>({});
+  const [viewIdx, setViewIdx] = useState<number | null>(null);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      for (const id of ids) {
+        const u = await loadReceipt(id, configured);
+        if (alive && u) setUrls((p) => (p[id] ? p : { ...p, [id]: u }));
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [ids, configured]);
+  const ready = ids.filter((id) => urls[id]).map((id) => urls[id]);
+  if (!ready.length) return <p className="text-sm text-ink-soft">Zatím žádný plánek.</p>;
+  return (
+    <div className="space-y-3">
+      {ready.map((u, i) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img key={i} src={u} alt="plánek zón" onClick={() => setViewIdx(i)} className="w-full cursor-zoom-in rounded-xl object-contain ring-1 ring-ink/10" />
+      ))}
+      <ImageViewer images={ready} index={viewIdx} onIndex={setViewIdx} title="Plánek zón" />
+    </div>
+  );
+}
+
+// Plánek — čistá karta s tlačítkem, plánky se ukážou velké ve středovém okně.
 function PlanCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
   const { dispatch } = useStore();
-  const [edit, setEdit] = useState(false);
+  const [open, setOpen] = useState(false); // okno prohlídky
+  const [manage, setManage] = useState(false); // režim úprav (nahrání/popis)
+  const [editDesc, setEditDesc] = useState(false);
   const [text, setText] = useState(year.decorPlanDesc ?? "");
   const ids = year.decorPlanIds ?? [];
   const desc = year.decorPlanDesc;
-  if (!canEdit && ids.length === 0 && !desc) return null;
+  const hasContent = ids.length > 0 || !!desc;
+  if (!canEdit && !hasContent) return null;
   return (
     <section className="card p-4">
-      <h2 className="font-display text-[19px] font-bold">🗺️ Plánek zón</h2>
-      <p className="mt-0.5 text-xs text-ink-soft">Fotka prostoru s rozdělením na zóny.</p>
-      <div className="mt-2">
-        <ImageBoard
-          ids={ids}
-          canEdit={canEdit}
-          addLabel="Přidat plánek"
-          thumb="h-32 w-32"
-          onChange={(next) => dispatch({ type: "setDecorPlan", yearId: year.id, ids: next })}
-        />
-      </div>
-      {/* Popis k plánku (jako mají zóny) */}
-      <div className="mt-3">
-        {edit && canEdit ? (
-          <div className="space-y-2">
-            <textarea className="input min-h-20" value={text} onChange={(e) => setText(e.target.value)} placeholder="Popis plánku — jak jsou zóny rozdělené…" autoFocus />
-            <div className="flex gap-2">
-              <button className="btn-primary py-1.5 text-xs" onClick={() => { dispatch({ type: "setDecorPlanDesc", yearId: year.id, text }); setEdit(false); flash("Popis plánku uložen", "🗺️"); }}>
-                Uložit popis
-              </button>
-              <button className="btn-ghost py-1.5 text-xs" onClick={() => { setText(desc ?? ""); setEdit(false); }}>Zrušit</button>
-            </div>
-          </div>
-        ) : desc ? (
-          <p className={`whitespace-pre-wrap rounded-lg bg-paper2/50 px-3 py-2 text-sm text-ink-soft ${canEdit ? "cursor-pointer hover:text-ink" : ""}`} onClick={() => canEdit && (setText(desc), setEdit(true))}>
-            {desc}
-          </p>
-        ) : canEdit ? (
-          <button
-            className="inline-flex items-center gap-1 rounded-lg border border-dashed border-gold-500/60 bg-gold-50 px-3 py-2 text-sm font-semibold text-gold-700 transition hover:bg-gold-100"
-            onClick={() => { setText(""); setEdit(true); }}
-          >
-            ✍️ Přidat popis
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-display text-[19px] font-bold">🗺️ Plánek zón</h2>
+        {canEdit && (
+          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setManage((v) => !v)}>
+            {manage ? "Hotovo" : "Upravit"}
           </button>
-        ) : null}
+        )}
       </div>
+      <p className="mt-0.5 text-xs text-ink-soft">Fotka prostoru s rozdělením na zóny.</p>
+
+      {manage && canEdit ? (
+        <div className="mt-2 space-y-3">
+          <ImageBoard
+            ids={ids}
+            canEdit
+            addLabel="Přidat plánek"
+            thumb="h-28 w-28"
+            onChange={(next) => dispatch({ type: "setDecorPlan", yearId: year.id, ids: next })}
+          />
+          {editDesc ? (
+            <div className="space-y-2">
+              <textarea className="input min-h-20" value={text} onChange={(e) => setText(e.target.value)} placeholder="Popis plánku — jak jsou zóny rozdělené…" autoFocus />
+              <div className="flex gap-2">
+                <button className="btn-primary py-1.5 text-xs" onClick={() => { dispatch({ type: "setDecorPlanDesc", yearId: year.id, text }); setEditDesc(false); flash("Popis plánku uložen", "🗺️"); }}>
+                  Uložit popis
+                </button>
+                <button className="btn-ghost py-1.5 text-xs" onClick={() => { setText(desc ?? ""); setEditDesc(false); }}>Zrušit</button>
+              </div>
+            </div>
+          ) : desc ? (
+            <p className="whitespace-pre-wrap rounded-lg bg-paper2/50 px-3 py-2 text-sm text-ink-soft cursor-pointer hover:text-ink" onClick={() => { setText(desc); setEditDesc(true); }}>
+              {desc}
+            </p>
+          ) : (
+            <button
+              className="inline-flex items-center gap-1 rounded-lg border border-dashed border-gold-500/60 bg-gold-50 px-3 py-2 text-sm font-semibold text-gold-700 transition hover:bg-gold-100"
+              onClick={() => { setText(""); setEditDesc(true); }}
+            >
+              ✍️ Přidat popis
+            </button>
+          )}
+        </div>
+      ) : hasContent ? (
+        <button className="btn-primary mt-2 w-full py-2.5 text-sm" onClick={() => setOpen(true)}>
+          🗺️ Prohlédnout plánek
+        </button>
+      ) : (
+        <p className="mt-2 text-sm text-ink-soft/70">Zatím žádný plánek.</p>
+      )}
+
+      <Modal open={open} onClose={() => setOpen(false)} title="🗺️ Plánek zón">
+        <div className="space-y-4">
+          <PlanImages ids={ids} />
+          {desc && <p className="whitespace-pre-wrap rounded-lg bg-paper2/50 px-3 py-2 text-sm text-ink-soft">{desc}</p>}
+          <button className="btn-primary w-full py-2.5" onClick={() => setOpen(false)}>
+            Zavřít
+          </button>
+        </div>
+      </Modal>
     </section>
   );
 }
