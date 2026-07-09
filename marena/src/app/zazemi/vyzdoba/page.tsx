@@ -15,6 +15,8 @@ import { Collapsible } from "@/components/Collapsible";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
 import { flash } from "@/components/Flash";
+import { PollCard, DeadlineField } from "@/components/PollCard";
+import { isPollClosed } from "@/lib/poll";
 import type { Decor, DecorStatus, DecorZone, Year } from "@/lib/types";
 
 const STATUS: Record<DecorStatus, { label: string; cls: string; order: number }> = {
@@ -92,6 +94,9 @@ export default function VyzdobaPage() {
 
       {/* Zóny */}
       <ZonesSection year={year} canEdit={canEdit} isLead={isLead} me={me} />
+
+      {/* Hlasování týmu — propíše se i do obecného Hlasování */}
+      <TeamVoting year={year} canEdit={canEdit} me={me} />
 
       {/* Materiál a nápady */}
       <section className="space-y-3">
@@ -267,6 +272,104 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
         <div className="space-y-2.5">
           {zones.map((z) => (
             <ZoneCard key={z.id} zone={z} year={year} canEdit={canEdit} isLead={isLead} me={me} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// Hlasování týmu výzdoby — vedoucí (a tým) zakládá ankety o rozhodnutích výzdoby.
+// Anketa jde do sdílených `year.polls`, takže se objeví i v obecném Hlasování.
+function TeamVoting({ year, canEdit, me }: { year: Year; canEdit: boolean; me: string }) {
+  const { dispatch } = useStore();
+  const [open, setOpen] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [options, setOptions] = useState<string[]>(["", ""]);
+  const [multi, setMulti] = useState(false);
+  const [closesAt, setClosesAt] = useState<string | undefined>(undefined);
+
+  const polls = [...year.polls]
+    .filter((p) => p.tag === "vyzdoba")
+    .sort((a, b) => {
+      const ac = isPollClosed(a), bc = isPollClosed(b);
+      if (ac !== bc) return ac ? 1 : -1;
+      return b.createdAt.localeCompare(a.createdAt);
+    });
+
+  async function create() {
+    const opts = options.map((o) => o.trim()).filter(Boolean);
+    if (!question.trim() || opts.length < 2) return;
+    await dispatch({ type: "addPoll", yearId: year.id, author: me, question, options: opts, multi, closesAt, tag: "vyzdoba" });
+    setQuestion("");
+    setOptions(["", ""]);
+    setMulti(false);
+    setClosesAt(undefined);
+    setOpen(false);
+    flash("Anketa vytvořena — je i v Hlasování", "🗳️");
+  }
+
+  if (!canEdit && polls.length === 0) return null;
+
+  return (
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-display text-[19px] font-bold">🗳️ Hlasování týmu</h2>
+        {canEdit && (
+          <button className="btn-primary px-3 py-1.5 text-sm" onClick={() => setOpen((v) => !v)}>
+            {open ? "Zavřít" : "+ Nová anketa"}
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-ink-soft">
+        Rozhodnutí výzdoby na jednom místě — každá anketa se propíše i do obecného{" "}
+        <Link href="/zazemi/hlasovani" className="font-medium text-gold-700 hover:underline">Hlasování</Link>.
+      </p>
+
+      {open && canEdit && (
+        <div className="card space-y-3 p-4">
+          <input className="input" placeholder="Otázka (např. Jakou barvu lampionů?)" value={question} onChange={(e) => setQuestion(e.target.value)} autoFocus />
+          <div className="space-y-2">
+            {options.map((o, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  className="input"
+                  placeholder={`Možnost ${i + 1}`}
+                  value={o}
+                  onChange={(e) => setOptions((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))}
+                />
+                {options.length > 2 && (
+                  <button className="btn-ghost px-2" aria-label={`Odebrat možnost ${i + 1}`} title="Odebrat možnost" onClick={() => setOptions((arr) => arr.filter((_, j) => j !== i))}>
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+            <button className="btn-ghost" onClick={() => setOptions((arr) => [...arr, ""])}>
+              + Další možnost
+            </button>
+          </div>
+          <DeadlineField value={closesAt} onChange={setClosesAt} />
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-ink-soft">
+              <input type="checkbox" checked={multi} onChange={(e) => setMulti(e.target.checked)} />
+              Lze vybrat víc možností
+            </label>
+            <button className="btn-primary ml-auto" onClick={create}>
+              Vytvořit anketu
+            </button>
+          </div>
+        </div>
+      )}
+
+      {polls.length === 0 ? (
+        <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
+          Zatím žádné hlasování.{canEdit ? " Založ první rozhodnutí týmu." : ""}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {polls.map((p) => (
+            <PollCard key={p.id} poll={p} yearId={year.id} me={me} totalPeople={year.members.length} />
           ))}
         </div>
       )}

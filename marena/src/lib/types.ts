@@ -45,6 +45,7 @@ export interface Poll {
   multi: boolean; // lze vybrat víc možností
   closed: boolean;
   closesAt?: string; // ISO – čas, kdy se anketa sama uzavře (nepovinné)
+  tag?: string; // odkud anketa vznikla (např. „vyzdoba") — je i v obecném Hlasování
   createdAt: string;
 }
 
