@@ -7,6 +7,7 @@ import { isAdmin } from "@/lib/admin";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
+import { WhoSelect } from "@/components/WhoSelect";
 import { matchesQuery } from "@/lib/search";
 import { flash } from "@/components/Flash";
 import type { Sponsor, SponsorStatus, SponsorCategory } from "@/lib/types";
@@ -152,7 +153,7 @@ export default function SponzoriPage() {
             autoFocus
           />
           <input className="input" placeholder="Co dává (pivo, čaj, kávovar, peníze…)" value={gives} onChange={(e) => setGives(e.target.value)} />
-          <input className="input" placeholder="Kdo to řeší" value={who} onChange={(e) => setWho(e.target.value)} />
+          <WhoSelect value={who} onChange={setWho} placeholder="Kdo to řeší? (nepovinné)" />
           <LinksEditor links={links} setLinks={setLinks} />
           <input className="input" placeholder="Požadavky / poznámka (např. chce logo)" value={note} onChange={(e) => setNote(e.target.value)} />
 
@@ -238,6 +239,7 @@ export default function SponzoriPage() {
 function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdit: boolean }) {
   const { dispatch, me } = useStore();
   const [edit, setEdit] = useState(false);
+  const [askCancel, setAskCancel] = useState(false); // potvrzení „Zrušeno?"
   const [name, setName] = useState(s.name);
   const [gives, setGives] = useState(s.gives ?? "");
   const [who, setWho] = useState(s.who ?? "");
@@ -259,7 +261,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
       <li className="card space-y-3 p-3">
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Název sponzora" />
         <input className="input" value={gives} onChange={(e) => setGives(e.target.value)} placeholder="Co dává (pivo, čaj, kávovar, peníze…)" />
-        <input className="input" value={who} onChange={(e) => setWho(e.target.value)} placeholder="Kdo to řeší" />
+        <WhoSelect value={who} onChange={setWho} placeholder="Kdo to řeší? (nepovinné)" />
         <LinksEditor links={links} setLinks={setLinks} />
         <input className="input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Požadavky / poznámka (např. chce logo)" />
         <div>
@@ -304,9 +306,11 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
   // (čeká → potvrzeno / odmítl). Po rozhodnutí zamčeno — mění jen správce.
   const admin = isAdmin(me);
   const contacted = s.status !== "oslovit";
-  const decided = s.status === "potvrzeno" || s.status === "odmitl";
-  const lockContact = decided && !admin;
-  const lockDecide = decided && !admin;
+  const confirmed = s.status === "potvrzeno";
+  const decided = confirmed || s.status === "odmitl";
+  // Potvrzené je zamčené i pro správce — překlikne se jen přes „Zrušeno?".
+  const lockContact = confirmed || (decided && !admin);
+  const lockDecide = s.status === "odmitl" && !admin;
   const setStatus = (status: SponsorStatus) => canEdit && dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { status } });
 
   return (
@@ -362,8 +366,8 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
         )}
         {s.status === "odmitl" && <span className="inline-flex rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600">👎 odmítl</span>}
 
-        {/* Domluva ano/ne — po oslovení */}
-        {canEdit && contacted && (
+        {/* Domluva ano/ne — po oslovení; po potvrzení se schová a zamkne (mění se jen přes „Zrušeno?") */}
+        {canEdit && contacted && !confirmed && (
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium text-ink-soft">domluva?</span>
             <div className="flex gap-1" title={lockDecide ? "Rozhodnuto — změnit může jen správce" : undefined}>
@@ -391,6 +395,16 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
 
         {canEdit && (
           <div className="ml-auto flex items-center gap-1 self-start">
+            {/* Zrušeno? — jen u potvrzeného; přesune mezi odmítnuté */}
+            {confirmed && (
+              <button
+                className="btn-ghost px-2 py-1 text-xs text-red-600"
+                title="Označit jako zrušeno — přesun mezi odmítnuté"
+                onClick={() => setAskCancel(true)}
+              >
+                Zrušeno?
+              </button>
+            )}
             <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>
               Upravit
             </button>
@@ -398,6 +412,34 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
           </div>
         )}
       </div>
+
+      {/* „Zrušeno?" — u potvrzeného sponzora; přesune mezi odmítnuté (info zůstane) */}
+      {askCancel && (
+        <div className="fixed inset-0 z-50 grid place-items-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAskCancel(false)} aria-hidden />
+          <div className="relative w-full max-w-md rounded-xl border border-ink/10 bg-white p-6 shadow-2xl" role="dialog" aria-modal="true">
+            <h2 className="mb-4 font-display text-[20px] font-semibold tracking-tight">Opravdu zrušeno?</h2>
+            <p className="text-sm text-ink-soft">
+              Opravdu domluva se sponzorem <strong className="text-ink">{s.name}</strong> padla? Přesuneme ho mezi odmítnuté (info zůstane).
+            </p>
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                className="btn-primary flex-1"
+                onClick={() => {
+                  dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { status: "odmitl" } });
+                  setAskCancel(false);
+                  flash(`${s.name} spadl mezi odmítnuté`, "👎");
+                }}
+              >
+                Ano, zrušeno
+              </button>
+              <button className="btn-ghost" onClick={() => setAskCancel(false)}>
+                Ne
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </li>
   );
 }

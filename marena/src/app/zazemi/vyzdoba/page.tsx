@@ -7,6 +7,7 @@ import { isAdmin } from "@/lib/admin";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
+import { WhoSelect } from "@/components/WhoSelect";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
 import { flash } from "@/components/Flash";
@@ -87,7 +88,7 @@ export default function VyzdobaPage() {
             autoFocus
           />
           <div className="grid gap-2 sm:grid-cols-2">
-            <input className="input" placeholder="Kdo shání" value={who} onChange={(e) => setWho(e.target.value)} />
+            <WhoSelect value={who} onChange={setWho} placeholder="Kdo shání? (nepovinné)" />
             <input className="input" placeholder="Odkaz (nepovinné)" value={link} onChange={(e) => setLink(e.target.value)} />
           </div>
           <input
@@ -155,15 +156,23 @@ function DecorRow({ d, yearId, canEdit, admin }: { d: Decor; yearId: string; can
     }
     dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { status: NEXT[d.status] } });
   }
+  // Po změně stavu se řádek přesune (seznam se řadí podle stavu) — doscrolluj
+  // k němu, ať to nevypadá, že „zmizel".
+  function scrollToSelf() {
+    setTimeout(() => document.getElementById(`decor-${d.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
+  }
   function confirmDone() {
     dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { status: "hotovo" } });
     setAskDone(false);
     flash("Hotovo — uzamčeno 🔒", "✅");
+    scrollToSelf();
   }
-  // Reset (jen správce) — uzamčené hotové vrátí na začátek (nápad).
+  // Reset (jen správce) — uzamčené hotové vrátí na začátek (nápad). Položka se
+  // nemaže, jen změní stav a přesune se mezi nápady (nahoru) — doscrollujeme k ní.
   function reset() {
     dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { status: "napad" } });
-    flash("Resetováno na nápad", "🔄");
+    flash("Resetováno na nápad — je mezi nápady nahoře", "🔄");
+    scrollToSelf();
   }
 
   if (edit) {
@@ -171,7 +180,7 @@ function DecorRow({ d, yearId, canEdit, admin }: { d: Decor; yearId: string; can
       <li className="card space-y-2 p-3">
         <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nápad / materiál" />
         <div className="grid gap-2 sm:grid-cols-2">
-          <input className="input" value={who} onChange={(e) => setWho(e.target.value)} placeholder="Kdo shání" />
+          <WhoSelect value={who} onChange={setWho} placeholder="Kdo shání? (nepovinné)" />
           <input className="input" value={link} onChange={(e) => setLink(e.target.value)} placeholder="Odkaz (nepovinné)" />
         </div>
         <input className="input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Poznámka" />
@@ -184,7 +193,7 @@ function DecorRow({ d, yearId, canEdit, admin }: { d: Decor; yearId: string; can
   }
 
   return (
-    <li className="card flex items-start gap-3 p-3">
+    <li id={`decor-${d.id}`} className="card flex scroll-mt-24 items-start gap-3 p-3">
       <button
         onClick={cycle}
         disabled={!canEdit || locked}

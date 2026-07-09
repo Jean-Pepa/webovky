@@ -252,11 +252,14 @@ function InterestControl({ invite }: { invite: Invite }) {
 function ConfirmButtons({ invite, yearId, canEdit }: { invite: Invite; yearId: string; canEdit: boolean }) {
   const { dispatch, me } = useStore();
   const admin = isAdmin(me);
-  if (!canEdit || !invite.contacted) return null;
+  // Po potvrzení (ano) se „má zájem?" schová a zamkne — potvrzené se tak omylem
+  // nepřeklikne. Změnit ho jde už jen přes „Zrušeno?" (přesun mezi odmítnuté),
+  // ať je to potvrzené i pro správce zamčené.
+  if (!canEdit || !invite.contacted || isConfirmed(invite)) return null;
   const yes = invite.interest === "ano";
   const no = invite.interest === "ne";
-  // Jakmile padne rozhodnutí (ano/ne), je zamčené — změnit může už jen správce.
-  const locked = (yes || no) && !admin;
+  // Odmítnuté (ne) je zamčené pro ostatní — vrátit zpět může jen správce.
+  const locked = no && !admin;
   const choose = (interest: Interest) => {
     if (locked) return;
     const decided = interest === "ano" || interest === "ne";
