@@ -731,7 +731,6 @@ function AppPowerToggle({ maint, onChanged }: { maint: boolean | null; onChanged
       type="button"
       onClick={toggle}
       disabled={maint === null || busy}
-      title={appOn ? "Aplikace běží — klikni pro údržbu (vypnutí)" : "Údržba — klikni pro zapnutí aplikace"}
       className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-ink/10 transition hover:bg-ink/5 disabled:opacity-50"
     >
       <span className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition ${appOn ? "bg-leaf" : "bg-red-500"}`}>

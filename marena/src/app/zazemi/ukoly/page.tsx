@@ -355,7 +355,6 @@ function TaskItem({
       <button
         onClick={() => onToggle(t.id, t.title, t.done)}
         aria-label={t.done ? "Označit jako nesplněné" : "Označit jako splněné"}
-        title={t.done ? "Hotovo — klikni pro vrácení" : "Klikni, když je hotovo"}
         className={`grid ${big ? "h-9 w-9" : "h-7 w-7"} shrink-0 place-items-center rounded-xl border-2 font-bold transition ${
           t.done
             ? "border-leaf bg-leaf text-white"

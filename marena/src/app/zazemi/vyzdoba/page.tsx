@@ -108,7 +108,6 @@ export default function VyzdobaPage() {
             </button>
           )}
         </div>
-        <p className="text-xs text-ink-soft">Klikni na stav: nápad → shání se → hotovo. Každou položku můžeš přiřadit k zóně, nebo nechat volnou.</p>
 
         {(year.decor?.length ?? 0) > 0 && <SearchBox value={q} onChange={setQ} placeholder="Hledat materiál…" />}
 
@@ -151,7 +150,7 @@ export default function VyzdobaPage() {
 
         {(year.decor?.length ?? 0) === 0 ? (
           <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
-            {canEdit ? "Zatím žádný materiál. Přidej první nahoře." : "Zatím žádný materiál."}
+            Zatím žádný materiál.
           </div>
         ) : list.length === 0 && q.trim() ? (
           <p className="text-sm text-ink-soft">Nic neodpovídá hledání.</p>
@@ -266,7 +265,7 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
       )}
       {zones.length === 0 ? (
         <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
-          Zatím žádné zóny.{isLead ? " Přidej první tlačítkem nahoře." : ""}
+          Zatím žádné zóny.
         </div>
       ) : (
         <div className="space-y-2.5">
@@ -321,10 +320,6 @@ function TeamVoting({ year, canEdit, me }: { year: Year; canEdit: boolean; me: s
           </button>
         )}
       </div>
-      <p className="text-xs text-ink-soft">
-        Rozhodnutí výzdoby na jednom místě — každá anketa se propíše i do obecného{" "}
-        <Link href="/zazemi/hlasovani" className="font-medium text-gold-700 hover:underline">Hlasování</Link>.
-      </p>
 
       {open && canEdit && (
         <div className="card space-y-3 p-4">
@@ -364,7 +359,7 @@ function TeamVoting({ year, canEdit, me }: { year: Year; canEdit: boolean; me: s
 
       {polls.length === 0 ? (
         <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
-          Zatím žádné hlasování.{canEdit ? " Založ první rozhodnutí týmu." : ""}
+          Zatím žádné hlasování.
         </div>
       ) : (
         <div className="space-y-2">
@@ -679,7 +674,7 @@ function DecorRow({ d, yearId, canEdit, admin, zones, myZones, isLead }: { d: De
           onClick={cycle}
           disabled={!canEdit || locked}
           className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition ${STATUS[d.status].cls} ${canEdit && !locked ? "hover:opacity-80" : ""}`}
-          title={locked ? "Hotovo — uzamčeno" : canEdit ? "Klikni pro změnu stavu" : undefined}
+          title={locked ? "Hotovo — uzamčeno" : undefined}
         >
           {STATUS[d.status].label}
           {locked ? " 🔒" : ""}
@@ -687,7 +682,7 @@ function DecorRow({ d, yearId, canEdit, admin, zones, myZones, isLead }: { d: De
         {canEdit && (
           <div className="ml-auto flex shrink-0 items-center gap-1">
             {locked && admin && (
-              <button className="btn-ghost px-2 py-1 text-xs font-semibold text-gold-700" onClick={reset} title="Resetovat na nápad (odemknout)">
+              <button className="btn-ghost px-2 py-1 text-xs font-semibold text-gold-700" onClick={reset}>
                 🔄 Reset
               </button>
             )}

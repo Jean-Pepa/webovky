@@ -97,7 +97,6 @@ export default function KalendarPage() {
         {isAdmin(me) && canEditCurrentYear && missingMilestones.length > 0 && (
           <button
             className="btn-secondary px-3 py-2 text-sm"
-            title="Doplní do kalendáře termíny z almanachu (kdy co začít dělat), které tu ještě nejsou."
             onClick={async () => {
               await dispatch({ type: "addMilestones", yearId: year.id, author: me });
               flash(`Doplněno ${missingMilestones.length} milníků z almanachu`, "📅");

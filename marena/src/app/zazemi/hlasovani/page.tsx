@@ -116,7 +116,7 @@ export default function HlasovaniPage() {
 
       {polls.length === 0 ? (
         <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
-          {q ? "Nic neodpovídá hledání." : "Zatím žádná anketa. Založ první rozhodování týmu."}
+          {q ? "Nic neodpovídá hledání." : "Zatím žádná anketa."}
         </div>
       ) : (
         polls.map((p) => (

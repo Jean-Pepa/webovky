@@ -140,7 +140,6 @@ function TaskComposer({ draft, setDraft, names = [], title = "✅ Přidat úkol 
       </label>
       {draft.on && (
         <div className="mt-3 space-y-2">
-          <p className="text-xs text-ink-soft">Napiš, co je potřeba udělat a vyber, kdo to má na starost. Odškrtnutím se úkol splní tady i v Úkolech.</p>
           {draft.rows.map((r, i) => (
             <div key={i} className="flex items-center gap-2">
               <input className="input flex-1" placeholder="Co udělat? (např. Povolení průvodu)" value={r.text} onChange={(e) => setRow(i, { text: e.target.value })} />

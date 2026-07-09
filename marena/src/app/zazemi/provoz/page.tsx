@@ -191,7 +191,7 @@ export default function ProvozPage() {
       </div>
 
       {shifts.length === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">Zatím žádné směny. Přidej první rozpis.</div>
+        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">Zatím žádné směny.</div>
       ) : view === "seznam" ? (
         groups.length === 0 ? (
           <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">{q.trim() ? "Nic neodpovídá hledání." : "Nic tu není."}</div>
@@ -391,7 +391,6 @@ function ShiftCard({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
             await dispatch({ type: "signShiftBackup", yearId, shiftId: shift.id, name: me });
             if (!wasBackup) flash("Jsi záloha na směně", "🫡");
           }}
-          title="Přihlásit se jako záloha"
         >
           {inBackup ? "Záloha ✓" : "Záloha"}
         </button>

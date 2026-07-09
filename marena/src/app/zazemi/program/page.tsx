@@ -304,7 +304,6 @@ function CancelButton({ invite, yearId, canEdit }: { invite: Invite; yearId: str
     <>
       <button
         className="btn-ghost px-2 py-1 text-xs text-red-600"
-        title="Označit jako zrušeno — přesun mezi odmítnuté"
         onClick={() => setAsk(true)}
       >
         Zrušeno?
@@ -462,7 +461,7 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
             <button className="btn-primary px-3 py-1.5 text-xs" onClick={save}>Uložit</button>
             <button className="btn-ghost px-2 py-1.5 text-xs" onClick={() => setEdit(false)}>Zrušit</button>
             {isAdmin(me) && (
-              <button className="btn-ghost px-2 py-1.5 text-xs text-ink-soft ring-1 ring-ink/10" onClick={resetState} title="Vrátí do neutrality (osloveno + ano/ne), info zůstane">
+              <button className="btn-ghost px-2 py-1.5 text-xs text-ink-soft ring-1 ring-ink/10" onClick={resetState}>
                 🔄 Reset stavu
               </button>
             )}
