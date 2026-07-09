@@ -63,7 +63,7 @@ export type Action =
   | { type: "updatePost"; yearId: string; postId: string; editedBy: string; patch: { title?: string; body?: string; roleId?: string | null; photoIds?: string[]; pollId?: string } }
   | { type: "togglePin"; yearId: string; postId: string }
   | { type: "removePost"; yearId: string; postId: string }
-  | { type: "addPoll"; yearId: string; author: string; question: string; options: string[]; multi?: boolean; id?: string; closesAt?: string }
+  | { type: "addPoll"; yearId: string; author: string; question: string; options: string[]; multi?: boolean; id?: string; closesAt?: string; tag?: string }
   | { type: "vote"; yearId: string; pollId: string; optionId: string; voter: string }
   | { type: "removeVoter"; yearId: string; pollId: string; optionId: string; voter: string }
   | { type: "closePoll"; yearId: string; pollId: string }
@@ -526,6 +526,7 @@ export function applyAction(db: DB, a: Action): DB {
             multi: a.multi ?? false,
             closed: false,
             closesAt: a.closesAt || undefined,
+            tag: a.tag || undefined,
             options: a.options.map((label) => ({ id: uid("o_"), label: label.trim(), voters: [] })).filter((o) => o.label),
             createdAt: now(),
           },

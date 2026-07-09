@@ -496,7 +496,7 @@ export default function FinancePage() {
               .filter((c) => (q.trim() ? normName(`${c.label ?? ""} ${fmtDate(c.openedAt)}`).includes(normName(q)) : true))
               .sort((a, b) => b.openedAt.localeCompare(a.openedAt));
             if ((year.cashboxes?.length ?? 0) === 0)
-              return <p className="text-sm text-ink-soft">Zatím žádná kasa. Klikni nahoře na tlačítko + Kasa.</p>;
+              return <p className="text-sm text-ink-soft">Zatím žádná kasa.</p>;
             if (boxes.length === 0) return <p className="py-4 text-center text-sm text-ink-soft">Žádná kasa neodpovídá hledání.</p>;
             return (
               <Collapsible peekClass="max-h-[620px]" expandable={boxes.length > 2} total={boxes.length}>
@@ -592,7 +592,6 @@ export default function FinancePage() {
                   <button
                     className="btn-ghost"
                     onClick={addTeamContributions}
-                    title="Přidá všechny ze soupisky týmu (i s e-maily), kteří v seznamu ještě nejsou"
                   >
                     👥 Doplnit tým ({teamToAdd.length})
                   </button>
@@ -602,7 +601,7 @@ export default function FinancePage() {
           )}
           {contributions.length === 0 ? (
             <p className="text-sm text-ink-soft">
-              {canAdd ? "Zatím nikdo. Klikni nahoře na „+ Výběr“ a vlož jména naráz." : "Zatím nikdo."}
+              Zatím nikdo.
             </p>
           ) : (
             <>
@@ -749,7 +748,7 @@ export default function FinancePage() {
       {/* Tabulka */}
       {rows.length === 0 ? (
         <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
-          {q.trim() || filter !== "vse" ? "Nic neodpovídá filtru ani hledání." : "Zatím žádné položky. Přidej první vklad nebo výdaj."}
+          {q.trim() || filter !== "vse" ? "Nic neodpovídá filtru ani hledání." : "Zatím žádné položky."}
         </div>
       ) : (
         <div className="card overflow-hidden">
@@ -1041,7 +1040,6 @@ function FinanceRow({ item, yearId, canAdd, canEdit }: { item: FinanceItem; year
           <button
             onClick={() => dispatch({ type: "toggleFinancePaid", yearId, financeId: item.id })}
             className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${item.paid ? "bg-leaf/12 text-leaf-700 hover:bg-leaf/20" : "bg-gold-500 text-[#1d1d1f] hover:bg-gold-400"}`}
-            title="Přepnout stav"
           >
             {item.paid ? "Zaplaceno" : "Čeká"}
           </button>
@@ -1771,9 +1769,6 @@ function MyExpenses({ yearId, me, items, canSubmit }: { yearId: string; me: stri
     <div className="mx-auto max-w-2xl space-y-4 tabular-nums">
       <div>
         <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Moje výdaje</h1>
-        <p className="mt-0.5 text-sm text-ink-soft">
-          Zaplatil(a) jsi něco za Mařenu? Zapiš to tady — propíše se to do financí a po proplacení se to odškrtne.
-        </p>
       </div>
 
       {canSubmit ? (

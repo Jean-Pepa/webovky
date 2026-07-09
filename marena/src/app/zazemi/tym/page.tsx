@@ -534,7 +534,6 @@ export default function TymPage() {
                             {/* Změnit role — vyskakovací okno (přidat / vyměnit / odebrat) */}
                             <button
                               className="rounded-full bg-plum-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-plum-700"
-                              title="Změnit role člena — přidat, vyměnit nebo úplně odebrat"
                               onClick={() => setRolesFor(m)}
                             >
                               🎭 Změnit role
@@ -885,7 +884,6 @@ function ChangeRolesModal({ member, yearId, onClose }: { member: Member; yearId:
       </div>
 
       {/* Všechny role — klik = přidat/odebrat */}
-      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Klikni pro přidání / odebrání</p>
       <div className="flex flex-wrap gap-1.5">
         {ROLES.map((r) => {
           const on = roleIds.includes(r.id);

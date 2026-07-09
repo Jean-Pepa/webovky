@@ -80,7 +80,7 @@ export default function PrvaciPage() {
 
       {(year.freshmen?.length ?? 0) === 0 ? (
         <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
-          {canEdit ? "Zatím tu nikdo není. Přidej prvního prváka tlačítkem nahoře." : "Zatím tu nikdo není."}
+          Zatím tu nikdo není.
         </div>
       ) : list.length === 0 ? (
         <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">Nikdo neodpovídá hledání.</div>

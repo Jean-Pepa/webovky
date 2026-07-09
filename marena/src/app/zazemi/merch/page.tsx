@@ -123,9 +123,6 @@ export default function MerchPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Merch</h1>
-          <p className="text-sm text-ink-soft">
-            {canManage ? "Nahraj fotky nabídky, sdílej QR kód a sleduj objednávky." : "Nabídka merche a QR kód k objednání."}
-          </p>
         </div>
         {/* Prodej na místě probíhá v jednotné pokladně (předvolí merch);
             zaplacený prodej se sem vrátí jako uzamčená objednávka. */}
@@ -595,7 +592,6 @@ function OrderRow({
             <button
               onClick={() => setQrOpen(true)}
               className="rounded-full bg-gold-500 px-2.5 py-1 text-xs font-semibold text-[#1d1d1f] transition hover:bg-gold-400"
-              title="Ukázat platební QR zákazníkovi"
             >
               QR platba
             </button>
@@ -625,7 +621,6 @@ function OrderRow({
               className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
                 order.done ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-amber-100 text-amber-800 hover:bg-amber-200"
               }`}
-              title="Přepnout stav"
             >
               {order.done ? "✓ Vyřízeno" : "⏳ Čeká"}
             </button>

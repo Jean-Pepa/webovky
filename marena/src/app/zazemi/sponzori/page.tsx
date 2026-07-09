@@ -127,7 +127,6 @@ export default function SponzoriPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Sponzoři</h1>
-          <p className="mt-0.5 text-sm text-ink-soft">Koho oslovit a co dává. Oslov a pak označ, jak domluva dopadla — ano (potvrzeno) / ne (odmítl).</p>
         </div>
         {canEdit && (
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
@@ -221,7 +220,7 @@ export default function SponzoriPage() {
 
       {sponsors.length === 0 ? (
         <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
-          {canEdit ? "Zatím žádní sponzoři. Přidej prvního nahoře." : "Zatím žádní sponzoři."}
+          Zatím žádní sponzoři.
         </div>
       ) : list.length === 0 ? (
         <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">V tomhle filtru nikdo není.</div>
@@ -399,7 +398,6 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
             {confirmed && (
               <button
                 className="btn-ghost px-2 py-1 text-xs text-red-600"
-                title="Označit jako zrušeno — přesun mezi odmítnuté"
                 onClick={() => setAskCancel(true)}
               >
                 Zrušeno?

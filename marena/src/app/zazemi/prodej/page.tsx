@@ -650,9 +650,6 @@ function Pos() {
                 </div>
               )}
             </div>
-            {soldMode && gi === firstNonEmpty && (
-              <p className="mt-2 text-xs text-ink-soft">Ťukni na položku, která došla — přeškrtne se a nepůjde markovat (platí jen pro dnešní kasu).</p>
-            )}
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {g.items.map((i) => {
                 const sold = isSoldOut(g.kind, i.id);
@@ -984,7 +981,6 @@ function DayGate({
     <div className="mx-auto max-w-3xl space-y-4 tabular-nums">
       <div>
         <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Prodej</h1>
-        <p className="mt-0.5 text-sm text-ink-soft">Nový den začíná založením kasy — po uzavření se den uzamkne do statistik.</p>
         <div className="mt-1">
           <AccountChip admin={admin} account={account} accountOk={accountOk} yearId={yearId} />
         </div>
@@ -993,7 +989,6 @@ function DayGate({
       {/* Založení nového dne — teprve pak se prodává */}
       <section className="card border-l-4 border-l-gold-500 p-4">
         <h2 className="font-display text-[20px] font-semibold">🌞 Založit nový den</h2>
-        <p className="mt-1 text-sm text-ink-soft">Vlož základ do kasy na vracení (klidně 0 Kč) a otevři den — pak se prodává.</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <input
             className="input w-44"
@@ -1084,7 +1079,6 @@ function KasaControl({ year, cashMarked }: { year: { id: string; cashboxes: Cash
         className={`flex min-h-11 items-center gap-2 rounded-full px-4 text-[15px] font-semibold transition ${
           openBox ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-paper2 text-ink hover:bg-gold-100"
         }`}
-        title={openBox ? "Kasa je otevřená — ťukni pro uzavření" : "Otevřít kasu s ranním vkladem"}
       >
         🧰 {openBox ? "Uzavřít kasu" : "Otevřít kasu"}
       </button>
@@ -1130,9 +1124,6 @@ function KasaControl({ year, cashMarked }: { year: { id: string; cashboxes: Cash
                 ✓ Dnešní kasa už byla uzavřena ({fmtCZK(closedToday.opening)} → {fmtCZK(closedToday.closing ?? 0)}).
               </p>
             )}
-            <p className="text-sm text-ink-soft">
-              Kasa je jednotná pro celý prodej. Vlož základ na vracení a otevři ji — večer ji tu uzavřeš.
-            </p>
             <div>
               <label className="label">Ranní vklad (Kč)</label>
               <input
