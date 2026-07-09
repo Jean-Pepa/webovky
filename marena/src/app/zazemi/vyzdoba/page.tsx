@@ -193,19 +193,40 @@ function DecorRow({ d, yearId, canEdit, admin }: { d: Decor; yearId: string; can
   }
 
   return (
-    <li id={`decor-${d.id}`} className="card flex scroll-mt-24 items-start gap-3 p-3">
-      <button
-        onClick={cycle}
-        disabled={!canEdit || locked}
-        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition ${STATUS[d.status].cls} ${canEdit && !locked ? "hover:opacity-80" : ""}`}
-        title={locked ? "Hotovo — uzamčeno" : canEdit ? "Klikni pro změnu stavu" : undefined}
-      >
-        {STATUS[d.status].label}
-        {locked ? " 🔒" : ""}
-      </button>
-      <div className="min-w-0 flex-1">
-        <p className={`break-words font-medium ${d.status === "hotovo" ? "text-ink-soft line-through" : ""}`}>{d.title}</p>
-        <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
+    <li id={`decor-${d.id}`} className="card scroll-mt-24 space-y-2 p-3">
+      {/* Horní řádek: stav vlevo, akce vpravo — zarovnané na jednu linku */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={cycle}
+          disabled={!canEdit || locked}
+          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition ${STATUS[d.status].cls} ${canEdit && !locked ? "hover:opacity-80" : ""}`}
+          title={locked ? "Hotovo — uzamčeno" : canEdit ? "Klikni pro změnu stavu" : undefined}
+        >
+          {STATUS[d.status].label}
+          {locked ? " 🔒" : ""}
+        </button>
+        {canEdit && (
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            {/* Reset (jen správce) — odemkne hotové a vrátí na nápad */}
+            {locked && admin && (
+              <button className="btn-ghost px-2 py-1 text-xs font-semibold text-gold-700" onClick={reset} title="Resetovat na nápad (odemknout)">
+                🔄 Reset
+              </button>
+            )}
+            {!locked && (
+              <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>Upravit</button>
+            )}
+            <DeleteButton onConfirm={() => dispatch({ type: "removeDecor", yearId, decorId: d.id })} />
+          </div>
+        )}
+      </div>
+
+      {/* Název přes celou šířku — méně se láme */}
+      <p className={`break-words font-medium ${d.status === "hotovo" ? "text-ink-soft line-through" : ""}`}>{d.title}</p>
+
+      {/* Kdo shání / odkaz / poznámka — vždy pod názvem, zarovnané */}
+      {(d.who || d.link || d.note) && (
+        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
           {d.who && <span>👤 {d.who}</span>}
           {d.link && (
             <a href={d.link.startsWith("http") ? d.link : `https://${d.link}`} target="_blank" rel="noreferrer" className="break-all text-gold-700 hover:underline">
@@ -213,20 +234,6 @@ function DecorRow({ d, yearId, canEdit, admin }: { d: Decor; yearId: string; can
             </a>
           )}
           {d.note && <span className="break-words">📝 {d.note}</span>}
-        </div>
-      </div>
-      {canEdit && (
-        <div className="flex shrink-0 items-center gap-1">
-          {/* Reset (jen správce) — odemkne hotové a vrátí na nápad */}
-          {locked && admin && (
-            <button className="btn-ghost px-2 py-1 text-xs font-semibold text-gold-700" onClick={reset} title="Resetovat na nápad (odemknout)">
-              🔄 Reset
-            </button>
-          )}
-          {!locked && (
-            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>Upravit</button>
-          )}
-          <DeleteButton onConfirm={() => dispatch({ type: "removeDecor", yearId, decorId: d.id })} />
         </div>
       )}
 
