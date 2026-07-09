@@ -49,6 +49,7 @@ export default function VyzdobaPage() {
   const [zone, setZone] = useState(""); // zóna zvolená rovnou při přidávání nápadu
   const [addNewZone, setAddNewZone] = useState(false); // inline „nová zóna" v okně přidání
   const [addNewZoneName, setAddNewZoneName] = useState("");
+  const [view, setView] = useState<"domu" | "zony" | "material">("domu"); // spodní podlišta výzdoby
 
   const year = currentYear;
   const list = useMemo(
@@ -94,27 +95,42 @@ export default function VyzdobaPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6">
       {canEditCurrentYear && !canEdit && (
         <ReadOnlyBanner>Výzdobu máš jen k náhledu — upravovat ji může jen správce a příslušná role.</ReadOnlyBanner>
       )}
-      <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Výzdoba</h1>
+        {/* Přepínač (desktop) — na mobilu je dole ve svítící zlaté liště */}
+        <div className="hidden gap-1.5 md:flex">
+          {VYZDOBA_TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setView(t.id)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                view === t.id ? "bg-gold-500 text-[#1d1d1f] shadow-sm" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+              }`}
+            >
+              {t.emoji} {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Pravidla */}
-      <RulesCard year={year} canEdit={isLead} />
-
-      {/* Plánek zón */}
-      <PlanCard year={year} canEdit={isLead} />
+      {/* Domů — pravidla, plánek a hlasování týmu */}
+      {view === "domu" && (
+        <>
+          <RulesCard year={year} canEdit={isLead} />
+          <PlanCard year={year} canEdit={isLead} />
+          <TeamVoting year={year} canEdit={canEdit} me={me} />
+        </>
+      )}
 
       {/* Zóny */}
-      <ZonesSection year={year} canEdit={canEdit} isLead={isLead} me={me} />
-
-      {/* Hlasování týmu — propíše se i do obecného Hlasování */}
-      <TeamVoting year={year} canEdit={canEdit} me={me} />
+      {view === "zony" && <ZonesSection year={year} canEdit={canEdit} isLead={isLead} me={me} />}
 
       {/* Materiál a nápady */}
+      {view === "material" && (
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-[19px] font-bold">🎨 Materiál a nápady</h2>
@@ -199,9 +215,37 @@ export default function VyzdobaPage() {
           </ul>
         )}
       </section>
+      )}
+
+      {/* Spodní podlišta výzdoby (mobil) — Zóny · Domů · Materiál */}
+      <div className="fixed inset-x-3 bottom-[calc(5.1rem+env(safe-area-inset-bottom))] z-40 md:hidden">
+        <div className="mx-auto max-w-3xl">
+          <div className="grid grid-cols-3 gap-1 rounded-[28px] bg-gold-500 p-1.5 shadow-[0_0_24px_rgba(244,183,31,0.65)]">
+            {VYZDOBA_TABS.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setView(t.id)}
+                className={`flex min-h-12 flex-col items-center justify-center rounded-[22px] px-0.5 text-[11px] font-semibold leading-tight transition ${
+                  view === t.id ? "bg-[#1d1d1f] text-gold-300" : "text-[#1d1d1f] active:scale-[0.97]"
+                }`}
+              >
+                <span className="text-base leading-none">{t.emoji}</span>
+                <span className="mt-0.5 text-center">{t.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
+
+// 3 pohledy výzdoby (svítící podlišta) — domů (přehled) je uprostřed.
+const VYZDOBA_TABS: { id: "zony" | "domu" | "material"; emoji: string; label: string }[] = [
+  { id: "zony", emoji: "📍", label: "Zóny" },
+  { id: "domu", emoji: "🏠", label: "Domů" },
+  { id: "material", emoji: "🎨", label: "Materiál" },
+];
 
 // Přehledně naformátovaná pravidla — úvodní odstavce + odrážky (řádky s „-").
 function RulesView({ text }: { text: string }) {
@@ -584,15 +628,29 @@ function TeamVoting({ year, canEdit, me }: { year: Year; canEdit: boolean; me: s
           Zatím žádné hlasování.
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {polls.map((p) => {
             const closed = isPollClosed(p);
             const voted = p.options.some((o) => o.voters.some((v) => sameName(v, me)));
             const votes = new Set(p.options.flatMap((o) => o.voters)).size;
+            // Nové (ještě neodhlasované a otevřené) → celé okénko bliká, ať ho nejde přehlédnout.
+            const isNew = !voted && !closed;
             return (
-              <div key={p.id} className={`card flex flex-wrap items-center gap-3 p-3.5 ${voted && !closed ? "bg-leaf/[0.05] ring-1 ring-leaf/40" : ""}`}>
+              <div
+                key={p.id}
+                className={`flex flex-wrap items-center gap-3 rounded-2xl border p-4 ${
+                  closed
+                    ? "border-ink/10 bg-surface opacity-90"
+                    : voted
+                      ? "border-leaf/45 bg-leaf/[0.06]"
+                      : "pending-glow border-2 border-gold-500 bg-gold-50"
+                }`}
+              >
                 <div className="min-w-0 flex-1">
-                  <p className="break-words font-medium">🗳️ {p.question}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {isNew && <span className="shrink-0 rounded-full bg-gold-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#1d1d1f]">🆕 nové</span>}
+                    <p className="min-w-0 break-words font-semibold">🗳️ {p.question}</p>
+                  </div>
                   <p className="mt-0.5 text-xs text-ink-soft">
                     {votes === 0 ? "zatím nikdo nehlasoval" : `${votes} ${votes === 1 ? "hlas" : votes <= 4 ? "hlasy" : "hlasů"}`}
                     {closed ? " · uzavřeno" : ""}
@@ -603,11 +661,11 @@ function TeamVoting({ year, canEdit, me }: { year: Year; canEdit: boolean; me: s
                     Výsledek →
                   </Link>
                 ) : voted ? (
-                  <span className="badge-closed-glow inline-flex shrink-0 items-center gap-1.5 rounded-full border border-leaf/50 bg-leaf/15 px-3.5 py-2 text-xs font-bold text-leaf-700">
+                  <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-leaf/50 bg-leaf/15 px-3.5 py-2 text-xs font-bold text-leaf-700">
                     ✅ Hlasoval jsi
                   </span>
                 ) : (
-                  <Link href={`/zazemi/hlasovani?poll=${p.id}`} className="pending-glow inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gold-500 px-4 py-2 text-xs font-bold text-[#1d1d1f] transition hover:bg-gold-400">
+                  <Link href={`/zazemi/hlasovani?poll=${p.id}`} className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gold-500 px-4 py-2.5 text-sm font-bold text-[#1d1d1f] shadow-sm transition hover:bg-gold-400">
                     🗳️ Hlasovat →
                   </Link>
                 )}
