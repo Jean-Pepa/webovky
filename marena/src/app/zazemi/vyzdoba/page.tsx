@@ -14,7 +14,6 @@ import { WhoSelect } from "@/components/WhoSelect";
 import { ImageBoard } from "@/components/ImageBoard";
 import { ImageViewer } from "@/components/ImageViewer";
 import { loadReceipt } from "@/lib/receipts";
-import { Collapsible } from "@/components/Collapsible";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
 import { flash } from "@/components/Flash";
@@ -392,7 +391,11 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
   const [desc, setDesc] = useState(""); // volitelný popis nové zóny (jako mají zóny uvnitř)
   const [descOpen, setDescOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [openZoneId, setOpenZoneId] = useState<string | null>(null); // otevřená zóna v okně
   const zones = year.decorZones ?? [];
+  // Seřazené podle názvu (A-1, A-1-2-3, B-1…) — přehlednější než pořadí přidání.
+  const sorted = [...zones].sort((a, b) => a.name.localeCompare(b.name, "cs"));
+  const openZone = zones.find((z) => z.id === openZoneId);
   const involved = new Set(zones.flatMap((z) => z.members.map((m) => m.toLowerCase()))).size;
   const zoneWord = zones.length === 1 ? "zóna" : zones.length >= 2 && zones.length <= 4 ? "zóny" : "zón";
   function addZone() {
@@ -447,13 +450,51 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
           Zatím žádné zóny.
         </div>
       ) : (
-        <div className="space-y-2.5">
-          {zones.map((z) => (
-            <ZoneCard key={z.id} zone={z} year={year} canEdit={canEdit} isLead={isLead} me={me} />
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {sorted.map((z) => (
+            <ZoneTile key={z.id} zone={z} year={year} me={me} onClick={() => setOpenZoneId(z.id)} />
           ))}
         </div>
       )}
+
+      {/* Detail zóny v okně na střed */}
+      <Modal open={!!openZone} onClose={() => setOpenZoneId(null)} title={openZone ? `📍 ${openZone.name}` : ""}>
+        {openZone && (
+          <ZoneDetail key={openZone.id} zone={openZone} year={year} canEdit={canEdit} isLead={isLead} me={me} onClose={() => setOpenZoneId(null)} />
+        )}
+      </Modal>
     </section>
+  );
+}
+
+// Malá dlaždice zóny v mřížce — přehled, klik otevře detail v okně.
+function ZoneTile({ zone, year, me, onClick }: { zone: DecorZone; year: Year; me: string; onClick: () => void }) {
+  const iAmIn = zone.members.some((m) => sameName(m, me));
+  const zoneTasks = year.tasks.filter((t) => t.zoneId === zone.id);
+  const done = zoneTasks.filter((t) => t.done).length;
+  const total = zoneTasks.length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const empty = zone.members.length === 0;
+  return (
+    <button onClick={onClick} className={`card p-3 text-left transition hover:border-gold-300 ${iAmIn ? "ring-1 ring-leaf/40" : ""}`}>
+      <div className="flex items-start gap-1">
+        <span className="min-w-0 flex-1 break-words font-display text-sm font-semibold leading-snug">📍 {zone.name}</span>
+        <span aria-hidden className="shrink-0 text-ink-soft/40">›</span>
+      </div>
+      <div className="mt-1.5 flex flex-wrap items-center gap-1">
+        {iAmIn && <span className="rounded-full bg-leaf px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">jsi tu</span>}
+        {empty && <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-red-600">volná</span>}
+      </div>
+      <div className="mt-1.5 flex items-center gap-2 text-[11px] text-ink-soft">
+        <span>👥 {zone.members.length}</span>
+        {total > 0 && <span className={done === total ? "font-semibold text-leaf-700" : ""}>✅ {done}/{total}</span>}
+      </div>
+      {total > 0 && (
+        <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-paper2">
+          <div className="h-full rounded-full bg-leaf transition-all" style={{ width: `${pct}%` }} />
+        </div>
+      )}
+    </button>
   );
 }
 
@@ -593,7 +634,7 @@ function ZoneLabel({ icon, children, count }: { icon: string; children: React.Re
 // Jedna zóna — sbalitelná karta. Sbaleno = přehled (lidi, postup úkolů,
 // materiál); rozbaleno = kdo spravuje, referenční obrázek + popis, úkoly zóny
 // (svítí členům v Moje agenda) a přiřazený materiál. Moje zóny jsou rozbalené.
-function ZoneCard({ zone, year, canEdit, isLead, me }: { zone: DecorZone; year: Year; canEdit: boolean; isLead: boolean; me: string }) {
+function ZoneDetail({ zone, year, canEdit, isLead, me, onClose }: { zone: DecorZone; year: Year; canEdit: boolean; isLead: boolean; me: string; onClose: () => void }) {
   const { dispatch } = useStore();
   const [editName, setEditName] = useState(false);
   const [name, setName] = useState(zone.name);
@@ -619,32 +660,20 @@ function ZoneCard({ zone, year, canEdit, isLead, me }: { zone: DecorZone; year: 
   }
 
   return (
-    <Collapsible
-      defaultOpen={iAmIn}
-      className={`card p-4 transition ${iAmIn ? "ring-1 ring-leaf/40" : ""}`}
-      headerClassName="items-start gap-3"
-      header={(open) => (
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-display text-lg font-semibold">📍 {zone.name}</span>
-            {iAmIn && <span className="rounded-full bg-leaf px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">jsi tu</span>}
-            {empty && <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600">volná</span>}
-          </div>
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-soft">
-            <span>👥 {zone.members.length}</span>
-            {total > 0 && <span className={done === total ? "font-semibold text-leaf-700" : ""}>✅ {done}/{total} úkolů</span>}
-            {zoneMaterial.length > 0 && <span>🎨 {zoneMaterial.length}× materiál</span>}
-            {!open && zone.members.length > 0 && <span className="min-w-0 truncate text-ink-soft/70">· {zone.members.join(", ")}</span>}
-          </div>
-          {total > 0 && (
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-paper2">
-              <div className="h-full rounded-full bg-leaf transition-all" style={{ width: `${pct}%` }} />
-            </div>
-          )}
+    <div className="space-y-4">
+      {/* Stav zóny */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-soft">
+        {iAmIn && <span className="rounded-full bg-leaf px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">jsi tu</span>}
+        {empty && <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600">volná</span>}
+        <span>👥 {zone.members.length}</span>
+        {total > 0 && <span className={done === total ? "font-semibold text-leaf-700" : ""}>✅ {done}/{total} úkolů</span>}
+        {zoneMaterial.length > 0 && <span>🎨 {zoneMaterial.length}× materiál</span>}
+      </div>
+      {total > 0 && (
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-paper2">
+          <div className="h-full rounded-full bg-leaf transition-all" style={{ width: `${pct}%` }} />
         </div>
       )}
-    >
-      <div className="mt-3 space-y-4 border-t border-ink/[0.08] pt-3">
         {/* Akce vedoucího */}
         {isLead && (
           <div className="flex items-center gap-2">
@@ -785,8 +814,11 @@ function ZoneCard({ zone, year, canEdit, isLead, me }: { zone: DecorZone; year: 
             </ul>
           </div>
         )}
-      </div>
-    </Collapsible>
+
+      <button className="btn-primary w-full py-2.5" onClick={onClose}>
+        Zavřít
+      </button>
+    </div>
   );
 }
 
