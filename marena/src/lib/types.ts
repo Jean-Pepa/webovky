@@ -25,6 +25,8 @@ export interface Post {
   pinned: boolean;
   photoIds?: string[]; // přiložené obrázky (blob id, načítá se přes loadReceipt)
   pollId?: string; // připojená anketa (žije v sekci Hlasování, odkaz z příspěvku)
+  // Prioritní zpráva — komu „svítí" v Moje agendě (všichni / role / konkrétní lidé).
+  priority?: { all?: boolean; roles?: string[]; people?: string[] };
   createdAt: string;
   editedBy?: string; // kdo naposledy upravil (autor založení se nemění) — legacy
   editedAt?: string; // ISO – kdy se naposledy upravilo — legacy
