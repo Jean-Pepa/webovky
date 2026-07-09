@@ -583,14 +583,13 @@ function DecorRow({ d, yearId, canEdit, admin, zones }: { d: Decor; yearId: stri
       )}
 
       {/* Potvrzení „hotovo" — pak se to uzamkne */}
-      <Modal open={askDone} onClose={() => setAskDone(false)} title={`Označit jako hotovo — ${d.title}`}>
+      <Modal open={askDone} onClose={() => setAskDone(false)} title="Označit jako hotovo?">
         <p className="text-sm text-ink-soft">
-          Označit <strong className="text-ink">„{d.title}“</strong> jako <strong className="text-ink">hotovo</strong>? Pak se to
-          <strong className="text-ink"> uzamkne</strong> — nepůjde omylem překlikat zpět. Odemknout může jen správce (tlačítkem Reset).
+          <strong className="text-ink">„{d.title}“</strong> se uzamkne. Odemkne jen správce.
         </p>
         <div className="mt-4 flex items-center gap-2">
           <button className="btn-primary flex-1" onClick={confirmDone}>
-            ✅ Ano, hotovo a uzamknout
+            ✅ Hotovo
           </button>
           <button className="btn-ghost" onClick={() => setAskDone(false)}>
             Zrušit
