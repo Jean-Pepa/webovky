@@ -3,8 +3,10 @@
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { canEditSection } from "@/lib/access";
+import { isAdmin } from "@/lib/admin";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { DeleteButton } from "@/components/DeleteButton";
+import { Modal } from "@/components/Modal";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
 import { flash } from "@/components/Flash";
@@ -121,7 +123,7 @@ export default function VyzdobaPage() {
       ) : (
         <ul className="space-y-2">
           {list.map((d) => (
-            <DecorRow key={d.id} d={d} yearId={year.id} canEdit={canEdit} />
+            <DecorRow key={d.id} d={d} yearId={year.id} canEdit={canEdit} admin={isAdmin(me)} />
           ))}
         </ul>
       )}
@@ -129,17 +131,39 @@ export default function VyzdobaPage() {
   );
 }
 
-function DecorRow({ d, yearId, canEdit }: { d: Decor; yearId: string; canEdit: boolean }) {
+function DecorRow({ d, yearId, canEdit, admin }: { d: Decor; yearId: string; canEdit: boolean; admin?: boolean }) {
   const { dispatch } = useStore();
   const [edit, setEdit] = useState(false);
+  const [askDone, setAskDone] = useState(false); // potvrzení „hotovo → uzamknout"
   const [title, setTitle] = useState(d.title);
   const [who, setWho] = useState(d.who ?? "");
   const [link, setLink] = useState(d.link ?? "");
   const [note, setNote] = useState(d.note ?? "");
+  const locked = d.status === "hotovo"; // hotové je uzamčené, dokud se neodemkne
 
   async function save() {
     await dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { title, who, link, note } });
     setEdit(false);
+  }
+  // Klik na stav: nápad → shání se rovnou; před „hotovo" se to potvrdí a pak
+  // se uzamkne. Hotové už samo neroluje zpět (šlo by jen omylem).
+  function cycle() {
+    if (!canEdit || locked) return;
+    if (d.status === "shani") {
+      setAskDone(true);
+      return;
+    }
+    dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { status: NEXT[d.status] } });
+  }
+  function confirmDone() {
+    dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { status: "hotovo" } });
+    setAskDone(false);
+    flash("Hotovo — uzamčeno 🔒", "✅");
+  }
+  // Reset (jen správce) — uzamčené hotové vrátí na začátek (nápad).
+  function reset() {
+    dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { status: "napad" } });
+    flash("Resetováno na nápad", "🔄");
   }
 
   if (edit) {
@@ -162,12 +186,13 @@ function DecorRow({ d, yearId, canEdit }: { d: Decor; yearId: string; canEdit: b
   return (
     <li className="card flex items-start gap-3 p-3">
       <button
-        onClick={() => canEdit && dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { status: NEXT[d.status] } })}
-        disabled={!canEdit}
-        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition ${STATUS[d.status].cls} ${canEdit ? "hover:opacity-80" : ""}`}
-        title={canEdit ? "Klikni pro změnu stavu" : undefined}
+        onClick={cycle}
+        disabled={!canEdit || locked}
+        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition ${STATUS[d.status].cls} ${canEdit && !locked ? "hover:opacity-80" : ""}`}
+        title={locked ? "Hotovo — uzamčeno" : canEdit ? "Klikni pro změnu stavu" : undefined}
       >
         {STATUS[d.status].label}
+        {locked ? " 🔒" : ""}
       </button>
       <div className="min-w-0 flex-1">
         <p className={`break-words font-medium ${d.status === "hotovo" ? "text-ink-soft line-through" : ""}`}>{d.title}</p>
@@ -183,10 +208,34 @@ function DecorRow({ d, yearId, canEdit }: { d: Decor; yearId: string; canEdit: b
       </div>
       {canEdit && (
         <div className="flex shrink-0 items-center gap-1">
-          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>Upravit</button>
+          {/* Reset (jen správce) — odemkne hotové a vrátí na nápad */}
+          {locked && admin && (
+            <button className="btn-ghost px-2 py-1 text-xs font-semibold text-gold-700" onClick={reset} title="Resetovat na nápad (odemknout)">
+              🔄 Reset
+            </button>
+          )}
+          {!locked && (
+            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEdit(true)}>Upravit</button>
+          )}
           <DeleteButton onConfirm={() => dispatch({ type: "removeDecor", yearId, decorId: d.id })} />
         </div>
       )}
+
+      {/* Potvrzení „hotovo" — pak se to uzamkne */}
+      <Modal open={askDone} onClose={() => setAskDone(false)} title={`Označit jako hotovo — ${d.title}`}>
+        <p className="text-sm text-ink-soft">
+          Označit <strong className="text-ink">„{d.title}“</strong> jako <strong className="text-ink">hotovo</strong>? Pak se to
+          <strong className="text-ink"> uzamkne</strong> — nepůjde omylem překlikat zpět. Odemknout může jen správce (tlačítkem Reset).
+        </p>
+        <div className="mt-4 flex items-center gap-2">
+          <button className="btn-primary flex-1" onClick={confirmDone}>
+            ✅ Ano, hotovo a uzamknout
+          </button>
+          <button className="btn-ghost" onClick={() => setAskDone(false)}>
+            Zrušit
+          </button>
+        </div>
+      </Modal>
     </li>
   );
 }
