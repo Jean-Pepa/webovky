@@ -543,6 +543,8 @@ function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post;
   const poll = p.pollId ? currentYear?.polls.find((pl) => pl.id === p.pollId) : undefined;
   // Úkoly navázané na tenhle příspěvek (přes fromPostId) — checklist rovnou na nástěnce.
   const postTasks = (currentYear?.tasks ?? []).filter((t) => t.fromPostId === p.id);
+  // Delší seznam úkolů se sbalí za klikací šipku (rozbalí se na kliknutí).
+  const [tasksOpen, setTasksOpen] = useState(postTasks.length <= 10);
   // Všechny úkoly příspěvku hotové → příspěvek se rozsvítí zeleně.
   const allTasksDone = postTasks.length > 0 && postTasks.every((t) => t.done);
   // Moje úkoly z tohoto příspěvku (podle jména). Dokud mám nějaký nesplněný,
@@ -757,37 +759,46 @@ function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post;
       {postTasks.length > 0 && (
         <div className={`mt-3 rounded-xl p-3 ring-1 ${allTasksDone ? "bg-leaf/10 ring-leaf/40" : "bg-paper2/50 ring-ink/10"}`}>
           <div className="mb-1.5 flex items-center justify-between gap-2">
-            <p className={`text-xs font-semibold uppercase tracking-wide ${allTasksDone ? "text-leaf-700" : "text-ink-soft"}`}>
+            {/* Klikací šipka: rozbalí/sbalí seznam úkolů (dlouhý seznam nebobtná přes obrazovku). */}
+            <button
+              type="button"
+              onClick={() => setTasksOpen((v) => !v)}
+              aria-expanded={tasksOpen}
+              className={`flex min-w-0 items-center gap-1 text-xs font-semibold uppercase tracking-wide ${allTasksDone ? "text-leaf-700" : "text-ink-soft"}`}
+            >
+              <span aria-hidden className={`shrink-0 text-[10px] transition-transform ${tasksOpen ? "rotate-0" : "-rotate-90"}`}>▼</span>
               {allTasksDone ? "✅ Hotovo" : "✅ Úkoly"} ({postTasks.filter((t) => t.done).length}/{postTasks.length})
-            </p>
+            </button>
             <Link href="/zazemi/ukoly" className="shrink-0 text-xs font-medium text-gold-700 hover:underline">
               Odškrtnout v Úkolech →
             </Link>
           </div>
-          {/* Nad 10 úkolů se seznam scrolluje, ať příspěvek nebobtná přes celou obrazovku. */}
-          <ul className={`space-y-1 ${postTasks.length > 10 ? "max-h-60 overflow-y-auto overscroll-contain pr-1" : ""}`}>
-            {postTasks.map((t) => (
-              <li key={t.id} className="flex items-center gap-2">
-                <span
-                  aria-hidden
-                  className={`grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border text-[11px] font-bold leading-none ${
-                    t.done ? "border-leaf bg-leaf text-white" : "border-ink/30 bg-white"
-                  }`}
-                >
-                  {t.done ? "✓" : ""}
-                </span>
-                <span className={`min-w-0 flex-1 text-sm ${t.done ? "text-ink-soft line-through" : "font-medium"}`}>
-                  {t.title}
-                  {t.assignee ? <span className="text-ink-soft"> — {t.assignee}</span> : null}
-                </span>
-              </li>
-            ))}
-          </ul>
-          {postTasks.length > 10 && (
-            <p className="mt-1.5 text-center text-[11px] text-ink-soft/70">↕ {postTasks.length} úkolů — seznam se roluje</p>
+          {tasksOpen ? (
+            <ul className="space-y-1">
+              {postTasks.map((t) => (
+                <li key={t.id} className="flex items-center gap-2">
+                  <span
+                    aria-hidden
+                    className={`grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border text-[11px] font-bold leading-none ${
+                      t.done ? "border-leaf bg-leaf text-white" : "border-ink/30 bg-white"
+                    }`}
+                  >
+                    {t.done ? "✓" : ""}
+                  </span>
+                  <span className={`min-w-0 flex-1 text-sm ${t.done ? "text-ink-soft line-through" : "font-medium"}`}>
+                    {t.title}
+                    {t.assignee ? <span className="text-ink-soft"> — {t.assignee}</span> : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <button type="button" onClick={() => setTasksOpen(true)} className="text-xs font-medium text-gold-700 hover:underline">
+              Zobrazit {postTasks.length} úkolů ▼
+            </button>
           )}
           {/* Když mám všechny svoje úkoly z příspěvku hotové → pochvala (blik zhasne). */}
-          {myAllDone && (
+          {myAllDone && tasksOpen && (
             <p className="mt-2 rounded-lg bg-leaf/15 px-2.5 py-1.5 text-xs font-semibold text-leaf-700">
               🎉 Splnil(a) jsi zatím všechny dosavadní úkoly z tohoto příspěvku.
             </p>
