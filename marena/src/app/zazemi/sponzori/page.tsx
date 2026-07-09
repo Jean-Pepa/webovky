@@ -7,6 +7,7 @@ import { isAdmin } from "@/lib/admin";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
+import { WhoSelect } from "@/components/WhoSelect";
 import { matchesQuery } from "@/lib/search";
 import { flash } from "@/components/Flash";
 import type { Sponsor, SponsorStatus, SponsorCategory } from "@/lib/types";
@@ -152,7 +153,7 @@ export default function SponzoriPage() {
             autoFocus
           />
           <input className="input" placeholder="Co dává (pivo, čaj, kávovar, peníze…)" value={gives} onChange={(e) => setGives(e.target.value)} />
-          <input className="input" placeholder="Kdo to řeší" value={who} onChange={(e) => setWho(e.target.value)} />
+          <WhoSelect value={who} onChange={setWho} placeholder="Kdo to řeší? (nepovinné)" />
           <LinksEditor links={links} setLinks={setLinks} />
           <input className="input" placeholder="Požadavky / poznámka (např. chce logo)" value={note} onChange={(e) => setNote(e.target.value)} />
 
@@ -260,7 +261,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
       <li className="card space-y-3 p-3">
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Název sponzora" />
         <input className="input" value={gives} onChange={(e) => setGives(e.target.value)} placeholder="Co dává (pivo, čaj, kávovar, peníze…)" />
-        <input className="input" value={who} onChange={(e) => setWho(e.target.value)} placeholder="Kdo to řeší" />
+        <WhoSelect value={who} onChange={setWho} placeholder="Kdo to řeší? (nepovinné)" />
         <LinksEditor links={links} setLinks={setLinks} />
         <input className="input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Požadavky / poznámka (např. chce logo)" />
         <div>
