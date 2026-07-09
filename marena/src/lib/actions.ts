@@ -105,7 +105,7 @@ export type Action =
   | { type: "updateDecor"; yearId: string; decorId: string; patch: { title?: string; status?: "napad" | "shani" | "hotovo"; who?: string; link?: string; note?: string; zoneId?: string | null } }
   | { type: "removeDecor"; yearId: string; decorId: string }
   // Výzdobné zóny + plánek + pravidla
-  | { type: "addDecorZone"; yearId: string; name: string }
+  | { type: "addDecorZone"; yearId: string; name: string; id?: string }
   | { type: "updateDecorZone"; yearId: string; zoneId: string; patch: { name?: string; description?: string; refImageIds?: string[] } }
   | { type: "removeDecorZone"; yearId: string; zoneId: string }
   | { type: "joinDecorZone"; yearId: string; zoneId: string; name: string }
@@ -944,7 +944,7 @@ export function applyAction(db: DB, a: Action): DB {
       if (!name) return db;
       return mapYear(db, a.yearId, (y) => ({
         ...y,
-        decorZones: [...(y.decorZones ?? []), { id: uid("dz_"), name, members: [], createdAt: now() }],
+        decorZones: [...(y.decorZones ?? []), { id: a.id ?? uid("dz_"), name, members: [], createdAt: now() }],
       }));
     }
     case "updateDecorZone":

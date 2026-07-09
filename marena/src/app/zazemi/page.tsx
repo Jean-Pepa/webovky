@@ -542,8 +542,8 @@ function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post;
   const poll = p.pollId ? currentYear?.polls.find((pl) => pl.id === p.pollId) : undefined;
   // Úkoly navázané na tenhle příspěvek (přes fromPostId) — checklist rovnou na nástěnce.
   const postTasks = (currentYear?.tasks ?? []).filter((t) => t.fromPostId === p.id);
-  // Delší seznam úkolů se sbalí za klikací šipku (rozbalí se na kliknutí).
-  const [tasksOpen, setTasksOpen] = useState(postTasks.length <= 10);
+  // Delší seznam úkolů (nad 3) se sbalí za klikací šipku; po rozbalení se roluje.
+  const [tasksOpen, setTasksOpen] = useState(postTasks.length <= 3);
   // Všechny úkoly příspěvku hotové → příspěvek se rozsvítí zeleně.
   const allTasksDone = postTasks.length > 0 && postTasks.every((t) => t.done);
   // Moje úkoly z tohoto příspěvku (podle jména). Dokud mám nějaký nesplněný,
@@ -773,7 +773,7 @@ function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post;
             </Link>
           </div>
           {tasksOpen ? (
-            <ul className="space-y-1">
+            <ul className={`space-y-1 ${postTasks.length > 3 ? "max-h-20 overflow-y-auto overscroll-contain pr-1" : ""}`}>
               {postTasks.map((t) => (
                 <li key={t.id} className="flex items-center gap-2">
                   <span
