@@ -155,15 +155,23 @@ function DecorRow({ d, yearId, canEdit, admin }: { d: Decor; yearId: string; can
     }
     dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { status: NEXT[d.status] } });
   }
+  // Po změně stavu se řádek přesune (seznam se řadí podle stavu) — doscrolluj
+  // k němu, ať to nevypadá, že „zmizel".
+  function scrollToSelf() {
+    setTimeout(() => document.getElementById(`decor-${d.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
+  }
   function confirmDone() {
     dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { status: "hotovo" } });
     setAskDone(false);
     flash("Hotovo — uzamčeno 🔒", "✅");
+    scrollToSelf();
   }
-  // Reset (jen správce) — uzamčené hotové vrátí na začátek (nápad).
+  // Reset (jen správce) — uzamčené hotové vrátí na začátek (nápad). Položka se
+  // nemaže, jen změní stav a přesune se mezi nápady (nahoru) — doscrollujeme k ní.
   function reset() {
     dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { status: "napad" } });
-    flash("Resetováno na nápad", "🔄");
+    flash("Resetováno na nápad — je mezi nápady nahoře", "🔄");
+    scrollToSelf();
   }
 
   if (edit) {
@@ -184,7 +192,7 @@ function DecorRow({ d, yearId, canEdit, admin }: { d: Decor; yearId: string; can
   }
 
   return (
-    <li className="card flex items-start gap-3 p-3">
+    <li id={`decor-${d.id}`} className="card flex scroll-mt-24 items-start gap-3 p-3">
       <button
         onClick={cycle}
         disabled={!canEdit || locked}
