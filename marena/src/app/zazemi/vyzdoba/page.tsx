@@ -11,6 +11,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
 import { WhoSelect } from "@/components/WhoSelect";
 import { ImageBoard } from "@/components/ImageBoard";
+import { Collapsible } from "@/components/Collapsible";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
 import { flash } from "@/components/Flash";
@@ -205,11 +206,14 @@ function PlanCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
   );
 }
 
-// Sekce Zóny — vedoucí přidává zóny, každá je karta (ZoneCard).
+// Sekce Zóny — vedoucí přidává zóny, každá je sbalitelná karta (ZoneCard).
 function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: boolean; isLead: boolean; me: string }) {
   const { dispatch } = useStore();
   const [name, setName] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
   const zones = year.decorZones ?? [];
+  const involved = new Set(zones.flatMap((z) => z.members.map((m) => m.toLowerCase()))).size;
+  const zoneWord = zones.length === 1 ? "zóna" : zones.length >= 2 && zones.length <= 4 ? "zóny" : "zón";
   function addZone() {
     if (!name.trim()) return;
     dispatch({ type: "addDecorZone", yearId: year.id, name: name.trim() });
@@ -218,17 +222,35 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
   }
   return (
     <section className="space-y-3">
-      <h2 className="font-display text-[19px] font-bold">📍 Zóny</h2>
-      {isLead && (
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-display text-[19px] font-bold">📍 Zóny</h2>
+        <div className="flex items-center gap-2">
+          {zones.length > 0 && (
+            <span className="text-xs text-ink-soft">
+              {zones.length} {zoneWord} · {involved} zapojeno
+            </span>
+          )}
+          {isLead && (
+            <button className="btn-primary px-3 py-1.5 text-sm" onClick={() => setAddOpen((v) => !v)}>
+              {addOpen ? "Zavřít" : "+ Zóna"}
+            </button>
+          )}
+        </div>
+      </div>
+      {isLead && addOpen && (
         <div className="flex gap-2">
-          <input className="input" placeholder="Nová zóna (např. Vstup, Dvůr, Aula)" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addZone()} />
-          <button className="btn-primary shrink-0" onClick={addZone} disabled={!name.trim()}>+ Zóna</button>
+          <input className="input" placeholder="Nová zóna (např. Vstup, Dvůr, Aula)" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addZone()} autoFocus />
+          <button className="btn-primary shrink-0" onClick={addZone} disabled={!name.trim()}>
+            Přidat
+          </button>
         </div>
       )}
       {zones.length === 0 ? (
-        <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">Zatím žádné zóny.{isLead ? " Přidej první nahoře." : ""}</div>
+        <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
+          Zatím žádné zóny.{isLead ? " Přidej první tlačítkem nahoře." : ""}
+        </div>
       ) : (
-        <div className="grid items-start gap-3 md:grid-cols-2">
+        <div className="space-y-2.5">
           {zones.map((z) => (
             <ZoneCard key={z.id} zone={z} year={year} canEdit={canEdit} isLead={isLead} me={me} />
           ))}
@@ -238,8 +260,20 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
   );
 }
 
-// Jedna zóna — kdo spravuje (přihlášení), referenční obrázek + popis, úkoly zóny
-// (svítí členům v Moje agenda) a přiřazený materiál.
+// Malý nadpis podsekce v zóně (ikona + popisek + volitelný počet).
+function ZoneLabel({ icon, children, count }: { icon: string; children: React.ReactNode; count?: string }) {
+  return (
+    <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">
+      <span aria-hidden>{icon}</span>
+      {children}
+      {count && <span className="text-ink-soft/60">{count}</span>}
+    </p>
+  );
+}
+
+// Jedna zóna — sbalitelná karta. Sbaleno = přehled (lidi, postup úkolů,
+// materiál); rozbaleno = kdo spravuje, referenční obrázek + popis, úkoly zóny
+// (svítí členům v Moje agenda) a přiřazený materiál. Moje zóny jsou rozbalené.
 function ZoneCard({ zone, year, canEdit, isLead, me }: { zone: DecorZone; year: Year; canEdit: boolean; isLead: boolean; me: string }) {
   const { dispatch } = useStore();
   const [editName, setEditName] = useState(false);
@@ -253,7 +287,10 @@ function ZoneCard({ zone, year, canEdit, isLead, me }: { zone: DecorZone; year: 
   const canEditZone = isLead || (canEdit && iAmIn); // přispívat do zóny (obrázek, popis)
   const zoneTasks = year.tasks.filter((t) => t.zoneId === zone.id);
   const zoneMaterial = (year.decor ?? []).filter((d) => d.zoneId === zone.id);
-  const doneTasks = zoneTasks.filter((t) => t.done).length;
+  const done = zoneTasks.filter((t) => t.done).length;
+  const total = zoneTasks.length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const empty = zone.members.length === 0;
 
   function addZoneTask() {
     if (!taskText.trim()) return;
@@ -263,150 +300,166 @@ function ZoneCard({ zone, year, canEdit, isLead, me }: { zone: DecorZone; year: 
   }
 
   return (
-    <section className="card space-y-3 p-4">
-      {/* Název + akce vedoucího */}
-      <div className="flex items-start justify-between gap-2">
-        {editName && isLead ? (
-          <div className="flex flex-1 gap-2">
-            <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-            <button className="btn-primary shrink-0 px-2.5 py-1 text-xs" onClick={() => { dispatch({ type: "updateDecorZone", yearId: year.id, zoneId: zone.id, patch: { name } }); setEditName(false); }}>
-              OK
-            </button>
+    <Collapsible
+      defaultOpen={iAmIn}
+      className={`card p-4 transition ${iAmIn ? "ring-1 ring-leaf/40" : ""}`}
+      headerClassName="items-start gap-3"
+      header={(open) => (
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-display text-lg font-semibold">📍 {zone.name}</span>
+            {iAmIn && <span className="rounded-full bg-leaf px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">jsi tu</span>}
+            {empty && <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600">volná</span>}
           </div>
-        ) : (
-          <h3 className="font-display text-lg font-semibold">📍 {zone.name}</h3>
-        )}
-        {isLead && !editName && (
-          <div className="flex shrink-0 items-center gap-1">
-            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => { setName(zone.name); setEditName(true); }}>Přejmenovat</button>
-            <DeleteButton onConfirm={() => dispatch({ type: "removeDecorZone", yearId: year.id, zoneId: zone.id })} />
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-soft">
+            <span>👥 {zone.members.length}</span>
+            {total > 0 && <span className={done === total ? "font-semibold text-leaf-700" : ""}>✅ {done}/{total} úkolů</span>}
+            {zoneMaterial.length > 0 && <span>🎨 {zoneMaterial.length}× materiál</span>}
+            {!open && zone.members.length > 0 && <span className="min-w-0 truncate text-ink-soft/70">· {zone.members.join(", ")}</span>}
           </div>
-        )}
-      </div>
-
-      {/* Kdo spravuje */}
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Kdo spravuje</p>
-        <div className="mt-1 flex flex-wrap items-center gap-1.5">
-          {zone.members.length === 0 && <span className="text-sm italic text-ink-soft/70">zatím nikdo</span>}
-          {zone.members.map((m) => (
-            <span key={m} className={`chip ${sameName(m, me) ? "bg-leaf text-white" : ""}`}>
-              {m}
-              {isLead && (
-                <button onClick={() => dispatch({ type: "leaveDecorZone", yearId: year.id, zoneId: zone.id, name: m })} className="ml-1 opacity-70 hover:opacity-100" aria-label="Odebrat ze zóny">
-                  ×
-                </button>
-              )}
-            </span>
-          ))}
-        </div>
-        {canEdit && (
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            {iAmIn ? (
-              <button className="rounded-full bg-paper2 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50" onClick={() => dispatch({ type: "leaveDecorZone", yearId: year.id, zoneId: zone.id, name: me })}>
-                Odhlásit se
-              </button>
-            ) : (
-              <button className="btn-primary px-2.5 py-1 text-xs" onClick={() => { dispatch({ type: "joinDecorZone", yearId: year.id, zoneId: zone.id, name: me }); flash(`Přihlášen do zóny „${zone.name}"`, "📍"); }}>
-                Přihlásit se do zóny
-              </button>
-            )}
-            {isLead && (
-              <button className="btn-ghost px-2.5 py-1 text-xs" onClick={() => setManage((v) => !v)}>
-                {manage ? "Hotovo" : "+ Přidat člověka"}
-              </button>
-            )}
-          </div>
-        )}
-        {isLead && manage && (
-          <div className="mt-2">
-            <WhoSelect
-              value=""
-              onChange={(v) => v && dispatch({ type: "joinDecorZone", yearId: year.id, zoneId: zone.id, name: v })}
-              placeholder="Přidat člena do zóny…"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Referenční obrázek + popis */}
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Jak si to představujeme</p>
-        <div className="mt-1 space-y-2">
-          <ImageBoard
-            ids={zone.refImageIds ?? []}
-            canEdit={canEditZone}
-            addLabel="Ref. obrázek"
-            onChange={(next) => dispatch({ type: "updateDecorZone", yearId: year.id, zoneId: zone.id, patch: { refImageIds: next } })}
-          />
-          {editDesc && canEditZone ? (
-            <div className="space-y-2">
-              <textarea className="input min-h-20" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Popis představy zóny…" autoFocus />
-              <div className="flex gap-2">
-                <button className="btn-primary py-1.5 text-xs" onClick={() => { dispatch({ type: "updateDecorZone", yearId: year.id, zoneId: zone.id, patch: { description: desc } }); setEditDesc(false); }}>
-                  Uložit popis
-                </button>
-                <button className="btn-ghost py-1.5 text-xs" onClick={() => setEditDesc(false)}>Zrušit</button>
-              </div>
+          {total > 0 && (
+            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-paper2">
+              <div className="h-full rounded-full bg-leaf transition-all" style={{ width: `${pct}%` }} />
             </div>
-          ) : zone.description ? (
-            <p
-              className={`whitespace-pre-wrap text-sm text-ink-soft ${canEditZone ? "cursor-pointer hover:text-ink" : ""}`}
-              onClick={() => canEditZone && (setDesc(zone.description ?? ""), setEditDesc(true))}
-            >
-              {zone.description}
-            </p>
-          ) : canEditZone ? (
-            <button className="text-xs font-medium text-gold-700 hover:underline" onClick={() => { setDesc(""); setEditDesc(true); }}>+ Přidat popis</button>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Úkoly zóny */}
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft">
-          Úkoly zóny {zoneTasks.length > 0 && <span className="text-ink-soft/70">({doneTasks}/{zoneTasks.length})</span>}
-        </p>
-        {zoneTasks.length > 0 ? (
-          <ul className="mt-1 space-y-1">
-            {zoneTasks.map((t) => (
-              <li key={t.id} className="flex items-center gap-2 text-sm">
-                <span className={`grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border text-[11px] font-bold leading-none ${t.done ? "border-leaf bg-leaf text-white" : "border-ink/30 bg-white text-transparent"}`}>✓</span>
-                <span className={t.done ? "text-ink-soft line-through" : "font-medium"}>{t.title}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-1 text-sm text-ink-soft/70">Zatím žádné úkoly.</p>
-        )}
-        {isLead && (
-          <div className="mt-2 flex gap-2">
-            <input className="input" placeholder="Nový úkol pro zónu…" value={taskText} onChange={(e) => setTaskText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addZoneTask()} />
-            <button className="btn-primary shrink-0 px-2.5 py-1 text-xs" onClick={addZoneTask} disabled={!taskText.trim()}>+ Úkol</button>
-          </div>
-        )}
-        {zoneTasks.length > 0 && (
-          <Link href="/zazemi/ukoly" className="mt-1.5 inline-block text-xs font-medium text-gold-700 hover:underline">
-            Odškrtnout v Úkolech →
-          </Link>
-        )}
-      </div>
-
-      {/* Materiál zóny */}
-      {zoneMaterial.length > 0 && (
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Materiál zóny</p>
-          <ul className="mt-1 space-y-1">
-            {zoneMaterial.map((d) => (
-              <li key={d.id} className="flex items-center gap-2 text-sm">
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS[d.status].cls}`}>{STATUS[d.status].label}</span>
-                <span className={d.status === "hotovo" ? "text-ink-soft line-through" : ""}>{d.title}</span>
-              </li>
-            ))}
-          </ul>
+          )}
         </div>
       )}
-    </section>
+    >
+      <div className="mt-3 space-y-4 border-t border-ink/[0.08] pt-3">
+        {/* Akce vedoucího */}
+        {isLead && (
+          <div className="flex items-center gap-2">
+            {editName ? (
+              <div className="flex flex-1 gap-2">
+                <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+                <button className="btn-primary shrink-0 px-2.5 py-1 text-xs" onClick={() => { dispatch({ type: "updateDecorZone", yearId: year.id, zoneId: zone.id, patch: { name } }); setEditName(false); }}>
+                  OK
+                </button>
+              </div>
+            ) : (
+              <>
+                <button className="btn-ghost px-2 py-1 text-xs" onClick={() => { setName(zone.name); setEditName(true); }}>✏️ Přejmenovat</button>
+                <DeleteButton onConfirm={() => dispatch({ type: "removeDecorZone", yearId: year.id, zoneId: zone.id })} what={`zónu „${zone.name}"`} />
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Kdo spravuje */}
+        <div>
+          <ZoneLabel icon="👥">Kdo spravuje</ZoneLabel>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {zone.members.length === 0 && <span className="text-sm italic text-ink-soft/70">zatím nikdo — přihlaš se</span>}
+            {zone.members.map((m) => (
+              <span key={m} className={`chip ${sameName(m, me) ? "bg-leaf text-white" : ""}`}>
+                {m}
+                {isLead && (
+                  <button onClick={() => dispatch({ type: "leaveDecorZone", yearId: year.id, zoneId: zone.id, name: m })} className="ml-1 opacity-70 hover:opacity-100" aria-label="Odebrat ze zóny">
+                    ×
+                  </button>
+                )}
+              </span>
+            ))}
+          </div>
+          {canEdit && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {iAmIn ? (
+                <button className="rounded-full bg-paper2 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50" onClick={() => dispatch({ type: "leaveDecorZone", yearId: year.id, zoneId: zone.id, name: me })}>
+                  Odhlásit se
+                </button>
+              ) : (
+                <button className="btn-primary px-3 py-1.5 text-xs" onClick={() => { dispatch({ type: "joinDecorZone", yearId: year.id, zoneId: zone.id, name: me }); flash(`Přihlášen do zóny „${zone.name}"`, "📍"); }}>
+                  Přihlásit se do zóny
+                </button>
+              )}
+              {isLead && (
+                <button className="btn-ghost px-2.5 py-1.5 text-xs" onClick={() => setManage((v) => !v)}>
+                  {manage ? "Hotovo" : "+ Přidat člověka"}
+                </button>
+              )}
+            </div>
+          )}
+          {isLead && manage && (
+            <div className="mt-2">
+              <WhoSelect value="" onChange={(v) => v && dispatch({ type: "joinDecorZone", yearId: year.id, zoneId: zone.id, name: v })} placeholder="Přidat člena do zóny…" />
+            </div>
+          )}
+        </div>
+
+        {/* Referenční obrázek + popis */}
+        <div>
+          <ZoneLabel icon="🖼️">Jak si to představujeme</ZoneLabel>
+          <div className="mt-1.5 space-y-2">
+            <ImageBoard
+              ids={zone.refImageIds ?? []}
+              canEdit={canEditZone}
+              addLabel="Ref. obrázek"
+              onChange={(next) => dispatch({ type: "updateDecorZone", yearId: year.id, zoneId: zone.id, patch: { refImageIds: next } })}
+            />
+            {editDesc && canEditZone ? (
+              <div className="space-y-2">
+                <textarea className="input min-h-20" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Popis představy zóny…" autoFocus />
+                <div className="flex gap-2">
+                  <button className="btn-primary py-1.5 text-xs" onClick={() => { dispatch({ type: "updateDecorZone", yearId: year.id, zoneId: zone.id, patch: { description: desc } }); setEditDesc(false); }}>
+                    Uložit popis
+                  </button>
+                  <button className="btn-ghost py-1.5 text-xs" onClick={() => setEditDesc(false)}>Zrušit</button>
+                </div>
+              </div>
+            ) : zone.description ? (
+              <p className={`whitespace-pre-wrap rounded-lg bg-paper2/50 px-3 py-2 text-sm text-ink-soft ${canEditZone ? "cursor-pointer hover:text-ink" : ""}`} onClick={() => canEditZone && (setDesc(zone.description ?? ""), setEditDesc(true))}>
+                {zone.description}
+              </p>
+            ) : canEditZone ? (
+              <button className="text-xs font-medium text-gold-700 hover:underline" onClick={() => { setDesc(""); setEditDesc(true); }}>+ Přidat popis</button>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Úkoly zóny */}
+        <div>
+          <ZoneLabel icon="✅" count={total > 0 ? `(${done}/${total})` : undefined}>Úkoly zóny</ZoneLabel>
+          {total > 0 ? (
+            <ul className="mt-1.5 space-y-1">
+              {zoneTasks.map((t) => (
+                <li key={t.id} className="flex items-center gap-2 text-sm">
+                  <span className={`grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border text-[11px] font-bold leading-none ${t.done ? "border-leaf bg-leaf text-white" : "border-ink/30 bg-white text-transparent"}`}>✓</span>
+                  <span className={t.done ? "text-ink-soft line-through" : "font-medium"}>{t.title}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-1.5 text-sm text-ink-soft/70">Zatím žádné úkoly.</p>
+          )}
+          {isLead && (
+            <div className="mt-2 flex gap-2">
+              <input className="input" placeholder="Nový úkol pro zónu…" value={taskText} onChange={(e) => setTaskText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addZoneTask()} />
+              <button className="btn-primary shrink-0 px-2.5 py-1 text-xs" onClick={addZoneTask} disabled={!taskText.trim()}>+ Úkol</button>
+            </div>
+          )}
+          {total > 0 && (
+            <Link href="/zazemi/ukoly" className="mt-1.5 inline-block text-xs font-medium text-gold-700 hover:underline">
+              Odškrtnout v Úkolech →
+            </Link>
+          )}
+        </div>
+
+        {/* Materiál zóny */}
+        {zoneMaterial.length > 0 && (
+          <div>
+            <ZoneLabel icon="🎨" count={`(${zoneMaterial.length})`}>Materiál zóny</ZoneLabel>
+            <ul className="mt-1.5 space-y-1">
+              {zoneMaterial.map((d) => (
+                <li key={d.id} className="flex items-center gap-2 text-sm">
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS[d.status].cls}`}>{STATUS[d.status].label}</span>
+                  <span className={d.status === "hotovo" ? "text-ink-soft line-through" : ""}>{d.title}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </Collapsible>
   );
 }
 
