@@ -7,6 +7,8 @@ import { matchesQuery } from "@/lib/search";
 import { flash } from "@/components/Flash";
 import { isPollClosed } from "@/lib/poll";
 import { PollCard, DeadlineField } from "@/components/PollCard";
+import { isAdmin } from "@/lib/admin";
+import { myRoleIds } from "@/lib/access";
 
 export default function HlasovaniPage() {
   const { currentYear, me, dispatch } = useStore();
@@ -48,7 +50,10 @@ export default function HlasovaniPage() {
     flash("Anketa vytvořena", "🗳️");
   }
 
+  // Ankety výzdoby jsou jen pro výzdobáře (a správce) — ostatní je tu nevidí.
+  const canSeeVyzdoba = isAdmin(me) || myRoleIds(year, me).includes("vyzdoba");
   const polls = [...year.polls]
+    .filter((p) => p.tag !== "vyzdoba" || canSeeVyzdoba)
     .sort((a, b) => {
       const ac = isPollClosed(a), bc = isPollClosed(b);
       if (ac !== bc) return ac ? 1 : -1;

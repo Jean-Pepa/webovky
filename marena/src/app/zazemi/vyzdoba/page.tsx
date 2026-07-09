@@ -362,7 +362,9 @@ function TeamVoting({ year, canEdit, me }: { year: Year; canEdit: boolean; me: s
     flash("Anketa vytvořena — je i v Hlasování", "🗳️");
   }
 
-  if (!canEdit && polls.length === 0) return null;
+  // Hlasování výzdoby je jen pro výzdobáře (a správce/vedoucího) — kdo nesmí
+  // upravovat výzdobu, sekci vůbec nevidí.
+  if (!canEdit) return null;
 
   return (
     <section className="space-y-3">
