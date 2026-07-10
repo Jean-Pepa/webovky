@@ -220,13 +220,13 @@ export default function VyzdobaPage() {
       {/* Spodní podlišta výzdoby (mobil) — Zóny · Domů · Materiál */}
       <div className="fixed inset-x-3 bottom-[calc(5.1rem+env(safe-area-inset-bottom))] z-40 md:hidden">
         <div className="mx-auto max-w-3xl">
-          <div className="grid grid-cols-3 gap-1 rounded-[28px] bg-gold-500 p-1.5 shadow-[0_0_24px_rgba(244,183,31,0.65)]">
+          <div className="grid grid-cols-3 gap-1 rounded-[28px] border-2 border-gold-500 bg-paper/95 p-1.5 shadow-lg backdrop-blur">
             {VYZDOBA_TABS.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setView(t.id)}
                 className={`flex min-h-12 flex-col items-center justify-center rounded-[22px] px-0.5 text-[11px] font-semibold leading-tight transition ${
-                  view === t.id ? "bg-[#1d1d1f] text-gold-300" : "text-[#1d1d1f] active:scale-[0.97]"
+                  view === t.id ? "bg-gold-100 text-ink" : "text-ink-soft active:scale-[0.97]"
                 }`}
               >
                 <span className="text-base leading-none">{t.emoji}</span>
