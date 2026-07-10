@@ -203,8 +203,9 @@ function ContactedButton({ invite, yearId, canEdit }: { invite: Invite; yearId: 
   const decided = invite.interest === "ano" || invite.interest === "ne";
   const locked = isConfirmed(invite) || (decided && !admin);
 
-  if (!canEdit) {
-    // Jen náhled — bez tlačítka.
+  // „Neosloveno" je jen štítek stavu — oslovení se dělá výrazným tlačítkem
+  // „Oslovil jsem" vedle. Klikací (pro vrácení zpět) je až zelené „Osloveno ✓".
+  if (!canEdit || !invite.contacted) {
     return (
       <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${invite.contacted ? "bg-leaf/15 text-leaf-700" : "bg-paper2 text-ink-soft"}`}>
         {invite.contacted ? "Osloveno ✓" : "Neosloveno"}
@@ -217,20 +218,37 @@ function ContactedButton({ invite, yearId, canEdit }: { invite: Invite; yearId: 
       disabled={locked}
       title={locked ? (admin ? "Potvrzeno — pro změnu nejdřív Zrušit" : "Rozhodnuto — změnit může jen správce") : undefined}
       onClick={() => {
-        const willContact = !invite.contacted;
         dispatch({
           type: "updateInvite",
           yearId,
           inviteId: invite.id,
-          patch: willContact ? { contacted: true, interest: "ceka", contactedBy: me } : { contacted: false, interest: "nevim", contactedBy: "" },
+          patch: { contacted: false, interest: "nevim", contactedBy: "" },
         });
-        flash(willContact ? `„${invite.name}" je teď osloveno` : `„${invite.name}" už není osloveno`, willContact ? "✉️" : "↩️");
+        flash(`„${invite.name}" už není osloveno`, "↩️");
       }}
-      className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-        invite.contacted ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-paper2 text-ink-soft hover:bg-ink/5"
-      } ${locked ? "cursor-not-allowed opacity-60 hover:bg-leaf/15" : ""}`}
+      className={`rounded-full px-2.5 py-1 text-xs font-medium transition bg-leaf/15 text-leaf-700 hover:bg-leaf/25 ${
+        locked ? "cursor-not-allowed opacity-60 hover:bg-leaf/15" : ""
+      }`}
     >
-      {invite.contacted ? "Osloveno ✓" : "Neosloveno"}
+      Osloveno ✓
+    </button>
+  );
+}
+
+// Výrazné tlačítko „Oslovil jsem" — jen dokud není osloveno. Klik = osloveno
+// (zapíše kdo a stav „čeká"). Umístěné mezi stavem a akcemi Upravit/Smazat.
+function MarkContactedButton({ invite, yearId, canEdit }: { invite: Invite; yearId: string; canEdit: boolean }) {
+  const { dispatch, me } = useStore();
+  if (!canEdit || invite.contacted) return null;
+  return (
+    <button
+      onClick={() => {
+        dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { contacted: true, interest: "ceka", contactedBy: me } });
+        flash(`„${invite.name}" je teď osloveno`, "✉️");
+      }}
+      className="inline-flex items-center gap-1.5 rounded-full bg-gold-500 px-3.5 py-1.5 text-xs font-bold text-[#1d1d1f] shadow-sm transition hover:bg-gold-400"
+    >
+      ✉️ Oslovil jsem
     </button>
   );
 }
@@ -421,7 +439,8 @@ function InviteCard({ invite, yearId, index, canEdit }: { invite: Invite; yearId
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <ContactedButton invite={invite} yearId={yearId} canEdit={canEdit} />
-        <InterestControl invite={invite} />
+        {invite.contacted && <InterestControl invite={invite} />}
+        <MarkContactedButton invite={invite} yearId={yearId} canEdit={canEdit} />
         {canEdit && invite.contacted && (
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium text-ink-soft">má zájem?</span>
@@ -487,7 +506,10 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
         {invite.cancelledBy && <div className="text-xs text-ink-soft">↩️ zrušil {invite.cancelledBy}</div>}
       </td>
       <td className="px-3 py-3">
-        <ContactedButton invite={invite} yearId={yearId} canEdit={canEdit} />
+        <div className="flex flex-col items-start gap-1.5">
+          <ContactedButton invite={invite} yearId={yearId} canEdit={canEdit} />
+          <MarkContactedButton invite={invite} yearId={yearId} canEdit={canEdit} />
+        </div>
       </td>
       <td className="px-3 py-3">
         <InterestControl invite={invite} />
