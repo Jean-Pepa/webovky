@@ -808,7 +808,7 @@ function Pos() {
         }`}
       >
         <div className="mx-auto max-w-3xl">
-          <div className="grid grid-cols-3 gap-1 rounded-[28px] border-2 border-gold-500 bg-paper/95 p-1.5 shadow-lg backdrop-blur">
+          <div className="drop-in-bounce grid grid-cols-3 gap-1 rounded-[28px] border-2 border-gold-500 bg-paper/95 p-1.5 shadow-lg backdrop-blur">
             {STANDS.map((s) => (
               <button
                 key={s.id}

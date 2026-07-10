@@ -845,7 +845,7 @@ export default function FinancePage() {
       {!vyberOnly && (
       <div className="fixed inset-x-3 bottom-[calc(5.1rem+env(safe-area-inset-bottom))] z-40 md:hidden">
         <div className="mx-auto max-w-3xl">
-          <div className="grid grid-cols-4 gap-1 rounded-[28px] border-2 border-gold-500 bg-paper/95 p-1.5 shadow-lg backdrop-blur">
+          <div className="drop-in-bounce grid grid-cols-4 gap-1 rounded-[28px] border-2 border-gold-500 bg-paper/95 p-1.5 shadow-lg backdrop-blur">
             {FIN_TABS.map((t) => (
               <button
                 key={t.id}
