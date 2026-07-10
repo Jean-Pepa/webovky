@@ -341,21 +341,33 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
 
       {/* Stavová tlačítka (jako Program): Osloveno + domluva ano/ne */}
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        {canEdit ? (
+        {/* „Neosloveno" je jen štítek stavu — oslovení se dělá výrazným tlačítkem
+            „Oslovil jsem" vedle. Klikací (pro vrácení zpět) je až zelené „Osloveno ✓". */}
+        {canEdit && contacted ? (
           <button
             disabled={lockContact}
-            onClick={() => setStatus(contacted ? "oslovit" : "ceka")}
+            onClick={() => setStatus("oslovit")}
             title={lockContact ? "Rozhodnuto — změnit může jen správce" : undefined}
-            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-              contacted ? "bg-leaf/15 text-leaf-700 hover:bg-leaf/25" : "bg-paper2 text-ink-soft hover:bg-ink/5"
-            } ${lockContact ? "cursor-not-allowed opacity-60 hover:bg-leaf/15" : ""}`}
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition bg-leaf/15 text-leaf-700 hover:bg-leaf/25 ${
+              lockContact ? "cursor-not-allowed opacity-60 hover:bg-leaf/15" : ""
+            }`}
           >
-            {contacted ? "Osloveno ✓" : "Oslovit"}
+            Osloveno ✓
           </button>
         ) : (
           <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${contacted ? "bg-leaf/15 text-leaf-700" : "bg-paper2 text-ink-soft"}`}>
             {contacted ? "Osloveno ✓" : "Neosloveno"}
           </span>
+        )}
+
+        {/* Výrazné tlačítko „Oslovil jsem" — mezi stavem a Upravit/Smazat, dokud není osloveno */}
+        {canEdit && !contacted && (
+          <button
+            onClick={() => { setStatus("ceka"); flash(`${s.name} — osloveno`, "✉️"); }}
+            className="inline-flex items-center gap-1.5 rounded-full bg-gold-500 px-3.5 py-1.5 text-xs font-bold text-[#1d1d1f] shadow-sm transition hover:bg-gold-400"
+          >
+            ✉️ Oslovil jsem
+          </button>
         )}
 
         {/* Stav domluvy */}
