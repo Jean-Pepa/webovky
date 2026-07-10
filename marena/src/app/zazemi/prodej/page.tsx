@@ -808,13 +808,13 @@ function Pos() {
         }`}
       >
         <div className="mx-auto max-w-3xl">
-          <div className="grid grid-cols-3 gap-1 rounded-[28px] bg-gold-500 p-1.5 shadow-[0_0_24px_rgba(244,183,31,0.65)]">
+          <div className="grid grid-cols-3 gap-1 rounded-[28px] border-2 border-gold-500 bg-paper/95 p-1.5 shadow-lg backdrop-blur">
             {STANDS.map((s) => (
               <button
                 key={s.id}
                 onClick={() => pickStand(s.id)}
                 className={`${posOnly ? "min-h-14 text-base" : "min-h-11 text-[15px]"} rounded-full font-semibold transition ${
-                  stand === s.id ? "bg-[#1d1d1f] text-gold-300" : "text-[#1d1d1f] active:scale-[0.97]"
+                  stand === s.id ? "bg-gold-100 text-ink" : "text-ink-soft active:scale-[0.97]"
                 }`}
               >
                 {s.label}

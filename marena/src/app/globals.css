@@ -615,3 +615,51 @@ input[type="search"]::-webkit-search-decoration {
     border-color: rgba(239, 68, 68, 0.85);
   }
 }
+
+/* Podlišta „spadne z nebe", odrazí se od spodní lišty a poskáká — upoutání
+   pozornosti při vstupu do sekce. Přehraje se jednou při načtení. */
+@keyframes drop-in-bounce {
+  0% {
+    transform: translateY(-130vh);
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.6, 0.04, 0.98, 0.34);
+  }
+  7% {
+    opacity: 1;
+  }
+  45% {
+    transform: translateY(0);
+    animation-timing-function: ease-out;
+  }
+  58% {
+    transform: translateY(-26px);
+    animation-timing-function: ease-in;
+  }
+  70% {
+    transform: translateY(0);
+    animation-timing-function: ease-out;
+  }
+  80% {
+    transform: translateY(-12px);
+    animation-timing-function: ease-in;
+  }
+  89% {
+    transform: translateY(0);
+    animation-timing-function: ease-out;
+  }
+  95% {
+    transform: translateY(-4px);
+    animation-timing-function: ease-in;
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+.drop-in-bounce {
+  animation: drop-in-bounce 1.5s both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .drop-in-bounce {
+    animation: none;
+  }
+}
