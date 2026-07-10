@@ -26,7 +26,6 @@ const STATUS: Record<DecorStatus, { label: string; cls: string; order: number }>
   shani: { label: "🛒 shání se", cls: "bg-gold-600/12 text-gold-700", order: 1 },
   hotovo: { label: "✅ hotovo", cls: "bg-leaf/15 text-leaf-700", order: 2 },
 };
-const NEXT: Record<DecorStatus, DecorStatus> = { napad: "shani", shani: "hotovo", hotovo: "napad" };
 
 // Vedoucí výzdoby = výslovně určený vedoucí role „vyzdoba" (roleLeads), jinak
 // nejdřív zapsaný držitel role. Ten zóny zakládá a velí jim (+ správce/hlavní).
@@ -247,21 +246,31 @@ const VYZDOBA_TABS: { id: "zony" | "domu" | "material"; emoji: string; label: st
   { id: "material", emoji: "🎨", label: "Materiál" },
 ];
 
-// Přehledně naformátovaná pravidla — úvodní odstavce + odrážky (řádky s „-").
+// Text pravidel = hlavní text (běžné řádky) + odrážky (řádky s „-"). Rozdělíme
+// je na dvě části, ať se dají upravovat i zobrazovat samostatně.
+function parseRules(text: string): { main: string; bullets: string[] } {
+  const lines = text.split("\n").map((l) => l.trim());
+  const main = lines.filter((l) => l && !/^[-–—•]/.test(l)).join("\n");
+  const bullets = lines.filter((l) => /^[-–—•]/.test(l)).map((l) => l.replace(/^[-–—•]\s*/, "").trim()).filter(Boolean);
+  return { main, bullets };
+}
+// Zpět do jednoho textu: hlavní text + každá odrážka na řádku s „- ".
+function serializeRules(main: string, bullets: string[]): string {
+  const parts = [main.trim(), ...bullets.map((b) => b.trim()).filter(Boolean).map((b) => `- ${b}`)];
+  return parts.filter(Boolean).join("\n");
+}
+
+// Přehledně naformátovaná pravidla — hlavní text nahoře, pod ním odrážky.
 function RulesView({ text }: { text: string }) {
-  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-  const intro = lines.filter((l) => !/^[-–—•]/.test(l));
-  const bullets = lines.filter((l) => /^[-–—•]/.test(l)).map((l) => l.replace(/^[-–—•]\s*/, ""));
+  const { main, bullets } = parseRules(text);
   return (
-    <div className="space-y-3">
-      {intro.map((p, i) => (
-        <p key={i} className="text-sm font-medium text-ink">{p}</p>
-      ))}
+    <div className="space-y-4">
+      {main && <p className="whitespace-pre-wrap text-[15px] font-medium leading-relaxed text-ink">{main}</p>}
       {bullets.length > 0 && (
         <ul className="space-y-2">
           {bullets.map((b, i) => (
-            <li key={i} className="flex gap-2 rounded-lg bg-paper2/50 px-3 py-2 text-sm text-ink-soft">
-              <span aria-hidden className="mt-0.5 shrink-0 font-bold text-gold-600">•</span>
+            <li key={i} className="flex gap-2.5 rounded-xl bg-paper2/50 px-3.5 py-2.5 text-[15px] leading-relaxed text-ink-soft">
+              <span aria-hidden className="mt-0.5 shrink-0 text-lg font-bold leading-none text-gold-600">•</span>
               <span className="min-w-0">{b}</span>
             </li>
           ))}
@@ -271,38 +280,116 @@ function RulesView({ text }: { text: string }) {
   );
 }
 
-// Pravidla — na kartě jen výzva „přečti si", text se ukáže ve velkém okně.
+// Pravidla — hlavní text je vidět rovnou na kartě ve zvýrazněné bublině, která
+// bliká červeně, dokud si ho člověk nepřečte (neklikne na „Přečíst pravidla").
+// Ve velkém okně se pak ukážou i všechny odrážky. Úpravy: hlavní text zvlášť +
+// odrážky se přidávají po jedné tlačítkem „+ přidat odrážku".
 function RulesCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
   const { dispatch } = useStore();
   const [edit, setEdit] = useState(false);
   const [openRules, setOpenRules] = useState(false);
-  const [text, setText] = useState(year.decorRules ?? "");
-  const rules = year.decorRules;
+  const [mainText, setMainText] = useState("");
+  const [bullets, setBullets] = useState<string[]>([]);
+  const [seen, setSeen] = useState(true); // dokud nevíme (SSR), nebliká — pak upřesníme v efektu
+
+  const rules = year.decorRules ?? "";
+  const parsed = parseRules(rules);
+  const seenKey = `marena_vyzdoba_rules_seen_${year.id}`;
+
+  // Přečteno = v localStorage je uložený přesně tenhle text. Když se pravidla
+  // změní, bublina začne blikat znovu (uložený podpis se přestane shodovat).
+  useEffect(() => {
+    let val = true;
+    try {
+      val = localStorage.getItem(seenKey) === rules;
+    } catch {
+      val = true;
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSeen(val);
+  }, [seenKey, rules]);
+
+  function markSeen() {
+    try {
+      localStorage.setItem(seenKey, rules);
+    } catch {
+      /* demo bez úložiště */
+    }
+    setSeen(true);
+  }
+  function startEdit() {
+    const p = parseRules(year.decorRules ?? "");
+    setMainText(p.main);
+    setBullets(p.bullets);
+    setEdit(true);
+  }
+  function saveEdit() {
+    dispatch({ type: "setDecorRules", yearId: year.id, text: serializeRules(mainText, bullets) });
+    setEdit(false);
+    flash("Pravidla uložena", "📋");
+  }
+
   if (!canEdit && !rules) return null;
   return (
     <section className="card p-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-display text-[19px] font-bold">📋 Pravidla</h2>
         {canEdit && !edit && (
-          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => { setText(year.decorRules ?? ""); setEdit(true); }}>
+          <button className="btn-ghost px-2 py-1 text-xs" onClick={startEdit}>
             {rules ? "Upravit" : "+ Přidat"}
           </button>
         )}
       </div>
+
       {edit ? (
-        <div className="mt-2 space-y-2">
-          <textarea className="input min-h-28" value={text} onChange={(e) => setText(e.target.value)} placeholder="Co se musí při výzdobě dodržet (materiály, bezpečnost, termíny…)" autoFocus />
-          <div className="flex gap-2">
-            <button className="btn-primary py-2 text-sm" onClick={() => { dispatch({ type: "setDecorRules", yearId: year.id, text }); setEdit(false); flash("Pravidla uložena", "📋"); }}>
-              Uložit
+        <div className="mt-2 space-y-4">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wide text-ink-soft">Hlavní text</label>
+            <textarea
+              className="input min-h-24"
+              value={mainText}
+              onChange={(e) => setMainText(e.target.value)}
+              placeholder="Hlavní text pravidel — co je důležité vědět, než se začne tvořit…"
+              autoFocus
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold uppercase tracking-wide text-ink-soft">Odrážky</label>
+            {bullets.map((b, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span aria-hidden className="shrink-0 text-lg font-bold leading-none text-gold-600">•</span>
+                <input
+                  className="input"
+                  value={b}
+                  onChange={(e) => setBullets((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))}
+                  placeholder={`Odrážka ${i + 1}`}
+                />
+                <button className="btn-ghost shrink-0 px-2" aria-label="Odebrat odrážku" onClick={() => setBullets((arr) => arr.filter((_, j) => j !== i))}>
+                  ✕
+                </button>
+              </div>
+            ))}
+            <button
+              className="inline-flex items-center gap-1 rounded-lg border border-dashed border-gold-500/60 bg-gold-50 px-3 py-1.5 text-xs font-semibold text-gold-700 transition hover:bg-gold-100"
+              onClick={() => setBullets((arr) => [...arr, ""])}
+            >
+              + přidat odrážku
             </button>
+          </div>
+          <div className="flex gap-2">
+            <button className="btn-primary py-2 text-sm" onClick={saveEdit}>Uložit</button>
             <button className="btn-ghost py-2 text-sm" onClick={() => setEdit(false)}>Zrušit</button>
           </div>
         </div>
       ) : rules ? (
         <div className="mt-2 space-y-3">
-          <p className="text-sm text-ink-soft">Než začneš tvořit, přečti si prosím pravidla — ať se vyhneme zbytečným problémům.</p>
-          <button className="btn-primary w-full py-2.5 text-sm" onClick={() => setOpenRules(true)}>
+          {/* Hlavní text ve zvýrazněné bublině — bliká červeně, dokud se nepřečte */}
+          <div className={`rounded-2xl border-2 bg-paper2/50 p-4 ${seen ? "border-transparent" : "readonly-pulse border-red-500"}`}>
+            <p className="whitespace-pre-wrap text-[15px] font-medium leading-relaxed text-ink">
+              {parsed.main || "Přečti si prosím pravidla výzdoby, než začneš tvořit."}
+            </p>
+          </div>
+          <button className="btn-primary w-full py-2.5 text-sm" onClick={() => { markSeen(); setOpenRules(true); }}>
             📖 Přečíst pravidla
           </button>
         </div>
@@ -881,7 +968,7 @@ function ZoneDetail({ zone, year, canEdit, isLead, me, onClose }: { zone: DecorZ
 }
 
 function DecorRow({ d, yearId, canEdit, admin, zones, myZones }: { d: Decor; yearId: string; canEdit: boolean; admin?: boolean; zones: DecorZone[]; myZones: DecorZone[] }) {
-  const { dispatch } = useStore();
+  const { dispatch, me } = useStore();
   const [edit, setEdit] = useState(false);
   const [askDone, setAskDone] = useState(false); // potvrzení „hotovo → uzamknout"
   const [title, setTitle] = useState(d.title);
@@ -908,15 +995,13 @@ function DecorRow({ d, yearId, canEdit, admin, zones, myZones }: { d: Decor; yea
     setNewZone(false);
     setNewZoneName("");
   }
-  // Klik na stav: nápad → shání se rovnou; před „hotovo" se to potvrdí a pak
-  // se uzamkne. Hotové už samo neroluje zpět (šlo by jen omylem).
-  function cycle() {
+  // „Chci shánět": nápad → shání se. Když ještě není určeno, kdo shání,
+  // zapíše se jméno toho, kdo tlačítko zmáčkl.
+  function startShani() {
     if (!canEdit || locked) return;
-    if (d.status === "shani") {
-      setAskDone(true);
-      return;
-    }
-    dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { status: NEXT[d.status] } });
+    const takeOver = !d.who?.trim();
+    dispatch({ type: "updateDecor", yearId, decorId: d.id, patch: { status: "shani", ...(takeOver ? { who: me } : {}) } });
+    flash(takeOver ? `Sháníš to ty — ${me} 🛒` : "Shání se 🛒", "🛒");
   }
   function scrollToSelf() {
     setTimeout(() => document.getElementById(`decor-${d.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
@@ -952,17 +1037,31 @@ function DecorRow({ d, yearId, canEdit, admin, zones, myZones }: { d: Decor; yea
 
   return (
     <li id={`decor-${d.id}`} className="card scroll-mt-24 space-y-2 p-3">
-      {/* Horní řádek: stav vlevo, akce vpravo — zarovnané na jednu linku */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={cycle}
-          disabled={!canEdit || locked}
-          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition ${STATUS[d.status].cls} ${canEdit && !locked ? "hover:opacity-80" : ""}`}
-          title={locked ? "Hotovo — uzamčeno" : undefined}
-        >
+      {/* Horní řádek: stav + viditelná akce vlevo, úpravy/smazání vpravo */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS[d.status].cls}`}>
           {STATUS[d.status].label}
           {locked ? " 🔒" : ""}
-        </button>
+        </span>
+
+        {/* Viditelná akce podle stavu: nápad → chci shánět → sehnal jsem (hotovo) */}
+        {canEdit && !locked && d.status === "napad" && (
+          <button
+            className="inline-flex items-center gap-1.5 rounded-full bg-gold-500 px-3.5 py-1.5 text-xs font-bold text-[#1d1d1f] shadow-sm transition hover:bg-gold-400"
+            onClick={startShani}
+          >
+            🛒 Chci shánět
+          </button>
+        )}
+        {canEdit && !locked && d.status === "shani" && (
+          <button
+            className="inline-flex items-center gap-1.5 rounded-full bg-leaf px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-leaf/90"
+            onClick={() => setAskDone(true)}
+          >
+            ✅ Sehnal jsem
+          </button>
+        )}
+
         {canEdit && (
           <div className="ml-auto flex shrink-0 items-center gap-1">
             {locked && admin && (
