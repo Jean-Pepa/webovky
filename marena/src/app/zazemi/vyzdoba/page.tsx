@@ -345,7 +345,7 @@ function RulesCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
       {edit ? (
         <div className="mt-2 space-y-4">
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold uppercase tracking-wide text-ink-soft">Hlavní text</label>
+            <label className="block eyebrow">Hlavní text</label>
             <textarea
               className="input min-h-24"
               value={mainText}
@@ -355,7 +355,7 @@ function RulesCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-xs font-semibold uppercase tracking-wide text-ink-soft">Odrážky</label>
+            <label className="block eyebrow">Odrážky</label>
             {bullets.map((b, i) => (
               <div key={i} className="flex items-center gap-2">
                 <span aria-hidden className="shrink-0 text-lg font-bold leading-none text-gold-600">•</span>

@@ -92,7 +92,7 @@ export function AnnounceModal({ open, onClose }: { open: boolean; onClose: () =>
           </button>
 
           <div>
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-soft">Týmy / role</p>
+            <p className="mb-1.5 eyebrow">Týmy / role</p>
             <div className="flex flex-wrap gap-1.5">
               {ROLES.map((r) => {
                 const on = roles.includes(r.id);
@@ -113,7 +113,7 @@ export function AnnounceModal({ open, onClose }: { open: boolean; onClose: () =>
           </div>
 
           <div>
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-soft">Konkrétní lidé</p>
+            <p className="mb-1.5 eyebrow">Konkrétní lidé</p>
             {people.length > 0 && (
               <div className="mb-2 flex flex-wrap gap-1.5">
                 {people.map((p) => (
@@ -154,7 +154,7 @@ export function AnnounceModal({ open, onClose }: { open: boolean; onClose: () =>
         {/* Odeslaná oznámení — dají se smazat */}
         {sent.length > 0 && (
           <div className="border-t border-ink/10 pt-3">
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-soft">Odeslaná</p>
+            <p className="mb-1.5 eyebrow">Odeslaná</p>
             <ul className="space-y-1.5">
               {sent.map((an) => (
                 <li key={an.id} className="flex items-start gap-2 rounded-lg bg-paper2/50 px-3 py-2 text-sm">

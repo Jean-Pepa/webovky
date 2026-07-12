@@ -728,7 +728,7 @@ function PurgeAccountModal({ member, year, onClose }: { member: Member; year: Ye
         </div>
         {available.length > 0 && (
           <div className="flex items-center justify-between px-1 pt-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Co dalšího smazat</span>
+            <span className="eyebrow">Co dalšího smazat</span>
             <button type="button" onClick={toggleAll} className="text-xs font-bold text-red-600 hover:underline">
               {allSelected ? "Zrušit výběr" : "Vybrat vše"}
             </button>
@@ -864,7 +864,7 @@ function ChangeRolesModal({ member, yearId, onClose }: { member: Member; yearId:
 
       {/* Aktuální výběr — klikem na křížek roli hned pustíš */}
       <div className="mb-3 rounded-xl bg-paper2 px-3 py-2.5">
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Vybrané role</p>
+        <p className="mb-1.5 eyebrow">Vybrané role</p>
         {chosen.length === 0 ? (
           <p className="text-sm italic text-ink-soft/70">Zatím bez role</p>
         ) : (

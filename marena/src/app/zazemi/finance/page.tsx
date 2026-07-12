@@ -540,7 +540,7 @@ export default function FinancePage() {
           {/* Kdo zaplatil naposled — 2 nejnovější + rolovačka na další */}
           {recentPaid.length > 0 && (
             <div className="mb-4 rounded-xl border border-ink/10 bg-surface p-3">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">🕐 Naposledy zaplatili</p>
+              <p className="mb-2 eyebrow">🕐 Naposledy zaplatili</p>
               <ul className="space-y-1.5">
                 {(recentOpen ? recentPaid : recentPaid.slice(0, 2)).map((c, i) => (
                   <li key={c.id} className="flex items-center gap-2 text-sm">

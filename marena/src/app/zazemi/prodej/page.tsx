@@ -140,7 +140,7 @@ function ProdejReadOnly() {
       )}
 
       {/* Uzavřené dny — statistiky, jen ke čtení */}
-      <h2 className="pt-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Uzavřené dny</h2>
+      <h2 className="pt-2 eyebrow">Uzavřené dny</h2>
       {closed.length === 0 ? (
         <p className="card p-4 text-sm text-ink-soft">Zatím žádný uzavřený den.</p>
       ) : (
@@ -786,7 +786,7 @@ function Pos() {
       })()}
 
       {/* ---------- Přehled dne ---------- */}
-      <h2 className="pt-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Přehled dne</h2>
+      <h2 className="pt-2 eyebrow">Přehled dne</h2>
 
       {/* U otevřené kasy jen historie objednávek — čísla (statistiky dne) jsou
           ve Financích a v archivu uzavřených dnů, ať obsluhu nerozptylují. */}
@@ -1006,7 +1006,7 @@ function DayGate({
       </section>
 
       {/* Archiv: uzamčené dny se statistikami */}
-      <h2 className="pt-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Uzavřené dny</h2>
+      <h2 className="pt-2 eyebrow">Uzavřené dny</h2>
       {closed.length === 0 ? (
         <p className="card p-4 text-sm text-ink-soft">Zatím žádný uzavřený den — po uzavření kasy se tu objeví statistiky.</p>
       ) : (

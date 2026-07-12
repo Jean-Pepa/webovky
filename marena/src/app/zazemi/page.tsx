@@ -249,7 +249,7 @@ function PriorityModal({
 
         {/* Role / týmy */}
         <div>
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-soft">Týmy / role</p>
+          <p className="mb-1.5 eyebrow">Týmy / role</p>
           <div className="flex flex-wrap gap-1.5">
             {ROLES.map((r) => {
               const on = value.roles.includes(r.id);
@@ -271,7 +271,7 @@ function PriorityModal({
 
         {/* Konkrétní lidé */}
         <div>
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-soft">Konkrétní lidé</p>
+          <p className="mb-1.5 eyebrow">Konkrétní lidé</p>
           {value.people.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-1.5">
               {value.people.map((p) => (
