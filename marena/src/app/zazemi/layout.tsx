@@ -15,6 +15,7 @@ import { AnnounceModal, AnnouncementAlert } from "@/components/Announce";
 import { SupabaseGate } from "@/components/SupabaseGate";
 import { FlashHost } from "@/components/Flash";
 import { AdminApprovals } from "@/components/AdminApprovals";
+import { PushGate } from "@/components/PushGate";
 import { ThemeToggle, useZazemiTheme } from "@/components/ThemeToggle";
 import { supabaseEnabled } from "@/lib/supabase/config";
 import type { Post } from "@/lib/types";
@@ -537,7 +538,10 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
       )}
 
       {/* Spodní odsazení = plovoucí lišta (64 px + 12 px mezera) + bezpečná zóna + rezerva. */}
-      <main className="mx-auto max-w-6xl px-4 py-6 pb-[calc(6.25rem+env(safe-area-inset-bottom))] md:pb-6">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-6 pb-[calc(6.25rem+env(safe-area-inset-bottom))] md:pb-6">
+        <PushGate />
+        {children}
+      </main>
 
       {/* Mobil: ztmavení + vysouvací panel skupiny (nad spodní lištou) */}
       {sheet && <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setSheet(null)} aria-hidden />}
