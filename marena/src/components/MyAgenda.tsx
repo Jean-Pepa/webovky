@@ -132,7 +132,7 @@ export function MyAgenda({ onOpenPost }: { onOpenPost?: (id: string) => void }) 
                 <span className="text-xl leading-none">{c.emoji}</span>
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold">{c.label}</span>
-                  {c.badge && <span className={`block truncate text-xs font-medium ${badgeCls}`}>{c.badge}</span>}
+                  {c.badge && <span className={`block truncate text-xs font-medium tabular-nums ${badgeCls}`}>{c.badge}</span>}
                 </span>
               </Link>
             );
