@@ -12,19 +12,19 @@
   --color-ink: #1d1d1f; /* hlavní text (Apple ink) */
   --color-ink-soft: #6e6e73; /* sekundární text */
 
-  /* Primární akcent — TEPLÁ ORANŽOVÁ (nový vizuální styl). Token se pořád jmenuje
-     „gold" kvůli kompatibilitě (používá se přes celou appku), ale odstíny jsou
-     oranžové. Kontrasty: gold-500 + tmavý text ≈ 5,6:1; gold-700 na světlém ≈ 4,9:1. */
-  --color-gold-50: #fdf1e9;
-  --color-gold-100: #fbe1d0;
-  --color-gold-200: #f6c4a1;
-  --color-gold-300: #f2a672;
-  --color-gold-400: #f58a44;
-  --color-gold-500: #f26d1b;
-  --color-gold-600: #d75d13;
-  --color-gold-700: #b8500e;
-  --color-gold-800: #8f3f0b;
-  --color-gold-900: #6f2f08;
+  /* Zlatý primár — „naše žlutá" (Vegas neon identita, kotveno na zlato nápisu
+     MAŘENA). gold-500 = sytá značková; 600/700 hlubší pro čitelný text/akcenty.
+     Kontrasty: gold-500 + tmavý text = 9,3:1; gold-700 na světlém = 4,6:1. */
+  --color-gold-50: #fdf6e3;
+  --color-gold-100: #fbeec7;
+  --color-gold-200: #f8dd8f;
+  --color-gold-300: #ffd94d;
+  --color-gold-400: #f5c032;
+  --color-gold-500: #f4b71f;
+  --color-gold-600: #d69208;
+  --color-gold-700: #9a5a06;
+  --color-gold-800: #834e05;
+  --color-gold-900: #6b4204;
 
   /* Akcent — VUT / FA VUT červená: nově jen doplněk (mazání/varování, jako červený
      MOTEL neon). Token „marigold" zůstává kvůli kompatibilitě. */
@@ -77,9 +77,9 @@
   /* Světlé „tinty" (jemné barevné plochy 50/100/200) → tmavé varianty téhož tónu,
      ať na nočním pozadí neřve bílá/růžová. Sytost akcentů (600/700 pro tlačítka)
      necháváme. Automaticky se přepíšou i s průhledností (color-mix). */
-  --color-gold-50: #3a2410; /* jemná oranžová plocha na tmavé */
-  --color-gold-100: #4a2c13;
-  --color-gold-200: #5c3818;
+  --color-gold-50: #332913; /* jemná zlatá plocha na tmavé */
+  --color-gold-100: #483a18;
+  --color-gold-200: #5c4a1f;
   --color-marigold-50: #3a1c22; /* jemná červená plocha */
   --color-marigold-100: #48232c;
   --color-marigold-200: #5c2c37;
@@ -104,9 +104,9 @@
 .dark .text-marigold-600 { color: #ef4a62; }
 .dark .text-marigold-700 { color: #f2758b; }
 .dark .text-marigold-800 { color: #f6a2b1; }
-.dark .text-gold-600 { color: #f2883f; }
-.dark .text-gold-700 { color: #f59b5a; }
-.dark .text-gold-800 { color: #f7b07a; }
+.dark .text-gold-600 { color: #f4b71f; }
+.dark .text-gold-700 { color: #f5c032; }
+.dark .text-gold-800 { color: #ffd94d; }
 .dark .text-red-600 { color: #f26d6d; }
 .dark .text-red-700 { color: #f58a8a; }
 .dark .text-leaf-700 { color: #57d98a; }
@@ -339,12 +339,12 @@ html.theme-anim .input {
 /* Zlatý nápis MAŘENA v hlavičce zázemí — bez tmavé cedulky, čitelný na světlém
    pozadí (sytý zlatý přechod do bronzu + jemný stín pro kontrast). */
 .marena-header-gold {
-  background: linear-gradient(180deg, #f5852a 0%, #e2631b 52%, #a8420b 100%);
+  background: linear-gradient(180deg, #f4b71f 0%, #e0940a 52%, #a25f06 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 1px 0 rgba(120, 52, 0, 0.35));
+  filter: drop-shadow(0 1px 0 rgba(120, 72, 0, 0.35));
 }
 /* Červený neon (jako cedule MOTEL) — červené „trubičkové" písmo. */
 .vegas-neon-red {

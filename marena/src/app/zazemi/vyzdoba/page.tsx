@@ -133,7 +133,7 @@ export default function VyzdobaPage() {
       {view === "material" && (
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="section-title">🎨 Materiál a nápady</h2>
+          <h2 className="eyebrow">Materiál a nápady</h2>
           {canEdit && (
             <button className="btn-primary px-3 py-1.5 text-sm" onClick={() => setOpen((v) => !v)}>
               {open ? "Zavřít" : "+ Přidat nápad"}
@@ -334,7 +334,7 @@ function RulesCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
   return (
     <section className="card p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="section-title">📋 Pravidla</h2>
+        <h2 className="eyebrow">Pravidla</h2>
         {canEdit && !edit && (
           <button className="btn-ghost px-2 py-1 text-xs" onClick={startEdit}>
             {rules ? "Upravit" : "+ Přidat"}
@@ -454,7 +454,7 @@ function PlanCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
   return (
     <section className="card p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="section-title">🗺️ Plánek zón</h2>
+        <h2 className="eyebrow">Plánek zón</h2>
         {canEdit && (
           <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setManage((v) => !v)}>
             {manage ? "Hotovo" : "Upravit"}
@@ -543,7 +543,7 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="section-title">📍 Zóny</h2>
+        <h2 className="eyebrow">Zóny</h2>
         <div className="flex items-center gap-2">
           {zones.length > 0 && (
             <span className="text-xs text-ink-soft">
@@ -582,7 +582,7 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
           Zatím žádné zóny.
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="card divide-y divide-ink/10 overflow-hidden">
           {sorted.map((z) => (
             <ZoneTile key={z.id} zone={z} year={year} me={me} onClick={() => setOpenZoneId(z.id)} />
           ))}
@@ -599,7 +599,7 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
   );
 }
 
-// Malá dlaždice zóny v mřížce — přehled, klik otevře detail v okně.
+// Řádek zóny v editorialním seznamu (vlasové linky) — klik otevře detail v okně.
 function ZoneTile({ zone, year, me, onClick }: { zone: DecorZone; year: Year; me: string; onClick: () => void }) {
   const iAmIn = zone.members.some((m) => sameName(m, me));
   const zoneTasks = year.tasks.filter((t) => t.zoneId === zone.id);
@@ -608,24 +608,24 @@ function ZoneTile({ zone, year, me, onClick }: { zone: DecorZone; year: Year; me
   const pct = total ? Math.round((done / total) * 100) : 0;
   const empty = zone.members.length === 0;
   return (
-    <button onClick={onClick} className={`card p-3 text-left transition hover:border-gold-300 ${iAmIn ? "ring-1 ring-leaf/40" : ""}`}>
-      <div className="flex items-start gap-1">
-        <span className="min-w-0 flex-1 break-words font-display text-sm font-semibold leading-snug">📍 {zone.name}</span>
-        <span aria-hidden className="shrink-0 text-ink-soft/40">›</span>
-      </div>
-      <div className="mt-1.5 flex flex-wrap items-center gap-1">
-        {iAmIn && <span className="rounded-full bg-leaf px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">jsi tu</span>}
-        {empty && <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-red-600">volná</span>}
-      </div>
-      <div className="mt-1.5 flex items-center gap-2 text-[11px] text-ink-soft">
-        <span>👥 {zone.members.length}</span>
-        {total > 0 && <span className={done === total ? "font-semibold text-leaf-700" : ""}>✅ {done}/{total}</span>}
+    <button onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-paper2/50">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="min-w-0 break-words font-display text-[15px] font-semibold leading-snug">{zone.name}</span>
+          {iAmIn && <span className="rounded-full bg-leaf/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-leaf-700">jsi tu</span>}
+          {empty && <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600">volná</span>}
+        </div>
+        <div className="mt-0.5 flex items-center gap-3 text-xs tabular-nums text-ink-soft">
+          <span>{zone.members.length} v týmu</span>
+          {total > 0 && <span className={done === total ? "font-semibold text-leaf-700" : ""}>{done}/{total} úkolů</span>}
+        </div>
       </div>
       {total > 0 && (
-        <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-paper2">
+        <div className="hidden h-1 w-16 shrink-0 overflow-hidden rounded-full bg-paper2 sm:block">
           <div className="h-full rounded-full bg-leaf transition-all" style={{ width: `${pct}%` }} />
         </div>
       )}
+      <span aria-hidden className="shrink-0 text-lg leading-none text-ink-soft/40">›</span>
     </button>
   );
 }
@@ -667,7 +667,7 @@ function TeamVoting({ year, canEdit, me }: { year: Year; canEdit: boolean; me: s
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="section-title">🗳️ Hlasování týmu</h2>
+        <h2 className="eyebrow">Hlasování týmu</h2>
         {canEdit && (
           <button className="btn-primary px-3 py-1.5 text-sm" onClick={() => setOpen((v) => !v)}>
             {open ? "Zavřít" : "+ Nová anketa"}
