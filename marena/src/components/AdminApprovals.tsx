@@ -7,6 +7,7 @@ import { roleById } from "@/lib/roles";
 import { fmtCZK } from "@/lib/format";
 import { flash } from "@/components/Flash";
 import { ApproveAccountModal } from "@/components/ApproveAccountModal";
+import { ConfirmButton } from "@/components/ConfirmButton";
 import type { Member } from "@/lib/types";
 
 // Akční pruhy správce — hned pod hlavičkou (čárou u MAŘENA 2026), zlaté se
@@ -58,18 +59,35 @@ export function AdminApprovals() {
                     {role?.emoji ?? "🎭"} <strong>{m.name}</strong> žádá o roli <strong>{role?.name ?? roleId}</strong>
                   </span>
                   <span className="flex shrink-0 gap-1.5">
-                    <button
+                    <ConfirmButton
                       className="rounded-full bg-leaf px-4 py-1.5 text-sm font-bold text-white transition hover:opacity-90"
-                      onClick={() => dispatch({ type: "resolveRoleRequest", yearId: year.id, memberId: m.id, roleId, approve: true })}
+                      title="Schválit roli?"
+                      message={
+                        <>
+                          Opravdu přidělit roli <strong className="text-ink">{role?.name ?? roleId}</strong> členovi{" "}
+                          <strong className="text-ink">{m.name}</strong>?
+                        </>
+                      }
+                      confirmLabel="Ano, schválit"
+                      onConfirm={() => dispatch({ type: "resolveRoleRequest", yearId: year.id, memberId: m.id, roleId, approve: true })}
                     >
                       Schválit
-                    </button>
-                    <button
+                    </ConfirmButton>
+                    <ConfirmButton
                       className="rounded-full bg-white px-4 py-1.5 text-sm font-bold text-red-600 transition hover:bg-red-50"
-                      onClick={() => dispatch({ type: "resolveRoleRequest", yearId: year.id, memberId: m.id, roleId, approve: false })}
+                      title="Zamítnout roli?"
+                      message={
+                        <>
+                          Opravdu zamítnout žádost o roli <strong className="text-ink">{role?.name ?? roleId}</strong> od{" "}
+                          <strong className="text-ink">{m.name}</strong>?
+                        </>
+                      }
+                      confirmLabel="Ano, zamítnout"
+                      confirmClassName="flex-1 rounded-full bg-red-600 px-5 py-2.5 text-[15px] font-semibold text-white transition hover:bg-red-700"
+                      onConfirm={() => dispatch({ type: "resolveRoleRequest", yearId: year.id, memberId: m.id, roleId, approve: false })}
                     >
                       Zamítnout
-                    </button>
+                    </ConfirmButton>
                   </span>
                 </div>
               );
@@ -90,15 +108,23 @@ export function AdminApprovals() {
                 <span className="min-w-0 flex-1 text-[15px] text-[#1d1d1f]">
                   💸 <strong>{f.who}</strong> — {f.label} · <strong>{fmtCZK(f.amount)}</strong>
                 </span>
-                <button
+                <ConfirmButton
                   className="shrink-0 rounded-full bg-leaf px-4 py-1.5 text-sm font-bold text-white transition hover:opacity-90"
-                  onClick={async () => {
+                  title="Proplatit výdaj?"
+                  message={
+                    <>
+                      Opravdu proplatit <strong className="text-ink">{fmtCZK(f.amount)}</strong> pro{" "}
+                      <strong className="text-ink">{f.who}</strong>? Částka se odečte ze společného účtu (v kase).
+                    </>
+                  }
+                  confirmLabel="Ano, proplatit"
+                  onConfirm={async () => {
                     const ok = await dispatch({ type: "toggleFinancePaid", yearId: year.id, financeId: f.id });
                     if (ok) flash(`Proplaceno ${fmtCZK(f.amount)} — ${f.who}. Odečteno ze společného účtu (v kase).`, "💸");
                   }}
                 >
                   Proplatit
-                </button>
+                </ConfirmButton>
               </div>
             ))}
           </div>
