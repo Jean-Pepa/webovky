@@ -21,7 +21,7 @@ export function PageTitle({ children }: { children: string }) {
   return (
     <h1 className="page-title">
       {text.slice(0, i)}
-      <span className="text-gold-600">{text.slice(i)}</span>
+      <span className="text-gold-grad">{text.slice(i)}</span>
     </h1>
   );
 }

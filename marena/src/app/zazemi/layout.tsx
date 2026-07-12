@@ -277,7 +277,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             <>
               <Link
                 href={restrictHref}
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-gold-500 px-3.5 py-1.5 text-sm font-medium text-[#1d1d1f]"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-gold-grad px-3.5 py-1.5 text-sm font-medium text-[#1d1d1f]"
               >
                 <Icon name={restrictIcon} className="h-4 w-4" /> {restrictLabel}
               </Link>
@@ -294,7 +294,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             href="/zazemi"
             onClick={() => setDeskMenu(null)}
             className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-              pathname === "/zazemi" ? "bg-gold-500 text-[#1d1d1f]" : "text-ink-soft hover:bg-ink/5"
+              pathname === "/zazemi" ? "bg-gold-grad text-[#1d1d1f]" : "text-ink-soft hover:bg-ink/5"
             }`}
           >
             <Icon name="board" className="h-4 w-4" /> Nástěnka
@@ -313,7 +313,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   onClick={() => setDeskMenu(open ? null : g.id)}
                   aria-expanded={open}
                   className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                    active ? "bg-gold-500 text-[#1d1d1f]" : open ? "bg-ink/5 text-ink" : "text-ink-soft hover:bg-ink/5"
+                    active ? "bg-gold-grad text-[#1d1d1f]" : open ? "bg-ink/5 text-ink" : "text-ink-soft hover:bg-ink/5"
                   }`}
                 >
                   <Icon name={g.icon} className="h-4 w-4" /> {g.label}
@@ -347,7 +347,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           })}
           <Link
             href="/zazemi/almanach"
-            className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-gold-500 px-3.5 py-1.5 text-sm font-semibold text-[#1d1d1f] transition-colors hover:bg-gold-400"
+            className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-gold-grad px-3.5 py-1.5 text-sm font-semibold text-[#1d1d1f] transition-colors"
           >
             <Icon name="book" className="h-4 w-4" /> Almanach
           </Link>
@@ -414,7 +414,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                 <Link
                   href="/zazemi/almanach"
                   onClick={() => setMenuOpen(false)}
-                  className="inline-flex items-center gap-2.5 rounded-xl bg-gold-500 px-3 py-2.5 text-[15px] font-semibold text-[#1d1d1f]"
+                  className="inline-flex items-center gap-2.5 rounded-xl bg-gold-grad px-3 py-2.5 text-[15px] font-semibold text-[#1d1d1f]"
                 >
                   <Icon name="book" className="h-5 w-5" /> Almanach
                 </Link>

@@ -62,34 +62,45 @@
   --radius-app: 18px;
 }
 
+/* „Namíchaná" zlatá — teplý diagonální přechod (jasné zlato → značkové f4b71f →
+   hlubší jantar), dává velkým zlatým plochám hloubku a život místo ploché barvy
+   (inspirace: TasteTown oranžová). Světlo přichází z levého horního rohu.
+   `--sheen-top` je jemný horní „lesk" (bílý přísvit) — přeloží se PŘES zlatý
+   přechod, takže tlačítka vypadají hmatatelně/naleštěně (jako fyzická zlatá plocha). */
+:root {
+  --grad-gold: linear-gradient(135deg, #ffce4a 0%, #f7c02a 38%, #ec9f14 74%, #db8a08 100%);
+  --grad-gold-hover: linear-gradient(135deg, #ffd867 0%, #fbca38 38%, #f2aa1e 74%, #e79710 100%);
+  --sheen-top: linear-gradient(180deg, rgba(255, 255, 255, 0.36) 0%, rgba(255, 255, 255, 0.08) 42%, rgba(255, 255, 255, 0) 62%);
+}
+
 /* ===================== Noční režim (zázemí) =========================
    Třída `.dark` na <html> jen přemapuje neutrální tokeny. Akcenty (červená,
    zelená, modrá) zůstávají — na tmavém pozadí jsou dobře čitelné. Text je
    měkce bílý (ne čistě #fff), aby „nepálil do očí". Čáry a hovery používají
    v celé appce `ink` s průhledností, takže se převrátí samy. */
 .dark {
-  --color-paper: #1e1e21; /* pozadí stránky — měkká tmavá šedá (ne černá) */
-  --color-paper2: #37383d; /* výplně, chipy, hover plochy */
-  --color-surface: #2a2b2f; /* karty a inputy — o stupínek světlejší šedá */
-  --color-ink: #ededf0; /* hlavní text — měkká bílá */
-  --color-ink-soft: #a4a5ad; /* sekundární text */
+  --color-paper: #26272c; /* pozadí stránky — světlejší charcoal (pořád tmavý, ne skoro černý) */
+  --color-paper2: #43444c; /* výplně, chipy, hover plochy */
+  --color-surface: #313238; /* karty a inputy — o stupínek světlejší než pozadí */
+  --color-ink: #f2f2f5; /* hlavní text — měkká bílá */
+  --color-ink-soft: #aeafb7; /* sekundární text */
 
   /* Světlé „tinty" (jemné barevné plochy 50/100/200) → tmavé varianty téhož tónu,
      ať na nočním pozadí neřve bílá/růžová. Sytost akcentů (600/700 pro tlačítka)
      necháváme. Automaticky se přepíšou i s průhledností (color-mix). */
-  --color-gold-50: #332913; /* jemná zlatá plocha na tmavé */
-  --color-gold-100: #483a18;
-  --color-gold-200: #5c4a1f;
-  --color-marigold-50: #3a1c22; /* jemná červená plocha */
-  --color-marigold-100: #48232c;
-  --color-marigold-200: #5c2c37;
-  --color-red-50: #3a1a1d;
-  --color-red-100: #48232a;
-  --color-amber-50: #2e2410;
-  --color-amber-100: #3a2c14;
-  --color-amber-200: #4b3a1c;
-  --color-plum-100: #2a2b31; /* světlá „plum" výplň → tmavá */
-  --color-plum-200: #34353c;
+  --color-gold-50: #3d3118; /* jemná zlatá plocha na tmavé (o stupeň výš kvůli světlejšímu pozadí) */
+  --color-gold-100: #52421d;
+  --color-gold-200: #665324;
+  --color-marigold-50: #452630; /* jemná červená plocha */
+  --color-marigold-100: #542d38;
+  --color-marigold-200: #683543;
+  --color-red-50: #452428;
+  --color-red-100: #542c34;
+  --color-amber-50: #392e16;
+  --color-amber-100: #45361b;
+  --color-amber-200: #564324;
+  --color-plum-100: #34353c; /* světlá „plum" výplň → tmavá */
+  --color-plum-200: #3e3f47;
 }
 
 /* Bílé plochy (karty, inputy, pruhy) → tmavý povrch. Výjimky (QR, kolečko
@@ -107,6 +118,10 @@
 .dark .text-gold-600 { color: #f4b71f; }
 .dark .text-gold-700 { color: #f5c032; }
 .dark .text-gold-800 { color: #ffd94d; }
+/* Zlatý přechod v textu (akcent nadpisu) — na tmavém zesvětlený, ať svítí. */
+.dark .text-gold-grad {
+  background-image: linear-gradient(118deg, #e0a015 0%, #f4b71f 50%, #ffd94d 100%);
+}
 .dark .text-red-600 { color: #f26d6d; }
 .dark .text-red-700 { color: #f58a8a; }
 .dark .text-leaf-700 { color: #57d98a; }
@@ -511,10 +526,21 @@ html.theme-anim .input {
 @layer components {
   .btn-primary {
     /* Zlaté tlačítko s TMAVÝM textem (9,3:1) — text zůstává tmavý i v nočním
-       režimu (proto literál, ne token ink). Min. výška 44 px (Apple tap target). */
-    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-gold-500
+       režimu (proto literál, ne token ink). Min. výška 44 px (Apple tap target).
+       Výplň je „namíchaný" zlatý přechod (hloubka místo ploché barvy). */
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full
       px-5 py-2.5 text-[15px] font-semibold text-[#1d1d1f] ring-1 ring-inset ring-gold-600/50
-      transition-all hover:bg-gold-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+      transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+    background-color: #f4b71f; /* fallback = značková zlatá */
+    background-image: var(--sheen-top), var(--grad-gold);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-image: var(--sheen-top), var(--grad-gold-hover);
+  }
+  /* Zlatá výplň s přechodem pro další plochy (aktivní pilulka navigace apod.). */
+  .bg-gold-grad {
+    background-color: #f4b71f;
+    background-image: var(--sheen-top), var(--grad-gold);
   }
   /* Vegas tlačítko — neonový přechod růžová → fialová (místo červené na homepage). */
   .btn-vegas {
@@ -566,7 +592,12 @@ html.theme-anim .input {
       disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-pill-gold {
-    @apply bg-gold-500 text-[#1d1d1f] hover:bg-gold-400;
+    @apply text-[#1d1d1f];
+    background-color: #f4b71f;
+    background-image: var(--sheen-top), var(--grad-gold);
+  }
+  .btn-pill-gold:hover:not(:disabled) {
+    background-image: var(--sheen-top), var(--grad-gold-hover);
   }
   .btn-pill-leaf {
     @apply bg-leaf text-white hover:bg-leaf/90;
@@ -602,6 +633,16 @@ html.theme-anim .input {
   .page-title {
     @apply text-[31px] font-bold leading-[1.04] tracking-[-0.028em] text-ink sm:text-[38px];
     font-family: var(--font-display);
+  }
+  /* Akcentní (zlatý) konec nadpisu — „namíchaný" zlatý přechod v textu místo
+     ploché barvy. Rozsah drží kontrast pro velký text (≥3:1 na světlém papíru);
+     noční varianta je zesvětlená (viz `.dark .text-gold-grad`). */
+  .text-gold-grad {
+    background-image: linear-gradient(118deg, #c8850a 0%, #dd9c10 50%, #edb01a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
   }
   /* Nadpis sekce — čistý, sevřený. */
   .section-title {
