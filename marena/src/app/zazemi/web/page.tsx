@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { isAdmin } from "@/lib/admin";
@@ -220,7 +221,7 @@ export default function WebEditorPage() {
     <div className="space-y-5 pb-24">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Správa webu</h1>
+          <PageTitle>Správa webu</PageTitle>
           <p className="mt-0.5 text-sm text-ink-soft">
             Uprav texty, nadpisy, fotky a novinky na veřejné homepage. Prázdné pole = zůstane výchozí text.
           </p>
@@ -243,7 +244,7 @@ export default function WebEditorPage() {
 
       {/* TÉMA WEBU — vzhled homepage (každý ročník může mít jiné) */}
       <section className="card p-4 sm:p-5">
-        <h2 className="font-display text-[20px] font-semibold">🎨 Téma webu</h2>
+        <h2 className="section-title">🎨 Téma webu</h2>
         <p className="mb-3 mt-0.5 text-xs text-ink-soft">
           Vyber vzhled veřejné homepage. Texty, fotky i novinky zůstávají stejné — mění se jen styl. Ulož změny dole.
         </p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { ROLES, roleById } from "@/lib/roles";
@@ -121,7 +122,7 @@ export default function UkolyPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Úkoly</h1>
+        <PageTitle>Úkoly</PageTitle>
         {isAdmin(me) && total > 0 && (
           <button className="btn-ghost px-3 py-1.5 text-xs text-red-600" onClick={clearAll}>
             Smazat všechny úkoly
@@ -132,8 +133,8 @@ export default function UkolyPage() {
       {/* ===== MOJE ÚKOLY — nahoře, hlavní věc pro uživatele ===== */}
       <section className="card overflow-hidden ring-1 ring-gold-300">
         <div className="flex items-center justify-between gap-2 bg-gold-50 px-4 py-3">
-          <h2 className="font-display text-[19px] font-bold">🙋 Moje úkoly</h2>
-          <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${myOpen.length ? "bg-red-100 text-red-700" : "bg-leaf/15 text-leaf-700"}`}>
+          <h2 className="eyebrow">Moje úkoly</h2>
+          <span className={`rounded-full px-2.5 py-1 text-xs font-bold tabular-nums ${myOpen.length ? "bg-red-100 text-red-700" : "bg-leaf/15 text-leaf-700"}`}>
             {myOpen.length ? `${myOpen.length} k splnění` : "vše hotovo ✅"}
           </span>
         </div>
@@ -141,8 +142,8 @@ export default function UkolyPage() {
         {myTotal > 0 && (
           <div className="border-b border-ink/10 px-4 py-3">
             <div className="mb-1 flex items-center justify-between text-sm">
-              <span className="font-medium">Hotovo {myDone} z {myTotal}</span>
-              <span className="text-ink-soft">{myPct} %</span>
+              <span className="font-medium tabular-nums">Hotovo {myDone} z {myTotal}</span>
+              <span className="tabular-nums text-ink-soft">{myPct} %</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-paper2">
               <div className="h-full rounded-full bg-gold-500 transition-all" style={{ width: `${myPct}%` }} />
@@ -203,8 +204,8 @@ export default function UkolyPage() {
 
       {/* ===== VŠECHNY ÚKOLY (přehled celého týmu) — ukáže pár, zbytek se dorolová ===== */}
       <div className="space-y-3 pt-1">
-        <h2 className="font-display text-[19px] font-bold">
-          📋 Všechny úkoly <span className="text-sm font-normal text-ink-soft">({total})</span>
+        <h2 className="eyebrow">
+          Všechny úkoly <span className="text-sm font-normal tabular-nums text-ink-soft">({total})</span>
         </h2>
 
         <SearchBox value={q} onChange={setQ} placeholder="Hledat úkol…" />
@@ -228,7 +229,7 @@ export default function UkolyPage() {
         </div>
 
         {tasks.length === 0 ? (
-          <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+          <div className="empty-state">
             {q.trim() ? "Nic neodpovídá hledání." : "Nic tu není. 🎉"}
           </div>
         ) : (
@@ -238,7 +239,7 @@ export default function UkolyPage() {
                 const role = key === "_none" ? null : roleById(key);
                 return (
                   <div key={key} className="card overflow-hidden">
-                    <div className="border-b border-ink/10 bg-paper2/60 px-4 py-2 text-sm font-semibold">
+                    <div className="border-b border-ink/10 bg-paper2/60 px-4 py-2 eyebrow">
                       {role ? `${role.emoji} ${role.name}` : "📋 Bez role"}
                     </div>
                     <ul className="divide-y divide-ink/10">
@@ -257,7 +258,7 @@ export default function UkolyPage() {
                 type="button"
                 onClick={() => setAllOpen((v) => !v)}
                 aria-expanded={allOpen}
-                className="mx-auto flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-medium text-gold-700 ring-1 ring-ink/10 transition hover:bg-paper2"
+                className="mx-auto flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-medium tabular-nums text-gold-700 ring-1 ring-ink/10 transition hover:bg-paper2"
               >
                 {allOpen ? "Zobrazit méně" : `Zobrazit další (${tasks.length - PEEK})`}
                 <Icon name="chevron" className={`h-4 w-4 transition-transform ${allOpen ? "rotate-180" : ""}`} />
@@ -367,7 +368,7 @@ function TaskItem({
         <p className={`${big ? "text-base" : "text-[15px]"} ${t.done ? "text-ink-soft line-through" : "font-semibold"}`}>{t.title}</p>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-ink-soft">
           {t.assignee && <span>👤 {t.assignee}</span>}
-          {t.due && <span>📅 {fmtDate(t.due)}</span>}
+          {t.due && <span className="tabular-nums">📅 {fmtDate(t.due)}</span>}
           {t.fromPostId && (
             <Link href={`/zazemi?post=${t.fromPostId}`} className="font-medium text-gold-700 hover:underline">
               📌 z nástěnky

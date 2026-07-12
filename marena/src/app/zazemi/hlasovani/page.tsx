@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
@@ -72,7 +73,7 @@ export default function HlasovaniPage() {
     <div className="mx-auto max-w-3xl space-y-5">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Hlasování</h1>
+          <PageTitle>Hlasování</PageTitle>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Nová anketa"}
@@ -123,7 +124,7 @@ export default function HlasovaniPage() {
       )}
 
       {polls.length === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+        <div className="empty-state">
           {q ? "Nic neodpovídá hledání." : "Zatím žádná anketa."}
         </div>
       ) : (

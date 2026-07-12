@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { roleById, ROLES } from "@/lib/roles";
@@ -248,7 +249,7 @@ function PriorityModal({
 
         {/* Role / týmy */}
         <div>
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-soft">Týmy / role</p>
+          <p className="mb-1.5 eyebrow">Týmy / role</p>
           <div className="flex flex-wrap gap-1.5">
             {ROLES.map((r) => {
               const on = value.roles.includes(r.id);
@@ -270,7 +271,7 @@ function PriorityModal({
 
         {/* Konkrétní lidé */}
         <div>
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-soft">Konkrétní lidé</p>
+          <p className="mb-1.5 eyebrow">Konkrétní lidé</p>
           {value.people.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-1.5">
               {value.people.map((p) => (
@@ -493,7 +494,7 @@ export default function NastenkaPage() {
       <div className="min-w-0 space-y-5">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Nástěnka</h1>
+            <PageTitle>Nástěnka</PageTitle>
           </div>
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
             {open ? "Zavřít" : "+ Přidat info"}
@@ -592,10 +593,10 @@ export default function NastenkaPage() {
         {hasFinance && (
           <Link href="/zazemi/finance" className="card block p-4 transition hover:border-ink/10">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-base font-semibold">💰 Bilance</h2>
+              <h2 className="eyebrow">Bilance</h2>
               <span className="text-xs font-medium text-gold-700">detail →</span>
             </div>
-            <p className={`mt-1 font-display text-2xl font-semibold tracking-tight ${bilance >= 0 ? "text-leaf-700" : "text-red-600"}`}>
+            <p className={`mt-1 font-display text-2xl font-semibold tracking-tight tabular-nums ${bilance >= 0 ? "text-leaf-700" : "text-red-600"}`}>
               {bilance >= 0 ? "+" : "−"}
               {fmtCZK(Math.abs(bilance))}
             </p>
@@ -604,7 +605,7 @@ export default function NastenkaPage() {
         )}
         <div className="card p-4">
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="font-display text-base font-semibold">📅 Nejbližší termíny</h2>
+            <h2 className="eyebrow">Nejbližší termíny</h2>
             <Link href="/zazemi/kalendar" className="text-xs font-medium text-gold-700 hover:underline">
               vše →
             </Link>
@@ -619,7 +620,7 @@ export default function NastenkaPage() {
                 return (
                   <li key={e.id} className="flex items-center gap-3">
                     <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-paper2 text-center leading-none">
-                      <span className="text-sm font-bold">{d.day}</span>
+                      <span className="text-sm font-bold tabular-nums">{d.day}</span>
                       <span className="text-[10px] uppercase text-ink-soft">{d.month}</span>
                     </div>
                     <div className="min-w-0">
@@ -916,7 +917,7 @@ function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post;
           </span>
         )}
         <div className="ml-auto text-right leading-tight">
-          <div className="whitespace-nowrap">
+          <div className="whitespace-nowrap tabular-nums">
             založil(a): <span className="font-medium text-ink">{p.author}</span> · {fmtDateTime(p.createdAt)}
           </div>
           {edits.length > 0 &&
@@ -924,7 +925,7 @@ function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post;
               <>
                 <div className="mt-1 max-h-24 space-y-0.5 overflow-auto rounded-lg bg-paper2/70 px-2 py-1.5 text-left">
                   {edits.map((e, i) => (
-                    <div key={i} className="whitespace-nowrap">
+                    <div key={i} className="whitespace-nowrap tabular-nums">
                       upravil(a): <span className="font-medium text-ink">{e.by}</span> · {fmtDateTime(e.at)}
                     </div>
                   ))}
@@ -951,7 +952,7 @@ function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post;
               type="button"
               onClick={() => setTasksOpen((v) => !v)}
               aria-expanded={tasksOpen}
-              className={`flex min-w-0 items-center gap-1 text-xs font-semibold uppercase tracking-wide ${allTasksDone ? "text-leaf-700" : "text-ink-soft"}`}
+              className={`flex min-w-0 items-center gap-1 text-xs font-semibold uppercase tracking-wide tabular-nums ${allTasksDone ? "text-leaf-700" : "text-ink-soft"}`}
             >
               <span aria-hidden className={`shrink-0 text-[10px] transition-transform ${tasksOpen ? "rotate-0" : "-rotate-90"}`}>▼</span>
               {allTasksDone ? "✅ Hotovo" : "✅ Úkoly"} ({postTasks.filter((t) => t.done).length}/{postTasks.length})
@@ -1021,17 +1022,17 @@ function WidgetLinks({ openPolls, myTasks, myShifts }: { openPolls: number; myTa
     <div className="grid grid-cols-3 gap-3">
       <Link href="/zazemi/hlasovani" className="card p-3 transition hover:border-gold-300">
         <Icon name="vote" className="h-4 w-4 text-gold-600" />
-        <div className="mt-1 text-2xl font-bold text-gold-700">{openPolls}</div>
+        <div className="mt-1 text-2xl font-bold text-gold-700 tabular-nums">{openPolls}</div>
         <div className="text-xs text-ink-soft">anket</div>
       </Link>
       <Link href="/zazemi/ukoly" className="card p-3 transition hover:border-gold-300">
         <Icon name="tasks" className="h-4 w-4 text-plum-600" />
-        <div className="mt-1 text-2xl font-bold text-plum-600">{myTasks}</div>
+        <div className="mt-1 text-2xl font-bold text-plum-600 tabular-nums">{myTasks}</div>
         <div className="text-xs text-ink-soft">úkolů</div>
       </Link>
       <Link href="/zazemi/provoz" className="card p-3 transition hover:border-gold-300">
         <Icon name="ops" className="h-4 w-4 text-gold-600" />
-        <div className="mt-1 text-2xl font-bold text-gold-700">{myShifts}</div>
+        <div className="mt-1 text-2xl font-bold text-gold-700 tabular-nums">{myShifts}</div>
         <div className="text-xs text-ink-soft">směn</div>
       </Link>
     </div>
@@ -1039,5 +1040,5 @@ function WidgetLinks({ openPolls, myTasks, myShifts }: { openPolls: number; myTa
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">{children}</div>;
+  return <div className="empty-state">{children}</div>;
 }

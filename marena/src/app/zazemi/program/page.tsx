@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { isAdmin } from "@/lib/admin";
 import { sameName } from "@/lib/names";
 import { DeleteButton } from "@/components/DeleteButton";
+import { Modal } from "@/components/Modal";
 import { SearchBox } from "@/components/SearchBox";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { flash } from "@/components/Flash";
@@ -21,7 +23,6 @@ const CAT_META: Record<string, string> = {
   Ostatní: "📍",
 };
 const CAT_ORDER = Object.keys(CAT_META);
-const catEmoji = (c: string) => CAT_META[c] ?? "📍";
 
 // Přidávat a upravovat program smí jen tyto role (+ správce). Ostatní jen čtou.
 const PROGRAM_EDIT_ROLES = ["kapelnik", "program"];
@@ -115,7 +116,7 @@ export default function ProgramPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Program</h1>
+          <PageTitle>Program</PageTitle>
         </div>
         {canEdit && (
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
@@ -144,16 +145,16 @@ export default function ProgramPage() {
       )}
 
       {groups.length === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+        <div className="empty-state">
           {q.trim() ? "Nic neodpovídá hledání." : "Zatím prázdné. Přidej přednášející a kapely, které chcete oslovit."}
         </div>
       ) : (
         <div className="space-y-6">
           {groups.map(([cat, items]) => (
             <section key={cat}>
-              <h2 className="mb-3 flex items-center gap-2 font-display text-[20px] font-semibold">
-                <span>{catEmoji(cat)}</span> {cat}
-                <span className="chip">{items.length}</span>
+              <h2 className="mb-3 flex items-center gap-2 eyebrow">
+                {cat}
+                <span className="chip tabular-nums">{items.length}</span>
               </h2>
               <div className="card overflow-hidden">
                 {/* Mobil: karty */}
@@ -207,7 +208,7 @@ function ContactedButton({ invite, yearId, canEdit }: { invite: Invite; yearId: 
   // „Oslovil jsem" vedle. Klikací (pro vrácení zpět) je až zelené „Osloveno ✓".
   if (!canEdit || !invite.contacted) {
     return (
-      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${invite.contacted ? "bg-leaf/15 text-leaf-700" : "bg-paper2 text-ink-soft"}`}>
+      <span className={`badge ${invite.contacted ? "badge-done" : "badge-idle"}`}>
         {invite.contacted ? "Osloveno ✓" : "Neosloveno"}
       </span>
     );
@@ -246,7 +247,7 @@ function MarkContactedButton({ invite, yearId, canEdit }: { invite: Invite; year
         dispatch({ type: "updateInvite", yearId, inviteId: invite.id, patch: { contacted: true, interest: "ceka", contactedBy: me } });
         flash(`„${invite.name}" je teď osloveno`, "✉️");
       }}
-      className="inline-flex items-center gap-1.5 rounded-full bg-gold-500 px-3.5 py-1.5 text-xs font-bold text-[#1d1d1f] shadow-sm transition hover:bg-gold-400"
+      className="btn-pill btn-pill-gold"
     >
       ✉️ Oslovil jsem
     </button>
@@ -256,11 +257,11 @@ function MarkContactedButton({ invite, yearId, canEdit }: { invite: Invite; year
 // Zájem — jen ZOBRAZENÍ stavu (neklikací). Řídí se přes ano/ne v „Má zájem?".
 function InterestControl({ invite }: { invite: Invite }) {
   if (invite.interest === "ano")
-    return <span className="inline-flex rounded-full bg-leaf/15 px-2.5 py-1 text-xs font-semibold text-leaf-700 ring-1 ring-inset ring-leaf/40">✅ potvrzeno</span>;
+    return <span className="badge badge-done ring-1 ring-inset ring-leaf/40">✅ potvrzeno</span>;
   if (invite.interest === "ne")
-    return <span className="inline-flex rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600">👎 odmítl</span>;
+    return <span className="badge badge-reject">👎 odmítl</span>;
   if (invite.contacted)
-    return <span className="inline-flex rounded-full bg-gold-100 px-2.5 py-1 text-xs font-medium text-gold-800">čeká</span>;
+    return <span className="badge badge-wait">čeká</span>;
   return <span className="text-xs text-ink-soft/50">—</span>;
 }
 
@@ -326,25 +327,19 @@ function CancelButton({ invite, yearId, canEdit }: { invite: Invite; yearId: str
       >
         Zrušeno?
       </button>
-      {ask && (
-        <div className="fixed inset-0 z-50 grid place-items-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAsk(false)} aria-hidden />
-          <div className="relative w-full max-w-md rounded-xl border border-ink/10 bg-white p-6 shadow-2xl" role="dialog" aria-modal="true">
-            <h2 className="mb-4 font-display text-[20px] font-semibold tracking-tight">Opravdu zrušeno?</h2>
-            <p className="text-sm text-ink-soft">
-              Opravdu byla <strong className="text-ink">{invite.name}</strong> zrušena? Přesuneme ji mezi odmítnuté (info zůstane).
-            </p>
-            <div className="mt-4 flex items-center gap-2">
-              <button className="btn-primary flex-1" onClick={confirmCancel}>
-                Ano, zrušeno
-              </button>
-              <button className="btn-ghost" onClick={() => setAsk(false)}>
-                Ne
-              </button>
-            </div>
-          </div>
+      <Modal open={ask} onClose={() => setAsk(false)} title="Opravdu zrušeno?">
+        <p className="text-sm text-ink-soft">
+          Opravdu byla <strong className="text-ink">{invite.name}</strong> zrušena? Přesuneme ji mezi odmítnuté (info zůstane).
+        </p>
+        <div className="mt-4 flex items-center gap-2">
+          <button className="btn-primary flex-1" onClick={confirmCancel}>
+            Ano, zrušeno
+          </button>
+          <button className="btn-ghost" onClick={() => setAsk(false)}>
+            Ne
+          </button>
         </div>
-      )}
+      </Modal>
     </>
   );
 }
@@ -419,7 +414,7 @@ function InviteCard({ invite, yearId, index, canEdit }: { invite: Invite; yearId
   return (
     <div className={`p-3 ${inviteBg(invite)}`}>
       <div className="flex items-start gap-2">
-        <span className="chip shrink-0">{index}</span>
+        <span className="chip shrink-0 tabular-nums">{index}</span>
         <div className="min-w-0 flex-1">
           <span className="font-medium">{invite.name}</span>
           {invite.link && (
@@ -466,7 +461,7 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
   if (canEdit && edit) {
     return (
       <tr className="border-b border-ink/[0.06] bg-paper2/40 align-top">
-        <td className="px-3 py-2 text-ink-soft">{index}</td>
+        <td className="px-3 py-2 text-ink-soft tabular-nums">{index}</td>
         <td className="px-3 py-2">
           <input className="input mb-1" value={name} onChange={(e) => setName(e.target.value)} placeholder="Jméno" />
           <input className="input" value={link} onChange={(e) => setLink(e.target.value)} placeholder="Odkaz" />
@@ -492,7 +487,7 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
 
   return (
     <tr className={`border-b border-ink/[0.06] transition-colors ${inviteBg(invite) || "hover:bg-paper2/40"}`}>
-      <td className="px-3 py-3 font-medium text-ink-soft">{index}</td>
+      <td className="px-3 py-3 font-medium text-ink-soft tabular-nums">{index}</td>
       <td className="px-3 py-3">
         <span className="font-medium">{invite.name}</span>
         {invite.link && (
@@ -515,7 +510,7 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
         <InterestControl invite={invite} />
       </td>
       <td className="px-3 py-3 text-ink-soft">{invite.availability || "—"}</td>
-      <td className="px-3 py-3 text-ink-soft">{invite.price || "—"}</td>
+      <td className="px-3 py-3 text-ink-soft tabular-nums">{invite.price || "—"}</td>
       <td className="px-3 py-3">
         {canEdit ? <ConfirmButtons invite={invite} yearId={yearId} canEdit={canEdit} /> : <span className="text-xs text-ink-soft/50">—</span>}
       </td>

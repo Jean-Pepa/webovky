@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { fmtDate } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -123,7 +124,7 @@ export default function ProvozPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Provoz &amp; směny</h1>
+          <PageTitle>Provoz &amp; směny</PageTitle>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Přidat směnu"}
@@ -191,17 +192,17 @@ export default function ProvozPage() {
       </div>
 
       {shifts.length === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">Zatím žádné směny.</div>
+        <div className="empty-state">Zatím žádné směny.</div>
       ) : view === "seznam" ? (
         groups.length === 0 ? (
-          <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">{q.trim() ? "Nic neodpovídá hledání." : "Nic tu není."}</div>
+          <div className="empty-state">{q.trim() ? "Nic neodpovídá hledání." : "Nic tu není."}</div>
         ) : (
           <div className="space-y-6">
             {groups.map(([areaName, items]) => (
               <section key={areaName}>
-                <h2 className="mb-3 flex items-center gap-2 font-display text-[20px] font-semibold">
-                  <span>{areaEmoji(areaName)}</span> {areaName}
-                  <span className="chip">{items.length}</span>
+                <h2 className="mb-3 flex items-center gap-2 eyebrow">
+                  {areaName}
+                  <span className="chip tabular-nums">{items.length}</span>
                 </h2>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {items.map((s) => (
@@ -213,14 +214,14 @@ export default function ProvozPage() {
           </div>
         )
       ) : byDay.length === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">{q.trim() ? "Nic neodpovídá hledání." : "Nic tu není."}</div>
+        <div className="empty-state">{q.trim() ? "Nic neodpovídá hledání." : "Nic tu není."}</div>
       ) : (
         <div className="space-y-5">
           {byDay.map(([day, items]) => (
             <section key={day} className="card overflow-hidden">
-              <h2 className="border-b border-ink/[0.06] bg-paper2/60 px-4 py-2 font-display text-base font-semibold">
-                {day === "Bez data" ? "📌 Bez data" : `📅 ${fmtDate(day)}`}
-                <span className="ml-2 text-sm font-normal text-ink-soft">{items.length} směn</span>
+              <h2 className="border-b border-ink/[0.06] bg-paper2/60 px-4 py-2 eyebrow tabular-nums">
+                {day === "Bez data" ? "Bez data" : fmtDate(day)}
+                <span className="ml-2 text-sm font-normal tabular-nums text-ink-soft">{items.length} směn</span>
               </h2>
               <ul className="divide-y divide-black/[0.06]">
                 {items.map((s) => (
@@ -252,7 +253,7 @@ function RozvrhRow({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
         <div className="min-w-0">
           <p className="break-words text-sm font-medium">
             {shift.title || shift.area}
-            {t && <span className="ml-2 font-normal text-ink-soft">{t}</span>}
+            {t && <span className="ml-2 font-normal tabular-nums text-ink-soft">{t}</span>}
           </p>
           <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
             {shift.people.length > 0 ? (
@@ -312,14 +313,14 @@ function ShiftCard({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="font-display text-base font-semibold">{shift.title || shift.area}</h3>
-          {time && <p className="text-xs text-ink-soft">{time}</p>}
+          {time && <p className="text-xs tabular-nums text-ink-soft">{time}</p>}
         </div>
         <DeleteButton onConfirm={() => dispatch({ type: "removeShift", yearId, shiftId: shift.id })} />
       </div>
 
       <div className="mt-2">
         <span
-          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+          className={`badge tabular-nums ${
             cap === 0 ? "bg-paper2 text-ink-soft" : full ? "bg-gold-500 text-[#1d1d1f]" : "bg-leaf/12 text-leaf-700"
           }`}
         >

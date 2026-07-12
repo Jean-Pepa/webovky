@@ -117,7 +117,7 @@ export function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost,
         <span>· {fmtRelative(poll.createdAt)}</span>
         {poll.multi && <span className="chip">vícevýběr</span>}
         {remaining && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-gold-50 px-2.5 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-200" title={`Uzavře se ${fmtDateTime(poll.closesAt!)}`}>
+          <span className="badge badge-wait tabular-nums" title={`Uzavře se ${fmtDateTime(poll.closesAt!)}`}>
             ⏳ zbývá {remaining}
           </span>
         )}
@@ -166,7 +166,7 @@ export function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost,
                   </span>
                   {o.label}
                 </span>
-                <span className="relative text-xs text-ink-soft">
+                <span className="relative text-xs text-ink-soft tabular-nums">
                   {o.voters.length}
                   {o.voters.length > 0 && <span className="ml-1 hidden sm:inline">· {o.voters.join(", ")}</span>}
                 </span>
@@ -185,7 +185,7 @@ export function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost,
           </span>
         ) : (
           <span className="inline-flex items-center gap-2.5 rounded-full bg-gold-500 px-4 py-2 text-[#1d1d1f] shadow-sm">
-            <span className="font-display text-3xl font-bold leading-none tracking-tight">
+            <span className="font-display text-3xl font-bold leading-none tracking-tight tabular-nums">
               {totalVoters}
               {totalPeople > 0 && <span className="text-xl font-semibold opacity-80"> z {totalPeople}</span>}
             </span>
@@ -224,7 +224,7 @@ export function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost,
             <div key={o.id}>
               <div className="flex items-center justify-between gap-2 text-sm font-medium">
                 <span>{o.label}</span>
-                <span className="text-ink-soft">{o.voters.length}</span>
+                <span className="text-ink-soft tabular-nums">{o.voters.length}</span>
               </div>
               {o.voters.length > 0 ? (
                 <div className="mt-1.5 flex flex-col items-start gap-1.5">
@@ -268,7 +268,7 @@ export function PollCard({ poll, yearId, me, totalPeople, highlight, linkedPost,
                     onChange={(e) => setOpts((arr) => arr.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))}
                   />
                   {votes > 0 && (
-                    <span className="shrink-0 text-xs text-ink-soft" title="Hlasy zůstanou">
+                    <span className="shrink-0 text-xs text-ink-soft tabular-nums" title="Hlasy zůstanou">
                       {votes}×
                     </span>
                   )}

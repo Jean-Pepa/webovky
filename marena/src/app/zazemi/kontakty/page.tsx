@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
@@ -76,7 +77,7 @@ export default function KontaktyPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Kontakty &amp; odkazy</h1>
+          <PageTitle>Kontakty &amp; odkazy</PageTitle>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Přidat kontakt"}
@@ -106,7 +107,7 @@ export default function KontaktyPage() {
       )}
 
       {links.length === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+        <div className="empty-state">
           Zatím žádné kontakty. Přidej ty důležité a zařaď je do složek.
         </div>
       ) : filtered.length === 0 && q ? (
@@ -120,13 +121,13 @@ export default function KontaktyPage() {
               return (
               <section key={name} id={slug(name)} className="scroll-mt-28">
                 <div className="mb-3 flex items-center gap-2">
-                  <h2 className={`font-display text-[20px] font-semibold ${isSponsor ? "text-gold-700" : ""}`}>{name}</h2>
+                  <h2 className="eyebrow">{name}</h2>
                   {isSponsor && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-gold-500 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#1d1d1f]">
                       ★ Hlavní
                     </span>
                   )}
-                  <span className="chip">{items.length}</span>
+                  <span className="chip tabular-nums">{items.length}</span>
                 </div>
                 <ul className="grid gap-3 sm:grid-cols-2">
                   {items.map((l) => {
@@ -169,7 +170,7 @@ export default function KontaktyPage() {
                     }`}
                   >
                     <span className="truncate">{isSponsor ? "★ " : ""}{name}</span>
-                    <span className={`ml-2 shrink-0 rounded-full px-2 text-xs ${isSponsor ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2"}`}>{items.length}</span>
+                    <span className={`ml-2 shrink-0 rounded-full px-2 text-xs tabular-nums ${isSponsor ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2"}`}>{items.length}</span>
                   </a>
                 );
               })}

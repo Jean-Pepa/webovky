@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { canEditSection } from "@/lib/access";
@@ -99,7 +100,7 @@ export default function VyzdobaPage() {
         <ReadOnlyBanner>Výzdobu máš jen k náhledu — upravovat ji může jen správce a příslušná role.</ReadOnlyBanner>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Výzdoba</h1>
+        <PageTitle>Výzdoba</PageTitle>
         {/* Přepínač (desktop) — na mobilu je dole ve svítící zlaté liště */}
         <div className="hidden gap-1.5 md:flex">
           {VYZDOBA_TABS.map((t) => (
@@ -132,7 +133,7 @@ export default function VyzdobaPage() {
       {view === "material" && (
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-[19px] font-bold">🎨 Materiál a nápady</h2>
+          <h2 className="eyebrow">Materiál a nápady</h2>
           {canEdit && (
             <button className="btn-primary px-3 py-1.5 text-sm" onClick={() => setOpen((v) => !v)}>
               {open ? "Zavřít" : "+ Přidat nápad"}
@@ -201,7 +202,7 @@ export default function VyzdobaPage() {
         )}
 
         {(year.decor?.length ?? 0) === 0 ? (
-          <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+          <div className="empty-state">
             Zatím žádný materiál.
           </div>
         ) : list.length === 0 && q.trim() ? (
@@ -333,7 +334,7 @@ function RulesCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
   return (
     <section className="card p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-display text-[19px] font-bold">📋 Pravidla</h2>
+        <h2 className="eyebrow">Pravidla</h2>
         {canEdit && !edit && (
           <button className="btn-ghost px-2 py-1 text-xs" onClick={startEdit}>
             {rules ? "Upravit" : "+ Přidat"}
@@ -344,7 +345,7 @@ function RulesCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
       {edit ? (
         <div className="mt-2 space-y-4">
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold uppercase tracking-wide text-ink-soft">Hlavní text</label>
+            <label className="block eyebrow">Hlavní text</label>
             <textarea
               className="input min-h-24"
               value={mainText}
@@ -354,7 +355,7 @@ function RulesCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-xs font-semibold uppercase tracking-wide text-ink-soft">Odrážky</label>
+            <label className="block eyebrow">Odrážky</label>
             {bullets.map((b, i) => (
               <div key={i} className="flex items-center gap-2">
                 <span aria-hidden className="shrink-0 text-lg font-bold leading-none text-gold-600">•</span>
@@ -453,7 +454,7 @@ function PlanCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
   return (
     <section className="card p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-display text-[19px] font-bold">🗺️ Plánek zón</h2>
+        <h2 className="eyebrow">Plánek zón</h2>
         {canEdit && (
           <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setManage((v) => !v)}>
             {manage ? "Hotovo" : "Upravit"}
@@ -542,7 +543,7 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-display text-[19px] font-bold">📍 Zóny</h2>
+        <h2 className="eyebrow">Zóny</h2>
         <div className="flex items-center gap-2">
           {zones.length > 0 && (
             <span className="text-xs text-ink-soft">
@@ -577,11 +578,11 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
         </div>
       )}
       {zones.length === 0 ? (
-        <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
+        <div className="empty-state">
           Zatím žádné zóny.
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="card divide-y divide-ink/10 overflow-hidden">
           {sorted.map((z) => (
             <ZoneTile key={z.id} zone={z} year={year} me={me} onClick={() => setOpenZoneId(z.id)} />
           ))}
@@ -598,7 +599,7 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
   );
 }
 
-// Malá dlaždice zóny v mřížce — přehled, klik otevře detail v okně.
+// Řádek zóny v editorialním seznamu (vlasové linky) — klik otevře detail v okně.
 function ZoneTile({ zone, year, me, onClick }: { zone: DecorZone; year: Year; me: string; onClick: () => void }) {
   const iAmIn = zone.members.some((m) => sameName(m, me));
   const zoneTasks = year.tasks.filter((t) => t.zoneId === zone.id);
@@ -607,24 +608,24 @@ function ZoneTile({ zone, year, me, onClick }: { zone: DecorZone; year: Year; me
   const pct = total ? Math.round((done / total) * 100) : 0;
   const empty = zone.members.length === 0;
   return (
-    <button onClick={onClick} className={`card p-3 text-left transition hover:border-gold-300 ${iAmIn ? "ring-1 ring-leaf/40" : ""}`}>
-      <div className="flex items-start gap-1">
-        <span className="min-w-0 flex-1 break-words font-display text-sm font-semibold leading-snug">📍 {zone.name}</span>
-        <span aria-hidden className="shrink-0 text-ink-soft/40">›</span>
-      </div>
-      <div className="mt-1.5 flex flex-wrap items-center gap-1">
-        {iAmIn && <span className="rounded-full bg-leaf px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">jsi tu</span>}
-        {empty && <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-red-600">volná</span>}
-      </div>
-      <div className="mt-1.5 flex items-center gap-2 text-[11px] text-ink-soft">
-        <span>👥 {zone.members.length}</span>
-        {total > 0 && <span className={done === total ? "font-semibold text-leaf-700" : ""}>✅ {done}/{total}</span>}
+    <button onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-paper2/50">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="min-w-0 break-words font-display text-[15px] font-semibold leading-snug">{zone.name}</span>
+          {iAmIn && <span className="rounded-full bg-leaf/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-leaf-700">jsi tu</span>}
+          {empty && <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600">volná</span>}
+        </div>
+        <div className="mt-0.5 flex items-center gap-3 text-xs tabular-nums text-ink-soft">
+          <span>{zone.members.length} v týmu</span>
+          {total > 0 && <span className={done === total ? "font-semibold text-leaf-700" : ""}>{done}/{total} úkolů</span>}
+        </div>
       </div>
       {total > 0 && (
-        <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-paper2">
+        <div className="hidden h-1 w-16 shrink-0 overflow-hidden rounded-full bg-paper2 sm:block">
           <div className="h-full rounded-full bg-leaf transition-all" style={{ width: `${pct}%` }} />
         </div>
       )}
+      <span aria-hidden className="shrink-0 text-lg leading-none text-ink-soft/40">›</span>
     </button>
   );
 }
@@ -666,7 +667,7 @@ function TeamVoting({ year, canEdit, me }: { year: Year; canEdit: boolean; me: s
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-display text-[19px] font-bold">🗳️ Hlasování týmu</h2>
+        <h2 className="eyebrow">Hlasování týmu</h2>
         {canEdit && (
           <button className="btn-primary px-3 py-1.5 text-sm" onClick={() => setOpen((v) => !v)}>
             {open ? "Zavřít" : "+ Nová anketa"}
@@ -711,7 +712,7 @@ function TeamVoting({ year, canEdit, me }: { year: Year; canEdit: boolean; me: s
       )}
 
       {polls.length === 0 ? (
-        <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
+        <div className="empty-state">
           Zatím žádné hlasování.
         </div>
       ) : (
@@ -768,7 +769,7 @@ function TeamVoting({ year, canEdit, me }: { year: Year; canEdit: boolean; me: s
 // Malý nadpis podsekce v zóně (ikona + popisek + volitelný počet).
 function ZoneLabel({ icon, children, count }: { icon: string; children: React.ReactNode; count?: string }) {
   return (
-    <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">
+    <p className="eyebrow flex items-center gap-1.5">
       <span aria-hidden>{icon}</span>
       {children}
       {count && <span className="text-ink-soft/60">{count}</span>}
@@ -1039,7 +1040,7 @@ function DecorRow({ d, yearId, canEdit, admin, zones, myZones }: { d: Decor; yea
     <li id={`decor-${d.id}`} className="card scroll-mt-24 space-y-2 p-3">
       {/* Horní řádek: stav + viditelná akce vlevo, úpravy/smazání vpravo */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS[d.status].cls}`}>
+        <span className={`badge shrink-0 ${STATUS[d.status].cls}`}>
           {STATUS[d.status].label}
           {locked ? " 🔒" : ""}
         </span>
@@ -1047,7 +1048,7 @@ function DecorRow({ d, yearId, canEdit, admin, zones, myZones }: { d: Decor; yea
         {/* Viditelná akce podle stavu: nápad → chci shánět → sehnal jsem (hotovo) */}
         {canEdit && !locked && d.status === "napad" && (
           <button
-            className="inline-flex items-center gap-1.5 rounded-full bg-gold-500 px-3.5 py-1.5 text-xs font-bold text-[#1d1d1f] shadow-sm transition hover:bg-gold-400"
+            className="btn-pill btn-pill-gold"
             onClick={startShani}
           >
             🛒 Chci shánět
@@ -1055,7 +1056,7 @@ function DecorRow({ d, yearId, canEdit, admin, zones, myZones }: { d: Decor; yea
         )}
         {canEdit && !locked && d.status === "shani" && (
           <button
-            className="inline-flex items-center gap-1.5 rounded-full bg-leaf px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-leaf/90"
+            className="btn-pill btn-pill-leaf"
             onClick={() => setAskDone(true)}
           >
             ✅ Sehnal jsem

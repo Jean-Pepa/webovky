@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { canEditSection } from "@/lib/access";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
@@ -45,7 +46,7 @@ export default function PrvaciPage() {
       )}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Prváci</h1>
+          <PageTitle>Prváci</PageTitle>
           <p className="mt-0.5 text-sm text-ink-soft">Seznam prváků, o které celá Mařena je. Zapisuje se ručně.</p>
         </div>
         {canEdit && (
@@ -73,19 +74,19 @@ export default function PrvaciPage() {
           <input type="search" className={`input w-full ${q ? "pr-10" : ""}`} placeholder="🔎 Hledat…" value={q} onChange={(e) => setQ(e.target.value)} />
           {q && <SearchClear onClear={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2" />}
         </div>
-        <span className="text-sm text-ink-soft">
+        <span className="text-sm text-ink-soft tabular-nums">
           {q ? `${list.length} z ${year.freshmen?.length ?? 0}` : `${year.freshmen?.length ?? 0} prváků`}
         </span>
       </div>
 
       {(year.freshmen?.length ?? 0) === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+        <div className="empty-state">
           Zatím tu nikdo není.
         </div>
       ) : list.length === 0 ? (
-        <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">Nikdo neodpovídá hledání.</div>
+        <div className="empty-state">Nikdo neodpovídá hledání.</div>
       ) : (
-        <ul className="card divide-y divide-black/[0.06] overflow-hidden">
+        <ul className="card divide-y divide-ink/10 overflow-hidden">
           {list.map((f) => (
             <FreshmanRow key={f.id} f={f} yearId={year.id} canEdit={canEdit} />
           ))}
