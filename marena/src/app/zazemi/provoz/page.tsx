@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { fmtDate } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -123,7 +124,7 @@ export default function ProvozPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="page-title">Provoz &amp; směny</h1>
+          <PageTitle>Provoz &amp; směny</PageTitle>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Přidat směnu"}

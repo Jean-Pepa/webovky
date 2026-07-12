@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { Modal } from "@/components/Modal";
@@ -118,7 +119,7 @@ function ProdejReadOnly() {
       <ReadOnlyBanner>
         Prodej máš jen k náhledu — kasu obsluhuje jen správce a lidé s rolí „jen Prodej“.
       </ReadOnlyBanner>
-      <h1 className="page-title">Prodej</h1>
+      <PageTitle>Prodej</PageTitle>
 
       {/* Dnešní prodej — jen čísla, bez markování */}
       {openBox && openStats ? (
@@ -478,7 +479,7 @@ function Pos() {
     <div className="mx-auto max-w-3xl space-y-4 pb-16 tabular-nums md:pb-0">
       <div>
         <div className="flex items-center justify-between gap-3">
-          <h1 className="page-title">Prodej</h1>
+          <PageTitle>Prodej</PageTitle>
           {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
           <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} />
         </div>
@@ -980,7 +981,7 @@ function DayGate({
   return (
     <div className="mx-auto max-w-3xl space-y-4 tabular-nums">
       <div>
-        <h1 className="page-title">Prodej</h1>
+        <PageTitle>Prodej</PageTitle>
         <div className="mt-1">
           <AccountChip admin={admin} account={account} accountOk={accountOk} yearId={yearId} />
         </div>

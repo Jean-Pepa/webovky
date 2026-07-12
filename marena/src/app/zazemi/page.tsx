@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { roleById, ROLES } from "@/lib/roles";
@@ -493,7 +494,7 @@ export default function NastenkaPage() {
       <div className="min-w-0 space-y-5">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <h1 className="page-title">Nástěnka</h1>
+            <PageTitle>Nástěnka</PageTitle>
           </div>
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
             {open ? "Zavřít" : "+ Přidat info"}

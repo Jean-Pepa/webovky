@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { KINDS, KIND_ORDER } from "@/lib/kinds";
 import { fmtDate, todayISO } from "@/lib/format";
@@ -93,7 +94,7 @@ export default function KalendarPage() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="page-title">Kalendář</h1>
+        <PageTitle>Kalendář</PageTitle>
         {isAdmin(me) && canEditCurrentYear && missingMilestones.length > 0 && (
           <button
             className="btn-secondary px-3 py-2 text-sm"

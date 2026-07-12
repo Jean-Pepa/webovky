@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { canEditSection } from "@/lib/access";
@@ -99,7 +100,7 @@ export default function VyzdobaPage() {
         <ReadOnlyBanner>Výzdobu máš jen k náhledu — upravovat ji může jen správce a příslušná role.</ReadOnlyBanner>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="page-title">Výzdoba</h1>
+        <PageTitle>Výzdoba</PageTitle>
         {/* Přepínač (desktop) — na mobilu je dole ve svítící zlaté liště */}
         <div className="hidden gap-1.5 md:flex">
           {VYZDOBA_TABS.map((t) => (

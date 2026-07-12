@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
 import { ImageViewer } from "@/components/ImageViewer";
@@ -67,7 +68,7 @@ export default function KuchyneBarPage() {
         <ReadOnlyBanner>Kuchyni a bar máš jen k náhledu — upravovat je může jen správce a příslušná role.</ReadOnlyBanner>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="page-title">Kuchyně &amp; bar</h1>
+        <PageTitle>Kuchyně &amp; bar</PageTitle>
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex rounded-full bg-paper2 p-0.5 text-sm">
             {(["kuchyne", "bar"] as Place[]).map((p) => (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
@@ -76,7 +77,7 @@ export default function KontaktyPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="page-title">Kontakty &amp; odkazy</h1>
+          <PageTitle>Kontakty &amp; odkazy</PageTitle>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Přidat kontakt"}

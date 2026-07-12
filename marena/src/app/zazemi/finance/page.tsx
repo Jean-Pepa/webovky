@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, fmtDateTime, fmtRelative, todayISO } from "@/lib/format";
 import { posStats, posOrders, boxDayFinances, DayCard, OrderHistory, PayBreakdown } from "@/lib/pos";
@@ -362,7 +363,7 @@ export default function FinancePage() {
       </datalist>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="page-title">Finance</h1>
+          <PageTitle>Finance</PageTitle>
         </div>
         {canAdd && (
           <div className="flex flex-wrap items-center gap-2">
@@ -1768,7 +1769,7 @@ function MyExpenses({ yearId, me, items, canSubmit }: { yearId: string; me: stri
   return (
     <div className="mx-auto max-w-2xl space-y-4 tabular-nums">
       <div>
-        <h1 className="page-title">Moje výdaje</h1>
+        <PageTitle>Moje výdaje</PageTitle>
       </div>
 
       {canSubmit ? (

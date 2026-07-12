@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
@@ -122,7 +123,7 @@ export default function MerchPage() {
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="page-title">Merch</h1>
+          <PageTitle>Merch</PageTitle>
         </div>
         {/* Prodej na místě probíhá v jednotné pokladně (předvolí merch);
             zaplacený prodej se sem vrátí jako uzamčená objednávka. */}

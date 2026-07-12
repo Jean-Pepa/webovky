@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { ROLES, roleById } from "@/lib/roles";
@@ -121,7 +122,7 @@ export default function UkolyPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="page-title">Úkoly</h1>
+        <PageTitle>Úkoly</PageTitle>
         {isAdmin(me) && total > 0 && (
           <button className="btn-ghost px-3 py-1.5 text-xs text-red-600" onClick={clearAll}>
             Smazat všechny úkoly

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { canEditSection } from "@/lib/access";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
@@ -45,7 +46,7 @@ export default function PrvaciPage() {
       )}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="page-title">Prváci</h1>
+          <PageTitle>Prváci</PageTitle>
           <p className="mt-0.5 text-sm text-ink-soft">Seznam prváků, o které celá Mařena je. Zapisuje se ručně.</p>
         </div>
         {canEdit && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { isAdmin } from "@/lib/admin";
 import { sameName } from "@/lib/names";
@@ -116,7 +117,7 @@ export default function ProgramPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="page-title">Program</h1>
+          <PageTitle>Program</PageTitle>
         </div>
         {canEdit && (
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>

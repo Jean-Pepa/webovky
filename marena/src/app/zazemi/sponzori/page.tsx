@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { canEditSection } from "@/lib/access";
 import { isAdmin } from "@/lib/admin";
@@ -127,7 +128,7 @@ export default function SponzoriPage() {
       )}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="page-title">Sponzoři</h1>
+          <PageTitle>Sponzoři</PageTitle>
         </div>
         {canEdit && (
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>

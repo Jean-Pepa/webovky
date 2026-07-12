@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageTitle } from "@/components/PageTitle";
 import { ALMANACH, type Callout } from "@/lib/almanach";
 
 export const metadata: Metadata = {
@@ -15,7 +16,7 @@ export default function AlmanachPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="page-title">Almanach Mařeny</h1>
+        <PageTitle>Almanach Mařeny</PageTitle>
         <p className="text-sm text-ink-soft">
           Veškerá nasbíraná moudrost dvou ročníků v jednom dokumentu — interní manuál pro ty, kdo
           Mařenu organizují. Čti, doplňuj a předávej dál.

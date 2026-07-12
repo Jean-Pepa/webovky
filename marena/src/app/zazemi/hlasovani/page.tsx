@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
@@ -72,7 +73,7 @@ export default function HlasovaniPage() {
     <div className="mx-auto max-w-3xl space-y-5">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="page-title">Hlasování</h1>
+          <PageTitle>Hlasování</PageTitle>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Nová anketa"}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { ROLES, roleById, type Role } from "@/lib/roles";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -378,7 +379,7 @@ export default function TymPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="page-title">Tým &amp; role</h1>
+          <PageTitle>Tým &amp; role</PageTitle>
           {admin && pendingCount > 0 && (
             <span className="pending-glow inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-sm font-semibold text-white">
               ⏳ {pendingLabel}
