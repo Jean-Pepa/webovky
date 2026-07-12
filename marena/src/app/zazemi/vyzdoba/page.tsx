@@ -99,7 +99,7 @@ export default function VyzdobaPage() {
         <ReadOnlyBanner>Výzdobu máš jen k náhledu — upravovat ji může jen správce a příslušná role.</ReadOnlyBanner>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Výzdoba</h1>
+        <h1 className="page-title">Výzdoba</h1>
         {/* Přepínač (desktop) — na mobilu je dole ve svítící zlaté liště */}
         <div className="hidden gap-1.5 md:flex">
           {VYZDOBA_TABS.map((t) => (
@@ -132,7 +132,7 @@ export default function VyzdobaPage() {
       {view === "material" && (
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-[19px] font-bold">🎨 Materiál a nápady</h2>
+          <h2 className="section-title">🎨 Materiál a nápady</h2>
           {canEdit && (
             <button className="btn-primary px-3 py-1.5 text-sm" onClick={() => setOpen((v) => !v)}>
               {open ? "Zavřít" : "+ Přidat nápad"}
@@ -201,7 +201,7 @@ export default function VyzdobaPage() {
         )}
 
         {(year.decor?.length ?? 0) === 0 ? (
-          <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+          <div className="empty-state">
             Zatím žádný materiál.
           </div>
         ) : list.length === 0 && q.trim() ? (
@@ -333,7 +333,7 @@ function RulesCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
   return (
     <section className="card p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-display text-[19px] font-bold">📋 Pravidla</h2>
+        <h2 className="section-title">📋 Pravidla</h2>
         {canEdit && !edit && (
           <button className="btn-ghost px-2 py-1 text-xs" onClick={startEdit}>
             {rules ? "Upravit" : "+ Přidat"}
@@ -453,7 +453,7 @@ function PlanCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
   return (
     <section className="card p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-display text-[19px] font-bold">🗺️ Plánek zón</h2>
+        <h2 className="section-title">🗺️ Plánek zón</h2>
         {canEdit && (
           <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setManage((v) => !v)}>
             {manage ? "Hotovo" : "Upravit"}
@@ -542,7 +542,7 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-display text-[19px] font-bold">📍 Zóny</h2>
+        <h2 className="section-title">📍 Zóny</h2>
         <div className="flex items-center gap-2">
           {zones.length > 0 && (
             <span className="text-xs text-ink-soft">
@@ -577,7 +577,7 @@ function ZonesSection({ year, canEdit, isLead, me }: { year: Year; canEdit: bool
         </div>
       )}
       {zones.length === 0 ? (
-        <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
+        <div className="empty-state">
           Zatím žádné zóny.
         </div>
       ) : (
@@ -666,7 +666,7 @@ function TeamVoting({ year, canEdit, me }: { year: Year; canEdit: boolean; me: s
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-display text-[19px] font-bold">🗳️ Hlasování týmu</h2>
+        <h2 className="section-title">🗳️ Hlasování týmu</h2>
         {canEdit && (
           <button className="btn-primary px-3 py-1.5 text-sm" onClick={() => setOpen((v) => !v)}>
             {open ? "Zavřít" : "+ Nová anketa"}
@@ -711,7 +711,7 @@ function TeamVoting({ year, canEdit, me }: { year: Year; canEdit: boolean; me: s
       )}
 
       {polls.length === 0 ? (
-        <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
+        <div className="empty-state">
           Zatím žádné hlasování.
         </div>
       ) : (
@@ -1039,7 +1039,7 @@ function DecorRow({ d, yearId, canEdit, admin, zones, myZones }: { d: Decor; yea
     <li id={`decor-${d.id}`} className="card scroll-mt-24 space-y-2 p-3">
       {/* Horní řádek: stav + viditelná akce vlevo, úpravy/smazání vpravo */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS[d.status].cls}`}>
+        <span className={`badge shrink-0 ${STATUS[d.status].cls}`}>
           {STATUS[d.status].label}
           {locked ? " 🔒" : ""}
         </span>
@@ -1047,7 +1047,7 @@ function DecorRow({ d, yearId, canEdit, admin, zones, myZones }: { d: Decor; yea
         {/* Viditelná akce podle stavu: nápad → chci shánět → sehnal jsem (hotovo) */}
         {canEdit && !locked && d.status === "napad" && (
           <button
-            className="inline-flex items-center gap-1.5 rounded-full bg-gold-500 px-3.5 py-1.5 text-xs font-bold text-[#1d1d1f] shadow-sm transition hover:bg-gold-400"
+            className="btn-pill btn-pill-gold"
             onClick={startShani}
           >
             🛒 Chci shánět
@@ -1055,7 +1055,7 @@ function DecorRow({ d, yearId, canEdit, admin, zones, myZones }: { d: Decor; yea
         )}
         {canEdit && !locked && d.status === "shani" && (
           <button
-            className="inline-flex items-center gap-1.5 rounded-full bg-leaf px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-leaf/90"
+            className="btn-pill btn-pill-leaf"
             onClick={() => setAskDone(true)}
           >
             ✅ Sehnal jsem

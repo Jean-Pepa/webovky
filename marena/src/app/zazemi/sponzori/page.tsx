@@ -6,6 +6,7 @@ import { canEditSection } from "@/lib/access";
 import { isAdmin } from "@/lib/admin";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { DeleteButton } from "@/components/DeleteButton";
+import { Modal } from "@/components/Modal";
 import { SearchBox } from "@/components/SearchBox";
 import { WhoSelect } from "@/components/WhoSelect";
 import { matchesQuery } from "@/lib/search";
@@ -126,7 +127,7 @@ export default function SponzoriPage() {
       )}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Sponzoři</h1>
+          <h1 className="page-title">Sponzoři</h1>
         </div>
         {canEdit && (
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
@@ -219,11 +220,11 @@ export default function SponzoriPage() {
       )}
 
       {sponsors.length === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+        <div className="empty-state">
           Zatím žádní sponzoři.
         </div>
       ) : list.length === 0 ? (
-        <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">V tomhle filtru nikdo není.</div>
+        <div className="empty-state">V tomhle filtru nikdo není.</div>
       ) : (
         <ul className="space-y-2">
           {list.map((s) => (
@@ -355,7 +356,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
             Osloveno ✓
           </button>
         ) : (
-          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${contacted ? "bg-leaf/15 text-leaf-700" : "bg-paper2 text-ink-soft"}`}>
+          <span className={`badge ${contacted ? "badge-done" : "badge-idle"}`}>
             {contacted ? "Osloveno ✓" : "Neosloveno"}
           </span>
         )}
@@ -364,18 +365,18 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
         {canEdit && !contacted && (
           <button
             onClick={() => { setStatus("ceka"); flash(`${s.name} — osloveno`, "✉️"); }}
-            className="inline-flex items-center gap-1.5 rounded-full bg-gold-500 px-3.5 py-1.5 text-xs font-bold text-[#1d1d1f] shadow-sm transition hover:bg-gold-400"
+            className="btn-pill btn-pill-gold"
           >
             ✉️ Oslovil jsem
           </button>
         )}
 
         {/* Stav domluvy */}
-        {s.status === "ceka" && <span className="inline-flex rounded-full bg-gold-100 px-2.5 py-1 text-xs font-medium text-gold-800">⏳ čeká</span>}
+        {s.status === "ceka" && <span className="badge badge-wait">⏳ čeká</span>}
         {s.status === "potvrzeno" && (
-          <span className="inline-flex rounded-full bg-leaf/15 px-2.5 py-1 text-xs font-semibold text-leaf-700 ring-1 ring-inset ring-leaf/40">✅ potvrzeno</span>
+          <span className="badge badge-done ring-1 ring-inset ring-leaf/40">✅ potvrzeno</span>
         )}
-        {s.status === "odmitl" && <span className="inline-flex rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600">👎 odmítl</span>}
+        {s.status === "odmitl" && <span className="badge badge-reject">👎 odmítl</span>}
 
         {/* Domluva ano/ne — po oslovení; po potvrzení se schová a zamkne (mění se jen přes „Zrušeno?") */}
         {canEdit && contacted && !confirmed && (
@@ -424,32 +425,26 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
       </div>
 
       {/* „Zrušeno?" — u potvrzeného sponzora; přesune mezi odmítnuté (info zůstane) */}
-      {askCancel && (
-        <div className="fixed inset-0 z-50 grid place-items-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAskCancel(false)} aria-hidden />
-          <div className="relative w-full max-w-md rounded-xl border border-ink/10 bg-white p-6 shadow-2xl" role="dialog" aria-modal="true">
-            <h2 className="mb-4 font-display text-[20px] font-semibold tracking-tight">Opravdu zrušeno?</h2>
-            <p className="text-sm text-ink-soft">
-              Opravdu domluva se sponzorem <strong className="text-ink">{s.name}</strong> padla? Přesuneme ho mezi odmítnuté (info zůstane).
-            </p>
-            <div className="mt-4 flex items-center gap-2">
-              <button
-                className="btn-primary flex-1"
-                onClick={() => {
-                  dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { status: "odmitl" } });
-                  setAskCancel(false);
-                  flash(`${s.name} spadl mezi odmítnuté`, "👎");
-                }}
-              >
-                Ano, zrušeno
-              </button>
-              <button className="btn-ghost" onClick={() => setAskCancel(false)}>
-                Ne
-              </button>
-            </div>
-          </div>
+      <Modal open={askCancel} onClose={() => setAskCancel(false)} title="Opravdu zrušeno?">
+        <p className="text-sm text-ink-soft">
+          Opravdu domluva se sponzorem <strong className="text-ink">{s.name}</strong> padla? Přesuneme ho mezi odmítnuté (info zůstane).
+        </p>
+        <div className="mt-4 flex items-center gap-2">
+          <button
+            className="btn-primary flex-1"
+            onClick={() => {
+              dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { status: "odmitl" } });
+              setAskCancel(false);
+              flash(`${s.name} spadl mezi odmítnuté`, "👎");
+            }}
+          >
+            Ano, zrušeno
+          </button>
+          <button className="btn-ghost" onClick={() => setAskCancel(false)}>
+            Ne
+          </button>
         </div>
-      )}
+      </Modal>
     </li>
   );
 }

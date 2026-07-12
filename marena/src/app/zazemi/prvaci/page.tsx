@@ -45,7 +45,7 @@ export default function PrvaciPage() {
       )}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Prváci</h1>
+          <h1 className="page-title">Prváci</h1>
           <p className="mt-0.5 text-sm text-ink-soft">Seznam prváků, o které celá Mařena je. Zapisuje se ručně.</p>
         </div>
         {canEdit && (
@@ -79,11 +79,11 @@ export default function PrvaciPage() {
       </div>
 
       {(year.freshmen?.length ?? 0) === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+        <div className="empty-state">
           Zatím tu nikdo není.
         </div>
       ) : list.length === 0 ? (
-        <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">Nikdo neodpovídá hledání.</div>
+        <div className="empty-state">Nikdo neodpovídá hledání.</div>
       ) : (
         <ul className="card divide-y divide-black/[0.06] overflow-hidden">
           {list.map((f) => (

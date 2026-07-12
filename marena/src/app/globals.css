@@ -557,6 +557,60 @@ html.theme-anim .input {
     @apply inline-flex items-center gap-1 rounded-full bg-paper2 px-2.5 py-1 text-xs font-medium
       text-ink-soft;
   }
+
+  /* Malá akční „pilulka" pro řádkové CTA (např. „Oslovil jsem", „Chci shánět",
+     „Sehnal jsem"). Tvar je jednotný; sémantickou barvu dodá modifikátor. */
+  .btn-pill {
+    @apply inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full px-3.5 py-1.5
+      text-xs font-bold shadow-sm transition active:scale-[0.97]
+      disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-pill-gold {
+    @apply bg-gold-500 text-[#1d1d1f] hover:bg-gold-400;
+  }
+  .btn-pill-leaf {
+    @apply bg-leaf text-white hover:bg-leaf/90;
+  }
+  .btn-pill-red {
+    @apply bg-red-500 text-white hover:bg-red-600;
+  }
+
+  /* Stavový štítek. Jednotný tvar (rounded-full, px-2.5 py-1, text-xs, semibold);
+     sémantickou barvu dodá modifikátor — pro jednoznačné stavy napříč aplikací. */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+  .badge-idle {
+    @apply bg-paper2 text-ink-soft;
+  }
+  .badge-wait {
+    @apply bg-amber-100 text-amber-800;
+  }
+  .badge-done {
+    @apply bg-leaf/15 text-leaf-700;
+  }
+  .badge-reject {
+    @apply bg-red-500/10 text-red-600;
+  }
+
+  /* Jednotný nadpis sekce (h2) a prázdný stav — ať vypadají všude stejně.
+     font-display i card jsou vlastní třídy (ne utility), takže je nelze
+     @apply — vypíšeme rovnou vlastnosti. */
+  /* Hlavní nadpis stránky — velký „Apple" large title: bez verzálek, tučný,
+     mírně stažený proklad, jemně měkčí (ne úplně černá). */
+  .page-title {
+    @apply text-[30px] font-bold leading-[1.08] tracking-[-0.02em] text-ink sm:text-[34px];
+    font-family: var(--font-display);
+  }
+  .section-title {
+    @apply text-[19px] font-bold;
+    font-family: var(--font-display);
+  }
+  .empty-state {
+    @apply grid place-items-center rounded-xl border border-ink/[0.06] bg-surface p-8
+      text-center text-sm text-ink-soft;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
 }
 
 /* Nativní křížek u <input type="search"> schováme — všude používáme vlastní

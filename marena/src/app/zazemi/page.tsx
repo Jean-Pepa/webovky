@@ -493,7 +493,7 @@ export default function NastenkaPage() {
       <div className="min-w-0 space-y-5">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Nástěnka</h1>
+            <h1 className="page-title">Nástěnka</h1>
           </div>
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
             {open ? "Zavřít" : "+ Přidat info"}
@@ -1039,5 +1039,5 @@ function WidgetLinks({ openPolls, myTasks, myShifts }: { openPolls: number; myTa
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">{children}</div>;
+  return <div className="empty-state">{children}</div>;
 }

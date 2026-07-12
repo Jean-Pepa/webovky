@@ -121,7 +121,7 @@ export default function UkolyPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Úkoly</h1>
+        <h1 className="page-title">Úkoly</h1>
         {isAdmin(me) && total > 0 && (
           <button className="btn-ghost px-3 py-1.5 text-xs text-red-600" onClick={clearAll}>
             Smazat všechny úkoly
@@ -132,7 +132,7 @@ export default function UkolyPage() {
       {/* ===== MOJE ÚKOLY — nahoře, hlavní věc pro uživatele ===== */}
       <section className="card overflow-hidden ring-1 ring-gold-300">
         <div className="flex items-center justify-between gap-2 bg-gold-50 px-4 py-3">
-          <h2 className="font-display text-[19px] font-bold">🙋 Moje úkoly</h2>
+          <h2 className="section-title">🙋 Moje úkoly</h2>
           <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${myOpen.length ? "bg-red-100 text-red-700" : "bg-leaf/15 text-leaf-700"}`}>
             {myOpen.length ? `${myOpen.length} k splnění` : "vše hotovo ✅"}
           </span>
@@ -203,7 +203,7 @@ export default function UkolyPage() {
 
       {/* ===== VŠECHNY ÚKOLY (přehled celého týmu) — ukáže pár, zbytek se dorolová ===== */}
       <div className="space-y-3 pt-1">
-        <h2 className="font-display text-[19px] font-bold">
+        <h2 className="section-title">
           📋 Všechny úkoly <span className="text-sm font-normal text-ink-soft">({total})</span>
         </h2>
 
@@ -228,7 +228,7 @@ export default function UkolyPage() {
         </div>
 
         {tasks.length === 0 ? (
-          <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+          <div className="empty-state">
             {q.trim() ? "Nic neodpovídá hledání." : "Nic tu není. 🎉"}
           </div>
         ) : (

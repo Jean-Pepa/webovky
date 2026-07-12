@@ -123,7 +123,7 @@ export default function ProvozPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Provoz &amp; směny</h1>
+          <h1 className="page-title">Provoz &amp; směny</h1>
         </div>
         <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
           {open ? "Zavřít" : "+ Přidat směnu"}
@@ -191,15 +191,15 @@ export default function ProvozPage() {
       </div>
 
       {shifts.length === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">Zatím žádné směny.</div>
+        <div className="empty-state">Zatím žádné směny.</div>
       ) : view === "seznam" ? (
         groups.length === 0 ? (
-          <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">{q.trim() ? "Nic neodpovídá hledání." : "Nic tu není."}</div>
+          <div className="empty-state">{q.trim() ? "Nic neodpovídá hledání." : "Nic tu není."}</div>
         ) : (
           <div className="space-y-6">
             {groups.map(([areaName, items]) => (
               <section key={areaName}>
-                <h2 className="mb-3 flex items-center gap-2 font-display text-[20px] font-semibold">
+                <h2 className="mb-3 flex items-center gap-2 section-title">
                   <span>{areaEmoji(areaName)}</span> {areaName}
                   <span className="chip">{items.length}</span>
                 </h2>
@@ -213,12 +213,12 @@ export default function ProvozPage() {
           </div>
         )
       ) : byDay.length === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">{q.trim() ? "Nic neodpovídá hledání." : "Nic tu není."}</div>
+        <div className="empty-state">{q.trim() ? "Nic neodpovídá hledání." : "Nic tu není."}</div>
       ) : (
         <div className="space-y-5">
           {byDay.map(([day, items]) => (
             <section key={day} className="card overflow-hidden">
-              <h2 className="border-b border-ink/[0.06] bg-paper2/60 px-4 py-2 font-display text-base font-semibold">
+              <h2 className="border-b border-ink/[0.06] bg-paper2/60 px-4 py-2 section-title">
                 {day === "Bez data" ? "📌 Bez data" : `📅 ${fmtDate(day)}`}
                 <span className="ml-2 text-sm font-normal text-ink-soft">{items.length} směn</span>
               </h2>
@@ -319,7 +319,7 @@ function ShiftCard({ shift, yearId, me }: { shift: Shift; yearId: string; me: st
 
       <div className="mt-2">
         <span
-          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+          className={`badge ${
             cap === 0 ? "bg-paper2 text-ink-soft" : full ? "bg-gold-500 text-[#1d1d1f]" : "bg-leaf/12 text-leaf-700"
           }`}
         >

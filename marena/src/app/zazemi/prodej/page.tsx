@@ -118,12 +118,12 @@ function ProdejReadOnly() {
       <ReadOnlyBanner>
         Prodej máš jen k náhledu — kasu obsluhuje jen správce a lidé s rolí „jen Prodej“.
       </ReadOnlyBanner>
-      <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Prodej</h1>
+      <h1 className="page-title">Prodej</h1>
 
       {/* Dnešní prodej — jen čísla, bez markování */}
       {openBox && openStats ? (
         <section className="card p-4">
-          <h2 className="font-display text-[20px] font-semibold">🧾 Dnešní prodej</h2>
+          <h2 className="section-title">🧾 Dnešní prodej</h2>
           <p className="mt-1 font-display text-2xl font-bold tracking-tight text-leaf-700">+{fmtCZK(openStats.takings)}</p>
           <div className="mt-2">
             <PayBreakdown qr={openStats.qr} cash={openStats.cash} count={openStats.count} />
@@ -478,7 +478,7 @@ function Pos() {
     <div className="mx-auto max-w-3xl space-y-4 pb-16 tabular-nums md:pb-0">
       <div>
         <div className="flex items-center justify-between gap-3">
-          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Prodej</h1>
+          <h1 className="page-title">Prodej</h1>
           {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
           <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} />
         </div>
@@ -570,7 +570,7 @@ function Pos() {
       {/* Čekající objednávky merche — QR platba se jménem objednatele */}
       {pendingOrders.length > 0 && (
         <section className="card border-l-4 border-l-amber-400 p-4">
-          <h2 className="flex items-center gap-2 font-display text-[20px] font-semibold">
+          <h2 className="flex items-center gap-2 section-title">
             🧾 Objednávky k zaplacení
             <span className="grid h-7 min-w-7 place-items-center rounded-full bg-gold-500 px-2 font-display text-sm font-bold text-[#1d1d1f]">
               {pendingOrders.length}
@@ -616,7 +616,7 @@ function Pos() {
         g.items.length > 0 ? (
           <section key={g.kind} className="card p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-display text-[20px] font-semibold">{g.title}</h2>
+              <h2 className="section-title">{g.title}</h2>
               {gi === firstNonEmpty && (
                 <div className="flex items-center gap-1.5">
                   {/* Vyprodáno (kdokoli u kasy): ťuknutím se položka vyprodá/odblokuje — jen pro tento den */}
@@ -980,7 +980,7 @@ function DayGate({
   return (
     <div className="mx-auto max-w-3xl space-y-4 tabular-nums">
       <div>
-        <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Prodej</h1>
+        <h1 className="page-title">Prodej</h1>
         <div className="mt-1">
           <AccountChip admin={admin} account={account} accountOk={accountOk} yearId={yearId} />
         </div>
@@ -988,7 +988,7 @@ function DayGate({
 
       {/* Založení nového dne — teprve pak se prodává */}
       <section className="card border-l-4 border-l-gold-500 p-4">
-        <h2 className="font-display text-[20px] font-semibold">🌞 Založit nový den</h2>
+        <h2 className="section-title">🌞 Založit nový den</h2>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <input
             className="input w-44"

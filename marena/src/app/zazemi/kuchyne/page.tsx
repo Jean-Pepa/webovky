@@ -67,7 +67,7 @@ export default function KuchyneBarPage() {
         <ReadOnlyBanner>Kuchyni a bar máš jen k náhledu — upravovat je může jen správce a příslušná role.</ReadOnlyBanner>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Kuchyně &amp; bar</h1>
+        <h1 className="page-title">Kuchyně &amp; bar</h1>
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex rounded-full bg-paper2 p-0.5 text-sm">
             {(["kuchyne", "bar"] as Place[]).map((p) => (
@@ -161,7 +161,7 @@ function MenuSection({ place, editable, q }: { place: Place; editable: boolean; 
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-display text-[20px] font-semibold">{place === "bar" ? "🍸 Nápojový lístek" : "🍲 Menu (jídla)"}</h2>
+        <h2 className="section-title">{place === "bar" ? "🍸 Nápojový lístek" : "🍲 Menu (jídla)"}</h2>
         {editable && (
           <button className="btn-secondary px-3 py-1.5 text-sm" onClick={() => setOpen((v) => !v)}>
             {open ? "Zavřít" : place === "bar" ? "+ Přidat drink" : "+ Přidat jídlo"}
@@ -209,7 +209,7 @@ function MenuSection({ place, editable, q }: { place: Place; editable: boolean; 
         q.trim() ? (
           <p className="text-sm text-ink-soft">Nic neodpovídá hledání.</p>
         ) : (
-          <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">
+          <div className="empty-state">
             {editable ? "Zatím prázdné. Přidej položku a doplň recepturu." : "Zatím prázdné."}
           </div>
         )
@@ -378,7 +378,7 @@ function ShoppingSection({ place, editable, q }: { place: Place; editable: boole
   return (
     <section className="card space-y-3 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-display text-[20px] font-semibold">
+        <h2 className="section-title">
           🛒 Nákupní seznam{items.length > 0 && <span className="ml-2 text-sm font-normal text-ink-soft">{boughtCount}/{items.length} koupeno</span>}
         </h2>
         {editable && boughtCount > 0 && (
@@ -459,7 +459,7 @@ function FilesSection({ place, editable }: { place: Place; editable: boolean }) 
 
   return (
     <section className="space-y-3">
-      <h2 className="font-display text-[20px] font-semibold">📎 Soubory (nákupy, menu, recepty)</h2>
+      <h2 className="section-title">📎 Soubory (nákupy, menu, recepty)</h2>
       {editable ? (
         <div className="card space-y-3 p-4">
           <div className="flex flex-wrap items-end gap-3">
@@ -486,7 +486,7 @@ function FilesSection({ place, editable }: { place: Place; editable: boolean }) 
       )}
 
       {files.length === 0 ? (
-        <div className="card grid place-items-center p-8 text-center text-sm text-ink-soft">Zatím tu nejsou žádné soubory.</div>
+        <div className="empty-state">Zatím tu nejsou žádné soubory.</div>
       ) : (
         groups.map((g) => (
           <div key={g.cat} className="space-y-2">

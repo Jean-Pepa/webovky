@@ -93,7 +93,7 @@ export default function KalendarPage() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Kalendář</h1>
+        <h1 className="page-title">Kalendář</h1>
         {isAdmin(me) && canEditCurrentYear && missingMilestones.length > 0 && (
           <button
             className="btn-secondary px-3 py-2 text-sm"
@@ -112,7 +112,7 @@ export default function KalendarPage() {
         <div className="card p-4">
           <div className="mb-3 flex items-center justify-between">
             <button className="btn-ghost" onClick={() => shift(-1)} aria-label="Předchozí měsíc">←</button>
-            <h2 className="font-display text-[20px] font-semibold">
+            <h2 className="section-title">
               {MONTH_NAMES[vm]} {vy}
             </h2>
             <div className="flex items-center gap-1">
@@ -184,7 +184,7 @@ export default function KalendarPage() {
         {/* DETAIL DNE */}
         <div className="space-y-4">
           <div className="card p-4">
-            <h2 className="font-display text-base font-semibold">{fmtDate(selected)}</h2>
+            <h2 className="section-title">{fmtDate(selected)}</h2>
             {selectedEvents.length === 0 ? (
               <p className="mt-2 text-sm text-ink-soft">Žádné události. Přidej níže.</p>
             ) : (

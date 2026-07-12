@@ -362,7 +362,7 @@ export default function FinancePage() {
       </datalist>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Finance</h1>
+          <h1 className="page-title">Finance</h1>
         </div>
         {canAdd && (
           <div className="flex flex-wrap items-center gap-2">
@@ -490,7 +490,7 @@ export default function FinancePage() {
       {tab === "kasy" &&
       ((year.cashboxes?.length ?? 0) > 0 || canAdd) && (
         <section className="card p-4">
-          <h2 className="mb-1 font-display text-[20px] font-semibold">🧰 Denní kasy</h2>
+          <h2 className="mb-1 section-title">🧰 Denní kasy</h2>
           {(() => {
             const boxes = [...(year.cashboxes ?? [])]
               .filter((c) => (q.trim() ? normName(`${c.label ?? ""} ${fmtDate(c.openedAt)}`).includes(normName(q)) : true))
@@ -526,7 +526,7 @@ export default function FinancePage() {
       {tab === "vyber" &&
       (contributions.length > 0 || canAdd || vyberOnly) && (
         <section id="vyber" className="card scroll-mt-20 p-4">
-          <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
+          <h2 className="mb-1 flex flex-wrap items-center gap-2 section-title">
             💰 Výběr (vklady)
             {vyber.returned > 0 && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-sm">
@@ -658,7 +658,7 @@ export default function FinancePage() {
             {/* Nákupy zboží a ostatní (neprodejní položky kategorie merch) */}
             {merchExtras.length > 0 && (
               <section className="card p-4">
-                <h2 className="mb-2 font-display text-[20px] font-semibold">📦 Nákupy a ostatní</h2>
+                <h2 className="mb-2 section-title">📦 Nákupy a ostatní</h2>
                 <Collapsible peekClass="max-h-[220px]" expandable={merchExtras.length > 3} total={merchExtras.length}>
                   <div className="space-y-2">
                     {merchExtras.map((f) => (
@@ -678,7 +678,7 @@ export default function FinancePage() {
             )}
           </div>
         ) : (
-          <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+          <div className="empty-state">
             Zatím žádný merch. Prodeje se sem zapíšou z Prodeje, nákupy zboží přidáš ve „Všechny finance“ (kategorie merch).
           </div>
         )
@@ -743,11 +743,11 @@ export default function FinancePage() {
       )}
 
       {/* Seznam položek (výdaje, vklady…) */}
-      <h2 className="border-b-2 border-gold-600/70 pb-1.5 font-display text-lg font-semibold tracking-tight">Položky</h2>
+      <h2 className="border-b-2 border-gold-600/70 pb-1.5 section-title tracking-tight">Položky</h2>
 
       {/* Tabulka */}
       {rows.length === 0 ? (
-        <div className="card grid place-items-center p-10 text-center text-sm text-ink-soft">
+        <div className="empty-state">
           {q.trim() || filter !== "vse" ? "Nic neodpovídá filtru ani hledání." : "Zatím žádné položky."}
         </div>
       ) : (
@@ -788,7 +788,7 @@ export default function FinancePage() {
         {/* Souhrn po kategoriích */}
         {byCategory.length > 0 && (
           <div className="card p-5">
-            <h2 className="mb-3 font-display text-base font-semibold">Souhrn po kategoriích</h2>
+            <h2 className="mb-3 section-title">Souhrn po kategoriích</h2>
             <ul className="divide-y divide-black/[0.06]">
               {byCategory.map(([cat, v]) => (
                 <li key={cat} className="flex items-center gap-3 py-2 text-sm">
@@ -806,7 +806,7 @@ export default function FinancePage() {
         {/* Proplácení — kdo zaplatil a kolik mu vrátit */}
         {byPerson.length > 0 && (
           <div className="card p-5">
-            <h2 className="mb-1 flex flex-wrap items-center gap-2 font-display text-base font-semibold">
+            <h2 className="mb-1 flex flex-wrap items-center gap-2 section-title">
               Proplácení po lidech
               {totalOwed > 0 && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-gold-600/10 px-2.5 py-0.5 text-sm">
@@ -975,7 +975,7 @@ function FinanceCard({ item, yearId, canAdd, canEdit }: { item: FinanceItem; yea
             {item.paid ? "Zaplaceno" : "Čeká"}
           </button>
         ) : (
-          <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${item.paid ? "bg-leaf/12 text-leaf-700" : "bg-gold-500 text-[#1d1d1f]"}`}>
+          <span className={`badge ${item.paid ? "bg-leaf/12 text-leaf-700" : "bg-gold-500 text-[#1d1d1f]"}`}>
             {item.paid ? "Zaplaceno" : "Čeká"}
           </span>
         )}
@@ -1044,7 +1044,7 @@ function FinanceRow({ item, yearId, canAdd, canEdit }: { item: FinanceItem; year
             {item.paid ? "Zaplaceno" : "Čeká"}
           </button>
         ) : (
-          <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${item.paid ? "bg-leaf/12 text-leaf-700" : "bg-gold-500 text-[#1d1d1f]"}`}>
+          <span className={`badge ${item.paid ? "bg-leaf/12 text-leaf-700" : "bg-gold-500 text-[#1d1d1f]"}`}>
             {item.paid ? "Zaplaceno" : "Čeká"}
           </span>
         )}
@@ -1240,19 +1240,19 @@ function ContributionRow({ c, yearId, canEdit, onEdit }: { c: Contribution; year
       {/* Stavový pruh + kdy naposledy zaplatil */}
       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
         {c.returned ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-ink/[0.06] px-2.5 py-1 text-xs font-semibold text-ink-soft">
+          <span className="badge bg-ink/[0.06] text-ink-soft">
             🔒 Vráceno — uzamčeno
           </span>
         ) : nothingYet ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
+          <span className="badge bg-red-100 text-red-700">
             🔴 Nezaplaceno
           </span>
         ) : partial ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+          <span className="badge bg-amber-100 text-amber-800">
             ⏳ Splátka — zbývá {fmtCZK(owes)}
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 rounded-full bg-leaf/15 px-2.5 py-1 text-xs font-semibold text-leaf-700">
+          <span className="badge bg-leaf/15 text-leaf-700">
             ✓ Zaplaceno
           </span>
         )}
@@ -1610,7 +1610,7 @@ function SalesByDay({ days, title, q, canDelete, yearId }: { days: SaleDay[]; ti
   const sum = days.reduce((s, d) => s + d.total, 0);
   return (
     <section className="card p-4">
-      <h2 className="flex flex-wrap items-center gap-2 font-display text-[20px] font-semibold">
+      <h2 className="flex flex-wrap items-center gap-2 section-title">
         {title}
         <span className="chip">{count}×</span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf/12 px-2.5 py-0.5 text-sm">
@@ -1768,12 +1768,12 @@ function MyExpenses({ yearId, me, items, canSubmit }: { yearId: string; me: stri
   return (
     <div className="mx-auto max-w-2xl space-y-4 tabular-nums">
       <div>
-        <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Moje výdaje</h1>
+        <h1 className="page-title">Moje výdaje</h1>
       </div>
 
       {canSubmit ? (
         <section className="card space-y-2 p-4">
-          <h2 className="font-display text-[20px] font-semibold">💸 Zapsat výdaj</h2>
+          <h2 className="section-title">💸 Zapsat výdaj</h2>
           <input className="input w-full" placeholder="Za co? (např. Kelímky Makro)" value={label} onChange={(e) => setLabel(e.target.value)} />
           <div className="flex flex-wrap gap-2">
             <input className="input w-32" inputMode="numeric" placeholder="Kč" value={amount} onChange={(e) => setAmount(e.target.value)} />
@@ -1791,9 +1791,9 @@ function MyExpenses({ yearId, me, items, canSubmit }: { yearId: string; me: stri
 
       <section className="card p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-[20px] font-semibold">Moje položky</h2>
+          <h2 className="section-title">Moje položky</h2>
           {owed > 0 && (
-            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+            <span className="badge bg-amber-100 text-amber-800">
               čeká na proplacení {fmtCZK(owed)}
             </span>
           )}

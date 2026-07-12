@@ -346,7 +346,7 @@ export default function TymPage() {
               ) : r.id === "hlavni" && !admin ? (
                 <span className="text-xs text-ink-soft">🔒 Tuto funkci přiděluje jen správce (Mařena).</span>
               ) : (myMember?.roleRequests ?? []).includes(r.id) ? (
-                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">⏳ Žádost čeká na správce</span>
+                <span className="badge bg-amber-100 text-amber-800">⏳ Žádost čeká na správce</span>
               ) : (
                 <button
                   className={taken ? "btn-secondary" : "btn-primary"}
@@ -378,7 +378,7 @@ export default function TymPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-display text-[28px] font-bold uppercase tracking-tight">Tým &amp; role</h1>
+          <h1 className="page-title">Tým &amp; role</h1>
           {admin && pendingCount > 0 && (
             <span className="pending-glow inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-sm font-semibold text-white">
               ⏳ {pendingLabel}
@@ -394,7 +394,7 @@ export default function TymPage() {
           {/* Já v týmu */}
           <section className="card p-5">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-[20px] font-semibold">Já v týmu</h2>
+              <h2 className="section-title">Já v týmu</h2>
               {editable && (
                 <button className="btn-secondary" onClick={() => setModal({})}>
                   {myMember ? "Upravit profil" : "Vyplnit profil"}
@@ -553,7 +553,7 @@ export default function TymPage() {
           {/* Moje funkce nahoře */}
           {mineRoles.length > 0 && (
             <section className="space-y-3">
-              <h2 className="font-display text-[20px] font-semibold">Moje funkce</h2>
+              <h2 className="section-title">Moje funkce</h2>
               <div className="grid items-start gap-3 md:grid-cols-2">
                 {mineRoles.map((r) => (
                   <RoleCard key={r.id} r={r} defaultOpen />
@@ -564,7 +564,7 @@ export default function TymPage() {
 
           {/* Ostatní posty */}
           <section className="space-y-3">
-            <h2 className="font-display text-[20px] font-semibold">{mineRoles.length > 0 ? "Další posty" : "Posty a co obnášejí"}</h2>
+            <h2 className="section-title">{mineRoles.length > 0 ? "Další posty" : "Posty a co obnášejí"}</h2>
             <div className="grid items-start gap-3 md:grid-cols-2">
               {otherRoles.map((r) => (
                 <RoleCard key={`${r.id}-${q.length > 0}`} r={r} defaultOpen={q.length > 0} />
@@ -588,7 +588,7 @@ export default function TymPage() {
 
           {/* Lidi, kteří ještě nemají žádnou roli. */}
           <section className="card p-4">
-            <h2 className="mb-3 flex items-center gap-2 font-display text-[20px] font-semibold">
+            <h2 className="mb-3 flex items-center gap-2 section-title">
               <Icon name="users" className="h-5 w-5 text-gold-600" /> Bez role ({roleless.length})
             </h2>
             {roleless.length === 0 ? (
