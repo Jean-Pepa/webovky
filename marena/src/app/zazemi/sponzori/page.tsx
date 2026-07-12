@@ -199,7 +199,7 @@ export default function SponzoriPage() {
 
       {sponsors.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm text-ink-soft">
+          <p className="text-sm text-ink-soft tabular-nums">
             {sponsors.length} sponzorů · <span className="font-semibold text-leaf-700">{counts.potvrzeno} potvrzeno</span> ·{" "}
             <span className="font-semibold text-red-600">{counts.odmitl} odmítl</span>
           </p>
@@ -212,7 +212,7 @@ export default function SponzoriPage() {
                   onClick={() => setFilter(f.id)}
                   className={`rounded-full px-3 py-1 text-xs font-medium transition ${filter === f.id ? "bg-ink text-white" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
                 >
-                  {f.label} <span className="opacity-70">{n}</span>
+                  {f.label} <span className="opacity-70 tabular-nums">{n}</span>
                 </button>
               );
             })}
@@ -227,7 +227,7 @@ export default function SponzoriPage() {
       ) : list.length === 0 ? (
         <div className="empty-state">V tomhle filtru nikdo není.</div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="card divide-y divide-ink/10 overflow-hidden">
           {list.map((s) => (
             <SponsorRow key={s.id} s={s} yearId={year.id} canEdit={canEdit} />
           ))}
@@ -315,7 +315,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
   const setStatus = (status: SponsorStatus) => canEdit && dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { status } });
 
   return (
-    <li className={`card p-3 ${s.status === "potvrzeno" ? "bg-leaf/[0.05]" : s.status === "odmitl" ? "bg-red-500/[0.04]" : ""}`}>
+    <li className={`p-4 ${s.status === "potvrzeno" ? "bg-leaf/[0.05]" : s.status === "odmitl" ? "bg-red-500/[0.04]" : ""}`}>
       {/* Jméno + odznaky + odkaz */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <p className="break-words font-medium">{s.name}</p>

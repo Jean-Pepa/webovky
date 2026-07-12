@@ -23,7 +23,6 @@ const CAT_META: Record<string, string> = {
   Ostatní: "📍",
 };
 const CAT_ORDER = Object.keys(CAT_META);
-const catEmoji = (c: string) => CAT_META[c] ?? "📍";
 
 // Přidávat a upravovat program smí jen tyto role (+ správce). Ostatní jen čtou.
 const PROGRAM_EDIT_ROLES = ["kapelnik", "program"];
@@ -153,9 +152,9 @@ export default function ProgramPage() {
         <div className="space-y-6">
           {groups.map(([cat, items]) => (
             <section key={cat}>
-              <h2 className="mb-3 flex items-center gap-2 section-title">
-                <span>{catEmoji(cat)}</span> {cat}
-                <span className="chip">{items.length}</span>
+              <h2 className="mb-3 flex items-center gap-2 eyebrow">
+                {cat}
+                <span className="chip tabular-nums">{items.length}</span>
               </h2>
               <div className="card overflow-hidden">
                 {/* Mobil: karty */}
@@ -415,7 +414,7 @@ function InviteCard({ invite, yearId, index, canEdit }: { invite: Invite; yearId
   return (
     <div className={`p-3 ${inviteBg(invite)}`}>
       <div className="flex items-start gap-2">
-        <span className="chip shrink-0">{index}</span>
+        <span className="chip shrink-0 tabular-nums">{index}</span>
         <div className="min-w-0 flex-1">
           <span className="font-medium">{invite.name}</span>
           {invite.link && (
@@ -462,7 +461,7 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
   if (canEdit && edit) {
     return (
       <tr className="border-b border-ink/[0.06] bg-paper2/40 align-top">
-        <td className="px-3 py-2 text-ink-soft">{index}</td>
+        <td className="px-3 py-2 text-ink-soft tabular-nums">{index}</td>
         <td className="px-3 py-2">
           <input className="input mb-1" value={name} onChange={(e) => setName(e.target.value)} placeholder="Jméno" />
           <input className="input" value={link} onChange={(e) => setLink(e.target.value)} placeholder="Odkaz" />
@@ -488,7 +487,7 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
 
   return (
     <tr className={`border-b border-ink/[0.06] transition-colors ${inviteBg(invite) || "hover:bg-paper2/40"}`}>
-      <td className="px-3 py-3 font-medium text-ink-soft">{index}</td>
+      <td className="px-3 py-3 font-medium text-ink-soft tabular-nums">{index}</td>
       <td className="px-3 py-3">
         <span className="font-medium">{invite.name}</span>
         {invite.link && (
@@ -511,7 +510,7 @@ function InviteRow({ invite, yearId, index, canEdit }: { invite: Invite; yearId:
         <InterestControl invite={invite} />
       </td>
       <td className="px-3 py-3 text-ink-soft">{invite.availability || "—"}</td>
-      <td className="px-3 py-3 text-ink-soft">{invite.price || "—"}</td>
+      <td className="px-3 py-3 text-ink-soft tabular-nums">{invite.price || "—"}</td>
       <td className="px-3 py-3">
         {canEdit ? <ConfirmButtons invite={invite} yearId={yearId} canEdit={canEdit} /> : <span className="text-xs text-ink-soft/50">—</span>}
       </td>

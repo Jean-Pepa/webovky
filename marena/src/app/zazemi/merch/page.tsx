@@ -115,7 +115,7 @@ export default function MerchPage() {
     }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 tabular-nums">
       {/* Upozornění „jen náhled" úplně nahoře, červeně (uzamčený ročník řeší
           globální proužek v layoutu). */}
       {canEditCurrentYear && !canManage && (
@@ -136,7 +136,7 @@ export default function MerchPage() {
 
       {/* Nabídka (fotky merche) */}
       <section className="space-y-3">
-        <h2 className="section-title">Nabídka</h2>
+        <h2 className="eyebrow">Nabídka</h2>
         {canManage && <AddProduct yearId={year.id} />}
         {products.length === 0 ? (
           <div className="empty-state">
@@ -154,7 +154,7 @@ export default function MerchPage() {
       {/* Objednávky + QR */}
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         <section className="space-y-3">
-          <h2 className="flex flex-wrap items-center gap-2 section-title">
+          <h2 className="flex flex-wrap items-center gap-2 eyebrow">
             Objednávky
             <span className="grid h-8 min-w-8 place-items-center rounded-full bg-gold-500 px-2.5 font-display text-base font-bold text-[#1d1d1f]">
               {orders.length}
@@ -168,7 +168,7 @@ export default function MerchPage() {
               Zatím žádné objednávky. Lidi objednávají přes QR kód vedle.
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="card divide-y divide-ink/10 overflow-hidden">
               {orders.map((o) => (
                 <OrderRow key={o.id} order={o} yearId={year.id} canManage={canManage} canDelete={canDeleteOrders} canUnlock={canDeleteOrders} total={orderTotal(o, products)} account={year.paymentAccount} />
               ))}
@@ -179,7 +179,7 @@ export default function MerchPage() {
         <aside className="space-y-4">
           {/* Souhrn / propočty */}
           <div className="card p-4">
-            <h2 className="mb-2 section-title">Souhrn</h2>
+            <h2 className="mb-2 eyebrow">Souhrn</h2>
             <dl className="space-y-1.5 text-sm">
               <div className="flex justify-between gap-2">
                 <dt className="text-ink-soft">Objednávek</dt>
@@ -572,7 +572,7 @@ function OrderRow({
     .join(", ");
 
   return (
-    <div className={`card px-3 py-2 ${order.done ? "bg-leaf/[0.06]" : ""}`}>
+    <div className={`px-4 py-3 ${order.done ? "bg-leaf/[0.06]" : ""}`}>
       {/* Řádek 1: jméno · telefon · e-mail · datum a čas · stav · smazat */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className="font-semibold">{order.name}</span>
@@ -719,7 +719,7 @@ function QrCard({ yearId }: { yearId: string }) {
 
   return (
     <div className="card space-y-3 p-4 text-center">
-      <h2 className="section-title">QR k objednání</h2>
+      <h2 className="eyebrow">QR k objednání</h2>
       <p className="text-xs text-ink-soft">Naskenuj nebo sdílej odkaz — kdokoli si přes něj objedná z nabídky.</p>
       <div className="grid place-items-center">
         {qr ? (
