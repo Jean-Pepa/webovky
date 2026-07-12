@@ -320,6 +320,17 @@ export interface MerchOrder {
   createdAt: string;
 }
 
+// Oznámení „přes obrazovku" — správce napíše zprávu a vybere komu (všem / rolím
+// / konkrétním lidem). Vybraným hned vyskočí okno přes celou obrazovku, které
+// musí odkliknout (potvrzení se pamatuje u každého v prohlížeči).
+export interface Announcement {
+  id: string;
+  text: string; // zpráva / informace
+  audience: { all?: boolean; roles?: string[]; people?: string[] }; // komu se zobrazí
+  createdBy: string; // kdo poslal (správce)
+  createdAt: string;
+}
+
 export interface Year {
   id: string; // např. "2025"
   label: string; // "Mařena 2025"
@@ -353,6 +364,7 @@ export interface Year {
   kitchen?: KitchenFile[]; // kuchyně — nahrané fotky/soubory (nákupy, menu…)
   merch?: MerchProduct[]; // merch — nabídka produktů (fotky)
   merchOrders?: MerchOrder[]; // merch — objednávky z veřejné stránky (QR)
+  announcements?: Announcement[]; // oznámení „přes obrazovku" pro vybrané lidi
   createdAt: string;
 }
 

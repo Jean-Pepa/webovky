@@ -63,6 +63,8 @@ export type Action =
   | { type: "updatePost"; yearId: string; postId: string; editedBy: string; patch: { title?: string; body?: string; roleId?: string | null; photoIds?: string[]; pollId?: string } }
   | { type: "togglePin"; yearId: string; postId: string }
   | { type: "removePost"; yearId: string; postId: string }
+  | { type: "addAnnouncement"; yearId: string; text: string; audience: { all?: boolean; roles?: string[]; people?: string[] }; createdBy: string }
+  | { type: "removeAnnouncement"; yearId: string; announcementId: string }
   | { type: "addPoll"; yearId: string; author: string; question: string; options: string[]; multi?: boolean; id?: string; closesAt?: string; tag?: string }
   | { type: "vote"; yearId: string; pollId: string; optionId: string; voter: string }
   | { type: "removeVoter"; yearId: string; pollId: string; optionId: string; voter: string }
@@ -514,6 +516,27 @@ export function applyAction(db: DB, a: Action): DB {
         ...y,
         posts: y.posts.filter((p) => p.id !== a.postId),
         tasks: y.tasks.filter((t) => t.fromPostId !== a.postId),
+      }));
+
+    case "addAnnouncement": {
+      const aud = a.audience || {};
+      const audience = {
+        all: !!aud.all,
+        roles: aud.all ? [] : aud.roles ?? [],
+        people: aud.all ? [] : aud.people ?? [],
+      };
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        announcements: [
+          { id: uid("an_"), text: a.text.trim(), audience, createdBy: a.createdBy.trim() || "Mařena", createdAt: now() },
+          ...(y.announcements ?? []),
+        ],
+      }));
+    }
+    case "removeAnnouncement":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        announcements: (y.announcements ?? []).filter((x) => x.id !== a.announcementId),
       }));
 
     case "addPoll":
