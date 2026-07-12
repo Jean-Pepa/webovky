@@ -124,7 +124,7 @@ function ProdejReadOnly() {
       {/* Dnešní prodej — jen čísla, bez markování */}
       {openBox && openStats ? (
         <section className="card p-4">
-          <h2 className="section-title">🧾 Dnešní prodej</h2>
+          <h2 className="eyebrow">Dnešní prodej</h2>
           <p className="mt-1 font-display text-2xl font-bold tracking-tight text-leaf-700">+{fmtCZK(openStats.takings)}</p>
           <div className="mt-2">
             <PayBreakdown qr={openStats.qr} cash={openStats.cash} count={openStats.count} />
@@ -225,12 +225,12 @@ function Pos() {
   const grids: { kind: Exclude<Kind, "custom">; title: string; items: { id: string; name: string; price: number }[] }[] = [
     {
       kind: "merch" as const,
-      title: "🛍️ Merch",
+      title: "Merch",
       items: (year.merch ?? []).filter((p) => p.price != null && p.price > 0).map((p) => ({ id: p.id, name: p.name, price: p.price! })).sort(bySold),
     },
     {
       kind: "bar" as const,
-      title: "🍸 Pití",
+      title: "Pití",
       items: (year.bar ?? [])
         .filter((d) => (d.place ?? "bar") === "bar" && d.price != null && d.price > 0)
         .map((d) => ({ id: d.id, name: d.name, price: d.price! }))
@@ -238,7 +238,7 @@ function Pos() {
     },
     {
       kind: "kuchyne" as const,
-      title: "🍳 Jídlo",
+      title: "Jídlo",
       items: (year.bar ?? [])
         .filter((d) => (d.place ?? "bar") === "kuchyne" && d.price != null && d.price > 0)
         .map((d) => ({ id: d.id, name: d.name, price: d.price! }))
@@ -571,8 +571,8 @@ function Pos() {
       {/* Čekající objednávky merche — QR platba se jménem objednatele */}
       {pendingOrders.length > 0 && (
         <section className="card border-l-4 border-l-amber-400 p-4">
-          <h2 className="flex items-center gap-2 section-title">
-            🧾 Objednávky k zaplacení
+          <h2 className="flex items-center gap-2">
+            <span className="eyebrow">Objednávky k zaplacení</span>
             <span className="grid h-7 min-w-7 place-items-center rounded-full bg-gold-500 px-2 font-display text-sm font-bold text-[#1d1d1f]">
               {pendingOrders.length}
             </span>
@@ -617,7 +617,7 @@ function Pos() {
         g.items.length > 0 ? (
           <section key={g.kind} className="card p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="section-title">{g.title}</h2>
+              <h2 className="eyebrow">{g.title}</h2>
               {gi === firstNonEmpty && (
                 <div className="flex items-center gap-1.5">
                   {/* Vyprodáno (kdokoli u kasy): ťuknutím se položka vyprodá/odblokuje — jen pro tento den */}
@@ -793,7 +793,7 @@ function Pos() {
       <section className="card p-4">
         {posOrders(dayFinances).length === 0 ? (
           <>
-            <h3 className="font-display text-[20px] font-semibold">🧾 Objednávky dne</h3>
+            <h3 className="eyebrow">Objednávky dne</h3>
             <p className="mt-1 text-sm text-ink-soft">Zatím žádná objednávka — první prodej se tu hned ukáže.</p>
           </>
         ) : (
@@ -894,7 +894,7 @@ function CashModal({ amount, busy, onConfirm, onClose }: { amount: number; busy:
 
   return (
     <Modal open onClose={onClose} title="Platba hotově">
-      <div className="space-y-4">
+      <div className="space-y-4 tabular-nums">
         <p className="text-center font-display text-3xl font-bold tracking-tight">{fmtCZK(amount)}</p>
         <div>
           <label className="label">Kolik dal zákazník? (Kč)</label>
@@ -989,7 +989,7 @@ function DayGate({
 
       {/* Založení nového dne — teprve pak se prodává */}
       <section className="card border-l-4 border-l-gold-500 p-4">
-        <h2 className="section-title">🌞 Založit nový den</h2>
+        <h2 className="eyebrow">Založit nový den</h2>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <input
             className="input w-44"
@@ -1086,7 +1086,7 @@ function KasaControl({ year, cashMarked }: { year: { id: string; cashboxes: Cash
 
       <Modal open={modal} onClose={() => setModal(false)} title={openBox ? "Kasa — uzavření" : "Kasa — otevření"}>
         {openBox ? (
-          <div className="space-y-3">
+          <div className="space-y-3 tabular-nums">
             <p className="text-sm text-ink-soft">
               Otevřena {fmtDateTime(openBox.openedAt)} · vklad <strong className="text-ink">{fmtCZK(openBox.opening)}</strong>
             </p>

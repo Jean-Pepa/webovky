@@ -92,7 +92,7 @@ export default function KalendarPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 tabular-nums">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PageTitle>Kalendář</PageTitle>
         {isAdmin(me) && canEditCurrentYear && missingMilestones.length > 0 && (
@@ -113,7 +113,7 @@ export default function KalendarPage() {
         <div className="card p-4">
           <div className="mb-3 flex items-center justify-between">
             <button className="btn-ghost" onClick={() => shift(-1)} aria-label="Předchozí měsíc">←</button>
-            <h2 className="section-title">
+            <h2 className="eyebrow">
               {MONTH_NAMES[vm]} {vy}
             </h2>
             <div className="flex items-center gap-1">
@@ -185,7 +185,7 @@ export default function KalendarPage() {
         {/* DETAIL DNE */}
         <div className="space-y-4">
           <div className="card p-4">
-            <h2 className="section-title">{fmtDate(selected)}</h2>
+            <h2 className="eyebrow">{fmtDate(selected)}</h2>
             {selectedEvents.length === 0 ? (
               <p className="mt-2 text-sm text-ink-soft">Žádné události. Přidej níže.</p>
             ) : (
@@ -305,7 +305,7 @@ function AddEvent({ date, yearId }: { date: string; yearId: string }) {
 
   return (
     <div className="card space-y-2 p-4">
-      <h3 className="font-display text-base font-semibold">+ Přidat událost</h3>
+      <h3 className="eyebrow">+ Přidat událost</h3>
       <input className="input" placeholder="Co se děje?" value={title} onChange={(e) => setTitle(e.target.value)} />
       <div className="grid grid-cols-2 gap-2">
         <div>
