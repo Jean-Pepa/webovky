@@ -162,7 +162,7 @@ function MenuSection({ place, editable, q }: { place: Place; editable: boolean; 
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="section-title">{place === "bar" ? "🍸 Nápojový lístek" : "🍲 Menu (jídla)"}</h2>
+        <h2 className="eyebrow">{place === "bar" ? "Nápojový lístek" : "Menu (jídla)"}</h2>
         {editable && (
           <button className="btn-secondary px-3 py-1.5 text-sm" onClick={() => setOpen((v) => !v)}>
             {open ? "Zavřít" : place === "bar" ? "+ Přidat drink" : "+ Přidat jídlo"}
@@ -217,7 +217,7 @@ function MenuSection({ place, editable, q }: { place: Place; editable: boolean; 
       ) : (
         groups.map((g) => (
           <div key={g.group} className="space-y-2">
-            <h3 className="font-display text-base font-semibold">{g.group}</h3>
+            <h3 className="eyebrow">{g.group}</h3>
             <div className="grid gap-3 md:grid-cols-2">
               {g.list.map((d) => (
                 <DrinkCard key={d.id} d={d} place={place} yearId={year.id} editable={editable} />
@@ -267,7 +267,7 @@ function DrinkCard({ d, place, yearId, editable }: { d: Drink; place: Place; yea
         </ul>
       )}
       {d.note && <p className="mt-1 text-xs text-ink-soft">{d.note}</p>}
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-ink/[0.06] pt-2 text-sm">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-ink/[0.06] pt-2 text-sm tabular-nums">
         <span className="text-ink-soft">náklad <strong className="text-ink">{fmtCZK(cost)}</strong></span>
         {showPrice && <span className="text-ink-soft">prodej <strong className="text-ink">{d.price != null ? fmtCZK(d.price) : "—"}</strong></span>}
         {showPrice && margin != null && (
@@ -333,7 +333,7 @@ function DrinkEdit({ d, place, yearId, onClose }: { d: Drink; place: Place; year
           ))}
         </div>
         <button className="btn-secondary mt-2 px-3 py-1.5 text-xs" onClick={() => setIngs((arr) => [...arr, { name: "", cost: 0 }])}>+ Surovina</button>
-        <p className="mt-1 text-xs text-ink-soft">Náklad celkem: <strong className="text-ink">{fmtCZK(cost)}</strong></p>
+        <p className="mt-1 text-xs text-ink-soft">Náklad celkem: <strong className="text-ink tabular-nums">{fmtCZK(cost)}</strong></p>
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         {showPrice && (
@@ -379,8 +379,8 @@ function ShoppingSection({ place, editable, q }: { place: Place; editable: boole
   return (
     <section className="card space-y-3 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="section-title">
-          🛒 Nákupní seznam{items.length > 0 && <span className="ml-2 text-sm font-normal text-ink-soft">{boughtCount}/{items.length} koupeno</span>}
+        <h2 className="eyebrow">
+          Nákupní seznam{items.length > 0 && <span className="ml-2 text-sm font-normal tabular-nums text-ink-soft">{boughtCount}/{items.length} koupeno</span>}
         </h2>
         {editable && boughtCount > 0 && (
           <button className="btn-ghost px-3 py-1.5 text-xs" onClick={() => dispatch({ type: "clearBoughtShopping", yearId: year.id, place })}>
@@ -460,7 +460,7 @@ function FilesSection({ place, editable }: { place: Place; editable: boolean }) 
 
   return (
     <section className="space-y-3">
-      <h2 className="section-title">📎 Soubory (nákupy, menu, recepty)</h2>
+      <h2 className="eyebrow">Soubory (nákupy, menu, recepty)</h2>
       {editable ? (
         <div className="card space-y-3 p-4">
           <div className="flex flex-wrap items-end gap-3">
@@ -491,7 +491,7 @@ function FilesSection({ place, editable }: { place: Place; editable: boolean }) 
       ) : (
         groups.map((g) => (
           <div key={g.cat} className="space-y-2">
-            <h3 className="font-display text-base font-semibold">{g.cat} <span className="text-sm font-normal text-ink-soft">({g.items.length})</span></h3>
+            <h3 className="eyebrow">{g.cat} <span className="text-sm font-normal tabular-nums text-ink-soft">({g.items.length})</span></h3>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {g.items.map((item) => (<KitchenCard key={item.id} item={item} yearId={year.id} editable={editable} />))}
             </div>
