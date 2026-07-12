@@ -618,7 +618,7 @@ export default function FinancePage() {
                     key={f}
                     onClick={() => setCtFilter(f)}
                     className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                      ctFilter === f ? "bg-ink text-white" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"
+                      ctFilter === f ? "bg-ink text-surface" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"
                     }`}
                   >
                     {l} <span className={ctFilter === f ? "opacity-80" : "opacity-60"}>{n}</span>
@@ -699,7 +699,7 @@ export default function FinancePage() {
             key={f}
             onClick={() => setFilter(f)}
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              filter === f ? "bg-ink text-white" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"
+              filter === f ? "bg-ink text-surface" : "bg-white text-ink-soft ring-1 ring-ink/10 hover:bg-paper2"
             }`}
           >
             {l}

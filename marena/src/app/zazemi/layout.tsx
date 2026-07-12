@@ -226,19 +226,19 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
       <header className="sticky top-0 z-30 border-b border-ink/10 bg-paper/85 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-x-4 gap-y-2 px-4 py-3">
           <div className="flex items-baseline gap-2">
-            {/* Zlatý „Las Vegas" nápis jako na homepage — bez tmavé cedulky, sytý zlatý přechod je čitelný i na světlém pozadí zázemí. */}
+            {/* Černobílé logo v zaobleném obdélníku — bílá výplň, černý rámeček, černý text (bez zlaté). */}
             <Link
               href="/zazemi"
               aria-label="Mařena — zázemí"
-              className="marena-header-gold font-display text-2xl font-extrabold uppercase tracking-[0.05em] sm:text-3xl"
+              className="inline-flex items-baseline gap-1.5 rounded-2xl border-2 border-[#1d1d1f] bg-[#fff] px-2.5 py-1 sm:gap-2 sm:px-3.5"
             >
-              MAŘENA
+              <span className="font-display text-xl font-extrabold uppercase tracking-[0.04em] text-[#1d1d1f] sm:text-2xl">MAŘENA</span>
+              {currentYear && (
+                <span className="font-display text-xl font-bold tracking-tight text-[#1d1d1f] sm:text-2xl">
+                  {currentYear.label.match(/\d{4}/)?.[0] ?? currentYear.id}
+                </span>
+              )}
             </Link>
-            {currentYear && (
-              <span className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-                {currentYear.label.match(/\d{4}/)?.[0] ?? currentYear.id}
-              </span>
-            )}
           </div>
           {/* Desktop: přepínač den/noc + heslo (správce) + přepínač ročníku + jméno */}
           <div className="ml-auto hidden items-center gap-2 md:flex">

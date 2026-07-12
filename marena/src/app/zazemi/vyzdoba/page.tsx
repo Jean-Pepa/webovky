@@ -506,7 +506,7 @@ function PlanCard({ year, canEdit }: { year: Year; canEdit: boolean }) {
       <Modal open={open} onClose={() => setOpen(false)} title="🗺️ Plánek zón">
         <div className="space-y-4">
           <PlanImages ids={ids} />
-          {desc && <p className="whitespace-pre-wrap rounded-lg bg-paper2/50 px-3 py-2 text-sm text-ink-soft">{desc}</p>}
+          {desc && <p className="readonly-pulse whitespace-pre-wrap rounded-lg border-2 border-red-500 bg-paper2/50 px-3 py-2 text-sm text-ink-soft">{desc}</p>}
           <button className="btn-primary w-full py-2.5" onClick={() => setOpen(false)}>
             Zavřít
           </button>

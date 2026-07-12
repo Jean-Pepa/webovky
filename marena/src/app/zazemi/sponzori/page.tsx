@@ -177,10 +177,10 @@ export default function SponzoriPage() {
           <div>
             <p className="mb-1 text-xs font-medium text-ink-soft">Typ sponzora</p>
             <div className="inline-flex rounded-full bg-paper2 p-0.5 text-xs">
-              <button type="button" onClick={() => setReturning(false)} className={`rounded-full px-3 py-1 font-medium transition ${!returning ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}>
+              <button type="button" onClick={() => setReturning(false)} className={`rounded-full px-3 py-1 font-medium transition ${!returning ? "bg-gold-500 text-[#1d1d1f] shadow-sm" : "text-ink-soft"}`}>
                 🆕 Nový
               </button>
-              <button type="button" onClick={() => setReturning(true)} className={`rounded-full px-3 py-1 font-medium transition ${returning ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}>
+              <button type="button" onClick={() => setReturning(true)} className={`rounded-full px-3 py-1 font-medium transition ${returning ? "bg-gold-500 text-[#1d1d1f] shadow-sm" : "text-ink-soft"}`}>
                 🔁 Stálý
               </button>
             </div>
@@ -210,7 +210,7 @@ export default function SponzoriPage() {
                 <button
                   key={f.id}
                   onClick={() => setFilter(f.id)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${filter === f.id ? "bg-ink text-white" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${filter === f.id ? "bg-ink text-surface" : "bg-paper2 text-ink-soft hover:bg-ink/5"}`}
                 >
                   {f.label} <span className="opacity-70 tabular-nums">{n}</span>
                 </button>
@@ -283,10 +283,10 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
         <div>
           <p className="mb-1 text-xs font-medium text-ink-soft">Typ sponzora</p>
           <div className="inline-flex rounded-full bg-paper2 p-0.5 text-xs">
-            <button type="button" onClick={() => setReturning(false)} className={`rounded-full px-3 py-1 font-medium transition ${!returning ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}>
+            <button type="button" onClick={() => setReturning(false)} className={`rounded-full px-3 py-1 font-medium transition ${!returning ? "bg-gold-500 text-[#1d1d1f] shadow-sm" : "text-ink-soft"}`}>
               🆕 Nový
             </button>
-            <button type="button" onClick={() => setReturning(true)} className={`rounded-full px-3 py-1 font-medium transition ${returning ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}>
+            <button type="button" onClick={() => setReturning(true)} className={`rounded-full px-3 py-1 font-medium transition ${returning ? "bg-gold-500 text-[#1d1d1f] shadow-sm" : "text-ink-soft"}`}>
               🔁 Stálý
             </button>
           </div>

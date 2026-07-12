@@ -623,7 +623,7 @@ function Pos() {
                   {/* Vyprodáno (kdokoli u kasy): ťuknutím se položka vyprodá/odblokuje — jen pro tento den */}
                   <button
                     className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                      soldMode ? "bg-ink text-white hover:bg-ink/90" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+                      soldMode ? "bg-ink text-surface hover:bg-ink/90" : "bg-paper2 text-ink-soft hover:bg-gold-100"
                     }`}
                     aria-pressed={soldMode}
                     onClick={() => {
