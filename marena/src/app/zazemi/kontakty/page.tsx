@@ -121,13 +121,13 @@ export default function KontaktyPage() {
               return (
               <section key={name} id={slug(name)} className="scroll-mt-28">
                 <div className="mb-3 flex items-center gap-2">
-                  <h2 className={`section-title ${isSponsor ? "text-gold-700" : ""}`}>{name}</h2>
+                  <h2 className="eyebrow">{name}</h2>
                   {isSponsor && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-gold-500 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#1d1d1f]">
                       ★ Hlavní
                     </span>
                   )}
-                  <span className="chip">{items.length}</span>
+                  <span className="chip tabular-nums">{items.length}</span>
                 </div>
                 <ul className="grid gap-3 sm:grid-cols-2">
                   {items.map((l) => {
@@ -170,7 +170,7 @@ export default function KontaktyPage() {
                     }`}
                   >
                     <span className="truncate">{isSponsor ? "★ " : ""}{name}</span>
-                    <span className={`ml-2 shrink-0 rounded-full px-2 text-xs ${isSponsor ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2"}`}>{items.length}</span>
+                    <span className={`ml-2 shrink-0 rounded-full px-2 text-xs tabular-nums ${isSponsor ? "bg-gold-500 text-[#1d1d1f]" : "bg-paper2"}`}>{items.length}</span>
                   </a>
                 );
               })}

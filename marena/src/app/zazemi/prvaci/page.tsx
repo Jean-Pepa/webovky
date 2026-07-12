@@ -74,7 +74,7 @@ export default function PrvaciPage() {
           <input type="search" className={`input w-full ${q ? "pr-10" : ""}`} placeholder="🔎 Hledat…" value={q} onChange={(e) => setQ(e.target.value)} />
           {q && <SearchClear onClear={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2" />}
         </div>
-        <span className="text-sm text-ink-soft">
+        <span className="text-sm text-ink-soft tabular-nums">
           {q ? `${list.length} z ${year.freshmen?.length ?? 0}` : `${year.freshmen?.length ?? 0} prváků`}
         </span>
       </div>
@@ -86,7 +86,7 @@ export default function PrvaciPage() {
       ) : list.length === 0 ? (
         <div className="empty-state">Nikdo neodpovídá hledání.</div>
       ) : (
-        <ul className="card divide-y divide-black/[0.06] overflow-hidden">
+        <ul className="card divide-y divide-ink/10 overflow-hidden">
           {list.map((f) => (
             <FreshmanRow key={f.id} f={f} yearId={year.id} canEdit={canEdit} />
           ))}
