@@ -62,6 +62,14 @@
   --radius-app: 18px;
 }
 
+/* „Namíchaná" zlatá — teplý diagonální přechod (jasné zlato → značkové f4b71f →
+   hlubší jantar), dává velkým zlatým plochám hloubku a život místo ploché barvy
+   (inspirace: TasteTown oranžová). Světlo přichází z levého horního rohu. */
+:root {
+  --grad-gold: linear-gradient(135deg, #f9c62f 0%, #f4b71f 44%, #e0940a 100%);
+  --grad-gold-hover: linear-gradient(135deg, #fbd046 0%, #f8c32c 44%, #e89e12 100%);
+}
+
 /* ===================== Noční režim (zázemí) =========================
    Třída `.dark` na <html> jen přemapuje neutrální tokeny. Akcenty (červená,
    zelená, modrá) zůstávají — na tmavém pozadí jsou dobře čitelné. Text je
@@ -107,6 +115,10 @@
 .dark .text-gold-600 { color: #f4b71f; }
 .dark .text-gold-700 { color: #f5c032; }
 .dark .text-gold-800 { color: #ffd94d; }
+/* Zlatý přechod v textu (akcent nadpisu) — na tmavém zesvětlený, ať svítí. */
+.dark .text-gold-grad {
+  background-image: linear-gradient(118deg, #e0a015 0%, #f4b71f 50%, #ffd94d 100%);
+}
 .dark .text-red-600 { color: #f26d6d; }
 .dark .text-red-700 { color: #f58a8a; }
 .dark .text-leaf-700 { color: #57d98a; }
@@ -511,10 +523,21 @@ html.theme-anim .input {
 @layer components {
   .btn-primary {
     /* Zlaté tlačítko s TMAVÝM textem (9,3:1) — text zůstává tmavý i v nočním
-       režimu (proto literál, ne token ink). Min. výška 44 px (Apple tap target). */
-    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-gold-500
+       režimu (proto literál, ne token ink). Min. výška 44 px (Apple tap target).
+       Výplň je „namíchaný" zlatý přechod (hloubka místo ploché barvy). */
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full
       px-5 py-2.5 text-[15px] font-semibold text-[#1d1d1f] ring-1 ring-inset ring-gold-600/50
-      transition-all hover:bg-gold-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+      transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+    background-color: #f4b71f; /* fallback = značková zlatá */
+    background-image: var(--grad-gold);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-image: var(--grad-gold-hover);
+  }
+  /* Zlatá výplň s přechodem pro další plochy (aktivní pilulka navigace apod.). */
+  .bg-gold-grad {
+    background-color: #f4b71f;
+    background-image: var(--grad-gold);
   }
   /* Vegas tlačítko — neonový přechod růžová → fialová (místo červené na homepage). */
   .btn-vegas {
@@ -566,7 +589,12 @@ html.theme-anim .input {
       disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-pill-gold {
-    @apply bg-gold-500 text-[#1d1d1f] hover:bg-gold-400;
+    @apply text-[#1d1d1f];
+    background-color: #f4b71f;
+    background-image: var(--grad-gold);
+  }
+  .btn-pill-gold:hover:not(:disabled) {
+    background-image: var(--grad-gold-hover);
   }
   .btn-pill-leaf {
     @apply bg-leaf text-white hover:bg-leaf/90;
@@ -602,6 +630,16 @@ html.theme-anim .input {
   .page-title {
     @apply text-[31px] font-bold leading-[1.04] tracking-[-0.028em] text-ink sm:text-[38px];
     font-family: var(--font-display);
+  }
+  /* Akcentní (zlatý) konec nadpisu — „namíchaný" zlatý přechod v textu místo
+     ploché barvy. Rozsah drží kontrast pro velký text (≥3:1 na světlém papíru);
+     noční varianta je zesvětlená (viz `.dark .text-gold-grad`). */
+  .text-gold-grad {
+    background-image: linear-gradient(118deg, #c8850a 0%, #dd9c10 50%, #edb01a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
   }
   /* Nadpis sekce — čistý, sevřený. */
   .section-title {
