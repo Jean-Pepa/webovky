@@ -769,7 +769,7 @@ function TeamVoting({ year, canEdit, me }: { year: Year; canEdit: boolean; me: s
 // Malý nadpis podsekce v zóně (ikona + popisek + volitelný počet).
 function ZoneLabel({ icon, children, count }: { icon: string; children: React.ReactNode; count?: string }) {
   return (
-    <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">
+    <p className="eyebrow flex items-center gap-1.5">
       <span aria-hidden>{icon}</span>
       {children}
       {count && <span className="text-ink-soft/60">{count}</span>}

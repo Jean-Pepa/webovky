@@ -99,7 +99,7 @@ export function MyAgenda({ onOpenPost }: { onOpenPost?: (id: string) => void }) 
 
   return (
     <section className="agenda-pulse p-3">
-      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Moje agenda</h2>
+      <h2 className="eyebrow mb-2">Moje agenda</h2>
 
       {/* Nová prioritní zpráva pro mě — bliká červeně, klik ji na nástěnce zvýrazní. */}
       {unseen.length > 0 && (

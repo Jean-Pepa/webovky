@@ -596,15 +596,26 @@ html.theme-anim .input {
   /* Jednotný nadpis sekce (h2) a prázdný stav — ať vypadají všude stejně.
      font-display i card jsou vlastní třídy (ne utility), takže je nelze
      @apply — vypíšeme rovnou vlastnosti. */
-  /* Hlavní nadpis stránky — velký „Apple" large title: bez verzálek, tučný,
-     mírně stažený proklad, jemně měkčí (ne úplně černá). */
+  /* Hlavní nadpis stránky — velký editorialní „large title" ve stylu
+     architektonických studií: bez verzálek, tučný, sevřený proklad. Zlatý
+     konec slova dodá komponenta PageTitle. */
   .page-title {
-    @apply text-[30px] font-bold leading-[1.08] tracking-[-0.02em] text-ink sm:text-[34px];
+    @apply text-[31px] font-bold leading-[1.04] tracking-[-0.028em] text-ink sm:text-[38px];
     font-family: var(--font-display);
   }
+  /* Nadpis sekce — čistý, sevřený. */
   .section-title {
-    @apply text-[19px] font-bold;
+    @apply text-[18px] font-bold tracking-[-0.015em] text-ink;
     font-family: var(--font-display);
+  }
+  /* „Eyebrow" popisek — malé verzálky se širším prostrkáním a zlatou (editorialní
+     / architektonický akcent). Nahrazuje roztroušené `text-xs uppercase…`. */
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.11em] text-gold-700;
+  }
+  /* Tenká vlasová linka pod nadpisem sekce (struktura, ne dekorace). */
+  .rule-hair {
+    @apply border-b border-ink/10;
   }
   .empty-state {
     @apply grid place-items-center rounded-xl border border-ink/[0.06] bg-surface p-8
