@@ -11,6 +11,7 @@ import { isAdmin, ADMIN_NAME } from "@/lib/admin";
 import { sameName } from "@/lib/names";
 import { ArchiveModal } from "@/components/ArchiveModal";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
+import { AnnounceModal, AnnouncementAlert } from "@/components/Announce";
 import { SupabaseGate } from "@/components/SupabaseGate";
 import { FlashHost } from "@/components/Flash";
 import { AdminApprovals } from "@/components/AdminApprovals";
@@ -138,6 +139,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const [deskMenu, setDeskMenu] = useState<string | null>(null); // otevřené rozbalovací menu (desktop)
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
+  const [annOpen, setAnnOpen] = useState(false);
   const [boardUnread, setBoardUnread] = useState(0);
   const [maint, setMaint] = useState<boolean | null>(null); // režim údržby (null = ještě nevíme)
   const { dark, toggle: toggleTheme } = useZazemiTheme();
@@ -350,6 +352,15 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             <Icon name="book" className="h-4 w-4" /> Almanach
           </Link>
           {isAdmin(me) && (
+            <button
+              onClick={() => setAnnOpen(true)}
+              title="Poslat oznámení vybraným lidem (vyskočí jim přes obrazovku)"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-marigold-500 px-3.5 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-marigold-600"
+            >
+              📣 Oznámení
+            </button>
+          )}
+          {isAdmin(me) && (
             <Link
               href="/zazemi/web"
               title="Upravit veřejný web (texty, fotky, novinky)"
@@ -409,6 +420,17 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                 </Link>
               )}
               {isAdmin(me) && (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setAnnOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2.5 rounded-xl bg-marigold-500 px-3 py-2.5 text-left text-[15px] font-semibold text-white"
+                >
+                  📣 Poslat oznámení
+                </button>
+              )}
+              {isAdmin(me) && (
                 <Link
                   href="/zazemi/web"
                   onClick={() => setMenuOpen(false)}
@@ -444,6 +466,10 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
 
       {isAdmin(me) && <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />}
       {isAdmin(me) && <ChangePasswordModal open={pwdOpen} onClose={() => setPwdOpen(false)} />}
+      {isAdmin(me) && <AnnounceModal open={annOpen} onClose={() => setAnnOpen(false)} />}
+
+      {/* Oznámení „přes obrazovku" — vyskočí každému, koho se týká, musí odkliknout */}
+      <AnnouncementAlert />
 
       {/* Po znovuotevření appky upozorni na nový příspěvek na nástěnce */}
       <NewPostAlert />
