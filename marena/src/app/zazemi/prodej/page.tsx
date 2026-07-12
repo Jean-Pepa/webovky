@@ -560,7 +560,7 @@ function Pos() {
             key={s.id}
             onClick={() => pickStand(s.id)}
             className={`min-h-10 shrink-0 rounded-full px-4 text-[15px] font-semibold transition ${
-              stand === s.id ? "bg-gold-500 text-[#1d1d1f] shadow-sm" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+              stand === s.id ? "bg-gold-grad text-[#1d1d1f] shadow-sm" : "bg-paper2 text-ink-soft hover:bg-gold-100"
             }`}
           >
             {s.label}

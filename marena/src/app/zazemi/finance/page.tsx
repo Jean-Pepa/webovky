@@ -413,7 +413,7 @@ export default function FinancePage() {
                 setQ("");
               }}
               className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                tab === t.id ? "bg-gold-500 text-[#1d1d1f] shadow-sm" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+                tab === t.id ? "bg-gold-grad text-[#1d1d1f] shadow-sm" : "bg-paper2 text-ink-soft hover:bg-gold-100"
               }`}
             >
               {t.emoji} {t.label}
