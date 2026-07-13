@@ -51,6 +51,42 @@ async function pushForAction(action: Action, db: DB): Promise<void> {
       return;
     }
 
+    // Nový příspěvek na nástěnce → všem (mimo autora).
+    if (action.type === "addPost") {
+      const a = action as { yearId: string; author: string; title?: string; body?: string };
+      const year = db.years.find((y) => y.id === a.yearId);
+      if (!year) return;
+      const names = year.members.filter((m) => m.approved !== false && !sameName(m.name, a.author)).map((m) => m.name);
+      const body = (a.title?.trim() || a.body?.trim() || "Podívej se na nástěnku").slice(0, 140);
+      await sendToNames(names, { title: "📌 Nový příspěvek na nástěnce", body, url: "/zazemi", tag: "marena-post" });
+      return;
+    }
+
+    // Nové hlasování → těm, kdo smí hlasovat (výzdoba ankety jen výzdobářům), mimo autora.
+    if (action.type === "addPoll") {
+      const a = action as { yearId: string; author: string; question: string; tag?: string };
+      const year = db.years.find((y) => y.id === a.yearId);
+      if (!year) return;
+      const names = year.members
+        .filter((m) => m.approved !== false && !sameName(m.name, a.author) && (a.tag !== "vyzdoba" || m.roleIds.includes("vyzdoba")))
+        .map((m) => m.name);
+      await sendToNames(names, { title: "🗳️ Nové hlasování", body: a.question, url: "/zazemi/hlasovani", tag: "marena-poll" });
+      return;
+    }
+
+    // Nový úkol → přiřazeným (jméno/jména), celé roli i výzdobné zóně.
+    if (action.type === "addTask") {
+      const a = action as { yearId: string; title: string; roleId?: string; assignee?: string; zoneId?: string };
+      const year = db.years.find((y) => y.id === a.yearId);
+      if (!year) return;
+      const names = new Set<string>();
+      if (a.assignee) a.assignee.split(",").map((s) => s.trim()).filter(Boolean).forEach((n) => names.add(n));
+      if (a.roleId) year.members.filter((m) => m.approved !== false && m.roleIds.includes(a.roleId!)).forEach((m) => names.add(m.name));
+      if (a.zoneId) (year.decorZones ?? []).find((z) => z.id === a.zoneId)?.members.forEach((n) => names.add(n));
+      if (names.size) await sendToNames([...names], { title: "📋 Nový úkol pro tebe", body: a.title, url: "/zazemi/ukoly", tag: `marena-task-${a.zoneId ?? a.roleId ?? "x"}` });
+      return;
+    }
+
     // Správcovské notifikace — cokoli, co čeká na schválení, cinkne správci.
     let adminBody: string | null = null;
     if (action.type === "addMember") {
