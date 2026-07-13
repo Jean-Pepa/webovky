@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 
-// Na PC (velká obrazovka + myš) připomene, že Mařena je hlavně do mobilu —
-// s QR kódem, který otevře appku na telefonu. Zavíratelné (pamatuje si to).
+// Na PC (velká obrazovka + myš) vyskočí přes celou obrazovku připomínka, že
+// Mařena je hlavně do mobilu — s velkým QR kódem, který otevře appku na telefonu.
+// Zavíratelné (zapamatuje si to, už neotravuje).
 const KEY = "marena_phone_hint_dismissed";
 
 export function DesktopPhoneHint() {
@@ -21,7 +22,7 @@ export function DesktopPhoneHint() {
     if (!desktop) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setShow(true);
-    QRCode.toDataURL(window.location.origin, { width: 240, margin: 1, color: { dark: "#1d1d1f", light: "#ffffff" } })
+    QRCode.toDataURL(window.location.origin, { width: 480, margin: 1, color: { dark: "#1d1d1f", light: "#ffffff" } })
       .then(setQr)
       .catch(() => {});
   }, []);
@@ -38,28 +39,29 @@ export function DesktopPhoneHint() {
   };
 
   return (
-    <div className="mb-3 flex items-center gap-4 rounded-2xl border-2 border-gold-500 bg-gold-50 px-4 py-3">
-      {qr ? (
-        // eslint-disable-next-line @next/next/no-img-element -- QR je data-URL, next/image nedává smysl
-        <img src={qr} alt="QR kód — otevřít Mařenu na telefonu" className="h-20 w-20 shrink-0 rounded-lg bg-[#fff] p-1 ring-1 ring-ink/10" />
-      ) : (
-        <div className="h-20 w-20 shrink-0 rounded-lg bg-[#fff] ring-1 ring-ink/10" />
-      )}
-      <div className="min-w-0 flex-1">
-        <p className="text-[15px] font-bold text-ink">📱 Mařena je hlavně do mobilu</p>
-        <p className="mt-0.5 text-sm text-ink-soft">
-          Otevři si ji na telefonu — naskenuj QR kód. Tam ti navíc chodí <strong className="text-ink">upozornění</strong> a máš ji pořád po ruce.
+    <div className="fixed inset-0 z-[68] grid place-items-center bg-ink/60 px-4 backdrop-blur-sm">
+      <div className="marena-pop w-full max-w-md rounded-2xl bg-surface px-6 py-7 text-center shadow-2xl ring-2 ring-gold-500/60">
+        <div className="text-4xl">📱</div>
+        <h2 className="mt-2 font-display text-xl font-bold">Otevři Mařenu na telefonu</h2>
+        <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
+          Appka je hlavně do mobilu — naskenuj QR kód a otevři si ji na telefonu. Tam ti navíc chodí{" "}
+          <strong className="text-ink">upozornění</strong> a máš ji pořád po ruce.
         </p>
+        <div className="mx-auto mt-4 w-fit rounded-2xl bg-[#fff] p-3 ring-1 ring-ink/10">
+          {qr ? (
+            // eslint-disable-next-line @next/next/no-img-element -- QR je data-URL, next/image nedává smysl
+            <img src={qr} alt="QR kód — otevřít Mařenu na telefonu" className="h-52 w-52" />
+          ) : (
+            <div className="h-52 w-52 animate-pulse rounded-lg bg-paper2" />
+          )}
+        </div>
+        <button className="btn-primary mt-5 w-full py-2.5" onClick={dismiss}>
+          Rozumím, budu na telefonu
+        </button>
+        <button className="btn-ghost mt-1 w-full py-2 text-sm" onClick={dismiss}>
+          Chci pokračovat na počítači
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={dismiss}
-        aria-label="Zavřít"
-        title="Zavřít"
-        className="shrink-0 rounded-full p-1.5 text-lg leading-none text-ink-soft transition hover:bg-ink/10"
-      >
-        ✕
-      </button>
     </div>
   );
 }
