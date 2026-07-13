@@ -21,6 +21,13 @@ export function isStandalone(): boolean {
   );
 }
 
+// Skutečné PC (velká obrazovka + myš) — tam nevnucujeme notifikace, posíláme
+// lidi na telefon. Telefon/tablet (dotyk) sem nespadá.
+export function isDesktop(): boolean {
+  if (typeof window === "undefined" || !window.matchMedia) return false;
+  return window.matchMedia("(min-width: 768px) and (pointer: fine)").matches;
+}
+
 export function notifPermission(): NotificationPermission | null {
   if (typeof Notification === "undefined") return null;
   return Notification.permission;

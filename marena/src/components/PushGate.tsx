@@ -13,6 +13,7 @@ import {
   notifPermission,
   currentSubscription,
   enablePush,
+  isDesktop,
 } from "@/lib/push-client";
 
 // Stav upozornění na tomhle zařízení:
@@ -45,6 +46,13 @@ export function PushGate() {
       if (!pushSupported()) return setSt(isIOS() && !isStandalone() ? "iosInstall" : "off");
       await registerSW();
       const perm = notifPermission();
+      // Na PC nevnucujeme notifikace — místo toho pruh „otevři na telefonu"
+      // (DesktopPhoneHint). Ruční zapnutí přes hamburger 🔔 pořád funguje.
+      if (isDesktop()) {
+        const sub = perm === "granted" ? await currentSubscription() : null;
+        if (alive) setSt(sub ? "on" : "off");
+        return;
+      }
       if (perm === "granted") {
         const sub = await currentSubscription();
         if (!sub) await enablePush(me); // povoleno, ale odběr chybí → tiše obnovíme
