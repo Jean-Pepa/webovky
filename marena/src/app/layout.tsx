@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { StoreProvider } from "@/lib/store";
+import { AnalyticsTracker } from "@/components/AnalyticsTracker";
+import { ThirdPartyAnalytics } from "@/components/ThirdPartyAnalytics";
 
 export const metadata: Metadata = {
   title: "Mařena — studentský festival Fakulty architektury VUT",
@@ -45,9 +47,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       {/* Používáme systémový font (SF Pro / Segoe UI / Roboto) — žádné externí načítání. */}
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <ThirdPartyAnalytics />
       </head>
       <body>
-        <StoreProvider>{children}</StoreProvider>
+        <StoreProvider>
+          <AnalyticsTracker />
+          {children}
+        </StoreProvider>
       </body>
     </html>
   );
