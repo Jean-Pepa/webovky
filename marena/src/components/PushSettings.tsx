@@ -61,7 +61,19 @@ export function PushSettings({ open, onClose }: { open: boolean; onClose: () => 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: me }),
       });
-      flash(r.ok ? "Test odeslán — za chvíli cinkne 🔔" : "Test se nepodařilo odeslat.", r.ok ? "🔔" : "⚠️");
+      const d = (await r.json().catch(() => null)) as
+        | { subs?: number; sent?: number; fails?: { code?: number }[] }
+        | null;
+      if (!r.ok || !d) {
+        flash("Test se nepodařilo odeslat.", "⚠️");
+      } else if ((d.subs ?? 0) === 0) {
+        flash("Tady nemáš uložené žádné zařízení — vypni a zapni upozornění znovu.", "⚠️");
+      } else if ((d.sent ?? 0) > 0) {
+        flash("Odesláno 🔔 Zamkni teď telefon — za chvíli to cinkne.", "🔔");
+      } else {
+        const code = d.fails?.[0]?.code;
+        flash(`Nedoručeno${code ? ` (chyba ${code})` : ""}. Zkus upozornění vypnout a zapnout znovu.`, "⚠️");
+      }
     } catch {
       flash("Test se nepodařilo odeslat.", "⚠️");
     } finally {
