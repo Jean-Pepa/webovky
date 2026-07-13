@@ -26,8 +26,12 @@ export function AdminApprovals() {
   // Proplacení: nezaplacené výdaje psané na jméno člověka (kdo zaplatil).
   const reimburse = (year.finances ?? []).filter((f) => f.kind === "vydaj" && !f.paid && !!f.who?.trim());
   const owedTotal = reimburse.reduce((s, f) => s + f.amount, 0);
+  // Oznámení od ostatních (ne správce) čekají na schválení, než vyskočí lidem.
+  const pendingAnns = (year.announcements ?? []).filter((an) => an.approved === false);
+  const audLabel = (a: { all?: boolean; roles?: string[]; people?: string[] }) =>
+    a.all ? "Všichni" : [...(a.roles ?? []).map((r) => roleById(r)?.name ?? r), ...(a.people ?? [])].join(", ") || "—";
 
-  if (accounts.length === 0 && requests.length === 0 && reimburse.length === 0) return null;
+  if (accounts.length === 0 && requests.length === 0 && reimburse.length === 0 && pendingAnns.length === 0) return null;
 
   return (
     <>
@@ -125,6 +129,56 @@ export function AdminApprovals() {
                 >
                   Proplatit
                 </ConfirmButton>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Oznámení od ostatních — čekají na schválení, než vyskočí lidem */}
+      {pendingAnns.length > 0 && (
+        <div className="approve-sweep border-b-2 border-amber-500/70 bg-gradient-to-r from-gold-500 via-amber-300 to-gold-500 px-4 py-3 shadow-md">
+          <div className="mx-auto max-w-6xl space-y-2">
+            <p className="font-display text-lg font-bold tracking-tight text-[#1d1d1f] sm:text-xl">
+              📣 Zprávy ke schválení ({pendingAnns.length})
+            </p>
+            {pendingAnns.map((an) => (
+              <div key={an.id} className="relative z-10 flex flex-wrap items-center gap-2 rounded-xl bg-white/80 px-3 py-2 shadow-sm">
+                <span className="min-w-0 flex-1 text-[15px] text-[#1d1d1f]">
+                  <strong>{an.createdBy}</strong>: „{an.text}“ <span className="text-[#1d1d1f]/70">→ {audLabel(an.audience)}</span>
+                </span>
+                <span className="flex shrink-0 gap-1.5">
+                  <ConfirmButton
+                    className="rounded-full bg-leaf px-4 py-1.5 text-sm font-bold text-white transition hover:opacity-90"
+                    title="Odeslat oznámení?"
+                    message={
+                      <>
+                        Opravdu odeslat zprávu od <strong className="text-ink">{an.createdBy}</strong>? Vybraným hned vyskočí přes obrazovku (a cinkne na mobil).
+                      </>
+                    }
+                    confirmLabel="Ano, odeslat"
+                    onConfirm={() => {
+                      dispatch({ type: "approveAnnouncement", yearId: year.id, announcementId: an.id });
+                      flash("Oznámení schváleno a odesláno 📣", "📣");
+                    }}
+                  >
+                    Odeslat
+                  </ConfirmButton>
+                  <ConfirmButton
+                    className="rounded-full bg-white px-4 py-1.5 text-sm font-bold text-red-600 transition hover:bg-red-50"
+                    title="Zahodit zprávu?"
+                    message={
+                      <>
+                        Opravdu zahodit zprávu od <strong className="text-ink">{an.createdBy}</strong>? Neodešle se.
+                      </>
+                    }
+                    confirmLabel="Ano, zahodit"
+                    confirmClassName="flex-1 rounded-full bg-red-600 px-5 py-2.5 text-[15px] font-semibold text-white transition hover:bg-red-700"
+                    onConfirm={() => dispatch({ type: "removeAnnouncement", yearId: year.id, announcementId: an.id })}
+                  >
+                    Zahodit
+                  </ConfirmButton>
+                </span>
               </div>
             ))}
           </div>

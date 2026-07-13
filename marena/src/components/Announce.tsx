@@ -59,7 +59,10 @@ export function AnnounceModal({ open, onClose }: { open: boolean; onClose: () =>
   function send() {
     if (!year || !canSend) return;
     dispatch({ type: "addAnnouncement", yearId: year.id, text: text.trim(), createdBy: me, audience: { all, roles, people } });
-    flash("Oznámení odesláno — vybraným vyskočí přes obrazovku", "📣");
+    flash(
+      isAdmin(me) ? "Oznámení odesláno — vybraným vyskočí přes obrazovku" : "Odesláno ke schválení správci — vyskočí, až ho schválí",
+      "📣",
+    );
     setText("");
     setAll(false);
     setRoles([]);
@@ -162,7 +165,14 @@ export function AnnounceModal({ open, onClose }: { open: boolean; onClose: () =>
                 <li key={an.id} className="flex items-start gap-2 rounded-lg bg-paper2/50 px-3 py-2 text-sm">
                   <div className="min-w-0 flex-1">
                     <p className="break-words text-ink">{an.text}</p>
-                    <p className="mt-0.5 text-xs text-ink-soft">→ {audienceLabel(an.audience)}</p>
+                    <p className="mt-0.5 text-xs text-ink-soft">
+                      → {audienceLabel(an.audience)} ·{" "}
+                      {an.approved === false ? (
+                        <span className="font-semibold text-amber-700">⏳ čeká na schválení</span>
+                      ) : (
+                        <span className="font-semibold text-leaf-700">✓ odesláno</span>
+                      )}
+                    </p>
                   </div>
                   <button
                     className="btn-ghost shrink-0 px-2 py-1 text-xs text-red-600"
@@ -202,7 +212,7 @@ export function AnnouncementAlert() {
 
   if (!currentYear || !me) return null;
   const pending = (currentYear.announcements ?? [])
-    .filter((an) => !acked.includes(an.id) && !sameName(an.createdBy, me) && announcementTargets(an, me, currentYear))
+    .filter((an) => an.approved !== false && !acked.includes(an.id) && !sameName(an.createdBy, me) && announcementTargets(an, me, currentYear))
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const current = pending[0];
   if (!current) return null;

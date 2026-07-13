@@ -4,32 +4,50 @@ import type { Action } from "@/lib/actions";
 import { isAuthed } from "@/lib/auth";
 import { sendToNames } from "@/lib/push";
 import { sameName } from "@/lib/names";
-import { ADMIN_NAME } from "@/lib/admin";
+import { ADMIN_NAME, isAdmin } from "@/lib/admin";
 import { roleById } from "@/lib/roles";
-import type { DB } from "@/lib/types";
+import type { DB, Year } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type Audience = { all?: boolean; roles?: string[]; people?: string[] };
+
+// Rozešle schválené oznámení vybraným lidem (mimo autora).
+async function deliverAnnouncement(year: Year, an: { audience?: Audience; createdBy: string; text: string }): Promise<void> {
+  const aud = an.audience || {};
+  const names = year.members
+    .filter((m) => m.approved !== false && !sameName(m.name, an.createdBy))
+    .filter((m) => aud.all || aud.people?.some((p) => sameName(p, m.name)) || (aud.roles?.length ? m.roleIds.some((r) => aud.roles!.includes(r)) : false))
+    .map((m) => m.name);
+  if (!names.length) return;
+  const body = an.text.length > 160 ? an.text.slice(0, 157) + "…" : an.text;
+  await sendToNames(names, { title: "📣 Nové oznámení", body, url: "/zazemi", tag: "marena-oznameni" });
+}
+
 // Po některých akcích rozešle push. Běží server-side, takže nezávisí na tom,
 // jestli má odesílatel otevřený prohlížeč. Selhání pushe nikdy neshodí zápis.
-//  • addAnnouncement → vybraným lidem (mimo autora)
-//  • addMember (approved:false) / requestRole / addFinance (výdaj) → SPRÁVCI,
-//    ať mu na mobil cinkne cokoli, co čeká na schválení.
+//  • addAnnouncement správce → rovnou lidem; od ostatních → SPRÁVCI ke schválení
+//  • approveAnnouncement → teď teprve lidem
+//  • addMember (approved:false) / requestRole / addFinance (výdaj) → SPRÁVCI.
 async function pushForAction(action: Action, db: DB): Promise<void> {
   try {
     if (action.type === "addAnnouncement") {
-      const a = action as { yearId: string; text: string; createdBy: string; audience: { all?: boolean; roles?: string[]; people?: string[] } };
+      const a = action as { yearId: string; text: string; createdBy: string; audience: Audience };
       const year = db.years.find((y) => y.id === a.yearId);
       if (!year) return;
-      const aud = a.audience || {};
-      const names = year.members
-        .filter((m) => m.approved !== false && !sameName(m.name, a.createdBy))
-        .filter((m) => aud.all || aud.people?.some((p) => sameName(p, m.name)) || (aud.roles?.length ? m.roleIds.some((r) => aud.roles!.includes(r)) : false))
-        .map((m) => m.name);
-      if (!names.length) return;
-      const body = a.text.length > 160 ? a.text.slice(0, 157) + "…" : a.text;
-      await sendToNames(names, { title: "📣 Nové oznámení", body, url: "/zazemi", tag: "marena-oznameni" });
+      // Správcova zpráva jde rovnou; od ostatních cinkne správci ke schválení.
+      if (isAdmin(a.createdBy)) await deliverAnnouncement(year, a);
+      else if (!sameName(a.createdBy, ADMIN_NAME))
+        await sendToNames([ADMIN_NAME], { title: "Mařena — ke schválení", body: `📣 ${a.createdBy} chce poslat oznámení`, url: "/zazemi", tag: "marena-schvaleni" });
+      return;
+    }
+
+    if (action.type === "approveAnnouncement") {
+      const a = action as { yearId: string; announcementId: string };
+      const year = db.years.find((y) => y.id === a.yearId);
+      const an = year?.announcements?.find((x) => x.id === a.announcementId);
+      if (year && an) await deliverAnnouncement(year, an);
       return;
     }
 

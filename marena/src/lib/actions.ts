@@ -5,6 +5,7 @@ import type { DB, Year, Member, EventKind, FinanceKind, Task, Invite, MerchOrder
 import { uid } from "./id";
 import { ROLE_TASKS } from "./roleTasks";
 import { sameName } from "./names";
+import { isAdmin } from "./admin";
 import { missingMilestoneEvents } from "./milestones";
 
 // Ořež a vyhoď prázdné odkazy; když nezbude žádný, vrať undefined.
@@ -65,6 +66,7 @@ export type Action =
   | { type: "removePost"; yearId: string; postId: string }
   | { type: "addAnnouncement"; yearId: string; text: string; audience: { all?: boolean; roles?: string[]; people?: string[] }; createdBy: string }
   | { type: "removeAnnouncement"; yearId: string; announcementId: string }
+  | { type: "approveAnnouncement"; yearId: string; announcementId: string }
   | { type: "addPoll"; yearId: string; author: string; question: string; options: string[]; multi?: boolean; id?: string; closesAt?: string; tag?: string }
   | { type: "vote"; yearId: string; pollId: string; optionId: string; voter: string }
   | { type: "removeVoter"; yearId: string; pollId: string; optionId: string; voter: string }
@@ -525,10 +527,12 @@ export function applyAction(db: DB, a: Action): DB {
         roles: aud.all ? [] : aud.roles ?? [],
         people: aud.all ? [] : aud.people ?? [],
       };
+      const createdBy = a.createdBy.trim() || "Mařena";
+      // Správcova zpráva jde rovnou (approved:true); od ostatních čeká na schválení.
       return mapYear(db, a.yearId, (y) => ({
         ...y,
         announcements: [
-          { id: uid("an_"), text: a.text.trim(), audience, createdBy: a.createdBy.trim() || "Mařena", createdAt: now() },
+          { id: uid("an_"), text: a.text.trim(), audience, createdBy, createdAt: now(), approved: isAdmin(createdBy) },
           ...(y.announcements ?? []),
         ],
       }));
@@ -537,6 +541,11 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => ({
         ...y,
         announcements: (y.announcements ?? []).filter((x) => x.id !== a.announcementId),
+      }));
+    case "approveAnnouncement":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        announcements: (y.announcements ?? []).map((x) => (x.id === a.announcementId ? { ...x, approved: true } : x)),
       }));
 
     case "addPoll":
