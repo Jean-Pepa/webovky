@@ -171,6 +171,10 @@ export default function WebEditorPage() {
     setC((prev) => ({ ...prev, theme }));
   }
   const activeTheme = themeOf(c);
+  function setSiteEnabled(on: boolean) {
+    setC((prev) => ({ ...prev, siteEnabled: on }));
+  }
+  const siteOn = c.siteEnabled !== false; // undefined = zapnuto (výchozí)
 
   const news = c.news ?? [];
   const newId = () => `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -242,8 +246,37 @@ export default function WebEditorPage() {
         </p>
       )}
 
-      {/* TÉMA WEBU — vzhled homepage (každý ročník může mít jiné) */}
+      {/* ZAPNOUT / VYPNOUT VEŘEJNÝ WEB */}
       <section className="card p-4 sm:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="section-title">🌐 Veřejný web</h2>
+            <p className="mt-0.5 text-xs text-ink-soft">
+              {siteOn
+                ? "Web je zapnutý — návštěvníci vidí veřejnou homepage."
+                : "Web je vypnutý — návštěvníci jdou rovnou na přihlášení heslem. Zůstane jen appka."}
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={siteOn}
+            aria-label="Zapnout nebo vypnout veřejný web"
+            onClick={() => setSiteEnabled(!siteOn)}
+            className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition ${siteOn ? "bg-leaf" : "bg-ink/25"}`}
+          >
+            <span className={`inline-block h-5 w-5 transform rounded-full bg-[#fff] shadow transition ${siteOn ? "translate-x-[22px]" : "translate-x-1"}`} />
+          </button>
+        </div>
+        {!siteOn && (
+          <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+            ⚠️ Ulož změny dole. Po uložení se veřejná adresa (/) přesměruje rovnou na přihlášení.
+          </p>
+        )}
+      </section>
+
+      {/* TÉMA WEBU — vzhled homepage (každý ročník může mít jiné) */}
+      <section className={`card p-4 sm:p-5 ${siteOn ? "" : "opacity-50"}`}>
         <h2 className="section-title">🎨 Téma webu</h2>
         <p className="mb-3 mt-0.5 text-xs text-ink-soft">
           Vyber vzhled veřejné homepage. Texty, fotky i novinky zůstávají stejné — mění se jen styl. Ulož změny dole.

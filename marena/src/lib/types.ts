@@ -327,8 +327,9 @@ export interface Announcement {
   id: string;
   text: string; // zpráva / informace
   audience: { all?: boolean; roles?: string[]; people?: string[] }; // komu se zobrazí
-  createdBy: string; // kdo poslal (správce)
+  createdBy: string; // kdo poslal
   createdAt: string;
+  approved?: boolean; // false = čeká na schválení správcem (nevyskočí ani neposílá push). Správcova zpráva je rovnou true.
 }
 
 export interface Year {

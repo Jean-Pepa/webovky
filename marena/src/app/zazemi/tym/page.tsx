@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { ROLES, roleById, type Role } from "@/lib/roles";
@@ -8,7 +8,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
 import { Icon } from "@/components/Icons";
 import { isAdmin } from "@/lib/admin";
-import { sameName } from "@/lib/names";
+import { sameName, normName } from "@/lib/names";
 import { SearchBox } from "@/components/SearchBox";
 import { flash as toast } from "@/components/Flash";
 import { ApproveAccountModal } from "@/components/ApproveAccountModal";
@@ -31,6 +31,21 @@ export default function TymPage() {
   const [celebrate, setCelebrate] = useState<{ role: string; kind: "taken" | "released" } | null>(null);
   const celebrateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [q, setQ] = useState("");
+  // Přehled pro správce: kdo má zapnutá upozornění (množina normalizovaných jmen).
+  const [pushOn, setPushOn] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!isAdmin(me)) return;
+    let alive = true;
+    fetch("/api/push/status", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (alive && Array.isArray(d?.names)) setPushOn(new Set(d.names as string[]));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [me]);
 
   // Stejné okno (a stejná doba) pro vzetí i uvolnění funkce — liší se jen text.
   function flash(roleId: string, kind: "taken" | "released") {
@@ -480,6 +495,14 @@ export default function TymPage() {
                               <span className="badge badge-wait shrink-0">⏳ Čeká</span>
                             ) : (
                               <span className="badge badge-done shrink-0">✓ Schváleno</span>
+                            )}
+                            {/* Správci: má člověk zapnutá mobilní upozornění? */}
+                            {admin && !pending && (
+                              pushOn.has(normName(m.name)) ? (
+                                <span className="badge badge-done shrink-0" title="Má zapnutá upozornění na mobil">🔔 Upozornění</span>
+                              ) : (
+                                <span className="badge badge-idle shrink-0" title="Nemá zapnutá upozornění — připomeň mu to">🔕 Bez upozornění</span>
+                              )
                             )}
                           </div>
                           {/* Vybraná role (malým písmem) — nebo že žádnou nemá */}

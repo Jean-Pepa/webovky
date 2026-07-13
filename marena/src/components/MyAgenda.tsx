@@ -7,6 +7,7 @@ import { isAdmin } from "@/lib/admin";
 import { myRoleIds } from "@/lib/access";
 import { sameName, assigneeHas } from "@/lib/names";
 import { todayISO } from "@/lib/format";
+import { isPollClosed } from "@/lib/poll";
 
 // Moje agenda — osobní rozcestník na nástěnce podle rolí: každý má svoje
 // sekce s počítadly toho, co čeká, na jeden ťuk. Nikomu nic neschovává,
@@ -73,7 +74,17 @@ export function MyAgenda({ onOpenPost }: { onOpenPost?: (id: string) => void }) 
   const today = todayISO();
   const shift = (year.shifts ?? []).find((s) => s.date === today && s.people.some((p) => sameName(p, me)));
 
+  // Hlasování — otevřené ankety, kde smím hlasovat (výzdoba ankety jen výzdobáři)
+  // a ještě jsem nehlasoval. Ať mi neuteče, vyskočí nahoře v agendě.
+  const myOpenPolls = (year.polls ?? []).filter((p) => {
+    if (isPollClosed(p)) return false;
+    if (p.tag === "vyzdoba" && !roles.includes("vyzdoba")) return false;
+    return !p.options.some((o) => o.voters.some((v) => sameName(v, me)));
+  }).length;
+
   const cards: { href: string; emoji: string; label: string; badge?: string; tone?: "red" | "green" }[] = [];
+  if (myOpenPolls > 0)
+    cards.push({ href: "/zazemi/hlasovani", emoji: "🗳️", label: "Hlasování", badge: `${myOpenPolls} k hlasování`, tone: "red" });
   if (has("merch") || (admin && pendingOrders > 0))
     cards.push({ href: "/zazemi/merch", emoji: "🛍️", label: "Merch", badge: pendingOrders ? `${pendingOrders} čeká` : undefined });
   if (has("bar")) cards.push({ href: "/zazemi/kuchyne", emoji: "🍳", label: "Kuchyně & bar" });

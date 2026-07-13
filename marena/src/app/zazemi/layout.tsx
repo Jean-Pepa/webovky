@@ -15,6 +15,9 @@ import { AnnounceModal, AnnouncementAlert } from "@/components/Announce";
 import { SupabaseGate } from "@/components/SupabaseGate";
 import { FlashHost } from "@/components/Flash";
 import { AdminApprovals } from "@/components/AdminApprovals";
+import { PushGate } from "@/components/PushGate";
+import { PushSettings } from "@/components/PushSettings";
+import { DesktopPhoneHint } from "@/components/DesktopPhoneHint";
 import { ThemeToggle, useZazemiTheme } from "@/components/ThemeToggle";
 import { supabaseEnabled } from "@/lib/supabase/config";
 import type { Post } from "@/lib/types";
@@ -103,6 +106,9 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const posOnly = !isAdmin(me) && !!meMember?.posOnly;
   const vyberOnly = !isAdmin(me) && !posOnly && !!meMember?.vyberOnly;
   const restricted = posOnly || vyberOnly;
+  // Oznámení („📣") smí poslat každý s přístupem do aktuálního ročníku
+  // (schválený člen; správce vždy). Výpomoc u stánku / výběrčí ho nemají.
+  const canAnnounce = !restricted && canEditCurrentYear;
   const restrictHref = vyberOnly ? "/zazemi/finance" : "/zazemi/prodej";
   const restrictLabel = vyberOnly ? "Výběr" : "Prodej";
   const restrictIcon: IconName = vyberOnly ? "finance" : "cart";
@@ -140,6 +146,20 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
   const [annOpen, setAnnOpen] = useState(false);
+  const [pushSettingsOpen, setPushSettingsOpen] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false); // je web push nastavený na serveru?
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/push/config", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (alive && d?.enabled) setPushEnabled(true);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
   const [boardUnread, setBoardUnread] = useState(0);
   const [maint, setMaint] = useState<boolean | null>(null); // režim údržby (null = ještě nevíme)
   const { dark, toggle: toggleTheme } = useZazemiTheme();
@@ -243,6 +263,15 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           {/* Desktop: přepínač den/noc + heslo (správce) + přepínač ročníku + jméno */}
           <div className="ml-auto hidden items-center gap-2 md:flex">
             <ThemeToggle dark={dark} onToggle={toggleTheme} />
+            {canAnnounce && (
+              <button
+                onClick={() => setAnnOpen(true)}
+                title="Poslat oznámení vybraným lidem (vyskočí jim přes obrazovku)"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-marigold-500 px-3.5 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-marigold-600"
+              >
+                📣 Oznámení
+              </button>
+            )}
             {isAdmin(me) && (
               <button
                 onClick={() => setPwdOpen(true)}
@@ -257,7 +286,17 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             {isAdmin(me) && <AppPowerToggle maint={maint} onChanged={setMaint} />}
           </div>
           {/* Mobil: přepínač den/noc (vlevo od hamburgeru) + hamburger */}
-          <div className="ml-auto flex items-center gap-1 md:hidden">
+          <div className="ml-auto flex items-center gap-1.5 md:hidden">
+            {canAnnounce && (
+              <button
+                onClick={() => setAnnOpen(true)}
+                title="Poslat oznámení"
+                aria-label="Poslat oznámení"
+                className="inline-flex items-center gap-1 rounded-full bg-marigold-500 px-2.5 py-1.5 text-sm font-semibold text-white transition hover:bg-marigold-600"
+              >
+                📣<span className="hidden min-[420px]:inline"> Oznámení</span>
+              </button>
+            )}
             <ThemeToggle dark={dark} onToggle={toggleTheme} />
             <button
               className="inline-flex items-center justify-center rounded-full p-2 text-ink-soft hover:bg-ink/5"
@@ -351,13 +390,13 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           >
             <Icon name="book" className="h-4 w-4" /> Almanach
           </Link>
-          {isAdmin(me) && (
+          {pushEnabled && (
             <button
-              onClick={() => setAnnOpen(true)}
-              title="Poslat oznámení vybraným lidem (vyskočí jim přes obrazovku)"
-              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-marigold-500 px-3.5 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-marigold-600"
+              onClick={() => setPushSettingsOpen(true)}
+              title="Zapnout / vypnout upozornění na mobil"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-ink/10 transition-colors hover:bg-ink/5"
             >
-              📣 Oznámení
+              🔔 Upozornění
             </button>
           )}
           {isAdmin(me) && (
@@ -419,15 +458,15 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   <Icon name="book" className="h-5 w-5" /> Almanach
                 </Link>
               )}
-              {isAdmin(me) && (
+              {pushEnabled && (
                 <button
                   onClick={() => {
                     setMenuOpen(false);
-                    setAnnOpen(true);
+                    setPushSettingsOpen(true);
                   }}
-                  className="inline-flex items-center gap-2.5 rounded-xl bg-marigold-500 px-3 py-2.5 text-left text-[15px] font-semibold text-white"
+                  className="inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[15px] font-medium text-ink ring-1 ring-ink/10 hover:bg-ink/5"
                 >
-                  📣 Poslat oznámení
+                  🔔 Upozornění
                 </button>
               )}
               {isAdmin(me) && (
@@ -466,7 +505,8 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
 
       {isAdmin(me) && <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />}
       {isAdmin(me) && <ChangePasswordModal open={pwdOpen} onClose={() => setPwdOpen(false)} />}
-      {isAdmin(me) && <AnnounceModal open={annOpen} onClose={() => setAnnOpen(false)} />}
+      {canAnnounce && <AnnounceModal open={annOpen} onClose={() => setAnnOpen(false)} />}
+      {pushEnabled && <PushSettings open={pushSettingsOpen} onClose={() => setPushSettingsOpen(false)} />}
 
       {/* Oznámení „přes obrazovku" — vyskočí každému, koho se týká, musí odkliknout */}
       <AnnouncementAlert />
@@ -537,7 +577,11 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
       )}
 
       {/* Spodní odsazení = plovoucí lišta (64 px + 12 px mezera) + bezpečná zóna + rezerva. */}
-      <main className="mx-auto max-w-6xl px-4 py-6 pb-[calc(6.25rem+env(safe-area-inset-bottom))] md:pb-6">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-6 pb-[calc(6.25rem+env(safe-area-inset-bottom))] md:pb-6">
+        <DesktopPhoneHint />
+        <PushGate />
+        {children}
+      </main>
 
       {/* Mobil: ztmavení + vysouvací panel skupiny (nad spodní lištou) */}
       {sheet && <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setSheet(null)} aria-hidden />}

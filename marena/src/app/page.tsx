@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { Photo } from "@/components/Photo";
@@ -31,8 +32,16 @@ type HomeView = {
 };
 
 export default function Home() {
+  const router = useRouter();
   const [lang, setLang] = useState<Lang>("cs");
   const [content, setContent] = useState<HomeContent | null>(null);
+
+  // Správce může veřejný web vypnout (Správa webu) — pak návštěvník jde rovnou
+  // na přihlášení heslem. Běží jen na klientovi, funguje i v demu (localStorage).
+  const siteOff = content?.siteEnabled === false;
+  useEffect(() => {
+    if (siteOff) router.replace("/prihlaseni");
+  }, [siteOff, router]);
 
   useEffect(() => {
     const saved = localStorage.getItem("marena_lang");
@@ -74,6 +83,9 @@ export default function Home() {
     news: content?.news ?? [],
     content,
   };
+
+  // Web je vypnutý → nic nevykreslujeme, přesměrováváme na přihlášení (viz efekt výše).
+  if (siteOff) return null;
 
   // Téma vybírá správce ve „Správě webu"; každý ročník může mít jiné.
   return themeOf(content) === "normal" ? <NormalHome {...view} /> : <VegasHome {...view} />;
