@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { isAdmin } from "@/lib/admin";
@@ -8,6 +7,7 @@ import { myRoleIds } from "@/lib/access";
 import { sameName, assigneeHas } from "@/lib/names";
 import { todayISO } from "@/lib/format";
 import { isPollClosed } from "@/lib/poll";
+import { isPriorityFor, hasSeenPriority } from "@/lib/priority";
 
 // Moje agenda — osobní rozcestník na nástěnce podle rolí: každý má svoje
 // sekce s počítadly toho, co čeká, na jeden ťuk. Nikomu nic neschovává,
@@ -16,17 +16,6 @@ import { isPollClosed } from "@/lib/poll";
 export function MyAgenda({ onOpenPost }: { onOpenPost?: (id: string) => void }) {
   const { currentYear, me } = useStore();
   const year = currentYear;
-  const seenKey = year ? `marena_priority_seen_${year.id}` : "";
-  const [lastSeen, setLastSeen] = useState("");
-  useEffect(() => {
-    if (!seenKey) return;
-    try {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLastSeen(localStorage.getItem(seenKey) || "");
-    } catch {
-      /* ignore */
-    }
-  }, [seenKey]);
 
   if (!year) return null;
 
@@ -35,31 +24,15 @@ export function MyAgenda({ onOpenPost }: { onOpenPost?: (id: string) => void }) 
   const chief = roles.includes("hlavni");
   const has = (...ids: string[]) => chief || ids.some((r) => roles.includes(r));
 
-  // Prioritní zprávy „pro mě" (všichni / moje role / moje jméno), které jsem ještě
-  // neviděl a nenapsal sám. Nejnovější první.
-  const priorityForMe = (year.posts ?? [])
-    .filter((p) => {
-      const pr = p.priority;
-      if (!pr || sameName(p.author, me)) return false;
-      if (pr.all) return true;
-      if (pr.roles?.some((r) => roles.includes(r))) return true;
-      if (pr.people?.some((n) => sameName(n, me))) return true;
-      return false;
-    })
+  // Prioritní zprávy „pro mě", které jsem ještě neodklikl (potvrzuje se na nástěnce
+  // tlačítkem „Beru na vědomí" — každý sám za sebe). Nejnovější první.
+  const unseen = (year.posts ?? [])
+    .filter((p) => isPriorityFor(year, p, me) && !hasSeenPriority(p, me))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const unseen = priorityForMe.filter((p) => p.createdAt > lastSeen);
 
+  // Klik jen doscrolluje na zprávu; potvrdit ji musí dotyčný přímo na nástěnce.
   function openPriority() {
-    if (!unseen.length) return;
-    const id = unseen[0].id;
-    const stamp = new Date().toISOString();
-    try {
-      localStorage.setItem(seenKey, stamp);
-    } catch {
-      /* ignore */
-    }
-    setLastSeen(stamp);
-    onOpenPost?.(id);
+    if (unseen.length) onOpenPost?.(unseen[0].id);
   }
 
   const pendingOrders = (year.merchOrders ?? []).filter((o) => !o.done).length;
