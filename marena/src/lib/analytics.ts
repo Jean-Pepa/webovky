@@ -1,5 +1,6 @@
 import { getRedis } from "./redis";
 import { parseUA } from "./ua";
+import { isAdmin } from "./admin";
 
 // První-strana analytika. Ukládá se do Redisu, odděleně od hlavní DB:
 //  - unikátní uživatelé (DAU/WAU/MAU) přes HyperLogLog (paměťově levné počítání)
@@ -46,6 +47,7 @@ export async function recordEvents(events: IncomingEvent[], ip: string, ua: stri
 
   for (const ev of events.slice(0, 40)) {
     const name = "name" in ev ? ev.name : undefined;
+    if (isAdmin(name)) continue; // správce se do statistik nezapočítává
     const sid = "sid" in ev ? ev.sid : undefined;
     const uk = userKey(name, sid, ip);
     const loggedIn = !!(name && name.trim());
