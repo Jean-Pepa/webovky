@@ -217,6 +217,7 @@ export const THEMES: { id: ThemeId; name: string; emoji: string; desc: string }[
 
 export interface HomeContent {
   theme?: ThemeId;
+  siteEnabled?: boolean; // false = veřejný web je vypnutý → návštěvníci jdou rovnou na přihlášení. undefined/true = web běží.
   text?: Partial<Record<Lang, HomeText>>;
   photos?: { hero?: string; finale?: string; letters?: string; lineup?: (string | undefined)[] };
   ig?: { url?: string; handle?: string };
