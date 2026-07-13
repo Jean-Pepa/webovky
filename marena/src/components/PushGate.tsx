@@ -27,7 +27,6 @@ type St = "loading" | "on" | "prompt" | "denied" | "iosInstall" | "off";
 export function PushGate() {
   const { authed, me, pendingApproval } = useStore();
   const [st, setSt] = useState<St>("loading");
-  const [dismissed, setDismissed] = useState(false); // výzvu zavřel → jen pruh
   const [settings, setSettings] = useState(false); // otevřené okno nastavení
   const [busy, setBusy] = useState(false);
 
@@ -83,8 +82,8 @@ export function PushGate() {
 
   if (st === "loading" || st === "on" || st === "off") return settingsModal;
 
-  // ---- Vynucená výzva (než se rozhodne) — velké okno přes obrazovku ----
-  if (st === "prompt" && !dismissed) {
+  // ---- Vynucená výzva — velké okno přes obrazovku, dokud si upozornění nezapne ----
+  if (st === "prompt") {
     return (
       <>
         {settingsModal}
@@ -98,33 +97,28 @@ export function PushGate() {
             <button className="btn-primary mt-5 w-full py-2.5" onClick={turnOn} disabled={busy}>
               {busy ? "Zapínám…" : "🔔 Zapnout upozornění"}
             </button>
-            <button className="btn-ghost mt-1 w-full py-2 text-sm" onClick={() => setDismissed(true)} disabled={busy}>
-              Teď ne
-            </button>
           </div>
         </div>
       </>
     );
   }
 
-  // ---- Slim pruh (zavřená výzva / zakázáno / iOS instalace) → otevře nastavení ----
+  // ---- Slim pruh (zakázáno / iOS instalace) → otevře nastavení s návodem ----
   const barText =
     st === "denied"
       ? "Upozornění máš vypnutá. Zapni je v nastavení telefonu."
-      : st === "iosInstall"
-        ? "Na iPhonu přidej Mařenu na plochu, ať ti chodí upozornění."
-        : "Zapni si upozornění, ať ti nic neuteče.";
+      : "Na iPhonu přidej Mařenu na plochu, ať ti chodí upozornění.";
 
   return (
     <div className="mb-3">
       <button
         type="button"
-        onClick={() => (st === "prompt" ? setDismissed(false) : setSettings(true))}
+        onClick={() => setSettings(true)}
         className="readonly-pulse flex w-full items-center gap-2.5 rounded-xl border-2 border-gold-500 bg-gold-50 px-3 py-2.5 text-left"
       >
         <span className="text-lg leading-none">🔔</span>
         <span className="min-w-0 flex-1 text-sm font-medium text-ink">{barText}</span>
-        <span className="shrink-0 text-xs font-bold text-gold-700">{st === "prompt" ? "Zapnout →" : "Návod →"}</span>
+        <span className="shrink-0 text-xs font-bold text-gold-700">Návod →</span>
       </button>
       {settingsModal}
     </div>

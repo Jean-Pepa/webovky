@@ -88,30 +88,38 @@ export interface PushPayload {
   tag?: string;
 }
 
-// Pošle notifikaci na všechna zařízení daných jmen. Mrtvé odběry (404/410)
-// průběžně vyčistí. Vrací počet úspěšně doručených požadavků.
-export async function sendToNames(names: string[], payload: PushPayload): Promise<number> {
+export interface SendReport {
+  subs: number; // kolik zařízení bylo uloženo pro daná jména
+  sent: number; // kolik z nich push doopravdy přijalo
+  fails: { code?: number; body?: string }[]; // chyby od push serveru (kvůli diagnostice)
+}
+
+// Jádro rozesílání — vrací podrobný přehled (kolik zařízení, kolik doručeno,
+// jaké chyby). Mrtvé odběry (404/410) průběžně vyčistí.
+export async function sendToNamesDetailed(names: string[], payload: PushPayload): Promise<SendReport> {
   const redis = getRedis();
-  if (!redis || !ensureVapid()) return 0;
+  if (!redis || !ensureVapid()) return { subs: 0, sent: 0, fails: [] };
   const fields = [...new Set(names.map(normName).filter(Boolean))];
-  if (fields.length === 0) return 0;
+  if (fields.length === 0) return { subs: 0, sent: 0, fails: [] };
 
   const lists = await Promise.all(fields.map((f) => redis.hget(PUSH_KEY, f)));
   const body = JSON.stringify(payload);
-  let ok = 0;
+  const report: SendReport = { subs: 0, sent: 0, fails: [] };
 
   await Promise.all(
     fields.map(async (field, i) => {
       const subs = parseList(lists[i]);
+      report.subs += subs.length;
       const dead: string[] = [];
       await Promise.all(
         subs.map(async (sub) => {
           try {
             await webpush.sendNotification(sub, body);
-            ok += 1;
+            report.sent += 1;
           } catch (err: unknown) {
-            const code = (err as { statusCode?: number })?.statusCode;
-            if (code === 404 || code === 410) dead.push(sub.endpoint);
+            const e = err as { statusCode?: number; body?: string };
+            report.fails.push({ code: e?.statusCode, body: typeof e?.body === "string" ? e.body.slice(0, 300) : undefined });
+            if (e?.statusCode === 404 || e?.statusCode === 410) dead.push(sub.endpoint);
           }
         }),
       );
@@ -122,5 +130,10 @@ export async function sendToNames(names: string[], payload: PushPayload): Promis
       }
     }),
   );
-  return ok;
+  return report;
+}
+
+// Pošle notifikaci na všechna zařízení daných jmen. Vrací počet doručení.
+export async function sendToNames(names: string[], payload: PushPayload): Promise<number> {
+  return (await sendToNamesDetailed(names, payload)).sent;
 }

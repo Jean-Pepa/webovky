@@ -27,6 +27,8 @@ export interface Post {
   pollId?: string; // připojená anketa (žije v sekci Hlasování, odkaz z příspěvku)
   // Prioritní zpráva — komu „svítí" v Moje agendě (všichni / role / konkrétní lidé).
   priority?: { all?: boolean; roles?: string[]; people?: string[] };
+  // Kdo z cílených už zprávu odklikl („Beru na vědomí") — každý sám za sebe.
+  prioritySeenBy?: string[];
   createdAt: string;
   editedBy?: string; // kdo naposledy upravil (autor založení se nemění) — legacy
   editedAt?: string; // ISO – kdy se naposledy upravilo — legacy

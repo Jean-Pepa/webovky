@@ -17,6 +17,7 @@ import { ImageViewer } from "@/components/ImageViewer";
 import { matchesQuery } from "@/lib/search";
 import { isAdmin } from "@/lib/admin";
 import { sameName, assigneeHas } from "@/lib/names";
+import { isPriorityFor, hasSeenPriority, priorityTargetNames } from "@/lib/priority";
 import { flash } from "@/components/Flash";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
@@ -717,6 +718,69 @@ function PostPhotos({ ids }: { ids: string[] }) {
   );
 }
 
+// Prioritní zpráva: pro cíleného člověka „Beru na vědomí" (potvrdí sám za sebe),
+// pro autora/správce přehled „kdo už četl a kdo ne".
+function PriorityBox({ post, yearId }: { post: Post; yearId: string }) {
+  const { me, dispatch, currentYear } = useStore();
+  const [showList, setShowList] = useState(false);
+  if (!currentYear || !post.priority) return null;
+
+  const forMe = isPriorityFor(currentYear, post, me);
+  const seen = hasSeenPriority(post, me);
+  const canSeeReceipt = sameName(post.author, me) || isAdmin(me);
+  const targets = canSeeReceipt ? priorityTargetNames(currentYear, post) : [];
+  const seenBy = post.prioritySeenBy ?? [];
+  const acked = targets.filter((n) => seenBy.some((s) => sameName(s, n)));
+  const pending = targets.filter((n) => !seenBy.some((s) => sameName(s, n)));
+
+  return (
+    <div className="mt-3 space-y-2">
+      {forMe && !seen && (
+        <button
+          type="button"
+          onClick={() => dispatch({ type: "markPrioritySeen", yearId, postId: post.id, name: me })}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500 px-3 py-2.5 text-sm font-bold text-white shadow transition hover:bg-red-600"
+        >
+          📣 Beru na vědomí
+        </button>
+      )}
+      {forMe && seen && (
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-leaf-700">
+          <span className="grid h-4 w-4 place-items-center rounded-full bg-leaf/15 text-[10px]">✓</span>
+          Vzal(a) jsi na vědomí.
+        </p>
+      )}
+      {canSeeReceipt && targets.length > 0 && (
+        <div className="rounded-xl bg-paper2/60 p-2.5 ring-1 ring-ink/10">
+          <button
+            type="button"
+            onClick={() => setShowList((v) => !v)}
+            aria-expanded={showList}
+            className="flex w-full items-center gap-1.5 text-xs font-semibold text-ink-soft"
+          >
+            <span aria-hidden className={`text-[10px] transition-transform ${showList ? "rotate-0" : "-rotate-90"}`}>▼</span>
+            📣 Prioritní zpráva · přečetlo {acked.length}/{targets.length}
+          </button>
+          {showList && (
+            <div className="mt-2 space-y-1.5 text-xs leading-relaxed">
+              {pending.length > 0 && (
+                <p className="text-ink-soft">
+                  <span className="font-semibold text-red-600">Ještě nepotvrdili:</span> {pending.join(", ")}
+                </p>
+              )}
+              {acked.length > 0 && (
+                <p className="text-ink-soft">
+                  <span className="font-semibold text-leaf-700">Vzali na vědomí:</span> {acked.join(", ")}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post; yearId: string; highlight?: boolean; flash?: boolean }) {
   const { me, dispatch, configured, currentYear } = useStore();
   const [edit, setEdit] = useState(false);
@@ -741,8 +805,11 @@ function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post;
   const myPostTasks = postTasks.filter((t) => assigneeHas(t.assignee, me));
   const myUndone = myPostTasks.filter((t) => !t.done).length;
   const myAllDone = myPostTasks.length > 0 && myUndone === 0;
-  // Červené blikající ohraničení: moje nesplněné úkoly, nebo nový příspěvek (3 s).
-  const blink = myUndone > 0 || !!flashNew;
+  // Prioritní („svítící") zpráva pro mě, kterou jsem ještě neodklikl → bliká, dokud
+  // nedám „Beru na vědomí" (každý sám za sebe).
+  const priorityUnseen = !!(currentYear && isPriorityFor(currentYear, p, me) && !hasSeenPriority(p, me));
+  // Červené blikající ohraničení: moje nesplněné úkoly, nová/prioritní zpráva.
+  const blink = myUndone > 0 || !!flashNew || priorityUnseen;
   // Jména z týmu pro našeptávač u „Kdo?".
   const memberNames = [...new Set((currentYear?.members ?? []).map((m) => m.name.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "cs"));
   // Historie úprav (nová), s fallbackem na stará data (jen poslední úprava).
@@ -943,6 +1010,7 @@ function PostCard({ post: p, yearId, highlight, flash: flashNew }: { post: Post;
       </div>
       <h3 className="break-words font-display text-[20px] font-semibold">{p.title}</h3>
       {p.body && <PostBody body={p.body} />}
+      {p.priority && <PriorityBox post={p} yearId={yearId} />}
       {/* Úkoly z příspěvku — jen náhled; odškrtává se v sekci Úkoly (tady se needituje) */}
       {postTasks.length > 0 && (
         <div className={`mt-3 rounded-xl p-3 ring-1 ${allTasksDone ? "bg-leaf/10 ring-leaf/40" : "bg-paper2/50 ring-ink/10"}`}>

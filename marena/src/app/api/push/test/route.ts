@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthed } from "@/lib/auth";
-import { sendToNames, pushConfigured } from "@/lib/push";
+import { sendToNamesDetailed, pushConfigured } from "@/lib/push";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,11 +18,11 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as { name?: string } | null;
   const name = body?.name?.trim();
   if (!name) return NextResponse.json({ error: "bad_request" }, { status: 400 });
-  const sent = await sendToNames([name], {
+  const report = await sendToNamesDetailed([name], {
     title: "🔔 Testovací notifikace",
     body: "Funguje to! Takhle ti budou chodit upozornění z Mařeny.",
     url: "/zazemi",
     tag: "marena-test",
   });
-  return NextResponse.json({ ok: true, sent });
+  return NextResponse.json({ ok: true, ...report });
 }

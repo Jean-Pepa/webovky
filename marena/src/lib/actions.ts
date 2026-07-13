@@ -63,6 +63,7 @@ export type Action =
   | { type: "addPost"; yearId: string; id?: string; author: string; roleId?: string; title: string; body: string; pinned?: boolean; photoIds?: string[]; pollId?: string; priority?: { all?: boolean; roles?: string[]; people?: string[] } }
   | { type: "updatePost"; yearId: string; postId: string; editedBy: string; patch: { title?: string; body?: string; roleId?: string | null; photoIds?: string[]; pollId?: string } }
   | { type: "togglePin"; yearId: string; postId: string }
+  | { type: "markPrioritySeen"; yearId: string; postId: string; name: string }
   | { type: "removePost"; yearId: string; postId: string }
   | { type: "addAnnouncement"; yearId: string; text: string; audience: { all?: boolean; roles?: string[]; people?: string[] }; createdBy: string }
   | { type: "removeAnnouncement"; yearId: string; announcementId: string }
@@ -511,6 +512,16 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => ({
         ...y,
         posts: y.posts.map((p) => (p.id === a.postId ? { ...p, pinned: !p.pinned } : p)),
+      }));
+    case "markPrioritySeen":
+      // Dotyčný odklikl „Beru na vědomí" — přidáme jeho jméno (jednou, bez duplicit).
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        posts: y.posts.map((p) => {
+          const name = a.name.trim();
+          if (p.id !== a.postId || !p.priority || !name || (p.prioritySeenBy ?? []).some((n) => sameName(n, name))) return p;
+          return { ...p, prioritySeenBy: [...(p.prioritySeenBy ?? []), name] };
+        }),
       }));
     case "removePost":
       // Smazání příspěvku smaže i úkoly, které z něj vznikly (fromPostId).
