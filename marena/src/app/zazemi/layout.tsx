@@ -105,6 +105,9 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const posOnly = !isAdmin(me) && !!meMember?.posOnly;
   const vyberOnly = !isAdmin(me) && !posOnly && !!meMember?.vyberOnly;
   const restricted = posOnly || vyberOnly;
+  // Oznámení („📣") smí poslat každý s přístupem do aktuálního ročníku
+  // (schválený člen; správce vždy). Výpomoc u stánku / výběrčí ho nemají.
+  const canAnnounce = !restricted && canEditCurrentYear;
   const restrictHref = vyberOnly ? "/zazemi/finance" : "/zazemi/prodej";
   const restrictLabel = vyberOnly ? "Výběr" : "Prodej";
   const restrictIcon: IconName = vyberOnly ? "finance" : "cart";
@@ -376,7 +379,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               🔔 Upozornění
             </button>
           )}
-          {isAdmin(me) && (
+          {canAnnounce && (
             <button
               onClick={() => setAnnOpen(true)}
               title="Poslat oznámení vybraným lidem (vyskočí jim přes obrazovku)"
@@ -455,7 +458,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   🔔 Upozornění
                 </button>
               )}
-              {isAdmin(me) && (
+              {canAnnounce && (
                 <button
                   onClick={() => {
                     setMenuOpen(false);
@@ -502,7 +505,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
 
       {isAdmin(me) && <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />}
       {isAdmin(me) && <ChangePasswordModal open={pwdOpen} onClose={() => setPwdOpen(false)} />}
-      {isAdmin(me) && <AnnounceModal open={annOpen} onClose={() => setAnnOpen(false)} />}
+      {canAnnounce && <AnnounceModal open={annOpen} onClose={() => setAnnOpen(false)} />}
       {pushEnabled && <PushSettings open={pushSettingsOpen} onClose={() => setPushSettingsOpen(false)} />}
 
       {/* Oznámení „přes obrazovku" — vyskočí každému, koho se týká, musí odkliknout */}

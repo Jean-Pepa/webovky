@@ -6,6 +6,7 @@ import { Modal } from "@/components/Modal";
 import { flash } from "@/components/Flash";
 import { ROLES, roleById } from "@/lib/roles";
 import { sameName } from "@/lib/names";
+import { isAdmin } from "@/lib/admin";
 import type { Announcement, Year } from "@/lib/types";
 
 // Komu oznámení „svítí": všem, nebo podle role, nebo konkrétním lidem.
@@ -40,7 +41,8 @@ export function AnnounceModal({ open, onClose }: { open: boolean; onClose: () =>
   const members = useMemo(() => (year?.members ?? []).filter((m) => m.approved !== false), [year]);
   const hasAudience = all || roles.length > 0 || people.length > 0;
   const canSend = text.trim().length > 0 && hasAudience;
-  const sent = year?.announcements ?? [];
+  // Správce vidí všechna odeslaná oznámení; ostatní jen ta svoje (a jen ta mažou).
+  const sent = (year?.announcements ?? []).filter((an) => isAdmin(me) || sameName(an.createdBy, me));
 
   const toggleRole = (rid: string) => {
     setAll(false);
