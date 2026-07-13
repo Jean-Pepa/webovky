@@ -262,6 +262,15 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           {/* Desktop: přepínač den/noc + heslo (správce) + přepínač ročníku + jméno */}
           <div className="ml-auto hidden items-center gap-2 md:flex">
             <ThemeToggle dark={dark} onToggle={toggleTheme} />
+            {canAnnounce && (
+              <button
+                onClick={() => setAnnOpen(true)}
+                title="Poslat oznámení vybraným lidem (vyskočí jim přes obrazovku)"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-marigold-500 px-3.5 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-marigold-600"
+              >
+                📣 Oznámení
+              </button>
+            )}
             {isAdmin(me) && (
               <button
                 onClick={() => setPwdOpen(true)}
@@ -276,7 +285,17 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             {isAdmin(me) && <AppPowerToggle maint={maint} onChanged={setMaint} />}
           </div>
           {/* Mobil: přepínač den/noc (vlevo od hamburgeru) + hamburger */}
-          <div className="ml-auto flex items-center gap-1 md:hidden">
+          <div className="ml-auto flex items-center gap-1.5 md:hidden">
+            {canAnnounce && (
+              <button
+                onClick={() => setAnnOpen(true)}
+                title="Poslat oznámení"
+                aria-label="Poslat oznámení"
+                className="inline-flex items-center gap-1 rounded-full bg-marigold-500 px-2.5 py-1.5 text-sm font-semibold text-white transition hover:bg-marigold-600"
+              >
+                📣<span className="hidden min-[420px]:inline"> Oznámení</span>
+              </button>
+            )}
             <ThemeToggle dark={dark} onToggle={toggleTheme} />
             <button
               className="inline-flex items-center justify-center rounded-full p-2 text-ink-soft hover:bg-ink/5"
@@ -379,15 +398,6 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               🔔 Upozornění
             </button>
           )}
-          {canAnnounce && (
-            <button
-              onClick={() => setAnnOpen(true)}
-              title="Poslat oznámení vybraným lidem (vyskočí jim přes obrazovku)"
-              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-marigold-500 px-3.5 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-marigold-600"
-            >
-              📣 Oznámení
-            </button>
-          )}
           {isAdmin(me) && (
             <Link
               href="/zazemi/web"
@@ -456,17 +466,6 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   className="inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[15px] font-medium text-ink ring-1 ring-ink/10 hover:bg-ink/5"
                 >
                   🔔 Upozornění
-                </button>
-              )}
-              {canAnnounce && (
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setAnnOpen(true);
-                  }}
-                  className="inline-flex items-center gap-2.5 rounded-xl bg-marigold-500 px-3 py-2.5 text-left text-[15px] font-semibold text-white"
-                >
-                  📣 Poslat oznámení
                 </button>
               )}
               {isAdmin(me) && (
