@@ -7,6 +7,7 @@ const SID_COOKIE = "marena_sid";
 let identity = ""; // aktuální přihlášené jméno (prázdné = návštěvník)
 let queue: Record<string, unknown>[] = [];
 let started = false;
+let suppressed = false; // správce se do statistik nepočítá (vlastní klikání se nesbírá)
 
 function readCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -30,7 +31,15 @@ export function setIdentity(name: string) {
   identity = (name || "").trim();
 }
 
+// Zapnout/vypnout sběr. Pro správce ho vypínáme — ať se jeho vlastní klikání
+// (procházení, testování, mazání) nemíchá do statistik. Zahodí i frontu.
+export function setSuppressed(v: boolean) {
+  suppressed = v;
+  if (v) queue = [];
+}
+
 function enqueue(ev: Record<string, unknown>) {
+  if (suppressed) return;
   const sid = ensureSid();
   queue.push({ ...ev, sid, name: identity || undefined });
   if (queue.length >= 12) flush();
