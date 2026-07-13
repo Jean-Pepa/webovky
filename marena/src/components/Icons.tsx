@@ -31,6 +31,7 @@ export type IconName =
   | "globe"
   | "merch"
   | "cart"
+  | "chart"
   | "chevron";
 
 const PATHS: Record<IconName, ReactNode> = {
@@ -201,6 +202,12 @@ const PATHS: Record<IconName, ReactNode> = {
       <circle cx="9" cy="20" r="1.4" />
       <circle cx="18" cy="20" r="1.4" />
       <path d="M2.5 3h2.2l2.2 11.2a1.6 1.6 0 0 0 1.6 1.3h8.4a1.6 1.6 0 0 0 1.6-1.3L21 6.5H6" />
+    </>
+  ),
+  chart: (
+    <>
+      <path d="M4 4v16h16" />
+      <path d="M8 15v-3M12 15V8M16 15v-6" />
     </>
   ),
   chevron: <path d="m6 9 6 6 6-6" />,

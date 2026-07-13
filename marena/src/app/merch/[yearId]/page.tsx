@@ -8,6 +8,7 @@ import { fmtCZK } from "@/lib/format";
 import { Icon } from "@/components/Icons";
 import { ImageViewer } from "@/components/ImageViewer";
 import { FlashHost, flash } from "@/components/Flash";
+import { trackFunnel } from "@/lib/analytics-client";
 import type { DB } from "@/lib/types";
 
 const LS_DB = "marena_db"; // demo režim (localStorage) — stejný klíč jako ve store
@@ -129,8 +130,14 @@ export default function MerchOrderPage() {
     };
   }, [yearId]);
 
+  // Funnel: otevření nabídky (jednou, jakmile je načtená).
+  useEffect(() => {
+    if (status === "ready") trackFunnel("merch_view");
+  }, [status]);
+
   function addToCart(p: PubProduct) {
     if (p.soldOut) return;
+    trackFunnel("merch_add");
     const s = sel[p.id] || {};
     const size = p.sizes.length ? s.size ?? p.sizes[0] : undefined;
     const color = p.colors.length ? s.color ?? p.colors[0] : undefined;
@@ -153,6 +160,7 @@ export default function MerchOrderPage() {
     if (!email.trim()) return setErr("Vyplň e-mail.");
     if (cart.length === 0) return setErr("Košík je prázdný — přidej aspoň jednu věc z nabídky.");
 
+    trackFunnel("merch_submit");
     setSubmitting(true);
     try {
       if (mode === "server") {
@@ -191,6 +199,7 @@ export default function MerchOrderPage() {
         });
         localStorage.setItem(LS_DB, JSON.stringify(next));
       }
+      trackFunnel("merch_success");
       setDone(true);
     } catch {
       setErr("Něco se pokazilo. Zkus to prosím znovu.");

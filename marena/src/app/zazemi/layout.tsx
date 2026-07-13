@@ -410,6 +410,17 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               <Icon name="globe" className="h-4 w-4" /> Web
             </Link>
           )}
+          {isAdmin(me) && (
+            <Link
+              href="/zazemi/statistiky"
+              title="Návštěvnost, kliky, funnel objednávek, zařízení a boti"
+              className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                pathname === "/zazemi/statistiky" ? "bg-ink text-white" : "text-ink-soft ring-1 ring-ink/10 hover:bg-ink/5"
+              }`}
+            >
+              <Icon name="chart" className="h-4 w-4" /> Statistiky
+            </Link>
+          )}
           {isAdmin(me) && db && (
             <button
               onClick={() => setArchiveOpen(true)}
@@ -476,6 +487,15 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   className="inline-flex items-center gap-2.5 rounded-xl bg-plum-600 px-3 py-2.5 text-[15px] font-medium text-white"
                 >
                   <Icon name="globe" className="h-5 w-5" /> Správa webu
+                </Link>
+              )}
+              {isAdmin(me) && (
+                <Link
+                  href="/zazemi/statistiky"
+                  onClick={() => setMenuOpen(false)}
+                  className="inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-medium text-ink ring-1 ring-ink/10 hover:bg-ink/5"
+                >
+                  <Icon name="chart" className="h-5 w-5" /> Statistiky
                 </Link>
               )}
               {isAdmin(me) && db && (
@@ -578,7 +598,8 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
 
       {/* Spodní odsazení = plovoucí lišta (64 px + 12 px mezera) + bezpečná zóna + rezerva. */}
       <main className="mx-auto max-w-6xl px-4 py-6 pb-[calc(6.25rem+env(safe-area-inset-bottom))] md:pb-6">
-        <DesktopPhoneHint />
+        {/* Statistiky jsou správcovský nástroj na počítač → tam „jdi na telefon" pruh nevnucujeme. */}
+        {pathname !== "/zazemi/statistiky" && <DesktopPhoneHint />}
         <PushGate />
         {children}
       </main>
