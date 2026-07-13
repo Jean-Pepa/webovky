@@ -16,6 +16,7 @@ import { SupabaseGate } from "@/components/SupabaseGate";
 import { FlashHost } from "@/components/Flash";
 import { AdminApprovals } from "@/components/AdminApprovals";
 import { PushGate } from "@/components/PushGate";
+import { PushSettings } from "@/components/PushSettings";
 import { ThemeToggle, useZazemiTheme } from "@/components/ThemeToggle";
 import { supabaseEnabled } from "@/lib/supabase/config";
 import type { Post } from "@/lib/types";
@@ -141,6 +142,20 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
   const [annOpen, setAnnOpen] = useState(false);
+  const [pushSettingsOpen, setPushSettingsOpen] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false); // je web push nastavený na serveru?
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/push/config", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (alive && d?.enabled) setPushEnabled(true);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
   const [boardUnread, setBoardUnread] = useState(0);
   const [maint, setMaint] = useState<boolean | null>(null); // režim údržby (null = ještě nevíme)
   const { dark, toggle: toggleTheme } = useZazemiTheme();
@@ -352,6 +367,15 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
           >
             <Icon name="book" className="h-4 w-4" /> Almanach
           </Link>
+          {pushEnabled && (
+            <button
+              onClick={() => setPushSettingsOpen(true)}
+              title="Zapnout / vypnout upozornění na mobil"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-ink/10 transition-colors hover:bg-ink/5"
+            >
+              🔔 Upozornění
+            </button>
+          )}
           {isAdmin(me) && (
             <button
               onClick={() => setAnnOpen(true)}
@@ -420,6 +444,17 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   <Icon name="book" className="h-5 w-5" /> Almanach
                 </Link>
               )}
+              {pushEnabled && (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setPushSettingsOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[15px] font-medium text-ink ring-1 ring-ink/10 hover:bg-ink/5"
+                >
+                  🔔 Upozornění
+                </button>
+              )}
               {isAdmin(me) && (
                 <button
                   onClick={() => {
@@ -468,6 +503,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
       {isAdmin(me) && <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />}
       {isAdmin(me) && <ChangePasswordModal open={pwdOpen} onClose={() => setPwdOpen(false)} />}
       {isAdmin(me) && <AnnounceModal open={annOpen} onClose={() => setAnnOpen(false)} />}
+      {pushEnabled && <PushSettings open={pushSettingsOpen} onClose={() => setPushSettingsOpen(false)} />}
 
       {/* Oznámení „přes obrazovku" — vyskočí každému, koho se týká, musí odkliknout */}
       <AnnouncementAlert />
