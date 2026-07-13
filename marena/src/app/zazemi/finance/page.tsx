@@ -278,7 +278,17 @@ export default function FinancePage() {
   // zapíšou, co zaplatili (propíše se ekonomovi), a vidí jen svoje.
   // Výběrčí (vyberOnly) tuto bránu obchází — potřebuje pohled Výběr.
   if (!canEditSection(year, me, "finance") && !vyberOnly) {
-    return <MyExpenses yearId={year.id} me={me} items={items} canSubmit={canEditCurrentYear} />;
+    return (
+      <MyExpenses
+        yearId={year.id}
+        me={me}
+        items={items}
+        canSubmit={canEditCurrentYear}
+        totals={totals}
+        byCategory={byCategory}
+        vyberTotal={vyber.total}
+      />
+    );
   }
 
   // Přidávat položky i kasy: hlavní koordinátor & finance + správce.
@@ -786,23 +796,8 @@ export default function FinancePage() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Souhrn po kategoriích */}
-        {byCategory.length > 0 && (
-          <div className="card p-5">
-            <h2 className="mb-3 eyebrow">Souhrn po kategoriích</h2>
-            <ul className="divide-y divide-black/[0.06]">
-              {byCategory.map(([cat, v]) => (
-                <li key={cat} className="flex items-center gap-3 py-2 text-sm">
-                  <span className="min-w-0 break-words font-medium">{cat}</span>
-                  <span className="ml-auto flex shrink-0 items-center gap-4">
-                    {v.prijem > 0 && <span className="text-leaf-700">+{fmtCZK(v.prijem)}</span>}
-                    {v.vydaj > 0 && <span className="text-ink-soft">−{fmtCZK(v.vydaj)}</span>}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {/* Souhrn po kategoriích (+ řádek Výběr) */}
+        <CategorySummary byCategory={byCategory} vyberTotal={vyber.total} />
 
         {/* Proplácení — kdo zaplatil a kolik mu vrátit */}
         {byPerson.length > 0 && (
@@ -889,6 +884,34 @@ function SummaryStrip({ cells }: { cells: { label: string; text: string; cls?: s
           <p className={`mt-0.5 font-display text-sm font-bold leading-tight sm:text-base ${c.cls ?? "text-ink"}`}>{c.text}</p>
         </div>
       ))}
+    </div>
+  );
+}
+
+// Souhrn po kategoriích + řádek „Výběr" (kolik jsme dohromady vybrali z vkladů).
+// Sdílený: vidí ho správce i ostatní (v Mých výdajích).
+function CategorySummary({ byCategory, vyberTotal }: { byCategory: [string, { prijem: number; vydaj: number }][]; vyberTotal: number }) {
+  if (byCategory.length === 0 && vyberTotal <= 0) return null;
+  return (
+    <div className="card p-5">
+      <h2 className="mb-3 eyebrow">Souhrn po kategoriích</h2>
+      <ul className="divide-y divide-black/[0.06]">
+        {byCategory.map(([cat, v]) => (
+          <li key={cat} className="flex items-center gap-3 py-2 text-sm">
+            <span className="min-w-0 break-words font-medium">{cat}</span>
+            <span className="ml-auto flex shrink-0 items-center gap-4">
+              {v.prijem > 0 && <span className="text-leaf-700">+{fmtCZK(v.prijem)}</span>}
+              {v.vydaj > 0 && <span className="text-ink-soft">−{fmtCZK(v.vydaj)}</span>}
+            </span>
+          </li>
+        ))}
+        {vyberTotal > 0 && (
+          <li className="flex items-center gap-3 py-2 text-sm">
+            <span className="min-w-0 break-words font-semibold">💰 Výběr — vybráno celkem</span>
+            <span className="ml-auto shrink-0 font-bold text-leaf-700">+{fmtCZK(vyberTotal)}</span>
+          </li>
+        )}
+      </ul>
     </div>
   );
 }
@@ -1723,7 +1746,23 @@ function SaleLine({ o, canDelete, yearId }: { o: SaleOrder; canDelete: boolean; 
 // „Moje výdaje" — pohled pro lidi bez finanční role: zapíšou, co zaplatili
 // (propíše se do financí jako výdaj k proplacení, se jménem), a vidí jen
 // svoje položky se stavem proplacení. Zbytek financí nevidí.
-function MyExpenses({ yearId, me, items, canSubmit }: { yearId: string; me: string; items: FinanceItem[]; canSubmit: boolean }) {
+function MyExpenses({
+  yearId,
+  me,
+  items,
+  canSubmit,
+  totals,
+  byCategory,
+  vyberTotal,
+}: {
+  yearId: string;
+  me: string;
+  items: FinanceItem[];
+  canSubmit: boolean;
+  totals: { prijmy: number; vydaje: number; bilance: number; kasa: number };
+  byCategory: [string, { prijem: number; vydaj: number }][];
+  vyberTotal: number;
+}) {
   const { dispatch } = useStore();
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
@@ -1771,6 +1810,17 @@ function MyExpenses({ yearId, me, items, canSubmit }: { yearId: string; me: stri
       <div>
         <PageTitle>Moje výdaje</PageTitle>
       </div>
+
+      {/* Přehled financí celého ročníku — vidí i běžní členové (jen náhled). */}
+      <SummaryStrip
+        cells={[
+          { label: "Příjmy", text: `+${fmtCZK(totals.prijmy)}`, cls: "text-leaf-700" },
+          { label: "Výdaje", text: `−${fmtCZK(totals.vydaje)}` },
+          { label: "Bilance", text: `${totals.bilance >= 0 ? "+" : "−"}${fmtCZK(Math.abs(totals.bilance))}`, cls: totals.bilance >= 0 ? "text-leaf-700" : "text-red-600" },
+          { label: "V kase", text: `${totals.kasa >= 0 ? "" : "−"}${fmtCZK(Math.abs(totals.kasa))}`, cls: totals.kasa >= 0 ? "text-ink" : "text-red-600" },
+        ]}
+      />
+      <CategorySummary byCategory={byCategory} vyberTotal={vyberTotal} />
 
       {canSubmit ? (
         <section className="card space-y-2 p-4">
