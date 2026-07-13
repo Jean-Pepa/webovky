@@ -53,6 +53,22 @@ export function PushSettings({ open, onClose }: { open: boolean; onClose: () => 
     else flash("Nepodařilo se zapnout, zkus to znovu.", "⚠️");
   }
 
+  async function sendTest() {
+    setBusy(true);
+    try {
+      const r = await fetch("/api/push/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: me }),
+      });
+      flash(r.ok ? "Test odeslán — za chvíli cinkne 🔔" : "Test se nepodařilo odeslat.", r.ok ? "🔔" : "⚠️");
+    } catch {
+      flash("Test se nepodařilo odeslat.", "⚠️");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function turnOff() {
     setBusy(true);
     await disablePush(me);
@@ -87,8 +103,11 @@ export function PushSettings({ open, onClose }: { open: boolean; onClose: () => 
             Upozornění máš zapnutá.
           </p>
           <p className="text-sm text-ink-soft">Na tomhle zařízení ti chodí oznámení. Můžeš je kdykoliv vypnout.</p>
+          <button className="btn-primary w-full py-2.5" onClick={sendTest} disabled={busy}>
+            {busy ? "Posílám…" : "🔔 Poslat testovací notifikaci"}
+          </button>
           <button className="btn-secondary w-full py-2.5" onClick={turnOff} disabled={busy}>
-            {busy ? "Vypínám…" : "🔕 Vypnout upozornění"}
+            {busy ? "Moment…" : "🔕 Vypnout upozornění"}
           </button>
         </div>
       )}
