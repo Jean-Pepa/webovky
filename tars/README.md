@@ -149,7 +149,9 @@ Paměť běží v Chatu **automaticky** — žádné přepínání. TARS odpoví
 **pouze z tvých uložených věcí** (poznámky, lidé, události, přečtené fotky) a
 **nic si nevymýšlí**. Když k dotazu nic relevantního nenajde, řekne narovinu, že
 to v poznámkách nemá (místo aby si domýšlel). Pod odpovědí je decentní odkaz
-**„📎 Odkud to mám (N)"** — po rozkliknutí uvidíš, z čeho čerpal.
+**„📎 Odkud to mám (N)"** — po rozkliknutí uvidíš, z čeho čerpal. Když čerpal
+z **fotky**, ukáže se pod odpovědí i její **náhled** — klepnutím ji otevřeš
+celou (i když ji model přečetl blbě, prostě si ji prohlédneš).
 
 > Když ti chat říká „to nemám", i když věc uloženou máš, sniž práh
 > `MEMORY_MIN_SCORE` (níže) — např. na `0.3`. Vyšší = přísnější.

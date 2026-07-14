@@ -371,10 +371,14 @@ async function handleChat(req, res) {
     "\n\nODPOVÍDEJ POUZE na základě těchto poznámek uživatele. Nedoplňuj nic z " +
     "obecných znalostí a nic si nevymýšlej. Z poznámek MŮŽEŠ vypsat nebo shrnout, co " +
     "v nich je (např. z receptu vypsat suroviny, co koupit), ale NIKDY nedoplňuj " +
-    "konkrétní čísla, množství, suroviny ani kroky, které v poznámkách nejsou. Když je " +
-    "text z poznámek nejasný, poškozený nebo neúplný, řekni to narovinu a nedomýšlej. " +
-    "Když k dotazu v poznámkách nic není, napiš krátce, že o tom nemáš data. Čísla, " +
-    "jména a data uváděj přesně tak, jak jsou v poznámkách.\n\n=== POZNÁMKY ===\n" + context;
+    "konkrétní čísla, množství, suroviny ani kroky, které v poznámkách nejsou. " +
+    "Pokud poznámky jen zmiňují, že existuje nějaká fotka nebo soubor (třeba jen název " +
+    "typu recept na X), ale neobsahují její skutečný obsah, NEPOPISUJ obsah a NEVYMÝŠLEJ " +
+    "ho — napiš, že " +
+    "obsah té fotky nemáš přečtený. Když je text z poznámek nejasný nebo neúplný, řekni " +
+    "to narovinu a nedomýšlej. Když k dotazu v poznámkách nic není, napiš krátce, že o " +
+    "tom nemáš data. Čísla, jména a data uváděj přesně tak, jak jsou v poznámkách." +
+    "\n\n=== POZNÁMKY ===\n" + context;
 
   const fullMessages = [{ role: "system", content: system }, ...messages];
 
@@ -386,7 +390,7 @@ async function handleChat(req, res) {
         model: OLLAMA_MODEL,
         messages: fullMessages,
         stream: true,
-        options: { temperature: 0.2 }, // méně „kreativity" = míň vymýšlení
+        options: { temperature: 0.1 }, // co nejmíň „kreativity" = míň vymýšlení
       }),
     });
 
@@ -411,6 +415,7 @@ async function handleChat(req, res) {
       date: h.date,
       score: Math.round(h.score * 100) / 100,
       snippet: h.chunk.slice(0, 120),
+      isImage: h.refType === "file" && isImageFile(h.name),
     }));
     res.write(JSON.stringify({ sources }) + "\n");
     for await (const chunk of ollamaRes.body) res.write(chunk);

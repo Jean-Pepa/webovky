@@ -728,6 +728,28 @@ function addSources(sources) {
   const box = document.createElement("div");
   box.className = "sources collapsed"; // ve výchozím stavu sbalené
 
+  // fotky ukážeme jako náhledy (klepnutím se otevřou celé) – bez duplicit
+  const seen = new Set();
+  const images = sources.filter((s) => s.isImage && s.refId && !seen.has(s.refId) && seen.add(s.refId));
+  if (images.length) {
+    const imgRow = document.createElement("div");
+    imgRow.className = "src-images";
+    for (const s of images) {
+      const a = document.createElement("a");
+      a.href = "/api/file?id=" + encodeURIComponent(s.refId);
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.className = "src-thumb";
+      const img = document.createElement("img");
+      img.src = "/api/file?id=" + encodeURIComponent(s.refId);
+      img.loading = "lazy";
+      img.alt = s.name || "fotka";
+      a.appendChild(img);
+      imgRow.appendChild(a);
+    }
+    box.appendChild(imgRow);
+  }
+
   const toggle = document.createElement("button");
   toggle.className = "src-toggle";
   toggle.textContent = "📎 Odkud to mám (" + sources.length + ")";
