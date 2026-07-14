@@ -22,7 +22,7 @@ function LinksEditor({ links, setLinks }: { links: string[]; setLinks: Dispatch<
         <div key={i} className="flex items-center gap-2">
           <input
             className="input"
-            placeholder="Odkaz / kontakt"
+            placeholder="Web, e-mail nebo telefon"
             value={l}
             onChange={(e) => setLinks((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))}
           />
@@ -68,7 +68,19 @@ const FILTERS: { id: "vse" | SponsorStatus; label: string }[] = [
 
 // Odkazy sponzora: nové links[] + starý jeden link (kvůli původním datům).
 const linksOf = (s: Sponsor): string[] => [...(s.links ?? []), ...(s.link ? [s.link] : [])];
-const hrefOf = (l: string) => (l.startsWith("http") ? l : `https://${l}`);
+
+// Pozná, jestli je „kontakt" e-mail, telefon nebo web, a udělá správný odkaz
+// (mailto: / tel: / https:). Dřív se všechno bralo jako web — telefon i e-mail
+// se pak chybně otvíraly jako https://…
+type LinkKind = "email" | "phone" | "url";
+function classifyLink(raw: string): { kind: LinkKind; href: string; label: string } {
+  const l = raw.trim();
+  const email = l.replace(/^mailto:/i, "");
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { kind: "email", href: `mailto:${email}`, label: email };
+  const tel = l.replace(/^tel:/i, "");
+  if (/^\+?\d[\d\s()/.-]{5,}$/.test(tel)) return { kind: "phone", href: `tel:${tel.replace(/[\s()/.-]/g, "")}`, label: tel };
+  return { kind: "url", href: l.startsWith("http") ? l : `https://${l}`, label: "odkaz" };
+}
 
 export default function SponzoriPage() {
   const { currentYear, me, dispatch, canEditCurrentYear } = useStore();
@@ -325,11 +337,26 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
             {CAT[s.category].emoji} {CAT[s.category].label}
           </span>
         )}
-        {linksOf(s).map((l, i, arr) => (
-          <a key={i} href={hrefOf(l)} target="_blank" rel="noreferrer" className="break-all text-xs font-medium text-gold-700 hover:underline">
-            🔗 odkaz{arr.length > 1 ? ` ${i + 1}` : ""} ↗
-          </a>
-        ))}
+        {(() => {
+          const items = linksOf(s).map(classifyLink);
+          const urlTotal = items.filter((c) => c.kind === "url").length;
+          const cls = "break-all text-xs font-medium text-gold-700 hover:underline";
+          return items.map((c, i) => {
+            if (c.kind === "url") {
+              const urlN = items.slice(0, i + 1).filter((x) => x.kind === "url").length;
+              return (
+                <a key={i} href={c.href} target="_blank" rel="noreferrer" className={cls}>
+                  🔗 odkaz{urlTotal > 1 ? ` ${urlN}` : ""} ↗
+                </a>
+              );
+            }
+            return (
+              <a key={i} href={c.href} className={cls}>
+                {c.kind === "email" ? "✉️" : "📞"} {c.label}
+              </a>
+            );
+          });
+        })()}
       </div>
 
       {/* Co dává + kdo řeší + poznámka */}
