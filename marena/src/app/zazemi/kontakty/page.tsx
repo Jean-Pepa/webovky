@@ -7,6 +7,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
 import { flash } from "@/components/Flash";
+import { CopyContact } from "@/components/CopyContact";
 import type { LinkItem } from "@/lib/types";
 
 // Doporučené pořadí složek; cokoliv navíc se zařadí za ně, prázdné jako „Ostatní".
@@ -132,16 +133,21 @@ export default function KontaktyPage() {
                 <ul className="grid gap-3 sm:grid-cols-2">
                   {items.map((l) => {
                     const href = hrefFor(l.value);
+                    const cls = "mt-0.5 break-all text-sm font-medium text-gold-700 hover:underline";
                     return (
                       <li key={l.id} className={`card flex min-w-0 flex-col p-4 ${isSponsor ? "ring-1 ring-gold-300" : ""}`}>
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="min-w-0 break-words font-display text-base font-semibold">{l.label}</h3>
                           <DeleteButton onConfirm={() => dispatch({ type: "removeLink", yearId: year.id, linkId: l.id })} />
                         </div>
-                        {href ? (
-                          <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="mt-0.5 break-all text-sm font-medium text-gold-700 hover:underline">
+                        {href?.startsWith("http") ? (
+                          <a href={href} target="_blank" rel="noreferrer" className={cls}>
                             {l.value}
                           </a>
+                        ) : href?.startsWith("mailto:") ? (
+                          <CopyContact value={l.value} kind="email" icon={false} className={cls} />
+                        ) : href?.startsWith("tel:") ? (
+                          <CopyContact value={l.value} kind="phone" icon={false} className={cls} />
                         ) : (
                           <p className="mt-0.5 break-all text-sm text-ink-soft">{l.value}</p>
                         )}

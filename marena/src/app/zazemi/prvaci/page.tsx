@@ -7,6 +7,7 @@ import { canEditSection } from "@/lib/access";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { SearchClear } from "@/components/SearchBox";
 import { DeleteButton } from "@/components/DeleteButton";
+import { CopyContact } from "@/components/CopyContact";
 import { normName } from "@/lib/names";
 import { flash } from "@/components/Flash";
 import type { Freshman } from "@/lib/types";
@@ -126,11 +127,7 @@ function FreshmanRow({ f, yearId, canEdit }: { f: Freshman; yearId: string; canE
     <li className="flex items-start gap-3 px-4 py-2.5">
       <div className="min-w-0 flex-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
         <p className="break-words font-medium">{f.name}</p>
-        {f.email && (
-          <a href={`mailto:${f.email}`} className="break-all text-xs text-ink-soft hover:text-gold-700">
-            ✉️ {f.email}
-          </a>
-        )}
+        {f.email && <CopyContact value={f.email} kind="email" className="break-all text-xs text-ink-soft hover:text-gold-700" />}
         {f.note && <span className="break-words text-xs text-ink-soft">📝 {f.note}</span>}
       </div>
       {canEdit && (

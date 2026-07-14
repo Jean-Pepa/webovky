@@ -13,6 +13,7 @@ import { SearchBox } from "@/components/SearchBox";
 import { flash as toast } from "@/components/Flash";
 import { ApproveAccountModal } from "@/components/ApproveAccountModal";
 import { Collapsible } from "@/components/Collapsible";
+import { CopyContact } from "@/components/CopyContact";
 import { matchesQuery } from "@/lib/search";
 import type { Member, Year } from "@/lib/types";
 
@@ -191,16 +192,8 @@ export default function TymPage() {
         </p>
         {(p.phone || p.email) ? (
           <p className="mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
-            {p.phone && (
-              <a href={`tel:${p.phone}`} className="hover:text-gold-700 tabular-nums">
-                📞 {p.phone}
-              </a>
-            )}
-            {p.email && (
-              <a href={`mailto:${p.email}`} className="min-w-0 break-all hover:text-gold-700">
-                ✉️ {p.email}
-              </a>
-            )}
+            {p.phone && <CopyContact value={p.phone} kind="phone" className="hover:text-gold-700 tabular-nums" />}
+            {p.email && <CopyContact value={p.email} kind="email" className="min-w-0 break-all hover:text-gold-700" />}
           </p>
         ) : (
           <p className="mt-1 text-xs text-ink-soft/70">Bez kontaktu — doplň v profilu.</p>
@@ -230,16 +223,8 @@ export default function TymPage() {
               <span className="truncate">{m.name}</span>
               {sameName(m.name, me) && <span className="chip shrink-0 bg-leaf text-white">ty</span>}
             </p>
-            {m.phone && (
-              <a href={`tel:${m.phone}`} className="block truncate text-xs text-ink-soft hover:text-gold-700 tabular-nums">
-                📞 {m.phone}
-              </a>
-            )}
-            {m.email && (
-              <a href={`mailto:${m.email}`} className="block truncate text-xs text-ink-soft hover:text-gold-700">
-                ✉️ {m.email}
-              </a>
-            )}
+            {m.phone && <CopyContact value={m.phone} kind="phone" className="block max-w-full truncate text-xs text-ink-soft hover:text-gold-700 tabular-nums" />}
+            {m.email && <CopyContact value={m.email} kind="email" className="block max-w-full truncate text-xs text-ink-soft hover:text-gold-700" />}
           </div>
         </div>
         {admin && (
@@ -435,10 +420,9 @@ export default function TymPage() {
                   )}
                 </div>
                 {(myMember.email || myMember.phone) && (
-                  <p className="mt-2 break-words text-sm text-ink-soft">
-                    {myMember.email && <span>✉️ {myMember.email}</span>}
-                    {myMember.email && myMember.phone && <span> · </span>}
-                    {myMember.phone && <span>📞 {myMember.phone}</span>}
+                  <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 break-words text-sm text-ink-soft">
+                    {myMember.email && <CopyContact value={myMember.email} kind="email" className="break-all hover:text-gold-700" />}
+                    {myMember.phone && <CopyContact value={myMember.phone} kind="phone" className="hover:text-gold-700 tabular-nums" />}
                   </p>
                 )}
               </div>
@@ -514,16 +498,8 @@ export default function TymPage() {
                             )}
                           </p>
                           {/* Kontakt — telefon i e-mail celé, každý na svém řádku */}
-                          {m.phone && (
-                            <a href={`tel:${m.phone}`} className="mt-0.5 block text-xs text-ink-soft hover:text-gold-700 tabular-nums">
-                              📞 {m.phone}
-                            </a>
-                          )}
-                          {m.email && (
-                            <a href={`mailto:${m.email}`} className="mt-0.5 block break-all text-xs text-ink-soft hover:text-gold-700">
-                              ✉️ {m.email}
-                            </a>
-                          )}
+                          {m.phone && <CopyContact value={m.phone} kind="phone" className="mt-0.5 block text-xs text-ink-soft hover:text-gold-700 tabular-nums" />}
+                          {m.email && <CopyContact value={m.email} kind="email" className="mt-0.5 block break-all text-xs text-ink-soft hover:text-gold-700" />}
                         </div>
                         {admin && (
                           <div className="flex flex-wrap items-center gap-2">

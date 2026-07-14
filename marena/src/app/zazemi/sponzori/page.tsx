@@ -10,6 +10,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
 import { SearchBox } from "@/components/SearchBox";
 import { WhoSelect } from "@/components/WhoSelect";
+import { CopyContact } from "@/components/CopyContact";
 import { matchesQuery } from "@/lib/search";
 import { flash } from "@/components/Flash";
 import type { Sponsor, SponsorStatus, SponsorCategory } from "@/lib/types";
@@ -350,11 +351,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
                 </a>
               );
             }
-            return (
-              <a key={i} href={c.href} className={cls}>
-                {c.kind === "email" ? "✉️" : "📞"} {c.label}
-              </a>
-            );
+            return <CopyContact key={i} value={c.label} kind={c.kind} className={cls} />;
           });
         })()}
       </div>
