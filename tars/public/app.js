@@ -54,6 +54,7 @@ document.querySelectorAll(".tab").forEach((tab) => {
     for (const [name, el] of Object.entries(views)) el.hidden = name !== which;
     document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === tab));
     if (which === "chat") inputEl.focus();
+    if (which === "notes") loadEntries();
     if (which === "people") loadPeople();
     if (which === "calendar") loadCalendar();
     if (which === "overview") loadStats();
@@ -176,35 +177,64 @@ function plural(n, one, few, many) {
 function summarizeSaved(saved) {
   const notes = saved.filter((s) => s.type === "note").length;
   const people = saved.filter((s) => s.type === "person").map((s) => s.label);
+  const events = saved.filter((s) => s.type === "event").map((s) => s.label);
   const parts = [];
   if (notes) parts.push(notes + " " + plural(notes, "poznámka", "poznámky", "poznámek"));
   if (people.length) parts.push("do Lidí: " + people.join(", "));
+  if (events.length) parts.push("do Kalendáře: " + events.join(", "));
   return parts.length ? "✓ Uloženo — " + parts.join(" · ") : "Nic k uložení.";
 }
 
-// CHYTRÝ ZÁZNAM: nadiktuješ cokoliv, model rozřadí do složek
-saveNoteBtn.addEventListener("click", async () => {
+// CHYTRÝ ZÁZNAM – fronta: klepneš Ulož, pole se HNED uvolní a zpracování běží
+// na pozadí. Můžeš rovnou psát a ukládat další; zpracovává se jedno po druhém.
+const captureQueue = [];
+let captureWorking = false;
+let lastCaptureSummary = "";
+
+function updateCaptureStatus() {
+  const pending = captureQueue.length + (captureWorking ? 1 : 0);
+  if (pending > 0) {
+    captureResult.hidden = false;
+    captureResult.textContent =
+      "⏳ Ukládám a zařazuji…" + (pending > 1 ? " (" + pending + " ve frontě)" : "");
+  } else {
+    captureResult.hidden = !lastCaptureSummary;
+    captureResult.textContent = lastCaptureSummary || "";
+  }
+}
+
+async function processCaptureQueue() {
+  if (captureWorking) return; // pracuje se – další položky se přiberou z fronty
+  captureWorking = true;
+  while (captureQueue.length) {
+    const text = captureQueue.shift();
+    updateCaptureStatus();
+    try {
+      const res = await fetch("/api/capture", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || "chyba");
+      lastCaptureSummary = summarizeSaved(j.saved || []);
+      await loadEntries();
+    } catch (err) {
+      lastCaptureSummary = "⚠ Nepodařilo se uložit: " + (err.message || err);
+    }
+  }
+  captureWorking = false;
+  updateCaptureStatus();
+}
+
+saveNoteBtn.addEventListener("click", () => {
   const text = noteInput.value.trim();
   if (!text) return noteInput.focus();
-  saveNoteBtn.disabled = true;
-  captureResult.hidden = false;
-  captureResult.textContent = "Zpracovávám a zařazuji…";
-  try {
-    const res = await fetch("/api/capture", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
-    const j = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(j.error || "chyba");
-    noteInput.value = "";
-    captureResult.textContent = summarizeSaved(j.saved || []);
-    await loadEntries();
-  } catch (err) {
-    captureResult.textContent = "⚠ Nepodařilo se uložit: " + (err.message || err);
-  } finally {
-    saveNoteBtn.disabled = false;
-  }
+  captureQueue.push(text); // do fronty
+  noteInput.value = ""; // pole je hned volné pro další zápis
+  noteInput.focus();
+  updateCaptureStatus();
+  processCaptureQueue(); // rozjede zpracování, když zrovna neběží
 });
 
 attachBtn.addEventListener("click", () => fileInput.click());
