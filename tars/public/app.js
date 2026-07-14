@@ -17,6 +17,7 @@ const fileInput = document.getElementById("fileInput");
 const uploading = document.getElementById("uploading");
 const captureResult = document.getElementById("captureResult");
 const entriesEl = document.getElementById("entries");
+const entrySearch = document.getElementById("entrySearch");
 
 // lidé
 const personName = document.getElementById("personName");
@@ -154,19 +155,53 @@ function renderEntry(e) {
   return row;
 }
 
+// odstraň diakritiku a malá písmena (kvůli hledání)
+function normStr(s) {
+  return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+// text, ve kterém záznam hledáme (obsah + datum v různých podobách)
+function entrySearchText(e) {
+  const d = new Date(e.date);
+  return normStr(
+    [
+      e.preview || "",
+      e.name || "",
+      e.readSnippet || "",
+      fmtDate(e.date),
+      d.toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" }),
+      e.date, // ISO (2026-07-14)
+    ].join(" ")
+  );
+}
+
+let allEntries = [];
+
+function renderEntriesList() {
+  const q = normStr(entrySearch.value.trim());
+  entriesEl.innerHTML = "";
+  if (!allEntries.length) {
+    entriesEl.innerHTML = '<p class="hint">Zatím nic uloženého. Nadiktuj něco nebo přidej soubor.</p>';
+    return;
+  }
+  const list = q ? allEntries.filter((e) => entrySearchText(e).includes(q)) : allEntries;
+  if (!list.length) {
+    entriesEl.innerHTML = '<p class="hint">Nic nenalezeno.</p>';
+    return;
+  }
+  for (const e of list) entriesEl.appendChild(renderEntry(e));
+}
+
 async function loadEntries() {
   try {
     const { entries } = await (await fetch("/api/entries")).json();
-    entriesEl.innerHTML = "";
-    if (!entries.length) {
-      entriesEl.innerHTML = '<p class="hint">Zatím nic uloženého. Nadiktuj něco nebo přidej soubor.</p>';
-      return;
-    }
-    for (const e of entries) entriesEl.appendChild(renderEntry(e));
+    allEntries = entries;
+    renderEntriesList();
   } catch {
     entriesEl.innerHTML = '<p class="hint">Nepodařilo se načíst uložené (běží server?).</p>';
   }
 }
+entrySearch.addEventListener("input", renderEntriesList);
 loadEntries();
 
 // české skloňování počtu
@@ -675,11 +710,16 @@ function addBubble(role, text) {
 function addSources(sources) {
   if (!sources || !sources.length) return;
   const box = document.createElement("div");
-  box.className = "sources";
-  const title = document.createElement("div");
-  title.className = "src-title";
-  title.textContent = "Z poznámek:";
-  box.appendChild(title);
+  box.className = "sources collapsed"; // ve výchozím stavu sbalené
+
+  const toggle = document.createElement("button");
+  toggle.className = "src-toggle";
+  toggle.textContent = "📎 Odkud to mám (" + sources.length + ")";
+  toggle.addEventListener("click", () => box.classList.toggle("collapsed"));
+  box.appendChild(toggle);
+
+  const list = document.createElement("div");
+  list.className = "src-list";
   for (const s of sources) {
     const el = document.createElement("div");
     el.className = "source";
@@ -687,8 +727,10 @@ function addSources(sources) {
     el.querySelector("b").textContent =
       (s.name || "poznámka") + " · " + new Date(s.date).toLocaleDateString("cs-CZ") + " — ";
     el.querySelector("span").textContent = s.snippet + "…";
-    box.appendChild(el);
+    list.appendChild(el);
   }
+  box.appendChild(list);
+
   chatEl.appendChild(box);
   chatEl.scrollTop = chatEl.scrollHeight;
 }

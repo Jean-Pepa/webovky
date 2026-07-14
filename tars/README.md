@@ -98,7 +98,11 @@ tars/data/ocr/       ← text přečtený z fotek
 > **nikdy nenahrají na GitHub**. Zůstávají jen na tvém počítači.
 
 Uložené poznámky a soubory vidíš rovnou v seznamu pod polem; křížkem ✕ položku
-smažeš.
+smažeš. Nad seznamem je **vyhledávací pole** — hledá v obsahu i podle **data**
+(napiš třeba `14.7`, `červenec` nebo `2026`).
+
+Špatně zařazeno? Tlačítkem **↦** u položky ji **přeřadíš** (a TARS si to
+zapamatuje — viz „Učení z oprav" níže).
 
 ---
 
@@ -137,20 +141,30 @@ Na obrazovce **Přehled**:
 
 ## Paměť — ptej se nad svými poznámkami (RAG)
 
-Paměť běží v Chatu **automaticky** — žádné přepínání. Když se zeptáš, TARS
-najde k dotazu nejpodobnější poznámky, lidi a textové soubory, vezme je v potaz
-a **pod odpovědí ukáže, z čeho čerpal** („Z poznámek:"). Když se nic
-relevantního nenajde, odpoví normálně z obecných znalostí.
+Paměť běží v Chatu **automaticky** — žádné přepínání. TARS odpovídá
+**pouze z tvých uložených věcí** (poznámky, lidé, události, přečtené fotky) a
+**nic si nevymýšlí**. Když k dotazu nic relevantního nenajde, řekne narovinu, že
+to v poznámkách nemá (místo aby si domýšlel). Pod odpovědí je decentní odkaz
+**„📎 Odkud to mám (N)"** — po rozkliknutí uvidíš, z čeho čerpal.
+
+> Když ti chat říká „to nemám", i když věc uloženou máš, sniž práh
+> `MEMORY_MIN_SCORE` (níže) — např. na `0.3`. Vyšší = přísnější.
 
 Jak to funguje: každá uložená věc se převede na „otisk" (embedding) modelem
 **`nomic-embed-text`**, který už máš. Vše lokálně.
 
-> ℹ️ Do paměti jdou **poznámky, lidé a textové soubory** (`.txt`, `.md`, `.csv`,
-> `.log`, `.json`). Obrázky a PDF se zatím jen ukládají (čtení z nich přidáme
-> později).
->
-> Jak ochotně TARS poznámky používá, ladí proměnná `MEMORY_MIN_SCORE`
-> (níže) — nižší číslo = ochotnější.
+> ℹ️ Do paměti jdou **poznámky, lidé, události, textové soubory a text přečtený
+> z fotek**.
+
+---
+
+## Učení z oprav
+
+Když TARS něco zařadí špatně, u položky (poznámka / člověk / událost) klepni na
+**↦ Přeřadit** a vyber, kam to vlastně patří. Položka se přesune do správné
+složky a TARS si to **zapamatuje jako příklad** — u podobných textů se pak drží
+tvých oprav. Model se sice nemění, ale appka ho tvými opravami navádí. Vše
+lokálně (uloženo v `data/lessons.json`).
 
 ---
 
@@ -192,7 +206,7 @@ Když budeš chtít něco změnit, spusť server s proměnnou navíc:
 | `OLLAMA_MODEL` | který model použít (chat)       | `qwen2.5:7b`             |
 | `EMBED_MODEL`  | model pro paměť (embeddingy)    | `nomic-embed-text`       |
 | `VISION_MODEL` | model pro čtení textu z fotek   | `llava`                  |
-| `MEMORY_MIN_SCORE` | práh, kdy chat použije poznámku (0–1) | `0.5`             |
+| `MEMORY_MIN_SCORE` | práh, kdy chat použije poznámku (0–1) | `0.4`             |
 
 > Čtení fotek potřebuje „vidoucí" model. Stáhni ho jednou:
 > `ollama pull llava` (menší varianta při málo paměti: `ollama pull moondream`,

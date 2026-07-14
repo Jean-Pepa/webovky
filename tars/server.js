@@ -28,7 +28,7 @@ const EMBED_MODEL = process.env.EMBED_MODEL || "nomic-embed-text";
 // model, který "vidí" obrázky (čtení textu z fotek). Musí být stažený: ollama pull llava
 const VISION_MODEL = process.env.VISION_MODEL || "llava";
 // jak moc musí být poznámka podobná dotazu, aby ji chat použil (0–1). Nižší = ochotnější.
-const MEMORY_MIN_SCORE = Number(process.env.MEMORY_MIN_SCORE || 0.5);
+const MEMORY_MIN_SCORE = Number(process.env.MEMORY_MIN_SCORE || 0.4);
 
 const SYSTEM_PROMPT =
   "Jsi TARS, osobní asistent Kristiána. Odpovídáš česky, stručně a k věci. " +
@@ -309,23 +309,35 @@ async function handleChat(req, res) {
   let hits = [];
   if (lastUser && INDEX.length) {
     try {
-      const found = await searchIndex(String(lastUser.content || ""), 5);
+      const found = await searchIndex(String(lastUser.content || ""), 6);
       hits = found.filter((h) => h.score >= MEMORY_MIN_SCORE);
     } catch {
-      hits = []; // embed model nedostupný → chat pojede normálně, bez paměti
+      hits = []; // embed model nedostupný
     }
   }
 
-  let system = SYSTEM_PROMPT;
-  if (hits.length) {
-    const context = hits
-      .map((h, i) => `[${i + 1}] (${h.name}, ${new Date(h.date).toLocaleString("cs-CZ")}):\n${h.chunk}`)
-      .join("\n\n");
-    system +=
-      "\n\nNíže jsou poznámky uživatele, které MOHOU souviset s dotazem. Použij je, " +
-      "pokud pomáhají odpovědět; pokud nesouvisí, ignoruj je a odpověz z obecných znalostí.\n\n" +
-      "=== POZNÁMKY ===\n" + context;
+  // STRIKTNÍ REŽIM: TARS odpovídá jen z tvých poznámek. Když nic relevantního
+  // nenajde, řekne to narovinu – nic si nevymýšlí.
+  if (!hits.length) {
+    const msg = INDEX.length
+      ? "To k tomu ve svých poznámkách nemám. Zkus se zeptat jinak, nebo se mrkni do Záznamu."
+      : "Ještě nemáš uložené žádné poznámky. Ulož něco do Záznamu a pak se ptej.";
+    res.writeHead(200, { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-cache" });
+    res.write(JSON.stringify({ message: { content: msg } }) + "\n");
+    res.write(JSON.stringify({ done: true }) + "\n");
+    res.end();
+    return;
   }
+
+  const context = hits
+    .map((h, i) => `[${i + 1}] (${h.name}, ${new Date(h.date).toLocaleString("cs-CZ")}):\n${h.chunk}`)
+    .join("\n\n");
+  const system =
+    SYSTEM_PROMPT +
+    "\n\nODPOVÍDEJ POUZE na základě těchto poznámek uživatele. Nic si nevymýšlej a " +
+    "nedoplňuj nic z obecných znalostí. Když odpověď v poznámkách není, napiš krátce, že " +
+    "to v poznámkách nemáš. Čísla, jména a data uváděj přesně tak, jak jsou v poznámkách.\n\n" +
+    "=== POZNÁMKY ===\n" + context;
 
   const fullMessages = [{ role: "system", content: system }, ...messages];
 
@@ -333,7 +345,12 @@ async function handleChat(req, res) {
     const ollamaRes = await fetch(`${OLLAMA_URL}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: OLLAMA_MODEL, messages: fullMessages, stream: true }),
+      body: JSON.stringify({
+        model: OLLAMA_MODEL,
+        messages: fullMessages,
+        stream: true,
+        options: { temperature: 0.2 }, // méně „kreativity" = míň vymýšlení
+      }),
     });
 
     if (!ollamaRes.ok || !ollamaRes.body) {
@@ -349,18 +366,16 @@ async function handleChat(req, res) {
       "Content-Type": "application/x-ndjson; charset=utf-8",
       "Cache-Control": "no-cache",
     });
-    // když paměť něco našla, pošli nejdřív zdroje (appka je ukáže pod odpovědí)
-    if (hits.length) {
-      const sources = hits.map((h) => ({
-        refType: h.refType,
-        refId: h.refId,
-        name: h.name,
-        date: h.date,
-        score: Math.round(h.score * 100) / 100,
-        snippet: h.chunk.slice(0, 120),
-      }));
-      res.write(JSON.stringify({ sources }) + "\n");
-    }
+    // nejdřív pošli zdroje (appka je ukáže sbalené, na rozkliknutí)
+    const sources = hits.map((h) => ({
+      refType: h.refType,
+      refId: h.refId,
+      name: h.name,
+      date: h.date,
+      score: Math.round(h.score * 100) / 100,
+      snippet: h.chunk.slice(0, 120),
+    }));
+    res.write(JSON.stringify({ sources }) + "\n");
     for await (const chunk of ollamaRes.body) res.write(chunk);
     res.end();
   } catch (err) {

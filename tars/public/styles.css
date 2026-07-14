@@ -384,6 +384,17 @@ body {
   border-color: #3a3a44;
 }
 
+/* vyhledávací pole v Záznamu */
+.search-bar {
+  flex: 0 0 auto;
+  padding: 10px 14px 0;
+}
+
+.search-bar .field {
+  font-size: 15px;
+  padding: 10px 14px;
+}
+
 /* ============ PŘEHLED ============ */
 .overview {
   flex: 1;
@@ -657,11 +668,31 @@ body {
   gap: 5px;
 }
 
-.sources .src-title {
-  font-size: 11px;
+.src-toggle {
+  align-self: flex-start;
+  background: none;
+  border: none;
   color: var(--muted);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 0;
+  text-align: left;
+}
+
+.src-toggle:active {
+  color: var(--accent);
+}
+
+.sources .src-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.sources.collapsed .src-list {
+  display: none;
 }
 
 .source {
