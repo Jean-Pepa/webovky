@@ -16,6 +16,7 @@ import { normName, sameName } from "@/lib/names";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { uid } from "@/lib/id";
 import { flash } from "@/components/Flash";
+import { CopyContact } from "@/components/CopyContact";
 import type { FinanceItem, FinanceKind, Cashbox, Contribution } from "@/lib/types";
 
 // Stav jednoho vkladu — pro barvy, filtry i souhrny.
@@ -1244,16 +1245,8 @@ function ContributionRow({ c, yearId, canEdit, onEdit }: { c: Contribution; year
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className={`font-semibold leading-tight ${c.returned ? "text-ink-soft line-through" : "text-ink"}`}>{c.name}</p>
-          {c.email && (
-            <a href={`mailto:${c.email}`} className="mt-0.5 block break-all text-xs text-ink-soft hover:text-gold-700">
-              ✉️ {c.email}
-            </a>
-          )}
-          {c.phone && (
-            <a href={`tel:${c.phone}`} className="mt-0.5 block break-all text-xs text-ink-soft hover:text-gold-700">
-              📞 {c.phone}
-            </a>
-          )}
+          {c.email && <CopyContact value={c.email} kind="email" className="mt-0.5 block break-all text-xs text-ink-soft hover:text-gold-700" />}
+          {c.phone && <CopyContact value={c.phone} kind="phone" className="mt-0.5 block break-all text-xs text-ink-soft hover:text-gold-700" />}
         </div>
         <div className="shrink-0 text-right leading-tight">
           <p className={`font-display text-lg font-bold ${amountColor}`}>{fmtCZK(c.amount)}</p>

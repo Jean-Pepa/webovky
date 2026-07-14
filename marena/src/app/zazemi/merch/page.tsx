@@ -6,6 +6,7 @@ import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { ImageViewer } from "@/components/ImageViewer";
+import { CopyContact } from "@/components/CopyContact";
 import Link from "next/link";
 import { PayQr } from "@/components/PayQr";
 import { parseAccount } from "@/lib/payment";
@@ -576,16 +577,8 @@ function OrderRow({
       {/* Řádek 1: jméno · telefon · e-mail · datum a čas · stav · smazat */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className="font-semibold">{order.name}</span>
-        {order.phone && (
-          <a href={`tel:${order.phone}`} className="text-xs text-ink-soft hover:text-ink">
-            📞 {order.phone}
-          </a>
-        )}
-        {order.email && (
-          <a href={`mailto:${order.email}`} className="text-xs text-ink-soft hover:text-ink">
-            ✉️ {order.email}
-          </a>
-        )}
+        {order.phone && <CopyContact value={order.phone} kind="phone" className="text-xs text-ink-soft hover:text-ink" />}
+        {order.email && <CopyContact value={order.email} kind="email" className="text-xs text-ink-soft hover:text-ink" />}
         <span className="text-xs text-ink-soft/70">{fmtDateTime(order.createdAt)}</span>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
