@@ -149,6 +149,7 @@ function renderEntry(e) {
 
   row.appendChild(ico);
   row.appendChild(body);
+  if (e.type === "note") row.appendChild(reclassifyButton({ type: "note", id: e.id }));
   row.appendChild(del);
   return row;
 }
@@ -285,6 +286,105 @@ async function deleteEntry(e, row, reload) {
   }
 }
 
+// ==================== UČENÍ Z OPRAV (přeřazení) ====================
+// Obnov všechny seznamy (položka se přesune mezi Záznamem / Lidmi / Kalendářem)
+function refreshAll() {
+  loadEntries();
+  loadPeople();
+  loadCalendar();
+  loadStats();
+}
+
+const RECLASS_LABELS = { note: "Poznámky", person: "Lidí", event: "Kalendáře" };
+
+// tlačítko „přeřadit" pro položku { type, id }
+function reclassifyButton(entry) {
+  const b = document.createElement("button");
+  b.className = "reclass";
+  b.textContent = "↦";
+  b.title = "Přeřadit (a naučit TARS)";
+  b.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    openReclassify(entry, b.closest(".entry, .day-event"));
+  });
+  return b;
+}
+
+function openReclassify(entry, rowEl) {
+  document.querySelectorAll(".reclass-panel").forEach((p) => p.remove());
+  const panel = document.createElement("div");
+  panel.className = "reclass-panel";
+  const q = document.createElement("div");
+  q.className = "reclass-q";
+  q.textContent = "Kam to vlastně patří?";
+  panel.appendChild(q);
+  const choices = document.createElement("div");
+  choices.className = "reclass-choices";
+  for (const t of ["note", "person", "event"]) {
+    if (t === entry.type) continue;
+    const b = document.createElement("button");
+    b.className = "reclass-choice";
+    b.textContent = "→ " + RECLASS_LABELS[t];
+    b.addEventListener("click", () => chooseTarget(entry, t, panel));
+    choices.appendChild(b);
+  }
+  panel.appendChild(choices);
+  rowEl.insertAdjacentElement("afterend", panel);
+}
+
+function mkOk(fn) {
+  const b = document.createElement("button");
+  b.className = "reclass-choice ok";
+  b.textContent = "OK";
+  b.addEventListener("click", fn);
+  return b;
+}
+
+function chooseTarget(entry, toType, panel) {
+  if (toType === "note") return doReclassify(entry, "note", {}, panel);
+  panel.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.className = "reclass-form";
+  if (toType === "person") {
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.placeholder = "Jméno";
+    inp.className = "reclass-input";
+    wrap.appendChild(inp);
+    wrap.appendChild(mkOk(() => (inp.value.trim() ? doReclassify(entry, "person", { name: inp.value.trim() }, panel) : inp.focus())));
+    panel.appendChild(wrap);
+    inp.focus();
+  } else if (toType === "event") {
+    const dt = document.createElement("input");
+    dt.type = "date";
+    dt.className = "reclass-input";
+    const tm = document.createElement("input");
+    tm.type = "time";
+    tm.className = "reclass-input";
+    wrap.appendChild(dt);
+    wrap.appendChild(tm);
+    wrap.appendChild(mkOk(() => (dt.value ? doReclassify(entry, "event", { date: dt.value, time: tm.value }, panel) : dt.focus())));
+    panel.appendChild(wrap);
+  }
+}
+
+async function doReclassify(entry, toType, extra, panel) {
+  panel.innerHTML = '<div class="reclass-q">Přeřazuji a učím se…</div>';
+  try {
+    const res = await fetch("/api/reclassify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fromType: entry.type, id: entry.id, toType, ...extra }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(j.error || "chyba");
+    panel.remove();
+    refreshAll();
+  } catch (err) {
+    panel.innerHTML = '<div class="reclass-q">⚠ ' + (err.message || err) + "</div>";
+  }
+}
+
 // ==================== LIDÉ ====================
 function renderPerson(p) {
   const row = document.createElement("div");
@@ -314,6 +414,7 @@ function renderPerson(p) {
 
   row.appendChild(ico);
   row.appendChild(body);
+  row.appendChild(reclassifyButton({ type: "person", id: p.id }));
   row.appendChild(del);
   return row;
 }
@@ -462,6 +563,7 @@ function renderDayPanel() {
     });
     row.appendChild(t);
     row.appendChild(ttl);
+    row.appendChild(reclassifyButton({ type: "event", id: e.id }));
     row.appendChild(del);
     dayPanel.appendChild(row);
   }

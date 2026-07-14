@@ -81,6 +81,26 @@ function saveIndex() {
   }
 }
 
+// ==== UČENÍ Z OPRAV ====
+// Když uživatel něco přeřadí (opraví zařazení), uložíme "lekci": text → správný typ.
+// Lekce pak vkládáme do třídiče jako příklady, ať se u podobných textů drží tvých oprav.
+const LESSONS_FILE = path.join(DATA_DIR, "lessons.json");
+let LESSONS = [];
+try {
+  if (fs.existsSync(LESSONS_FILE)) LESSONS = JSON.parse(fs.readFileSync(LESSONS_FILE, "utf-8"));
+} catch {
+  LESSONS = [];
+}
+function saveLessons() {
+  try {
+    fs.writeFileSync(LESSONS_FILE, JSON.stringify(LESSONS), "utf-8");
+  } catch (e) {
+    console.warn("  ! nepodařilo se uložit lekce:", e.message);
+  }
+}
+
+let RECLASS_SEQ = 0; // aby se jména nekřížila ve stejné milisekundě
+
 const MIME = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -407,7 +427,8 @@ async function handleCapture(req, res) {
               CLASSIFY_SYS +
               "\nDnes je " +
               new Date().toLocaleDateString("cs-CZ", { weekday: "long", year: "numeric", month: "2-digit", day: "2-digit" }) +
-              " (" + new Date().toISOString().slice(0, 10) + ").",
+              " (" + new Date().toISOString().slice(0, 10) + ")." +
+              lessonsHint(),
           },
           { role: "user", content: text },
         ],
@@ -455,6 +476,97 @@ async function handleCapture(req, res) {
   }
 
   sendJson(res, 200, { ok: true, saved });
+}
+
+// příklady z tvých oprav, které vložíme do třídiče
+function lessonsHint() {
+  if (!LESSONS.length) return "";
+  const items = LESSONS.slice(-12)
+    .map((l) => `- "${l.text}" → ${l.type}`)
+    .join("\n");
+  return (
+    "\n\nPOUČENÍ z toho, jak jsi to dříve opravil (u podobných textů se drž " +
+    "těchto zařazení):\n" + items
+  );
+}
+
+// přečti "surový text" položky (pro přeřazení jinam)
+function reclassSourceText(type, id) {
+  if (type === "note") {
+    const p = insideDir(NOTES_DIR, id);
+    return p && fs.existsSync(p) ? fs.readFileSync(p, "utf-8") : null;
+  }
+  if (type === "person") {
+    const p = insideDir(PEOPLE_DIR, id);
+    if (!p || !fs.existsSync(p)) return null;
+    const o = JSON.parse(fs.readFileSync(p, "utf-8"));
+    return (o.name || "") + (o.info ? "\n" + o.info : "");
+  }
+  if (type === "event") {
+    const p = insideDir(EVENTS_DIR, id);
+    if (!p || !fs.existsSync(p)) return null;
+    const o = JSON.parse(fs.readFileSync(p, "utf-8"));
+    return o.title || "";
+  }
+  return null;
+}
+
+// --- Učení z oprav: přeřaď položku jinam a zapamatuj si to --------------------
+async function handleReclassify(req, res) {
+  const body = await readBody(req);
+  let fromType, id, toType, name, date, time;
+  try {
+    const j = JSON.parse(body || "{}");
+    fromType = j.fromType;
+    id = safeName(j.id);
+    toType = j.toType;
+    name = String(j.name || "").trim();
+    date = String(j.date || "");
+    time = String(j.time || "");
+  } catch {
+    return sendJson(res, 400, { error: "Neplatný JSON." });
+  }
+
+  const text = reclassSourceText(fromType, id);
+  if (text == null) return sendJson(res, 400, { error: "Zdroj nenalezen." });
+  const clean = text.trim();
+
+  // vytvoř cíl
+  const nid = stamp() + "-r" + RECLASS_SEQ++;
+  let created;
+  if (toType === "note") {
+    if (!clean) return sendJson(res, 400, { error: "Prázdný text." });
+    fs.writeFileSync(path.join(NOTES_DIR, nid + ".md"), clean, "utf-8");
+    await indexRef({ refType: "note", refId: nid + ".md", name: "poznámka", date: new Date().toISOString(), text: clean });
+    created = { type: "note" };
+  } else if (toType === "person") {
+    if (!name) return sendJson(res, 400, { error: "Chybí jméno." });
+    const d = new Date().toISOString();
+    fs.writeFileSync(path.join(PEOPLE_DIR, nid + ".json"), JSON.stringify({ name, info: clean, date: d }), "utf-8");
+    await indexRef({ refType: "person", refId: nid + ".json", name, date: d, text: "Osoba: " + name + "\n" + clean });
+    created = { type: "person", label: name };
+  } else if (toType === "event") {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return sendJson(res, 400, { error: "Chybí datum." });
+    const ev = await saveEvent(nid + ".json", clean.split("\n")[0].slice(0, 100), date, time);
+    created = { type: "event", label: ev.title };
+  } else {
+    return sendJson(res, 400, { error: "Neznámý cíl." });
+  }
+
+  // smaž původní položku (i z paměti)
+  const dir = fromType === "note" ? NOTES_DIR : fromType === "person" ? PEOPLE_DIR : fromType === "event" ? EVENTS_DIR : null;
+  if (dir) {
+    const p = insideDir(dir, id);
+    if (p && fs.existsSync(p)) fs.unlinkSync(p);
+    removeFromIndex(fromType, id);
+  }
+
+  // zapamatuj si lekci: text → správný typ
+  LESSONS.push({ text: clean.replace(/\s+/g, " ").slice(0, 200), type: toType, at: new Date().toISOString() });
+  if (LESSONS.length > 60) LESSONS = LESSONS.slice(-60);
+  saveLessons();
+
+  sendJson(res, 200, { ok: true, created, lessons: LESSONS.length });
 }
 
 // --- Zápisník: nahraj soubor (raw tělo, jméno v ?name=) ----------------------
@@ -821,6 +933,7 @@ const server = http.createServer((req, res) => {
   if (req.method === "POST" && pathname === "/api/chat") return handleChat(req, res);
   if (req.method === "POST" && pathname === "/api/notes") return handleSaveNote(req, res);
   if (req.method === "POST" && pathname === "/api/capture") return handleCapture(req, res);
+  if (req.method === "POST" && pathname === "/api/reclassify") return handleReclassify(req, res);
   if (req.method === "POST" && pathname === "/api/upload") return handleUpload(req, res);
   if (req.method === "POST" && pathname === "/api/delete") return handleDelete(req, res);
   if (req.method === "POST" && pathname === "/api/people") return handleSavePerson(req, res);
