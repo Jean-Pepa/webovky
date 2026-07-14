@@ -25,6 +25,8 @@ const PORT = process.env.PORT || 8787;
 const OLLAMA_URL = (process.env.OLLAMA_URL || "http://localhost:11434").replace(/\/$/, "");
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5:7b";
 const EMBED_MODEL = process.env.EMBED_MODEL || "nomic-embed-text";
+// model, který "vidí" obrázky (čtení textu z fotek). Musí být stažený: ollama pull llava
+const VISION_MODEL = process.env.VISION_MODEL || "llava";
 // jak moc musí být poznámka podobná dotazu, aby ji chat použil (0–1). Nižší = ochotnější.
 const MEMORY_MIN_SCORE = Number(process.env.MEMORY_MIN_SCORE || 0.5);
 
@@ -54,9 +56,10 @@ const NOTES_DIR = path.join(DATA_DIR, "notes");
 const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
 const PEOPLE_DIR = path.join(DATA_DIR, "people");
 const EVENTS_DIR = path.join(DATA_DIR, "events");
+const OCR_DIR = path.join(DATA_DIR, "ocr"); // přečtený text z fotek (podle id souboru)
 
 // založ složky na data, když ještě nejsou
-for (const dir of [DATA_DIR, NOTES_DIR, UPLOADS_DIR, PEOPLE_DIR, EVENTS_DIR]) {
+for (const dir of [DATA_DIR, NOTES_DIR, UPLOADS_DIR, PEOPLE_DIR, EVENTS_DIR, OCR_DIR]) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
@@ -235,6 +238,39 @@ async function searchIndex(question, k = 5) {
 // je soubor textový (umíme z něj číst pro paměť)?
 function isTextFile(name) {
   return /\.(txt|md|markdown|csv|log|json)$/i.test(name || "");
+}
+
+// je soubor obrázek (umíme z něj přečíst text přes vision model)?
+function isImageFile(name) {
+  return /\.(jpg|jpeg|png|webp|gif|heic)$/i.test(name || "");
+}
+
+// přečti text z obrázku „vidoucím" modelem v Ollamě (llava apod.)
+async function readImage(filePath) {
+  const b64 = fs.readFileSync(filePath).toString("base64");
+  const r = await fetch(`${OLLAMA_URL}/api/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: VISION_MODEL,
+      prompt:
+        "Přepiš do češtiny veškerý text, který na obrázku vidíš. Vrať jen ten text, " +
+        "bez úvodu a komentářů. Když na obrázku žádný text není, stručně popiš, co na něm je.",
+      images: [b64],
+      stream: false,
+    }),
+  });
+  if (!r.ok) throw new Error("vision HTTP " + r.status);
+  const j = await r.json();
+  return String(j.response || "").trim();
+}
+
+// přečti obrázek a ulož text (sidecar + do paměti). Běží na pozadí po nahrání.
+async function readImageAndIndex(filePath, id, name) {
+  const text = await readImage(filePath);
+  if (!text) return;
+  fs.writeFileSync(path.join(OCR_DIR, id + ".txt"), text, "utf-8");
+  await indexRef({ refType: "file", refId: id, name, date: new Date().toISOString(), text });
 }
 
 // --- Tunel do Ollamy: /api/chat (paměť běží automaticky) ---------------------
@@ -432,7 +468,7 @@ function handleUpload(req, res) {
   const out = fs.createWriteStream(dest);
   req.pipe(out);
   out.on("finish", async () => {
-    // textové soubory vložíme do paměti (obrázky/PDF zatím ne – ty umíme jen uložit)
+    // textové soubory rovnou vložíme do paměti
     let memory = false;
     if (isTextFile(original)) {
       try {
@@ -449,7 +485,14 @@ function handleUpload(req, res) {
         /* zaindexování je jen bonus – když selže, soubor je stejně uložený */
       }
     }
-    sendJson(res, 200, { ok: true, id, name: original, memory });
+    // odpovíme hned; fotku přečteme na pozadí (může to chvíli trvat)
+    const reading = isImageFile(original);
+    sendJson(res, 200, { ok: true, id, name: original, memory, reading });
+    if (reading) {
+      readImageAndIndex(dest, id, original).catch((e) =>
+        console.warn("  ! čtení obrázku selhalo (běží vision model '" + VISION_MODEL + "'?):", e.message)
+      );
+    }
   });
   out.on("error", () => sendJson(res, 500, { error: "Nepodařilo se uložit soubor." }));
 }
@@ -474,12 +517,23 @@ function handleEntries(req, res) {
   for (const f of fs.readdirSync(UPLOADS_DIR)) {
     const full = path.join(UPLOADS_DIR, f);
     const st = fs.statSync(full);
+    // je k fotce přečtený text?
+    const ocrPath = path.join(OCR_DIR, f + ".txt");
+    let read = false;
+    let readSnippet = "";
+    if (fs.existsSync(ocrPath)) {
+      read = true;
+      readSnippet = fs.readFileSync(ocrPath, "utf-8").replace(/\s+/g, " ").slice(0, 120);
+    }
     entries.push({
       type: "file",
       id: f,
       name: f.replace(/^[^_]+__/, ""), // zpět původní jméno (bez časové předpony)
       size: st.size,
       date: st.mtime.toISOString(),
+      isImage: isImageFile(f),
+      read,
+      readSnippet,
     });
   }
 
@@ -530,6 +584,11 @@ async function handleDelete(req, res) {
   if (!full || !fs.existsSync(full)) return sendJson(res, 404, { error: "Nenalezeno." });
   fs.unlinkSync(full);
   removeFromIndex(type, id); // odeber i z paměti
+  // u fotky smaž i přečtený text
+  if (type === "file") {
+    const ocrPath = path.join(OCR_DIR, id + ".txt");
+    if (fs.existsSync(ocrPath)) fs.unlinkSync(ocrPath);
+  }
   sendJson(res, 200, { ok: true });
 }
 
@@ -706,8 +765,14 @@ async function handleReindex(req, res) {
   }
   for (const f of fs.readdirSync(UPLOADS_DIR)) {
     const name = f.replace(/^[^_]+__/, "");
-    if (!isTextFile(name)) continue;
-    const text = fs.readFileSync(path.join(UPLOADS_DIR, f), "utf-8");
+    let text = null;
+    if (isTextFile(name)) {
+      text = fs.readFileSync(path.join(UPLOADS_DIR, f), "utf-8");
+    } else {
+      const ocrPath = path.join(OCR_DIR, f + ".txt"); // přečtený text z fotky
+      if (fs.existsSync(ocrPath)) text = fs.readFileSync(ocrPath, "utf-8");
+    }
+    if (text == null) continue;
     const st = fs.statSync(path.join(UPLOADS_DIR, f));
     const r = await indexRef({ refType: "file", refId: f, name, date: st.mtime.toISOString(), text });
     r.ok ? ok++ : fail++;

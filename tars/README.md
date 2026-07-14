@@ -76,6 +76,10 @@ zařadí**:
   napíše sám do pole. (Diktování zajišťuje systém Applu, my nic neposíláme ven.)
 - **Soubor / fotka:** tlačítko **+ Soubor** → vybereš z telefonu (Fotky,
   Soubory, Vyfotit, Naskenovat dokument). Nahraje se na PC.
+- **Čtení z fotek:** když nahraješ **fotku** (dokument, tabule, účtenka…),
+  TARS z ní na pozadí **přečte text** a vloží ho do paměti — pak se na obsah
+  fotky můžeš ptát v Chatu. Přečtený text se ukáže i pod fotkou v seznamu.
+  (Vyžaduje stažený „vidoucí" model — viz níže `VISION_MODEL`.)
 
 > ℹ️ Když si model záznamem není jistý (nebo zrovna neběží Ollama), uloží ho
 > celý jako jednu poznámku — **nikdy nic neztratíš**.
@@ -87,6 +91,7 @@ tars/data/notes/     ← poznámky (.md)
 tars/data/people/    ← lidé (.json)
 tars/data/events/    ← události v kalendáři (.json)
 tars/data/uploads/   ← nahrané soubory a fotky
+tars/data/ocr/       ← text přečtený z fotek
 ```
 
 > 🔒 Složka `tars/data/` je v `.gitignore`, takže se tvoje osobní data
@@ -186,7 +191,12 @@ Když budeš chtít něco změnit, spusť server s proměnnou navíc:
 | `OLLAMA_URL`   | kde běží Ollama                 | `http://localhost:11434` |
 | `OLLAMA_MODEL` | který model použít (chat)       | `qwen2.5:7b`             |
 | `EMBED_MODEL`  | model pro paměť (embeddingy)    | `nomic-embed-text`       |
+| `VISION_MODEL` | model pro čtení textu z fotek   | `llava`                  |
 | `MEMORY_MIN_SCORE` | práh, kdy chat použije poznámku (0–1) | `0.5`             |
+
+> Čtení fotek potřebuje „vidoucí" model. Stáhni ho jednou:
+> `ollama pull llava` (menší varianta při málo paměti: `ollama pull moondream`,
+> pak spusť s `VISION_MODEL=moondream`).
 
 Příklady:
 
@@ -244,4 +254,4 @@ Soubory:
 ## Co bude dál
 
 - **Lokální Whisper** — nahrávání hlasu přímo v appce (delší nahrávky)
-- **Čtení z PDF a obrázků** do paměti (OCR)
+- **Čtení z PDF** do paměti (fotky už umíme)

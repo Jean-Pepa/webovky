@@ -266,6 +266,12 @@ body {
   color: var(--muted);
 }
 
+.entry .body .meta.read {
+  color: #b7ad86;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .entry .del {
   flex: 0 0 auto;
   background: none;

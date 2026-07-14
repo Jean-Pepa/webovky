@@ -133,6 +133,13 @@ function renderEntry(e) {
   meta.textContent = fmtDate(e.date) + (e.type === "file" ? " · " + fmtSize(e.size) : "");
   body.appendChild(main);
   body.appendChild(meta);
+  // u přečtené fotky ukaž náhled textu
+  if (e.type === "file" && e.read && e.readSnippet) {
+    const rd = document.createElement("div");
+    rd.className = "meta read";
+    rd.textContent = "📷 " + e.readSnippet + "…";
+    body.appendChild(rd);
+  }
 
   const del = document.createElement("button");
   del.className = "del";
@@ -207,11 +214,14 @@ fileInput.addEventListener("change", async () => {
   if (!files.length) return;
   uploading.hidden = false;
   let done = 0;
+  let anyReading = false;
   for (const file of files) {
     uploading.textContent = "Nahrávám " + (done + 1) + "/" + files.length + ": " + file.name + "…";
     try {
       const res = await fetch("/api/upload?name=" + encodeURIComponent(file.name), { method: "POST", body: file });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "chyba");
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || "chyba");
+      if (j.reading) anyReading = true;
       done++;
     } catch (err) {
       uploading.textContent = "Chyba u " + file.name + ": " + (err.message || err);
@@ -221,6 +231,10 @@ fileInput.addEventListener("change", async () => {
   fileInput.value = "";
   uploading.hidden = true;
   await loadEntries();
+  if (anyReading) {
+    captureResult.hidden = false;
+    captureResult.textContent = "📷 Fotku čtu na pozadí… za chvíli bude text v paměti (později obnov seznam).";
+  }
 });
 
 // smaž záznam (poznámka/soubor/člověk)
