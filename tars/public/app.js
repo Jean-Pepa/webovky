@@ -15,6 +15,7 @@ const saveNoteBtn = document.getElementById("saveNoteBtn");
 const attachBtn = document.getElementById("attachBtn");
 const fileInput = document.getElementById("fileInput");
 const uploading = document.getElementById("uploading");
+const captureResult = document.getElementById("captureResult");
 const entriesEl = document.getElementById("entries");
 
 // lidé
@@ -147,7 +148,7 @@ async function loadEntries() {
     const { entries } = await (await fetch("/api/entries")).json();
     entriesEl.innerHTML = "";
     if (!entries.length) {
-      entriesEl.innerHTML = '<p class="hint">Zatím nic uloženého. Napiš poznámku nebo přidej soubor.</p>';
+      entriesEl.innerHTML = '<p class="hint">Zatím nic uloženého. Nadiktuj něco nebo přidej soubor.</p>';
       return;
     }
     for (const e of entries) entriesEl.appendChild(renderEntry(e));
@@ -157,21 +158,41 @@ async function loadEntries() {
 }
 loadEntries();
 
+// české skloňování počtu
+function plural(n, one, few, many) {
+  return n === 1 ? one : n >= 2 && n <= 4 ? few : many;
+}
+
+// shrnutí, co chytrý záznam uložil a kam
+function summarizeSaved(saved) {
+  const notes = saved.filter((s) => s.type === "note").length;
+  const people = saved.filter((s) => s.type === "person").map((s) => s.label);
+  const parts = [];
+  if (notes) parts.push(notes + " " + plural(notes, "poznámka", "poznámky", "poznámek"));
+  if (people.length) parts.push("do Lidí: " + people.join(", "));
+  return parts.length ? "✓ Uloženo — " + parts.join(" · ") : "Nic k uložení.";
+}
+
+// CHYTRÝ ZÁZNAM: nadiktuješ cokoliv, model rozřadí do složek
 saveNoteBtn.addEventListener("click", async () => {
   const text = noteInput.value.trim();
   if (!text) return noteInput.focus();
   saveNoteBtn.disabled = true;
+  captureResult.hidden = false;
+  captureResult.textContent = "Zpracovávám a zařazuji…";
   try {
-    const res = await fetch("/api/notes", {
+    const res = await fetch("/api/capture", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
     });
-    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "chyba");
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(j.error || "chyba");
     noteInput.value = "";
+    captureResult.textContent = summarizeSaved(j.saved || []);
     await loadEntries();
   } catch (err) {
-    alert("Poznámku se nepodařilo uložit: " + (err.message || err));
+    captureResult.textContent = "⚠ Nepodařilo se uložit: " + (err.message || err);
   } finally {
     saveNoteBtn.disabled = false;
   }

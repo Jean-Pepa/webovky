@@ -26,19 +26,20 @@
       </div>
     </header>
 
-    <!-- ===== ZÁPISNÍK ===== -->
+    <!-- ===== ZÁZNAM (chytrý zápis) ===== -->
     <section class="view" id="view-notes">
       <div class="capture">
         <textarea
           id="noteInput"
-          rows="3"
-          placeholder="Zapiš poznámku… (na hlas použij mikrofon na klávesnici)"
+          rows="4"
+          placeholder="Nadiktuj cokoliv — poznámku, člověka, úkol… TARS to sám zařadí. (Na hlas použij mikrofon na klávesnici.)"
         ></textarea>
         <div class="capture-actions">
           <input type="file" id="fileInput" multiple hidden />
           <button type="button" class="btn ghost" id="attachBtn">＋ Soubor</button>
-          <button type="button" class="btn primary" id="saveNoteBtn">Uložit poznámku</button>
+          <button type="button" class="btn primary" id="saveNoteBtn">Ulož</button>
         </div>
+        <div class="capture-result" id="captureResult" hidden></div>
         <div class="uploading" id="uploading" hidden></div>
       </div>
       <div class="entries" id="entries">
@@ -93,8 +94,8 @@
     <nav class="tabs">
       <button class="tab active" data-view="notes">
         <span class="tab-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L20 8a2 2 0 0 0-3-3L5 17v3z"/><path d="M14 6l4 4"/></svg>
-        </span><span>Zápisník</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M12 17v4"/><path d="M9 21h6"/></svg>
+        </span><span>Záznam</span>
       </button>
       <button class="tab" data-view="people">
         <span class="tab-ico" aria-hidden="true">

@@ -2,8 +2,8 @@
 
 Malá webová appka, co běží **u tebe na PC**. Dole se přepínají **čtyři obrazovky**:
 
-- **Zápisník** — rychle zapíšeš poznámku (i hlasem) nebo pošleš soubor/fotku;
-  vše se uloží na disk tvého PC.
+- **Záznam** — jedno místo, kam **nadiktuješ cokoliv** (poznámku, člověka, úkol)
+  nebo přidáš soubor/fotku. TARS text sám **rozřadí do správných složek**.
 - **Lidé** — kdo je kdo: přidáš člověka + info a můžeš se na něj ptát.
 - **Přehled** — počty uložených věcí a **denní přehled** tvých poznámek jedním
   klepnutím. Je tu i tlačítko *Obnovit paměť*.
@@ -56,28 +56,39 @@ měl by ti odpovědět tvůj model. Hotovo. 🎉
 
 ---
 
-## Zápisník — poznámky a soubory z telefonu
+## Záznam — nadiktuj cokoliv, TARS to zařadí
 
-Na obrazovce **Zápisník**:
+Na obrazovce **Záznam** je jedno velké pole. Napiš nebo **nadiktuj** cokoliv —
+klidně víc věcí v jedné větě — a dej **Ulož**. Model text rozdělí a **sám
+zařadí**:
 
-- **Poznámka:** napiš text a dej *Uložit poznámku*.
+- konkrétní člověk (kdo to je, vztah, kontakt) → do **Lidí**,
+- všechno ostatní (úkol, myšlenka…) → do **poznámek**.
+
+> Příklad: *„koupit mléko a soused František má psa Rexe"* → uloží se **koupit
+> mléko** jako poznámka a **František** k Lidem. TARS ti napíše, co kam dal.
+
 - **Hlasem:** na iPhonu klepni na **mikrofon na klávesnici** a mluv — text se
   napíše sám do pole. (Diktování zajišťuje systém Applu, my nic neposíláme ven.)
 - **Soubor / fotka:** tlačítko **+ Soubor** → vybereš z telefonu (Fotky,
   Soubory, Vyfotit, Naskenovat dokument). Nahraje se na PC.
 
+> ℹ️ Když si model záznamem není jistý (nebo zrovna neběží Ollama), uloží ho
+> celý jako jednu poznámku — **nikdy nic neztratíš**.
+
 Vše se uloží **lokálně na disk PC** do složky `tars/data/`:
 
 ```
-tars/data/notes/     ← textové poznámky (.md)
+tars/data/notes/     ← poznámky (.md)
+tars/data/people/    ← lidé (.json)
 tars/data/uploads/   ← nahrané soubory a fotky
 ```
 
-> 🔒 Složka `tars/data/` je v `.gitignore`, takže se tvoje osobní poznámky a
-> soubory **nikdy nenahrají na GitHub**. Zůstávají jen na tvém počítači.
+> 🔒 Složka `tars/data/` je v `.gitignore`, takže se tvoje osobní data
+> **nikdy nenahrají na GitHub**. Zůstávají jen na tvém počítači.
 
-Uložené věci vidíš rovnou v seznamu (nejnovější nahoře), soubor si otevřeš
-klepnutím, křížkem ✕ položku smažeš.
+Uložené poznámky a soubory vidíš rovnou v seznamu pod polem; křížkem ✕ položku
+smažeš.
 
 ---
 

@@ -191,6 +191,17 @@ body {
   color: var(--accent);
 }
 
+.capture-result {
+  font-size: 13.5px;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 9px 12px;
+  line-height: 1.4;
+}
+
 .entries {
   flex: 1;
   min-height: 0;

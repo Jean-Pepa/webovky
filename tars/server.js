@@ -32,6 +32,18 @@ const SYSTEM_PROMPT =
   "Jsi TARS, osobní asistent Kristiána. Odpovídáš česky, stručně a k věci. " +
   "Když něco nevíš, řekneš to narovinu. Jsi věcný, klidný a spolehlivý.";
 
+// "třídič" pro chytrý záznam: rozdělí nadiktovaný text na jednotlivé položky
+// a každou zařadí buď jako osobu, nebo jako poznámku.
+const CLASSIFY_SYS =
+  "Jsi třídič poznámek. Uživatel nadiktuje text. Rozděl ho na jednotlivé " +
+  "samostatné záznamy a každý zařaď. Vrať POUZE JSON ve tvaru " +
+  '{"items":[...]}. Každá položka je buď osoba, nebo poznámka:\n' +
+  '- osoba (konkrétní člověk – kdo to je, vztah, kontakt): ' +
+  '{"type":"person","name":"jméno","info":"co si o něm pamatovat"}\n' +
+  '- poznámka (úkol, myšlenka, cokoliv ostatního): {"type":"note","text":"text poznámky"}\n' +
+  "Neztrať žádnou informaci. Zachovej jazyk uživatele (češtinu). " +
+  "Když je to jen jedna věc, vrať pole s jednou položkou.";
+
 const PUBLIC_DIR = path.join(__dirname, "public");
 const DATA_DIR = path.join(__dirname, "data");
 const NOTES_DIR = path.join(DATA_DIR, "notes");
@@ -326,6 +338,72 @@ async function handleSaveNote(req, res) {
   sendJson(res, 200, { ok: true, id, memory: mem.ok });
 }
 
+// --- Chytrý záznam: nadiktuj cokoliv, model to rozřadí do složek --------------
+async function handleCapture(req, res) {
+  const body = await readBody(req);
+  let text;
+  try {
+    text = String(JSON.parse(body || "{}").text || "").trim();
+  } catch {
+    return sendJson(res, 400, { error: "Neplatný JSON." });
+  }
+  if (!text) return sendJson(res, 400, { error: "Prázdný text." });
+
+  // nech model rozdělit a zařadit (JSON režim = spolehlivé parsování)
+  let items = null;
+  try {
+    const r = await fetch(`${OLLAMA_URL}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: OLLAMA_MODEL,
+        format: "json",
+        stream: false,
+        messages: [
+          { role: "system", content: CLASSIFY_SYS },
+          { role: "user", content: text },
+        ],
+      }),
+    });
+    if (r.ok) {
+      const j = await r.json();
+      const parsed = JSON.parse(j.message.content);
+      items = Array.isArray(parsed) ? parsed : parsed.items;
+    }
+  } catch {
+    items = null; // model nedostupný / špatný JSON → spadneme na fallback níže
+  }
+
+  // pojistka: když třídění selže, ulož celý text jako jednu poznámku (nic neztratit)
+  if (!Array.isArray(items) || !items.length) {
+    items = [{ type: "note", text }];
+  }
+
+  const saved = [];
+  let i = 0;
+  for (const it of items.slice(0, 20)) {
+    const suffix = "-" + i++; // aby se jména souborů nekřížila ve stejné milisekundě
+    if (it && it.type === "person" && String(it.name || "").trim()) {
+      const id = stamp() + suffix + ".json";
+      const date = new Date().toISOString();
+      const name = String(it.name).trim();
+      const info = String(it.info || "").trim();
+      fs.writeFileSync(path.join(PEOPLE_DIR, id), JSON.stringify({ name, info, date }), "utf-8");
+      await indexRef({ refType: "person", refId: id, name, date, text: "Osoba: " + name + "\n" + info });
+      saved.push({ type: "person", label: name });
+    } else {
+      const t = String((it && it.text) || "").trim();
+      if (!t) continue;
+      const id = stamp() + suffix + ".md";
+      fs.writeFileSync(path.join(NOTES_DIR, id), t, "utf-8");
+      await indexRef({ refType: "note", refId: id, name: "poznámka", date: new Date().toISOString(), text: t });
+      saved.push({ type: "note", label: t.slice(0, 60) });
+    }
+  }
+
+  sendJson(res, 200, { ok: true, saved });
+}
+
 // --- Zápisník: nahraj soubor (raw tělo, jméno v ?name=) ----------------------
 function handleUpload(req, res) {
   const url = new URL(req.url, "http://x");
@@ -584,6 +662,7 @@ const server = http.createServer((req, res) => {
 
   if (req.method === "POST" && pathname === "/api/chat") return handleChat(req, res);
   if (req.method === "POST" && pathname === "/api/notes") return handleSaveNote(req, res);
+  if (req.method === "POST" && pathname === "/api/capture") return handleCapture(req, res);
   if (req.method === "POST" && pathname === "/api/upload") return handleUpload(req, res);
   if (req.method === "POST" && pathname === "/api/delete") return handleDelete(req, res);
   if (req.method === "POST" && pathname === "/api/people") return handleSavePerson(req, res);
