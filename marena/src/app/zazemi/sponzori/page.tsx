@@ -339,7 +339,9 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
           </span>
         )}
         {(() => {
-          const items = linksOf(s).map(classifyLink);
+          // Pevné pořadí kontaktů: nejdřív web (odkaz), pak telefon, pak e-mail.
+          const rank = { url: 0, phone: 1, email: 2 };
+          const items = linksOf(s).map(classifyLink).sort((a, b) => rank[a.kind] - rank[b.kind]);
           const urlTotal = items.filter((c) => c.kind === "url").length;
           const cls = "break-all text-xs font-medium text-gold-700 hover:underline";
           return items.map((c, i) => {
