@@ -47,6 +47,11 @@ měl by ti odpovědět tvůj model. Hotovo. 🎉
 
 **Zastavení:** ve stejném okně stiskni `Ctrl + C`.
 
+> 💡 **Nechceš spouštět ručně pokaždé?** Ve složce `windows/` je návod, jak
+> zařídit, aby se TARS **spouštěl sám při startu Windows a běžel skrytě na
+> pozadí** — stačí dvakrát kliknout na `windows/install.bat`. Viz
+> [`windows/README.md`](windows/README.md).
+
 ---
 
 ## Zápisník — poznámky a soubory z telefonu
