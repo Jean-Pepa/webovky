@@ -28,7 +28,7 @@ const EMBED_MODEL = process.env.EMBED_MODEL || "nomic-embed-text";
 // model, který "vidí" obrázky (čtení textu z fotek). Musí být stažený: ollama pull llava
 const VISION_MODEL = process.env.VISION_MODEL || "llava";
 // jak moc musí být poznámka podobná dotazu, aby ji chat použil (0–1). Nižší = ochotnější.
-const MEMORY_MIN_SCORE = Number(process.env.MEMORY_MIN_SCORE || 0.4);
+const MEMORY_MIN_SCORE = Number(process.env.MEMORY_MIN_SCORE || 0.3);
 
 const SYSTEM_PROMPT =
   "Jsi TARS, osobní asistent Kristiána. Odpovídáš česky, stručně a k věci. " +
@@ -57,9 +57,10 @@ const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
 const PEOPLE_DIR = path.join(DATA_DIR, "people");
 const EVENTS_DIR = path.join(DATA_DIR, "events");
 const OCR_DIR = path.join(DATA_DIR, "ocr"); // přečtený text z fotek (podle id souboru)
+const CAPTIONS_DIR = path.join(DATA_DIR, "captions"); // tvůj popisek k souboru (podle id)
 
 // založ složky na data, když ještě nejsou
-for (const dir of [DATA_DIR, NOTES_DIR, UPLOADS_DIR, PEOPLE_DIR, EVENTS_DIR, OCR_DIR]) {
+for (const dir of [DATA_DIR, NOTES_DIR, UPLOADS_DIR, PEOPLE_DIR, EVENTS_DIR, OCR_DIR, CAPTIONS_DIR]) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
@@ -285,12 +286,35 @@ async function readImage(filePath) {
   return String(j.response || "").trim();
 }
 
-// přečti obrázek a ulož text (sidecar + do paměti). Běží na pozadí po nahrání.
-async function readImageAndIndex(filePath, id, name) {
+// slož text souboru pro paměť: tvůj popisek + (obsah textového souboru NEBO text z fotky)
+function fileCombinedText(id, name) {
+  const parts = [];
+  const cap = path.join(CAPTIONS_DIR, id + ".txt");
+  if (fs.existsSync(cap)) parts.push("Popis: " + fs.readFileSync(cap, "utf-8").trim());
+  if (isTextFile(name)) {
+    const f = insideDir(UPLOADS_DIR, id);
+    if (f && fs.existsSync(f)) parts.push(fs.readFileSync(f, "utf-8"));
+  } else {
+    const ocr = path.join(OCR_DIR, id + ".txt");
+    if (fs.existsSync(ocr)) parts.push(fs.readFileSync(ocr, "utf-8"));
+  }
+  return parts.filter((p) => p && p.trim()).join("\n\n").trim();
+}
+
+// zaindexuj soubor (popisek + obsah/OCR) do paměti
+async function indexFile(id, name) {
+  const text = fileCombinedText(id, name);
+  if (!text) return { ok: false };
+  return indexRef({ refType: "file", refId: id, name, date: new Date().toISOString(), text });
+}
+
+// přečti obrázek, ulož text a přeindexuj (i s popiskem). Běží na pozadí po nahrání.
+async function readImageAndIndex(id, name) {
+  const filePath = insideDir(UPLOADS_DIR, id);
+  if (!filePath || !fs.existsSync(filePath)) return;
   const text = await readImage(filePath);
-  if (!text) return;
-  fs.writeFileSync(path.join(OCR_DIR, id + ".txt"), text, "utf-8");
-  await indexRef({ refType: "file", refId: id, name, date: new Date().toISOString(), text });
+  if (text) fs.writeFileSync(path.join(OCR_DIR, id + ".txt"), text, "utf-8");
+  await indexFile(id, name);
 }
 
 // --- Tunel do Ollamy: /api/chat (paměť běží automaticky) ---------------------
@@ -309,7 +333,7 @@ async function handleChat(req, res) {
   let hits = [];
   if (lastUser && INDEX.length) {
     try {
-      const found = await searchIndex(String(lastUser.content || ""), 6);
+      const found = await searchIndex(String(lastUser.content || ""), 8);
       hits = found.filter((h) => h.score >= MEMORY_MIN_SCORE);
     } catch {
       hits = []; // embed model nedostupný
@@ -334,10 +358,11 @@ async function handleChat(req, res) {
     .join("\n\n");
   const system =
     SYSTEM_PROMPT +
-    "\n\nODPOVÍDEJ POUZE na základě těchto poznámek uživatele. Nic si nevymýšlej a " +
-    "nedoplňuj nic z obecných znalostí. Když odpověď v poznámkách není, napiš krátce, že " +
-    "to v poznámkách nemáš. Čísla, jména a data uváděj přesně tak, jak jsou v poznámkách.\n\n" +
-    "=== POZNÁMKY ===\n" + context;
+    "\n\nODPOVÍDEJ POUZE na základě těchto poznámek uživatele. Nedoplňuj nic z " +
+    "obecných znalostí a nic si nevymýšlej. Z poznámek ale MŮŽEŠ logicky vyvodit " +
+    "odpověď — např. z receptu vypsat, co je potřeba koupit. Když k dotazu v " +
+    "poznámkách nic není, napiš krátce, že o tom nemáš data. Čísla, jména a data " +
+    "uváděj přesně tak, jak jsou v poznámkách.\n\n=== POZNÁMKY ===\n" + context;
 
   const fullMessages = [{ role: "system", content: system }, ...messages];
 
@@ -588,6 +613,7 @@ async function handleReclassify(req, res) {
 function handleUpload(req, res) {
   const url = new URL(req.url, "http://x");
   const original = safeName(url.searchParams.get("name") || "soubor");
+  const caption = String(url.searchParams.get("caption") || "").trim();
   const id = stamp() + "__" + original;
   const dest = insideDir(UPLOADS_DIR, id);
   if (!dest) return sendJson(res, 400, { error: "Špatné jméno souboru." });
@@ -595,28 +621,24 @@ function handleUpload(req, res) {
   const out = fs.createWriteStream(dest);
   req.pipe(out);
   out.on("finish", async () => {
-    // textové soubory rovnou vložíme do paměti
-    let memory = false;
-    if (isTextFile(original)) {
+    // ulož tvůj popisek (když jsi nějaký napsal)
+    if (caption) {
       try {
-        const text = fs.readFileSync(dest, "utf-8");
-        const mem = await indexRef({
-          refType: "file",
-          refId: id,
-          name: original,
-          date: new Date().toISOString(),
-          text,
-        });
-        memory = mem.ok;
-      } catch {
-        /* zaindexování je jen bonus – když selže, soubor je stejně uložený */
-      }
+        fs.writeFileSync(path.join(CAPTIONS_DIR, id + ".txt"), caption, "utf-8");
+      } catch {}
+    }
+    // rovnou zaindexuj popisek + obsah textového souboru (fotku přečteme až na pozadí)
+    let memory = false;
+    try {
+      memory = (await indexFile(id, original)).ok;
+    } catch {
+      /* index je bonus – soubor je uložený tak jako tak */
     }
     // odpovíme hned; fotku přečteme na pozadí (může to chvíli trvat)
     const reading = isImageFile(original);
-    sendJson(res, 200, { ok: true, id, name: original, memory, reading });
+    sendJson(res, 200, { ok: true, id, name: original, memory, reading, caption: !!caption });
     if (reading) {
-      readImageAndIndex(dest, id, original).catch((e) =>
+      readImageAndIndex(id, original).catch((e) =>
         console.warn("  ! čtení obrázku selhalo (běží vision model '" + VISION_MODEL + "'?):", e.message)
       );
     }
@@ -652,6 +674,10 @@ function handleEntries(req, res) {
       read = true;
       readSnippet = fs.readFileSync(ocrPath, "utf-8").replace(/\s+/g, " ").slice(0, 120);
     }
+    // tvůj popisek k souboru?
+    let caption = "";
+    const capPath = path.join(CAPTIONS_DIR, f + ".txt");
+    if (fs.existsSync(capPath)) caption = fs.readFileSync(capPath, "utf-8").trim();
     entries.push({
       type: "file",
       id: f,
@@ -659,6 +685,7 @@ function handleEntries(req, res) {
       size: st.size,
       date: st.mtime.toISOString(),
       isImage: isImageFile(f),
+      caption,
       read,
       readSnippet,
     });
@@ -711,10 +738,11 @@ async function handleDelete(req, res) {
   if (!full || !fs.existsSync(full)) return sendJson(res, 404, { error: "Nenalezeno." });
   fs.unlinkSync(full);
   removeFromIndex(type, id); // odeber i z paměti
-  // u fotky smaž i přečtený text
+  // u souboru smaž i přečtený text a popisek
   if (type === "file") {
-    const ocrPath = path.join(OCR_DIR, id + ".txt");
-    if (fs.existsSync(ocrPath)) fs.unlinkSync(ocrPath);
+    for (const side of [path.join(OCR_DIR, id + ".txt"), path.join(CAPTIONS_DIR, id + ".txt")]) {
+      if (fs.existsSync(side)) fs.unlinkSync(side);
+    }
   }
   sendJson(res, 200, { ok: true });
 }
@@ -892,14 +920,8 @@ async function handleReindex(req, res) {
   }
   for (const f of fs.readdirSync(UPLOADS_DIR)) {
     const name = f.replace(/^[^_]+__/, "");
-    let text = null;
-    if (isTextFile(name)) {
-      text = fs.readFileSync(path.join(UPLOADS_DIR, f), "utf-8");
-    } else {
-      const ocrPath = path.join(OCR_DIR, f + ".txt"); // přečtený text z fotky
-      if (fs.existsSync(ocrPath)) text = fs.readFileSync(ocrPath, "utf-8");
-    }
-    if (text == null) continue;
+    const text = fileCombinedText(f, name); // popisek + obsah/OCR
+    if (!text) continue;
     const st = fs.statSync(path.join(UPLOADS_DIR, f));
     const r = await indexRef({ refType: "file", refId: f, name, date: st.mtime.toISOString(), text });
     r.ok ? ok++ : fail++;

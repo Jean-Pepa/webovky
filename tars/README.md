@@ -76,10 +76,14 @@ zařadí**:
   napíše sám do pole. (Diktování zajišťuje systém Applu, my nic neposíláme ven.)
 - **Soubor / fotka:** tlačítko **+ Soubor** → vybereš z telefonu (Fotky,
   Soubory, Vyfotit, Naskenovat dokument). Nahraje se na PC.
+- **Popisek k souboru:** když **před** klepnutím na *+ Soubor* napíšeš text do
+  horního pole (např. „recept na guláš"), přiloží se k souboru jako popisek a
+  jde se na něj ptát. (Text se použije jako popisek a pole se uvolní.)
 - **Čtení z fotek:** když nahraješ **fotku** (dokument, tabule, účtenka…),
-  TARS z ní na pozadí **přečte text** a vloží ho do paměti — pak se na obsah
-  fotky můžeš ptát v Chatu. Přečtený text se ukáže i pod fotkou v seznamu.
-  (Vyžaduje stažený „vidoucí" model — viz níže `VISION_MODEL`.)
+  TARS z ní na pozadí **přečte text** a spolu s popiskem vloží do paměti — pak
+  se na obsah fotky můžeš ptát v Chatu (třeba *„co musím koupit na ten recept?"*).
+  Popisek i přečtený text se ukážou i pod fotkou v seznamu. (Vyžaduje stažený
+  „vidoucí" model — viz níže `VISION_MODEL`.)
 
 > ℹ️ Když si model záznamem není jistý (nebo zrovna neběží Ollama), uloží ho
 > celý jako jednu poznámku — **nikdy nic neztratíš**.

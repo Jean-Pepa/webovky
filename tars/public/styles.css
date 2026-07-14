@@ -272,6 +272,12 @@ body {
   overflow-wrap: anywhere;
 }
 
+.entry .body .meta.caption {
+  color: var(--text);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .entry .del {
   flex: 0 0 auto;
   background: none;

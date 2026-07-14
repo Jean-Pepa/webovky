@@ -135,6 +135,13 @@ function renderEntry(e) {
   meta.textContent = fmtDate(e.date) + (e.type === "file" ? " · " + fmtSize(e.size) : "");
   body.appendChild(main);
   body.appendChild(meta);
+  // tvůj popisek k souboru
+  if (e.type === "file" && e.caption) {
+    const cp = document.createElement("div");
+    cp.className = "meta caption";
+    cp.textContent = "📝 " + e.caption;
+    body.appendChild(cp);
+  }
   // u přečtené fotky ukaž náhled textu
   if (e.type === "file" && e.read && e.readSnippet) {
     const rd = document.createElement("div");
@@ -167,6 +174,7 @@ function entrySearchText(e) {
     [
       e.preview || "",
       e.name || "",
+      e.caption || "",
       e.readSnippet || "",
       fmtDate(e.date),
       d.toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" }),
@@ -278,13 +286,16 @@ attachBtn.addEventListener("click", () => fileInput.click());
 fileInput.addEventListener("change", async () => {
   const files = Array.from(fileInput.files || []);
   if (!files.length) return;
+  // text napsaný nahoře se přiloží k souboru jako popisek
+  const caption = noteInput.value.trim();
   uploading.hidden = false;
   let done = 0;
   let anyReading = false;
   for (const file of files) {
     uploading.textContent = "Nahrávám " + (done + 1) + "/" + files.length + ": " + file.name + "…";
     try {
-      const res = await fetch("/api/upload?name=" + encodeURIComponent(file.name), { method: "POST", body: file });
+      const q = "/api/upload?name=" + encodeURIComponent(file.name) + (caption ? "&caption=" + encodeURIComponent(caption) : "");
+      const res = await fetch(q, { method: "POST", body: file });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error || "chyba");
       if (j.reading) anyReading = true;
@@ -295,11 +306,16 @@ fileInput.addEventListener("change", async () => {
     }
   }
   fileInput.value = "";
+  if (caption) noteInput.value = ""; // popisek se použil, pole uvolníme
   uploading.hidden = true;
   await loadEntries();
+  captureResult.hidden = false;
   if (anyReading) {
-    captureResult.hidden = false;
-    captureResult.textContent = "📷 Fotku čtu na pozadí… za chvíli bude text v paměti (později obnov seznam).";
+    captureResult.textContent = caption
+      ? "📷 Fotka uložena s popisem — čtu ji na pozadí (později obnov seznam)."
+      : "📷 Fotku čtu na pozadí… za chvíli bude text v paměti (později obnov seznam).";
+  } else {
+    captureResult.textContent = caption ? "✓ Soubor uložen s popisem." : "✓ Soubor uložen.";
   }
 });
 
