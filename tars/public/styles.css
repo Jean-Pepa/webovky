@@ -278,6 +278,11 @@ body {
   overflow-wrap: anywhere;
 }
 
+.entry .body .meta.read-err {
+  color: #e0a060;
+  line-height: 1.35;
+}
+
 .entry .del {
   flex: 0 0 auto;
   background: none;

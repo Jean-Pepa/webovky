@@ -322,9 +322,17 @@ async function indexFile(id, name) {
 async function readImageAndIndex(id, name) {
   const filePath = insideDir(UPLOADS_DIR, id);
   if (!filePath || !fs.existsSync(filePath)) return;
-  const text = await readImage(filePath);
-  if (text) fs.writeFileSync(path.join(OCR_DIR, id + ".txt"), text, "utf-8");
-  await indexFile(id, name);
+  const errPath = path.join(OCR_DIR, id + ".err");
+  try {
+    const text = await readImage(filePath);
+    if (text) fs.writeFileSync(path.join(OCR_DIR, id + ".txt"), text, "utf-8");
+    if (fs.existsSync(errPath)) fs.unlinkSync(errPath);
+    await indexFile(id, name);
+  } catch (e) {
+    // zapiš značku „nepřečteno", ať to appka umí ukázat (ne potichu)
+    fs.writeFileSync(errPath, String((e && e.message) || e), "utf-8");
+    throw e;
+  }
 }
 
 // --- Tunel do Ollamy: /api/chat (paměť běží automaticky) ---------------------
@@ -695,6 +703,8 @@ function handleEntries(req, res) {
     let caption = "";
     const capPath = path.join(CAPTIONS_DIR, f + ".txt");
     if (fs.existsSync(capPath)) caption = fs.readFileSync(capPath, "utf-8").trim();
+    // nepodařilo se fotku přečíst?
+    const readError = fs.existsSync(path.join(OCR_DIR, f + ".err"));
     entries.push({
       type: "file",
       id: f,
@@ -705,6 +715,7 @@ function handleEntries(req, res) {
       caption,
       read,
       readSnippet,
+      readError,
     });
   }
 
@@ -755,9 +766,13 @@ async function handleDelete(req, res) {
   if (!full || !fs.existsSync(full)) return sendJson(res, 404, { error: "Nenalezeno." });
   fs.unlinkSync(full);
   removeFromIndex(type, id); // odeber i z paměti
-  // u souboru smaž i přečtený text a popisek
+  // u souboru smaž i přečtený text, popisek a značku chyby čtení
   if (type === "file") {
-    for (const side of [path.join(OCR_DIR, id + ".txt"), path.join(CAPTIONS_DIR, id + ".txt")]) {
+    for (const side of [
+      path.join(OCR_DIR, id + ".txt"),
+      path.join(OCR_DIR, id + ".err"),
+      path.join(CAPTIONS_DIR, id + ".txt"),
+    ]) {
       if (fs.existsSync(side)) fs.unlinkSync(side);
     }
   }

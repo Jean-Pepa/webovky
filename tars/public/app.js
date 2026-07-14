@@ -149,6 +149,13 @@ function renderEntry(e) {
     rd.textContent = "📷 " + e.readSnippet + "…";
     body.appendChild(rd);
   }
+  // fotku se nepodařilo přečíst
+  if (e.type === "file" && e.readError) {
+    const w = document.createElement("div");
+    w.className = "meta read-err";
+    w.textContent = "⚠ Fotku se nepodařilo přečíst — je stažený model na čtení? (config.json)";
+    body.appendChild(w);
+  }
 
   const del = document.createElement("button");
   del.className = "del";
