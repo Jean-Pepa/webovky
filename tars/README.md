@@ -4,13 +4,15 @@ Malá webová appka, co běží **u tebe na PC**. Má dvě obrazovky:
 
 - **Zápisník** — z telefonu rychle zapíšeš poznámku (i hlasem) nebo pošleš
   soubor/fotku a vše se uloží na disk tvého PC.
-- **Chat** — povídání s tvojí **Ollamou** (model `qwen2.5:7b`).
+- **Chat** — povídání s tvojí **Ollamou** (model `qwen2.5:7b`), s možností
+  **odpovídat z tvých poznámek** (paměť/RAG).
 
-Otevřeš ji v prohlížeči na počítači i na mobilu (přes Tailscale).
-**Nic neodchází na cizí servery** — vše zůstává lokálně.
+Otevřeš ji v prohlížeči na počítači i na mobilu (přes Tailscale) a přidáš si
+ji na plochu telefonu jako appku. **Nic neodchází na cizí servery** — vše
+zůstává lokálně.
 
-Hotové kroky: **1** (chat) a **2** (zápisník — ukládání na disk).
-Paměť nad poznámkami (RAG) a nahrávání hlasu přímo v appce přijdou dál.
+Hotovo: chat, zápisník (ukládání na disk), paměť nad poznámkami (RAG) a PWA
+(appka na ploše). Dál přijdou přehledy/briefing a nahrávání hlasem.
 
 ---
 
@@ -79,6 +81,42 @@ klepnutím, křížkem ✕ položku smažeš.
 
 ---
 
+## Paměť — ptej se nad svými poznámkami (RAG)
+
+Na obrazovce **Chat** je nahoře přepínač **🧠 Odpovídat z mých poznámek**.
+
+- **Vypnutý** = normální povídání s modelem.
+- **Zapnutý** = TARS odpoví **jen na základě tvých uložených poznámek a
+  textových souborů** a pod odpovědí ukáže, z čeho čerpal („Z poznámek:").
+
+Jak to funguje: každá uložená poznámka se převede na „otisk" (embedding)
+modelem **`nomic-embed-text`**, který už máš. Když se zeptáš, TARS najde
+nejpodobnější kousky a předá je modelu jako podklad. Vše lokálně.
+
+**Tlačítko ↻ (vpravo nahoře v chatu)** = *přeindexovat paměť*. Použij ho:
+
+- když jsi měl uložené poznámky **ještě předtím**, než paměť existovala,
+- nebo když jsi poprvé spustil verzi s pamětí.
+
+> ℹ️ Do paměti jdou zatím **poznámky a textové soubory** (`.txt`, `.md`, `.csv`,
+> `.log`, `.json`). Obrázky a PDF se zatím jen ukládají (čtení z nich přidáme
+> později).
+
+---
+
+## Appka na ploše telefonu (PWA)
+
+Appku si přidáš na plochu iPhonu, ať se chová jako opravdová appka
+(vlastní ikona, celá obrazovka, bez adresního řádku):
+
+1. Otevři TARS v **Safari** na iPhonu (přes Tailscale).
+2. Klepni na **Sdílet** (ikonka se šipkou) → **Přidat na plochu**.
+3. Potvrď. Na ploše se objeví ikona **TARS** (zlatý monolit).
+
+Od teď stačí klepnout na ikonu a máš svůj záznamník po ruce jako appku.
+
+---
+
 ## Jak se připojit z mobilu (Tailscale)
 
 Tvoje PC má přes Tailscale adresu (uváděl jsi `100.120.51.2`).
@@ -101,7 +139,8 @@ Když budeš chtít něco změnit, spusť server s proměnnou navíc:
 | -------------- | ------------------------------- | ------------------------ |
 | `PORT`         | port serveru                    | `8787`                   |
 | `OLLAMA_URL`   | kde běží Ollama                 | `http://localhost:11434` |
-| `OLLAMA_MODEL` | který model použít              | `qwen2.5:7b`             |
+| `OLLAMA_MODEL` | který model použít (chat)       | `qwen2.5:7b`             |
+| `EMBED_MODEL`  | model pro paměť (embeddingy)    | `nomic-embed-text`       |
 
 Příklady:
 
@@ -158,7 +197,7 @@ Soubory:
 
 ## Co bude dál
 
-- **Krok 3:** ptaní se nad poznámkami a soubory (RAG paměť)
-- **Krok 4:** PWA — přidání na plochu telefonu
-- **Lokální Whisper:** nahrávání hlasu přímo v appce (delší nahrávky)
-- **Krok 5:** přehledy, kalendář, denní briefing
+- **Denní briefing / přehledy** — souhrn toho, co sis zapsal
+- **Lokální Whisper** — nahrávání hlasu přímo v appce (delší nahrávky)
+- **Čtení z PDF a obrázků** do paměti (OCR)
+- **Kalendář**

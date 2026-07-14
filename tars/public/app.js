@@ -1,5 +1,12 @@
 // TARS – logika v prohlížeči: zápisník (poznámky + soubory) a chat.
 
+// PWA: zaregistruj service worker (funguje na localhost/https; jinde tiše přeskočí)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}
+
 // ---- odkazy na prvky ----
 const statusDot = document.getElementById("statusDot");
 const statusText = document.getElementById("statusText");
@@ -19,6 +26,8 @@ const emptyEl = document.getElementById("empty");
 const formEl = document.getElementById("composer");
 const inputEl = document.getElementById("input");
 const sendEl = document.getElementById("send");
+const ragToggle = document.getElementById("ragToggle");
+const reindexBtn = document.getElementById("reindexBtn");
 
 // ==================== ZÁLOŽKY ====================
 const views = {
@@ -213,6 +222,44 @@ function addBubble(role, text) {
   return div;
 }
 
+// vykresli seznam zdrojů, ze kterých bot čerpal (režim paměti)
+function addSources(sources) {
+  if (!sources || !sources.length) return;
+  const box = document.createElement("div");
+  box.className = "sources";
+  const title = document.createElement("div");
+  title.className = "src-title";
+  title.textContent = "Z poznámek:";
+  box.appendChild(title);
+  for (const s of sources) {
+    const el = document.createElement("div");
+    el.className = "source";
+    const when = new Date(s.date).toLocaleDateString("cs-CZ");
+    el.innerHTML = "<b></b><span></span>";
+    el.querySelector("b").textContent = (s.name || "poznámka") + " · " + when + " — ";
+    el.querySelector("span").textContent = s.snippet + "…";
+    box.appendChild(el);
+  }
+  chatEl.appendChild(box);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+// přeindexování paměti (načte už uložené poznámky/soubory do paměti)
+reindexBtn.addEventListener("click", async () => {
+  reindexBtn.disabled = true;
+  const prev = reindexBtn.textContent;
+  reindexBtn.textContent = "…";
+  try {
+    const j = await (await fetch("/api/reindex", { method: "POST" })).json();
+    addBubble("error", "🧠 Paměť obnovena: " + j.indexed + " položek, " + j.chunks + " kousků.");
+  } catch {
+    addBubble("error", "Přeindexování selhalo (běží Ollama a embedding model?).");
+  } finally {
+    reindexBtn.textContent = prev;
+    reindexBtn.disabled = false;
+  }
+});
+
 function autosize() {
   inputEl.style.height = "auto";
   inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + "px";
@@ -232,20 +279,23 @@ formEl.addEventListener("submit", async (e) => {
 
   busy = true;
   sendEl.disabled = true;
+  const useMemory = ragToggle.checked;
   addBubble("user", text);
-  history.push({ role: "user", content: text });
+  if (!useMemory) history.push({ role: "user", content: text }); // paměťové dotazy nejdou do historie chatu
   inputEl.value = "";
   autosize();
 
   const bot = addBubble("bot", "");
   bot.classList.add("pending");
   let answer = "";
+  let sources = null;
 
   try {
-    const res = await fetch("/api/chat", {
+    // režim paměti → /api/ask (jen dotaz), jinak běžný chat → /api/chat (celá historie)
+    const res = await fetch(useMemory ? "/api/ask" : "/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: history }),
+      body: JSON.stringify(useMemory ? { question: text } : { messages: history }),
     });
 
     const ctype = res.headers.get("Content-Type") || "";
@@ -268,7 +318,9 @@ formEl.addEventListener("submit", async (e) => {
         if (!line.trim()) continue;
         try {
           const obj = JSON.parse(line);
-          if (obj.message && obj.message.content) {
+          if (obj.sources) {
+            sources = obj.sources; // první řádek v režimu paměti
+          } else if (obj.message && obj.message.content) {
             answer += obj.message.content;
             bot.textContent = answer;
             chatEl.scrollTop = chatEl.scrollHeight;
@@ -281,7 +333,9 @@ formEl.addEventListener("submit", async (e) => {
 
     bot.classList.remove("pending");
     if (answer.trim()) {
-      history.push({ role: "assistant", content: answer });
+      if (sources) addSources(sources);
+      // do historie ukládáme jen běžný chat (dotazy nad pamětí jsou samostatné)
+      if (!useMemory) history.push({ role: "assistant", content: answer });
     } else {
       bot.remove();
       addBubble("error", "Model nevrátil žádnou odpověď.");

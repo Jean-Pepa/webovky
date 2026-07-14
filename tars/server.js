@@ -24,6 +24,7 @@ const path = require("path");
 const PORT = process.env.PORT || 8787;
 const OLLAMA_URL = (process.env.OLLAMA_URL || "http://localhost:11434").replace(/\/$/, "");
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5:7b";
+const EMBED_MODEL = process.env.EMBED_MODEL || "nomic-embed-text";
 
 const SYSTEM_PROMPT =
   "Jsi TARS, osobní asistent Kristiána. Odpovídáš česky, stručně a k věci. " +
@@ -37,6 +38,24 @@ const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
 // založ složky na data, když ještě nejsou
 for (const dir of [DATA_DIR, NOTES_DIR, UPLOADS_DIR]) {
   fs.mkdirSync(dir, { recursive: true });
+}
+
+// ==== PAMĚŤ (RAG) ====
+// Jednoduchý lokální index: pole záznamů { refType, refId, name, date, chunk, vector }.
+// Uložený v jednom souboru data/index.json. Pro osobní objem dat úplně stačí.
+const INDEX_FILE = path.join(DATA_DIR, "index.json");
+let INDEX = [];
+try {
+  if (fs.existsSync(INDEX_FILE)) INDEX = JSON.parse(fs.readFileSync(INDEX_FILE, "utf-8"));
+} catch {
+  INDEX = [];
+}
+function saveIndex() {
+  try {
+    fs.writeFileSync(INDEX_FILE, JSON.stringify(INDEX), "utf-8");
+  } catch (e) {
+    console.warn("  ! nepodařilo se uložit index:", e.message);
+  }
 }
 
 const MIME = {
@@ -57,6 +76,7 @@ const MIME = {
   ".wav": "audio/wav",
   ".ico": "image/x-icon",
   ".json": "application/json; charset=utf-8",
+  ".webmanifest": "application/manifest+json; charset=utf-8",
 };
 
 function sendJson(res, status, obj) {
@@ -113,6 +133,85 @@ function readBody(req) {
     req.on("data", (c) => (body += c));
     req.on("end", () => resolve(body));
   });
+}
+
+// ==== PAMĚŤ: pomocné funkce ==================================================
+
+// spočítej embedding textu přes Ollamu (model nomic-embed-text)
+async function embed(text) {
+  const r = await fetch(`${OLLAMA_URL}/api/embeddings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model: EMBED_MODEL, prompt: text }),
+  });
+  if (!r.ok) throw new Error("embeddings HTTP " + r.status);
+  const j = await r.json();
+  if (!Array.isArray(j.embedding)) throw new Error("embeddings: chybí vektor");
+  return j.embedding;
+}
+
+// rozděl delší text na kousky (~800 znaků) s malým překryvem
+function chunkText(text, size = 800, overlap = 120) {
+  const clean = String(text || "").trim();
+  if (clean.length <= size) return clean ? [clean] : [];
+  const chunks = [];
+  let i = 0;
+  while (i < clean.length) {
+    chunks.push(clean.slice(i, i + size));
+    i += size - overlap;
+  }
+  return chunks;
+}
+
+// kosinová podobnost dvou vektorů
+function cosine(a, b) {
+  let dot = 0, na = 0, nb = 0;
+  const n = Math.min(a.length, b.length);
+  for (let i = 0; i < n; i++) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
+  return na && nb ? dot / (Math.sqrt(na) * Math.sqrt(nb)) : 0;
+}
+
+// zaindexuj jeden zdroj (poznámku nebo textový soubor); tiše přeskoč při chybě
+async function indexRef({ refType, refId, name, date, text }) {
+  const chunks = chunkText(text);
+  if (!chunks.length) return { ok: false, reason: "prázdný text" };
+  try {
+    // nejdřív odeber staré záznamy stejného zdroje (kdyby se přeindexovával)
+    removeFromIndex(refType, refId);
+    for (const chunk of chunks) {
+      const vector = await embed(chunk);
+      INDEX.push({ refType, refId, name, date, chunk, vector });
+    }
+    saveIndex();
+    return { ok: true, chunks: chunks.length };
+  } catch (e) {
+    return { ok: false, reason: e.message };
+  }
+}
+
+// odeber zdroj z indexu
+function removeFromIndex(refType, refId) {
+  const before = INDEX.length;
+  INDEX = INDEX.filter((x) => !(x.refType === refType && x.refId === refId));
+  if (INDEX.length !== before) saveIndex();
+}
+
+// najdi nejbližší kousky k dotazu
+async function searchIndex(question, k = 5) {
+  if (!INDEX.length) return [];
+  const qv = await embed(question);
+  return INDEX.map((x) => ({ ...x, score: cosine(qv, x.vector) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, k);
+}
+
+// je soubor textový (umíme z něj číst pro paměť)?
+function isTextFile(name) {
+  return /\.(txt|md|markdown|csv|log|json)$/i.test(name || "");
 }
 
 // --- Tunel do Ollamy: /api/chat ---------------------------------------------
@@ -173,7 +272,17 @@ async function handleSaveNote(req, res) {
 
   const id = stamp() + ".md";
   fs.writeFileSync(path.join(NOTES_DIR, id), text, "utf-8");
-  sendJson(res, 200, { ok: true, id });
+
+  // zkus poznámku vložit do paměti (když embed model neběží, poznámka se přesto uloží)
+  const mem = await indexRef({
+    refType: "note",
+    refId: id,
+    name: "poznámka",
+    date: new Date().toISOString(),
+    text,
+  });
+
+  sendJson(res, 200, { ok: true, id, memory: mem.ok });
 }
 
 // --- Zápisník: nahraj soubor (raw tělo, jméno v ?name=) ----------------------
@@ -186,7 +295,26 @@ function handleUpload(req, res) {
 
   const out = fs.createWriteStream(dest);
   req.pipe(out);
-  out.on("finish", () => sendJson(res, 200, { ok: true, id, name: original }));
+  out.on("finish", async () => {
+    // textové soubory vložíme do paměti (obrázky/PDF zatím ne – ty umíme jen uložit)
+    let memory = false;
+    if (isTextFile(original)) {
+      try {
+        const text = fs.readFileSync(dest, "utf-8");
+        const mem = await indexRef({
+          refType: "file",
+          refId: id,
+          name: original,
+          date: new Date().toISOString(),
+          text,
+        });
+        memory = mem.ok;
+      } catch {
+        /* zaindexování je jen bonus – když selže, soubor je stejně uložený */
+      }
+    }
+    sendJson(res, 200, { ok: true, id, name: original, memory });
+  });
   out.on("error", () => sendJson(res, 500, { error: "Nepodařilo se uložit soubor." }));
 }
 
@@ -260,7 +388,113 @@ async function handleDelete(req, res) {
   const full = insideDir(dir, id);
   if (!full || !fs.existsSync(full)) return sendJson(res, 404, { error: "Nenalezeno." });
   fs.unlinkSync(full);
+  removeFromIndex(type, id); // odeber i z paměti
   sendJson(res, 200, { ok: true });
+}
+
+// --- Paměť: zeptej se nad svými poznámkami -----------------------------------
+async function handleAsk(req, res) {
+  const body = await readBody(req);
+  let question;
+  try {
+    question = String(JSON.parse(body || "{}").question || "").trim();
+  } catch {
+    return sendJson(res, 400, { error: "Neplatný JSON." });
+  }
+  if (!question) return sendJson(res, 400, { error: "Prázdný dotaz." });
+
+  let hits;
+  try {
+    hits = await searchIndex(question, 5);
+  } catch (err) {
+    return sendJson(res, 502, {
+      error:
+        "Nepodařilo se prohledat paměť. Běží Ollama a je stažený embedding model '" +
+        EMBED_MODEL + "'? (ollama pull " + EMBED_MODEL + ") Detail: " +
+        (err && err.message ? err.message : String(err)),
+    });
+  }
+
+  if (!hits.length) {
+    return sendJson(res, 200, {
+      empty: true,
+      error: "V paměti zatím nic není. Ulož nějaké poznámky, nebo spusť přeindexování.",
+    });
+  }
+
+  // z nalezených kousků poskládej kontext pro model
+  const context = hits
+    .map((h, i) => `[${i + 1}] (${h.name}, ${new Date(h.date).toLocaleString("cs-CZ")}):\n${h.chunk}`)
+    .join("\n\n");
+
+  const ragSystem =
+    "Jsi TARS, osobní asistent Kristiána. Odpovídej ČESKY a POUZE na základě " +
+    "následujících poznámek uživatele. Když odpověď v poznámkách není, řekni " +
+    "narovinu, že to v poznámkách nemáš. Buď stručný.\n\n=== POZNÁMKY ===\n" + context;
+
+  try {
+    const ollamaRes = await fetch(`${OLLAMA_URL}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: "system", content: ragSystem },
+          { role: "user", content: question },
+        ],
+        stream: true,
+      }),
+    });
+    if (!ollamaRes.ok || !ollamaRes.body) {
+      return sendJson(res, 502, { error: "Ollama chyba (" + ollamaRes.status + ")." });
+    }
+
+    res.writeHead(200, {
+      "Content-Type": "application/x-ndjson; charset=utf-8",
+      "Cache-Control": "no-cache",
+    });
+    // první řádek = zdroje (odkud bot čerpal), pak už proud odpovědi modelu
+    const sources = hits.map((h) => ({
+      refType: h.refType,
+      refId: h.refId,
+      name: h.name,
+      date: h.date,
+      score: Math.round(h.score * 100) / 100,
+      snippet: h.chunk.slice(0, 120),
+    }));
+    res.write(JSON.stringify({ sources }) + "\n");
+    for await (const chunk of ollamaRes.body) res.write(chunk);
+    res.end();
+  } catch (err) {
+    sendJson(res, 502, {
+      error: "Nepodařilo se spojit s Ollamou. Detail: " + (err && err.message ? err.message : String(err)),
+    });
+  }
+}
+
+// --- Paměť: přeindexuj všechna už uložená data -------------------------------
+async function handleReindex(req, res) {
+  INDEX = [];
+  let ok = 0, fail = 0;
+
+  for (const f of fs.readdirSync(NOTES_DIR)) {
+    if (!f.endsWith(".md")) continue;
+    const text = fs.readFileSync(path.join(NOTES_DIR, f), "utf-8");
+    const st = fs.statSync(path.join(NOTES_DIR, f));
+    const r = await indexRef({ refType: "note", refId: f, name: "poznámka", date: st.mtime.toISOString(), text });
+    r.ok ? ok++ : fail++;
+  }
+  for (const f of fs.readdirSync(UPLOADS_DIR)) {
+    const name = f.replace(/^[^_]+__/, "");
+    if (!isTextFile(name)) continue;
+    const text = fs.readFileSync(path.join(UPLOADS_DIR, f), "utf-8");
+    const st = fs.statSync(path.join(UPLOADS_DIR, f));
+    const r = await indexRef({ refType: "file", refId: f, name, date: st.mtime.toISOString(), text });
+    r.ok ? ok++ : fail++;
+  }
+
+  saveIndex();
+  sendJson(res, 200, { ok: true, indexed: ok, failed: fail, chunks: INDEX.length });
 }
 
 // --- Router ------------------------------------------------------------------
@@ -271,11 +505,19 @@ const server = http.createServer((req, res) => {
   if (req.method === "POST" && pathname === "/api/notes") return handleSaveNote(req, res);
   if (req.method === "POST" && pathname === "/api/upload") return handleUpload(req, res);
   if (req.method === "POST" && pathname === "/api/delete") return handleDelete(req, res);
+  if (req.method === "POST" && pathname === "/api/ask") return handleAsk(req, res);
+  if (req.method === "POST" && pathname === "/api/reindex") return handleReindex(req, res);
   if (req.method === "GET" && pathname === "/api/entries") return handleEntries(req, res);
   if (req.method === "GET" && pathname === "/api/note") return handleGetNote(req, res);
   if (req.method === "GET" && pathname === "/api/file") return handleGetFile(req, res);
   if (req.method === "GET" && pathname === "/api/health") {
-    return sendJson(res, 200, { ok: true, model: OLLAMA_MODEL, ollama: OLLAMA_URL });
+    return sendJson(res, 200, {
+      ok: true,
+      model: OLLAMA_MODEL,
+      ollama: OLLAMA_URL,
+      embedModel: EMBED_MODEL,
+      memoryChunks: INDEX.length,
+    });
   }
   return serveStatic(req, res);
 });

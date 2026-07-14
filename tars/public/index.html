@@ -6,6 +6,12 @@
     <meta name="theme-color" content="#0a0a0b" />
     <title>TARS</title>
     <link rel="icon" href="favicon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="TARS" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -45,6 +51,16 @@
 
     <!-- ===== CHAT ===== -->
     <section class="view chat" id="view-chat" hidden>
+      <div class="chat-toolbar">
+        <label class="switch">
+          <input type="checkbox" id="ragToggle" />
+          <span class="knob"></span>
+          <span class="switch-label">🧠 Odpovídat z mých poznámek</span>
+        </label>
+        <button type="button" class="reindex" id="reindexBtn" title="Znovu načíst poznámky do paměti">
+          ↻
+        </button>
+      </div>
       <div class="chat-scroll" id="chat">
         <div class="empty" id="empty">
           <span class="logo big" aria-hidden="true"></span>
