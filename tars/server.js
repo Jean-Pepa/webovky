@@ -23,12 +23,21 @@ const path = require("path");
 
 const PORT = process.env.PORT || 8787;
 const OLLAMA_URL = (process.env.OLLAMA_URL || "http://localhost:11434").replace(/\/$/, "");
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5:7b";
-const EMBED_MODEL = process.env.EMBED_MODEL || "nomic-embed-text";
-// model, který "vidí" obrázky (čtení textu z fotek). Musí být stažený: ollama pull llava
-const VISION_MODEL = process.env.VISION_MODEL || "llava";
+// volitelný soubor tars/config.json může přepsat výchozí nastavení (např. model na čtení fotek)
+let CONFIG = {};
+try {
+  const cfgPath = require("path").join(__dirname, "config.json");
+  if (require("fs").existsSync(cfgPath)) CONFIG = JSON.parse(require("fs").readFileSync(cfgPath, "utf-8"));
+} catch (e) {
+  console.warn("  ! config.json se nepodařilo načíst:", e.message);
+}
+
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || CONFIG.OLLAMA_MODEL || "qwen2.5:7b";
+const EMBED_MODEL = process.env.EMBED_MODEL || CONFIG.EMBED_MODEL || "nomic-embed-text";
+// model, který "vidí" obrázky (čtení textu z fotek). Přepiš v config.json (VISION_MODEL).
+const VISION_MODEL = process.env.VISION_MODEL || CONFIG.VISION_MODEL || "llava";
 // jak moc musí být poznámka podobná dotazu, aby ji chat použil (0–1). Nižší = ochotnější.
-const MEMORY_MIN_SCORE = Number(process.env.MEMORY_MIN_SCORE || 0.3);
+const MEMORY_MIN_SCORE = Number(process.env.MEMORY_MIN_SCORE || CONFIG.MEMORY_MIN_SCORE || 0.3);
 
 const SYSTEM_PROMPT =
   "Jsi TARS, osobní asistent Kristiána. Odpovídáš česky, stručně a k věci. " +
@@ -275,8 +284,9 @@ async function readImage(filePath) {
     body: JSON.stringify({
       model: VISION_MODEL,
       prompt:
-        "Přepiš do češtiny veškerý text, který na obrázku vidíš. Vrať jen ten text, " +
-        "bez úvodu a komentářů. Když na obrázku žádný text není, stručně popiš, co na něm je.",
+        "Přepiš PŘESNĚ všechen text z obrázku, řádek po řádku, tak jak je. Neprekládej, " +
+        "nedomýšlej a nic nepřidávej. Zachovej čísla a jednotky. Vrať jen ten text, bez " +
+        "úvodu a komentářů. Když na obrázku žádný text není, stručně popiš, co na něm je.",
       images: [b64],
       stream: false,
     }),
@@ -359,10 +369,12 @@ async function handleChat(req, res) {
   const system =
     SYSTEM_PROMPT +
     "\n\nODPOVÍDEJ POUZE na základě těchto poznámek uživatele. Nedoplňuj nic z " +
-    "obecných znalostí a nic si nevymýšlej. Z poznámek ale MŮŽEŠ logicky vyvodit " +
-    "odpověď — např. z receptu vypsat, co je potřeba koupit. Když k dotazu v " +
-    "poznámkách nic není, napiš krátce, že o tom nemáš data. Čísla, jména a data " +
-    "uváděj přesně tak, jak jsou v poznámkách.\n\n=== POZNÁMKY ===\n" + context;
+    "obecných znalostí a nic si nevymýšlej. Z poznámek MŮŽEŠ vypsat nebo shrnout, co " +
+    "v nich je (např. z receptu vypsat suroviny, co koupit), ale NIKDY nedoplňuj " +
+    "konkrétní čísla, množství, suroviny ani kroky, které v poznámkách nejsou. Když je " +
+    "text z poznámek nejasný, poškozený nebo neúplný, řekni to narovinu a nedomýšlej. " +
+    "Když k dotazu v poznámkách nic není, napiš krátce, že o tom nemáš data. Čísla, " +
+    "jména a data uváděj přesně tak, jak jsou v poznámkách.\n\n=== POZNÁMKY ===\n" + context;
 
   const fullMessages = [{ role: "system", content: system }, ...messages];
 
@@ -988,6 +1000,7 @@ const server = http.createServer((req, res) => {
       model: OLLAMA_MODEL,
       ollama: OLLAMA_URL,
       embedModel: EMBED_MODEL,
+      visionModel: VISION_MODEL,
       memoryChunks: INDEX.length,
     });
   }

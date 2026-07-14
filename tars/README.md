@@ -210,11 +210,16 @@ Když budeš chtít něco změnit, spusť server s proměnnou navíc:
 | `OLLAMA_MODEL` | který model použít (chat)       | `qwen2.5:7b`             |
 | `EMBED_MODEL`  | model pro paměť (embeddingy)    | `nomic-embed-text`       |
 | `VISION_MODEL` | model pro čtení textu z fotek   | `llava`                  |
-| `MEMORY_MIN_SCORE` | práh, kdy chat použije poznámku (0–1) | `0.4`             |
+| `MEMORY_MIN_SCORE` | práh, kdy chat použije poznámku (0–1) | `0.3`             |
 
-> Čtení fotek potřebuje „vidoucí" model. Stáhni ho jednou:
-> `ollama pull llava` (menší varianta při málo paměti: `ollama pull moondream`,
-> pak spusť s `VISION_MODEL=moondream`).
+Tyhle věci jde nastavit i bez proměnných — v souboru **`tars/config.json`**
+(např. `{"VISION_MODEL": "qwen2.5vl:3b"}`). Po změně restartuj server.
+
+> Čtení fotek potřebuje „vidoucí" model. Doporučený (dobrý na český text,
+> sedne do 6 GB): `ollama pull qwen2.5vl:3b`. Který model se použije, je v
+> souboru **`tars/config.json`** (klíč `VISION_MODEL`) — stačí přepsat a
+> restartovat. Alternativy: `minicpm-v` (nejlepší čtení, ~5,5 GB), `llava`
+> (základní, na češtinu slabší).
 
 Příklady:
 

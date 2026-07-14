@@ -1,0 +1,5 @@
+{
+  "_napoveda": "Tady se dá přepsat nastavení TARS. Po změně restartuj server (stop-tars.bat + start-tars.vbs).",
+  "_VISION_MODEL": "model na čtení textu z fotek. Musí být stažený: ollama pull <model>. Tipy: qwen2.5vl:3b (rychlý, dobrý na český text), minicpm-v (nejlepší čtení, ~5.5 GB), llava (základní).",
+  "VISION_MODEL": "qwen2.5vl:3b"
+}
