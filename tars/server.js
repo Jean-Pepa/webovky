@@ -40,7 +40,11 @@ const CLASSIFY_SYS =
   '{"items":[...]}. Každá položka je buď osoba, nebo poznámka:\n' +
   '- osoba (konkrétní člověk – kdo to je, vztah, kontakt): ' +
   '{"type":"person","name":"jméno","info":"co si o něm pamatovat"}\n' +
+  '- událost (má konkrétní datum/čas – schůzka, termín, narozeniny): ' +
+  '{"type":"event","title":"název","date":"RRRR-MM-DD","time":"HH:MM"} (time nepovinné)\n' +
   '- poznámka (úkol, myšlenka, cokoliv ostatního): {"type":"note","text":"text poznámky"}\n' +
+  "U události převeď relativní datum (dnes, zítra, ve čtvrtek) na konkrétní " +
+  "RRRR-MM-DD podle dnešního data, které dostaneš. " +
   "Neztrať žádnou informaci. Zachovej jazyk uživatele (češtinu). " +
   "Když je to jen jedna věc, vrať pole s jednou položkou.";
 
@@ -49,9 +53,10 @@ const DATA_DIR = path.join(__dirname, "data");
 const NOTES_DIR = path.join(DATA_DIR, "notes");
 const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
 const PEOPLE_DIR = path.join(DATA_DIR, "people");
+const EVENTS_DIR = path.join(DATA_DIR, "events");
 
 // založ složky na data, když ještě nejsou
-for (const dir of [DATA_DIR, NOTES_DIR, UPLOADS_DIR, PEOPLE_DIR]) {
+for (const dir of [DATA_DIR, NOTES_DIR, UPLOADS_DIR, PEOPLE_DIR, EVENTS_DIR]) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
@@ -360,7 +365,14 @@ async function handleCapture(req, res) {
         format: "json",
         stream: false,
         messages: [
-          { role: "system", content: CLASSIFY_SYS },
+          {
+            role: "system",
+            content:
+              CLASSIFY_SYS +
+              "\nDnes je " +
+              new Date().toLocaleDateString("cs-CZ", { weekday: "long", year: "numeric", month: "2-digit", day: "2-digit" }) +
+              " (" + new Date().toISOString().slice(0, 10) + ").",
+          },
           { role: "user", content: text },
         ],
       }),
@@ -391,8 +403,13 @@ async function handleCapture(req, res) {
       fs.writeFileSync(path.join(PEOPLE_DIR, id), JSON.stringify({ name, info, date }), "utf-8");
       await indexRef({ refType: "person", refId: id, name, date, text: "Osoba: " + name + "\n" + info });
       saved.push({ type: "person", label: name });
+    } else if (it && it.type === "event" && String(it.title || "").trim() && /^\d{4}-\d{2}-\d{2}$/.test(it.date || "")) {
+      const id = stamp() + suffix + ".json";
+      const ev = await saveEvent(id, it.title, it.date, it.time);
+      saved.push({ type: "event", label: ev.title + " (" + ev.date + (ev.time ? " " + ev.time : "") + ")" });
     } else {
-      const t = String((it && it.text) || "").trim();
+      // poznámka – i „událost bez data" sem spadne (vezmeme text i title, nic neztratíme)
+      const t = String((it && (it.text || it.title)) || "").trim();
       if (!t) continue;
       const id = stamp() + suffix + ".md";
       fs.writeFileSync(path.join(NOTES_DIR, id), t, "utf-8");
@@ -503,7 +520,11 @@ async function handleDelete(req, res) {
     return sendJson(res, 400, { error: "Neplatný JSON." });
   }
   const dir =
-    type === "note" ? NOTES_DIR : type === "file" ? UPLOADS_DIR : type === "person" ? PEOPLE_DIR : null;
+    type === "note" ? NOTES_DIR
+    : type === "file" ? UPLOADS_DIR
+    : type === "person" ? PEOPLE_DIR
+    : type === "event" ? EVENTS_DIR
+    : null;
   if (!dir) return sendJson(res, 400, { error: "Neznámý typ." });
   const full = insideDir(dir, id);
   if (!full || !fs.existsSync(full)) return sendJson(res, 404, { error: "Nenalezeno." });
@@ -539,6 +560,62 @@ async function handleSavePerson(req, res) {
   });
 
   sendJson(res, 200, { ok: true, id, memory: mem.ok });
+}
+
+// --- Kalendář: ulož jednu událost (sdílené pro diktování i ruční přidání) ----
+async function saveEvent(id, title, date, time) {
+  const ev = {
+    title: String(title).trim(),
+    date: String(date), // RRRR-MM-DD
+    time: /^\d{1,2}:\d{2}$/.test(time || "") ? time : "",
+    createdAt: new Date().toISOString(),
+  };
+  fs.writeFileSync(path.join(EVENTS_DIR, id), JSON.stringify(ev), "utf-8");
+  await indexRef({
+    refType: "event",
+    refId: id,
+    name: "událost",
+    date: ev.createdAt,
+    text: "Událost: " + ev.title + " – " + ev.date + (ev.time ? " " + ev.time : ""),
+  });
+  return ev;
+}
+
+// --- Kalendář: ruční přidání události ----------------------------------------
+async function handleSaveEvent(req, res) {
+  const body = await readBody(req);
+  let title, date, time;
+  try {
+    const j = JSON.parse(body || "{}");
+    title = String(j.title || "").trim();
+    date = String(j.date || "");
+    time = String(j.time || "");
+  } catch {
+    return sendJson(res, 400, { error: "Neplatný JSON." });
+  }
+  if (!title) return sendJson(res, 400, { error: "Chybí název." });
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return sendJson(res, 400, { error: "Chybí platné datum." });
+
+  const id = stamp() + ".json";
+  const ev = await saveEvent(id, title, date, time);
+  sendJson(res, 200, { ok: true, id, event: ev });
+}
+
+// --- Kalendář: seznam událostí ----------------------------------------------
+function handleEvents(req, res) {
+  const events = [];
+  for (const f of fs.readdirSync(EVENTS_DIR)) {
+    if (!f.endsWith(".json")) continue;
+    try {
+      const e = JSON.parse(fs.readFileSync(path.join(EVENTS_DIR, f), "utf-8"));
+      events.push({ id: f, title: e.title, date: e.date, time: e.time || "" });
+    } catch {
+      /* přeskoč poškozený */
+    }
+  }
+  // seřaď podle data + času
+  events.sort((a, b) => (a.date + (a.time || "99:99")).localeCompare(b.date + (b.time || "99:99")));
+  sendJson(res, 200, { events });
 }
 
 // --- Lidé: seznam -----------------------------------------------------------
@@ -651,6 +728,22 @@ async function handleReindex(req, res) {
       fail++;
     }
   }
+  for (const f of fs.readdirSync(EVENTS_DIR)) {
+    if (!f.endsWith(".json")) continue;
+    try {
+      const e = JSON.parse(fs.readFileSync(path.join(EVENTS_DIR, f), "utf-8"));
+      const r = await indexRef({
+        refType: "event",
+        refId: f,
+        name: "událost",
+        date: e.createdAt || new Date().toISOString(),
+        text: "Událost: " + e.title + " – " + e.date + (e.time ? " " + e.time : ""),
+      });
+      r.ok ? ok++ : fail++;
+    } catch {
+      fail++;
+    }
+  }
 
   saveIndex();
   sendJson(res, 200, { ok: true, indexed: ok, failed: fail, chunks: INDEX.length });
@@ -666,9 +759,11 @@ const server = http.createServer((req, res) => {
   if (req.method === "POST" && pathname === "/api/upload") return handleUpload(req, res);
   if (req.method === "POST" && pathname === "/api/delete") return handleDelete(req, res);
   if (req.method === "POST" && pathname === "/api/people") return handleSavePerson(req, res);
+  if (req.method === "POST" && pathname === "/api/events") return handleSaveEvent(req, res);
   if (req.method === "POST" && pathname === "/api/briefing") return handleBriefing(req, res);
   if (req.method === "POST" && pathname === "/api/reindex") return handleReindex(req, res);
   if (req.method === "GET" && pathname === "/api/people") return handlePeople(req, res);
+  if (req.method === "GET" && pathname === "/api/events") return handleEvents(req, res);
   if (req.method === "GET" && pathname === "/api/entries") return handleEntries(req, res);
   if (req.method === "GET" && pathname === "/api/note") return handleGetNote(req, res);
   if (req.method === "GET" && pathname === "/api/file") return handleGetFile(req, res);

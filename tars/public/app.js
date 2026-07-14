@@ -44,6 +44,7 @@ const sendEl = document.getElementById("send");
 const views = {
   notes: document.getElementById("view-notes"),
   people: document.getElementById("view-people"),
+  calendar: document.getElementById("view-calendar"),
   overview: document.getElementById("view-overview"),
   chat: document.getElementById("view-chat"),
 };
@@ -54,6 +55,7 @@ document.querySelectorAll(".tab").forEach((tab) => {
     document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === tab));
     if (which === "chat") inputEl.focus();
     if (which === "people") loadPeople();
+    if (which === "calendar") loadCalendar();
     if (which === "overview") loadStats();
   });
 });
@@ -307,6 +309,154 @@ savePersonBtn.addEventListener("click", async () => {
     savePersonBtn.disabled = false;
   }
 });
+
+// ==================== KALENDÁŘ ====================
+const calGrid = document.getElementById("calGrid");
+const calTitle = document.getElementById("calTitle");
+const dayPanel = document.getElementById("dayPanel");
+
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+function ymd(y, m, d) {
+  return y + "-" + pad2(m + 1) + "-" + pad2(d);
+}
+
+const _today = new Date();
+let calYear = _today.getFullYear();
+let calMonth = _today.getMonth(); // 0–11
+let calSelected = ymd(_today.getFullYear(), _today.getMonth(), _today.getDate());
+let calEvents = [];
+
+document.getElementById("calPrev").addEventListener("click", () => shiftMonth(-1));
+document.getElementById("calNext").addEventListener("click", () => shiftMonth(1));
+function shiftMonth(delta) {
+  calMonth += delta;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+}
+
+async function loadCalendar() {
+  try {
+    const { events } = await (await fetch("/api/events")).json();
+    calEvents = events || [];
+  } catch {
+    calEvents = [];
+  }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const first = new Date(calYear, calMonth, 1);
+  calTitle.textContent = first.toLocaleDateString("cs-CZ", { month: "long", year: "numeric" });
+  const startWd = (first.getDay() + 6) % 7; // pondělí = 0
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const todayStr = ymd(_today.getFullYear(), _today.getMonth(), _today.getDate());
+  const withEvents = new Set(calEvents.map((e) => e.date));
+
+  calGrid.innerHTML = "";
+  for (let i = 0; i < startWd; i++) {
+    const c = document.createElement("div");
+    c.className = "cal-day empty";
+    calGrid.appendChild(c);
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = ymd(calYear, calMonth, d);
+    const cell = document.createElement("div");
+    cell.className = "cal-day";
+    if (ds === todayStr) cell.classList.add("today");
+    if (ds === calSelected) cell.classList.add("selected");
+    cell.textContent = d;
+    if (withEvents.has(ds)) {
+      const dot = document.createElement("span");
+      dot.className = "ev-dot";
+      cell.appendChild(dot);
+    }
+    cell.addEventListener("click", () => {
+      calSelected = ds;
+      renderCalendar();
+    });
+    calGrid.appendChild(cell);
+  }
+  renderDayPanel();
+}
+
+function renderDayPanel() {
+  dayPanel.innerHTML = "";
+  const title = document.createElement("div");
+  title.className = "day-title";
+  title.textContent = new Date(calSelected + "T00:00:00").toLocaleDateString("cs-CZ", {
+    weekday: "long", day: "numeric", month: "long",
+  });
+  dayPanel.appendChild(title);
+
+  const dayEvents = calEvents
+    .filter((e) => e.date === calSelected)
+    .sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
+
+  for (const e of dayEvents) {
+    const row = document.createElement("div");
+    row.className = "day-event";
+    const t = document.createElement("span");
+    t.className = "time";
+    t.textContent = e.time || "—";
+    const ttl = document.createElement("span");
+    ttl.className = "ttl";
+    ttl.textContent = e.title;
+    const del = document.createElement("button");
+    del.className = "del";
+    del.textContent = "✕";
+    del.addEventListener("click", async () => {
+      if (!confirm("Smazat událost?")) return;
+      await fetch("/api/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "event", id: e.id }),
+      }).catch(() => {});
+      await loadCalendar();
+    });
+    row.appendChild(t);
+    row.appendChild(ttl);
+    row.appendChild(del);
+    dayPanel.appendChild(row);
+  }
+
+  // formulář pro ruční přidání události k vybranému dni
+  const add = document.createElement("div");
+  add.className = "add-event";
+  const time = document.createElement("input");
+  time.type = "time";
+  const ttl = document.createElement("input");
+  ttl.type = "text";
+  ttl.placeholder = "Název události";
+  const btn = document.createElement("button");
+  btn.textContent = "Přidat";
+  btn.addEventListener("click", async () => {
+    const t = ttl.value.trim();
+    if (!t) return ttl.focus();
+    btn.disabled = true;
+    try {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: t, date: calSelected, time: time.value }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "chyba");
+      ttl.value = "";
+      time.value = "";
+      await loadCalendar();
+    } catch (err) {
+      alert("Nepodařilo se přidat: " + (err.message || err));
+    } finally {
+      btn.disabled = false;
+    }
+  });
+  add.appendChild(time);
+  add.appendChild(ttl);
+  add.appendChild(btn);
+  dayPanel.appendChild(add);
+}
 
 // ==================== PŘEHLED ====================
 async function loadStats() {

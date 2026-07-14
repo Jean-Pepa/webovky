@@ -5,6 +5,8 @@ Malá webová appka, co běží **u tebe na PC**. Dole se přepínají **čtyři
 - **Záznam** — jedno místo, kam **nadiktuješ cokoliv** (poznámku, člověka, úkol)
   nebo přidáš soubor/fotku. TARS text sám **rozřadí do správných složek**.
 - **Lidé** — kdo je kdo: přidáš člověka + info a můžeš se na něj ptát.
+- **Kalendář** — měsíční mřížka; události přidáš ručně, nebo vzniknou samy
+  z diktování (viz Záznam).
 - **Přehled** — počty uložených věcí a **denní přehled** tvých poznámek jedním
   klepnutím. Je tu i tlačítko *Obnovit paměť*.
 - **Chat** — povídání s tvojí **Ollamou** (model `qwen2.5:7b`). Paměť běží
@@ -63,10 +65,12 @@ klidně víc věcí v jedné větě — a dej **Ulož**. Model text rozdělí a 
 zařadí**:
 
 - konkrétní člověk (kdo to je, vztah, kontakt) → do **Lidí**,
+- událost s datem/časem (schůzka, termín) → do **Kalendáře**,
 - všechno ostatní (úkol, myšlenka…) → do **poznámek**.
 
-> Příklad: *„koupit mléko a soused František má psa Rexe"* → uloží se **koupit
-> mléko** jako poznámka a **František** k Lidem. TARS ti napíše, co kam dal.
+> Příklad: *„koupit mléko, soused František má psa Rexe a ve čtvrtek v 15:00
+> schůzka s architektem"* → **koupit mléko** jako poznámka, **František** k
+> Lidem a **schůzka** do Kalendáře. TARS ti napíše, co kam dal.
 
 - **Hlasem:** na iPhonu klepni na **mikrofon na klávesnici** a mluv — text se
   napíše sám do pole. (Diktování zajišťuje systém Applu, my nic neposíláme ven.)
@@ -81,6 +85,7 @@ Vše se uloží **lokálně na disk PC** do složky `tars/data/`:
 ```
 tars/data/notes/     ← poznámky (.md)
 tars/data/people/    ← lidé (.json)
+tars/data/events/    ← události v kalendáři (.json)
 tars/data/uploads/   ← nahrané soubory a fotky
 ```
 
@@ -97,6 +102,18 @@ smažeš.
 Na obrazovce **Lidé** přidáš člověka (jméno + info: kdo to je, kontext, co si
 pamatovat). Uloží se na disk a **rovnou i do paměti**, takže se na něj můžeš
 ptát v Chatu („co vím o Františkovi?"). Křížkem ✕ člověka smažeš.
+
+---
+
+## Kalendář — události
+
+Na obrazovce **Kalendář** je měsíční mřížka (šipkami ‹ › přepínáš měsíce). Dny
+s událostí mají tečku, dnešek je zvýrazněný. Klepnutím na den uvidíš jeho
+události a přidáš novou (čas + název → **Přidat**).
+
+Události vznikají i **samy z diktování** v Záznamu — když řekneš „schůzka ve
+čtvrtek v 15:00", TARS z toho udělá událost (relativní datum jako „čtvrtek"
+převede na konkrétní den). Křížkem ✕ událost smažeš.
 
 ---
 
@@ -228,4 +245,3 @@ Soubory:
 
 - **Lokální Whisper** — nahrávání hlasu přímo v appce (delší nahrávky)
 - **Čtení z PDF a obrázků** do paměti (OCR)
-- **Kalendář**

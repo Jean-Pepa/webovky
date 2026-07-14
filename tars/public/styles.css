@@ -373,6 +373,200 @@ body {
   margin: 0;
 }
 
+/* ============ KALENDÁŘ ============ */
+.cal {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 14px 14px calc(16px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cal-title {
+  font-size: 17px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.cal-nav {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.cal-nav:active {
+  transform: scale(0.94);
+}
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-day {
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cal-day.empty {
+  border: none;
+  background: none;
+  cursor: default;
+}
+
+.cal-day.today {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.cal-day.selected {
+  background: rgba(216, 207, 168, 0.16);
+  border-color: var(--accent);
+}
+
+.cal-day .ev-dot {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* panel vybraného dne */
+.day-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.day-title {
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+
+.day-event {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent);
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+
+.day-event .time {
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 44px;
+}
+
+.day-event .ttl {
+  flex: 1;
+  min-width: 0;
+  font-size: 14.5px;
+  overflow-wrap: anywhere;
+}
+
+.day-event .del {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.day-event .del:active {
+  color: #e06060;
+}
+
+.add-event {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.add-event input[type="time"] {
+  width: 96px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+}
+
+.add-event input[type="text"] {
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+}
+
+.add-event button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #1a1a1a;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 /* zdroje pod odpovědí z paměti */
 .sources {
   align-self: flex-start;
@@ -541,10 +735,14 @@ body {
 .tabs {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   border-top: 1px solid var(--line);
   background: var(--panel);
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tab span:not(.tab-ico) {
+  font-size: 10.5px;
 }
 
 .tab {
