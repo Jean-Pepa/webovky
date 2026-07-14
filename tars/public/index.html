@@ -36,35 +36,51 @@
         ></textarea>
         <div class="capture-actions">
           <input type="file" id="fileInput" multiple hidden />
-          <button type="button" class="btn ghost" id="attachBtn" title="Přidat soubor">
-            ＋ Soubor
-          </button>
+          <button type="button" class="btn ghost" id="attachBtn">＋ Soubor</button>
           <button type="button" class="btn primary" id="saveNoteBtn">Uložit poznámku</button>
         </div>
         <div class="uploading" id="uploading" hidden></div>
       </div>
-
       <div class="entries" id="entries">
-        <p class="hint" id="entriesHint">Načítám uložené…</p>
+        <p class="hint">Načítám uložené…</p>
+      </div>
+    </section>
+
+    <!-- ===== LIDÉ ===== -->
+    <section class="view" id="view-people" hidden>
+      <div class="capture">
+        <input id="personName" class="field" type="text" placeholder="Jméno (např. František – soused)" />
+        <textarea id="personInfo" rows="3" placeholder="Kdo to je, kontext, co si pamatovat…"></textarea>
+        <div class="capture-actions">
+          <button type="button" class="btn primary" id="savePersonBtn">Uložit člověka</button>
+        </div>
+      </div>
+      <div class="entries" id="people">
+        <p class="hint">Načítám lidi…</p>
+      </div>
+    </section>
+
+    <!-- ===== PŘEHLED ===== -->
+    <section class="view" id="view-overview" hidden>
+      <div class="overview">
+        <div class="stats" id="stats">
+          <div class="stat"><span class="num" id="stNotes">–</span><span class="lbl">poznámek</span></div>
+          <div class="stat"><span class="num" id="stFiles">–</span><span class="lbl">souborů</span></div>
+          <div class="stat"><span class="num" id="stPeople">–</span><span class="lbl">lidí</span></div>
+        </div>
+        <button type="button" class="btn primary big" id="briefBtn">☀ Vytvoř denní přehled</button>
+        <div class="briefing" id="briefing"></div>
+        <button type="button" class="btn ghost" id="reindexBtn">🧠 Obnovit paměť z poznámek</button>
+        <p class="hint small" id="reindexHint"></p>
       </div>
     </section>
 
     <!-- ===== CHAT ===== -->
     <section class="view chat" id="view-chat" hidden>
-      <div class="chat-toolbar">
-        <label class="switch">
-          <input type="checkbox" id="ragToggle" />
-          <span class="knob"></span>
-          <span class="switch-label">🧠 Odpovídat z mých poznámek</span>
-        </label>
-        <button type="button" class="reindex" id="reindexBtn" title="Znovu načíst poznámky do paměti">
-          ↻
-        </button>
-      </div>
       <div class="chat-scroll" id="chat">
         <div class="empty" id="empty">
           <span class="logo big" aria-hidden="true"></span>
-          <p>Ahoj Kristiáne. Napiš mi cokoliv.</p>
+          <p>Ahoj Kristiáne. Zeptej se mě na cokoliv — znám tvoje poznámky.</p>
         </div>
       </div>
       <form class="composer" id="composer">
@@ -75,11 +91,25 @@
 
     <!-- ===== SPODNÍ ZÁLOŽKY ===== -->
     <nav class="tabs">
-      <button class="tab active" data-view="notes" id="tab-notes">
-        <span class="tab-ico">✎</span><span>Zápisník</span>
+      <button class="tab active" data-view="notes">
+        <span class="tab-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L20 8a2 2 0 0 0-3-3L5 17v3z"/><path d="M14 6l4 4"/></svg>
+        </span><span>Zápisník</span>
       </button>
-      <button class="tab" data-view="chat" id="tab-chat">
-        <span class="tab-ico">✦</span><span>Chat</span>
+      <button class="tab" data-view="people">
+        <span class="tab-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3 2.4-5 5.5-5s5.5 2 5.5 5"/><path d="M16.5 5.6a3 3 0 0 1 0 5.8"/><path d="M18.5 20c0-2.3-1.1-4-2.8-4.7"/></svg>
+        </span><span>Lidé</span>
+      </button>
+      <button class="tab" data-view="overview">
+        <span class="tab-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="7" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="17" r="1"/><path d="M9 7h11"/><path d="M9 12h11"/><path d="M9 17h11"/></svg>
+        </span><span>Přehled</span>
+      </button>
+      <button class="tab" data-view="chat">
+        <span class="tab-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v10H9l-4 4z"/></svg>
+        </span><span>Chat</span>
       </button>
     </nav>
 

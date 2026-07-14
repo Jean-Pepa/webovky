@@ -1,18 +1,18 @@
 # TARS — tvůj lokální záznamník + AI chat
 
-Malá webová appka, co běží **u tebe na PC**. Má dvě obrazovky:
+Malá webová appka, co běží **u tebe na PC**. Dole se přepínají **čtyři obrazovky**:
 
-- **Zápisník** — z telefonu rychle zapíšeš poznámku (i hlasem) nebo pošleš
-  soubor/fotku a vše se uloží na disk tvého PC.
-- **Chat** — povídání s tvojí **Ollamou** (model `qwen2.5:7b`), s možností
-  **odpovídat z tvých poznámek** (paměť/RAG).
+- **Zápisník** — rychle zapíšeš poznámku (i hlasem) nebo pošleš soubor/fotku;
+  vše se uloží na disk tvého PC.
+- **Lidé** — kdo je kdo: přidáš člověka + info a můžeš se na něj ptát.
+- **Přehled** — počty uložených věcí a **denní přehled** tvých poznámek jedním
+  klepnutím. Je tu i tlačítko *Obnovit paměť*.
+- **Chat** — povídání s tvojí **Ollamou** (model `qwen2.5:7b`). Paměť běží
+  **automaticky** — TARS bere v potaz tvoje poznámky a ukáže, z čeho čerpal.
 
 Otevřeš ji v prohlížeči na počítači i na mobilu (přes Tailscale) a přidáš si
 ji na plochu telefonu jako appku. **Nic neodchází na cizí servery** — vše
 zůstává lokálně.
-
-Hotovo: chat, zápisník (ukládání na disk), paměť nad poznámkami (RAG) a PWA
-(appka na ploše). Dál přijdou přehledy/briefing a nahrávání hlasem.
 
 ---
 
@@ -81,26 +81,43 @@ klepnutím, křížkem ✕ položku smažeš.
 
 ---
 
+## Lidé — kdo je kdo
+
+Na obrazovce **Lidé** přidáš člověka (jméno + info: kdo to je, kontext, co si
+pamatovat). Uloží se na disk a **rovnou i do paměti**, takže se na něj můžeš
+ptát v Chatu („co vím o Františkovi?"). Křížkem ✕ člověka smažeš.
+
+---
+
+## Přehled — počty a denní souhrn
+
+Na obrazovce **Přehled**:
+
+- nahoře vidíš **počty** (poznámek / souborů / lidí),
+- tlačítko **☀ Vytvoř denní přehled** vezme tvoje dnešní (nebo poslední)
+  poznámky a model z nich udělá krátký souhrn — co je důležité a co udělat,
+- tlačítko **🧠 Obnovit paměť z poznámek** *přeindexuje* vše uložené. Použij ho,
+  když jsi měl poznámky uložené ještě předtím, než paměť existovala, nebo po
+  prvním spuštění verze s pamětí.
+
+---
+
 ## Paměť — ptej se nad svými poznámkami (RAG)
 
-Na obrazovce **Chat** je nahoře přepínač **🧠 Odpovídat z mých poznámek**.
+Paměť běží v Chatu **automaticky** — žádné přepínání. Když se zeptáš, TARS
+najde k dotazu nejpodobnější poznámky, lidi a textové soubory, vezme je v potaz
+a **pod odpovědí ukáže, z čeho čerpal** („Z poznámek:"). Když se nic
+relevantního nenajde, odpoví normálně z obecných znalostí.
 
-- **Vypnutý** = normální povídání s modelem.
-- **Zapnutý** = TARS odpoví **jen na základě tvých uložených poznámek a
-  textových souborů** a pod odpovědí ukáže, z čeho čerpal („Z poznámek:").
+Jak to funguje: každá uložená věc se převede na „otisk" (embedding) modelem
+**`nomic-embed-text`**, který už máš. Vše lokálně.
 
-Jak to funguje: každá uložená poznámka se převede na „otisk" (embedding)
-modelem **`nomic-embed-text`**, který už máš. Když se zeptáš, TARS najde
-nejpodobnější kousky a předá je modelu jako podklad. Vše lokálně.
-
-**Tlačítko ↻ (vpravo nahoře v chatu)** = *přeindexovat paměť*. Použij ho:
-
-- když jsi měl uložené poznámky **ještě předtím**, než paměť existovala,
-- nebo když jsi poprvé spustil verzi s pamětí.
-
-> ℹ️ Do paměti jdou zatím **poznámky a textové soubory** (`.txt`, `.md`, `.csv`,
+> ℹ️ Do paměti jdou **poznámky, lidé a textové soubory** (`.txt`, `.md`, `.csv`,
 > `.log`, `.json`). Obrázky a PDF se zatím jen ukládají (čtení z nich přidáme
 > později).
+>
+> Jak ochotně TARS poznámky používá, ladí proměnná `MEMORY_MIN_SCORE`
+> (níže) — nižší číslo = ochotnější.
 
 ---
 
@@ -141,6 +158,7 @@ Když budeš chtít něco změnit, spusť server s proměnnou navíc:
 | `OLLAMA_URL`   | kde běží Ollama                 | `http://localhost:11434` |
 | `OLLAMA_MODEL` | který model použít (chat)       | `qwen2.5:7b`             |
 | `EMBED_MODEL`  | model pro paměť (embeddingy)    | `nomic-embed-text`       |
+| `MEMORY_MIN_SCORE` | práh, kdy chat použije poznámku (0–1) | `0.5`             |
 
 Příklady:
 
@@ -197,7 +215,6 @@ Soubory:
 
 ## Co bude dál
 
-- **Denní briefing / přehledy** — souhrn toho, co sis zapsal
 - **Lokální Whisper** — nahrávání hlasu přímo v appce (delší nahrávky)
 - **Čtení z PDF a obrázků** do paměti (OCR)
 - **Kalendář**

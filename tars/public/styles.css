@@ -125,7 +125,7 @@ body {
   gap: 10px;
 }
 
-#noteInput {
+.capture textarea {
   width: 100%;
   min-width: 0;
   resize: none;
@@ -141,7 +141,7 @@ body {
   outline: none;
 }
 
-#noteInput:focus {
+.capture textarea:focus {
   border-color: #3a3a44;
 }
 
@@ -171,9 +171,13 @@ body {
 }
 
 .btn.primary {
-  flex: 1;
   background: var(--accent);
   color: #1a1a1a;
+}
+
+/* v řádku akcí zápisníku má hlavní tlačítko vyplnit zbytek šířky */
+.capture-actions .primary {
+  flex: 1;
 }
 
 .btn.ghost {
@@ -271,84 +275,91 @@ body {
   /* chat je také .view (flex column) */
 }
 
-.chat-toolbar {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 9px 14px;
-  border-bottom: 1px solid var(--line);
-  background: var(--panel);
-}
-
-.switch {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.switch input {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.switch .knob {
-  flex: 0 0 auto;
-  width: 38px;
-  height: 22px;
-  border-radius: 999px;
-  background: var(--panel-2);
+/* jednořádkové pole (jméno člověka) */
+.field {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
   border: 1px solid var(--line);
-  position: relative;
-  transition: background 0.2s;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  outline: none;
 }
 
-.switch .knob::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--muted);
-  transition: transform 0.2s, background 0.2s;
+.field:focus {
+  border-color: #3a3a44;
 }
 
-.switch input:checked + .knob {
-  background: rgba(216, 207, 168, 0.25);
-  border-color: var(--accent);
+/* ============ PŘEHLED ============ */
+.overview {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.switch input:checked + .knob::after {
-  transform: translateX(16px);
-  background: var(--accent);
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
 }
 
-.switch-label {
-  font-size: 13.5px;
+.stat {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 10px;
+  text-align: center;
+}
+
+.stat .num {
+  display: block;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat .lbl {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.btn.big {
+  padding: 15px;
+  font-size: 16px;
+  border-radius: 14px;
+}
+
+.briefing {
+  white-space: pre-wrap;
+  line-height: 1.55;
+  font-size: 15px;
   color: var(--text);
 }
 
-.reindex {
-  flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  border: 1px solid var(--line);
-  background: var(--panel-2);
-  color: var(--muted);
-  font-size: 16px;
-  cursor: pointer;
+.briefing:empty {
+  display: none;
 }
 
-.reindex:active {
-  transform: scale(0.94);
+.briefing.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.hint.small {
+  font-size: 12px;
+  margin: 0;
 }
 
 /* zdroje pod odpovědí z paměti */
@@ -519,7 +530,7 @@ body {
 .tabs {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   border-top: 1px solid var(--line);
   background: var(--panel);
   padding-bottom: env(safe-area-inset-bottom);
@@ -542,6 +553,13 @@ body {
 .tab .tab-ico {
   font-size: 19px;
   line-height: 1;
+  display: inline-flex;
+}
+
+.tab .tab-ico svg {
+  width: 23px;
+  height: 23px;
+  display: block;
 }
 
 .tab.active {

@@ -25,6 +25,8 @@ const PORT = process.env.PORT || 8787;
 const OLLAMA_URL = (process.env.OLLAMA_URL || "http://localhost:11434").replace(/\/$/, "");
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5:7b";
 const EMBED_MODEL = process.env.EMBED_MODEL || "nomic-embed-text";
+// jak moc musí být poznámka podobná dotazu, aby ji chat použil (0–1). Nižší = ochotnější.
+const MEMORY_MIN_SCORE = Number(process.env.MEMORY_MIN_SCORE || 0.5);
 
 const SYSTEM_PROMPT =
   "Jsi TARS, osobní asistent Kristiána. Odpovídáš česky, stručně a k věci. " +
@@ -34,9 +36,10 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const DATA_DIR = path.join(__dirname, "data");
 const NOTES_DIR = path.join(DATA_DIR, "notes");
 const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
+const PEOPLE_DIR = path.join(DATA_DIR, "people");
 
 // založ složky na data, když ještě nejsou
-for (const dir of [DATA_DIR, NOTES_DIR, UPLOADS_DIR]) {
+for (const dir of [DATA_DIR, NOTES_DIR, UPLOADS_DIR, PEOPLE_DIR]) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
@@ -137,12 +140,15 @@ function readBody(req) {
 
 // ==== PAMĚŤ: pomocné funkce ==================================================
 
-// spočítej embedding textu přes Ollamu (model nomic-embed-text)
-async function embed(text) {
+// spočítej embedding textu přes Ollamu (model nomic-embed-text).
+// kind "document" = ukládaná poznámka, "query" = dotaz. Prefixy doporučuje
+// nomic-embed-text a znatelně zlepšují, co se v paměti najde.
+async function embed(text, kind = "document") {
+  const prefix = kind === "query" ? "search_query: " : "search_document: ";
   const r = await fetch(`${OLLAMA_URL}/api/embeddings`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model: EMBED_MODEL, prompt: text }),
+    body: JSON.stringify({ model: EMBED_MODEL, prompt: prefix + text }),
   });
   if (!r.ok) throw new Error("embeddings HTTP " + r.status);
   const j = await r.json();
@@ -203,7 +209,7 @@ function removeFromIndex(refType, refId) {
 // najdi nejbližší kousky k dotazu
 async function searchIndex(question, k = 5) {
   if (!INDEX.length) return [];
-  const qv = await embed(question);
+  const qv = await embed(question, "query");
   return INDEX.map((x) => ({ ...x, score: cosine(qv, x.vector) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, k);
@@ -214,7 +220,7 @@ function isTextFile(name) {
   return /\.(txt|md|markdown|csv|log|json)$/i.test(name || "");
 }
 
-// --- Tunel do Ollamy: /api/chat ---------------------------------------------
+// --- Tunel do Ollamy: /api/chat (paměť běží automaticky) ---------------------
 async function handleChat(req, res) {
   const body = await readBody(req);
   let messages;
@@ -225,7 +231,30 @@ async function handleChat(req, res) {
     return sendJson(res, 400, { error: "Neplatný JSON." });
   }
 
-  const fullMessages = [{ role: "system", content: SYSTEM_PROMPT }, ...messages];
+  // paměť: k poslednímu dotazu najdi relevantní poznámky (nad prahem podobnosti)
+  const lastUser = [...messages].reverse().find((m) => m.role === "user");
+  let hits = [];
+  if (lastUser && INDEX.length) {
+    try {
+      const found = await searchIndex(String(lastUser.content || ""), 5);
+      hits = found.filter((h) => h.score >= MEMORY_MIN_SCORE);
+    } catch {
+      hits = []; // embed model nedostupný → chat pojede normálně, bez paměti
+    }
+  }
+
+  let system = SYSTEM_PROMPT;
+  if (hits.length) {
+    const context = hits
+      .map((h, i) => `[${i + 1}] (${h.name}, ${new Date(h.date).toLocaleString("cs-CZ")}):\n${h.chunk}`)
+      .join("\n\n");
+    system +=
+      "\n\nNíže jsou poznámky uživatele, které MOHOU souviset s dotazem. Použij je, " +
+      "pokud pomáhají odpovědět; pokud nesouvisí, ignoruj je a odpověz z obecných znalostí.\n\n" +
+      "=== POZNÁMKY ===\n" + context;
+  }
+
+  const fullMessages = [{ role: "system", content: system }, ...messages];
 
   try {
     const ollamaRes = await fetch(`${OLLAMA_URL}/api/chat`, {
@@ -247,6 +276,18 @@ async function handleChat(req, res) {
       "Content-Type": "application/x-ndjson; charset=utf-8",
       "Cache-Control": "no-cache",
     });
+    // když paměť něco našla, pošli nejdřív zdroje (appka je ukáže pod odpovědí)
+    if (hits.length) {
+      const sources = hits.map((h) => ({
+        refType: h.refType,
+        refId: h.refId,
+        name: h.name,
+        date: h.date,
+        score: Math.round(h.score * 100) / 100,
+        snippet: h.chunk.slice(0, 120),
+      }));
+      res.write(JSON.stringify({ sources }) + "\n");
+    }
     for await (const chunk of ollamaRes.body) res.write(chunk);
     res.end();
   } catch (err) {
@@ -383,7 +424,8 @@ async function handleDelete(req, res) {
   } catch {
     return sendJson(res, 400, { error: "Neplatný JSON." });
   }
-  const dir = type === "note" ? NOTES_DIR : type === "file" ? UPLOADS_DIR : null;
+  const dir =
+    type === "note" ? NOTES_DIR : type === "file" ? UPLOADS_DIR : type === "person" ? PEOPLE_DIR : null;
   if (!dir) return sendJson(res, 400, { error: "Neznámý typ." });
   const full = insideDir(dir, id);
   if (!full || !fs.existsSync(full)) return sendJson(res, 404, { error: "Nenalezeno." });
@@ -392,45 +434,81 @@ async function handleDelete(req, res) {
   sendJson(res, 200, { ok: true });
 }
 
-// --- Paměť: zeptej se nad svými poznámkami -----------------------------------
-async function handleAsk(req, res) {
+// --- Lidé: ulož člověka ------------------------------------------------------
+async function handleSavePerson(req, res) {
   const body = await readBody(req);
-  let question;
+  let name, info;
   try {
-    question = String(JSON.parse(body || "{}").question || "").trim();
+    const j = JSON.parse(body || "{}");
+    name = String(j.name || "").trim();
+    info = String(j.info || "").trim();
   } catch {
     return sendJson(res, 400, { error: "Neplatný JSON." });
   }
-  if (!question) return sendJson(res, 400, { error: "Prázdný dotaz." });
+  if (!name) return sendJson(res, 400, { error: "Chybí jméno." });
 
-  let hits;
-  try {
-    hits = await searchIndex(question, 5);
-  } catch (err) {
-    return sendJson(res, 502, {
-      error:
-        "Nepodařilo se prohledat paměť. Běží Ollama a je stažený embedding model '" +
-        EMBED_MODEL + "'? (ollama pull " + EMBED_MODEL + ") Detail: " +
-        (err && err.message ? err.message : String(err)),
-    });
+  const id = stamp() + ".json";
+  const date = new Date().toISOString();
+  fs.writeFileSync(path.join(PEOPLE_DIR, id), JSON.stringify({ name, info, date }), "utf-8");
+
+  // vlož do paměti (jméno + info), ať se dá na člověka ptát i v chatu
+  const mem = await indexRef({
+    refType: "person",
+    refId: id,
+    name: name,
+    date,
+    text: "Osoba: " + name + "\n" + info,
+  });
+
+  sendJson(res, 200, { ok: true, id, memory: mem.ok });
+}
+
+// --- Lidé: seznam -----------------------------------------------------------
+function handlePeople(req, res) {
+  const people = [];
+  for (const f of fs.readdirSync(PEOPLE_DIR)) {
+    if (!f.endsWith(".json")) continue;
+    try {
+      const p = JSON.parse(fs.readFileSync(path.join(PEOPLE_DIR, f), "utf-8"));
+      people.push({ id: f, name: p.name, info: p.info || "", date: p.date });
+    } catch {
+      /* poškozený soubor přeskoč */
+    }
+  }
+  people.sort((a, b) => a.name.localeCompare(b.name, "cs"));
+  sendJson(res, 200, { people });
+}
+
+// --- Přehled: shrň poslední poznámky do denního přehledu ---------------------
+async function handleBriefing(req, res) {
+  // posbírej poznámky za posledních 24 h; když nic, vezmi posledních 8
+  const now = Date.now();
+  const DAY = 24 * 60 * 60 * 1000;
+  let notes = fs
+    .readdirSync(NOTES_DIR)
+    .filter((f) => f.endsWith(".md"))
+    .map((f) => {
+      const full = path.join(NOTES_DIR, f);
+      const st = fs.statSync(full);
+      return { text: fs.readFileSync(full, "utf-8"), date: st.mtime };
+    })
+    .sort((a, b) => b.date - a.date);
+
+  const recent = notes.filter((n) => now - n.date.getTime() <= DAY);
+  const used = recent.length ? recent : notes.slice(0, 8);
+
+  if (!used.length) {
+    return sendJson(res, 200, { empty: true, error: "Zatím nemáš žádné poznámky k přehledu." });
   }
 
-  if (!hits.length) {
-    return sendJson(res, 200, {
-      empty: true,
-      error: "V paměti zatím nic není. Ulož nějaké poznámky, nebo spusť přeindexování.",
-    });
-  }
+  const listing = used
+    .map((n) => "- (" + n.date.toLocaleString("cs-CZ") + ") " + n.text.replace(/\s+/g, " ").slice(0, 300))
+    .join("\n");
 
-  // z nalezených kousků poskládej kontext pro model
-  const context = hits
-    .map((h, i) => `[${i + 1}] (${h.name}, ${new Date(h.date).toLocaleString("cs-CZ")}):\n${h.chunk}`)
-    .join("\n\n");
-
-  const ragSystem =
-    "Jsi TARS, osobní asistent Kristiána. Odpovídej ČESKY a POUZE na základě " +
-    "následujících poznámek uživatele. Když odpověď v poznámkách není, řekni " +
-    "narovinu, že to v poznámkách nemáš. Buď stručný.\n\n=== POZNÁMKY ===\n" + context;
+  const sys =
+    "Jsi TARS, osobní asistent Kristiána. Z následujících poznámek vytvoř krátký, " +
+    "přehledný souhrn dne v češtině: co je důležité, co je potřeba udělat a na co " +
+    "nezapomenout. Použij krátké odrážky. Nevymýšlej si nic, co v poznámkách není.";
 
   try {
     const ollamaRes = await fetch(`${OLLAMA_URL}/api/chat`, {
@@ -439,8 +517,8 @@ async function handleAsk(req, res) {
       body: JSON.stringify({
         model: OLLAMA_MODEL,
         messages: [
-          { role: "system", content: ragSystem },
-          { role: "user", content: question },
+          { role: "system", content: sys },
+          { role: "user", content: "Mé poznámky:\n" + listing },
         ],
         stream: true,
       }),
@@ -448,21 +526,8 @@ async function handleAsk(req, res) {
     if (!ollamaRes.ok || !ollamaRes.body) {
       return sendJson(res, 502, { error: "Ollama chyba (" + ollamaRes.status + ")." });
     }
-
-    res.writeHead(200, {
-      "Content-Type": "application/x-ndjson; charset=utf-8",
-      "Cache-Control": "no-cache",
-    });
-    // první řádek = zdroje (odkud bot čerpal), pak už proud odpovědi modelu
-    const sources = hits.map((h) => ({
-      refType: h.refType,
-      refId: h.refId,
-      name: h.name,
-      date: h.date,
-      score: Math.round(h.score * 100) / 100,
-      snippet: h.chunk.slice(0, 120),
-    }));
-    res.write(JSON.stringify({ sources }) + "\n");
+    res.writeHead(200, { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-cache" });
+    res.write(JSON.stringify({ meta: { count: used.length, span: recent.length ? "24h" : "poslední" } }) + "\n");
     for await (const chunk of ollamaRes.body) res.write(chunk);
     res.end();
   } catch (err) {
@@ -492,6 +557,22 @@ async function handleReindex(req, res) {
     const r = await indexRef({ refType: "file", refId: f, name, date: st.mtime.toISOString(), text });
     r.ok ? ok++ : fail++;
   }
+  for (const f of fs.readdirSync(PEOPLE_DIR)) {
+    if (!f.endsWith(".json")) continue;
+    try {
+      const p = JSON.parse(fs.readFileSync(path.join(PEOPLE_DIR, f), "utf-8"));
+      const r = await indexRef({
+        refType: "person",
+        refId: f,
+        name: p.name,
+        date: p.date || new Date().toISOString(),
+        text: "Osoba: " + p.name + "\n" + (p.info || ""),
+      });
+      r.ok ? ok++ : fail++;
+    } catch {
+      fail++;
+    }
+  }
 
   saveIndex();
   sendJson(res, 200, { ok: true, indexed: ok, failed: fail, chunks: INDEX.length });
@@ -505,8 +586,10 @@ const server = http.createServer((req, res) => {
   if (req.method === "POST" && pathname === "/api/notes") return handleSaveNote(req, res);
   if (req.method === "POST" && pathname === "/api/upload") return handleUpload(req, res);
   if (req.method === "POST" && pathname === "/api/delete") return handleDelete(req, res);
-  if (req.method === "POST" && pathname === "/api/ask") return handleAsk(req, res);
+  if (req.method === "POST" && pathname === "/api/people") return handleSavePerson(req, res);
+  if (req.method === "POST" && pathname === "/api/briefing") return handleBriefing(req, res);
   if (req.method === "POST" && pathname === "/api/reindex") return handleReindex(req, res);
+  if (req.method === "GET" && pathname === "/api/people") return handlePeople(req, res);
   if (req.method === "GET" && pathname === "/api/entries") return handleEntries(req, res);
   if (req.method === "GET" && pathname === "/api/note") return handleGetNote(req, res);
   if (req.method === "GET" && pathname === "/api/file") return handleGetFile(req, res);

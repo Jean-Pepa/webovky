@@ -1,10 +1,8 @@
-// TARS – logika v prohlížeči: zápisník (poznámky + soubory) a chat.
+// TARS – logika v prohlížeči: Zápisník, Lidé, Přehled a Chat.
 
 // PWA: zaregistruj service worker (funguje na localhost/https; jinde tiše přeskočí)
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
-  });
+  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
 }
 
 // ---- odkazy na prvky ----
@@ -18,7 +16,21 @@ const attachBtn = document.getElementById("attachBtn");
 const fileInput = document.getElementById("fileInput");
 const uploading = document.getElementById("uploading");
 const entriesEl = document.getElementById("entries");
-const entriesHint = document.getElementById("entriesHint");
+
+// lidé
+const personName = document.getElementById("personName");
+const personInfo = document.getElementById("personInfo");
+const savePersonBtn = document.getElementById("savePersonBtn");
+const peopleEl = document.getElementById("people");
+
+// přehled
+const stNotes = document.getElementById("stNotes");
+const stFiles = document.getElementById("stFiles");
+const stPeople = document.getElementById("stPeople");
+const briefBtn = document.getElementById("briefBtn");
+const briefingEl = document.getElementById("briefing");
+const reindexBtn = document.getElementById("reindexBtn");
+const reindexHint = document.getElementById("reindexHint");
 
 // chat
 const chatEl = document.getElementById("chat");
@@ -26,12 +38,12 @@ const emptyEl = document.getElementById("empty");
 const formEl = document.getElementById("composer");
 const inputEl = document.getElementById("input");
 const sendEl = document.getElementById("send");
-const ragToggle = document.getElementById("ragToggle");
-const reindexBtn = document.getElementById("reindexBtn");
 
 // ==================== ZÁLOŽKY ====================
 const views = {
   notes: document.getElementById("view-notes"),
+  people: document.getElementById("view-people"),
+  overview: document.getElementById("view-overview"),
   chat: document.getElementById("view-chat"),
 };
 document.querySelectorAll(".tab").forEach((tab) => {
@@ -40,6 +52,8 @@ document.querySelectorAll(".tab").forEach((tab) => {
     for (const [name, el] of Object.entries(views)) el.hidden = name !== which;
     document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === tab));
     if (which === "chat") inputEl.focus();
+    if (which === "people") loadPeople();
+    if (which === "overview") loadStats();
   });
 });
 
@@ -56,26 +70,41 @@ async function checkHealth() {
 }
 checkHealth();
 
-// ==================== ZÁPISNÍK ====================
-
-// hezký formát data/času
+// ==================== POMOCNÉ ====================
 function fmtDate(iso) {
-  const d = new Date(iso);
-  return d.toLocaleString("cs-CZ", {
-    day: "numeric",
-    month: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+  return new Date(iso).toLocaleString("cs-CZ", {
+    day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit",
   });
 }
-
-function fmtSize(bytes) {
-  if (bytes < 1024) return bytes + " B";
-  if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + " kB";
-  return (bytes / 1024 / 1024).toFixed(1) + " MB";
+function fmtSize(b) {
+  if (b < 1024) return b + " B";
+  if (b < 1024 * 1024) return Math.round(b / 1024) + " kB";
+  return (b / 1024 / 1024).toFixed(1) + " MB";
 }
 
-// vykresli jeden záznam (poznámka nebo soubor)
+// obecné čtení NDJSON proudu (řádek = JSON), volá onObj pro každý objekt
+async function readNdjson(res, onObj) {
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        onObj(JSON.parse(line));
+      } catch {
+        /* neúplný řádek */
+      }
+    }
+  }
+}
+
+// ==================== ZÁPISNÍK ====================
 function renderEntry(e) {
   const row = document.createElement("div");
   row.className = "entry " + e.type;
@@ -105,8 +134,7 @@ function renderEntry(e) {
   const del = document.createElement("button");
   del.className = "del";
   del.textContent = "✕";
-  del.title = "Smazat";
-  del.addEventListener("click", () => deleteEntry(e, row));
+  del.addEventListener("click", () => deleteEntry(e, row, loadEntries));
 
   row.appendChild(ico);
   row.appendChild(body);
@@ -114,36 +142,24 @@ function renderEntry(e) {
   return row;
 }
 
-// načti seznam ze serveru a vykresli
 async function loadEntries() {
   try {
     const { entries } = await (await fetch("/api/entries")).json();
     entriesEl.innerHTML = "";
     if (!entries.length) {
-      const p = document.createElement("p");
-      p.className = "hint";
-      p.textContent = "Zatím nic uloženého. Napiš poznámku nebo přidej soubor.";
-      entriesEl.appendChild(p);
+      entriesEl.innerHTML = '<p class="hint">Zatím nic uloženého. Napiš poznámku nebo přidej soubor.</p>';
       return;
     }
     for (const e of entries) entriesEl.appendChild(renderEntry(e));
   } catch {
-    entriesEl.innerHTML = "";
-    const p = document.createElement("p");
-    p.className = "hint";
-    p.textContent = "Nepodařilo se načíst uložené (běží server?).";
-    entriesEl.appendChild(p);
+    entriesEl.innerHTML = '<p class="hint">Nepodařilo se načíst uložené (běží server?).</p>';
   }
 }
 loadEntries();
 
-// ulož poznámku
 saveNoteBtn.addEventListener("click", async () => {
   const text = noteInput.value.trim();
-  if (!text) {
-    noteInput.focus();
-    return;
-  }
+  if (!text) return noteInput.focus();
   saveNoteBtn.disabled = true;
   try {
     const res = await fetch("/api/notes", {
@@ -161,23 +177,17 @@ saveNoteBtn.addEventListener("click", async () => {
   }
 });
 
-// tlačítko "+ Soubor" otevře výběr souborů
 attachBtn.addEventListener("click", () => fileInput.click());
 
-// nahraj vybrané soubory (jeden po druhém, raw tělo – bez knihoven)
 fileInput.addEventListener("change", async () => {
   const files = Array.from(fileInput.files || []);
   if (!files.length) return;
   uploading.hidden = false;
-
   let done = 0;
   for (const file of files) {
     uploading.textContent = "Nahrávám " + (done + 1) + "/" + files.length + ": " + file.name + "…";
     try {
-      const res = await fetch("/api/upload?name=" + encodeURIComponent(file.name), {
-        method: "POST",
-        body: file, // raw obsah souboru
-      });
+      const res = await fetch("/api/upload?name=" + encodeURIComponent(file.name), { method: "POST", body: file });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "chyba");
       done++;
     } catch (err) {
@@ -185,15 +195,15 @@ fileInput.addEventListener("change", async () => {
       await new Promise((r) => setTimeout(r, 2500));
     }
   }
-
   fileInput.value = "";
   uploading.hidden = true;
   await loadEntries();
 });
 
-// smaž záznam
-async function deleteEntry(e, row) {
-  if (!confirm("Smazat " + (e.type === "note" ? "poznámku" : e.name) + "?")) return;
+// smaž záznam (poznámka/soubor/člověk)
+async function deleteEntry(e, row, reload) {
+  const label = e.type === "note" ? "poznámku" : e.type === "person" ? e.name : e.name;
+  if (!confirm("Smazat " + label + "?")) return;
   try {
     const res = await fetch("/api/delete", {
       method: "POST",
@@ -202,11 +212,134 @@ async function deleteEntry(e, row) {
     });
     if (!res.ok) throw new Error("chyba");
     row.remove();
-    if (!entriesEl.querySelector(".entry")) loadEntries();
+    if (reload && !row.parentElement) reload();
   } catch {
     alert("Nepodařilo se smazat.");
   }
 }
+
+// ==================== LIDÉ ====================
+function renderPerson(p) {
+  const row = document.createElement("div");
+  row.className = "entry person";
+
+  const ico = document.createElement("div");
+  ico.className = "ico";
+  ico.textContent = "👤";
+
+  const body = document.createElement("div");
+  body.className = "body";
+  const main = document.createElement("div");
+  main.className = "main";
+  main.textContent = p.name;
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  meta.textContent = p.info ? p.info : "(bez popisu)";
+  body.appendChild(main);
+  body.appendChild(meta);
+
+  const del = document.createElement("button");
+  del.className = "del";
+  del.textContent = "✕";
+  del.addEventListener("click", () =>
+    deleteEntry({ type: "person", id: p.id, name: p.name }, row, loadPeople)
+  );
+
+  row.appendChild(ico);
+  row.appendChild(body);
+  row.appendChild(del);
+  return row;
+}
+
+async function loadPeople() {
+  try {
+    const { people } = await (await fetch("/api/people")).json();
+    peopleEl.innerHTML = "";
+    if (!people.length) {
+      peopleEl.innerHTML = '<p class="hint">Zatím žádní lidé. Přidej někoho výše.</p>';
+      return;
+    }
+    for (const p of people) peopleEl.appendChild(renderPerson(p));
+  } catch {
+    peopleEl.innerHTML = '<p class="hint">Nepodařilo se načíst lidi.</p>';
+  }
+}
+
+savePersonBtn.addEventListener("click", async () => {
+  const name = personName.value.trim();
+  const info = personInfo.value.trim();
+  if (!name) return personName.focus();
+  savePersonBtn.disabled = true;
+  try {
+    const res = await fetch("/api/people", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, info }),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "chyba");
+    personName.value = "";
+    personInfo.value = "";
+    await loadPeople();
+  } catch (err) {
+    alert("Nepodařilo se uložit: " + (err.message || err));
+  } finally {
+    savePersonBtn.disabled = false;
+  }
+});
+
+// ==================== PŘEHLED ====================
+async function loadStats() {
+  try {
+    const [{ entries }, { people }] = await Promise.all([
+      (await fetch("/api/entries")).json(),
+      (await fetch("/api/people")).json(),
+    ]);
+    stNotes.textContent = entries.filter((e) => e.type === "note").length;
+    stFiles.textContent = entries.filter((e) => e.type === "file").length;
+    stPeople.textContent = people.length;
+  } catch {
+    stNotes.textContent = stFiles.textContent = stPeople.textContent = "–";
+  }
+}
+
+briefBtn.addEventListener("click", async () => {
+  briefBtn.disabled = true;
+  briefingEl.className = "briefing card";
+  briefingEl.textContent = "Připravuji přehled…";
+  let out = "";
+  try {
+    const res = await fetch("/api/briefing", { method: "POST" });
+    const ctype = res.headers.get("Content-Type") || "";
+    if (!res.ok || ctype.includes("application/json")) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j.error || "chyba");
+    }
+    await readNdjson(res, (obj) => {
+      if (obj.message && obj.message.content) {
+        out += obj.message.content;
+        briefingEl.textContent = out;
+      }
+    });
+    if (!out.trim()) briefingEl.textContent = "Model nevrátil přehled.";
+  } catch (err) {
+    briefingEl.textContent = "⚠ " + (err.message || err);
+  } finally {
+    briefBtn.disabled = false;
+  }
+});
+
+reindexBtn.addEventListener("click", async () => {
+  reindexBtn.disabled = true;
+  reindexHint.textContent = "Obnovuji paměť…";
+  try {
+    const j = await (await fetch("/api/reindex", { method: "POST" })).json();
+    reindexHint.textContent = "Hotovo: " + j.indexed + " položek v paměti (" + j.chunks + " kousků).";
+  } catch {
+    reindexHint.textContent = "Nepodařilo se (běží Ollama a embedding model?).";
+  } finally {
+    reindexBtn.disabled = false;
+  }
+});
 
 // ==================== CHAT ====================
 const history = [];
@@ -222,7 +355,6 @@ function addBubble(role, text) {
   return div;
 }
 
-// vykresli seznam zdrojů, ze kterých bot čerpal (režim paměti)
 function addSources(sources) {
   if (!sources || !sources.length) return;
   const box = document.createElement("div");
@@ -234,31 +366,15 @@ function addSources(sources) {
   for (const s of sources) {
     const el = document.createElement("div");
     el.className = "source";
-    const when = new Date(s.date).toLocaleDateString("cs-CZ");
     el.innerHTML = "<b></b><span></span>";
-    el.querySelector("b").textContent = (s.name || "poznámka") + " · " + when + " — ";
+    el.querySelector("b").textContent =
+      (s.name || "poznámka") + " · " + new Date(s.date).toLocaleDateString("cs-CZ") + " — ";
     el.querySelector("span").textContent = s.snippet + "…";
     box.appendChild(el);
   }
   chatEl.appendChild(box);
   chatEl.scrollTop = chatEl.scrollHeight;
 }
-
-// přeindexování paměti (načte už uložené poznámky/soubory do paměti)
-reindexBtn.addEventListener("click", async () => {
-  reindexBtn.disabled = true;
-  const prev = reindexBtn.textContent;
-  reindexBtn.textContent = "…";
-  try {
-    const j = await (await fetch("/api/reindex", { method: "POST" })).json();
-    addBubble("error", "🧠 Paměť obnovena: " + j.indexed + " položek, " + j.chunks + " kousků.");
-  } catch {
-    addBubble("error", "Přeindexování selhalo (běží Ollama a embedding model?).");
-  } finally {
-    reindexBtn.textContent = prev;
-    reindexBtn.disabled = false;
-  }
-});
 
 function autosize() {
   inputEl.style.height = "auto";
@@ -279,9 +395,8 @@ formEl.addEventListener("submit", async (e) => {
 
   busy = true;
   sendEl.disabled = true;
-  const useMemory = ragToggle.checked;
   addBubble("user", text);
-  if (!useMemory) history.push({ role: "user", content: text }); // paměťové dotazy nejdou do historie chatu
+  history.push({ role: "user", content: text });
   inputEl.value = "";
   autosize();
 
@@ -291,51 +406,30 @@ formEl.addEventListener("submit", async (e) => {
   let sources = null;
 
   try {
-    // režim paměti → /api/ask (jen dotaz), jinak běžný chat → /api/chat (celá historie)
-    const res = await fetch(useMemory ? "/api/ask" : "/api/chat", {
+    const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(useMemory ? { question: text } : { messages: history }),
+      body: JSON.stringify({ messages: history }),
     });
-
     const ctype = res.headers.get("Content-Type") || "";
     if (!res.ok || ctype.includes("application/json")) {
       const j = await res.json().catch(() => ({}));
       throw new Error(j.error || "Neznámá chyba serveru.");
     }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop();
-      for (const line of lines) {
-        if (!line.trim()) continue;
-        try {
-          const obj = JSON.parse(line);
-          if (obj.sources) {
-            sources = obj.sources; // první řádek v režimu paměti
-          } else if (obj.message && obj.message.content) {
-            answer += obj.message.content;
-            bot.textContent = answer;
-            chatEl.scrollTop = chatEl.scrollHeight;
-          }
-        } catch {
-          /* neúplný řádek */
-        }
+    await readNdjson(res, (obj) => {
+      if (obj.sources) {
+        sources = obj.sources;
+      } else if (obj.message && obj.message.content) {
+        answer += obj.message.content;
+        bot.textContent = answer;
+        chatEl.scrollTop = chatEl.scrollHeight;
       }
-    }
+    });
 
     bot.classList.remove("pending");
     if (answer.trim()) {
       if (sources) addSources(sources);
-      // do historie ukládáme jen běžný chat (dotazy nad pamětí jsou samostatné)
-      if (!useMemory) history.push({ role: "assistant", content: answer });
+      history.push({ role: "assistant", content: answer });
     } else {
       bot.remove();
       addBubble("error", "Model nevrátil žádnou odpověď.");
