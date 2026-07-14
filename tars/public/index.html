@@ -20,22 +20,52 @@
       </div>
     </header>
 
-    <main class="chat" id="chat">
-      <div class="empty" id="empty">
-        <span class="logo big" aria-hidden="true"></span>
-        <p>Ahoj Kristiáne. Napiš mi cokoliv.</p>
+    <!-- ===== ZÁPISNÍK ===== -->
+    <section class="view" id="view-notes">
+      <div class="capture">
+        <textarea
+          id="noteInput"
+          rows="3"
+          placeholder="Zapiš poznámku… (na hlas použij mikrofon na klávesnici)"
+        ></textarea>
+        <div class="capture-actions">
+          <input type="file" id="fileInput" multiple hidden />
+          <button type="button" class="btn ghost" id="attachBtn" title="Přidat soubor">
+            ＋ Soubor
+          </button>
+          <button type="button" class="btn primary" id="saveNoteBtn">Uložit poznámku</button>
+        </div>
+        <div class="uploading" id="uploading" hidden></div>
       </div>
-    </main>
 
-    <form class="composer" id="composer">
-      <textarea
-        id="input"
-        rows="1"
-        placeholder="Napiš zprávu…"
-        autocomplete="off"
-      ></textarea>
-      <button type="submit" id="send" aria-label="Odeslat">↑</button>
-    </form>
+      <div class="entries" id="entries">
+        <p class="hint" id="entriesHint">Načítám uložené…</p>
+      </div>
+    </section>
+
+    <!-- ===== CHAT ===== -->
+    <section class="view chat" id="view-chat" hidden>
+      <div class="chat-scroll" id="chat">
+        <div class="empty" id="empty">
+          <span class="logo big" aria-hidden="true"></span>
+          <p>Ahoj Kristiáne. Napiš mi cokoliv.</p>
+        </div>
+      </div>
+      <form class="composer" id="composer">
+        <textarea id="input" rows="1" placeholder="Napiš zprávu…" autocomplete="off"></textarea>
+        <button type="submit" id="send" aria-label="Odeslat">↑</button>
+      </form>
+    </section>
+
+    <!-- ===== SPODNÍ ZÁLOŽKY ===== -->
+    <nav class="tabs">
+      <button class="tab active" data-view="notes" id="tab-notes">
+        <span class="tab-ico">✎</span><span>Zápisník</span>
+      </button>
+      <button class="tab" data-view="chat" id="tab-chat">
+        <span class="tab-ico">✦</span><span>Chat</span>
+      </button>
+    </nav>
 
     <script src="app.js"></script>
   </body>

@@ -1,11 +1,16 @@
-# TARS — tvůj lokální AI chat
+# TARS — tvůj lokální záznamník + AI chat
 
-Malá webová appka, co běží **u tebe na PC** a mluví s tvojí **Ollamou**
-(model `qwen2.5:7b`). Otevřeš ji v prohlížeči na počítači i na mobilu
-(přes Tailscale). **Nic neodchází na cizí servery** — vše zůstává lokálně.
+Malá webová appka, co běží **u tebe na PC**. Má dvě obrazovky:
 
-Tohle je **Krok 1** z plánu: nejjednodušší funkční chat s vlastním vzhledem.
-Zápis poznámek a paměť (RAG) přidáme jako další kroky.
+- **Zápisník** — z telefonu rychle zapíšeš poznámku (i hlasem) nebo pošleš
+  soubor/fotku a vše se uloží na disk tvého PC.
+- **Chat** — povídání s tvojí **Ollamou** (model `qwen2.5:7b`).
+
+Otevřeš ji v prohlížeči na počítači i na mobilu (přes Tailscale).
+**Nic neodchází na cizí servery** — vše zůstává lokálně.
+
+Hotové kroky: **1** (chat) a **2** (zápisník — ukládání na disk).
+Paměť nad poznámkami (RAG) a nahrávání hlasu přímo v appce přijdou dál.
 
 ---
 
@@ -37,9 +42,35 @@ Nic se neinstaluje, žádný `npm install`. Je to jeden soubor `server.js`.
 5. Uvidíš nápis „TARS běží ✦". Otevři v prohlížeči:
    **http://localhost:8787**
 
-Napiš zprávu → měl by ti odpovědět tvůj model. Hotovo. 🎉
+Dole přepínáš mezi **Zápisníkem** a **Chatem**. Napiš zprávu v Chatu →
+měl by ti odpovědět tvůj model. Hotovo. 🎉
 
 **Zastavení:** ve stejném okně stiskni `Ctrl + C`.
+
+---
+
+## Zápisník — poznámky a soubory z telefonu
+
+Na obrazovce **Zápisník**:
+
+- **Poznámka:** napiš text a dej *Uložit poznámku*.
+- **Hlasem:** na iPhonu klepni na **mikrofon na klávesnici** a mluv — text se
+  napíše sám do pole. (Diktování zajišťuje systém Applu, my nic neposíláme ven.)
+- **Soubor / fotka:** tlačítko **+ Soubor** → vybereš z telefonu (Fotky,
+  Soubory, Vyfotit, Naskenovat dokument). Nahraje se na PC.
+
+Vše se uloží **lokálně na disk PC** do složky `tars/data/`:
+
+```
+tars/data/notes/     ← textové poznámky (.md)
+tars/data/uploads/   ← nahrané soubory a fotky
+```
+
+> 🔒 Složka `tars/data/` je v `.gitignore`, takže se tvoje osobní poznámky a
+> soubory **nikdy nenahrají na GitHub**. Zůstávají jen na tvém počítači.
+
+Uložené věci vidíš rovnou v seznamu (nejnovější nahoře), soubor si otevřeš
+klepnutím, křížkem ✕ položku smažeš.
 
 ---
 
@@ -122,7 +153,7 @@ Soubory:
 
 ## Co bude dál
 
-- **Krok 2:** rychlý zápis poznámek z mobilu (tvůj hlavní záznamník)
-- **Krok 3:** ptaní se nad poznámkami (RAG paměť)
+- **Krok 3:** ptaní se nad poznámkami a soubory (RAG paměť)
 - **Krok 4:** PWA — přidání na plochu telefonu
+- **Lokální Whisper:** nahrávání hlasu přímo v appce (delší nahrávky)
 - **Krok 5:** přehledy, kalendář, denní briefing
