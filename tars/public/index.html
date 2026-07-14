@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0a0b" />
+    <title>TARS</title>
+    <link rel="icon" href="favicon.svg" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true"></span>
+        <span class="brand-name">TARS</span>
+      </div>
+      <div class="status" id="status" title="Stav připojení">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">připojuji…</span>
+      </div>
+    </header>
+
+    <main class="chat" id="chat">
+      <div class="empty" id="empty">
+        <span class="logo big" aria-hidden="true"></span>
+        <p>Ahoj Kristiáne. Napiš mi cokoliv.</p>
+      </div>
+    </main>
+
+    <form class="composer" id="composer">
+      <textarea
+        id="input"
+        rows="1"
+        placeholder="Napiš zprávu…"
+        autocomplete="off"
+      ></textarea>
+      <button type="submit" id="send" aria-label="Odeslat">↑</button>
+    </form>
+
+    <script src="app.js"></script>
+  </body>
+</html>
