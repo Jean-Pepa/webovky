@@ -188,7 +188,7 @@ export interface Sponsor {
   gives?: string; // co dává (pivo, čaj, kávovar, poukazy, peníze…)
   status: SponsorStatus; // oslovit → čeká → potvrzeno / odmítl
   statusAt?: string; // ISO – kdy se naposledy změnil stav (řazení ve skupině)
-  contactedVia?: ContactVia; // čím jsme oslovili (e-mail / telefon / osobně)
+  contactedVia?: ContactVia[]; // čím vším jsme oslovili (e-mail / telefon / osobně) — může jich být víc
   category?: SponsorCategory; // jídlo a pití / stavební materiál / tisk / technika / ostatní
   returning?: boolean; // stálý sponzor (sponzoroval Mařenu už dřív)
   who?: string; // kdo to řeší

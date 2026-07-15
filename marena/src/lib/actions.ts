@@ -145,7 +145,7 @@ export type Action =
   | { type: "setDecorPlan"; yearId: string; ids: string[] }
   | { type: "setDecorPlanDesc"; yearId: string; text: string }
   | { type: "addSponsor"; yearId: string; name: string; gives?: string; who?: string; links?: string[]; note?: string; category?: SponsorCategory; returning?: boolean }
-  | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: SponsorStatus; who?: string; links?: string[]; note?: string; category?: SponsorCategory; returning?: boolean; contactedVia?: ContactVia } }
+  | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: SponsorStatus; who?: string; links?: string[]; note?: string; category?: SponsorCategory; returning?: boolean; contactedVia?: ContactVia[] } }
   | { type: "removeSponsor"; yearId: string; sponsorId: string }
   | { type: "addDrink"; yearId: string; name: string; kind: "koktejl" | "panak" | "snidane" | "obed" | "jine"; place: "bar" | "kuchyne"; day?: "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne"; price?: number }
   | { type: "updateDrink"; yearId: string; drinkId: string; patch: { name?: string; kind?: "koktejl" | "panak" | "snidane" | "obed" | "jine"; day?: "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne" | null; price?: number; note?: string; ingredients?: { name: string; cost: number }[] } }
@@ -1101,12 +1101,15 @@ export function applyAction(db: DB, a: Action): DB {
                 status: a.patch.status ?? s.status,
                 // při změně stavu zapiš čas — kvůli řazení uvnitř skupiny (fronta)
                 statusAt: a.patch.status !== undefined && a.patch.status !== s.status ? now() : s.statusAt,
-                // čím jsme oslovili; při vrácení na „neosloveno" se způsob zahodí
+                // čím vším jsme oslovili; při vrácení na „neosloveno" se způsoby zahodí,
+                // prázdný seznam ukládáme jako undefined
                 contactedVia:
                   (a.patch.status ?? s.status) === "oslovit"
                     ? undefined
                     : a.patch.contactedVia !== undefined
-                      ? a.patch.contactedVia
+                      ? a.patch.contactedVia.length
+                        ? a.patch.contactedVia
+                        : undefined
                       : s.contactedVia,
                 category: a.patch.category !== undefined ? a.patch.category : s.category,
                 returning: a.patch.returning !== undefined ? a.patch.returning : s.returning,
