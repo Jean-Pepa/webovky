@@ -12,6 +12,7 @@ import { Icon } from "@/components/Icons";
 import { matchesQuery } from "@/lib/search";
 import { isAdmin } from "@/lib/admin";
 import { sameName, assigneeHas } from "@/lib/names";
+import { dedupeTasks } from "@/lib/actions";
 import { flash } from "@/components/Flash";
 
 type Filter = "vse" | "nehotove" | "hotove";
@@ -80,6 +81,7 @@ export default function UkolyPage() {
   if (!year) return null;
 
   const total = year.tasks.length; // celkový počet — jen pro tlačítko „Smazat všechny"
+  const dupCount = total - dedupeTasks(year.tasks).length; // kolik duplicitních úkolů jde sloučit
   // Postup „Hotovo x/x" počítáme z úkolů přihlášené osoby (moje úkoly).
   const myAll = year.tasks.filter((t) => isMine(t.assignee, t.roleId, t.zoneId));
   const myDone = myAll.filter((t) => t.done).length;
@@ -103,6 +105,13 @@ export default function UkolyPage() {
     flash("Úkoly smazány", "🧹");
   }
 
+  async function removeDupes() {
+    if (!year || dupCount <= 0) return;
+    if (!window.confirm(`Najít a smazat ${dupCount} duplicitních úkolů? Od každého zůstane jeden (hotové se zachovají).`)) return;
+    await dispatch({ type: "dedupeTasks", yearId: year.id });
+    flash(`Smazáno ${dupCount} duplicitních úkolů`, "🧹");
+  }
+
   function onToggle(id: string, title: string, done: boolean) {
     if (!year) return;
     dispatch({ type: "toggleTask", yearId: year.id, taskId: id });
@@ -123,11 +132,18 @@ export default function UkolyPage() {
     <div className="mx-auto max-w-4xl space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <PageTitle>Úkoly</PageTitle>
-        {isAdmin(me) && total > 0 && (
-          <button className="btn-ghost px-3 py-1.5 text-xs text-red-600" onClick={clearAll}>
-            Smazat všechny úkoly
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {isAdmin(me) && dupCount > 0 && (
+            <button className="btn-ghost px-3 py-1.5 text-xs font-medium text-gold-700 ring-1 ring-gold-300" onClick={removeDupes}>
+              🧹 Odstranit duplicity ({dupCount})
+            </button>
+          )}
+          {isAdmin(me) && total > 0 && (
+            <button className="btn-ghost px-3 py-1.5 text-xs text-red-600" onClick={clearAll}>
+              Smazat všechny úkoly
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ===== MOJE ÚKOLY — nahoře, hlavní věc pro uživatele ===== */}
