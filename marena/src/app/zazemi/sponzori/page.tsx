@@ -333,11 +333,22 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
   const lockDecide = s.status === "odmitl" && !admin;
   const setStatus = (status: SponsorStatus) => canEdit && dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { status } });
 
-  // „Oslovil jsem" → vyber způsob. Když ještě nebyl osloven, posuneme ho na „čeká".
-  function markContacted(via: ContactVia) {
-    dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { status: s.status === "oslovit" ? "ceka" : s.status, contactedVia: via } });
+  // „Oslovil jsem" → zaškrtni jeden nebo víc způsobů. První zaškrtnutí posune
+  // sponzora z „neosloveno" na „čeká". Ukládá se hned (okno se zavře až „Hotovo").
+  function toggleVia(via: ContactVia) {
+    const cur = s.contactedVia ?? [];
+    const next = cur.includes(via) ? cur.filter((v) => v !== via) : [...cur, via];
+    dispatch({
+      type: "updateSponsor",
+      yearId,
+      sponsorId: s.id,
+      patch: { status: s.status === "oslovit" && next.length ? "ceka" : s.status, contactedVia: next },
+    });
+  }
+  function closeContact() {
     setAskContact(false);
-    flash(`${s.name} — osloveno ${VIA[via].adverb}`, VIA[via].emoji);
+    const via = s.contactedVia ?? [];
+    if (via.length) flash(`${s.name} — osloveno ${via.map((v) => VIA[v].emoji).join(" ")}`, "✅");
   }
   function revertContact() {
     dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { status: "oslovit" } });
@@ -371,7 +382,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
                 </a>
               );
             }
-            const ringed = s.contactedVia === c.kind; // takhle jsme oslovili → zakroužkuj
+            const ringed = !!s.contactedVia?.includes(c.kind as ContactVia); // takhle jsme oslovili → zakroužkuj
             return (
               <CopyContact
                 key={i}
@@ -399,7 +410,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
         {/* Stav oslovení — jen štítek; přepíná se tlačítkem „Oslovil jsem" níže. Ukazuje i způsob. */}
         {contacted ? (
           <span className="badge badge-done">
-            Osloveno ✓{s.contactedVia ? ` · ${VIA[s.contactedVia].emoji} ${VIA[s.contactedVia].adverb}` : ""}
+            Osloveno ✓{s.contactedVia?.length ? ` · ${s.contactedVia.map((v) => `${VIA[v].emoji} ${VIA[v].adverb}`).join(" · ")}` : ""}
           </span>
         ) : (
           <span className="badge badge-idle">Neosloveno</span>
@@ -469,7 +480,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
                 : "btn-pill btn-pill-gold"
             }
           >
-            {contacted ? `${s.contactedVia ? VIA[s.contactedVia].emoji : "✉️"} Oslovil jsem` : "✉️ Oslovil jsem"}
+            {contacted ? `${s.contactedVia?.length ? s.contactedVia.map((v) => VIA[v].emoji).join("") : "✉️"} Oslovil jsem` : "✉️ Oslovil jsem"}
           </button>
         )}
       </div>
@@ -496,33 +507,38 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
         </div>
       </Modal>
 
-      {/* „Jak jsi oslovil?" — vyskočí po kliknutí na „Oslovil jsem" */}
-      <Modal open={askContact} onClose={() => setAskContact(false)} title={`Jak jsi oslovil ${s.name}?`}>
+      {/* „Jak jsi oslovil?" — vyskočí po kliknutí na „Oslovil jsem". Víc voleb naráz. */}
+      <Modal open={askContact} onClose={closeContact} title={`Jak jsi oslovil ${s.name}?`}>
         <p className="text-sm text-ink-soft">
-          Vyber, jak proběhlo oslovení — ukáže se to u sponzora (a zvýrazní kontakt, přes který jsi psal/volal).
+          Zaškrtni všechny způsoby, kterými jsi ho oslovil — klidně víc (třeba mail, pak telefon, nakonec osobně).
         </p>
         <div className="mt-4 grid gap-2">
           {(Object.keys(VIA) as ContactVia[]).map((v) => {
-            const on = s.contactedVia === v;
+            const on = !!s.contactedVia?.includes(v);
             return (
               <button
                 key={v}
-                onClick={() => markContacted(v)}
+                onClick={() => toggleVia(v)}
                 className={`flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[15px] font-medium ring-1 transition ${
                   on ? "bg-gold-50 ring-gold-400" : "ring-ink/10 hover:bg-ink/5"
                 }`}
               >
+                <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-md text-xs font-bold ${on ? "bg-gold-500 text-white" : "ring-1 ring-ink/25"}`}>
+                  {on ? "✓" : ""}
+                </span>
                 <span className="text-xl">{VIA[v].emoji}</span>
                 {VIA[v].label}
-                {on && <span className="ml-auto text-xs font-semibold text-gold-700">✓ zvoleno</span>}
               </button>
             );
           })}
         </div>
+        <button onClick={closeContact} className="btn-primary mt-4 w-full justify-center">
+          Hotovo
+        </button>
         {contacted && (
           <button
             onClick={revertContact}
-            className="mt-3 w-full rounded-xl px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-500/5"
+            className="mt-2 w-full rounded-xl px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-500/5"
           >
             ↩︎ Ještě jsem neoslovil (vrátit zpět)
           </button>
