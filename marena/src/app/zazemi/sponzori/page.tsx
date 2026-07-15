@@ -22,6 +22,15 @@ const VIA: Record<ContactVia, { emoji: string; label: string; adverb: string }> 
   osobne: { emoji: "🤝", label: "Osobně", adverb: "osobně" },
 };
 
+// Způsoby oslovení vždy jako pole. Starší data mohla mít jeden způsob jako řetězec
+// (dřív bylo contactedVia jen jedna hodnota) — tady to bezpečně převedeme na pole,
+// ať se stránka nesekne (.map/„...spread" na řetězci = pád). Bereme jen platné hodnoty.
+function viasOf(s: Sponsor): ContactVia[] {
+  const v = s.contactedVia as unknown;
+  const arr = Array.isArray(v) ? v : v ? [v] : [];
+  return arr.filter((x): x is ContactVia => x === "email" || x === "phone" || x === "osobne");
+}
+
 // Editor více odkazů / kontaktů — tlačítko „+" přidá další pole, „✕" ho odebere.
 function LinksEditor({ links, setLinks }: { links: string[]; setLinks: Dispatch<SetStateAction<string[]>> }) {
   return (
@@ -331,12 +340,13 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
   const confirmed = s.status === "potvrzeno";
   const decided = confirmed || s.status === "odmitl";
   const lockDecide = s.status === "odmitl" && !admin;
+  const vias = viasOf(s); // způsoby oslovení (vždy pole, i pro starší data)
   const setStatus = (status: SponsorStatus) => canEdit && dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { status } });
 
   // „Oslovil jsem" → zaškrtni jeden nebo víc způsobů. První zaškrtnutí posune
   // sponzora z „neosloveno" na „čeká". Ukládá se hned (okno se zavře až „Hotovo").
   function toggleVia(via: ContactVia) {
-    const cur = s.contactedVia ?? [];
+    const cur = viasOf(s);
     const next = cur.includes(via) ? cur.filter((v) => v !== via) : [...cur, via];
     dispatch({
       type: "updateSponsor",
@@ -347,7 +357,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
   }
   function closeContact() {
     setAskContact(false);
-    const via = s.contactedVia ?? [];
+    const via = viasOf(s);
     if (via.length) flash(`${s.name} — osloveno ${via.map((v) => VIA[v].emoji).join(" ")}`, "✅");
   }
   function revertContact() {
@@ -382,7 +392,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
                 </a>
               );
             }
-            const ringed = !!s.contactedVia?.includes(c.kind as ContactVia); // takhle jsme oslovili → zakroužkuj
+            const ringed = vias.includes(c.kind as ContactVia); // takhle jsme oslovili → zakroužkuj
             return (
               <CopyContact
                 key={i}
@@ -410,7 +420,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
         {/* Stav oslovení — jen štítek; přepíná se tlačítkem „Oslovil jsem" níže. Ukazuje i způsob. */}
         {contacted ? (
           <span className="badge badge-done">
-            Osloveno ✓{s.contactedVia?.length ? ` · ${s.contactedVia.map((v) => `${VIA[v].emoji} ${VIA[v].adverb}`).join(" · ")}` : ""}
+            Osloveno ✓{vias.length ? ` · ${vias.map((v) => `${VIA[v].emoji} ${VIA[v].adverb}`).join(" · ")}` : ""}
           </span>
         ) : (
           <span className="badge badge-idle">Neosloveno</span>
@@ -480,7 +490,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
                 : "btn-pill btn-pill-gold"
             }
           >
-            {contacted ? `${s.contactedVia?.length ? s.contactedVia.map((v) => VIA[v].emoji).join("") : "✉️"} Oslovil jsem` : "✉️ Oslovil jsem"}
+            {contacted ? `${vias.length ? vias.map((v) => VIA[v].emoji).join("") : "✉️"} Oslovil jsem` : "✉️ Oslovil jsem"}
           </button>
         )}
       </div>
@@ -514,7 +524,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
         </p>
         <div className="mt-4 grid gap-2">
           {(Object.keys(VIA) as ContactVia[]).map((v) => {
-            const on = !!s.contactedVia?.includes(v);
+            const on = vias.includes(v);
             return (
               <button
                 key={v}
