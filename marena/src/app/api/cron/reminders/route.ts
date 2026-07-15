@@ -8,8 +8,9 @@ import { activeYearId } from "@/lib/years";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Denní připomínka (spouští Vercel Cron ~ve 12:00). Každému, kdo má nesplněný
-// úkol nebo neodhlasovanou anketu, cinkne na mobil. Nic dalšího nemění.
+// Připomínka jen v pondělí ~ve 12:00 (spouští Vercel Cron: „0 10 * * 1", tj.
+// 10:00 UTC = 12:00 v létě / 11:00 v zimě). Každému, kdo má nesplněný úkol nebo
+// neodhlasovanou anketu, cinkne na mobil. Nic dalšího nemění.
 // Zabezpečení: když je nastavený CRON_SECRET, musí přijít jako Bearer token.
 
 function taskLabel(n: number): string {
