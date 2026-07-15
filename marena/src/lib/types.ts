@@ -181,12 +181,14 @@ export interface Drink {
 // Sponzoři — koho oslovit o podporu, co dávají a v jakém stavu domluva je.
 export type SponsorStatus = "oslovit" | "ceka" | "potvrzeno" | "odmitl";
 export type SponsorCategory = "jidlo_piti" | "stavebni" | "tisk" | "technika" | "ostatni";
+export type ContactVia = "email" | "phone" | "osobne"; // jak jsme sponzora oslovili
 export interface Sponsor {
   id: string;
   name: string;
   gives?: string; // co dává (pivo, čaj, kávovar, poukazy, peníze…)
   status: SponsorStatus; // oslovit → čeká → potvrzeno / odmítl
   statusAt?: string; // ISO – kdy se naposledy změnil stav (řazení ve skupině)
+  contactedVia?: ContactVia; // čím jsme oslovili (e-mail / telefon / osobně)
   category?: SponsorCategory; // jídlo a pití / stavební materiál / tisk / technika / ostatní
   returning?: boolean; // stálý sponzor (sponzoroval Mařenu už dřív)
   who?: string; // kdo to řeší

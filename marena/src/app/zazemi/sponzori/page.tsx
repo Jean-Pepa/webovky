@@ -13,7 +13,14 @@ import { WhoSelect } from "@/components/WhoSelect";
 import { CopyContact } from "@/components/CopyContact";
 import { matchesQuery } from "@/lib/search";
 import { flash } from "@/components/Flash";
-import type { Sponsor, SponsorStatus, SponsorCategory } from "@/lib/types";
+import type { Sponsor, SponsorStatus, SponsorCategory, ContactVia } from "@/lib/types";
+
+// Jak jsme sponzora oslovili — emoji + popisky pro tlačítka i štítek.
+const VIA: Record<ContactVia, { emoji: string; label: string; adverb: string }> = {
+  email: { emoji: "✉️", label: "E-mailem", adverb: "e-mailem" },
+  phone: { emoji: "📞", label: "Telefonicky", adverb: "telefonicky" },
+  osobne: { emoji: "🤝", label: "Osobně", adverb: "osobně" },
+};
 
 // Editor více odkazů / kontaktů — tlačítko „+" přidá další pole, „✕" ho odebere.
 function LinksEditor({ links, setLinks }: { links: string[]; setLinks: Dispatch<SetStateAction<string[]>> }) {
@@ -254,6 +261,7 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
   const { dispatch, me } = useStore();
   const [edit, setEdit] = useState(false);
   const [askCancel, setAskCancel] = useState(false); // potvrzení „Zrušeno?"
+  const [askContact, setAskContact] = useState(false); // okno „jak jsi oslovil?"
   const [name, setName] = useState(s.name);
   const [gives, setGives] = useState(s.gives ?? "");
   const [who, setWho] = useState(s.who ?? "");
@@ -322,10 +330,20 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
   const contacted = s.status !== "oslovit";
   const confirmed = s.status === "potvrzeno";
   const decided = confirmed || s.status === "odmitl";
-  // Potvrzené je zamčené i pro správce — překlikne se jen přes „Zrušeno?".
-  const lockContact = confirmed || (decided && !admin);
   const lockDecide = s.status === "odmitl" && !admin;
   const setStatus = (status: SponsorStatus) => canEdit && dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { status } });
+
+  // „Oslovil jsem" → vyber způsob. Když ještě nebyl osloven, posuneme ho na „čeká".
+  function markContacted(via: ContactVia) {
+    dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { status: s.status === "oslovit" ? "ceka" : s.status, contactedVia: via } });
+    setAskContact(false);
+    flash(`${s.name} — osloveno ${VIA[via].adverb}`, VIA[via].emoji);
+  }
+  function revertContact() {
+    dispatch({ type: "updateSponsor", yearId, sponsorId: s.id, patch: { status: "oslovit" } });
+    setAskContact(false);
+    flash(`${s.name} — vráceno na „neosloveno"`, "↩️");
+  }
 
   return (
     <li className={`p-4 ${s.status === "potvrzeno" ? "bg-leaf/[0.05]" : s.status === "odmitl" ? "bg-red-500/[0.04]" : ""}`}>
@@ -353,7 +371,15 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
                 </a>
               );
             }
-            return <CopyContact key={i} value={c.label} kind={c.kind} className={cls} />;
+            const ringed = s.contactedVia === c.kind; // takhle jsme oslovili → zakroužkuj
+            return (
+              <CopyContact
+                key={i}
+                value={c.label}
+                kind={c.kind}
+                className={ringed ? `${cls} rounded-full bg-gold-50 px-2 py-0.5 ring-1 ring-gold-400` : cls}
+              />
+            );
           });
         })()}
       </div>
@@ -367,35 +393,16 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
         </div>
       )}
 
-      {/* Stavová tlačítka (jako Program): Osloveno + domluva ano/ne */}
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        {/* „Neosloveno" je jen štítek stavu — oslovení se dělá výrazným tlačítkem
-            „Oslovil jsem" vedle. Klikací (pro vrácení zpět) je až zelené „Osloveno ✓". */}
-        {canEdit && contacted ? (
-          <button
-            disabled={lockContact}
-            onClick={() => setStatus("oslovit")}
-            title={lockContact ? "Rozhodnuto — změnit může jen správce" : undefined}
-            className={`rounded-full px-2.5 py-1 text-xs font-medium transition bg-leaf/15 text-leaf-700 hover:bg-leaf/25 ${
-              lockContact ? "cursor-not-allowed opacity-60 hover:bg-leaf/15" : ""
-            }`}
-          >
-            Osloveno ✓
-          </button>
-        ) : (
-          <span className={`badge ${contacted ? "badge-done" : "badge-idle"}`}>
-            {contacted ? "Osloveno ✓" : "Neosloveno"}
+      {/* Řádek 1: stav (+ čím jsme oslovili) + domluva + akce; řádek 2: tlačítko „Oslovil jsem" */}
+      <div className="mt-2 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+        {/* Stav oslovení — jen štítek; přepíná se tlačítkem „Oslovil jsem" níže. Ukazuje i způsob. */}
+        {contacted ? (
+          <span className="badge badge-done">
+            Osloveno ✓{s.contactedVia ? ` · ${VIA[s.contactedVia].emoji} ${VIA[s.contactedVia].adverb}` : ""}
           </span>
-        )}
-
-        {/* Výrazné tlačítko „Oslovil jsem" — mezi stavem a Upravit/Smazat, dokud není osloveno */}
-        {canEdit && !contacted && (
-          <button
-            onClick={() => { setStatus("ceka"); flash(`${s.name} — osloveno`, "✉️"); }}
-            className="btn-pill btn-pill-gold"
-          >
-            ✉️ Oslovil jsem
-          </button>
+        ) : (
+          <span className="badge badge-idle">Neosloveno</span>
         )}
 
         {/* Stav domluvy */}
@@ -449,6 +456,22 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
             <DeleteButton onConfirm={() => dispatch({ type: "removeSponsor", yearId, sponsorId: s.id })} />
           </div>
         )}
+        </div>
+
+        {/* Tlačítko „Oslovil jsem" — dole vlevo pod stavem; zlaté dokud neosloveno, pak bílé.
+            Otevře okno s volbou způsobu (e-mail / telefon / osobně). Po rozhodnutí se skryje. */}
+        {canEdit && !decided && (
+          <button
+            onClick={() => setAskContact(true)}
+            className={
+              contacted
+                ? "inline-flex items-center gap-1.5 rounded-full bg-surface px-3.5 py-1.5 text-sm font-medium text-ink ring-1 ring-ink/15 transition hover:bg-ink/5"
+                : "btn-pill btn-pill-gold"
+            }
+          >
+            {contacted ? `${s.contactedVia ? VIA[s.contactedVia].emoji : "✉️"} Oslovil jsem` : "✉️ Oslovil jsem"}
+          </button>
+        )}
       </div>
 
       {/* „Zrušeno?" — u potvrzeného sponzora; přesune mezi odmítnuté (info zůstane) */}
@@ -471,6 +494,39 @@ function SponsorRow({ s, yearId, canEdit }: { s: Sponsor; yearId: string; canEdi
             Ne
           </button>
         </div>
+      </Modal>
+
+      {/* „Jak jsi oslovil?" — vyskočí po kliknutí na „Oslovil jsem" */}
+      <Modal open={askContact} onClose={() => setAskContact(false)} title={`Jak jsi oslovil ${s.name}?`}>
+        <p className="text-sm text-ink-soft">
+          Vyber, jak proběhlo oslovení — ukáže se to u sponzora (a zvýrazní kontakt, přes který jsi psal/volal).
+        </p>
+        <div className="mt-4 grid gap-2">
+          {(Object.keys(VIA) as ContactVia[]).map((v) => {
+            const on = s.contactedVia === v;
+            return (
+              <button
+                key={v}
+                onClick={() => markContacted(v)}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[15px] font-medium ring-1 transition ${
+                  on ? "bg-gold-50 ring-gold-400" : "ring-ink/10 hover:bg-ink/5"
+                }`}
+              >
+                <span className="text-xl">{VIA[v].emoji}</span>
+                {VIA[v].label}
+                {on && <span className="ml-auto text-xs font-semibold text-gold-700">✓ zvoleno</span>}
+              </button>
+            );
+          })}
+        </div>
+        {contacted && (
+          <button
+            onClick={revertContact}
+            className="mt-3 w-full rounded-xl px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-500/5"
+          >
+            ↩︎ Ještě jsem neoslovil (vrátit zpět)
+          </button>
+        )}
       </Modal>
     </li>
   );
