@@ -25,6 +25,28 @@ export function defaultRoleTasks(createdAt: string): Task[] {
   return out;
 }
 
+// Sloučí duplicitní úkoly. Za duplikát bereme úkol se stejným názvem, zdrojem
+// (příspěvek na nástěnce), rolí, přiřazenou osobou, zónou i termínem. Necháme
+// jeden — přednost má už hotový (ať se neztratí odškrtnutí), jinak ten starší.
+export function dedupeTasks(tasks: Task[]): Task[] {
+  const norm = (s?: string) => (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  const keyOf = (t: Task) =>
+    [norm(t.title), t.fromPostId ?? "", t.roleId ?? "", norm(t.assignee), t.zoneId ?? "", t.due ?? ""].join("§");
+  const seen = new Map<string, Task>();
+  const order: string[] = [];
+  for (const t of tasks) {
+    const k = keyOf(t);
+    const prev = seen.get(k);
+    if (!prev) {
+      seen.set(k, t);
+      order.push(k);
+      continue;
+    }
+    seen.set(k, prev.done ? prev : t.done ? t : prev.createdAt <= t.createdAt ? prev : t);
+  }
+  return order.map((k) => seen.get(k)!);
+}
+
 export type Action =
   | { type: "createYear"; id: string; label?: string; theme?: string; fledaDate?: string; copyFromYearId?: string }
   | { type: "updateYear"; yearId: string; patch: Partial<Pick<Year, "label" | "theme" | "fledaDate" | "plannedPeople" | "deposit" | "paymentAccount">> }
@@ -84,6 +106,7 @@ export type Action =
   | { type: "updateTask"; yearId: string; taskId: string; patch: { title?: string; roleId?: string; assignee?: string; due?: string } }
   | { type: "removeTask"; yearId: string; taskId: string }
   | { type: "clearTasks"; yearId: string }
+  | { type: "dedupeTasks"; yearId: string }
   | { type: "addLink"; yearId: string; label: string; value: string; folder?: string; note?: string }
   | { type: "removeLink"; yearId: string; linkId: string }
   | { type: "addFinance"; yearId: string; kind: FinanceKind; label: string; amount: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string }
@@ -719,6 +742,8 @@ export function applyAction(db: DB, a: Action): DB {
       return mapYear(db, a.yearId, (y) => ({ ...y, tasks: y.tasks.filter((t) => t.id !== a.taskId) }));
     case "clearTasks":
       return mapYear(db, a.yearId, (y) => ({ ...y, tasks: [] }));
+    case "dedupeTasks":
+      return mapYear(db, a.yearId, (y) => ({ ...y, tasks: dedupeTasks(y.tasks) }));
 
     case "addLink":
       return mapYear(db, a.yearId, (y) => ({
