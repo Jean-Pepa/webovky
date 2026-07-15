@@ -25,13 +25,15 @@ export function defaultRoleTasks(createdAt: string): Task[] {
   return out;
 }
 
-// Sloučí duplicitní úkoly. Za duplikát bereme úkol se stejným názvem, zdrojem
-// (příspěvek na nástěnce), rolí, přiřazenou osobou, zónou i termínem. Necháme
-// jeden — přednost má už hotový (ať se neztratí odškrtnutí), jinak ten starší.
+// Sloučí duplicitní úkoly. Za duplikát bereme úkol se stejným názvem, rolí,
+// přiřazenou osobou, zónou i termínem. Zdroj (příspěvek na nástěnce) do klíče
+// NEpatří — stejný úkol přidaný přes víc příspěvků má pokaždé jiné fromPostId,
+// takže by se jinak nesloučil. Necháme jeden — přednost má už hotový (ať se
+// neztratí odškrtnutí), jinak ten starší.
 export function dedupeTasks(tasks: Task[]): Task[] {
   const norm = (s?: string) => (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
   const keyOf = (t: Task) =>
-    [norm(t.title), t.fromPostId ?? "", t.roleId ?? "", norm(t.assignee), t.zoneId ?? "", t.due ?? ""].join("§");
+    [norm(t.title), t.roleId ?? "", norm(t.assignee), t.zoneId ?? "", t.due ?? ""].join("§");
   const seen = new Map<string, Task>();
   const order: string[] = [];
   for (const t of tasks) {
