@@ -1,7 +1,7 @@
 // Čistý reducer nad DB. Stejná logika běží na serveru (Redis) i v prohlížeči
 // (localStorage demo režim) — proto je bezstavová a deterministická až na uid().
 
-import type { DB, Year, Member, EventKind, FinanceKind, Task, Invite, MerchOrderItem, SponsorStatus, SponsorCategory } from "./types";
+import type { DB, Year, Member, EventKind, FinanceKind, Task, Invite, MerchOrderItem, SponsorStatus, SponsorCategory, ContactVia } from "./types";
 import { uid } from "./id";
 import { ROLE_TASKS } from "./roleTasks";
 import { sameName } from "./names";
@@ -25,13 +25,15 @@ export function defaultRoleTasks(createdAt: string): Task[] {
   return out;
 }
 
-// Sloučí duplicitní úkoly. Za duplikát bereme úkol se stejným názvem, zdrojem
-// (příspěvek na nástěnce), rolí, přiřazenou osobou, zónou i termínem. Necháme
-// jeden — přednost má už hotový (ať se neztratí odškrtnutí), jinak ten starší.
+// Sloučí duplicitní úkoly. Za duplikát bereme úkol se stejným názvem, rolí,
+// přiřazenou osobou, zónou i termínem. Zdroj (příspěvek na nástěnce) do klíče
+// NEpatří — stejný úkol přidaný přes víc příspěvků má pokaždé jiné fromPostId,
+// takže by se jinak nesloučil. Necháme jeden — přednost má už hotový (ať se
+// neztratí odškrtnutí), jinak ten starší.
 export function dedupeTasks(tasks: Task[]): Task[] {
   const norm = (s?: string) => (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
   const keyOf = (t: Task) =>
-    [norm(t.title), t.fromPostId ?? "", t.roleId ?? "", norm(t.assignee), t.zoneId ?? "", t.due ?? ""].join("§");
+    [norm(t.title), t.roleId ?? "", norm(t.assignee), t.zoneId ?? "", t.due ?? ""].join("§");
   const seen = new Map<string, Task>();
   const order: string[] = [];
   for (const t of tasks) {
@@ -143,7 +145,7 @@ export type Action =
   | { type: "setDecorPlan"; yearId: string; ids: string[] }
   | { type: "setDecorPlanDesc"; yearId: string; text: string }
   | { type: "addSponsor"; yearId: string; name: string; gives?: string; who?: string; links?: string[]; note?: string; category?: SponsorCategory; returning?: boolean }
-  | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: SponsorStatus; who?: string; links?: string[]; note?: string; category?: SponsorCategory; returning?: boolean } }
+  | { type: "updateSponsor"; yearId: string; sponsorId: string; patch: { name?: string; gives?: string; status?: SponsorStatus; who?: string; links?: string[]; note?: string; category?: SponsorCategory; returning?: boolean; contactedVia?: ContactVia } }
   | { type: "removeSponsor"; yearId: string; sponsorId: string }
   | { type: "addDrink"; yearId: string; name: string; kind: "koktejl" | "panak" | "snidane" | "obed" | "jine"; place: "bar" | "kuchyne"; day?: "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne"; price?: number }
   | { type: "updateDrink"; yearId: string; drinkId: string; patch: { name?: string; kind?: "koktejl" | "panak" | "snidane" | "obed" | "jine"; day?: "po" | "ut" | "st" | "ct" | "pa" | "so" | "ne" | null; price?: number; note?: string; ingredients?: { name: string; cost: number }[] } }
@@ -1099,6 +1101,13 @@ export function applyAction(db: DB, a: Action): DB {
                 status: a.patch.status ?? s.status,
                 // při změně stavu zapiš čas — kvůli řazení uvnitř skupiny (fronta)
                 statusAt: a.patch.status !== undefined && a.patch.status !== s.status ? now() : s.statusAt,
+                // čím jsme oslovili; při vrácení na „neosloveno" se způsob zahodí
+                contactedVia:
+                  (a.patch.status ?? s.status) === "oslovit"
+                    ? undefined
+                    : a.patch.contactedVia !== undefined
+                      ? a.patch.contactedVia
+                      : s.contactedVia,
                 category: a.patch.category !== undefined ? a.patch.category : s.category,
                 returning: a.patch.returning !== undefined ? a.patch.returning : s.returning,
                 who: a.patch.who !== undefined ? a.patch.who.trim() || undefined : s.who,
