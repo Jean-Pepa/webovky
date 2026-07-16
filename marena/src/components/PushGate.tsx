@@ -49,12 +49,17 @@ export function PushGate() {
       // (DesktopPhoneHint). Ruční zapnutí přes hamburger 🔔 pořád funguje.
       if (isDesktop()) {
         const sub = perm === "granted" ? await currentSubscription() : null;
+        // Když už odběr je, ulož ho pod AKTUÁLNÍ jméno — po přepnutí identity
+        // (třeba na správce „Mařena") jinak zůstane zařízení jen u starého jména
+        // a notifikace „ke schválení" (chodí na Mařenu) nikam nedorazí.
+        if (sub) await enablePush(me);
         if (alive) setSt(sub ? "on" : "off");
         return;
       }
       if (perm === "granted") {
-        const sub = await currentSubscription();
-        if (!sub) await enablePush(me); // povoleno, ale odběr chybí → tiše obnovíme
+        // Vždy (re)registruj tohle zařízení pod aktuální jméno — i když už odběr
+        // v prohlížeči existuje (jinak by přepnutí na správce nechalo Mařenu bez zařízení).
+        await enablePush(me);
         if (alive) setSt("on");
         return;
       }

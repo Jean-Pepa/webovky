@@ -51,6 +51,33 @@ async function pushForAction(action: Action, db: DB): Promise<void> {
       return;
     }
 
+    // ---- Správce něco SCHVÁLIL → dej vědět tomu, koho se to týká. ----
+    if (action.type === "approveMember") {
+      const a = action as { yearId: string; memberId: string };
+      const m = db.years.find((y) => y.id === a.yearId)?.members.find((x) => x.id === a.memberId);
+      if (m && !sameName(m.name, ADMIN_NAME))
+        await sendToNames([m.name], { title: "✅ Účet schválen", body: "Tvůj účet v Mařeně je schválený — vítej v týmu! 🎉", url: "/zazemi", tag: "marena-approved" });
+      return;
+    }
+
+    if (action.type === "resolveRoleRequest") {
+      const a = action as { yearId: string; memberId: string; roleId: string; approve: boolean };
+      if (!a.approve) return; // notifikujeme jen schválení, ne zamítnutí
+      const m = db.years.find((y) => y.id === a.yearId)?.members.find((x) => x.id === a.memberId);
+      if (m && !sameName(m.name, ADMIN_NAME))
+        await sendToNames([m.name], { title: "✅ Role schválena", body: `Máš roli ${roleById(a.roleId)?.name ?? a.roleId}. Mrkni na svoje úkoly.`, url: "/zazemi/ukoly", tag: "marena-role" });
+      return;
+    }
+
+    if (action.type === "toggleFinancePaid") {
+      const a = action as { yearId: string; financeId: string };
+      const f = db.years.find((y) => y.id === a.yearId)?.finances?.find((x) => x.id === a.financeId);
+      // Jen když je TEĎ proplaceno (toggle mohl i odškrtnout) a víme komu.
+      if (f && f.paid && f.kind === "vydaj" && f.who?.trim() && !sameName(f.who, ADMIN_NAME))
+        await sendToNames([f.who], { title: "💸 Výdaj proplacen", body: `${f.label} — ${f.amount} Kč je proplaceno.`, url: "/zazemi/finance", tag: "marena-paid" });
+      return;
+    }
+
     // Nový příspěvek na nástěnce → všem (mimo autora).
     if (action.type === "addPost") {
       const a = action as { yearId: string; author: string; title?: string; body?: string };
