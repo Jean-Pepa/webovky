@@ -37,9 +37,15 @@ export function PushSettings({ open, onClose }: { open: boolean; onClose: () => 
       const perm = notifPermission();
       if (perm === "denied") return setPs("denied");
       const sub = await currentSubscription();
-      setPs(perm === "granted" && sub ? "on" : "canEnable");
+      if (perm === "granted" && sub) {
+        // Zajisti, že je zařízení uložené pod AKTUÁLNÍM jménem (po přepnutí identity,
+        // třeba na správce „Mařena", jinak nechodí notifikace „ke schválení").
+        await enablePush(me);
+        return setPs("on");
+      }
+      setPs("canEnable");
     })();
-  }, [open]);
+  }, [open, me]);
 
   async function turnOn() {
     setBusy(true);
