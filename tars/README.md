@@ -164,6 +164,23 @@ Jak to funguje: každá uložená věc se převede na „otisk" (embedding) mode
 
 ---
 
+## Pravidla — nauč ho, jak chceš věci zapisovat
+
+V **Přehledu** je pole **„Pravidla — jak mám zapisovat a odpovídat"**. Napiš
+tam vlastními slovy svoje instrukce a dej *Uložit pravidla*. TARS je pak
+**bezpodmínečně dodržuje** při zařazování i při odpovídání — funguje to jako
+tvoje „custom instrukce" pro sekretářku. Příklady:
+
+```
+- U lidí vždy ulož telefon a odkud je znám.
+- Když řeknu „zavolat", je to úkol.
+- Výdaje kategorizuj: jídlo, doprava, bydlení.
+```
+
+Pravidla se ukládají do `data/rules.txt` a platí hned (bez restartu).
+
+---
+
 ## Učení z oprav
 
 Když TARS něco zařadí špatně, u položky (poznámka / člověk / událost) klepni na

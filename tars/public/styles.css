@@ -1,14 +1,15 @@
-/* TARS – vzhled. Tmavý, klidný, monolitový. Laděno hlavně pro mobil. */
+/* TARS – vzhled. Světlý, čistý, přehledný. Laděno hlavně pro mobil. */
 
 :root {
-  --bg: #0a0a0b;
-  --panel: #141417;
-  --panel-2: #1c1c21;
-  --line: #26262c;
-  --text: #ececf1;
-  --muted: #8a8a94;
-  --accent: #d8cfa8; /* teplá "monolit" zlatá */
-  --user: #2a2a31;
+  --bg: #f4f4f6;
+  --panel: #ffffff;
+  --panel-2: #eef0f3;
+  --line: #e3e4ea;
+  --text: #1c1d23;
+  --muted: #6a6c78;
+  --accent: #a87c1e; /* teplá "monolit" bronzová – dobrý kontrast na bílé */
+  --accent-ink: #ffffff; /* text na barevných tlačítkách */
+  --user: #eaecf1; /* bublina uživatele */
   --radius: 16px;
 }
 
@@ -41,7 +42,7 @@ body {
   padding: 14px 16px;
   padding-top: max(14px, env(safe-area-inset-top));
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(180deg, #101012, var(--bg));
+  background: var(--panel);
   flex: 0 0 auto;
 }
 
@@ -62,9 +63,9 @@ body {
   width: 14px;
   height: 22px;
   border-radius: 3px;
-  background: linear-gradient(180deg, #3a3a40, #17171a);
-  border: 1px solid #4a4a52;
-  box-shadow: inset 0 0 0 2px #0d0d0f, 0 0 12px rgba(216, 207, 168, 0.15);
+  background: linear-gradient(180deg, #e7dcae, #b6a974);
+  border: 1px solid #b7a35c;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
   display: inline-block;
 }
 
@@ -142,7 +143,7 @@ body {
 }
 
 .capture textarea:focus {
-  border-color: #3a3a44;
+  border-color: var(--accent);
 }
 
 .capture-actions {
@@ -172,7 +173,7 @@ body {
 
 .btn.primary {
   background: var(--accent);
-  color: #1a1a1a;
+  color: var(--accent-ink);
 }
 
 /* v řádku akcí zápisníku má hlavní tlačítko vyplnit zbytek šířky */
@@ -267,7 +268,7 @@ body {
 }
 
 .entry .body .meta.read {
-  color: #b7ad86;
+  color: #8a6d1a;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
@@ -279,7 +280,7 @@ body {
 }
 
 .entry .body .meta.read-err {
-  color: #e0a060;
+  color: #c05a10;
   line-height: 1.35;
 }
 
@@ -351,7 +352,7 @@ body {
 
 .reclass-choice.ok {
   background: var(--accent);
-  color: #1a1a1a;
+  color: var(--accent-ink);
   border-color: var(--accent);
   font-weight: 600;
 }
@@ -392,7 +393,7 @@ body {
 }
 
 .field:focus {
-  border-color: #3a3a44;
+  border-color: var(--accent);
 }
 
 /* vyhledávací pole v Záznamu */
@@ -473,6 +474,42 @@ body {
 .hint.small {
   font-size: 12px;
   margin: 0;
+}
+
+/* pravidla (custom instrukce) */
+.rules-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.rules-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#rulesInput {
+  width: 100%;
+  min-width: 0;
+  resize: vertical;
+  min-height: 130px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  outline: none;
+}
+
+#rulesInput:focus {
+  border-color: var(--accent);
 }
 
 /* ============ KALENDÁŘ ============ */
@@ -663,7 +700,7 @@ body {
   border: none;
   border-radius: 10px;
   background: var(--accent);
-  color: #1a1a1a;
+  color: var(--accent-ink);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -819,9 +856,9 @@ body {
 
 .msg.error {
   align-self: center;
-  background: #2a1414;
-  border: 1px solid #5a2a2a;
-  color: #f0b8b8;
+  background: #fdecec;
+  border: 1px solid #f2c4c4;
+  color: #b02a2a;
   font-size: 14px;
   max-width: 92%;
 }
@@ -854,7 +891,7 @@ body {
 }
 
 #input:focus {
-  border-color: #3a3a44;
+  border-color: var(--accent);
 }
 
 #send {
@@ -863,7 +900,7 @@ body {
   border-radius: 50%;
   border: none;
   background: var(--accent);
-  color: #1a1a1a;
+  color: var(--accent-ink);
   font-size: 20px;
   font-weight: 700;
   cursor: pointer;

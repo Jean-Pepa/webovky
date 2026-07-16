@@ -124,6 +124,22 @@ function saveLessons() {
 
 let RECLASS_SEQ = 0; // aby se jména nekřížila ve stejné milisekundě
 
+// ==== TVOJE PRAVIDLA (custom instrukce) ====
+// Volný text, který uživatel napíše (jak má TARS zapisovat/odpovídat).
+// Vkládá se do třídiče i do chatu. Čte se vždy čerstvě, aby změny platily hned.
+const RULES_FILE = path.join(DATA_DIR, "rules.txt");
+function readRules() {
+  try {
+    return fs.existsSync(RULES_FILE) ? fs.readFileSync(RULES_FILE, "utf-8").trim() : "";
+  } catch {
+    return "";
+  }
+}
+function rulesHint() {
+  const r = readRules();
+  return r ? "\n\nPRAVIDLA UŽIVATELE (bezpodmínečně je dodržuj):\n" + r : "";
+}
+
 const MIME = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -401,6 +417,7 @@ async function handleChat(req, res) {
     "obsah té fotky nemáš přečtený. Když je text z poznámek nejasný nebo neúplný, řekni " +
     "to narovinu a nedomýšlej. Když k dotazu v poznámkách nic není, napiš krátce, že o " +
     "tom nemáš data. Čísla, jména a data uváděj přesně tak, jak jsou v poznámkách." +
+    rulesHint() +
     "\n\n=== POZNÁMKY ===\n" + context;
 
   const fullMessages = [{ role: "system", content: system }, ...messages];
@@ -508,7 +525,8 @@ async function handleCapture(req, res) {
               "\nDnes je " +
               new Date().toLocaleDateString("cs-CZ", { weekday: "long", year: "numeric", month: "2-digit", day: "2-digit" }) +
               " (" + new Date().toISOString().slice(0, 10) + ")." +
-              lessonsHint(),
+              lessonsHint() +
+              rulesHint(),
           },
           { role: "user", content: text },
         ],
@@ -1010,6 +1028,26 @@ async function handleReindex(req, res) {
   sendJson(res, 200, { ok: true, indexed: ok, failed: fail, chunks: INDEX.length });
 }
 
+// --- Pravidla: přečti / ulož -------------------------------------------------
+function handleGetRules(req, res) {
+  sendJson(res, 200, { rules: readRules() });
+}
+async function handleSaveRules(req, res) {
+  const body = await readBody(req);
+  let rules;
+  try {
+    rules = String(JSON.parse(body || "{}").rules || "");
+  } catch {
+    return sendJson(res, 400, { error: "Neplatný JSON." });
+  }
+  try {
+    fs.writeFileSync(RULES_FILE, rules, "utf-8");
+  } catch {
+    return sendJson(res, 500, { error: "Nepodařilo se uložit pravidla." });
+  }
+  sendJson(res, 200, { ok: true });
+}
+
 // --- Router ------------------------------------------------------------------
 const server = http.createServer((req, res) => {
   const pathname = req.url.split("?")[0];
@@ -1024,6 +1062,8 @@ const server = http.createServer((req, res) => {
   if (req.method === "POST" && pathname === "/api/events") return handleSaveEvent(req, res);
   if (req.method === "POST" && pathname === "/api/briefing") return handleBriefing(req, res);
   if (req.method === "POST" && pathname === "/api/reindex") return handleReindex(req, res);
+  if (req.method === "POST" && pathname === "/api/rules") return handleSaveRules(req, res);
+  if (req.method === "GET" && pathname === "/api/rules") return handleGetRules(req, res);
   if (req.method === "GET" && pathname === "/api/people") return handlePeople(req, res);
   if (req.method === "GET" && pathname === "/api/events") return handleEvents(req, res);
   if (req.method === "GET" && pathname === "/api/entries") return handleEntries(req, res);

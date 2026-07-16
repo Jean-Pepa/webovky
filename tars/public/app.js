@@ -33,6 +33,9 @@ const briefBtn = document.getElementById("briefBtn");
 const briefingEl = document.getElementById("briefing");
 const reindexBtn = document.getElementById("reindexBtn");
 const reindexHint = document.getElementById("reindexHint");
+const rulesInput = document.getElementById("rulesInput");
+const saveRulesBtn = document.getElementById("saveRulesBtn");
+const rulesHintEl = document.getElementById("rulesHint");
 
 // chat
 const chatEl = document.getElementById("chat");
@@ -58,7 +61,10 @@ document.querySelectorAll(".tab").forEach((tab) => {
     if (which === "notes") loadEntries();
     if (which === "people") loadPeople();
     if (which === "calendar") loadCalendar();
-    if (which === "overview") loadStats();
+    if (which === "overview") {
+      loadStats();
+      loadRules();
+    }
   });
 });
 
@@ -700,6 +706,33 @@ briefBtn.addEventListener("click", async () => {
     briefingEl.textContent = "⚠ " + (err.message || err);
   } finally {
     briefBtn.disabled = false;
+  }
+});
+
+// pravidla (custom instrukce)
+async function loadRules() {
+  try {
+    const j = await (await fetch("/api/rules")).json();
+    if (document.activeElement !== rulesInput) rulesInput.value = j.rules || "";
+  } catch {
+    /* nevadí */
+  }
+}
+saveRulesBtn.addEventListener("click", async () => {
+  saveRulesBtn.disabled = true;
+  rulesHintEl.textContent = "Ukládám…";
+  try {
+    const res = await fetch("/api/rules", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rules: rulesInput.value }),
+    });
+    if (!res.ok) throw new Error("chyba");
+    rulesHintEl.textContent = "✓ Uloženo. TARS se jimi bude řídit.";
+  } catch {
+    rulesHintEl.textContent = "Nepodařilo se uložit.";
+  } finally {
+    saveRulesBtn.disabled = false;
   }
 });
 
