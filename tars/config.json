@@ -1,5 +1,5 @@
 {
   "_napoveda": "Tady se dá přepsat nastavení TARS. Po změně restartuj server (stop-tars.bat + start-tars.vbs).",
-  "_VISION_MODEL": "model na čtení textu z fotek. Musí být stažený: ollama pull <model>. Tipy: minicpm-v (nejlepší čtení textu), granite3.2-vision (menší/rychlejší), llava (základní, na češtinu slabší).",
-  "VISION_MODEL": "minicpm-v"
+  "_VISION_MODEL": "model na čtení textu z fotek. Musí být stažený: ollama pull <model>. Na 6 GB grafiky je nejstabilnější granite3.2-vision (~2 GB) nebo moondream (~1,8 GB). Velké modely (minicpm-v ~5,5 GB) ucpávají paměť a rozbíjí embeddingy.",
+  "VISION_MODEL": "granite3.2-vision"
 }
