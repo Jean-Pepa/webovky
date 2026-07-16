@@ -128,6 +128,32 @@ let RECLASS_SEQ = 0; // aby se jména nekřížila ve stejné milisekundě
 // Volný text, který uživatel napíše (jak má TARS zapisovat/odpovídat).
 // Vkládá se do třídiče i do chatu. Čte se vždy čerstvě, aby změny platily hned.
 const RULES_FILE = path.join(DATA_DIR, "rules.txt");
+
+// výchozí „top sekretářka" – založí se při prvním startu, pak si je uživatel může upravit
+const DEFAULT_RULES = [
+  "Chovej se jako pečlivá profesionální sekretářka: přesná, stručná, spolehlivá. Nikdy si nic nevymýšlej.",
+  "",
+  "ZAPISOVÁNÍ:",
+  "- Nic neztrať. Když je ve větě víc věcí, rozděl je a každou zařaď zvlášť.",
+  "- Lidé: ulož jméno, vztah (kdo to je) a když zazní, i telefon a e-mail.",
+  "- Události (schůzka, termín, oběd nebo večeře, narozeniny, doktor, cokoliv s datem nebo časem, nebo když řeknu ať to dám do kalendáře) patří VŽDY do kalendáře. Relativní datum (zítra, v pátek) převeď na konkrétní.",
+  "- Úkoly (zavolat, koupit, zaplatit, poslat, zařídit) ulož jako poznámku; když je u toho termín, zmíň ho.",
+  "- Peníze/výdaje: ulož částku, za co to bylo, a kategorii (jídlo, doprava, bydlení, ostatní).",
+  "",
+  "ODPOVÍDÁNÍ:",
+  "- Odpovídej jen z mých uložených dat. Když něco nemám uložené, řekni to narovinu a nedomýšlej.",
+  "- Buď stručný a konkrétní. Čísla, jména a data uváděj přesně tak, jak jsou.",
+  "- Když vypisuješ úkoly nebo události, seřaď je podle data.",
+  "- Piš česky, věcně a klidně.",
+].join("\n");
+
+// založ výchozí pravidla, pokud ještě žádná nejsou
+try {
+  if (!fs.existsSync(RULES_FILE)) fs.writeFileSync(RULES_FILE, DEFAULT_RULES, "utf-8");
+} catch {
+  /* nevadí */
+}
+
 function readRules() {
   try {
     return fs.existsSync(RULES_FILE) ? fs.readFileSync(RULES_FILE, "utf-8").trim() : "";
