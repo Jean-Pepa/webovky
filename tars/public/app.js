@@ -1,4 +1,4 @@
-// TARS – logika v prohlížeči: Zápisník, Lidé, Přehled a Chat.
+// TARS – logika v prohlížeči: Záznam (vč. Lidí, Pravidel, Údržby), Kalendář, Přehled a Chat.
 
 // PWA: zaregistruj service worker (funguje na localhost/https; jinde tiše přeskočí)
 if ("serviceWorker" in navigator) {
@@ -49,7 +49,6 @@ const sendEl = document.getElementById("send");
 // ==================== ZÁLOŽKY ====================
 const views = {
   notes: document.getElementById("view-notes"),
-  people: document.getElementById("view-people"),
   calendar: document.getElementById("view-calendar"),
   overview: document.getElementById("view-overview"),
   chat: document.getElementById("view-chat"),
@@ -60,12 +59,15 @@ document.querySelectorAll(".tab").forEach((tab) => {
     for (const [name, el] of Object.entries(views)) el.hidden = name !== which;
     document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === tab));
     if (which === "chat") inputEl.focus();
-    if (which === "notes") loadEntries();
-    if (which === "people") loadPeople();
+    if (which === "notes") {
+      // Záznam je teď i domov pro Lidi, Pravidla a Údržbu paměti
+      loadEntries();
+      loadPeople();
+      loadRules();
+    }
     if (which === "calendar") loadCalendar();
     if (which === "overview") {
       loadStats();
-      loadRules();
       loadAgenda();
     }
   });
@@ -227,6 +229,8 @@ async function loadEntries() {
 }
 entrySearch.addEventListener("input", renderEntriesList);
 loadEntries();
+loadPeople();
+loadRules();
 
 // české skloňování počtu
 function plural(n, one, few, many) {

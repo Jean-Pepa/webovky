@@ -553,6 +553,70 @@ body {
   border-color: var(--accent);
 }
 
+/* ============ ROZBALOVACÍ SEKCE (Lidé / Pravidla / Údržba v Záznamu) ============ */
+/* Záznam má teď pod záznamy ještě Lidi/Pravidla/Údržbu → ať scrolluje celá
+   stránka, a seznam záznamů nebere všechnu výšku (jinak by byly drawery mimo). */
+#view-notes {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+#view-notes #entries {
+  flex: none;
+  overflow: visible;
+  padding-bottom: 0;
+}
+
+.drawer {
+  margin-top: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.drawer > summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.drawer > summary::-webkit-details-marker {
+  display: none;
+}
+
+.drawer > summary::after {
+  content: "▾";
+  margin-left: auto;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+.drawer[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+/* obsah pod hlavičkou (kromě summary) */
+.drawer > :not(summary) {
+  margin: 0 14px 14px;
+}
+
+/* vnořený box s pravidly už nemá vlastní rámeček (má ho drawer) */
+.drawer .rules-box {
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+.drawer #reindexBtn {
+  width: 100%;
+}
+
 /* ============ KALENDÁŘ ============ */
 .cal {
   flex: 1;
@@ -981,7 +1045,7 @@ body {
 .tabs {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   border-top: 1px solid var(--line);
   background: var(--panel);
   padding-bottom: env(safe-area-inset-bottom);
