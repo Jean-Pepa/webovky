@@ -973,6 +973,24 @@ function addSources(sources) {
     box.appendChild(imgRow);
   }
 
+  // ostatní soubory (PDF, dokumenty) ukážeme jako odkaz ke klepnutí – i když TARS
+  // obsah nepřečetl, dostaneš tak aspoň samotný soubor k dané otázce
+  const docs = sources.filter((s) => s.refType === "file" && !s.isImage && s.refId && !seen.has(s.refId) && seen.add(s.refId));
+  if (docs.length) {
+    const docRow = document.createElement("div");
+    docRow.className = "src-files";
+    for (const s of docs) {
+      const a = document.createElement("a");
+      a.href = "/api/file?id=" + encodeURIComponent(s.refId);
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.className = "src-file";
+      a.textContent = "📄 " + (s.name || "soubor");
+      docRow.appendChild(a);
+    }
+    box.appendChild(docRow);
+  }
+
   const toggle = document.createElement("button");
   toggle.className = "src-toggle";
   toggle.textContent = "📎 Odkud to mám (" + sources.length + ")";

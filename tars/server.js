@@ -481,6 +481,36 @@ function textFromContentStream(content) {
   return out;
 }
 
+// Vypadá vytažený text jako opravdový (čitelný) text, ne jako binární blabol?
+// Naskenované PDF a hlavně PDF s "osekanými" fonty vrací místo písmen kódy glyfů,
+// což je nesmysl. Ten NECHCEME dát do paměti (jinak z toho model plácá blbosti).
+function looksLikeRealText(s) {
+  const t = String(s || "").replace(/\s+/g, " ").trim();
+  if (t.length < 15) return false;
+  const czech = "áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ";
+  const okPunct = ".,:;!?%-–—()[]/+*=…°'\"„“€$Kč&@#";
+  let ascii = 0;
+  let spaces = 0;
+  let weird = 0;
+  for (const ch of t) {
+    const c = ch.codePointAt(0);
+    if (c === 0x20) {
+      spaces++;
+      continue;
+    }
+    if ((c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a) || (c >= 0x30 && c <= 0x39)) {
+      ascii++;
+      continue;
+    }
+    if (czech.includes(ch) || okPunct.includes(ch)) continue; // přijatelné znaky
+    weird++; // vše ostatní (×¨©®þ{}^~¦§¤ apod.) je podezřelé
+  }
+  const total = t.length;
+  const wordish = (t.match(/[A-Za-zÀ-ſ]{2,}/g) || []).length;
+  // opravdový text: málo „divných" znaků, hodně písmen/mezer, pár skutečných slov
+  return weird / total < 0.12 && (ascii + spaces) / total > 0.6 && wordish >= 5;
+}
+
 // ukliď vytažený text: pryč řídicí byty, sluč mezery a prázdné řádky
 function cleanPdfText(s) {
   return String(s || "")
@@ -523,18 +553,27 @@ function fileCombinedText(id, name) {
   } else if (isPdfFile(name)) {
     // text z PDF vytáhneme jednou a uložíme do OCR_DIR (cache), pak jen čteme
     const ocr = path.join(OCR_DIR, id + ".txt");
-    if (!fs.existsSync(ocr)) {
+    let pdfText = fs.existsSync(ocr) ? fs.readFileSync(ocr, "utf-8") : null;
+    if (pdfText === null) {
       const f = insideDir(UPLOADS_DIR, id);
       if (f && fs.existsSync(f)) {
         try {
-          const txt = extractPdfText(fs.readFileSync(f));
-          if (txt) fs.writeFileSync(ocr, txt, "utf-8");
+          pdfText = extractPdfText(fs.readFileSync(f));
         } catch {
-          /* nevadí – PDF prostě neumíme přečíst (naskenované) */
+          pdfText = "";
         }
+        // do cache ulož jen čitelný text; blabol (osekané fonty / sken) zahoď
+        if (pdfText && looksLikeRealText(pdfText)) fs.writeFileSync(ocr, pdfText, "utf-8");
+        else pdfText = "";
       }
+    } else if (!looksLikeRealText(pdfText)) {
+      // stará cache je blabol (z dřívějška) → smaž a neber ho do paměti
+      try {
+        fs.unlinkSync(ocr);
+      } catch {}
+      pdfText = "";
     }
-    if (fs.existsSync(ocr)) parts.push(fs.readFileSync(ocr, "utf-8"));
+    if (pdfText && pdfText.trim()) parts.push(pdfText);
   } else {
     const ocr = path.join(OCR_DIR, id + ".txt");
     if (fs.existsSync(ocr)) parts.push(fs.readFileSync(ocr, "utf-8"));
@@ -542,9 +581,21 @@ function fileCombinedText(id, name) {
   return parts.filter((p) => p && p.trim()).join("\n\n").trim();
 }
 
-// zaindexuj soubor (popisek + obsah/OCR) do paměti
+// text souboru pro paměť: jméno + hezčí jméno + popisek + obsah/OCR.
+// I NEPŘEČTENÝ soubor (naskenované PDF, fotka bez modelu) tak jde najít podle
+// jména a nabídnout v chatu jako odkaz.
+function fileIndexText(id, name) {
+  const body = fileCombinedText(id, name); // popisek + obsah/OCR (může být prázdné)
+  const pretty = String(name || "")
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/[_\-]+/g, " ")
+    .trim();
+  return ["Soubor: " + name, pretty, body].filter((p) => p && p.trim()).join("\n").trim();
+}
+
+// zaindexuj soubor do paměti
 async function indexFile(id, name) {
-  const text = fileCombinedText(id, name);
+  const text = fileIndexText(id, name);
   if (!text) return { ok: false };
   return indexRef({ refType: "file", refId: id, name, date: new Date().toISOString(), text });
 }
@@ -615,8 +666,8 @@ async function handleChat(req, res) {
     "konkrétní čísla, množství, suroviny ani kroky, které v poznámkách nejsou. " +
     "Pokud poznámky jen zmiňují, že existuje nějaká fotka nebo soubor (třeba jen název " +
     "typu recept na X), ale neobsahují její skutečný obsah, NEPOPISUJ obsah a NEVYMÝŠLEJ " +
-    "ho — napiš, že " +
-    "obsah té fotky nemáš přečtený. Když je text z poznámek nejasný nebo neúplný, řekni " +
+    "ho — napiš, že obsah té fotky/souboru nemáš přečtený, ALE že daný soubor k tématu " +
+    "máš uložený a uživatel ho najde jako odkaz hned pod odpovědí. Když je text z poznámek nejasný nebo neúplný, řekni " +
     "to narovinu a nedomýšlej. Když k dotazu v poznámkách nic není, napiš krátce, že o " +
     "tom nemáš data. Čísla, jména a data uváděj přesně tak, jak jsou v poznámkách." +
     rulesHint() +
@@ -1199,7 +1250,7 @@ async function handleReindex(req, res) {
   }
   for (const f of fs.readdirSync(UPLOADS_DIR)) {
     const name = f.replace(/^[^_]+__/, "");
-    const text = fileCombinedText(f, name); // popisek + obsah/OCR
+    const text = fileIndexText(f, name); // jméno + popisek + obsah/OCR
     if (!text) continue;
     const st = fs.statSync(path.join(UPLOADS_DIR, f));
     const r = await indexRef({ refType: "file", refId: f, name, date: st.mtime.toISOString(), text });
