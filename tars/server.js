@@ -51,8 +51,10 @@ const CLASSIFY_SYS =
   '{"items":[...]}. Každá položka je jeden z těchto tří typů:\n' +
   '- "event" (UDÁLOST): má den nebo čas, nebo uživatel řekne, ať to dáš do ' +
   "kalendáře. Sem patří schůzka, termín, oběd/večeře s někým, narozeniny, " +
-  'doktor, cokoliv naplánovaného. Tvar: {"type":"event","title":"název",' +
-  '"date":"RRRR-MM-DD","time":"HH:MM"} (time nepovinné).\n' +
+  'doktor, dovolená, cokoliv naplánovaného. Tvar: {"type":"event","title":"název",' +
+  '"date":"RRRR-MM-DD","dateEnd":"RRRR-MM-DD","time":"HH:MM"} (dateEnd i time ' +
+  "nepovinné). Když akce trvá víc dní (dovolená, výlet, od–do), vyplň i " +
+  '"dateEnd" (poslední den). Když je to jeden den, "dateEnd" vynech.\n' +
   '- "person" (OSOBA): popis konkrétního člověka – kdo to je, vztah, kontakt. ' +
   'Tvar: {"type":"person","name":"jméno","info":"co si o něm pamatovat"}.\n' +
   '- "note" (POZNÁMKA): úkol, myšlenka, cokoliv ostatního bez data. ' +
@@ -68,7 +70,9 @@ const CLASSIFY_SYS =
   'Vstup: "zapiš mi do kalendáře oběd s bráchou v pátek ve 12" → ' +
   '{"items":[{"type":"event","title":"oběd s bráchou","date":"<pátek>","time":"12:00"}]}\n' +
   'Vstup: "schůzka s bankou zítra v 15:00" → {"items":[{"type":"event",' +
-  '"title":"schůzka s bankou","date":"<zítra>","time":"15:00"}]}\n\n' +
+  '"title":"schůzka s bankou","date":"<zítra>","time":"15:00"}]}\n' +
+  'Vstup: "jedu na dovolenou do hor od 17. do 20. července" → {"items":[' +
+  '{"type":"event","title":"dovolená v horách","date":"<17.7.>","dateEnd":"<20.7.>"}]}\n\n' +
   "Neztrať žádnou informaci. Odpovídej v češtině. Když je to jen jedna věc, " +
   "vrať pole s jednou položkou.";
 
@@ -586,8 +590,9 @@ async function handleCapture(req, res) {
       saved.push({ type: "person", label: name });
     } else if (it && it.type === "event" && String(it.title || "").trim() && /^\d{4}-\d{2}-\d{2}$/.test(it.date || "")) {
       const id = stamp() + suffix + ".json";
-      const ev = await saveEvent(id, it.title, it.date, it.time);
-      saved.push({ type: "event", label: ev.title + " (" + ev.date + (ev.time ? " " + ev.time : "") + ")" });
+      const ev = await saveEvent(id, it.title, it.date, it.time, it.dateEnd);
+      const when = ev.dateEnd ? ev.date + "–" + ev.dateEnd : ev.date + (ev.time ? " " + ev.time : "");
+      saved.push({ type: "event", label: ev.title + " (" + when + ")" });
     } else {
       // poznámka – i „událost bez data" sem spadne (vezmeme text i title, nic neztratíme)
       const t = String((it && (it.text || it.title)) || "").trim();
@@ -868,10 +873,14 @@ async function handleSavePerson(req, res) {
 }
 
 // --- Kalendář: ulož jednu událost (sdílené pro diktování i ruční přidání) ----
-async function saveEvent(id, title, date, time) {
+async function saveEvent(id, title, date, time, dateEnd) {
+  const start = String(date); // RRRR-MM-DD
+  // dateEnd je nepovinné; bereme jen když je platné a je po začátku (víc dní)
+  const end = /^\d{4}-\d{2}-\d{2}$/.test(dateEnd || "") && dateEnd > start ? dateEnd : "";
   const ev = {
     title: String(title).trim(),
-    date: String(date), // RRRR-MM-DD
+    date: start,
+    dateEnd: end,
     time: /^\d{1,2}:\d{2}$/.test(time || "") ? time : "",
     createdAt: new Date().toISOString(),
   };
@@ -881,20 +890,27 @@ async function saveEvent(id, title, date, time) {
     refId: id,
     name: "událost",
     date: ev.createdAt,
-    text: "Událost: " + ev.title + " – " + ev.date + (ev.time ? " " + ev.time : ""),
+    text: eventIndexText(ev),
   });
   return ev;
+}
+
+// text události pro paměť (RAG) – rozsah dní zapíšeme jako „od–do"
+function eventIndexText(e) {
+  const range = e.dateEnd ? e.date + " až " + e.dateEnd : e.date + (e.time ? " " + e.time : "");
+  return "Událost: " + e.title + " – " + range;
 }
 
 // --- Kalendář: ruční přidání události ----------------------------------------
 async function handleSaveEvent(req, res) {
   const body = await readBody(req);
-  let title, date, time;
+  let title, date, time, dateEnd;
   try {
     const j = JSON.parse(body || "{}");
     title = String(j.title || "").trim();
     date = String(j.date || "");
     time = String(j.time || "");
+    dateEnd = String(j.dateEnd || "");
   } catch {
     return sendJson(res, 400, { error: "Neplatný JSON." });
   }
@@ -902,7 +918,7 @@ async function handleSaveEvent(req, res) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return sendJson(res, 400, { error: "Chybí platné datum." });
 
   const id = stamp() + ".json";
-  const ev = await saveEvent(id, title, date, time);
+  const ev = await saveEvent(id, title, date, time, dateEnd);
   sendJson(res, 200, { ok: true, id, event: ev });
 }
 
@@ -913,7 +929,7 @@ function handleEvents(req, res) {
     if (!f.endsWith(".json")) continue;
     try {
       const e = JSON.parse(fs.readFileSync(path.join(EVENTS_DIR, f), "utf-8"));
-      events.push({ id: f, title: e.title, date: e.date, time: e.time || "" });
+      events.push({ id: f, title: e.title, date: e.date, dateEnd: e.dateEnd || "", time: e.time || "" });
     } catch {
       /* přeskoč poškozený */
     }
@@ -1042,7 +1058,7 @@ async function handleReindex(req, res) {
         refId: f,
         name: "událost",
         date: e.createdAt || new Date().toISOString(),
-        text: "Událost: " + e.title + " – " + e.date + (e.time ? " " + e.time : ""),
+        text: eventIndexText(e),
       });
       r.ok ? ok++ : fail++;
     } catch {

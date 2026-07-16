@@ -686,6 +686,13 @@ body {
   min-width: 44px;
 }
 
+/* vícedenní akce – rozsah „17.–20. 7." místo času */
+.day-event .time.range {
+  min-width: 70px;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
 .day-event .ttl {
   flex: 1;
   min-width: 0;
@@ -712,6 +719,19 @@ body {
   gap: 8px;
   align-items: center;
   margin-top: 2px;
+}
+
+/* datum konce roztáhni přes celou šířku na vlastní řádek */
+.add-event .end-date {
+  grid-column: 1 / -1;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
 }
 
 .add-event input[type="time"] {

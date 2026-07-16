@@ -534,6 +534,36 @@ function ymd(y, m, d) {
   return y + "-" + pad2(m + 1) + "-" + pad2(d);
 }
 
+// všechny dny v rozsahu (včetně začátku i konce) jako pole "RRRR-MM-DD"
+function datesInRange(start, end) {
+  const out = [start];
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(end || "") || end <= start) return out;
+  const d = new Date(start + "T00:00:00");
+  const last = new Date(end + "T00:00:00");
+  let guard = 0;
+  while (d < last && guard++ < 400) {
+    d.setDate(d.getDate() + 1);
+    out.push(ymd(d.getFullYear(), d.getMonth(), d.getDate()));
+  }
+  return out;
+}
+function fmtDM(dateStr) {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.getDate() + ". " + (d.getMonth() + 1) + ".";
+}
+// popisek „kdy" pro událost: jeden den → relativně; víc dní → „17.–20. 7."
+function eventWhenLabel(e) {
+  if (e.dateEnd) {
+    const a = new Date(e.date + "T00:00:00");
+    const b = new Date(e.dateEnd + "T00:00:00");
+    if (a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear()) {
+      return a.getDate() + ".–" + b.getDate() + ". " + (b.getMonth() + 1) + ".";
+    }
+    return fmtDM(e.date) + "–" + fmtDM(e.dateEnd);
+  }
+  return relDateLabel(e.date) + (e.time ? " " + e.time : "");
+}
+
 const _today = new Date();
 let calYear = _today.getFullYear();
 let calMonth = _today.getMonth(); // 0–11
@@ -565,7 +595,10 @@ function renderCalendar() {
   const startWd = (first.getDay() + 6) % 7; // pondělí = 0
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const todayStr = ymd(_today.getFullYear(), _today.getMonth(), _today.getDate());
-  const withEvents = new Set(calEvents.map((e) => e.date));
+  const withEvents = new Set();
+  for (const e of calEvents) {
+    for (const ds of datesInRange(e.date, e.dateEnd)) withEvents.add(ds);
+  }
 
   calGrid.innerHTML = "";
   for (let i = 0; i < startWd; i++) {
@@ -604,7 +637,7 @@ function renderDayPanel() {
   dayPanel.appendChild(title);
 
   const dayEvents = calEvents
-    .filter((e) => e.date === calSelected)
+    .filter((e) => datesInRange(e.date, e.dateEnd).includes(calSelected))
     .sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
 
   for (const e of dayEvents) {
@@ -612,7 +645,9 @@ function renderDayPanel() {
     row.className = "day-event";
     const t = document.createElement("span");
     t.className = "time";
-    t.textContent = e.time || "—";
+    // víc dní → ukaž rozsah „17.–20. 7.", jinak čas
+    t.textContent = e.dateEnd ? eventWhenLabel(e) : e.time || "—";
+    if (e.dateEnd) t.classList.add("range");
     const ttl = document.createElement("span");
     ttl.className = "ttl";
     ttl.textContent = e.title;
@@ -643,21 +678,32 @@ function renderDayPanel() {
   const ttl = document.createElement("input");
   ttl.type = "text";
   ttl.placeholder = "Název události";
+  // nepovinné datum konce – pro vícedenní akci (dovolená, výlet)
+  const end = document.createElement("input");
+  end.type = "date";
+  end.className = "end-date";
+  end.title = "Konec (nepovinné, pro víc dní)";
+  end.min = calSelected;
   const btn = document.createElement("button");
   btn.textContent = "Přidat";
   btn.addEventListener("click", async () => {
     const t = ttl.value.trim();
     if (!t) return ttl.focus();
+    if (end.value && end.value < calSelected) {
+      alert("Konec nesmí být před začátkem.");
+      return;
+    }
     btn.disabled = true;
     try {
       const res = await fetch("/api/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: t, date: calSelected, time: time.value }),
+        body: JSON.stringify({ title: t, date: calSelected, time: time.value, dateEnd: end.value }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "chyba");
       ttl.value = "";
       time.value = "";
+      end.value = "";
       await loadCalendar();
     } catch (err) {
       alert("Nepodařilo se přidat: " + (err.message || err));
@@ -667,6 +713,7 @@ function renderDayPanel() {
   });
   add.appendChild(time);
   add.appendChild(ttl);
+  add.appendChild(end);
   add.appendChild(btn);
   dayPanel.appendChild(add);
 }
@@ -702,7 +749,10 @@ async function loadAgenda() {
   try {
     const { events } = await (await fetch("/api/events")).json();
     const today = ymd(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
-    const up = (events || []).filter((e) => e.date >= today).slice(0, 12);
+    // nadcházející i právě probíhající (vícedenní akce, co ještě neskončila)
+    const up = (events || [])
+      .filter((e) => e.date >= today || (e.dateEnd && e.dateEnd >= today))
+      .slice(0, 12);
     agendaEvents.innerHTML = "";
     if (!up.length) {
       agendaEvents.innerHTML = '<p class="hint small">Žádné nadcházející události.</p>';
@@ -712,7 +762,7 @@ async function loadAgenda() {
         row.className = "agenda-item";
         const when = document.createElement("span");
         when.className = "ag-when";
-        when.textContent = relDateLabel(e.date) + (e.time ? " " + e.time : "");
+        when.textContent = eventWhenLabel(e);
         const ttl = document.createElement("span");
         ttl.className = "ag-ttl";
         ttl.textContent = e.title;
