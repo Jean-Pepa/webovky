@@ -48,16 +48,29 @@ const SYSTEM_PROMPT =
 const CLASSIFY_SYS =
   "Jsi třídič poznámek. Uživatel nadiktuje text. Rozděl ho na jednotlivé " +
   "samostatné záznamy a každý zařaď. Vrať POUZE JSON ve tvaru " +
-  '{"items":[...]}. Každá položka je buď osoba, nebo poznámka:\n' +
-  '- osoba (konkrétní člověk – kdo to je, vztah, kontakt): ' +
-  '{"type":"person","name":"jméno","info":"co si o něm pamatovat"}\n' +
-  '- událost (má konkrétní datum/čas – schůzka, termín, narozeniny): ' +
-  '{"type":"event","title":"název","date":"RRRR-MM-DD","time":"HH:MM"} (time nepovinné)\n' +
-  '- poznámka (úkol, myšlenka, cokoliv ostatního): {"type":"note","text":"text poznámky"}\n' +
-  "U události převeď relativní datum (dnes, zítra, ve čtvrtek) na konkrétní " +
-  "RRRR-MM-DD podle dnešního data, které dostaneš. " +
-  "Neztrať žádnou informaci. Zachovej jazyk uživatele (češtinu). " +
-  "Když je to jen jedna věc, vrať pole s jednou položkou.";
+  '{"items":[...]}. Každá položka je jeden z těchto tří typů:\n' +
+  '- "event" (UDÁLOST): má den nebo čas, nebo uživatel řekne, ať to dáš do ' +
+  "kalendáře. Sem patří schůzka, termín, oběd/večeře s někým, narozeniny, " +
+  'doktor, cokoliv naplánovaného. Tvar: {"type":"event","title":"název",' +
+  '"date":"RRRR-MM-DD","time":"HH:MM"} (time nepovinné).\n' +
+  '- "person" (OSOBA): popis konkrétního člověka – kdo to je, vztah, kontakt. ' +
+  'Tvar: {"type":"person","name":"jméno","info":"co si o něm pamatovat"}.\n' +
+  '- "note" (POZNÁMKA): úkol, myšlenka, cokoliv ostatního bez data. ' +
+  'Tvar: {"type":"note","text":"text poznámky"}.\n\n' +
+  "DŮLEŽITÉ: Když text obsahuje den (dnes, zítra, v pátek, 12.5.) nebo čas " +
+  "(v 15:00, ve tři) NEBO uživatel zmíní kalendář/schůzku/termín, je to VŽDY " +
+  '"event", NIKDY "note". U události převeď relativní datum na konkrétní ' +
+  "RRRR-MM-DD podle dnešního data, které dostaneš níže.\n\n" +
+  "Příklady:\n" +
+  'Vstup: "koupit mléko" → {"items":[{"type":"note","text":"koupit mléko"}]}\n' +
+  'Vstup: "František je soused, má psa Rexe" → {"items":[{"type":"person",' +
+  '"name":"František","info":"soused, má psa Rexe"}]}\n' +
+  'Vstup: "zapiš mi do kalendáře oběd s bráchou v pátek ve 12" → ' +
+  '{"items":[{"type":"event","title":"oběd s bráchou","date":"<pátek>","time":"12:00"}]}\n' +
+  'Vstup: "schůzka s bankou zítra v 15:00" → {"items":[{"type":"event",' +
+  '"title":"schůzka s bankou","date":"<zítra>","time":"15:00"}]}\n\n' +
+  "Neztrať žádnou informaci. Odpovídej v češtině. Když je to jen jedna věc, " +
+  "vrať pole s jednou položkou.";
 
 const PUBLIC_DIR = path.join(__dirname, "public");
 const DATA_DIR = path.join(__dirname, "data");
@@ -346,24 +359,26 @@ async function handleChat(req, res) {
     return sendJson(res, 400, { error: "Neplatný JSON." });
   }
 
-  // paměť: k poslednímu dotazu najdi relevantní poznámky (nad prahem podobnosti)
+  // paměť: k dotazu vezmi nejbližší poznámky (BEZ tvrdého prahu – ať se nic
+  // neztratí). O tom, jestli odpovídají, rozhodne model podle striktního pokynu.
   const lastUser = [...messages].reverse().find((m) => m.role === "user");
   let hits = [];
+  let embedFailed = false;
   if (lastUser && INDEX.length) {
     try {
-      const found = await searchIndex(String(lastUser.content || ""), 8);
-      hits = found.filter((h) => h.score >= MEMORY_MIN_SCORE);
+      hits = await searchIndex(String(lastUser.content || ""), 6);
     } catch {
-      hits = []; // embed model nedostupný
+      embedFailed = true; // embed model nedostupný
     }
   }
 
-  // STRIKTNÍ REŽIM: TARS odpovídá jen z tvých poznámek. Když nic relevantního
-  // nenajde, řekne to narovinu – nic si nevymýšlí.
+  // canned odpověď jen když paměť je prázdná nebo se nedá prohledat
   if (!hits.length) {
-    const msg = INDEX.length
-      ? "To k tomu ve svých poznámkách nemám. Zkus se zeptat jinak, nebo se mrkni do Záznamu."
-      : "Ještě nemáš uložené žádné poznámky. Ulož něco do Záznamu a pak se ptej.";
+    const msg = !INDEX.length
+      ? "Ještě nemáš uložené žádné poznámky. Ulož něco do Záznamu a pak se ptej."
+      : embedFailed
+      ? "Nedaří se mi teď prohledat paměť — běží embedding model (nomic-embed-text)?"
+      : "Ještě nemáš uložené žádné poznámky.";
     res.writeHead(200, { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-cache" });
     res.write(JSON.stringify({ message: { content: msg } }) + "\n");
     res.write(JSON.stringify({ done: true }) + "\n");
