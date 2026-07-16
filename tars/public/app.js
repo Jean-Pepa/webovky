@@ -202,6 +202,8 @@ function entrySearchText(e) {
 }
 
 let allEntries = [];
+const ENTRY_PAGE = 5; // kolik záznamů ukázat najednou
+let entryLimit = ENTRY_PAGE;
 
 function renderEntriesList() {
   const q = normStr(entrySearch.value.trim());
@@ -215,7 +217,21 @@ function renderEntriesList() {
     entriesEl.innerHTML = '<p class="hint">Nic nenalezeno.</p>';
     return;
   }
-  for (const e of list) entriesEl.appendChild(renderEntry(e));
+  // ukaž jen prvních `entryLimit`, zbytek přes tlačítko „▼ Zobrazit další"
+  const shown = list.slice(0, entryLimit);
+  for (const e of shown) entriesEl.appendChild(renderEntry(e));
+  const rest = list.length - shown.length;
+  if (rest > 0) {
+    const more = document.createElement("button");
+    more.type = "button";
+    more.className = "show-more";
+    more.textContent = "▼ Zobrazit další (" + rest + ")";
+    more.addEventListener("click", () => {
+      entryLimit += ENTRY_PAGE;
+      renderEntriesList();
+    });
+    entriesEl.appendChild(more);
+  }
 }
 
 async function loadEntries() {
@@ -227,7 +243,10 @@ async function loadEntries() {
     entriesEl.innerHTML = '<p class="hint">Nepodařilo se načíst uložené (běží server?).</p>';
   }
 }
-entrySearch.addEventListener("input", renderEntriesList);
+entrySearch.addEventListener("input", () => {
+  entryLimit = ENTRY_PAGE; // při hledání začni zase od 5
+  renderEntriesList();
+});
 loadEntries();
 loadPeople();
 loadRules();
@@ -303,16 +322,29 @@ saveNoteBtn.addEventListener("click", () => {
 
 attachBtn.addEventListener("click", () => fileInput.click());
 
+let uploadBusy = false; // aby se dvě nahrávání nepřekryla
 fileInput.addEventListener("change", async () => {
   const files = Array.from(fileInput.files || []);
   if (!files.length) return;
+  if (uploadBusy) return; // právě běží jiné nahrávání – počkej
+  uploadBusy = true;
   // text napsaný nahoře se přiloží k souboru jako popisek
   const caption = noteInput.value.trim();
+
+  // viditelný ukazatel „nahrává se" (točící se kolečko + text)
+  const startedAt = Date.now();
+  captureResult.hidden = true;
   uploading.hidden = false;
+  uploading.innerHTML = '<span class="spin" aria-hidden="true"></span><span class="up-txt"></span>';
+  const upTxt = uploading.querySelector(".up-txt");
   let done = 0;
   let anyReading = false;
+  let failed = false;
   for (const file of files) {
-    uploading.textContent = "Nahrávám " + (done + 1) + "/" + files.length + ": " + file.name + "…";
+    upTxt.textContent =
+      files.length > 1
+        ? "Nahrávám " + (done + 1) + "/" + files.length + ": " + file.name + "…"
+        : "Nahrávám „" + file.name + "…";
     try {
       const q = "/api/upload?name=" + encodeURIComponent(file.name) + (caption ? "&caption=" + encodeURIComponent(caption) : "");
       const res = await fetch(q, { method: "POST", body: file });
@@ -321,23 +353,45 @@ fileInput.addEventListener("change", async () => {
       if (j.reading) anyReading = true;
       done++;
     } catch (err) {
-      uploading.textContent = "Chyba u " + file.name + ": " + (err.message || err);
+      failed = true;
+      upTxt.textContent = "Chyba u " + file.name + ": " + (err.message || err);
       await new Promise((r) => setTimeout(r, 2500));
     }
   }
   fileInput.value = "";
   if (caption) noteInput.value = ""; // popisek se použil, pole uvolníme
+
+  // ať je „nahrává se" vidět aspoň chvíli i u malých souborů
+  const elapsed = Date.now() - startedAt;
+  if (elapsed < 700) await new Promise((r) => setTimeout(r, 700 - elapsed));
   uploading.hidden = true;
+
+  entryLimit = 5; // nový soubor je navrchu – ukaž prvních 5
   await loadEntries();
+  flashNewestEntry(); // krátce zvýrazni čerstvě přidaný záznam
+
   captureResult.hidden = false;
-  if (anyReading) {
+  captureResult.classList.toggle("ok", !failed);
+  const n = done > 1 ? done + " souborů" : "Soubor";
+  if (failed && !done) {
+    captureResult.textContent = "⚠ Nahrání se nepovedlo.";
+  } else if (anyReading) {
     captureResult.textContent = caption
-      ? "📷 Fotka uložena s popisem — čtu ji na pozadí (později obnov seznam)."
-      : "📷 Fotku čtu na pozadí… za chvíli bude text v paměti (později obnov seznam).";
+      ? "✓ " + n + " nahrán s popisem 📷 čtu fotku na pozadí…"
+      : "✓ " + n + " nahrán 📷 čtu fotku na pozadí…";
   } else {
-    captureResult.textContent = caption ? "✓ Soubor uložen s popisem." : "✓ Soubor uložen.";
+    captureResult.textContent = caption ? "✓ " + n + " nahrán s popisem." : "✓ " + n + " nahrán.";
   }
+  uploadBusy = false;
 });
+
+// krátké zvýraznění nejnovějšího záznamu (po nahrání souboru)
+function flashNewestEntry() {
+  const first = entriesEl.querySelector(".entry");
+  if (!first) return;
+  first.classList.add("flash");
+  setTimeout(() => first.classList.remove("flash"), 1600);
+}
 
 // smaž záznam (poznámka/soubor/člověk)
 async function deleteEntry(e, row, reload) {
