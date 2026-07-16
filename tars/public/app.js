@@ -153,18 +153,25 @@ function renderEntry(e) {
     cp.textContent = "📝 " + e.caption;
     body.appendChild(cp);
   }
-  // u přečtené fotky ukaž náhled textu
+  // náhled přečteného textu (fotka = čtení modelem, PDF/dokument = vytažený text)
   if (e.type === "file" && e.read && e.readSnippet) {
     const rd = document.createElement("div");
     rd.className = "meta read";
-    rd.textContent = "📷 " + e.readSnippet + "…";
+    rd.textContent = (e.isImage ? "📷 " : "📄 ") + e.readSnippet + "…";
     body.appendChild(rd);
   }
-  // fotku se nepodařilo přečíst
+  // fotku se nepodařilo přečíst (jen obrázky mají tuhle značku)
   if (e.type === "file" && e.readError) {
     const w = document.createElement("div");
     w.className = "meta read-err";
     w.textContent = "⚠ Fotku se nepodařilo přečíst — je stažený model na čtení? (config.json)";
+    body.appendChild(w);
+  }
+  // PDF, ze kterého nešel vytáhnout text (nejspíš naskenované – jen obrázky stránek)
+  if (e.type === "file" && !e.isImage && !e.read && /\.pdf$/i.test(e.name || "")) {
+    const w = document.createElement("div");
+    w.className = "meta read-err";
+    w.textContent = "📄 V PDF nebyl čitelný text (nejspíš naskenované stránky).";
     body.appendChild(w);
   }
 

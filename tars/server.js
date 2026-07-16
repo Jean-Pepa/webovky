@@ -20,6 +20,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const zlib = require("zlib");
 
 const PORT = process.env.PORT || 8787;
 const OLLAMA_URL = (process.env.OLLAMA_URL || "http://localhost:11434").replace(/\/$/, "");
@@ -334,6 +335,162 @@ function isImageFile(name) {
   return /\.(jpg|jpeg|png|webp|gif|heic)$/i.test(name || "");
 }
 
+function isPdfFile(name) {
+  return /\.pdf$/i.test(name || "");
+}
+
+// Vytáhni čitelný text z PDF čistě v Node (bez knihoven), přes vestavěný zlib.
+// Zvládne „digitální" PDF (exporty z Wordu/Excelu, výkazy, dokumenty). Naskenované
+// PDF (jen fotky stránek) text nemá – to by potřebovalo OCR přes vision model.
+function extractPdfText(buf) {
+  const raw = buf.toString("latin1");
+  const pieces = [];
+  const re = /stream\r?\n/g;
+  let m;
+  while ((m = re.exec(raw))) {
+    const start = m.index + m[0].length;
+    const end = raw.indexOf("endstream", start);
+    if (end < 0) continue;
+    const bytes = buf.subarray(start, end);
+    let content = null;
+    // zkus dekomprimovat (FlateDecode); když komprimovaný není, vezmi jak je
+    try {
+      content = zlib.inflateSync(bytes).toString("latin1");
+    } catch {
+      try {
+        content = zlib.inflateRawSync(bytes).toString("latin1");
+      } catch {
+        content = bytes.toString("latin1");
+      }
+    }
+    if (content && /(?:BT|Tj|TJ)\b/.test(content)) {
+      pieces.push(textFromContentStream(content));
+    }
+  }
+  return cleanPdfText(pieces.join("\n"));
+}
+
+// z jednoho content-streamu vytáhni text z operátorů (…)Tj a […]TJ
+function textFromContentStream(content) {
+  let out = "";
+  let i = 0;
+  const n = content.length;
+  const readLiteral = () => {
+    let depth = 1;
+    i++; // přeskoč '('
+    let s = "";
+    while (i < n && depth > 0) {
+      const c = content[i];
+      if (c === "\\") {
+        const nx = content[i + 1];
+        if (nx >= "0" && nx <= "7") {
+          let oct = "";
+          i++;
+          while (i < n && oct.length < 3 && content[i] >= "0" && content[i] <= "7") {
+            oct += content[i];
+            i++;
+          }
+          s += String.fromCharCode(parseInt(oct, 8) & 0xff);
+          continue;
+        }
+        const map = { n: "\n", r: "\r", t: "\t", b: "\b", f: "\f", "(": "(", ")": ")", "\\": "\\" };
+        s += nx in map ? map[nx] : nx || "";
+        i += 2;
+        continue;
+      }
+      if (c === "(") {
+        depth++;
+        s += c;
+        i++;
+        continue;
+      }
+      if (c === ")") {
+        depth--;
+        if (depth === 0) {
+          i++;
+          break;
+        }
+        s += c;
+        i++;
+        continue;
+      }
+      s += c;
+      i++;
+    }
+    return s;
+  };
+  const readHex = () => {
+    i++; // přeskoč '<'
+    let h = "";
+    while (i < n && content[i] !== ">") {
+      h += content[i];
+      i++;
+    }
+    i++;
+    h = h.replace(/[^0-9a-fA-F]/g, "");
+    if (h.length % 2) h += "0";
+    let s = "";
+    for (let k = 0; k < h.length; k += 2) s += String.fromCharCode(parseInt(h.substr(k, 2), 16));
+    return s;
+  };
+  let inArray = 0; // jsme uvnitř […] TJ pole?
+  while (i < n) {
+    const c = content[i];
+    if (c === "(") {
+      out += readLiteral();
+      continue;
+    }
+    if (c === "<" && content[i + 1] !== "<") {
+      out += readHex();
+      continue;
+    }
+    if (c === "[") {
+      inArray++;
+      i++;
+      continue;
+    }
+    if (c === "]") {
+      if (inArray > 0) inArray--;
+      i++;
+      continue;
+    }
+    // v poli TJ znamená velká záporná mezera (kerning) mezeru mezi slovy
+    if (inArray && (c === "-" || c === "." || (c >= "0" && c <= "9"))) {
+      let num = "";
+      while (i < n && (content[i] === "-" || content[i] === "." || (content[i] >= "0" && content[i] <= "9"))) {
+        num += content[i];
+        i++;
+      }
+      const v = parseFloat(num);
+      if (!isNaN(v) && v <= -100) out += " ";
+      continue;
+    }
+    // operátory, které rozumně odřádkují (nový řádek / odstavec)
+    if (c === "T" && (content.substr(i, 2) === "Td" || content.substr(i, 2) === "TD" || content.substr(i, 2) === "T*")) {
+      out += "\n";
+      i += 2;
+      continue;
+    }
+    if (c === "'" || c === '"') {
+      out += "\n";
+      i++;
+      continue;
+    }
+    i++;
+  }
+  return out;
+}
+
+// ukliď vytažený text: pryč řídicí byty, sluč mezery a prázdné řádky
+function cleanPdfText(s) {
+  return String(s || "")
+    .replace(new RegExp("[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]", "g"), " ")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 // přečti text z obrázku „vidoucím" modelem v Ollamě (llava apod.)
 async function readImage(filePath) {
   const b64 = fs.readFileSync(filePath).toString("base64");
@@ -363,6 +520,21 @@ function fileCombinedText(id, name) {
   if (isTextFile(name)) {
     const f = insideDir(UPLOADS_DIR, id);
     if (f && fs.existsSync(f)) parts.push(fs.readFileSync(f, "utf-8"));
+  } else if (isPdfFile(name)) {
+    // text z PDF vytáhneme jednou a uložíme do OCR_DIR (cache), pak jen čteme
+    const ocr = path.join(OCR_DIR, id + ".txt");
+    if (!fs.existsSync(ocr)) {
+      const f = insideDir(UPLOADS_DIR, id);
+      if (f && fs.existsSync(f)) {
+        try {
+          const txt = extractPdfText(fs.readFileSync(f));
+          if (txt) fs.writeFileSync(ocr, txt, "utf-8");
+        } catch {
+          /* nevadí – PDF prostě neumíme přečíst (naskenované) */
+        }
+      }
+    }
+    if (fs.existsSync(ocr)) parts.push(fs.readFileSync(ocr, "utf-8"));
   } else {
     const ocr = path.join(OCR_DIR, id + ".txt");
     if (fs.existsSync(ocr)) parts.push(fs.readFileSync(ocr, "utf-8"));
