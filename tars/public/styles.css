@@ -476,6 +476,47 @@ body {
   margin: 0;
 }
 
+/* automatický souhrn (agenda) v Přehledu */
+.agenda {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agenda-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.agenda-item {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 14.5px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+
+.ag-when {
+  flex: 0 0 auto;
+  min-width: 88px;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ag-ttl {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 /* pravidla (custom instrukce) */
 .rules-box {
   display: flex;

@@ -31,6 +31,8 @@ const stFiles = document.getElementById("stFiles");
 const stPeople = document.getElementById("stPeople");
 const briefBtn = document.getElementById("briefBtn");
 const briefingEl = document.getElementById("briefing");
+const agendaEvents = document.getElementById("agendaEvents");
+const agendaNotes = document.getElementById("agendaNotes");
 const reindexBtn = document.getElementById("reindexBtn");
 const reindexHint = document.getElementById("reindexHint");
 const rulesInput = document.getElementById("rulesInput");
@@ -64,6 +66,7 @@ document.querySelectorAll(".tab").forEach((tab) => {
     if (which === "overview") {
       loadStats();
       loadRules();
+      loadAgenda();
     }
   });
 });
@@ -680,6 +683,71 @@ async function loadStats() {
     stPeople.textContent = people.length;
   } catch {
     stNotes.textContent = stFiles.textContent = stPeople.textContent = "–";
+  }
+}
+
+// popisek data relativně (Dnes / Zítra / po 21. 7.)
+function relDateLabel(dateStr) {
+  const d = new Date(dateStr + "T00:00:00");
+  const t = new Date();
+  t.setHours(0, 0, 0, 0);
+  const diff = Math.round((d - t) / 86400000);
+  if (diff === 0) return "Dnes";
+  if (diff === 1) return "Zítra";
+  return d.toLocaleDateString("cs-CZ", { weekday: "short", day: "numeric", month: "numeric" });
+}
+
+// automatický souhrn v Přehledu: co tě čeká (události) + poslední poznámky
+async function loadAgenda() {
+  try {
+    const { events } = await (await fetch("/api/events")).json();
+    const today = ymd(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+    const up = (events || []).filter((e) => e.date >= today).slice(0, 12);
+    agendaEvents.innerHTML = "";
+    if (!up.length) {
+      agendaEvents.innerHTML = '<p class="hint small">Žádné nadcházející události.</p>';
+    } else {
+      for (const e of up) {
+        const row = document.createElement("div");
+        row.className = "agenda-item";
+        const when = document.createElement("span");
+        when.className = "ag-when";
+        when.textContent = relDateLabel(e.date) + (e.time ? " " + e.time : "");
+        const ttl = document.createElement("span");
+        ttl.className = "ag-ttl";
+        ttl.textContent = e.title;
+        row.appendChild(when);
+        row.appendChild(ttl);
+        agendaEvents.appendChild(row);
+      }
+    }
+  } catch {
+    agendaEvents.innerHTML = '<p class="hint small">Nepodařilo se načíst.</p>';
+  }
+
+  try {
+    const { entries } = await (await fetch("/api/entries")).json();
+    const notes = (entries || []).filter((e) => e.type === "note").slice(0, 6);
+    agendaNotes.innerHTML = "";
+    if (!notes.length) {
+      agendaNotes.innerHTML = '<p class="hint small">Zatím žádné poznámky.</p>';
+      return;
+    }
+    for (const n of notes) {
+      const row = document.createElement("div");
+      row.className = "agenda-item";
+      const when = document.createElement("span");
+      when.className = "ag-when";
+      when.textContent = fmtDate(n.date);
+      const ttl = document.createElement("span");
+      ttl.className = "ag-ttl";
+      ttl.textContent = n.preview || "(prázdná)";
+      row.appendChild(when);
+      row.appendChild(ttl);
+      agendaNotes.appendChild(row);
+    }
+  } catch {
+    agendaNotes.innerHTML = "";
   }
 }
 

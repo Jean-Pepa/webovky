@@ -88,7 +88,16 @@
           <div class="stat"><span class="num" id="stFiles">–</span><span class="lbl">souborů</span></div>
           <div class="stat"><span class="num" id="stPeople">–</span><span class="lbl">lidí</span></div>
         </div>
-        <button type="button" class="btn primary big" id="briefBtn">☀ Vytvoř denní přehled</button>
+        <div class="agenda">
+          <div class="agenda-title">📅 Co tě čeká</div>
+          <div id="agendaEvents"><p class="hint small">Načítám…</p></div>
+        </div>
+        <div class="agenda">
+          <div class="agenda-title">✍️ Poslední poznámky</div>
+          <div id="agendaNotes"></div>
+        </div>
+
+        <button type="button" class="btn primary big" id="briefBtn">☀ Vytvoř souhrn ze slov (AI)</button>
         <div class="briefing" id="briefing"></div>
 
         <div class="rules-box">
