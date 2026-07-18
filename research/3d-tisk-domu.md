@@ -134,6 +134,8 @@ Stropy, střechy, základy (většinou), schodiště, instalace, okna/dveře, po
 
 ## 5. Trh 2024–2026: růst + konsolidace zároveň
 
+> Podrobný rozbor světového trhu po regionech (USA, Evropa, záliv, Asie, Afrika, Ukrajina) je v samostatné zprávě: [3d-tisk-svetovy-trh.md](./3d-tisk-svetovy-trh.md).
+
 - **Velikost trhu**: odhady se řádově rozcházejí (agentury uvádějí 1–2,5 mld. $ v 2025 a CAGR 60–98 %; [Grand View](https://www.grandviewresearch.com/industry-analysis/3d-printing-constructions-market): 1,58 mld. $ 2024 → 54,6 mld. $ 2030; extrémní projekce Precedence ~1,8 bil. $ 2035 ber s velkou rezervou). Realita: celosvětově jde zatím o **tisíce vytištěných staveb** — trh je malý, ale zdvojnásobuje se.
 - **Regionálně**: Severní Amerika ~46 % (2024), rychlý růst Asie (Čína), Blízký východ tlačí regulací — **Dubaj: dekret 24/2021 a cíl 25 % nových budov tiskem do 2030** ([u.ae](https://u.ae/en/about-the-uae/strategies-initiatives-and-awards/strategies-plans-and-visions/industry-science-and-technology/dubai-3d-printing-strategy)).
 - **Konsolidace (důležitý signál)**: ICON −25 % zaměstnanců (03/2025) navzdory čerstvým 56 M$; **Mighty Buildings na prodej** (01–02/2025, prodej řídí Rock Creek Advisors) ([3DPI](https://3dprintingindustry.com/news/mighty-buildings-up-for-sale-following-headcount-reduction-235813/)). Poučení: **prodávat „levné domy" je těžké; vydělává prodej strojů (COBOD), služby, infrastruktura a nika s rychlým cash-flow (Alquist, ICE bunkry).**
