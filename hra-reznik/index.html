@@ -1,0 +1,1856 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>POSLEDNÍ EXEKUCE</title>
+<meta name="description" content="Arkádová hororová řežba. Přežij márnici, jatka i krematorium a zruš svou vlastní exekuci.">
+<meta name="theme-color" content="#0a0708">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0708'/%3E%3Cpath d='M16 5l9 9-9 13-9-13z' fill='%23b5121b'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --krev:#b5121b;
+    --krev-tmava:#5e0a0f;
+    --kost:#d8d2c6;
+    --cerna:#0a0708;
+    --seda:#6f6a66;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:var(--cerna)}
+  body{
+    display:flex;align-items:center;justify-content:center;
+    font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Courier New",monospace;
+    color:var(--kost);
+    -webkit-user-select:none;user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:none;
+  }
+  #obal{position:relative;line-height:0}
+  canvas{display:block;background:#000;cursor:crosshair}
+  /* jemná televizní špína přes celou plochu */
+  #obal::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(0,0,0,.55) 100%),
+      repeating-linear-gradient(to bottom, rgba(0,0,0,.22) 0 1px, rgba(0,0,0,0) 1px 3px);
+    mix-blend-mode:multiply;
+  }
+  #otoc{
+    position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:var(--cerna);color:var(--kost);text-align:center;padding:24px;
+    font-size:14px;letter-spacing:.18em;text-transform:uppercase;z-index:50;line-height:1.8;
+  }
+  @media (max-width:820px) and (orientation:portrait){
+    #otoc{display:flex}
+  }
+</style>
+</head>
+<body>
+<div id="obal"><canvas id="platno"></canvas></div>
+<div id="otoc">Otoč telefon na šířku.<br><span style="color:#b5121b">Na výšku se neumírá.</span></div>
+
+<script>
+(() => {
+"use strict";
+
+/* ============================================================
+   POSLEDNÍ EXEKUCE
+   Arkádová hororová řežba v jednom souboru. Bez závislostí.
+   ============================================================ */
+
+const Š = 960;               // logická šířka
+const V = 540;               // logická výška
+const OKRAJ = 26;            // hrací okraj arény
+
+const platno = document.getElementById("platno");
+const ctx = platno.getContext("2d", { alpha:false });
+
+// samostatné plátno na krev na podlaze — kreslí se jen jednou, drží se
+const podlaha = document.createElement("canvas");
+podlaha.width = Š; podlaha.height = V;
+const pctx = podlaha.getContext("2d");
+
+let měřítko = 1;
+
+function přeměř(){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const cw = window.innerWidth, ch = window.innerHeight;
+  měřítko = Math.min(cw / Š, ch / V);
+  platno.style.width  = Math.floor(Š * měřítko) + "px";
+  platno.style.height = Math.floor(V * měřítko) + "px";
+  platno.width  = Math.floor(Š * měřítko * dpr);
+  platno.height = Math.floor(V * měřítko * dpr);
+  ctx.setTransform(měřítko*dpr, 0, 0, měřítko*dpr, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+}
+window.addEventListener("resize", přeměř);
+window.addEventListener("orientationchange", () => setTimeout(přeměř, 150));
+
+/* ---------------------- drobnosti ---------------------- */
+
+const nah  = (a=1,b=0) => b + Math.random()*(a-b);
+const nahC = (a,b) => Math.floor(nah(b+1,a));
+const zpole = a => a[Math.floor(Math.random()*a.length)];
+const ome  = (x,a,b) => x < a ? a : x > b ? b : x;
+const dél  = (x,y) => Math.hypot(x,y);
+const úhelK = (a,b) => Math.atan2(Math.sin(b-a), Math.cos(b-a));
+const lerp = (a,b,t) => a + (b-a)*t;
+
+/* ---------------------- zvuk ---------------------- */
+/* Všechno syntetické — hra nepotřebuje jediný externí soubor. */
+
+const Zvuk = (() => {
+  let ac = null, master = null, drone = null, ztlumeno = false;
+
+  function nastartuj(){
+    if (ac) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    ac = new AC();
+    master = ac.createGain();
+    master.gain.value = 0.5;
+    master.connect(ac.destination);
+    postavDrone();
+  }
+
+  // šum se generuje jednou a půjčuje se z něj výřez — pila by jinak
+  // alokovala nový buffer dvacetkrát za vteřinu
+  let šumZásoba = null;
+  function šumZdroj(délka){
+    if (!šumZásoba){
+      šumZásoba = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+      const d = šumZásoba.getChannelData(0);
+      for (let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+    }
+    const src = ac.createBufferSource();
+    src.buffer = šumZásoba;
+    return { src, posun: Math.random() * (2 - Math.min(délka, 1.9)) };
+  }
+
+  function postavDrone(){
+    // temný podklad: dvě rozladěné pily přes dolní propust + pomalé chvění
+    const g = ac.createGain(); g.gain.value = 0;
+    const f = ac.createBiquadFilter();
+    f.type = "lowpass"; f.frequency.value = 190; f.Q.value = 6;
+    const o1 = ac.createOscillator(); o1.type = "sawtooth"; o1.frequency.value = 41.2;
+    const o2 = ac.createOscillator(); o2.type = "sawtooth"; o2.frequency.value = 41.9;
+    const lfo = ac.createOscillator(); lfo.type = "sine"; lfo.frequency.value = 0.07;
+    const lfoG = ac.createGain(); lfoG.gain.value = 55;
+    lfo.connect(lfoG); lfoG.connect(f.frequency);
+    o1.connect(f); o2.connect(f); f.connect(g); g.connect(master);
+    o1.start(); o2.start(); lfo.start();
+    drone = g;
+  }
+
+  function tón({typ="square", od=440, na=null, délka=0.12, hlas=0.2, zpoždění=0, filtr=null}){
+    if (!ac || ztlumeno) return;
+    const t = ac.currentTime + zpoždění;
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = typ;
+    o.frequency.setValueAtTime(od, t);
+    if (na != null) o.frequency.exponentialRampToValueAtTime(Math.max(1,na), t + délka);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(hlas, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + délka);
+    let cíl = g;
+    if (filtr){
+      const f = ac.createBiquadFilter();
+      f.type = filtr.typ || "lowpass"; f.frequency.value = filtr.f || 1200; f.Q.value = filtr.q || 1;
+      g.connect(f); cíl = f;
+    }
+    o.connect(g); cíl.connect(master);
+    o.start(t); o.stop(t + délka + 0.05);
+  }
+
+  function šum({délka=0.12, hlas=0.25, f=1400, typ="lowpass", q=1, spád=true}){
+    if (!ac || ztlumeno) return;
+    const t = ac.currentTime;
+    const { src, posun } = šumZdroj(délka);
+    const fl = ac.createBiquadFilter(); fl.type = typ; fl.frequency.value = f; fl.Q.value = q;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(hlas, t);
+    if (spád) g.gain.exponentialRampToValueAtTime(0.0001, t + délka);
+    src.connect(fl); fl.connect(g); g.connect(master);
+    src.start(t, posun, délka); src.stop(t + délka + 0.02);
+  }
+
+  return {
+    nastartuj,
+    probuď(){ if (ac && ac.state === "suspended") ac.resume(); },
+    ztlum(x){ ztlumeno = x; if (master) master.gain.value = x ? 0 : 0.5; },
+    jeZtlumeno: () => ztlumeno,
+    atmo(x){ if (drone && ac) drone.gain.setTargetAtTime(ztlumeno ? 0 : x, ac.currentTime, 0.6); },
+
+    výstřel(){ šum({délka:0.07, hlas:0.16, f:2600, typ:"highpass"}); tón({typ:"square", od:210, na:60, délka:0.07, hlas:0.10}); },
+    brok(){ šum({délka:0.16, hlas:0.3, f:1400}); tón({typ:"sawtooth", od:150, na:40, délka:0.16, hlas:0.16}); },
+    hod(){ šum({délka:0.1, hlas:0.14, f:900, typ:"bandpass", q:4}); },
+    pila(){ šum({délka:0.06, hlas:0.09, f:700, typ:"bandpass", q:2, spád:false}); },
+    zásah(){ šum({délka:0.09, hlas:0.24, f:520}); },
+    smrt(){ šum({délka:0.3, hlas:0.24, f:800}); tón({typ:"sawtooth", od:180, na:35, délka:0.3, hlas:0.14}); },
+    bolest(){ tón({typ:"sawtooth", od:300, na:70, délka:0.28, hlas:0.24}); šum({délka:0.2, hlas:0.2, f:700}); },
+    sebrat(){ tón({typ:"square", od:640, na:960, délka:0.1, hlas:0.14}); },
+    lék(){ tón({typ:"sine", od:420, na:760, délka:0.22, hlas:0.18}); },
+    úhyb(){ šum({délka:0.13, hlas:0.12, f:2200, typ:"highpass"}); },
+    vlna(){ tón({typ:"sawtooth", od:70, na:36, délka:0.9, hlas:0.2}); },
+    boss(){ tón({typ:"sawtooth", od:52, na:26, délka:2.0, hlas:0.3}); šum({délka:1.4, hlas:0.16, f:260}); },
+    konec(){ tón({typ:"sawtooth", od:160, na:22, délka:1.6, hlas:0.3}); },
+    vítěz(){ [0,0.14,0.3].forEach((z,i)=>tón({typ:"square", od:[220,330,440][i], na:[330,440,660][i], délka:0.5, hlas:0.16, zpoždění:z})); },
+    klik(){ tón({typ:"square", od:520, na:300, délka:0.05, hlas:0.1}); },
+  };
+})();
+
+/* ---------------------- vstup ---------------------- */
+
+const klávesy = new Set();
+const myš = { x: Š/2, y: V/2, dolů:false };
+let dotykové = false;
+
+const KLÁVESY_HRY = new Set([
+  "KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight",
+  "Space","ShiftLeft","ShiftRight","Digit1","Digit2","Digit3","Digit4"
+]);
+
+addEventListener("keydown", e => {
+  if (KLÁVESY_HRY.has(e.code)) e.preventDefault();
+  if (e.repeat) return;
+  klávesy.add(e.code);
+  Zvuk.nastartuj(); Zvuk.probuď();
+  stiskKlávesy(e.code);
+});
+addEventListener("keyup", e => klávesy.delete(e.code));
+addEventListener("blur", () => klávesy.clear());
+
+function naPlátno(e){
+  const r = platno.getBoundingClientRect();
+  return {
+    x: ome((e.clientX - r.left) / r.width  * Š, 0, Š),
+    y: ome((e.clientY - r.top)  / r.height * V, 0, V),
+  };
+}
+
+platno.addEventListener("mousemove", e => { const p = naPlátno(e); myš.x = p.x; myš.y = p.y; });
+platno.addEventListener("mousedown", e => {
+  if (e.button !== 0) return;
+  const p = naPlátno(e); myš.x = p.x; myš.y = p.y; myš.dolů = true;
+  Zvuk.nastartuj(); Zvuk.probuď();
+  klepnutí(p.x, p.y);
+});
+addEventListener("mouseup", () => myš.dolů = false);
+platno.addEventListener("contextmenu", e => e.preventDefault());
+
+/* dotyk: vlevo chůze, vpravo míření + automatická palba */
+const páky = {
+  chůze: { id:null, sx:0, sy:0, x:0, y:0 },
+  míra:  { id:null, sx:0, sy:0, x:0, y:0 },
+};
+const PÁKA_R = 58;
+
+function pákaOsy(p){
+  const dx = p.x - p.sx, dy = p.y - p.sy;
+  const d = dél(dx, dy);
+  if (d < 8) return { x:0, y:0, síla:0 };
+  const k = Math.min(d, PÁKA_R) / PÁKA_R;
+  return { x: dx/d, y: dy/d, síla: k };
+}
+
+platno.addEventListener("touchstart", e => {
+  e.preventDefault();
+  dotykové = true;
+  Zvuk.nastartuj(); Zvuk.probuď();
+  for (const t of e.changedTouches){
+    const p = naPlátno(t);
+    if (stav !== "hra"){ klepnutí(p.x, p.y); continue; }
+    const cíl = p.x < Š/2 ? páky.chůze : páky.míra;
+    if (cíl.id === null){ cíl.id = t.identifier; cíl.sx = p.x; cíl.sy = p.y; cíl.x = p.x; cíl.y = p.y; }
+  }
+}, { passive:false });
+
+platno.addEventListener("touchmove", e => {
+  e.preventDefault();
+  for (const t of e.changedTouches){
+    const p = naPlátno(t);
+    for (const k of ["chůze","míra"]) if (páky[k].id === t.identifier){ páky[k].x = p.x; páky[k].y = p.y; }
+  }
+}, { passive:false });
+
+function konecDotyku(e){
+  for (const t of e.changedTouches)
+    for (const k of ["chůze","míra"]) if (páky[k].id === t.identifier) páky[k].id = null;
+}
+platno.addEventListener("touchend", konecDotyku, { passive:false });
+platno.addEventListener("touchcancel", konecDotyku, { passive:false });
+
+/* ---------------------- hlášky ---------------------- */
+
+const HLÁŠKY_ZABITÍ = [
+  "Ticho po pitvě.",
+  "Zbytek posbírá uklízečka.",
+  "Tomu už transfuze nepomůže.",
+  "Odepsáno bez náhrady.",
+  "Jeden do statistiky.",
+  "Uzavřený případ.",
+  "Papíry vyplní někdo jiný.",
+  "Konec směny.",
+  "Zapiš to na chodbu.",
+  "Do pytle a odvézt.",
+];
+
+const HLÁŠKY_VLNA = [
+  "Slyšíš to? To nejsou trubky.",
+  "Někdo odemkl další křídlo.",
+  "Chodba dýchá.",
+  "Přihlásili se dobrovolníci.",
+  "Na řadě je další várka.",
+  "Světlo blikne třikrát. To je signál.",
+];
+
+const HLÁŠKY_KONEC = [
+  "Termín exekuce potvrzen.",
+  "Formulář vyplněn. Podepsáno krví.",
+  "Nikdo si nevšiml, že tam nejsi.",
+  "Přesně podle rozvrhu.",
+  "Ráno tě najdou. Možná.",
+];
+
+/* ---------------------- zbraně ---------------------- */
+
+const ZBRANĚ = {
+  bourak: {
+    název:"BOURÁK", zkr:"9mm", náboje:Infinity,
+    kadence:0.15, poškození:15, rychlost:660, rozptyl:0.035, kusů:1, dosah:1, barva:"#ffd9a0",
+    zvuk:() => Zvuk.výstřel(), odraz:5,
+  },
+  brokovnice: {
+    název:"BROKOVNICE", zkr:"12/70", náboje:26,
+    kadence:0.62, poškození:11, rychlost:560, rozptyl:0.30, kusů:8, dosah:0.55, barva:"#ffc46b",
+    zvuk:() => Zvuk.brok(), odraz:16,
+  },
+  sekacek: {
+    název:"SEKÁČEK", zkr:"ocel", náboje:34,
+    kadence:0.30, poškození:42, rychlost:520, rozptyl:0.05, kusů:1, dosah:1.2, barva:"#cfd6dd",
+    zvuk:() => Zvuk.hod(), odraz:6, prostup:3, rotuje:true,
+  },
+  pila: {
+    název:"MOTOROVKA", zkr:"benzín", náboje:170,   // náboje = desetiny sekundy běhu
+    kadence:0.05, poškození:11, blízko:true, barva:"#e8e2d6",
+    zvuk:() => Zvuk.pila(), odraz:2,
+  },
+};
+
+/* ---------------------- nepřátelé ---------------------- */
+
+const TYPY = {
+  hnat:   { hp:32,  rychlost:64,  r:13, poškození:9,  body:10, druh:"mělee",  barva:"#63605c" },
+  reznik: { hp:105, rychlost:52,  r:19, poškození:22, body:35, druh:"nájezd", barva:"#8d8880" },
+  sestra: { hp:48,  rychlost:104, r:12, poškození:11, body:28, druh:"střelec",barva:"#c2bcae" },
+  tlusty: { hp:230, rychlost:31,  r:27, poškození:26, body:70, druh:"dělí",   barva:"#7d6b68" },
+};
+
+const ÚROVNĚ = [
+  {
+    název:"MÁRNICE", podtitul:"00:14 — nikdo tě tu nehledá",
+    vlny:[ {hnat:9}, {hnat:11, sestra:2}, {hnat:12, reznik:2} ],
+  },
+  {
+    název:"JATKA", podtitul:"01:38 — háky jsou obsazené",
+    vlny:[ {hnat:10, reznik:3}, {reznik:5, sestra:4}, {hnat:16, tlusty:2}, {reznik:6, sestra:5} ],
+  },
+  {
+    název:"KREMATORIUM", podtitul:"03:05 — pec je předehřátá",
+    vlny:[ {hnat:14, sestra:5}, {reznik:7, tlusty:2}, {sestra:9, hnat:14}, {reznik:8, tlusty:3}, {hnat:20, reznik:6, sestra:6} ],
+  },
+  {
+    název:"POSLEDNÍ EXEKUCE", podtitul:"04:00 — tvůj termín",
+    boss:true, vlny:[],
+  },
+];
+
+/* ---------------------- vylepšení ---------------------- */
+
+const VYLEPŠENÍ = [
+  { id:"sekac",   název:"BROUŠENÁ ČEPEL",   popis:"+25 % poškození",            použij:h => h.mPoškození *= 1.25 },
+  { id:"tepláky", název:"TEPLÁKY S PRUHY",  popis:"+15 % rychlost pohybu",      použij:h => h.mRychlost  *= 1.15 },
+  { id:"krev",    název:"TRANSFUZE",        popis:"+30 max. života a doplnit",  použij:h => { h.maxHp += 30; h.hp = h.maxHp; } },
+  { id:"prst",    název:"NERVÓZNÍ PRST",    popis:"+22 % kadence",              použij:h => h.mKadence *= 0.78 },
+  { id:"kosti",   název:"BRNĚNÍ Z KOSTÍ",   popis:"−20 % přijaté poškození",    použij:h => h.mObrana *= 0.8 },
+  { id:"upir",    název:"UPÍŘÍ ZVYK",       popis:"za každé zabití +2 života",  použij:h => h.upír += 2 },
+  { id:"salvy",   název:"DVOJHLAVEŇ",       popis:"+1 projektil navíc",         použij:h => h.kusůNavíc += 1 },
+  { id:"uhyb",    název:"MRŠTNOST",         popis:"úhyb nabíjí o 40 % rychleji",použij:h => h.mÚhyb *= 0.6 },
+  { id:"zurivost",název:"KRVAVÁ ZUŘIVOST",  popis:"kombo přidává až +50 % dmg", použij:h => h.zuřivost = true },
+  { id:"magnet",  název:"HRABIVOST",        popis:"kořist létá sama k tobě",    použij:h => h.magnet = true },
+];
+
+/* ---------------------- stav ---------------------- */
+
+let stav = "menu";       // menu | brífink | hra | vylepšení | pauza | konec | výhra
+let čas = 0;             // herní čas v sekundách
+let předchozí = 0;
+let třes = 0;
+let bliknutí = 0;        // červené bliknutí při zásahu
+let zpomalení = 0;       // krátké zpomalení při zabití bosse
+
+let hrdina, nepřátelé, střely, střelyN, částice, kořist, texty, mrtvoly;
+let úroveň, vlna, čekáníVlny, skóre, kombo, komboČas, rekord, dokončeno, nověRekord;
+let boss = null;
+let hláška = "";
+let hláškaČas = 0;
+let nabídkaVylepšení = [];
+let statistiky = { zabito:0, výstřelů:0, zásahů:0, začátek:0 };
+
+try { rekord = parseInt(localStorage.getItem("posledni-exekuce-rekord") || "0", 10) || 0; }
+catch { rekord = 0; }
+
+/* ---------------------- postava ---------------------- */
+
+function novýHrdina(){
+  return {
+    x: Š/2, y: V/2, vx:0, vy:0, r:14,
+    hp:100, maxHp:100,
+    směr:0,
+    rychlost:212,
+    zbraň:"bourak",
+    zásoby:{ bourak:Infinity },
+    nabito:0,
+    nezranitelný:0,
+    úhybDo:0, úhybCd:0, úhybSměrX:0, úhybSměrY:0,
+    // násobiče z vylepšení
+    mPoškození:1, mRychlost:1, mKadence:1, mObrana:1, mÚhyb:1,
+    upír:0, kusůNavíc:0, zuřivost:false, magnet:false,
+    vylepšení:[],
+    živý:true,
+  };
+}
+
+/* ---------------------- start ---------------------- */
+
+function novaHra(){
+  hrdina = novýHrdina();
+  nepřátelé = []; střely = []; střelyN = []; částice = []; kořist = []; texty = []; mrtvoly = [];
+  fronta.length = 0;
+  úroveň = 0; vlna = -1; čekáníVlny = 2.4;
+  skóre = 0; kombo = 0; komboČas = 0; dokončeno = false; nověRekord = false;
+  boss = null; třes = 0; bliknutí = 0; zpomalení = 0;
+  statistiky = { zabito:0, výstřelů:0, zásahů:0, začátek:čas };
+  pctx.clearRect(0,0,Š,V);
+  stav = "brífink";
+  brífinkČas = 3.0;
+  Zvuk.atmo(0.16);
+}
+
+let brífinkČas = 0;
+
+/* ---------------------- ovládání nabídek ---------------------- */
+
+function stiskKlávesy(kód){
+  if (kód === "KeyM"){ Zvuk.ztlum(!Zvuk.jeZtlumeno()); return; }
+
+  if (stav === "menu" || stav === "konec" || stav === "výhra"){
+    if (kód === "Space" || kód === "Enter" || kód === "NumpadEnter"){ Zvuk.klik(); novaHra(); }
+    return;
+  }
+  if (stav === "brífink"){
+    if (kód === "Space" || kód === "Enter") brífinkČas = 0;
+    return;
+  }
+  if (stav === "vylepšení"){
+    const i = ["Digit1","Digit2","Digit3"].indexOf(kód);
+    if (i >= 0 && nabídkaVylepšení[i]) vyberVylepšení(i);
+    return;
+  }
+  if (stav === "hra"){
+    if (kód === "Escape" || kód === "KeyP"){ stav = "pauza"; Zvuk.atmo(0.05); return; }
+    if (kód === "Space" || kód === "ShiftLeft" || kód === "ShiftRight") úhyb();
+    return;
+  }
+  if (stav === "pauza"){
+    if (kód === "Escape" || kód === "KeyP"){ stav = "hra"; Zvuk.atmo(0.16); }
+    return;
+  }
+}
+
+function klepnutí(x, y){
+  if (stav === "menu" || stav === "konec" || stav === "výhra"){ Zvuk.klik(); novaHra(); return; }
+  if (stav === "brífink"){ brífinkČas = 0; return; }
+  if (stav === "pauza"){ stav = "hra"; Zvuk.atmo(0.16); return; }
+  if (stav === "vylepšení"){
+    for (let i=0;i<nabídkaVylepšení.length;i++){
+      const k = kartaObdélník(i);
+      if (x >= k.x && x <= k.x+k.š && y >= k.y && y <= k.y+k.v){ vyberVylepšení(i); return; }
+    }
+  }
+}
+
+function kartaObdélník(i){
+  const š = 250, v = 152, mezera = 26;
+  const celkem = 3*š + 2*mezera;
+  return { x: (Š - celkem)/2 + i*(š+mezera), y: V/2 - v/2 + 24, š, v };
+}
+
+function vyberVylepšení(i){
+  const u = nabídkaVylepšení[i];
+  if (!u) return;
+  u.použij(hrdina);
+  hrdina.vylepšení.push(u.id);
+  Zvuk.sebrat();
+  nabídkaVylepšení = [];
+  dalšíÚroveň();
+}
+
+/* ---------------------- postup hrou ---------------------- */
+
+function dalšíÚroveň(){
+  úroveň++;
+  if (úroveň >= ÚROVNĚ.length){ vyhrál(); return; }
+  vlna = -1;
+  čekáníVlny = 2.2;
+  nepřátelé.length = 0; střelyN.length = 0; fronta.length = 0;
+  boss = null;
+  stav = "brífink";
+  brífinkČas = 3.0;
+  Zvuk.atmo(0.16);
+}
+
+function spusťVlnu(){
+  const def = ÚROVNĚ[úroveň];
+  if (def.boss){ spusťBosse(); return; }
+  vlna++;
+  if (vlna >= def.vlny.length){
+    // úroveň hotova → výběr vylepšení
+    nabídniVylepšení();
+    return;
+  }
+  const složení = def.vlny[vlna];
+  const síla = 1 + 0.22*úroveň;
+  for (const [typ, počet] of Object.entries(složení))
+    for (let i=0;i<počet;i++) naplánujNepřítele(typ, síla, nah(1.9, 0));
+  ukažHlášku(zpole(HLÁŠKY_VLNA));
+  Zvuk.vlna();
+}
+
+const fronta = [];
+
+function naplánujNepřítele(typ, síla, zpoždění){
+  const kraj = nahC(0,3);
+  let x, y;
+  if (kraj === 0){ x = nah(Š-OKRAJ, OKRAJ); y = OKRAJ + 6; }
+  else if (kraj === 1){ x = Š - OKRAJ - 6; y = nah(V-OKRAJ, OKRAJ); }
+  else if (kraj === 2){ x = nah(Š-OKRAJ, OKRAJ); y = V - OKRAJ - 6; }
+  else { x = OKRAJ + 6; y = nah(V-OKRAJ, OKRAJ); }
+  fronta.push({ typ, síla, x, y, čas: zpoždění, značka: zpoždění });
+}
+
+function zrodNepřítele(typ, síla, x, y){
+  const t = TYPY[typ];
+  nepřátelé.push({
+    typ, x, y, vx:0, vy:0, r:t.r,
+    hp: t.hp*síla, maxHp: t.hp*síla,
+    rychlost: t.rychlost * nah(1.1, 0.9),
+    poškození: t.poškození * (1 + 0.1*úroveň),
+    body: t.body,
+    druh: t.druh,
+    barva: t.barva,
+    fáze: nah(6.3),
+    úder:0,
+    nájezd:0, nájezdCd: nah(3.4, 1.6),
+    zásah:0,
+    síla,
+  });
+}
+
+function spusťBosse(){
+  boss = {
+    x: Š/2, y: -80, vx:0, vy:0, r:44,
+    hp: 2600, maxHp: 2600,
+    fáze: 1, úder:0, sek:0, hodCd:2.6, přivolatCd:8, stav:"příchod",
+    zásah:0, nášlap:0,
+  };
+  ukažHlášku("KAT SI PŘIŠEL PRO SVÉ.");
+  Zvuk.boss();
+  třes = 26;
+}
+
+function nabídniVylepšení(){
+  const možné = VYLEPŠENÍ.filter(u => u.id === "krev" || !hrdina.vylepšení.includes(u.id));
+  nabídkaVylepšení = [];
+  const kopie = možné.slice();
+  for (let i=0;i<3 && kopie.length;i++)
+    nabídkaVylepšení.push(kopie.splice(Math.floor(Math.random()*kopie.length),1)[0]);
+  stav = "vylepšení";
+  Zvuk.atmo(0.06);
+}
+
+function vyhrál(){
+  stav = "výhra";
+  dokončeno = true;
+  ulozRekord();
+  Zvuk.atmo(0);
+  Zvuk.vítěz();
+}
+
+function prohrál(){
+  stav = "konec";
+  hrdina.živý = false;
+  ulozRekord();
+  krev(hrdina.x, hrdina.y, 60, 260);
+  třes = 30;
+  Zvuk.atmo(0);
+  Zvuk.konec();
+  ukažHlášku(zpole(HLÁŠKY_KONEC));
+}
+
+function ulozRekord(){
+  if (skóre > rekord){
+    nověRekord = true;
+    rekord = Math.floor(skóre);
+    try { localStorage.setItem("posledni-exekuce-rekord", String(rekord)); } catch {}
+  }
+}
+
+/* ---------------------- efekty ---------------------- */
+
+function krev(x, y, počet, síla=150){
+  for (let i=0;i<počet;i++){
+    const a = nah(6.283), r = nah(síla, síla*0.2);
+    částice.push({
+      x, y, vx: Math.cos(a)*r, vy: Math.sin(a)*r,
+      život: nah(0.9, 0.35), max:1, r: nah(4.2, 1.4),
+      barva: Math.random() < 0.82 ? "#9c0f16" : "#d8232c",
+      skvrna:true,
+    });
+  }
+}
+
+function jiskry(x, y, počet, barva="#ffd9a0"){
+  for (let i=0;i<počet;i++){
+    const a = nah(6.283), r = nah(210, 40);
+    částice.push({
+      x, y, vx: Math.cos(a)*r, vy: Math.sin(a)*r,
+      život: nah(0.3, 0.1), max:1, r: nah(2.4, 0.9), barva, skvrna:false,
+    });
+  }
+}
+
+function ukažHlášku(t){ hláška = t; hláškaČas = 3.2; }
+
+function letícíText(x, y, text, barva="#d8d2c6", velikost=13){
+  texty.push({ x, y, text, barva, velikost, život:1.0 });
+}
+
+/* ---------------------- střelba ---------------------- */
+
+function zbraňHrdiny(){ return ZBRANĚ[hrdina.zbraň]; }
+
+function střílej(){
+  const z = zbraňHrdiny();
+  if (hrdina.nabito > 0) return;
+
+  const zbylo = hrdina.zásoby[hrdina.zbraň];
+  if (zbylo !== undefined && zbylo <= 0){ přehoďNaPistoli(); return; }
+
+  if (z.blízko){ pilou(z); return; }
+
+  const kusů = z.kusů + (z.kusů > 1 ? hrdina.kusůNavíc*2 : hrdina.kusůNavíc);
+  const dmg = z.poškození * hrdina.mPoškození * zuřivostNásobič();
+
+  for (let i=0;i<kusů;i++){
+    const a = hrdina.směr + nah(z.rozptyl, -z.rozptyl) + (kusů > 1 ? (i/(kusů-1) - 0.5)*z.rozptyl*1.15 : 0);
+    střely.push({
+      x: hrdina.x + Math.cos(hrdina.směr)*18,
+      y: hrdina.y + Math.sin(hrdina.směr)*18,
+      vx: Math.cos(a)*z.rychlost*nah(1.06,0.94),
+      vy: Math.sin(a)*z.rychlost*nah(1.06,0.94),
+      r: z.rotuje ? 7 : 3.2,
+      poškození: dmg,
+      život: z.dosah * 1.35,
+      barva: z.barva,
+      prostup: z.prostup || 0,
+      zasažení: new Set(),
+      rotace: z.rotuje ? 0 : null,
+    });
+  }
+
+  hrdina.nabito = z.kadence * hrdina.mKadence;
+  if (zbylo !== undefined && zbylo !== Infinity){
+    hrdina.zásoby[hrdina.zbraň] -= 1;
+    if (hrdina.zásoby[hrdina.zbraň] <= 0) přehoďNaPistoli();
+  }
+  statistiky.výstřelů++;
+  třes = Math.max(třes, z.odraz);
+  hrdina.vx -= Math.cos(hrdina.směr) * z.odraz * 2.2;
+  hrdina.vy -= Math.sin(hrdina.směr) * z.odraz * 2.2;
+  jiskry(hrdina.x + Math.cos(hrdina.směr)*22, hrdina.y + Math.sin(hrdina.směr)*22, z.kusů > 1 ? 10 : 4, z.barva);
+  z.zvuk();
+}
+
+function pilou(z){
+  hrdina.nabito = z.kadence;
+  hrdina.zásoby.pila -= 1;
+  if (hrdina.zásoby.pila <= 0) přehoďNaPistoli();
+  z.zvuk();
+  třes = Math.max(třes, 3);
+
+  const dmg = z.poškození * hrdina.mPoškození * zuřivostNásobič();
+  const dosah = 46 + hrdina.r;
+  for (const n of nepřátelé){
+    const dx = n.x - hrdina.x, dy = n.y - hrdina.y;
+    const d = dél(dx, dy);
+    if (d > dosah + n.r) continue;
+    if (Math.abs(úhelK(hrdina.směr, Math.atan2(dy, dx))) > 0.85) continue;
+    ublížNepříteli(n, dmg);
+    krev(n.x, n.y, 3, 120);
+  }
+  const b = boss;   // ublížBossovi může bosse odstranit, drž si vlastní odkaz
+  if (b && b.stav !== "příchod"){
+    const dx = b.x - hrdina.x, dy = b.y - hrdina.y;
+    if (dél(dx,dy) < dosah + b.r && Math.abs(úhelK(hrdina.směr, Math.atan2(dy,dx))) < 0.85){
+      ublížBossovi(dmg);
+      krev(b.x, b.y, 3, 120);
+    }
+  }
+}
+
+function zuřivostNásobič(){
+  if (!hrdina.zuřivost) return 1;
+  return 1 + Math.min(kombo, 25) / 25 * 0.5;
+}
+
+function přehoďNaPistoli(){
+  if (hrdina.zbraň === "bourak") return;
+  hrdina.zbraň = "bourak";
+  letícíText(hrdina.x, hrdina.y - 26, "PRÁZDNO", "#b5121b", 12);
+}
+
+function úhyb(){
+  if (hrdina.úhybCd > 0 || hrdina.úhybDo > 0) return;
+  let dx = 0, dy = 0;
+  if (klávesy.has("KeyW") || klávesy.has("ArrowUp")) dy -= 1;
+  if (klávesy.has("KeyS") || klávesy.has("ArrowDown")) dy += 1;
+  if (klávesy.has("KeyA") || klávesy.has("ArrowLeft")) dx -= 1;
+  if (klávesy.has("KeyD") || klávesy.has("ArrowRight")) dx += 1;
+  if (páky.chůze.id !== null){ const o = pákaOsy(páky.chůze); dx = o.x; dy = o.y; }
+  if (!dx && !dy){ dx = Math.cos(hrdina.směr); dy = Math.sin(hrdina.směr); }
+  const d = dél(dx,dy) || 1;
+  hrdina.úhybSměrX = dx/d; hrdina.úhybSměrY = dy/d;
+  hrdina.úhybDo = 0.16;
+  hrdina.úhybCd = 1.15 * hrdina.mÚhyb;
+  hrdina.nezranitelný = Math.max(hrdina.nezranitelný, 0.26);
+  Zvuk.úhyb();
+}
+
+/* ---------------------- poškození ---------------------- */
+
+function ublížNepříteli(n, dmg){
+  n.hp -= dmg;
+  n.zásah = 0.1;
+  statistiky.zásahů++;
+  if (n.hp <= 0) zabij(n);
+}
+
+function zabij(n){
+  n.mrtvý = true;
+  statistiky.zabito++;
+  kombo++; komboČas = 3.0;
+  const zisk = n.body * (1 + Math.min(kombo, 30)*0.05);
+  skóre += zisk;
+  krev(n.x, n.y, 18, 200);
+  mrtvoly.push({ x:n.x, y:n.y, r:n.r, život:1, barva:n.barva });
+  skvrnaNaZem(n.x, n.y, n.r*1.6);
+  Zvuk.smrt();
+  if (hrdina.upír && hrdina.hp < hrdina.maxHp){
+    hrdina.hp = Math.min(hrdina.maxHp, hrdina.hp + hrdina.upír);
+    letícíText(hrdina.x, hrdina.y - 30, "+" + hrdina.upír, "#6ecf7a", 11);
+  }
+  if (kombo > 0 && kombo % 10 === 0) ukažHlášku(zpole(HLÁŠKY_ZABITÍ));
+
+  // rozpad tlustého
+  if (n.typ === "tlusty")
+    for (let i=0;i<3;i++){
+      const a = nah(6.283);
+      zrodNepřítele("hnat", n.síla, ome(n.x+Math.cos(a)*26, OKRAJ, Š-OKRAJ), ome(n.y+Math.sin(a)*26, OKRAJ, V-OKRAJ));
+    }
+
+  if (Math.random() < 0.085) shoďKořist(n.x, n.y);
+  else if (Math.random() < 0.05) kořist.push({ x:n.x, y:n.y, typ:"lék", život:14, fáze:nah(6.3) });
+}
+
+function shoďKořist(x, y){
+  const typ = zpole(["brokovnice","sekacek","pila"]);
+  kořist.push({ x, y, typ, život:16, fáze:nah(6.3) });
+}
+
+function ublížHrdinovi(dmg){
+  if (hrdina.nezranitelný > 0 || !hrdina.živý) return;
+  hrdina.hp -= dmg * hrdina.mObrana;
+  hrdina.nezranitelný = 0.7;
+  kombo = 0;
+  bliknutí = 1;
+  třes = Math.max(třes, 16);
+  krev(hrdina.x, hrdina.y, 12, 160);
+  Zvuk.bolest();
+  if (hrdina.hp <= 0){ hrdina.hp = 0; prohrál(); }
+}
+
+function ublížBossovi(dmg){
+  if (!boss || boss.stav === "příchod") return;
+  boss.hp -= dmg;
+  boss.zásah = 0.09;
+  statistiky.zásahů++;
+  const podíl = boss.hp / boss.maxHp;
+  if (boss.fáze === 1 && podíl <= 0.66){ boss.fáze = 2; přivolejSmečku(5); ukažHlášku("Kat se rozčílil."); }
+  else if (boss.fáze === 2 && podíl <= 0.33){ boss.fáze = 3; přivolejSmečku(7); ukažHlášku("Poslední přání? Nemáš."); }
+  if (boss.hp <= 0) zabijBosse();
+}
+
+function přivolejSmečku(n){
+  for (let i=0;i<n;i++) naplánujNepřítele(i % 3 === 0 ? "sestra" : "hnat", 1 + 0.22*úroveň, nah(1.6, 0.2));
+  Zvuk.vlna();
+  třes = Math.max(třes, 14);
+}
+
+function zabijBosse(){
+  krev(boss.x, boss.y, 90, 320);
+  skvrnaNaZem(boss.x, boss.y, 90);
+  skóre += 1200;
+  statistiky.zabito++;
+  třes = 34;
+  zpomalení = 1.4;
+  Zvuk.smrt(); Zvuk.boss();
+  boss = null;
+  setTimeout(() => { if (stav === "hra") vyhrál(); }, 1500);
+}
+
+function skvrnaNaZem(x, y, r){
+  pctx.globalAlpha = 0.55;
+  pctx.fillStyle = "#3d060a";
+  pctx.beginPath();
+  for (let i=0;i<5;i++){
+    const a = nah(6.283), d = nah(r*0.5);
+    pctx.moveTo(x+Math.cos(a)*d + r*0.4, y+Math.sin(a)*d);
+    pctx.arc(x+Math.cos(a)*d, y+Math.sin(a)*d, nah(r*0.55, r*0.2), 0, 6.283);
+  }
+  pctx.fill();
+  pctx.globalAlpha = 1;
+}
+
+/* ---------------------- aktualizace ---------------------- */
+
+function krok(dt){
+  čas += dt;
+  // třes a bliknutí dojíždí vždy, jinak by koncová obrazovka natrvalo poskakovala
+  třes = Math.max(0, třes - dt*58);
+  bliknutí = Math.max(0, bliknutí - dt*3.2);
+
+  if (stav === "konec" || stav === "výhra"){ krokČástic(dt); return; }
+
+  if (stav === "brífink"){
+    brífinkČas -= dt;
+    if (brífinkČas <= 0){ stav = "hra"; čekáníVlny = 1.0; }
+    return;
+  }
+  if (stav !== "hra") return;
+
+  if (zpomalení > 0){ zpomalení -= dt; dt *= 0.35; }
+
+  hláškaČas = Math.max(0, hláškaČas - dt);
+  if (komboČas > 0){ komboČas -= dt; if (komboČas <= 0) kombo = 0; }
+
+  krokFronty(dt);
+  if (hrdina.živý) krokHrdiny(dt);
+  krokNepřátel(dt);
+  krokBosse(dt);
+  krokStřel(dt);
+  krokKořisti(dt);
+  krokČástic(dt);
+  krokVln(dt);
+}
+
+function krokFronty(dt){
+  for (let i=fronta.length-1;i>=0;i--){
+    const f = fronta[i];
+    f.čas -= dt;
+    if (f.čas <= 0){ zrodNepřítele(f.typ, f.síla, f.x, f.y); fronta.splice(i,1); }
+  }
+}
+
+function krokVln(dt){
+  const def = ÚROVNĚ[úroveň];
+  if (def.boss){
+    if (!boss && !dokončeno && stav === "hra" && čekáníVlny > -999){
+      čekáníVlny -= dt;
+      if (čekáníVlny <= 0 && !boss && nepřátelé.length === 0 && fronta.length === 0){
+        čekáníVlny = 99999;
+        spusťBosse();
+      }
+    }
+    return;
+  }
+  if (nepřátelé.length === 0 && fronta.length === 0){
+    čekáníVlny -= dt;
+    if (čekáníVlny <= 0){ čekáníVlny = 3.4; spusťVlnu(); }
+  }
+}
+
+function krokHrdiny(dt){
+  const h = hrdina;
+  h.nabito = Math.max(0, h.nabito - dt);
+  h.nezranitelný = Math.max(0, h.nezranitelný - dt);
+  h.úhybCd = Math.max(0, h.úhybCd - dt);
+
+  // směr
+  if (dotykové && páky.míra.id !== null){
+    const o = pákaOsy(páky.míra);
+    if (o.síla > 0.1) h.směr = Math.atan2(o.y, o.x);
+  } else if (!dotykové){
+    h.směr = Math.atan2(myš.y - h.y, myš.x - h.x);
+  }
+
+  // pohyb
+  let dx = 0, dy = 0;
+  if (klávesy.has("KeyW") || klávesy.has("ArrowUp")) dy -= 1;
+  if (klávesy.has("KeyS") || klávesy.has("ArrowDown")) dy += 1;
+  if (klávesy.has("KeyA") || klávesy.has("ArrowLeft")) dx -= 1;
+  if (klávesy.has("KeyD") || klávesy.has("ArrowRight")) dx += 1;
+  if (páky.chůze.id !== null){ const o = pákaOsy(páky.chůze); dx = o.x*o.síla; dy = o.y*o.síla; }
+
+  const d = dél(dx,dy);
+  if (d > 1){ dx /= d; dy /= d; }
+
+  if (h.úhybDo > 0){
+    h.úhybDo -= dt;
+    h.vx = h.úhybSměrX * 690;
+    h.vy = h.úhybSměrY * 690;
+  } else {
+    const cílVx = dx * h.rychlost * h.mRychlost;
+    const cílVy = dy * h.rychlost * h.mRychlost;
+    h.vx = lerp(h.vx, cílVx, 1 - Math.pow(0.0009, dt));
+    h.vy = lerp(h.vy, cílVy, 1 - Math.pow(0.0009, dt));
+  }
+
+  h.x = ome(h.x + h.vx*dt, OKRAJ + h.r, Š - OKRAJ - h.r);
+  h.y = ome(h.y + h.vy*dt, OKRAJ + h.r, V - OKRAJ - h.r);
+
+  // palba
+  const pálí = myš.dolů || klávesy.has("KeyJ") || (dotykové && páky.míra.id !== null && pákaOsy(páky.míra).síla > 0.35);
+  if (pálí) střílej();
+}
+
+function krokNepřátel(dt){
+  for (let i=nepřátelé.length-1;i>=0;i--){
+    const n = nepřátelé[i];
+    if (n.mrtvý){ nepřátelé.splice(i,1); continue; }
+
+    n.fáze += dt*4;
+    n.zásah = Math.max(0, n.zásah - dt);
+    n.úder = Math.max(0, n.úder - dt);
+
+    const dx = hrdina.x - n.x, dy = hrdina.y - n.y;
+    const d = dél(dx,dy) || 1;
+    const ux = dx/d, uy = dy/d;
+
+    if (n.druh === "nájezd"){
+      n.nájezdCd -= dt;
+      if (n.nájezd > 0){
+        n.nájezd -= dt;
+        n.vx = lerp(n.vx, n.nx*430, 1-Math.pow(0.2,dt));
+        n.vy = lerp(n.vy, n.ny*430, 1-Math.pow(0.2,dt));
+      } else if (n.nájezdCd <= 0 && d < 300){
+        n.nájezd = 0.65; n.nájezdCd = nah(4.2, 2.4);
+        n.nx = ux; n.ny = uy;
+        jiskry(n.x, n.y, 5, "#8d8880");
+      } else {
+        n.vx = lerp(n.vx, ux*n.rychlost, 1-Math.pow(0.05,dt));
+        n.vy = lerp(n.vy, uy*n.rychlost, 1-Math.pow(0.05,dt));
+      }
+    } else if (n.druh === "střelec"){
+      n.plivCd = (n.plivCd ?? nah(2.4, 0.8)) - dt;
+      const chce = d > 190 ? 1 : d < 130 ? -1 : 0;
+      const bok = Math.sin(n.fáze*0.3) * 0.55;
+      n.vx = lerp(n.vx, (ux*chce - uy*bok)*n.rychlost, 1-Math.pow(0.05,dt));
+      n.vy = lerp(n.vy, (uy*chce + ux*bok)*n.rychlost, 1-Math.pow(0.05,dt));
+      if (n.plivCd <= 0 && d < 340){
+        n.plivCd = nah(2.6, 1.5);
+        const a = Math.atan2(dy, dx) + nah(0.09, -0.09);
+        střelyN.push({ x:n.x, y:n.y, vx:Math.cos(a)*260, vy:Math.sin(a)*260, r:5, poškození:n.poškození*0.75, život:2.4 });
+        jiskry(n.x, n.y, 4, "#7ad07a");
+      }
+    } else {
+      const bok = Math.sin(n.fáze*0.22 + n.r) * 0.3;
+      n.vx = lerp(n.vx, (ux - uy*bok)*n.rychlost, 1-Math.pow(0.06,dt));
+      n.vy = lerp(n.vy, (uy + ux*bok)*n.rychlost, 1-Math.pow(0.06,dt));
+    }
+
+    n.x += n.vx*dt; n.y += n.vy*dt;
+    n.x = ome(n.x, OKRAJ + n.r, Š - OKRAJ - n.r);
+    n.y = ome(n.y, OKRAJ + n.r, V - OKRAJ - n.r);
+
+    // rozestup mezi nepřáteli, aby se nelepili do jednoho bodu
+    for (let j=i-1;j>=0;j--){
+      const m = nepřátelé[j];
+      const ox = m.x-n.x, oy = m.y-n.y;
+      const od = dél(ox,oy);
+      const min = n.r + m.r;
+      if (od > 0.01 && od < min){
+        const tlak = (min-od)/od * 0.42;
+        n.x -= ox*tlak; n.y -= oy*tlak;
+        m.x += ox*tlak; m.y += oy*tlak;
+      }
+    }
+
+    // úder do hrdiny
+    if (hrdina.živý && d < n.r + hrdina.r && n.úder <= 0){
+      n.úder = 0.75;
+      ublížHrdinovi(n.poškození);
+      if (n.nájezd > 0) n.nájezd = 0;
+    }
+  }
+}
+
+function krokBosse(dt){
+  if (!boss) return;
+  const b = boss;
+  b.zásah = Math.max(0, b.zásah - dt);
+  b.úder = Math.max(0, b.úder - dt);
+
+  if (b.stav === "příchod"){
+    b.y += 90*dt;
+    if (b.y >= 110){ b.stav = "lov"; třes = 20; }
+    return;
+  }
+
+  const dx = hrdina.x - b.x, dy = hrdina.y - b.y;
+  const d = dél(dx,dy) || 1;
+  const ux = dx/d, uy = dy/d;
+  const rychlost = 54 + (b.fáze-1)*22;
+
+  b.vx = lerp(b.vx, ux*rychlost, 1-Math.pow(0.08,dt));
+  b.vy = lerp(b.vy, uy*rychlost, 1-Math.pow(0.08,dt));
+  b.x = ome(b.x + b.vx*dt, OKRAJ + b.r, Š - OKRAJ - b.r);
+  b.y = ome(b.y + b.vy*dt, OKRAJ + b.r, V - OKRAJ - b.r);
+
+  // sek sekerou zblízka — rázová vlna
+  b.sek -= dt;
+  if (d < b.r + 60 && b.sek <= 0){
+    b.sek = 1.9 - b.fáze*0.25;
+    b.nášlap = 0.34;
+    třes = Math.max(třes, 20);
+    Zvuk.zásah();
+    for (let i=0;i<26;i++){
+      const a = i/26*6.283;
+      střelyN.push({ x:b.x+Math.cos(a)*b.r, y:b.y+Math.sin(a)*b.r, vx:Math.cos(a)*230, vy:Math.sin(a)*230, r:6, poškození:16, život:0.75, rázová:true });
+    }
+  }
+  b.nášlap = Math.max(0, b.nášlap - dt);
+
+  // hod sekerou
+  b.hodCd -= dt;
+  if (b.hodCd <= 0 && d > 90){
+    b.hodCd = 3.2 - b.fáze*0.5;
+    const a = Math.atan2(dy, dx);
+    for (let k=-1;k<=1;k++){
+      if (b.fáze === 1 && k !== 0) continue;
+      if (b.fáze === 2 && k === 0 && Math.random() < 0.5) continue;
+      střelyN.push({ x:b.x, y:b.y, vx:Math.cos(a+k*0.22)*330, vy:Math.sin(a+k*0.22)*330, r:11, poškození:24, život:3.0, sekera:true, rot:0 });
+    }
+    Zvuk.hod();
+  }
+
+  // přivolání pomocníků
+  b.přivolatCd -= dt;
+  if (b.přivolatCd <= 0){
+    b.přivolatCd = 11 - b.fáze*1.6;
+    přivolejSmečku(2 + b.fáze);
+  }
+
+  if (hrdina.živý && d < b.r + hrdina.r && b.úder <= 0){
+    b.úder = 0.9;
+    ublížHrdinovi(30);
+  }
+}
+
+function krokStřel(dt){
+  // hrdinovy střely
+  for (let i=střely.length-1;i>=0;i--){
+    const s = střely[i];
+    s.život -= dt;
+    s.x += s.vx*dt; s.y += s.vy*dt;
+    if (s.rotace !== null) s.rotace += dt*22;
+
+    if (s.život <= 0 || s.x < OKRAJ || s.x > Š-OKRAJ || s.y < OKRAJ || s.y > V-OKRAJ){
+      if (s.život > 0) jiskry(ome(s.x,OKRAJ,Š-OKRAJ), ome(s.y,OKRAJ,V-OKRAJ), 3, "#8a8378");
+      střely.splice(i,1);
+      continue;
+    }
+
+    let pryč = false;
+    for (const n of nepřátelé){
+      if (n.mrtvý || s.zasažení.has(n)) continue;
+      if (dél(n.x-s.x, n.y-s.y) < n.r + s.r){
+        ublížNepříteli(n, s.poškození);
+        krev(s.x, s.y, 5, 130);
+        s.zasažení.add(n);
+        if (s.prostup > 0){ s.prostup--; s.poškození *= 0.8; }
+        else { pryč = true; }
+        break;
+      }
+    }
+    const b = boss;   // ublížBossovi může bosse odstranit ještě před add()
+    if (!pryč && b && b.stav !== "příchod" && !s.zasažení.has(b)){
+      if (dél(b.x-s.x, b.y-s.y) < b.r + s.r){
+        s.zasažení.add(b);
+        ublížBossovi(s.poškození);
+        krev(s.x, s.y, 5, 130);
+        if (s.prostup > 0){ s.prostup--; s.poškození *= 0.8; }
+        else pryč = true;
+      }
+    }
+    if (pryč) střely.splice(i,1);
+  }
+
+  // nepřátelské střely
+  for (let i=střelyN.length-1;i>=0;i--){
+    const s = střelyN[i];
+    s.život -= dt;
+    s.x += s.vx*dt; s.y += s.vy*dt;
+    if (s.sekera) s.rot += dt*16;
+    if (s.rázová){ s.vx *= Math.pow(0.12, dt); s.vy *= Math.pow(0.12, dt); }
+
+    if (s.život <= 0 || s.x < OKRAJ-20 || s.x > Š-OKRAJ+20 || s.y < OKRAJ-20 || s.y > V-OKRAJ+20){
+      střelyN.splice(i,1); continue;
+    }
+    if (hrdina.živý && dél(hrdina.x-s.x, hrdina.y-s.y) < hrdina.r + s.r){
+      ublížHrdinovi(s.poškození);
+      střelyN.splice(i,1);
+    }
+  }
+}
+
+function krokKořisti(dt){
+  for (let i=kořist.length-1;i>=0;i--){
+    const k = kořist[i];
+    k.život -= dt;
+    k.fáze += dt*3;
+    if (k.život <= 0){ kořist.splice(i,1); continue; }
+
+    const dx = hrdina.x - k.x, dy = hrdina.y - k.y;
+    const d = dél(dx,dy) || 1;
+    if (hrdina.magnet && d < 220){ k.x += dx/d * 200*dt; k.y += dy/d * 200*dt; }
+
+    if (d < hrdina.r + 16){
+      if (k.typ === "lék"){
+        hrdina.hp = Math.min(hrdina.maxHp, hrdina.hp + 28);
+        letícíText(hrdina.x, hrdina.y-30, "+28", "#6ecf7a");
+        Zvuk.lék();
+      } else {
+        const z = ZBRANĚ[k.typ];
+        hrdina.zbraň = k.typ;
+        hrdina.zásoby[k.typ] = (hrdina.zásoby[k.typ] || 0) + z.náboje;
+        letícíText(hrdina.x, hrdina.y-30, z.název, z.barva);
+        Zvuk.sebrat();
+      }
+      kořist.splice(i,1);
+    }
+  }
+}
+
+function krokČástic(dt){
+  for (let i=částice.length-1;i>=0;i--){
+    const p = částice[i];
+    p.život -= dt;
+    if (p.život <= 0){
+      if (p.skvrna && p.x > OKRAJ && p.x < Š-OKRAJ && p.y > OKRAJ && p.y < V-OKRAJ){
+        pctx.globalAlpha = 0.4;
+        pctx.fillStyle = "#4a070c";
+        pctx.beginPath();
+        pctx.arc(p.x, p.y, p.r*nah(1.5,0.8), 0, 6.283);
+        pctx.fill();
+        pctx.globalAlpha = 1;
+      }
+      částice.splice(i,1);
+      continue;
+    }
+    p.x += p.vx*dt; p.y += p.vy*dt;
+    const tlum = Math.pow(0.02, dt);
+    p.vx *= tlum; p.vy *= tlum;
+  }
+  for (let i=texty.length-1;i>=0;i--){
+    const t = texty[i];
+    t.život -= dt*1.3;
+    t.y -= dt*34;
+    if (t.život <= 0) texty.splice(i,1);
+  }
+  for (let i=mrtvoly.length-1;i>=0;i--){
+    mrtvoly[i].život -= dt*0.16;
+    if (mrtvoly[i].život <= 0) mrtvoly.splice(i,1);
+  }
+}
+
+/* ---------------------- vykreslení ---------------------- */
+
+function nadpis(text, x, y, velikost, barva="#d8d2c6", zarovnání="center"){
+  ctx.save();
+  ctx.font = `bold ${velikost}px ui-monospace, "Courier New", monospace`;
+  ctx.textAlign = zarovnání;
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = barva;
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+function popisek(text, x, y, velikost=12, barva="#8f8880", zarovnání="center"){
+  ctx.save();
+  ctx.font = `${velikost}px ui-monospace, "Courier New", monospace`;
+  ctx.textAlign = zarovnání;
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = barva;
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+function vykresli(){
+  ctx.save();
+
+  // třes obrazu
+  if (třes > 0.5) ctx.translate(nah(třes,-třes)*0.35, nah(třes,-třes)*0.35);
+
+  // podlaha
+  ctx.fillStyle = "#0a0708";
+  ctx.fillRect(-40, -40, Š+80, V+80);
+
+  kresliDlaždice();
+  ctx.drawImage(podlaha, 0, 0);
+  kresliStěny();
+
+  if (stav === "menu"){ kresliMenu(); ctx.restore(); return; }
+
+  kresliMrtvoly();
+  kresliKořist();
+  kresliZrození();
+  kresliNepřátele();
+  if (boss) kresliBosse();
+  if (hrdina && hrdina.živý) kresliHrdinu();
+  kresliStřely();
+  kresliČástice();
+  kresliTexty();
+
+  ctx.restore();
+
+  // překryvy bez třesu
+  if (bliknutí > 0){
+    ctx.fillStyle = `rgba(150,10,16,${bliknutí*0.34})`;
+    ctx.fillRect(0,0,Š,V);
+  }
+  kresliNízkýŽivot();
+
+  if (stav === "hra" || stav === "pauza" || stav === "vylepšení") kresliHUD();
+  if (dotykové && stav === "hra") kresliPáky();
+
+  if (stav === "brífink") kresliBrífink();
+  if (stav === "vylepšení") kresliVylepšení();
+  if (stav === "pauza") kresliPauzu();
+  if (stav === "konec") kresliKonec();
+  if (stav === "výhra") kresliVýhru();
+}
+
+let dlaždiceVzor = null;
+function kresliDlaždice(){
+  if (!dlaždiceVzor){
+    const c = document.createElement("canvas");
+    c.width = 60; c.height = 60;
+    const g = c.getContext("2d");
+    g.fillStyle = "#111011"; g.fillRect(0,0,60,60);
+    g.strokeStyle = "#171618"; g.lineWidth = 1;
+    g.strokeRect(0.5,0.5,59,59);
+    g.fillStyle = "rgba(255,255,255,0.012)";
+    for (let i=0;i<26;i++) g.fillRect(Math.random()*60, Math.random()*60, 1, 1);
+    dlaždiceVzor = ctx.createPattern(c, "repeat");
+  }
+  ctx.fillStyle = dlaždiceVzor;
+  ctx.fillRect(0,0,Š,V);
+  // nasvícení uprostřed
+  const g = ctx.createRadialGradient(Š/2, V/2, 40, Š/2, V/2, Š*0.62);
+  g.addColorStop(0, "rgba(210,190,170,0.055)");
+  g.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,Š,V);
+}
+
+function kresliStěny(){
+  ctx.save();
+  ctx.fillStyle = "#0c0a0b";
+  ctx.fillRect(0,0,Š,OKRAJ);
+  ctx.fillRect(0,V-OKRAJ,Š,OKRAJ);
+  ctx.fillRect(0,0,OKRAJ,V);
+  ctx.fillRect(Š-OKRAJ,0,OKRAJ,V);
+  ctx.strokeStyle = "#2a2426";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(OKRAJ, OKRAJ, Š-OKRAJ*2, V-OKRAJ*2);
+  ctx.strokeStyle = "rgba(181,18,27,0.16)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(OKRAJ+4, OKRAJ+4, Š-OKRAJ*2-8, V-OKRAJ*2-8);
+  ctx.restore();
+}
+
+function kresliZrození(){
+  for (const f of fronta){
+    if (f.čas > f.značka) continue;
+    const t = 1 - f.čas / Math.max(f.značka, 0.001);
+    ctx.save();
+    ctx.globalAlpha = 0.35 + Math.sin(čas*22)*0.25;
+    ctx.strokeStyle = "#b5121b";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, 8 + (1-t)*16, 0, 6.283);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function kresliMrtvoly(){
+  for (const m of mrtvoly){
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, m.život) * 0.4;
+    ctx.fillStyle = "#241c1d";
+    ctx.beginPath();
+    ctx.ellipse(m.x, m.y, m.r*1.15, m.r*0.66, 0.5, 0, 6.283);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function kresliKořist(){
+  for (const k of kořist){
+    const vznáší = Math.sin(k.fáze)*2.6;
+    // poslední tři vteřiny kořist bliká, ať je jasné, že mizí
+    if (k.život < 3 && Math.floor(k.život*8) % 2 === 0) continue;
+
+    ctx.save();
+    ctx.translate(k.x, k.y + vznáší);
+
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.beginPath();
+    ctx.ellipse(0, 14 - vznáší, 13, 4.5, 0, 0, 6.283);
+    ctx.fill();
+
+    const barva = k.typ === "lék" ? "#6ecf7a" : ZBRANĚ[k.typ].barva;
+    ctx.globalAlpha = 0.22;
+    ctx.fillStyle = barva;
+    ctx.beginPath(); ctx.arc(0, 0, 19 + Math.sin(k.fáze*1.6)*2, 0, 6.283); ctx.fill();
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = "#141112";
+    ctx.fillRect(-11, -11, 22, 22);
+    ctx.strokeStyle = barva;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-10.5, -10.5, 21, 21);
+
+    ctx.fillStyle = barva;
+    if (k.typ === "lék"){
+      ctx.fillRect(-6, -2, 12, 4);
+      ctx.fillRect(-2, -6, 4, 12);
+    } else if (k.typ === "brokovnice"){
+      ctx.fillRect(-7, -1.5, 14, 3);
+      ctx.fillRect(-7, 3, 9, 2.5);
+    } else if (k.typ === "sekacek"){
+      ctx.beginPath();
+      ctx.moveTo(-6, -6); ctx.lineTo(6, -3); ctx.lineTo(6, 4); ctx.lineTo(-6, 7);
+      ctx.closePath(); ctx.fill();
+    } else {
+      ctx.fillRect(-7, -4, 10, 8);
+      ctx.fillRect(3, -2, 5, 4);
+    }
+    ctx.restore();
+  }
+}
+
+function kresliNepřátele(){
+  for (const n of nepřátelé){
+    ctx.save();
+    ctx.translate(n.x, n.y);
+    const kolébání = Math.sin(n.fáze)*0.09;
+    ctx.rotate(kolébání);
+
+    // stín
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.beginPath();
+    ctx.ellipse(0, n.r*0.75, n.r*0.95, n.r*0.36, 0, 0, 6.283);
+    ctx.fill();
+
+    const tělo = n.barva;
+
+    if (n.typ === "reznik"){
+      // zástěra
+      ctx.fillStyle = tělo;
+      ctx.beginPath(); ctx.arc(0,0,n.r,0,6.283); ctx.fill();
+      ctx.fillStyle = "#5c1216";
+      ctx.fillRect(-n.r*0.55, -n.r*0.2, n.r*1.1, n.r*1.05);
+      ctx.fillStyle = "#0a0708";
+      ctx.beginPath(); ctx.arc(0, -n.r*0.45, n.r*0.42, 0, 6.283); ctx.fill();
+    } else if (n.typ === "tlusty"){
+      ctx.fillStyle = tělo;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, n.r, n.r*0.92, 0, 0, 6.283);
+      ctx.fill();
+      ctx.fillStyle = "rgba(90,20,24,0.75)";
+      for (let i=0;i<3;i++){
+        ctx.beginPath();
+        ctx.arc(Math.cos(i*2.1)*n.r*0.4, Math.sin(i*2.1)*n.r*0.4, n.r*0.22, 0, 6.283);
+        ctx.fill();
+      }
+    } else if (n.typ === "sestra"){
+      ctx.fillStyle = tělo;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, n.r*0.78, n.r*1.15, 0, 0, 6.283);
+      ctx.fill();
+      ctx.fillStyle = "#0a0708";
+      ctx.fillRect(-n.r*0.7, -n.r*0.55, n.r*1.4, n.r*0.34);
+    } else {
+      ctx.fillStyle = tělo;
+      ctx.beginPath();
+      ctx.arc(0, 0, n.r, 0, 6.283);
+      ctx.fill();
+      ctx.fillStyle = "rgba(0,0,0,0.4)";
+      ctx.beginPath(); ctx.arc(n.r*0.25, n.r*0.2, n.r*0.5, 0, 6.283); ctx.fill();
+    }
+
+    // záblesk zásahu jako průsvitný překryv — přemalování celého těla by
+    // při rychlé palbě nechalo nepřítele natrvalo bílého
+    if (n.zásah > 0){
+      ctx.globalAlpha = ome(n.zásah / 0.1, 0, 1) * 0.6;
+      ctx.fillStyle = "#fff6f0";
+      ctx.beginPath(); ctx.arc(0, 0, n.r*1.04, 0, 6.283); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    // oči
+    const k = Math.atan2(hrdina.y - n.y, hrdina.x - n.x) - kolébání;
+    ctx.fillStyle = n.druh === "nájezd" ? "#ff3b2f" : "#b5121b";
+    ctx.beginPath();
+    ctx.arc(Math.cos(k)*n.r*0.45 - Math.sin(k)*3.4, Math.sin(k)*n.r*0.45 + Math.cos(k)*3.4, 2.1, 0, 6.283);
+    ctx.arc(Math.cos(k)*n.r*0.45 + Math.sin(k)*3.4, Math.sin(k)*n.r*0.45 - Math.cos(k)*3.4, 2.1, 0, 6.283);
+    ctx.fill();
+    ctx.restore();
+
+    // proužek života u silnějších
+    if (n.maxHp > 60 && n.hp < n.maxHp){
+      const š = n.r*2;
+      ctx.fillStyle = "rgba(0,0,0,0.6)";
+      ctx.fillRect(n.x-š/2, n.y-n.r-9, š, 3);
+      ctx.fillStyle = "#b5121b";
+      ctx.fillRect(n.x-š/2, n.y-n.r-9, š*(n.hp/n.maxHp), 3);
+    }
+  }
+}
+
+function kresliBosse(){
+  const b = boss;
+  ctx.save();
+  ctx.translate(b.x, b.y);
+
+  if (b.nášlap > 0){
+    ctx.save();
+    ctx.globalAlpha = b.nášlap*1.4;
+    ctx.strokeStyle = "#b5121b";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0, 0, b.r + (0.34-b.nášlap)*260, 0, 6.283);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.fillStyle = "rgba(0,0,0,0.55)";
+  ctx.beginPath(); ctx.ellipse(0, b.r*0.7, b.r*1.05, b.r*0.4, 0, 0, 6.283); ctx.fill();
+
+  // plášť
+  ctx.fillStyle = "#2c2426";
+  ctx.beginPath();
+  ctx.moveTo(0, -b.r*1.15);
+  ctx.quadraticCurveTo(b.r*1.15, -b.r*0.2, b.r*0.82, b.r);
+  ctx.lineTo(-b.r*0.82, b.r);
+  ctx.quadraticCurveTo(-b.r*1.15, -b.r*0.2, 0, -b.r*1.15);
+  ctx.closePath();
+  ctx.fill();
+  if (b.zásah > 0){
+    ctx.globalAlpha = ome(b.zásah / 0.09, 0, 1) * 0.5;
+    ctx.fillStyle = "#fff6f0";
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  // kápě
+  ctx.fillStyle = "#0a0708";
+  ctx.beginPath(); ctx.arc(0, -b.r*0.42, b.r*0.46, 0, 6.283); ctx.fill();
+  // oči
+  ctx.fillStyle = "#ff2a1f";
+  ctx.beginPath();
+  ctx.arc(-6, -b.r*0.44, 3.2, 0, 6.283);
+  ctx.arc( 6, -b.r*0.44, 3.2, 0, 6.283);
+  ctx.fill();
+  // sekera
+  const k = Math.atan2(hrdina.y - b.y, hrdina.x - b.x);
+  ctx.rotate(k);
+  ctx.strokeStyle = "#5a4a3c"; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(b.r*0.3, 0); ctx.lineTo(b.r*1.25, 0); ctx.stroke();
+  ctx.fillStyle = "#cfd6dd";
+  ctx.beginPath();
+  ctx.moveTo(b.r*1.1, -16); ctx.lineTo(b.r*1.55, -4); ctx.lineTo(b.r*1.55, 4); ctx.lineTo(b.r*1.1, 16);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function kresliHrdinu(){
+  const h = hrdina;
+  ctx.save();
+  ctx.translate(h.x, h.y);
+
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  ctx.beginPath(); ctx.ellipse(0, h.r*0.78, h.r*0.9, h.r*0.34, 0, 0, 6.283); ctx.fill();
+
+  if (h.nezranitelný > 0 && Math.floor(čas*22) % 2 === 0) ctx.globalAlpha = 0.42;
+
+  ctx.rotate(h.směr);
+  // tělo
+  ctx.fillStyle = "#e6e0d4";
+  ctx.beginPath(); ctx.arc(0,0,h.r,0,6.283); ctx.fill();
+  ctx.fillStyle = "#171416";
+  ctx.beginPath(); ctx.arc(-2, 0, h.r*0.72, 0, 6.283); ctx.fill();
+
+  // zbraň
+  const z = zbraňHrdiny();
+  ctx.strokeStyle = z.barva;
+  ctx.lineWidth = z.blízko ? 7 : 4;
+  ctx.beginPath();
+  ctx.moveTo(h.r*0.4, 0);
+  ctx.lineTo(h.r + (z.blízko ? 30 : 14), 0);
+  ctx.stroke();
+  if (z.blízko){
+    ctx.strokeStyle = "rgba(232,226,214,0.35)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, h.r + 34, -0.8, 0.8);
+    ctx.stroke();
+  }
+  // ústí
+  if (h.nabito > (z.kadence*hrdina.mKadence)*0.66){
+    ctx.fillStyle = "rgba(255,214,140,0.8)";
+    ctx.beginPath(); ctx.arc(h.r+16, 0, 6, 0, 6.283); ctx.fill();
+  }
+  ctx.restore();
+
+  // ukazatel úhybu
+  if (h.úhybCd > 0){
+    ctx.save();
+    ctx.strokeStyle = "rgba(216,210,198,0.4)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(h.x, h.y, h.r+7, -1.5708, -1.5708 + 6.283*(1 - h.úhybCd/(1.15*h.mÚhyb)));
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function kresliStřely(){
+  for (const s of střely){
+    ctx.save();
+    ctx.translate(s.x, s.y);
+    if (s.rotace !== null){
+      ctx.rotate(s.rotace);
+      ctx.fillStyle = s.barva;
+      ctx.fillRect(-8, -2.4, 16, 4.8);
+      ctx.fillRect(-2.4, -8, 4.8, 16);
+    } else {
+      ctx.rotate(Math.atan2(s.vy, s.vx));
+      ctx.fillStyle = s.barva;
+      ctx.fillRect(-7, -s.r/2, 14, s.r);
+      ctx.globalAlpha = 0.3;
+      ctx.fillRect(-16, -s.r/3, 14, s.r*0.66);
+    }
+    ctx.restore();
+  }
+  for (const s of střelyN){
+    ctx.save();
+    ctx.translate(s.x, s.y);
+    if (s.sekera){
+      ctx.rotate(s.rot);
+      ctx.fillStyle = "#cfd6dd";
+      ctx.fillRect(-13, -3, 26, 6);
+      ctx.fillRect(-3, -13, 6, 26);
+    } else if (s.rázová){
+      ctx.fillStyle = "rgba(181,18,27,0.85)";
+      ctx.beginPath(); ctx.arc(0,0,s.r,0,6.283); ctx.fill();
+    } else {
+      ctx.fillStyle = "#7ad07a";
+      ctx.beginPath(); ctx.arc(0,0,s.r,0,6.283); ctx.fill();
+      ctx.globalAlpha = 0.4;
+      ctx.beginPath(); ctx.arc(0,0,s.r*1.8,0,6.283); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+function kresliČástice(){
+  for (const p of částice){
+    ctx.globalAlpha = ome(p.život*1.6, 0, 1);
+    ctx.fillStyle = p.barva;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, 6.283);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function kresliTexty(){
+  for (const t of texty){
+    ctx.globalAlpha = ome(t.život, 0, 1);
+    popisek(t.text, t.x, t.y, t.velikost, t.barva);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function kresliNízkýŽivot(){
+  if (!hrdina || !hrdina.živý) return;
+  const podíl = hrdina.hp / hrdina.maxHp;
+  if (podíl > 0.34) return;
+  const puls = (Math.sin(čas*6) * 0.5 + 0.5) * (1 - podíl/0.34);
+  const g = ctx.createRadialGradient(Š/2, V/2, V*0.28, Š/2, V/2, V*0.82);
+  g.addColorStop(0, "rgba(120,6,12,0)");
+  g.addColorStop(1, `rgba(120,6,12,${0.2 + puls*0.42})`);
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,Š,V);
+}
+
+function kresliHUD(){
+  const h = hrdina;
+
+  // život
+  const šž = 236;
+  ctx.fillStyle = "rgba(0,0,0,0.62)";
+  ctx.fillRect(OKRAJ+8, OKRAJ+8, šž, 17);
+  ctx.fillStyle = h.hp/h.maxHp < 0.3 ? "#ff2a1f" : "#b5121b";
+  ctx.fillRect(OKRAJ+8, OKRAJ+8, šž * ome(h.hp/h.maxHp,0,1), 17);
+  ctx.strokeStyle = "rgba(216,210,198,0.35)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(OKRAJ+8.5, OKRAJ+8.5, šž, 17);
+  popisek(`${Math.ceil(h.hp)} / ${h.maxHp}`, OKRAJ+14, OKRAJ+17, 11, "#e8e2d6", "left");
+
+  // zbraň a náboje
+  const z = zbraňHrdiny();
+  const zb = h.zásoby[h.zbraň];
+  // pila se počítá po tikách kadence, hráči ukaž rovnou zbývající sekundy
+  const munice = zb === Infinity ? "∞"
+    : h.zbraň === "pila" ? (zb * ZBRANĚ.pila.kadence).toFixed(1) + "s"
+    : String(zb);
+  popisek(z.název, OKRAJ+8, OKRAJ+40, 13, z.barva, "left");
+  popisek(munice, OKRAJ+8, OKRAJ+56, 12, "#8f8880", "left");
+
+  // skóre
+  popisek("SKÓRE " + Math.floor(skóre), Š-OKRAJ-8, OKRAJ+17, 14, "#e8e2d6", "right");
+  popisek("REKORD " + rekord, Š-OKRAJ-8, OKRAJ+35, 11, "#6f6a66", "right");
+  if (kombo > 1){
+    ctx.globalAlpha = ome(komboČas/3, 0.3, 1);
+    popisek("×" + kombo, Š-OKRAJ-8, OKRAJ+55, 16, "#b5121b", "right");
+    ctx.globalAlpha = 1;
+  }
+
+  // úroveň
+  const def = ÚROVNĚ[úroveň];
+  popisek(def.název, Š/2, OKRAJ+16, 13, "#8f8880");
+  if (!def.boss) popisek(`VLNA ${Math.max(vlna+1,1)} / ${def.vlny.length}`, Š/2, OKRAJ+33, 11, "#5d5854");
+
+  // pruh života bosse
+  if (boss && boss.stav !== "příchod"){
+    const šb = 460;
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
+    ctx.fillRect(Š/2-šb/2, V-OKRAJ-30, šb, 13);
+    ctx.fillStyle = "#b5121b";
+    ctx.fillRect(Š/2-šb/2, V-OKRAJ-30, šb*ome(boss.hp/boss.maxHp,0,1), 13);
+    ctx.strokeStyle = "rgba(216,210,198,0.4)";
+    ctx.strokeRect(Š/2-šb/2+0.5, V-OKRAJ-29.5, šb, 13);
+    popisek("KAT", Š/2, V-OKRAJ-42, 12, "#e8e2d6");
+  }
+
+  // hláška
+  if (hláškaČas > 0){
+    ctx.globalAlpha = ome(hláškaČas/0.7, 0, 1) * 0.9;
+    popisek(hláška, Š/2, V-OKRAJ-56, 13, "#c9c2b6");
+    ctx.globalAlpha = 1;
+  }
+}
+
+function kresliPáky(){
+  for (const k of ["chůze","míra"]){
+    const p = páky[k];
+    if (p.id === null) continue;
+    const o = pákaOsy(p);
+    ctx.save();
+    ctx.globalAlpha = 0.22;
+    ctx.strokeStyle = "#d8d2c6"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(p.sx, p.sy, PÁKA_R, 0, 6.283); ctx.stroke();
+    ctx.globalAlpha = 0.42;
+    ctx.fillStyle = k === "míra" ? "#b5121b" : "#d8d2c6";
+    ctx.beginPath();
+    ctx.arc(p.sx + o.x*o.síla*PÁKA_R, p.sy + o.y*o.síla*PÁKA_R, 22, 0, 6.283);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+/* ---------------------- obrazovky ---------------------- */
+
+function zatmavit(a=0.78){
+  ctx.fillStyle = `rgba(6,4,5,${a})`;
+  ctx.fillRect(0,0,Š,V);
+}
+
+function krvavýNadpis(text, x, y, velikost){
+  ctx.save();
+  ctx.font = `bold ${velikost}px ui-monospace, "Courier New", monospace`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const posun = Math.sin(čas*1.6)*1.4;
+  ctx.fillStyle = "rgba(94,10,15,0.85)";
+  ctx.fillText(text, x + 3 + posun, y + 3);
+  ctx.fillStyle = "#b5121b";
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+function kresliMenu(){
+  zatmavit(0.62);
+
+  krvavýNadpis("POSLEDNÍ", Š/2, V/2 - 118, 62);
+  krvavýNadpis("EXEKUCE", Š/2, V/2 - 56, 62);
+
+  popisek("Ve čtyři ráno tě odvedou. Do té doby máš dvě ruce a špatnou náladu.", Š/2, V/2 - 6, 13, "#9a938a");
+
+  const blik = Math.sin(čas*3.4) * 0.5 + 0.5;
+  ctx.globalAlpha = 0.35 + blik*0.65;
+  nadpis(dotykové ? "KLEPNI A ZAČNI" : "MEZERNÍK — ZAČÍT", Š/2, V/2 + 40, 20, "#e8e2d6");
+  ctx.globalAlpha = 1;
+
+  const ř = [
+    dotykové ? "vlevo chůze · vpravo míření a palba" : "WSAD / šipky — pohyb    myš — míření a palba",
+    dotykové ? "posbírej zbraně, které po nich zbydou" : "mezerník / shift — úhyb    Esc — pauza    M — zvuk",
+    "MÁRNICE → JATKA → KREMATORIUM → KAT",
+  ];
+  ř.forEach((t,i) => popisek(t, Š/2, V/2 + 84 + i*20, 12, "#5d5854"));
+
+  if (rekord > 0) popisek("NEJLEPŠÍ SKÓRE  " + rekord, Š/2, V - 46, 12, "#6f6a66");
+}
+
+function kresliBrífink(){
+  zatmavit(0.72);
+  const def = ÚROVNĚ[úroveň];
+  popisek(`ČÁST ${úroveň+1} ZE ${ÚROVNĚ.length}`, Š/2, V/2 - 60, 12, "#6f6a66");
+  krvavýNadpis(def.název, Š/2, V/2 - 14, def.název.length > 12 ? 40 : 52);
+  popisek(def.podtitul, Š/2, V/2 + 34, 14, "#9a938a");
+  const blik = Math.sin(čas*5) * 0.5 + 0.5;
+  ctx.globalAlpha = 0.3 + blik*0.5;
+  popisek(dotykové ? "klepni" : "mezerník", Š/2, V/2 + 74, 12, "#5d5854");
+  ctx.globalAlpha = 1;
+}
+
+function kresliVylepšení(){
+  zatmavit(0.84);
+  popisek("PŘEŽIL JSI. ZATÍM.", Š/2, V/2 - 132, 12, "#6f6a66");
+  krvavýNadpis("VYBER SI JEDNU VĚC", Š/2, V/2 - 96, 30);
+
+  nabídkaVylepšení.forEach((u, i) => {
+    const k = kartaObdélník(i);
+    ctx.save();
+    ctx.fillStyle = "rgba(14,11,12,0.96)";
+    ctx.fillRect(k.x, k.y, k.š, k.v);
+    ctx.strokeStyle = "#b5121b";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(k.x+0.5, k.y+0.5, k.š, k.v);
+    ctx.restore();
+
+    popisek(String(i+1), k.x + k.š/2, k.y + 28, 15, "#b5121b");
+    nadpis(u.název, k.x + k.š/2, k.y + 72, 15, "#e8e2d6");
+    obalText(u.popis, k.x + k.š/2, k.y + 112, k.š - 32, 12, "#9a938a");
+  });
+
+  popisek(dotykové ? "klepni na kartu" : "vyber klávesou 1 / 2 / 3 nebo myší", Š/2, V/2 + 148, 12, "#5d5854");
+}
+
+function obalText(text, x, y, maxŠ, velikost, barva){
+  ctx.save();
+  ctx.font = `${velikost}px ui-monospace, "Courier New", monospace`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillStyle = barva;
+  const slova = text.split(" ");
+  const řádky = [];
+  let ř = "";
+  for (const s of slova){
+    const zk = ř ? ř + " " + s : s;
+    if (ctx.measureText(zk).width > maxŠ && ř){ řádky.push(ř); ř = s; }
+    else ř = zk;
+  }
+  if (ř) řádky.push(ř);
+  řádky.forEach((r,i) => ctx.fillText(r, x, y + i*(velikost+5)));
+  ctx.restore();
+}
+
+function kresliPauzu(){
+  zatmavit(0.72);
+  krvavýNadpis("PAUZA", Š/2, V/2 - 20, 44);
+  popisek(dotykové ? "klepni a pokračuj" : "Esc — pokračovat    M — zvuk", Š/2, V/2 + 26, 13, "#8f8880");
+}
+
+function kresliKonec(){
+  zatmavit(0.8);
+  krvavýNadpis("EXEKUCE PROVEDENA", Š/2, V/2 - 78, 38);
+  popisek(hláška, Š/2, V/2 - 38, 14, "#9a938a");
+  kresliVýsledky(V/2 - 10);
+  const blik = Math.sin(čas*3.4) * 0.5 + 0.5;
+  ctx.globalAlpha = 0.35 + blik*0.65;
+  nadpis(dotykové ? "KLEPNI A ZNOVU" : "MEZERNÍK — ZNOVU", Š/2, V/2 + 152, 18, "#e8e2d6");
+  ctx.globalAlpha = 1;
+}
+
+function kresliVýhru(){
+  zatmavit(0.8);
+  krvavýNadpis("EXEKUCE ZRUŠENA", Š/2, V/2 - 82, 40);
+  popisek("Kat leží. Papíry nikdo nepodepíše. Jdi domů, než se rozední.", Š/2, V/2 - 40, 13, "#9a938a");
+  kresliVýsledky(V/2 - 10);
+  const blik = Math.sin(čas*3.4) * 0.5 + 0.5;
+  ctx.globalAlpha = 0.35 + blik*0.65;
+  nadpis(dotykové ? "KLEPNI A ZNOVU" : "MEZERNÍK — ZNOVU", Š/2, V/2 + 152, 18, "#e8e2d6");
+  ctx.globalAlpha = 1;
+}
+
+function kresliVýsledky(y){
+  const trvání = Math.max(0, čas - statistiky.začátek);
+  const min = String(Math.floor(trvání/60)).padStart(2,"0");
+  const sek = String(Math.floor(trvání%60)).padStart(2,"0");
+  const přesnost = statistiky.výstřelů ? Math.round(statistiky.zásahů / statistiky.výstřelů * 100) : 0;
+
+  const řádky = [
+    ["SKÓRE", Math.floor(skóre)],
+    ["ODEPSÁNO", statistiky.zabito],
+    ["ČAS", `${min}:${sek}`],
+    ["PŘESNOST", přesnost + " %"],
+    ["REKORD", rekord],
+  ];
+  řádky.forEach(([a,b], i) => {
+    popisek(a, Š/2 - 14, y + i*22, 13, "#6f6a66", "right");
+    popisek(String(b), Š/2 + 14, y + i*22, 13, "#e8e2d6", "left");
+  });
+  if (nověRekord) popisek("NOVÝ REKORD", Š/2, y + řádky.length*22 + 6, 12, "#b5121b");
+}
+
+/* ---------------------- smyčka ---------------------- */
+
+function smyčka(t){
+  const dt = Math.min((t - předchozí) / 1000 || 0, 0.05);
+  předchozí = t;
+  krok(dt);
+  vykresli();
+  requestAnimationFrame(smyčka);
+}
+
+přeměř();
+requestAnimationFrame(t => { předchozí = t; requestAnimationFrame(smyčka); });
+
+})();
+</script>
+</body>
+</html>
