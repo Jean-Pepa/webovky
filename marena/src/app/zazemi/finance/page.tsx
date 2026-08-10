@@ -9,7 +9,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { ImageViewer } from "@/components/ImageViewer";
-import { SearchBox, SearchClear } from "@/components/SearchBox";
+import { SearchClear } from "@/components/SearchBox";
 import { isAdmin } from "@/lib/admin";
 import { canEditSection } from "@/lib/access";
 import { normName, sameName } from "@/lib/names";
@@ -274,30 +274,16 @@ export default function FinancePage() {
   const vyberOnly = !isAdmin(me) && !!year.members.find((m) => sameName(m.name, me))?.vyberOnly;
   const tab = vyberOnly ? "vyber" : tabState;
 
-  // Celé finance (bilance, kasy, všechny položky) vidí jen hlavní
-  // koordinátor & finance + správce. Ostatní mají jen „Moje výdaje":
-  // zapíšou, co zaplatili (propíše se ekonomovi), a vidí jen svoje.
-  // Výběrčí (vyberOnly) tuto bránu obchází — potřebuje pohled Výběr.
-  if (!canEditSection(year, me, "finance") && !vyberOnly) {
-    return (
-      <MyExpenses
-        yearId={year.id}
-        me={me}
-        items={items}
-        canSubmit={canEditCurrentYear}
-        totals={totals}
-        byCategory={byCategory}
-        vyberTotal={vyber.total}
-      />
-    );
-  }
+  // Celé finance (bilance, kasy, merch, výběr, všechny položky) vidí KAŽDÝ člen —
+  // stejný přehled jako organizátor, ale jen ke čtení. Zapisovat/měnit smí dál
+  // jen hlavní koordinátor & finance + správce.
+  const viewOnly = !canEditSection(year, me, "finance") && !vyberOnly;
 
   // Přidávat položky i kasy: hlavní koordinátor & finance + správce.
   // Upravovat / mazat / přepínat zaplaceno už jen správce (canEdit).
-  // Výběrčí (vyberOnly) je jen pozorovatel — nic nepřidává ani nemění, jen
-  // sleduje, kdo a kdy zaplatil.
-  const canAdd = canEditCurrentYear && !vyberOnly;
-  const canEdit = isAdmin(me);
+  // Výběrčí (vyberOnly) i běžný člen (viewOnly) jsou jen pozorovatelé.
+  const canAdd = canEditCurrentYear && !vyberOnly && !viewOnly;
+  const canEdit = isAdmin(me) && !viewOnly;
 
   // Kasy: kolik se ráno vložilo (vklady) a kolik se vydělalo (tržba z uzavřených).
   const kasaOpenings = (year.cashboxes ?? []).reduce((s, c) => s + c.opening, 0);
@@ -479,7 +465,12 @@ export default function FinancePage() {
 
       {/* Kdo co smí: výběrčí jen sleduje; jinak každý (s finanční rolí) přidává,
           upravuje jen správce; zamčený ročník = jen náhled */}
-      {vyberOnly ? (
+      {viewOnly ? (
+        <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
+          <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>Vidíš celý rozpočet — jen k náhledu. Měnit ho může ekonom a správce. Svůj výdaj si zapíšeš níže.</span>
+        </div>
+      ) : vyberOnly ? (
         <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
           <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
           <span>Máš jen náhled — vidíš, kdo a kdy zaplatil. Zapisovat platby může ekonom nebo správce.</span>
@@ -753,6 +744,9 @@ export default function FinancePage() {
           </div>
         </div>
       )}
+
+      {/* Běžný člen (viewOnly): jediné, co smí sám zapsat — svůj výdaj k proplacení. */}
+      {viewOnly && <MyExpenses yearId={year.id} me={me} items={items} canSubmit={canEditCurrentYear} />}
 
       {/* Seznam položek (výdaje, vklady…) */}
       <h2 className="eyebrow">Položky</h2>
@@ -1736,25 +1730,19 @@ function SaleLine({ o, canDelete, yearId }: { o: SaleOrder; canDelete: boolean; 
   );
 }
 
-// „Moje výdaje" — pohled pro lidi bez finanční role: zapíšou, co zaplatili
-// (propíše se do financí jako výdaj k proplacení, se jménem), a vidí jen
-// svoje položky se stavem proplacení. Zbytek financí nevidí.
+// „Zapsat výdaj" + „Moje položky" — box pro lidi bez finanční role. Celý rozpočet
+// vidí (stránka je pro ně jen ke čtení), tohle je jediné, co smí sami zapsat:
+// co zaplatili ze svého → propíše se ekonomovi jako výdaj k proplacení, se jménem.
 function MyExpenses({
   yearId,
   me,
   items,
   canSubmit,
-  totals,
-  byCategory,
-  vyberTotal,
 }: {
   yearId: string;
   me: string;
   items: FinanceItem[];
   canSubmit: boolean;
-  totals: { prijmy: number; vydaje: number; bilance: number; kasa: number };
-  byCategory: [string, { prijem: number; vydaj: number }][];
-  vyberTotal: number;
 }) {
   const { dispatch } = useStore();
   const [label, setLabel] = useState("");
@@ -1762,20 +1750,11 @@ function MyExpenses({
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [q, setQ] = useState(""); // hledání ve všech položkách (jen náhled)
 
   const mine = items
     .filter((f) => f.who && normName(f.who) === normName(me))
     .sort((a, b) => (b.date || b.createdAt).localeCompare(a.date || a.createdAt));
   const owed = mine.filter((f) => f.kind === "vydaj" && !f.paid).reduce((s, f) => s + f.amount, 0);
-
-  // Všechny položky ročníku — jen ke čtení (nejnovější nahoře).
-  const allRows = useMemo(() => {
-    const needle = normName(q);
-    const sorted = [...items].sort((a, b) => (b.date || b.createdAt).localeCompare(a.date || a.createdAt));
-    if (!needle) return sorted;
-    return sorted.filter((f) => normName(`${f.label} ${f.category ?? ""} ${f.who ?? ""} ${f.note ?? ""}`).includes(needle));
-  }, [items, q]);
 
   async function submit() {
     const num = parseAmount(amount);
@@ -1808,23 +1787,7 @@ function MyExpenses({
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 tabular-nums">
-      <div>
-        <PageTitle>Finance</PageTitle>
-        <p className="mt-1 text-sm text-ink-soft">Přehled celého ročníku — jen k náhledu. Měnit položky může ekonom a správce.</p>
-      </div>
-
-      {/* Přehled financí celého ročníku — vidí i běžní členové (jen náhled). */}
-      <SummaryStrip
-        cells={[
-          { label: "Příjmy", text: `+${fmtCZK(totals.prijmy)}`, cls: "text-leaf-700" },
-          { label: "Výdaje", text: `−${fmtCZK(totals.vydaje)}` },
-          { label: "Bilance", text: `${totals.bilance >= 0 ? "+" : "−"}${fmtCZK(Math.abs(totals.bilance))}`, cls: totals.bilance >= 0 ? "text-leaf-700" : "text-red-600" },
-          { label: "V kase", text: `${totals.kasa >= 0 ? "" : "−"}${fmtCZK(Math.abs(totals.kasa))}`, cls: totals.kasa >= 0 ? "text-ink" : "text-red-600" },
-        ]}
-      />
-      <CategorySummary byCategory={byCategory} vyberTotal={vyberTotal} />
-
+    <div className="space-y-4 tabular-nums">
       {canSubmit ? (
         <section className="card space-y-2 p-4">
           <h2 className="eyebrow">Zapsat výdaj</h2>
@@ -1877,48 +1840,6 @@ function MyExpenses({
                 )}
               </div>
             ))}
-          </div>
-        )}
-      </section>
-
-      {/* Všechny položky ročníku — jen náhled (nejde upravovat ani mazat). */}
-      <section className="space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="eyebrow">Všechny položky</h2>
-          <span className="text-xs text-ink-soft tabular-nums">{allRows.length}</span>
-        </div>
-        <SearchBox value={q} onChange={setQ} placeholder="Hledat v položkách…" className="w-full" />
-        {allRows.length === 0 ? (
-          <div className="empty-state">{q.trim() ? "Nic neodpovídá hledání." : "Zatím žádné položky."}</div>
-        ) : (
-          <div className="card overflow-hidden">
-            <Collapsible peekClass="max-h-[260px]" expandable={allRows.length > 2} total={allRows.length}>
-              <div className="divide-y divide-black/[0.06] md:hidden">
-                {allRows.map((f) => (
-                  <FinanceCard key={f.id} item={f} yearId={yearId} canAdd={false} canEdit={false} />
-                ))}
-              </div>
-              <div className="hidden overflow-x-auto md:block">
-                <table className="w-full min-w-[640px] border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b border-ink/[0.06] text-left text-xs font-medium uppercase tracking-wide text-ink-soft">
-                      <th className="px-4 py-3">Popis</th>
-                      <th className="px-3 py-3">Kategorie</th>
-                      <th className="px-3 py-3">Kdo</th>
-                      <th className="px-3 py-3">Datum</th>
-                      <th className="px-3 py-3 text-right">Částka</th>
-                      <th className="px-3 py-3">Stav</th>
-                      <th className="px-3 py-3" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allRows.map((f) => (
-                      <FinanceRow key={f.id} item={f} yearId={yearId} canAdd={false} canEdit={false} />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Collapsible>
           </div>
         )}
       </section>
