@@ -9,7 +9,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { ImageViewer } from "@/components/ImageViewer";
-import { SearchClear } from "@/components/SearchBox";
+import { SearchBox, SearchClear } from "@/components/SearchBox";
 import { isAdmin } from "@/lib/admin";
 import { canEditSection } from "@/lib/access";
 import { normName, sameName } from "@/lib/names";
@@ -1762,11 +1762,20 @@ function MyExpenses({
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [q, setQ] = useState(""); // hledání ve všech položkách (jen náhled)
 
   const mine = items
     .filter((f) => f.who && normName(f.who) === normName(me))
     .sort((a, b) => (b.date || b.createdAt).localeCompare(a.date || a.createdAt));
   const owed = mine.filter((f) => f.kind === "vydaj" && !f.paid).reduce((s, f) => s + f.amount, 0);
+
+  // Všechny položky ročníku — jen ke čtení (nejnovější nahoře).
+  const allRows = useMemo(() => {
+    const needle = normName(q);
+    const sorted = [...items].sort((a, b) => (b.date || b.createdAt).localeCompare(a.date || a.createdAt));
+    if (!needle) return sorted;
+    return sorted.filter((f) => normName(`${f.label} ${f.category ?? ""} ${f.who ?? ""} ${f.note ?? ""}`).includes(needle));
+  }, [items, q]);
 
   async function submit() {
     const num = parseAmount(amount);
@@ -1801,7 +1810,8 @@ function MyExpenses({
   return (
     <div className="mx-auto max-w-2xl space-y-4 tabular-nums">
       <div>
-        <PageTitle>Moje výdaje</PageTitle>
+        <PageTitle>Finance</PageTitle>
+        <p className="mt-1 text-sm text-ink-soft">Přehled celého ročníku — jen k náhledu. Měnit položky může ekonom a správce.</p>
       </div>
 
       {/* Přehled financí celého ročníku — vidí i běžní členové (jen náhled). */}
@@ -1867,6 +1877,48 @@ function MyExpenses({
                 )}
               </div>
             ))}
+          </div>
+        )}
+      </section>
+
+      {/* Všechny položky ročníku — jen náhled (nejde upravovat ani mazat). */}
+      <section className="space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="eyebrow">Všechny položky</h2>
+          <span className="text-xs text-ink-soft tabular-nums">{allRows.length}</span>
+        </div>
+        <SearchBox value={q} onChange={setQ} placeholder="Hledat v položkách…" className="w-full" />
+        {allRows.length === 0 ? (
+          <div className="empty-state">{q.trim() ? "Nic neodpovídá hledání." : "Zatím žádné položky."}</div>
+        ) : (
+          <div className="card overflow-hidden">
+            <Collapsible peekClass="max-h-[260px]" expandable={allRows.length > 2} total={allRows.length}>
+              <div className="divide-y divide-black/[0.06] md:hidden">
+                {allRows.map((f) => (
+                  <FinanceCard key={f.id} item={f} yearId={yearId} canAdd={false} canEdit={false} />
+                ))}
+              </div>
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full min-w-[640px] border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-ink/[0.06] text-left text-xs font-medium uppercase tracking-wide text-ink-soft">
+                      <th className="px-4 py-3">Popis</th>
+                      <th className="px-3 py-3">Kategorie</th>
+                      <th className="px-3 py-3">Kdo</th>
+                      <th className="px-3 py-3">Datum</th>
+                      <th className="px-3 py-3 text-right">Částka</th>
+                      <th className="px-3 py-3">Stav</th>
+                      <th className="px-3 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allRows.map((f) => (
+                      <FinanceRow key={f.id} item={f} yearId={yearId} canAdd={false} canEdit={false} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Collapsible>
           </div>
         )}
       </section>
