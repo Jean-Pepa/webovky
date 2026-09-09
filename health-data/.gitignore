@@ -1,0 +1,5 @@
+# Osobní zdravotní data a OAuth tajemství – NIKDY necommitovat.
+secrets/
+data/
+__pycache__/
+*.pyc
