@@ -3,24 +3,30 @@
 pull.py – stáhne tvoje data z Google Health API (v4) do složky data/raw/.
 
 Použití:
+  python pull.py --auth-only              # jen přihlášení (poprvé, na počítači s prohlížečem)
   python pull.py                          # přírůstkově od posledního stažení (poprvé 30 dní zpět)
   python pull.py --since 2026-06-01       # od zadaného data do dneška
   python pull.py --since 2026-06-01 --until 2026-06-30
   python pull.py --types heart-rate,sleep # jen vybrané typy (seznam: --list-types)
   python pull.py --dry-run                # jen vypíše, co by se stahovalo (bez přihlášení)
+  python pull.py --no-browser             # pro automatický běh (GitHub Actions, cron):
+                                          #   token bere z proměnné HEALTH_TOKEN_JSON
+                                          #   nebo ze secrets/token.json, nikdy neotvírá prohlížeč
 
 První spuštění otevře prohlížeč a nechá tě přihlásit Google účtem (OAuth).
 Potřebuje secrets/client_secret.json – postup je v README.md.
 
-Výstup: data/raw/<typ>/<datum>.json – vždy původní (nezjednodušená) odpověď API,
-tj. {"dataPoints": [...]} nebo {"rollupDataPoints": [...]}. Stejný tvar dává
-`ghealth ... --raw -o soubor.json`, takže soubory z ghealth jde do složek přihodit.
+Výstup: data/raw/<typ>/<datum>.json.gz – vždy původní (nezjednodušená) odpověď API,
+tj. {"dataPoints": [...]} nebo {"rollupDataPoints": [...]}, jen zabalená gzipem.
+Stejný tvar dává `ghealth ... --raw -o soubor.json`; takové .json soubory jde do
+složek přihodit, summarize.py čte obojí.
 """
 
 from __future__ import annotations
 
 import argparse
 import datetime as dt
+import gzip
 import json
 import os
 import sys
@@ -133,13 +139,23 @@ def windows(since: dt.date, until: dt.date, chunk_days: int):
 
 def window_filename(a: dt.date, b: dt.date, chunk_days: int) -> str:
     last = b - dt.timedelta(days=1)
-    return f"{a}.json" if chunk_days == 1 else f"{a}_{last}.json"
+    return f"{a}.json.gz" if chunk_days == 1 else f"{a}_{last}.json.gz"
+
+
+def already_downloaded(path: Path) -> bool:
+    """Existuje soubor okna – zabalený, nebo nezabalený .json (např. z ghealth)."""
+    return path.exists() or path.with_suffix("").exists()
 
 
 def write_json_atomic(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    tmp = path.with_name(path.name + ".tmp")
+    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    if path.name.endswith(".gz"):
+        with gzip.open(tmp, "wb", compresslevel=6) as fh:
+            fh.write(data)
+    else:
+        tmp.write_bytes(data)
     tmp.replace(path)
 
 
@@ -154,10 +170,17 @@ def load_state(path: Path) -> dict:
 
 # ─── OAuth ──────────────────────────────────────────────────────────────────
 
-def get_session(secrets_dir: Path):
-    """Vrátí requests session s platným tokenem; poprvé otevře prohlížeč."""
+TOKEN_ENV = "HEALTH_TOKEN_JSON"
+
+
+def get_session(secrets_dir: Path, allow_browser: bool = True):
+    """Vrátí requests session s platným tokenem.
+
+    Pořadí: proměnná HEALTH_TOKEN_JSON (automatický běh) → secrets/token.json →
+    přihlášení v prohlížeči (jen když allow_browser).
+    """
     try:
-        from google.auth.exceptions import RefreshError
+        from google.auth.exceptions import RefreshError, TransportError
         from google.auth.transport.requests import AuthorizedSession, Request
         from google.oauth2.credentials import Credentials
         from google_auth_oauthlib.flow import InstalledAppFlow
@@ -166,23 +189,42 @@ def get_session(secrets_dir: Path):
 
     client_secret = secrets_dir / "client_secret.json"
     token_file = secrets_dir / "token.json"
+    from_env = bool(os.environ.get(TOKEN_ENV))
 
     creds = None
-    if token_file.exists():
-        try:
+    try:
+        if from_env:
+            creds = Credentials.from_authorized_user_info(json.loads(os.environ[TOKEN_ENV]), SCOPES)
+        elif token_file.exists():
             creds = Credentials.from_authorized_user_file(str(token_file), SCOPES)
-        except ValueError:
-            creds = None
+    except ValueError as e:
+        if from_env:
+            die(f"{TOKEN_ENV} není platný obsah token.json: {e}")
+        creds = None
 
     if creds and not creds.valid and creds.refresh_token:
         try:
             creds.refresh(Request())
-        except RefreshError:
-            # Refresh token vypršel (v režimu Testing platí 7 dní) nebo byl odvolán.
+            if not from_env:
+                token_file.write_text(creds.to_json(), encoding="utf-8")
+        except TransportError as e:
+            die(f"nepodařilo se spojit s Google (síť/proxy): {e}", code=4)
+        except RefreshError as e:
+            # Refresh token vypršel (v režimu Testing platí jen 7 dní) nebo byl odvolán.
+            if not allow_browser:
+                die(f"přihlášení už neplatí ({e}).\n"
+                    "  Na počítači spusť: python pull.py --auth-only\n"
+                    f"  a nový obsah secrets/token.json ulož do secretu {TOKEN_ENV}.\n"
+                    "  Pokud to vyprší každých 7 dní, přepni OAuth aplikaci v Google Cloud\n"
+                    "  na Publishing status: In production (viz README).", code=2)
             print("Uložené přihlášení už neplatí, přihlas se znovu v prohlížeči.", file=sys.stderr)
             creds = None
 
     if not creds or not creds.valid:
+        if not allow_browser:
+            die(f"chybí platný token a --no-browser zakazuje přihlášení.\n"
+                f"  Na počítači spusť: python pull.py --auth-only a obsah secrets/token.json\n"
+                f"  ulož do secretu {TOKEN_ENV}.", code=2)
         if not client_secret.exists():
             die(f"nenašel jsem {client_secret}\n"
                 "  1. https://console.cloud.google.com/apis/credentials\n"
@@ -200,6 +242,30 @@ def get_session(secrets_dir: Path):
         print(f"Přihlášení uloženo do {token_file}")
 
     return AuthorizedSession(creds)
+
+
+def print_auth_done(secrets_dir: Path, gh_repo: str | None) -> None:
+    token_file = secrets_dir / "token.json"
+    if gh_repo:
+        import shutil
+        import subprocess
+        if not shutil.which("gh"):
+            die("--gh-repo potřebuje gh CLI (https://cli.github.com) a `gh auth login`")
+        with token_file.open("rb") as fh:
+            subprocess.run(["gh", "secret", "set", TOKEN_ENV, "--repo", gh_repo], stdin=fh, check=True)
+        print(f"Secret {TOKEN_ENV} v repu {gh_repo} aktualizován.")
+        return
+    print(f"""
+Hotovo. Token je v {token_file}
+
+Pro automatický běh v GitHub Actions ulož jeho obsah do secretu {TOKEN_ENV}:
+  • ručně: GitHub → repo → Settings → Secrets and variables → Actions → New repository secret
+           Name: {TOKEN_ENV}   Secret: celý obsah souboru token.json
+  • nebo:  python pull.py --auth-only --gh-repo <ucet>/health-data   (přes gh CLI)
+
+Token nevyprší, pokud je OAuth aplikace v Google Cloud ve stavu „In production“
+(v režimu „Testing“ platí jen 7 dní).
+""")
 
 
 # ─── volání API ─────────────────────────────────────────────────────────────
@@ -282,6 +348,11 @@ def parse_args(argv=None) -> argparse.Namespace:
     p.add_argument("--force", action="store_true", help="stáhnout znovu i už stažená okna")
     p.add_argument("--dry-run", action="store_true", help="jen vypsat plán, nic nestahovat")
     p.add_argument("--list-types", action="store_true", help="vypsat podporované typy a skončit")
+    p.add_argument("--auth-only", action="store_true", help="jen se přihlásit a uložit secrets/token.json")
+    p.add_argument("--gh-repo", metavar="UCET/REPO",
+                   help=f"s --auth-only: rovnou nahrát token jako secret {TOKEN_ENV} do GitHub repa (přes gh CLI)")
+    p.add_argument("--no-browser", action="store_true",
+                   help=f"nikdy neotvírat prohlížeč (automatický běh; token z {TOKEN_ENV} nebo secrets/token.json)")
     return p.parse_args(argv)
 
 
@@ -291,6 +362,11 @@ def main(argv=None) -> int:
     if args.list_types:
         for tid, cfg in TYPES.items():
             print(f"{tid:38} {cfg['mode']:13} {cfg['desc']}")
+        return 0
+
+    if args.auth_only:
+        get_session(args.secrets, allow_browser=True)
+        print_auth_done(args.secrets, args.gh_repo)
         return 0
 
     try:
@@ -325,7 +401,7 @@ def main(argv=None) -> int:
         for a, b in windows(since, until, cfg["chunk"]):
             path = raw_dir / tid / window_filename(a, b, cfg["chunk"])
             recent = (b - dt.timedelta(days=1)) >= today - dt.timedelta(days=1)
-            if path.exists() and not args.force and not recent:
+            if already_downloaded(path) and not args.force and not recent:
                 continue
             plan.append((tid, a, b, path))
 
@@ -344,7 +420,7 @@ def main(argv=None) -> int:
             print(f"  {tid:38} {path.relative_to(args.data)}\n      {what}")
         return 0
 
-    session = get_session(args.secrets)
+    session = get_session(args.secrets, allow_browser=not args.no_browser)
     ok = 0
     failed: list[str] = []
     for tid, a, b, path in plan:

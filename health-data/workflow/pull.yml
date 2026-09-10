@@ -1,0 +1,73 @@
+# GitHub Actions: každé ráno stáhne nová data z Google Health API, udělá souhrn
+# a commitne data/ do repa. Patří do SOUKROMÉHO repa (zdravotní data!) jako
+# .github/workflows/pull.yml. Potřebuje secret HEALTH_TOKEN_JSON
+# (obsah secrets/token.json z `python pull.py --auth-only`).
+name: Health data – denní stažení
+
+on:
+  schedule:
+    - cron: "30 5 * * *"        # 05:30 UTC = 07:30 letního / 06:30 zimního času v ČR
+  workflow_dispatch:
+    inputs:
+      since:
+        description: "Stáhnout od data (YYYY-MM-DD); prázdné = přírůstkově"
+        required: false
+        default: ""
+      force:
+        description: "Přepsat už stažené soubory"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: health-data-pull
+  cancel-in-progress: false
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalace
+        run: pip install -r requirements.txt
+
+      - name: Stažení z Google Health API
+        env:
+          HEALTH_TOKEN_JSON: ${{ secrets.HEALTH_TOKEN_JSON }}
+          HEALTH_TZ: Europe/Prague
+        run: |
+          args="--no-browser"
+          if [ -n "${{ inputs.since }}" ]; then args="$args --since ${{ inputs.since }}"; fi
+          if [ "${{ inputs.force }}" = "true" ]; then args="$args --force"; fi
+          python pull.py $args
+
+      - name: Souhrn
+        run: python summarize.py
+
+      - name: Commit dat
+        run: |
+          git config user.name "health-data bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "Žádná nová data."
+          else
+            git commit -m "data: $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
+      - name: Souhrn do přehledu běhu
+        if: always()
+        run: |
+          if [ -f data/summary/summary.md ]; then
+            head -c 60000 data/summary/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi

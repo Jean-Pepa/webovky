@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import csv
 import datetime as dt
+import gzip
 import json
 import statistics
 import sys
@@ -156,13 +157,18 @@ def source_of(dp: dict) -> str:
 
 
 def iter_files(raw_dir: Path, type_id: str):
+    """Všechny *.json a *.json.gz daného typu (výstup pull.py i ghealth --raw)."""
     d = raw_dir / type_id
     if not d.is_dir():
         return
-    for f in sorted(d.glob("*.json")):
+    for f in sorted(list(d.glob("*.json")) + list(d.glob("*.json.gz"))):
         try:
-            yield f, json.loads(f.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError) as e:
+            if f.name.endswith(".gz"):
+                with gzip.open(f, "rt", encoding="utf-8") as fh:
+                    yield f, json.load(fh)
+            else:
+                yield f, json.loads(f.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError, EOFError) as e:
             warn(f"{f}: {e}")
 
 
@@ -435,6 +441,25 @@ def write_summary_md(path: Path, rows: list[dict], sleeps: list[dict], exercises
     if trows:
         out += ["## Posledních 7 dní vs. předchozích 7", "",
                 md_table(["metrika", f"od {cut7}", f"{cut14} až {(dt.date.fromisoformat(cut7) - dt.timedelta(days=1))}", "rozdíl"], trows), ""]
+
+    # týdenní průměry (ISO týdny od pondělí), posledních 8 týdnů
+    weeks: dict[str, list] = defaultdict(list)
+    for r in rows:
+        d = dt.date.fromisoformat(r["date"])
+        weeks[(d - dt.timedelta(days=d.weekday())).isoformat()].append(r)
+    wk_cols = [("steps", "kroky/den", 0), ("resting_hr", "klidový tep", 1), ("hrv", "HRV", 1),
+               ("sleep_minutes", "spánek min", 0), ("sleep_deep", "hluboký", 0), ("sleep_rem", "REM", 0),
+               ("hr_avg", "prům. tep", 1)]
+    wk_cols = [c for c in wk_cols if c[0] in present]
+    if len(weeks) >= 2 and wk_cols:
+        wrows = []
+        for start in sorted(weeks)[-8:]:
+            rs = weeks[start]
+            ex_min = sum(num(r.get("exercise_minutes")) or 0 for r in rs)
+            wrows.append([f"{start} ({len(rs)} d)"] + [fmt(mean_of(rs, c), dg) if mean_of(rs, c) is not None else ""
+                                                        for c, _, dg in wk_cols] + [fmt(ex_min)])
+        out += ["## Týdny (průměr na den)", "",
+                md_table(["týden od"] + [lbl for _, lbl, _ in wk_cols] + ["trénink min/týden"], wrows), ""]
 
     # denní tabulka posledních 14 dní
     cols = [c for c in ["date", "weekday", "steps", "resting_hr", "hrv", "spo2", "hr_avg", "hr_min", "hr_max",
