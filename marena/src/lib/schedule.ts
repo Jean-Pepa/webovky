@@ -22,44 +22,28 @@ export interface Day {
   finale?: boolean;
 }
 
-export const KIND_LABEL: Record<SlotKind, L> = {
-  zahajeni: { cs: "zahájení semestru", en: "semester opening", de: "Semesterauftakt" },
-  special: { cs: "studentský speciál", en: "student special", de: "Studenten-Spezial" },
-  film: { cs: "film", en: "film", de: "Film" },
-  vikend: { cs: "víkendová aktivita", en: "weekend activity", de: "Wochenendaktivität" },
-  prednaska: { cs: "přednáška", en: "lecture", de: "Vortrag" },
-  kapela: { cs: "kapela", en: "band", de: "Band" },
-  dj: { cs: "DJ", en: "DJ", de: "DJ" },
-  herni: { cs: "herní večer", en: "game night", de: "Spieleabend" },
-  pruvod: { cs: "průvod & pasování", en: "parade & initiation", de: "Umzug & Taufe" },
-  volno: { cs: "volno", en: "day off", de: "frei" },
+// Barevná tečka podle typu programu (místo legendy) — barvy dle tabulky organizátorů.
+export const KIND_DOT: Record<SlotKind, string> = {
+  zahajeni: "bg-orange-500",
+  special: "bg-yellow-400",
+  film: "bg-purple-600",
+  vikend: "bg-rose-700",
+  prednaska: "bg-amber-400",
+  kapela: "bg-blue-600",
+  dj: "bg-red-600",
+  herni: "bg-emerald-500",
+  pruvod: "bg-teal-500",
+  volno: "bg-ink/20",
 };
 
-// Barvy podle legendy v tabulce (na bílém pozadí).
-export const KIND_CLASS: Record<SlotKind, string> = {
-  zahajeni: "bg-orange-500 text-white",
-  special: "bg-yellow-300 text-yellow-950",
-  film: "bg-purple-600 text-white",
-  vikend: "bg-rose-800 text-white",
-  prednaska: "bg-amber-400 text-amber-950",
-  kapela: "bg-blue-600 text-white",
-  dj: "bg-red-600 text-white",
-  herni: "bg-emerald-500 text-white",
-  pruvod: "bg-teal-500 text-white",
-  volno: "bg-ink/5 text-ink-soft",
-};
-
-export const UI: Record<"from" | "finale" | "must" | "tickets" | "legend" | "range", L> = {
-  from: { cs: "od", en: "from", de: "ab" },
-  finale: { cs: "Velké finále", en: "Grand finale", de: "Großes Finale" },
+export const UI: Record<"finale" | "must" | "tickets", L> = {
+  finale: { cs: "Finále", en: "Finale", de: "Finale" },
   must: { cs: "povinné", en: "mandatory", de: "Pflicht" },
   tickets: {
-    cs: "Lístky na Flédu jsou už v prodeji — každý rok vyprodáno, tak neváhej.",
-    en: "Tickets for Fléda are on sale now — sold out every year, don't wait.",
-    de: "Tickets fürs Fléda sind bereits im Verkauf — jedes Jahr ausverkauft, also nicht zögern.",
+    cs: "Lístky na Flédu už v prodeji — každý rok vyprodáno, neváhej.",
+    en: "Tickets for Fléda on sale now — sold out every year, don't wait.",
+    de: "Tickets fürs Fléda im Verkauf — jedes Jahr ausverkauft, nicht zögern.",
   },
-  legend: { cs: "Legenda", en: "Legend", de: "Legende" },
-  range: { cs: "čtvrtek 17. 9. → čtvrtek 24. 9.", en: "Thursday 17 Sep → Thursday 24 Sep", de: "Donnerstag 17. 9. → Donnerstag 24. 9." },
 };
 
 const P = (cs: string, en: string, de: string): L => ({ cs, en, de });

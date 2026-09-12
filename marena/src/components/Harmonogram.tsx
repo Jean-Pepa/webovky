@@ -1,56 +1,45 @@
 import type { Lang } from "@/lib/homepage";
-import { SCHEDULE, KIND_CLASS, KIND_LABEL, UI, fmtDay, pick, type SlotKind } from "@/lib/schedule";
+import { SCHEDULE, KIND_DOT, UI, fmtDay, pick } from "@/lib/schedule";
 
-// Harmonogram čtvrtek → čtvrtek pod nadpisem „Co tě na Mařeně čeká" (obě témata
-// webu). Dny jako karty, program jako barevné štítky podle legendy; finálový
-// čtvrtek zvýrazněný + upozornění na lístky na Flédu.
+// Kompaktní harmonogram čt → čt: jeden řádek na den, jen začátky, barevná tečka
+// podle typu programu. Finálový čtvrtek zvýrazněný (povinné pasování + lístky).
 export function Harmonogram({ lang }: { lang: Lang }) {
-  const legend = (Object.keys(KIND_LABEL) as SlotKind[]).filter((k) => k !== "volno");
   return (
-    <div className="mt-6">
-      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-ink-soft">{UI.range[lang]}</p>
-      <ol className="mt-3 grid gap-3 md:grid-cols-2">
-        {SCHEDULE.map((d) => (
-          <li
-            key={d.day}
-            className={`rounded-2xl p-4 ring-1 ${d.finale ? "bg-amber-50 ring-amber-400 md:col-span-2" : "bg-white ring-ink/10"}`}
-          >
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="font-display text-2xl font-bold text-ink">{d.dow[lang]}</span>
-              <span className="text-ink-soft">{fmtDay(d.day, lang)}</span>
-              {d.finale && (
-                <span className="ml-auto rounded-full bg-amber-500 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">{UI.finale[lang]}</span>
-              )}
-            </div>
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {d.slots.map((s, i) => (
-                <li
-                  key={i}
-                  className={`inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-0.5 rounded-full px-3 py-1.5 text-sm font-medium ${KIND_CLASS[s.kind]}`}
-                >
-                  {s.from && <span className="tabular-nums opacity-80">{s.to ? `${s.from}–${s.to}` : `${UI.from[lang]} ${s.from}`}</span>}
-                  <span>{pick(s.title, lang)}</span>
-                  {s.must && (
-                    <span className="rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-red-700">{UI.must[lang]}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-            {d.slots.some((s) => s.note) && (
-              <p className="mt-2 text-xs text-ink-soft">{d.slots.map((s) => s.note?.[lang]).filter(Boolean).join(" · ")}</p>
+    <ol className="mt-5 divide-y divide-ink/10 overflow-hidden rounded-2xl bg-white ring-1 ring-ink/10">
+      {SCHEDULE.map((d) => (
+        <li
+          key={d.day}
+          className={`flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-baseline sm:gap-4 ${d.finale ? "bg-amber-50" : ""}`}
+        >
+          <div className="flex shrink-0 items-baseline gap-2 sm:w-24">
+            <span className="font-display text-lg font-bold text-ink">{d.dow[lang]}</span>
+            <span className="text-sm text-ink-soft">{fmtDay(d.day, lang)}</span>
+          </div>
+          <div className="min-w-0 text-sm leading-relaxed text-ink">
+            {d.finale && (
+              <span className="mr-2 rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">{UI.finale[lang]}</span>
             )}
-            {d.finale && <p className="mt-3 rounded-xl bg-amber-500/15 px-3 py-2 text-sm font-semibold text-amber-900">🎟️ {UI.tickets[lang]}</p>}
-          </li>
-        ))}
-      </ol>
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-        <span className="font-semibold uppercase tracking-wide text-ink-soft">{UI.legend[lang]}:</span>
-        {legend.map((k) => (
-          <span key={k} className={`rounded-full px-2.5 py-1 font-medium ${KIND_CLASS[k]}`}>
-            {KIND_LABEL[k][lang]}
-          </span>
-        ))}
-      </div>
-    </div>
+            {d.slots.map((s, i) => (
+              <span key={i}>
+                {i > 0 && <span className="mx-1.5 text-ink-soft/50">·</span>}
+                {/* tečka + čas drží pohromadě (zalomení až před názvem) */}
+                <span className="whitespace-nowrap">
+                  <span className={`mr-1 inline-block h-2 w-2 rounded-full align-middle ${KIND_DOT[s.kind]}`} />
+                  {s.from && <span className="mr-1 tabular-nums text-ink-soft">{s.from}</span>}
+                </span>
+                <span className={s.must ? "font-semibold" : ""}>{pick(s.title, lang)}</span>
+                {s.must && (
+                  <span className="ml-1 rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">{UI.must[lang]}</span>
+                )}
+              </span>
+            ))}
+            {d.slots.some((s) => s.note) && (
+              <div className="mt-0.5 text-xs text-ink-soft">{d.slots.map((s) => s.note?.[lang]).filter(Boolean).join(" · ")}</div>
+            )}
+            {d.finale && <div className="mt-1 text-xs font-semibold text-amber-900">🎟️ {UI.tickets[lang]}</div>}
+          </div>
+        </li>
+      ))}
+    </ol>
   );
 }
