@@ -71,7 +71,7 @@ export const SCHEDULE: Day[] = [
     slots: [
       { from: "19:00", to: "20:00", title: P("Zahájení semestru", "Semester opening", "Semesterauftakt"), kind: "zahajeni" },
       { from: "20:00", to: "21:00", title: "Hopsen Clark", kind: "kapela" },
-      { from: "21:30", to: "0:00", title: "DJ Vojta", kind: "dj" },
+      { from: "21:00", to: "0:00", title: "DJ Vojta", kind: "dj" },
     ],
   },
   {
