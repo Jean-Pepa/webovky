@@ -22,20 +22,7 @@ export interface Day {
   finale?: boolean;
 }
 
-export const KIND_LABEL: Record<SlotKind, L> = {
-  zahajeni: { cs: "zahájení semestru", en: "semester opening", de: "Semesterauftakt" },
-  special: { cs: "studentský speciál", en: "student special", de: "Studenten-Spezial" },
-  film: { cs: "film", en: "film", de: "Film" },
-  vikend: { cs: "víkendová aktivita", en: "weekend activity", de: "Wochenendaktivität" },
-  prednaska: { cs: "přednáška", en: "lecture", de: "Vortrag" },
-  kapela: { cs: "kapela", en: "band", de: "Band" },
-  dj: { cs: "DJ", en: "DJ", de: "DJ" },
-  herni: { cs: "herní večer", en: "game night", de: "Spieleabend" },
-  pruvod: { cs: "průvod & pasování", en: "parade & initiation", de: "Umzug & Taufe" },
-  volno: { cs: "volno", en: "day off", de: "frei" },
-};
-
-// Barvy podle legendy v tabulce (na bílém pozadí).
+// Barvy štítků podle typu programu (dle tabulky organizátorů, na bílém pozadí).
 export const KIND_CLASS: Record<SlotKind, string> = {
   zahajeni: "bg-orange-500 text-white",
   special: "bg-yellow-300 text-yellow-950",
@@ -49,17 +36,46 @@ export const KIND_CLASS: Record<SlotKind, string> = {
   volno: "bg-ink/5 text-ink-soft",
 };
 
-export const UI: Record<"from" | "finale" | "must" | "tickets" | "legend" | "range", L> = {
+// Štítek typu programu nad blokem (malými písmeny): [jednotné, množné číslo].
+// Sousední položky stejného typu dostanou štítek jen jednou. `null` = bez štítku.
+export const KIND_LABEL: Record<SlotKind, [L, L] | null> = {
+  zahajeni: [{ cs: "zahájení", en: "opening", de: "Auftakt" }, { cs: "zahájení", en: "opening", de: "Auftakt" }],
+  special: [{ cs: "speciál", en: "special", de: "Spezial" }, { cs: "speciály", en: "specials", de: "Spezials" }],
+  film: [{ cs: "film", en: "film", de: "Film" }, { cs: "filmy", en: "films", de: "Filme" }],
+  vikend: [{ cs: "víkendový program", en: "weekend programme", de: "Wochenendprogramm" }, { cs: "víkendový program", en: "weekend programme", de: "Wochenendprogramm" }],
+  prednaska: [{ cs: "přednáška", en: "lecture", de: "Vortrag" }, { cs: "přednášky", en: "lectures", de: "Vorträge" }],
+  kapela: [{ cs: "kapela", en: "band", de: "Band" }, { cs: "kapely", en: "bands", de: "Bands" }],
+  dj: [{ cs: "dj", en: "dj", de: "DJ" }, { cs: "djs", en: "djs", de: "DJs" }],
+  herni: [{ cs: "herní večer", en: "game night", de: "Spieleabend" }, { cs: "herní večery", en: "game nights", de: "Spieleabende" }],
+  pruvod: [{ cs: "průvod", en: "parade", de: "Umzug" }, { cs: "průvod", en: "parade", de: "Umzug" }],
+  volno: null,
+};
+
+export interface SlotGroup {
+  kind: SlotKind;
+  slots: Slot[];
+}
+// Sousední položky stejného typu → jeden blok (štítek se ukáže jen jednou nad ním).
+export function groupSlots(slots: Slot[]): SlotGroup[] {
+  const out: SlotGroup[] = [];
+  for (const s of slots) {
+    const last = out[out.length - 1];
+    if (last && last.kind === s.kind) last.slots.push(s);
+    else out.push({ kind: s.kind, slots: [s] });
+  }
+  return out;
+}
+
+export const UI: Record<"heading" | "finale" | "must" | "from" | "tickets", L> = {
+  heading: { cs: "Harmonogram", en: "Schedule", de: "Programm" },
   from: { cs: "od", en: "from", de: "ab" },
-  finale: { cs: "Velké finále", en: "Grand finale", de: "Großes Finale" },
+  finale: { cs: "Finále", en: "Finale", de: "Finale" },
   must: { cs: "povinné", en: "mandatory", de: "Pflicht" },
   tickets: {
-    cs: "Lístky na Flédu jsou už v prodeji — každý rok vyprodáno, tak neváhej.",
-    en: "Tickets for Fléda are on sale now — sold out every year, don't wait.",
-    de: "Tickets fürs Fléda sind bereits im Verkauf — jedes Jahr ausverkauft, also nicht zögern.",
+    cs: "Kupuj lístky, než se vyprodají.",
+    en: "Buy tickets before they sell out.",
+    de: "Kauf dir Tickets, bevor sie ausverkauft sind.",
   },
-  legend: { cs: "Legenda", en: "Legend", de: "Legende" },
-  range: { cs: "čtvrtek 17. 9. → čtvrtek 24. 9.", en: "Thursday 17 Sep → Thursday 24 Sep", de: "Donnerstag 17. 9. → Donnerstag 24. 9." },
 };
 
 const P = (cs: string, en: string, de: string): L => ({ cs, en, de });
@@ -71,7 +87,7 @@ export const SCHEDULE: Day[] = [
     slots: [
       { from: "19:00", to: "20:00", title: P("Zahájení semestru", "Semester opening", "Semesterauftakt"), kind: "zahajeni" },
       { from: "20:00", to: "21:00", title: "Hopsen Clark", kind: "kapela" },
-      { from: "21:30", to: "0:00", title: "DJ Vojta", kind: "dj" },
+      { from: "21:00", to: "0:00", title: "DJ Vojta", kind: "dj" },
     ],
   },
   {
@@ -79,7 +95,7 @@ export const SCHEDULE: Day[] = [
     dow: P("Pá", "Fri", "Fr"),
     slots: [
       { from: "17:30", to: "19:00", title: P("Studentský speciál", "Student special", "Studenten-Spezial"), kind: "special" },
-      { from: "19:00", to: "20:00", title: P("Kapela jednoho prváka BBzde", "One-freshman band BBzde", "Ein-Erstsemester-Band BBzde"), kind: "special" },
+      { from: "19:00", to: "20:00", title: P("Kapela jednoho prváka BBzde", "One-freshman band BBzde", "Ein-Erstsemester-Band BBzde"), kind: "kapela" },
       { from: "20:00", to: "23:30", title: P("Film", "Film", "Film"), kind: "film" },
     ],
   },
@@ -108,7 +124,7 @@ export const SCHEDULE: Day[] = [
     day: 21,
     dow: P("Po", "Mon", "Mo"),
     slots: [
-      { from: "16:00", to: "17:00", title: "Mitášová", kind: "prednaska" },
+      { from: "16:00", to: "17:00", title: "prof. Ing. arch. Monika Mitášová, Ph.D.", kind: "prednaska" },
       { from: "17:00", to: "18:00", title: "Štěpán Flekna", kind: "prednaska" },
       { from: "18:00", to: "20:00", title: "Steve Davies", kind: "prednaska" },
       { from: "20:00", to: "22:00", title: "Stříbrný Rafael", kind: "kapela" },
@@ -140,14 +156,6 @@ export const SCHEDULE: Day[] = [
     finale: true,
     slots: [
       { from: "17:30", title: P("Sraz na fakultě", "Meet at the faculty", "Treffen an der Fakultät"), kind: "pruvod" },
-      { from: "18:00", to: "19:30", title: P("Průvod městem", "Parade through the city", "Umzug durch die Stadt"), kind: "pruvod" },
-      {
-        from: "19:30",
-        to: "21:00",
-        title: P("Příchod na Flédu a pasování na architekta", "Arrival at Fléda and initiation as an architect", "Ankunft im Fléda und Architekten-Taufe"),
-        kind: "pruvod",
-        must: true,
-      },
       { from: "21:00", to: "22:30", title: "Obligatne", kind: "kapela" },
       { from: "22:30", to: "23:30", title: "Eduv syn", kind: "kapela" },
       { from: "23:30", title: "Ragdoll", kind: "kapela" },
