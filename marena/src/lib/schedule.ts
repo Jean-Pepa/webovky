@@ -66,7 +66,8 @@ export function groupSlots(slots: Slot[]): SlotGroup[] {
   return out;
 }
 
-export const UI: Record<"finale" | "must" | "from" | "tickets", L> = {
+export const UI: Record<"heading" | "finale" | "must" | "from" | "tickets", L> = {
+  heading: { cs: "Harmonogram", en: "Schedule", de: "Programm" },
   from: { cs: "od", en: "from", de: "ab" },
   finale: { cs: "Finále", en: "Finale", de: "Finale" },
   must: { cs: "povinné", en: "mandatory", de: "Pflicht" },

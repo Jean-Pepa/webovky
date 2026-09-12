@@ -207,7 +207,6 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
           <h2 className="mt-3 font-display text-4xl font-bold tracking-tight vegas-ink-gold">{t.whatsTitle}</h2>
           <p className="mt-3 text-ink-soft">{t.whatsIntro}</p>
         </div>
-        <Harmonogram lang={lang} />
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {LINEUP_MEDIA.map((m, i) => {
@@ -243,6 +242,9 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
             <p className="mt-2 max-w-2xl text-white/90 md:text-lg">{t.finaleText}</p>
           </div>
         </article>
+
+        {/* HARMONOGRAM — až pod finálovou kartou */}
+        <Harmonogram lang={lang} />
       </section>
 
       {/* Neonová cedule s kačenkou — téma ročníku beze slov (ať si to každý domyslí).
@@ -420,7 +422,6 @@ function NormalHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Hom
           <h2 className="mt-2 font-display text-4xl font-bold tracking-tight">{t.whatsTitle}</h2>
           <p className="mt-3 text-ink-soft">{t.whatsIntro}</p>
         </div>
-        <Harmonogram lang={lang} />
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {LINEUP_MEDIA.map((m, i) => {
@@ -456,6 +457,9 @@ function NormalHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Hom
             <p className="mt-2 max-w-2xl text-white/90 md:text-lg">{t.finaleText}</p>
           </div>
         </article>
+
+        {/* HARMONOGRAM — až pod finálovou kartou */}
+        <Harmonogram lang={lang} />
       </section>
 
       {/* MAŘENA BAND */}
