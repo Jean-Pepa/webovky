@@ -36,6 +36,36 @@ export const KIND_DOT: Record<SlotKind, string> = {
   volno: "bg-ink/20",
 };
 
+// Štítek typu programu nad blokem (malými písmeny): [jednotné, množné číslo].
+// Sousední položky stejného typu dostanou štítek jen jednou. `null` = bez štítku.
+export const KIND_LABEL: Record<SlotKind, [L, L] | null> = {
+  zahajeni: [{ cs: "zahájení", en: "opening", de: "Auftakt" }, { cs: "zahájení", en: "opening", de: "Auftakt" }],
+  special: [{ cs: "speciál", en: "special", de: "Spezial" }, { cs: "speciály", en: "specials", de: "Spezials" }],
+  film: [{ cs: "film", en: "film", de: "Film" }, { cs: "filmy", en: "films", de: "Filme" }],
+  vikend: [{ cs: "víkendový program", en: "weekend programme", de: "Wochenendprogramm" }, { cs: "víkendový program", en: "weekend programme", de: "Wochenendprogramm" }],
+  prednaska: [{ cs: "přednáška", en: "lecture", de: "Vortrag" }, { cs: "přednášky", en: "lectures", de: "Vorträge" }],
+  kapela: [{ cs: "kapela", en: "band", de: "Band" }, { cs: "kapely", en: "bands", de: "Bands" }],
+  dj: [{ cs: "dj", en: "dj", de: "DJ" }, { cs: "djs", en: "djs", de: "DJs" }],
+  herni: [{ cs: "herní večer", en: "game night", de: "Spieleabend" }, { cs: "herní večery", en: "game nights", de: "Spieleabende" }],
+  pruvod: [{ cs: "průvod & pasování", en: "parade & initiation", de: "Umzug & Taufe" }, { cs: "průvod & pasování", en: "parade & initiation", de: "Umzug & Taufe" }],
+  volno: null,
+};
+
+export interface SlotGroup {
+  kind: SlotKind;
+  slots: Slot[];
+}
+// Sousední položky stejného typu → jeden blok (štítek se ukáže jen jednou nad ním).
+export function groupSlots(slots: Slot[]): SlotGroup[] {
+  const out: SlotGroup[] = [];
+  for (const s of slots) {
+    const last = out[out.length - 1];
+    if (last && last.kind === s.kind) last.slots.push(s);
+    else out.push({ kind: s.kind, slots: [s] });
+  }
+  return out;
+}
+
 export const UI: Record<"finale" | "must" | "tickets", L> = {
   finale: { cs: "Finále", en: "Finale", de: "Finale" },
   must: { cs: "povinné", en: "mandatory", de: "Pflicht" },
@@ -63,7 +93,7 @@ export const SCHEDULE: Day[] = [
     dow: P("Pá", "Fri", "Fr"),
     slots: [
       { from: "17:30", to: "19:00", title: P("Studentský speciál", "Student special", "Studenten-Spezial"), kind: "special" },
-      { from: "19:00", to: "20:00", title: P("Kapela jednoho prváka BBzde", "One-freshman band BBzde", "Ein-Erstsemester-Band BBzde"), kind: "special" },
+      { from: "19:00", to: "20:00", title: P("Kapela jednoho prváka BBzde", "One-freshman band BBzde", "Ein-Erstsemester-Band BBzde"), kind: "kapela" },
       { from: "20:00", to: "23:30", title: P("Film", "Film", "Film"), kind: "film" },
     ],
   },
@@ -92,7 +122,7 @@ export const SCHEDULE: Day[] = [
     day: 21,
     dow: P("Po", "Mon", "Mo"),
     slots: [
-      { from: "16:00", to: "17:00", title: "Mitášová", kind: "prednaska" },
+      { from: "16:00", to: "17:00", title: "prof. Ing. arch. Monika Mitášová, Ph.D.", kind: "prednaska" },
       { from: "17:00", to: "18:00", title: "Štěpán Flekna", kind: "prednaska" },
       { from: "18:00", to: "20:00", title: "Steve Davies", kind: "prednaska" },
       { from: "20:00", to: "22:00", title: "Stříbrný Rafael", kind: "kapela" },
