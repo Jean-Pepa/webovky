@@ -22,18 +22,18 @@ export interface Day {
   finale?: boolean;
 }
 
-// Barevná tečka podle typu programu (místo legendy) — barvy dle tabulky organizátorů.
-export const KIND_DOT: Record<SlotKind, string> = {
-  zahajeni: "bg-orange-500",
-  special: "bg-yellow-400",
-  film: "bg-purple-600",
-  vikend: "bg-rose-700",
-  prednaska: "bg-amber-400",
-  kapela: "bg-blue-600",
-  dj: "bg-red-600",
-  herni: "bg-emerald-500",
-  pruvod: "bg-teal-500",
-  volno: "bg-ink/20",
+// Barvy štítků podle typu programu (dle tabulky organizátorů, na bílém pozadí).
+export const KIND_CLASS: Record<SlotKind, string> = {
+  zahajeni: "bg-orange-500 text-white",
+  special: "bg-yellow-300 text-yellow-950",
+  film: "bg-purple-600 text-white",
+  vikend: "bg-rose-800 text-white",
+  prednaska: "bg-amber-400 text-amber-950",
+  kapela: "bg-blue-600 text-white",
+  dj: "bg-red-600 text-white",
+  herni: "bg-emerald-500 text-white",
+  pruvod: "bg-teal-500 text-white",
+  volno: "bg-ink/5 text-ink-soft",
 };
 
 // Štítek typu programu nad blokem (malými písmeny): [jednotné, množné číslo].
@@ -47,7 +47,7 @@ export const KIND_LABEL: Record<SlotKind, [L, L] | null> = {
   kapela: [{ cs: "kapela", en: "band", de: "Band" }, { cs: "kapely", en: "bands", de: "Bands" }],
   dj: [{ cs: "dj", en: "dj", de: "DJ" }, { cs: "djs", en: "djs", de: "DJs" }],
   herni: [{ cs: "herní večer", en: "game night", de: "Spieleabend" }, { cs: "herní večery", en: "game nights", de: "Spieleabende" }],
-  pruvod: [{ cs: "průvod & pasování", en: "parade & initiation", de: "Umzug & Taufe" }, { cs: "průvod & pasování", en: "parade & initiation", de: "Umzug & Taufe" }],
+  pruvod: [{ cs: "průvod", en: "parade", de: "Umzug" }, { cs: "průvod", en: "parade", de: "Umzug" }],
   volno: null,
 };
 
@@ -66,13 +66,14 @@ export function groupSlots(slots: Slot[]): SlotGroup[] {
   return out;
 }
 
-export const UI: Record<"finale" | "must" | "tickets", L> = {
+export const UI: Record<"finale" | "must" | "from" | "tickets", L> = {
+  from: { cs: "od", en: "from", de: "ab" },
   finale: { cs: "Finále", en: "Finale", de: "Finale" },
   must: { cs: "povinné", en: "mandatory", de: "Pflicht" },
   tickets: {
-    cs: "Lístky na Flédu už v prodeji — každý rok vyprodáno, neváhej.",
-    en: "Tickets for Fléda on sale now — sold out every year, don't wait.",
-    de: "Tickets fürs Fléda im Verkauf — jedes Jahr ausverkauft, nicht zögern.",
+    cs: "Kupuj lístky, než se vyprodají.",
+    en: "Buy tickets before they sell out.",
+    de: "Kauf dir Tickets, bevor sie ausverkauft sind.",
   },
 };
 
@@ -154,14 +155,6 @@ export const SCHEDULE: Day[] = [
     finale: true,
     slots: [
       { from: "17:30", title: P("Sraz na fakultě", "Meet at the faculty", "Treffen an der Fakultät"), kind: "pruvod" },
-      { from: "18:00", to: "19:30", title: P("Průvod městem", "Parade through the city", "Umzug durch die Stadt"), kind: "pruvod" },
-      {
-        from: "19:30",
-        to: "21:00",
-        title: P("Příchod na Flédu a pasování na architekta", "Arrival at Fléda and initiation as an architect", "Ankunft im Fléda und Architekten-Taufe"),
-        kind: "pruvod",
-        must: true,
-      },
       { from: "21:00", to: "22:30", title: "Obligatne", kind: "kapela" },
       { from: "22:30", to: "23:30", title: "Eduv syn", kind: "kapela" },
       { from: "23:30", title: "Ragdoll", kind: "kapela" },
