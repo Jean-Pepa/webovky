@@ -63,7 +63,7 @@ export const STRINGS: Record<Lang, Strings> = {
     whatsKicker: "Na co se těšit",
     whatsTitle: "Co tě na Mařeně čeká",
     whatsIntro:
-      "Mařena je týdenní (cca 7–10 dní) festival na přelomu září a října. Celá fakulta ožije — a ty jsi u toho. Tady je, na co se můžeš těšit:",
+      "Mařena je od čtvrtka do čtvrtka — 17.–24. 9. Celý týden přednášky, kapely, DJs, film i herní večer na fakultě. A ve čtvrtek 24. 9. velké finále: průvod městem a povinné pasování na architekta na Flédě — tam nesmíš chybět. Lístky na Flédu jsou už v prodeji a každý rok se vyprodají, tak neváhej.",
     lineup: [
       { title: "Přednášky", text: "Špičkoví hosté z architektury a designu — i ze zahraničí. Inspirace, jakou v rozvrhu nenajdeš." },
       { title: "Obědy na dvoře", text: "Každý den teplý oběd (a ráno snídaně) přímo na dvoře fakulty. Najíš se a potkáš všechny." },
@@ -102,7 +102,7 @@ export const STRINGS: Record<Lang, Strings> = {
     whatsKicker: "What to look forward to",
     whatsTitle: "What awaits you at Mařena",
     whatsIntro:
-      "Mařena is a week-long (about 7–10 days) festival at the turn of September and October. The whole faculty comes alive — and you're part of it. Here's what to look forward to:",
+      "Mařena runs Thursday to Thursday — 17–24 September. A whole week of lectures, bands, DJs, a film and a game night at the faculty. And on Thursday 24 September the grand finale: a parade through the city and the mandatory initiation as an architect at Fléda — don't miss it. Tickets for Fléda are on sale now and sell out every year, so don't wait.",
     lineup: [
       { title: "Lectures", text: "Top guests from architecture and design — including from abroad. Inspiration you won't find in your timetable." },
       { title: "Lunches in the courtyard", text: "A warm lunch every day (and breakfast in the morning) right in the faculty courtyard. Eat and meet everyone." },
@@ -141,7 +141,7 @@ export const STRINGS: Record<Lang, Strings> = {
     whatsKicker: "Worauf du dich freuen kannst",
     whatsTitle: "Was dich bei Mařena erwartet",
     whatsIntro:
-      "Mařena ist ein etwa einwöchiges (ca. 7–10 Tage) Festival an der Wende von September und Oktober. Die ganze Fakultät lebt auf — und du bist dabei. Darauf kannst du dich freuen:",
+      "Mařena läuft von Donnerstag bis Donnerstag — 17.–24. 9. Eine ganze Woche Vorträge, Bands, DJs, Film und Spieleabend an der Fakultät. Und am Donnerstag, 24. 9., das große Finale: Umzug durch die Stadt und die verpflichtende Architekten-Taufe im Fléda — da darfst du nicht fehlen. Tickets fürs Fléda sind bereits im Verkauf und jedes Jahr ausverkauft, also nicht zögern.",
     lineup: [
       { title: "Vorträge", text: "Top-Gäste aus Architektur und Design — auch aus dem Ausland. Inspiration, die du im Stundenplan nicht findest." },
       { title: "Mittagessen im Hof", text: "Jeden Tag ein warmes Mittagessen (und morgens Frühstück) direkt im Hof der Fakultät. Iss und triff alle." },
