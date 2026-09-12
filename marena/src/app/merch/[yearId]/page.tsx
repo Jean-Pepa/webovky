@@ -236,7 +236,7 @@ export default function MerchOrderPage() {
             <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-leaf/15 text-2xl">✅</div>
             <h1 className="font-display text-xl font-semibold">Děkujeme, objednávka odeslána!</h1>
             <p className="mt-1 text-sm text-ink-soft">
-              Zaplatíš při vyzvednutí na místě — prodejce ti ukáže QR kód (nebo vezme hotovost). Kdyby něco, ozveme se na zadaný kontakt.
+              Tvůj lístek nebo merch už na tebe čeká na dvorku v Las Vegas Baru. Zaplatíš při vyzvednutí — prodejce ti ukáže QR kód (nebo vezme hotovost). Kdyby něco, ozveme se na zadaný kontakt.
             </p>
           </div>
         )}
