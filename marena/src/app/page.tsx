@@ -115,13 +115,12 @@ function LangSwitch({ lang, changeLang }: { lang: Lang; changeLang: (l: Lang) =>
 /* ============================ TÉMA: LAS VEGAS ============================ */
 function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: HomeView) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#000000] text-white">
-      {/* Vegas pozadí — čisté: jemná světla + teplá zlatá záře shora.
-          absolute (ne fixed) — fixed + mix-blend-mode dělá v Chromiu chybu vykreslení. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 vegas-stars opacity-40" />
+    <div className="relative min-h-screen overflow-hidden bg-white text-ink">
+      {/* Vegas pozadí na bílé — jen teplý zlatý nádech shora (hvězdičky by na
+          bílém zanikly). absolute (ne fixed) — fixed dělá v Chromiu chybu vykreslení. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(255,180,45,0.12),_transparent_62%)]"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(255,170,40,0.16),_transparent_58%)]"
       />
 
       {/* HERO — Las Vegas Strip. Desktop = foto přes celou plochu; mobil = celý
@@ -204,24 +203,24 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
       <section id="co-te-ceka" className="mx-auto max-w-6xl scroll-mt-8 px-4 py-16 md:py-20">
         <div className="max-w-2xl">
           <span className="marquee-sign">{t.whatsKicker}</span>
-          <h2 className="mt-3 font-display text-4xl font-bold tracking-tight vegas-neon-gold">{t.whatsTitle}</h2>
-          <p className="mt-3 text-white/70">{t.whatsIntro}</p>
+          <h2 className="mt-3 font-display text-4xl font-bold tracking-tight vegas-ink-gold">{t.whatsTitle}</h2>
+          <p className="mt-3 text-ink-soft">{t.whatsIntro}</p>
         </div>
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {LINEUP_MEDIA.map((m, i) => {
             const item = t.lineup[i];
             return (
-              <article key={i} className="vegas-card group overflow-hidden rounded-3xl">
+              <article key={i} className="vegas-card-light group overflow-hidden rounded-3xl">
                 <Photo src={lineupPhotoOf(content, i)} alt={item.title} label={`foto — ${item.title}`} className="aspect-[4/3] w-full" />
                 <div className="p-5">
-                  <h3 className="flex items-center gap-2.5 font-display text-lg font-semibold text-white">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10 text-amber-300 ring-1 ring-amber-400/40">
+                  <h3 className="flex items-center gap-2.5 font-display text-lg font-semibold text-ink">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-700 ring-1 ring-amber-500/40">
                       <Icon name={m.icon} className="h-5 w-5" />
                     </span>
                     {item.title}
                   </h3>
-                  <p className="mt-1 text-sm text-white/65">{item.text}</p>
+                  <p className="mt-1 text-sm text-ink-soft">{item.text}</p>
                 </div>
               </article>
             );
@@ -259,7 +258,7 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
       {/* MAŘENA BAND */}
       <section className="relative h-[26rem] md:h-[34rem]">
         <Photo src={photoOf(content, "letters")} alt="Nápis MAŘENA před Fakultou architektury VUT" label="MAŘENA před fakultou" className="absolute inset-0 h-full w-full" imgClass="object-bottom" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#000000]/85 via-black/30 to-[#000000]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/30 to-transparent" />
         <div className="relative mx-auto flex h-full max-w-6xl items-start px-4 pt-8">
           <p className="max-w-2xl font-display text-2xl font-semibold tracking-tight text-white md:text-4xl [text-shadow:0_0_18px_rgba(255,180,40,0.55),0_2px_18px_rgba(0,0,0,0.65)]">
             {t.band}
@@ -271,13 +270,13 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
       <section>
         <div className="mx-auto max-w-6xl px-4 py-16">
           <span className="marquee-sign">Týden</span>
-          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight vegas-neon-gold">{t.stepsTitle}</h2>
+          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight vegas-ink-gold">{t.stepsTitle}</h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {t.steps.map((s, i) => (
-              <div key={i} className="vegas-card relative rounded-3xl p-5">
-                <div className="font-display text-3xl font-bold vegas-neon-gold">{i + 1}</div>
-                <p className="mt-2 text-sm font-semibold uppercase tracking-wide text-white/55">{s.day}</p>
-                <p className="mt-1 text-[15px] text-white/90">{s.text}</p>
+              <div key={i} className="vegas-card-light relative rounded-3xl p-5">
+                <div className="font-display text-3xl font-bold vegas-ink-gold">{i + 1}</div>
+                <p className="mt-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">{s.day}</p>
+                <p className="mt-1 text-[15px] text-ink">{s.text}</p>
               </div>
             ))}
           </div>
@@ -289,17 +288,17 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
         <section>
           <div className="mx-auto max-w-6xl px-4 py-8 pb-16">
             <span className="marquee-sign">Aktuálně</span>
-            <h2 className="mt-3 font-display text-3xl font-bold tracking-tight vegas-neon-gold">{t.newsTitle}</h2>
+            <h2 className="mt-3 font-display text-3xl font-bold tracking-tight vegas-ink-gold">{t.newsTitle}</h2>
             <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {news.map((n) => (
-                <article key={n.id} className="vegas-card overflow-hidden rounded-3xl">
+                <article key={n.id} className="vegas-card-light overflow-hidden rounded-3xl">
                   {n.photo && <Photo src={n.photo} alt={n.title} label={`novinka — ${n.title}`} className="aspect-[16/9] w-full" />}
                   <div className="p-5">
-                    {n.date && <p className="text-xs font-semibold uppercase tracking-wide vegas-neon-gold">{n.date}</p>}
-                    <h3 className="mt-1 font-display text-lg font-semibold text-white">{n.title}</h3>
-                    <p className="mt-1 whitespace-pre-line text-sm text-white/70">{n.text}</p>
+                    {n.date && <p className="text-xs font-semibold uppercase tracking-wide vegas-ink-gold">{n.date}</p>}
+                    <h3 className="mt-1 font-display text-lg font-semibold text-ink">{n.title}</h3>
+                    <p className="mt-1 whitespace-pre-line text-sm text-ink-soft">{n.text}</p>
                     {n.link && (
-                      <a href={n.link} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-medium text-amber-300 hover:underline">
+                      <a href={n.link} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-medium text-amber-700 hover:underline">
                         Více →
                       </a>
                     )}
@@ -312,7 +311,7 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
       )}
 
       {/* INSTAGRAM CTA */}
-      <section className="relative bg-gradient-to-b from-[#1a0b2e] to-[#000000]">
+      <section className="relative bg-gradient-to-b from-[#fff3dd] to-white">
         <div aria-hidden className="vegas-bulbs absolute inset-x-0 top-0" />
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-4 py-16 text-center md:py-20">
           <a
@@ -320,13 +319,13 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
             target="_blank"
             rel="noreferrer"
             aria-label="Instagram"
-            className="grid h-16 w-16 place-items-center rounded-2xl bg-white/10 text-white ring-1 ring-amber-300/40 shadow-[0_0_24px_rgba(255,180,40,0.35)] transition hover:bg-white/20"
+            className="grid h-16 w-16 place-items-center rounded-2xl bg-white text-amber-700 ring-1 ring-amber-500/40 shadow-[0_0_24px_rgba(255,180,40,0.35)] transition hover:bg-amber-50"
           >
             <Icon name="instagram" className="h-9 w-9" />
           </a>
           <a href={igUrl} target="_blank" rel="noreferrer" className="marquee-sign transition hover:brightness-110">Sleduj</a>
-          <h2 className="font-display text-4xl font-bold tracking-tight vegas-neon-gold">{t.instaTitle}</h2>
-          <p className="max-w-xl text-white/75">{t.instaText}</p>
+          <h2 className="font-display text-4xl font-bold tracking-tight vegas-ink-gold">{t.instaTitle}</h2>
+          <p className="max-w-xl text-ink-soft">{t.instaText}</p>
           <a href={igUrl} target="_blank" rel="noreferrer" className="btn-vegas vegas-btn px-7 py-3.5 text-base">
             <Icon name="instagram" className="h-5 w-5" /> {igHandle}
           </a>
@@ -334,17 +333,15 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-white/10 bg-[#000000]">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-8 text-sm text-white/60">
-          <span className="[&_*]:text-white">
-            <Logo light />
-          </span>
+      <footer className="border-t border-ink/10 bg-white">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-8 text-sm text-ink-soft">
+          <Logo />
           <p>{t.footerTagline}</p>
           <div className="flex items-center gap-4">
-            <a href={igUrl} target="_blank" rel="noreferrer" className="font-medium text-pink-300 hover:underline">
+            <a href={igUrl} target="_blank" rel="noreferrer" className="font-medium text-pink-600 hover:underline">
               Instagram
             </a>
-            <Link href="/prihlaseni" className="hover:text-white">
+            <Link href="/prihlaseni" className="hover:text-ink">
               {t.footerOrganizers}
             </Link>
           </div>

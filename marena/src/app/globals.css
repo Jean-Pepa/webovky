@@ -453,6 +453,21 @@ html.theme-anim .input {
   background: rgba(14, 9, 22, 0.66);
   box-shadow: 0 0 0 1px rgba(255, 205, 90, 0.16), 0 10px 34px rgba(0, 0, 0, 0.45);
 }
+/* ---- Vegas na BÍLÉM podkladu ---- */
+/* Neonová záře na bílé zanikne, proto nadpisy řešíme sytým zlato-bronzovým
+   přechodem v písmu — drží vegas charakter a jsou čitelné. */
+.vegas-ink-gold {
+  background: linear-gradient(180deg, #eda317 0%, #d17f0a 55%, #9d5407 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+/* Karta na bílém pozadí — bílá s teplým zlatým orámováním. */
+.vegas-card-light {
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(209, 127, 10, 0.2), 0 10px 30px rgba(90, 45, 0, 0.09);
+}
 /* Osvětlená cedule (marquee) — jednotný „nápis" nad sekcemi (Learning from Las Vegas). */
 .marquee-sign {
   display: inline-flex;
@@ -465,7 +480,7 @@ html.theme-anim .input {
   text-transform: uppercase;
   font-size: 0.72rem;
   color: #ffe08a;
-  background: rgba(10, 6, 18, 0.5);
+  background: #171018; /* plná tmavá cedule — čitelná i na bílém pozadí */
   box-shadow: inset 0 0 0 1.5px rgba(255, 205, 90, 0.55), 0 0 18px rgba(255, 170, 30, 0.22);
   text-shadow: 0 0 8px rgba(255, 200, 60, 0.65);
 }
