@@ -7,8 +7,8 @@ export type Lang = "cs" | "en" | "de";
 export const LANGS: Lang[] = ["cs", "en", "de"];
 
 // Výchozí odkaz na Instagram (dá se přepsat v editaci).
-export const DEFAULT_IG_URL = "https://www.instagram.com/marena2k25";
-export const DEFAULT_IG_HANDLE = "@marena2k25";
+export const DEFAULT_IG_URL = "https://www.instagram.com/marena2k26?stkn=MW5mdWlmdWJ6Zm1taA==";
+export const DEFAULT_IG_HANDLE = "@marena2k26";
 
 // Fotky + ikonky sekce „Co tě čeká". Fotky jde přepsat; ikonky jsou pevné.
 export const LINEUP_MEDIA: { photo: string; icon: IconName }[] = [

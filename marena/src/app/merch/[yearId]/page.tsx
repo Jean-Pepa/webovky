@@ -10,6 +10,7 @@ import { ImageViewer } from "@/components/ImageViewer";
 import { FlashHost, flash } from "@/components/Flash";
 import { trackFunnel } from "@/lib/analytics-client";
 import type { DB } from "@/lib/types";
+import { isValidEmail, isValidPhone, sanitizePhone, PHONE_ERR, EMAIL_ERR } from "@/lib/contact";
 
 const LS_DB = "marena_db"; // demo režim (localStorage) — stejný klíč jako ve store
 
@@ -157,7 +158,9 @@ export default function MerchOrderPage() {
     setErr(null);
     if (!name.trim()) return setErr("Vyplň prosím jméno.");
     if (!phone.trim()) return setErr("Vyplň telefon.");
+    if (!isValidPhone(phone)) return setErr(PHONE_ERR);
     if (!email.trim()) return setErr("Vyplň e-mail.");
+    if (!isValidEmail(email)) return setErr(EMAIL_ERR);
     if (cart.length === 0) return setErr("Košík je prázdný — přidej aspoň jednu věc z nabídky.");
 
     trackFunnel("merch_submit");
@@ -176,7 +179,8 @@ export default function MerchOrderPage() {
           }),
         });
         if (!res.ok) {
-          setErr("Objednávku se nepodařilo odeslat. Zkus to prosím znovu.");
+          const code = ((await res.json().catch(() => null)) as { error?: string } | null)?.error;
+          setErr(code === "invalid_email" ? EMAIL_ERR : code === "invalid_phone" ? PHONE_ERR : "Objednávku se nepodařilo odeslat. Zkus to prosím znovu.");
           setSubmitting(false);
           return;
         }
@@ -377,9 +381,26 @@ export default function MerchOrderPage() {
                   )}
 
                   <div className="grid gap-2 pt-1 sm:grid-cols-2">
-                    <input className="input" placeholder="Jméno a příjmení" value={name} onChange={(e) => setName(e.target.value)} />
-                    <input className="input" placeholder="Telefon" value={phone} onChange={(e) => setPhone(e.target.value)} />
-                    <input className="input sm:col-span-2" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
+                    <input className="input" placeholder="Jméno a příjmení" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
+                    {/* jen číslice (+ mezery a „+" na začátku) — písmena se při psaní zahodí */}
+                    <input
+                      className="input"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      placeholder="Telefon (jen číslice)"
+                      value={phone}
+                      onChange={(e) => setPhone(sanitizePhone(e.target.value))}
+                    />
+                    <input
+                      className="input sm:col-span-2"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="E-mail (s @)"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
                     <input className="input sm:col-span-2" placeholder="Poznámka (nepovinné)" value={note} onChange={(e) => setNote(e.target.value)} />
                   </div>
 

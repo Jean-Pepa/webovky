@@ -341,7 +341,7 @@ export default function WebEditorPage() {
         header={<span className="font-display text-[20px] font-semibold">📸 Instagram odkaz (společný)</span>}
       >
         <div className="mt-2 grid gap-4 sm:grid-cols-2">
-          <Field label="URL profilu" value={c.ig?.url ?? ""} placeholder="https://www.instagram.com/marena2k25" onChange={(v) => setIg("url", v)} />
+          <Field label="URL profilu" value={c.ig?.url ?? ""} placeholder="https://www.instagram.com/marena2k26" onChange={(v) => setIg("url", v)} />
           <Field label="Zobrazená přezdívka" value={c.ig?.handle ?? ""} placeholder="@marena2k25" onChange={(v) => setIg("handle", v)} />
         </div>
       </Collapsible>
