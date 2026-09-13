@@ -41,7 +41,7 @@ export const KIND_CLASS: Record<SlotKind, string> = {
 // Sousední položky stejného typu dostanou štítek jen jednou. `null` = bez štítku.
 export const KIND_LABEL: Record<SlotKind, [L, L] | null> = {
   zahajeni: [{ cs: "zahájení", en: "opening", de: "Auftakt" }, { cs: "zahájení", en: "opening", de: "Auftakt" }],
-  special: [{ cs: "speciál", en: "special", de: "Spezial" }, { cs: "speciály", en: "specials", de: "Spezials" }],
+  special: [{ cs: "studentský speciál", en: "student special", de: "Studenten-Spezial" }, { cs: "studentský speciál", en: "student special", de: "Studenten-Spezial" }],
   film: [{ cs: "film", en: "film", de: "Film" }, { cs: "filmy", en: "films", de: "Filme" }],
   vikend: [{ cs: "víkendový program", en: "weekend programme", de: "Wochenendprogramm" }, { cs: "víkendový program", en: "weekend programme", de: "Wochenendprogramm" }],
   prednaska: [{ cs: "přednáška", en: "lecture", de: "Vortrag" }, { cs: "přednášky", en: "lectures", de: "Vorträge" }],
@@ -108,7 +108,7 @@ export const SCHEDULE: Day[] = [
     dow: P("Pá", "Fri", "Fr"),
     slots: [
       { from: "17:30", to: "19:00", title: P("Studentský speciál", "Student special", "Studenten-Spezial"), kind: "special" },
-      { from: "19:00", to: "20:00", title: P("Kapela jednoho prváka BBzde", "One-freshman band BBzde", "Ein-Erstsemester-Band BBzde"), kind: "kapela" },
+      { from: "19:00", to: "20:00", title: P("Kapela jednoho prváka BBzde", "One-freshman band BBzde", "Ein-Erstsemester-Band BBzde"), kind: "special" },
       { from: "20:00", to: "23:30", title: P("Film", "Film", "Film"), kind: "film" },
     ],
   },
@@ -151,7 +151,7 @@ export const SCHEDULE: Day[] = [
       { from: "16:30", to: "17:30", title: "INN", kind: "prednaska" },
       { from: "17:30", to: "18:30", title: "Městem na kole", kind: "prednaska" },
       { from: "18:30", to: "19:30", title: "Grau architekti", kind: "prednaska" },
-      { from: "20:00", to: "0:00", title: "Albert Wawracz", kind: "dj" },
+      { from: "20:00", to: "23:30", title: "Albert Wawracz", kind: "dj" },
     ],
   },
   {
@@ -161,7 +161,7 @@ export const SCHEDULE: Day[] = [
       { from: "16:30", to: "17:30", title: "Martina Mertová", kind: "prednaska" },
       { from: "17:30", to: "18:30", title: "AOSI", kind: "prednaska" },
       { from: "18:30", to: "19:30", title: "Henkai architekti", kind: "prednaska" },
-      { from: "20:00", to: "0:00", title: P("Herní večer", "Game night", "Spieleabend"), kind: "herni" },
+      { from: "20:00", to: "23:30", title: P("Herní večer", "Game night", "Spieleabend"), kind: "herni" },
     ],
   },
   {
@@ -172,7 +172,7 @@ export const SCHEDULE: Day[] = [
       { from: "17:30", to: "18:00", title: P("Sraz na fakultě", "Meet at the faculty", "Treffen an der Fakultät"), kind: "pruvod" },
       { from: "21:00", to: "22:30", title: "Obligatne", kind: "kapela", place: P("Fléda", "Fléda", "Fléda") },
       { from: "22:30", to: "23:30", title: "Eduv syn", kind: "kapela", place: P("Fléda", "Fléda", "Fléda") },
-      { from: "23:30", to: "0:30", title: "Ragdoll", kind: "kapela", place: P("Fléda", "Fléda", "Fléda") },
+      { from: "23:30", to: "0:00", title: "Ragdoll", kind: "kapela", place: P("Fléda", "Fléda", "Fléda") },
     ],
   },
 ];
