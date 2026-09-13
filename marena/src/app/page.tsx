@@ -189,9 +189,15 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
               <a href={igUrl} target="_blank" rel="noreferrer" className="btn-vegas vegas-btn px-6 py-3 text-base">
                 <Icon name="instagram" className="h-4 w-4" /> {t.ctaInsta}
               </a>
-              <a href="#co-te-ceka" className="rounded-full border border-white/50 bg-black/30 px-6 py-3 text-base font-semibold text-white transition hover:bg-black/50">
-                {t.ctaScroll}
-              </a>
+              {/* dvě stejně široká tlačítka vedle sebe: „Co tě čeká" + „Harmonogram" */}
+              <div className="grid w-full grid-cols-2 gap-3 sm:w-auto">
+                <a href="#co-te-ceka" className="rounded-full border border-white/50 bg-black/30 px-4 py-3 text-center text-base font-semibold text-white transition hover:bg-black/50">
+                  {t.ctaScroll}
+                </a>
+                <a href="#harmonogram" className="rounded-full border border-white/50 bg-black/30 px-4 py-3 text-center text-base font-semibold text-white transition hover:bg-black/50">
+                  {t.ctaSchedule}
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -399,9 +405,15 @@ function NormalHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Hom
             <a href={igUrl} target="_blank" rel="noreferrer" className="btn-primary px-6 py-3 text-base text-white [text-shadow:none]">
               {t.ctaInsta}
             </a>
-            <a href="#co-te-ceka" className="rounded-full border border-white/60 bg-black/25 px-6 py-3 text-base font-semibold text-white [text-shadow:none] transition hover:bg-black/40">
-              {t.ctaScroll}
-            </a>
+            {/* dvě stejně široká tlačítka vedle sebe: „Co tě čeká" + „Harmonogram" */}
+            <div className="grid w-full grid-cols-2 gap-3 sm:w-auto">
+              <a href="#co-te-ceka" className="rounded-full border border-white/60 bg-black/25 px-4 py-3 text-center text-base font-semibold text-white [text-shadow:none] transition hover:bg-black/40">
+                {t.ctaScroll}
+              </a>
+              <a href="#harmonogram" className="rounded-full border border-white/60 bg-black/25 px-4 py-3 text-center text-base font-semibold text-white [text-shadow:none] transition hover:bg-black/40">
+                {t.ctaSchedule}
+              </a>
+            </div>
           </div>
 
           <div className="mt-9">

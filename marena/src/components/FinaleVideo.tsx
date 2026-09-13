@@ -8,7 +8,9 @@ import { useEffect, useRef } from "react";
 //
 // Značka <video> je vložená jako hotové HTML: React neumí spolehlivě vyrenderovat
 // atribut `muted`, a bez něj v HTML Safari/Chrome autoplay zablokují.
-const MARKUP = `<video class="pointer-events-none absolute inset-0 h-full w-full object-cover mix-blend-screen" autoplay loop muted playsinline preload="auto" disablepictureinpicture disableremoteplayback aria-hidden="true"><source src="/finale-flashes.webm" type="video/webm"><source src="/finale-flashes.mp4" type="video/mp4"></video>`;
+// Zaoblení i na videu samotném: Safari (hlavně iOS) neořezává video podle
+// zaobleného rámu rodiče, a v rozích se pak objevovalo černé pozadí videa.
+const MARKUP = `<video class="pointer-events-none absolute inset-0 h-full w-full rounded-[inherit] object-cover mix-blend-screen" autoplay loop muted playsinline preload="auto" disablepictureinpicture disableremoteplayback aria-hidden="true"><source src="/finale-flashes.webm" type="video/webm"><source src="/finale-flashes.mp4" type="video/mp4"></video>`;
 
 export function FinaleVideo() {
   const wrap = useRef<HTMLDivElement>(null);
@@ -92,5 +94,5 @@ export function FinaleVideo() {
     };
   }, []);
 
-  return <div ref={wrap} aria-hidden className="absolute inset-0" dangerouslySetInnerHTML={{ __html: MARKUP }} />;
+  return <div ref={wrap} aria-hidden className="absolute inset-0 overflow-hidden rounded-[inherit]" dangerouslySetInnerHTML={{ __html: MARKUP }} />;
 }
