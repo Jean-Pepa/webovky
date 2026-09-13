@@ -84,7 +84,12 @@ export function groupSlots(slots: Slot[]): SlotGroup[] {
   return out;
 }
 
-export const UI: Record<"heading" | "finale" | "must" | "from" | "tickets", L> = {
+export const UI: Record<"heading" | "finale" | "finaleNote" | "must" | "from" | "tickets", L> = {
+  finaleNote: {
+    cs: "Tady nesmíš chybět — křest prváků, kde musí být každý.",
+    en: "You can't miss this — the freshers' initiation, where everyone has to be.",
+    de: "Hier darfst du nicht fehlen — die Erstsemester-Taufe, bei der jeder dabei sein muss.",
+  },
   heading: { cs: "Harmonogram", en: "Schedule", de: "Programm" },
   from: { cs: "od", en: "from", de: "ab" },
   finale: { cs: "Velké finále", en: "Grand finale", de: "Großes Finale" },

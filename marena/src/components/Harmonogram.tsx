@@ -4,7 +4,7 @@ import type { Lang } from "@/lib/homepage";
 import { SCHEDULE, KIND_CLASS, KIND_LABEL, UI, fmtDay, groupSlots, pick, placeOf } from "@/lib/schedule";
 
 // Harmonogram čt → čt: každý den jako karta („bublina") s tenkým světlým rámečkem,
-// program pod sebou jako štítky s barevným rámečkem — vždy začátek–konec, název a místo
+// karty se střídají bílá / zlatavá; program pod sebou jako štítky s barevným rámečkem — vždy začátek–konec, název a místo
 // (aula / dvůr / Fléda). Sousední položky stejného typu mají malý štítek typu
 // jen jednou nad sebou. Finálový čtvrtek výrazně zvýrazněný; věta o lístkách
 // samostatně pod harmonogramem jako stejné tlačítko, jaké je nahoře u merche
@@ -14,7 +14,7 @@ export function Harmonogram({ lang, vegas = false }: { lang: Lang; vegas?: boole
     <div className="mt-8">
       <p className="text-sm font-semibold uppercase tracking-wide text-ink-soft">{UI.heading[lang]}</p>
       <ol className="mt-2 grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-        {SCHEDULE.map((d) => {
+        {SCHEDULE.map((d, di) => {
           const groups = groupSlots(d.slots);
           return (
             <li
@@ -22,18 +22,26 @@ export function Harmonogram({ lang, vegas = false }: { lang: Lang; vegas?: boole
               className={`rounded-xl p-3 ${
                 d.finale
                   ? "border-[3px] border-gold-500 bg-gold-50 shadow-[0_0_0_4px_rgba(244,183,31,0.25)] md:col-span-2 lg:col-span-3"
-                  : "border border-ink/30 bg-white"
+                  : `border border-ink/30 ${di % 2 ? "bg-gold-50" : "bg-white"}`
               }`}
             >
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <span className={`font-display font-bold leading-none text-ink ${d.finale ? "text-2xl" : "text-lg"}`}>{d.dow[lang]}</span>
                 <span className={`text-ink-soft ${d.finale ? "text-sm font-semibold" : "text-xs"}`}>{fmtDay(d.day, lang, d.dayTo)}</span>
-                {d.finale && (
-                  <span className="ml-auto rounded-full bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white shadow-[0_0_12px_rgba(255,46,166,0.6)]">
-                    {UI.finale[lang]}
-                  </span>
-                )}
               </div>
+              {d.finale && (
+                <div className="mt-1">
+                  {/* velký nápis VELKÉ FINÁLE — v neon přechodu jako štítek na kartě Křest na Flédě */}
+                  <p
+                    className={`font-display text-3xl font-extrabold uppercase leading-none tracking-tight sm:text-4xl ${
+                      vegas ? "bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] bg-clip-text text-transparent" : "text-marigold-600"
+                    }`}
+                  >
+                    {UI.finale[lang]}
+                  </p>
+                  <p className="mt-1.5 text-sm font-semibold text-ink sm:text-base">{UI.finaleNote[lang]}</p>
+                </div>
+              )}
               <div className="mt-1.5 space-y-1.5">
                 {groups.map((g, gi) => {
                   // podnadpis (so/ne ve víkendu) + typ programu
