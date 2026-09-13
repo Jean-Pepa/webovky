@@ -25,18 +25,32 @@ export interface Day {
   finale?: boolean;
 }
 
-// Barvy štítků podle typu programu (dle tabulky organizátorů, na bílém pozadí).
+// Barvy štítků podle typu programu — paleta Mařeny Las Vegas (zlatá, VUT
+// červená, neon růžová / fialová / cyan, zeleň, Apple modrá, grafit).
 export const KIND_CLASS: Record<SlotKind, string> = {
-  zahajeni: "bg-orange-500 text-white",
-  special: "bg-yellow-300 text-yellow-950",
-  film: "bg-purple-600 text-white",
-  vikend: "bg-rose-800 text-white",
-  prednaska: "bg-amber-400 text-amber-950",
-  kapela: "bg-blue-600 text-white",
-  dj: "bg-red-600 text-white",
-  herni: "bg-emerald-500 text-white",
-  pruvod: "bg-teal-500 text-white",
-  volno: "bg-ink/5 text-ink-soft",
+  zahajeni: "bg-gold-600 text-white",
+  special: "bg-[#ff2ea6] text-white",
+  film: "bg-[#a020f0] text-white",
+  vikend: "bg-plum-600 text-white",
+  prednaska: "bg-gold-400 text-ink",
+  kapela: "bg-sky text-white",
+  dj: "bg-marigold-600 text-white",
+  herni: "bg-leaf text-white",
+  pruvod: "bg-[#4ff0ff] text-ink",
+  volno: "bg-paper2 text-ink-soft",
+};
+// Štítek místa uvnitř pilulky — světlý na tmavých, tmavý na světlých (zlatá, cyan).
+export const KIND_CHIP: Record<SlotKind, string> = {
+  zahajeni: "bg-white/30",
+  special: "bg-white/30",
+  film: "bg-white/30",
+  vikend: "bg-white/25",
+  prednaska: "bg-black/10",
+  kapela: "bg-white/30",
+  dj: "bg-white/30",
+  herni: "bg-white/30",
+  pruvod: "bg-black/10",
+  volno: "bg-black/10",
 };
 
 // Štítek typu programu nad blokem (malými písmeny): [jednotné, množné číslo].
@@ -111,7 +125,7 @@ export const SCHEDULE: Day[] = [
     dow: P("Pá", "Fri", "Fr"),
     slots: [
       { from: "17:30", to: "19:00", title: P("Studentský speciál", "Student special", "Studenten-Spezial"), kind: "special" },
-      { from: "19:00", to: "20:00", title: P("Kapela jednoho prváka BBzde", "One-freshman band BBzde", "Ein-Erstsemester-Band BBzde"), kind: "special" },
+      { from: "19:00", to: "20:00", title: P("Kapela z řad našeho ročníku", "A band from our own year", "Band aus unserem Jahrgang"), kind: "special" },
       { from: "20:00", to: "23:30", title: P("Film", "Film", "Film"), kind: "film" },
     ],
   },
