@@ -244,7 +244,7 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
         </article>
 
         {/* HARMONOGRAM — až pod finálovou kartou */}
-        <Harmonogram lang={lang} />
+        <Harmonogram lang={lang} vegas />
       </section>
 
       {/* Neonová cedule s kačenkou — téma ročníku beze slov (ať si to každý domyslí).
