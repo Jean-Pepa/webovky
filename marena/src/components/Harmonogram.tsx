@@ -25,7 +25,7 @@ export function Harmonogram({ lang }: { lang: Lang }) {
             >
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <span className={`font-display font-bold leading-none text-ink ${d.finale ? "text-3xl" : "text-xl"}`}>{d.dow[lang]}</span>
-                <span className={`text-ink-soft ${d.finale ? "text-base font-semibold" : "text-sm"}`}>{fmtDay(d.day, lang)}</span>
+                <span className={`text-ink-soft ${d.finale ? "text-base font-semibold" : "text-sm"}`}>{fmtDay(d.day, lang, d.dayTo)}</span>
                 {d.finale && (
                   <span className="ml-auto rounded-full bg-amber-500 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-[0_0_12px_rgba(245,158,11,0.7)]">
                     {UI.finale[lang]}
@@ -34,7 +34,8 @@ export function Harmonogram({ lang }: { lang: Lang }) {
               </div>
               <div className="mt-2 space-y-2">
                 {groups.map((g, gi) => {
-                  const label = KIND_LABEL[g.kind]?.[g.slots.length > 1 ? 1 : 0][lang];
+                  // podnadpis (so/ne ve víkendu) + typ programu
+                  const label = [g.sub?.[lang], KIND_LABEL[g.kind]?.[g.slots.length > 1 ? 1 : 0][lang]].filter(Boolean).join(" · ");
                   return (
                     <div key={gi}>
                       {/* štítek typu — jen jednou nad blokem; u „volno" žádný */}

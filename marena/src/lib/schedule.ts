@@ -13,11 +13,13 @@ export interface Slot {
   title: string | L;
   kind: SlotKind;
   note?: L;
+  sub?: L; // podnadpis nad položkou (např. „so 19. 9." ve sloučeném víkendu)
   place?: L; // místo konání — přepíše výchozí místo podle typu (KIND_PLACE)
   must?: boolean; // povinná účast (pasování)
 }
 export interface Day {
   day: number;
+  dayTo?: number; // sloučené dny (víkend 19.–20. 9.)
   dow: L;
   slots: Slot[];
   finale?: boolean;
@@ -66,6 +68,7 @@ export function placeOf(s: Slot): L | undefined {
 
 export interface SlotGroup {
   kind: SlotKind;
+  sub?: L;
   slots: Slot[];
 }
 // Sousední položky stejného typu → jeden blok (štítek se ukáže jen jednou nad ním).
@@ -73,8 +76,8 @@ export function groupSlots(slots: Slot[]): SlotGroup[] {
   const out: SlotGroup[] = [];
   for (const s of slots) {
     const last = out[out.length - 1];
-    if (last && last.kind === s.kind) last.slots.push(s);
-    else out.push({ kind: s.kind, slots: [s] });
+    if (last && last.kind === s.kind && last.sub === s.sub) last.slots.push(s);
+    else out.push({ kind: s.kind, sub: s.sub, slots: [s] });
   }
   return out;
 }
@@ -114,13 +117,10 @@ export const SCHEDULE: Day[] = [
   },
   {
     day: 19,
-    dow: P("So", "Sat", "Sa"),
-    slots: [{ from: "", title: P("Volno", "Day off", "Frei"), kind: "volno" }],
-  },
-  {
-    day: 20,
-    dow: P("Ne", "Sun", "So"),
+    dayTo: 20,
+    dow: P("Víkend", "Weekend", "Wochenende"),
     slots: [
+      { from: "", title: P("Volno", "Day off", "Frei"), kind: "volno", sub: P("so 19. 9.", "Sat 19 Sep", "Sa 19. 9.") },
       {
         from: "14:00",
         to: "15:30",
@@ -131,6 +131,7 @@ export const SCHEDULE: Day[] = [
         ),
         note: P("sraz u obelisku v Denisových sadech, cca 1,5 h", "meet at the obelisk in Denis Gardens, approx. 1.5 h", "Treffpunkt am Obelisken in den Denis-Gärten, ca. 1,5 h"),
         kind: "vikend",
+        sub: P("ne 20. 9.", "Sun 20 Sep", "So 20. 9."),
       },
     ],
   },
@@ -177,8 +178,9 @@ export const SCHEDULE: Day[] = [
   },
 ];
 
-// Datum podle jazyka: cs/de „17. 9.", en „17 Sep".
-export function fmtDay(day: number, lang: Lang): string {
+// Datum podle jazyka: cs/de „17. 9.", en „17 Sep"; rozsah „19.–20. 9." / „19–20 Sep".
+export function fmtDay(day: number, lang: Lang, dayTo?: number): string {
+  if (dayTo) return lang === "en" ? `${day}–${dayTo} Sep` : `${day}.–${dayTo}. 9.`;
   return lang === "en" ? `${day} Sep` : `${day}. 9.`;
 }
 export function pick(v: string | L, lang: Lang): string {
