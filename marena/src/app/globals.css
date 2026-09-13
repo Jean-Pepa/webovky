@@ -366,38 +366,6 @@ html.theme-anim .input {
   color: #ff4536;
   text-shadow: 0 0 6px rgba(255, 80, 60, 0.95), 0 0 16px rgba(255, 45, 25, 0.75), 0 0 34px rgba(255, 20, 0, 0.55);
 }
-/* Záblesky ve finálové kartě harmonogramu — každá čára/jiskra se rychle objeví,
-   chvíli svítí, mírně se posune a zmizí; rytmus (--dur, --delay) má každá jiný. */
-@keyframes finale-flash {
-  0% {
-    opacity: 0;
-    transform: translate(0, 0);
-  }
-  7% {
-    opacity: 1;
-  }
-  22% {
-    opacity: 0.75;
-  }
-  45%,
-  100% {
-    opacity: 0;
-    transform: translate(var(--dx, 0px), var(--dy, 0px));
-  }
-}
-.finale-flash {
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: finale-flash var(--dur, 4s) ease-out infinite;
-  animation-delay: var(--delay, 0s);
-}
-@media (prefers-reduced-motion: reduce) {
-  .finale-flash {
-    animation: none;
-    opacity: 0.3;
-  }
-}
 /* Problikávání jen neonového nápisu (Holiday Motel) v hero fotce — tmavý překryv
    jen přes oblast nápisu krátce zabliká (okolí je černá noční obloha, takže se
    zdá, že bliká jen nápis). Rytmus podobný blikání „56 ročník". */
