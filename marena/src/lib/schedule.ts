@@ -13,6 +13,7 @@ export interface Slot {
   title: string | L;
   kind: SlotKind;
   note?: L;
+  place?: L; // místo konání — přepíše výchozí místo podle typu (KIND_PLACE)
   must?: boolean; // povinná účast (pasování)
 }
 export interface Day {
@@ -51,6 +52,18 @@ export const KIND_LABEL: Record<SlotKind, [L, L] | null> = {
   volno: null,
 };
 
+// Kde se to koná — výchozí podle typu: přednášky v aule, kapely / dj / herní
+// večer na dvoře. Jednotlivá položka to může přepsat (finálové kapely na Flédě).
+export const KIND_PLACE: Partial<Record<SlotKind, L>> = {
+  prednaska: { cs: "aula", en: "lecture hall", de: "Aula" },
+  kapela: { cs: "dvůr", en: "courtyard", de: "Hof" },
+  dj: { cs: "dvůr", en: "courtyard", de: "Hof" },
+  herni: { cs: "dvůr", en: "courtyard", de: "Hof" },
+};
+export function placeOf(s: Slot): L | undefined {
+  return s.place ?? KIND_PLACE[s.kind];
+}
+
 export interface SlotGroup {
   kind: SlotKind;
   slots: Slot[];
@@ -69,7 +82,7 @@ export function groupSlots(slots: Slot[]): SlotGroup[] {
 export const UI: Record<"heading" | "finale" | "must" | "from" | "tickets", L> = {
   heading: { cs: "Harmonogram", en: "Schedule", de: "Programm" },
   from: { cs: "od", en: "from", de: "ab" },
-  finale: { cs: "Finále", en: "Finale", de: "Finale" },
+  finale: { cs: "Velké finále", en: "Grand finale", de: "Großes Finale" },
   must: { cs: "povinné", en: "mandatory", de: "Pflicht" },
   tickets: {
     cs: "Kupuj lístky, než se vyprodají.",
@@ -110,6 +123,7 @@ export const SCHEDULE: Day[] = [
     slots: [
       {
         from: "14:00",
+        to: "15:30",
         title: P(
           "Michal Konečný — procházka po okružní třídě 19. století",
           "Michal Konečný — walk along the 19th-century ring road",
@@ -155,10 +169,10 @@ export const SCHEDULE: Day[] = [
     dow: P("Čt", "Thu", "Do"),
     finale: true,
     slots: [
-      { from: "17:30", title: P("Sraz na fakultě", "Meet at the faculty", "Treffen an der Fakultät"), kind: "pruvod" },
-      { from: "21:00", to: "22:30", title: "Obligatne", kind: "kapela" },
-      { from: "22:30", to: "23:30", title: "Eduv syn", kind: "kapela" },
-      { from: "23:30", title: "Ragdoll", kind: "kapela" },
+      { from: "17:30", to: "18:00", title: P("Sraz na fakultě", "Meet at the faculty", "Treffen an der Fakultät"), kind: "pruvod" },
+      { from: "21:00", to: "22:30", title: "Obligatne", kind: "kapela", place: P("Fléda", "Fléda", "Fléda") },
+      { from: "22:30", to: "23:30", title: "Eduv syn", kind: "kapela", place: P("Fléda", "Fléda", "Fléda") },
+      { from: "23:30", to: "0:30", title: "Ragdoll", kind: "kapela", place: P("Fléda", "Fléda", "Fléda") },
     ],
   },
 ];
