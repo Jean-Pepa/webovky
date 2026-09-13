@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Lang } from "@/lib/homepage";
 import { SCHEDULE, KIND_CLASS, KIND_LABEL, UI, fmtDay, groupSlots, pick, placeOf } from "@/lib/schedule";
 
-// Harmonogram čt → čt: každý den jako karta („bublina") s černým rámečkem,
+// Harmonogram čt → čt: každý den jako karta („bublina") s tenkým světlým rámečkem,
 // program pod sebou jako štítky s barevným rámečkem — vždy začátek–konec, název a místo
 // (aula / dvůr / Fléda). Sousední položky stejného typu mají malý štítek typu
 // jen jednou nad sebou. Finálový čtvrtek výrazně zvýrazněný; věta o lístkách
@@ -20,7 +20,7 @@ export function Harmonogram({ lang }: { lang: Lang }) {
               className={`rounded-xl p-3 ${
                 d.finale
                   ? "border-[3px] border-gold-500 bg-gold-50 shadow-[0_0_0_4px_rgba(244,183,31,0.25)] md:col-span-2 lg:col-span-3"
-                  : "border-2 border-ink bg-white"
+                  : "border border-ink/15 bg-white"
               }`}
             >
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
