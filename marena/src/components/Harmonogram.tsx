@@ -22,7 +22,7 @@ export function Harmonogram({ lang, vegas = false }: { lang: Lang; vegas?: boole
               className={`rounded-xl p-3 ${
                 d.finale
                   ? "border-[3px] border-gold-500 bg-gold-50 shadow-[0_0_0_4px_rgba(244,183,31,0.25)] md:col-span-2 lg:col-span-3"
-                  : "border border-ink/15 bg-white"
+                  : "border border-ink/30 bg-white"
               }`}
             >
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
