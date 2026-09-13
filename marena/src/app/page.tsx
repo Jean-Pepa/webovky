@@ -288,23 +288,6 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
         </div>
       </section>
 
-      {/* JAK TO PROBÍHÁ */}
-      <section>
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <span className="marquee-sign">Týden</span>
-          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight vegas-ink-gold">{t.stepsTitle}</h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {t.steps.map((s, i) => (
-              <div key={i} className="vegas-card-light relative rounded-3xl p-5">
-                <div className="font-display text-3xl font-bold vegas-ink-gold">{i + 1}</div>
-                <p className="mt-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">{s.day}</p>
-                <p className="mt-1 text-[15px] text-ink">{s.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* NOVINKY */}
       {news.length > 0 && (
         <section>
@@ -494,22 +477,6 @@ function NormalHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Hom
           <p className="max-w-2xl font-display text-2xl font-semibold tracking-tight text-white md:text-4xl [text-shadow:0_2px_18px_rgba(0,0,0,0.65)]">
             {t.band}
           </p>
-        </div>
-      </section>
-
-      {/* JAK TO PROBÍHÁ */}
-      <section className="bg-paper">
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="font-display text-3xl font-bold tracking-tight">{t.stepsTitle}</h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {t.steps.map((s, i) => (
-              <div key={i} className="relative rounded-3xl border border-black/[0.06] bg-white p-5">
-                <div className="font-display text-3xl font-bold text-marigold-600">{i + 1}</div>
-                <p className="mt-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">{s.day}</p>
-                <p className="mt-1 text-[15px]">{s.text}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
