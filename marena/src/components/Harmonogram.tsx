@@ -24,7 +24,7 @@ export function Harmonogram({
   finaleTitle: string;
 }) {
   return (
-    <div className="mt-8">
+    <div id="harmonogram" className="mt-8 scroll-mt-6">
       {/* nadpis HARMONOGRAM — ve Vegas tématu hnědozlatý přechod jako „Jak týden probíhá" */}
       <p className={`text-sm font-bold uppercase tracking-wide ${vegas ? "vegas-ink-gold" : "text-ink-soft"}`}>{UI.heading[lang]}</p>
       <ol className="mt-2 grid gap-2 md:grid-cols-2 lg:grid-cols-3">

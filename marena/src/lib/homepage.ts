@@ -33,6 +33,7 @@ export interface Strings {
   heroBadge: string;
   ctaInsta: string;
   ctaScroll: string;
+  ctaSchedule: string;
   merchCta: string;
   whatsKicker: string;
   whatsTitle: string;
@@ -59,6 +60,7 @@ export const STRINGS: Record<Lang, Strings> = {
     heroBadge: "🐣 Jsi prvák? Tohle je tvůj vstup do života na fakultě.",
     ctaInsta: "Sleduj nás na Instagramu →",
     ctaScroll: "Co tě čeká ↓",
+    ctaSchedule: "Harmonogram ↓",
     merchCta: "Kup si lístek a merch Mařeny →",
     whatsKicker: "Na co se těšit",
     whatsTitle: "Co tě na Mařeně čeká",
@@ -98,6 +100,7 @@ export const STRINGS: Record<Lang, Strings> = {
     heroBadge: "🐣 A freshman? This is your start to life at the faculty.",
     ctaInsta: "Follow us on Instagram →",
     ctaScroll: "What's in store ↓",
+    ctaSchedule: "Schedule ↓",
     merchCta: "Get your ticket & Mařena merch →",
     whatsKicker: "What to look forward to",
     whatsTitle: "What awaits you at Mařena",
@@ -137,6 +140,7 @@ export const STRINGS: Record<Lang, Strings> = {
     heroBadge: "🐣 Erstsemester? Das ist dein Einstieg ins Leben an der Fakultät.",
     ctaInsta: "Folge uns auf Instagram →",
     ctaScroll: "Was dich erwartet ↓",
+    ctaSchedule: "Programm ↓",
     merchCta: "Hol dir Ticket & Mařena-Merch →",
     whatsKicker: "Worauf du dich freuen kannst",
     whatsTitle: "Was dich bei Mařena erwartet",
@@ -179,6 +183,7 @@ export interface HomeText {
   heroBadge?: string;
   ctaInsta?: string;
   ctaScroll?: string;
+  ctaSchedule?: string;
   merchCta?: string;
   whatsKicker?: string;
   whatsTitle?: string;
@@ -243,6 +248,7 @@ export function mergeStrings(lang: Lang, ov?: HomeText): Strings {
     heroBadge: s(ov.heroBadge, d.heroBadge),
     ctaInsta: s(ov.ctaInsta, d.ctaInsta),
     ctaScroll: s(ov.ctaScroll, d.ctaScroll),
+    ctaSchedule: s(ov.ctaSchedule, d.ctaSchedule),
     merchCta: s(ov.merchCta, d.merchCta),
     whatsKicker: s(ov.whatsKicker, d.whatsKicker),
     whatsTitle: s(ov.whatsTitle, d.whatsTitle),
