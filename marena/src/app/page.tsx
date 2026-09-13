@@ -244,7 +244,7 @@ function VegasHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Home
         </article>
 
         {/* HARMONOGRAM — až pod finálovou kartou */}
-        <Harmonogram lang={lang} vegas />
+        <Harmonogram lang={lang} vegas finaleBadge={t.finaleBadge} finaleTitle={t.finaleTitle} />
       </section>
 
       {/* Neonová cedule s kačenkou — téma ročníku beze slov (ať si to každý domyslí).
@@ -459,7 +459,7 @@ function NormalHome({ t, lang, changeLang, igUrl, igHandle, news, content }: Hom
         </article>
 
         {/* HARMONOGRAM — až pod finálovou kartou */}
-        <Harmonogram lang={lang} />
+        <Harmonogram lang={lang} finaleBadge={t.finaleBadge} finaleTitle={t.finaleTitle} />
       </section>
 
       {/* MAŘENA BAND */}

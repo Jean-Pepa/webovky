@@ -86,9 +86,9 @@ export function groupSlots(slots: Slot[]): SlotGroup[] {
 
 export const UI: Record<"heading" | "finale" | "finaleNote" | "must" | "from" | "tickets", L> = {
   finaleNote: {
-    cs: "Tady nesmíš chybět — křest prváků, kde musí být každý.",
-    en: "You can't miss this — the freshers' initiation, where everyone has to be.",
-    de: "Hier darfst du nicht fehlen — die Erstsemester-Taufe, bei der jeder dabei sein muss.",
+    cs: "Tady nesmíš chybět.",
+    en: "You can't miss this.",
+    de: "Hier darfst du nicht fehlen.",
   },
   heading: { cs: "Harmonogram", en: "Schedule", de: "Programm" },
   from: { cs: "od", en: "from", de: "ab" },

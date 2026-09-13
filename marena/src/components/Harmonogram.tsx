@@ -11,7 +11,18 @@ import { SCHEDULE, KIND_CLASS, KIND_LABEL, UI, fmtDay, groupSlots, pick, placeOf
 // a videem světelných čar na pozadí (FinaleVideo, černá → zlatá); věta o lístkách
 // samostatně pod harmonogramem jako stejné tlačítko, jaké je nahoře u merche
 // (pulzující, odkaz na merch) — vzhled podle tématu webu (vegas / normální).
-export function Harmonogram({ lang, vegas = false }: { lang: Lang; vegas?: boolean }) {
+// `finaleBadge` / `finaleTitle` = stejné texty jako na kartě „Křest na Flédě" (jdou přepsat ve Správě webu).
+export function Harmonogram({
+  lang,
+  vegas = false,
+  finaleBadge,
+  finaleTitle,
+}: {
+  lang: Lang;
+  vegas?: boolean;
+  finaleBadge: string;
+  finaleTitle: string;
+}) {
   return (
     <div className="mt-8">
       {/* nadpis HARMONOGRAM — ve Vegas tématu hnědozlatý přechod jako „Jak týden probíhá" */}
@@ -34,15 +45,18 @@ export function Harmonogram({ lang, vegas = false }: { lang: Lang; vegas?: boole
                 <span className={`text-ink-soft ${d.finale ? "text-sm font-semibold" : "text-xs"}`}>{fmtDay(d.day, lang, d.dayTo)}</span>
               </div>
               {d.finale && (
-                <div className="relative mt-1">
-                  {/* velký nápis VELKÉ FINÁLE — v neon přechodu jako štítek na kartě Křest na Flédě */}
-                  <p
-                    className={`font-display text-3xl font-extrabold uppercase leading-none tracking-tight sm:text-4xl ${
-                      vegas ? "bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] bg-clip-text text-transparent" : "text-marigold-600"
+                <div className="relative mt-2">
+                  {/* stejný štítek a nadpis jako na kartě „Křest na Flédě" výš na stránce */}
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white ${
+                      vegas ? "bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] shadow-[0_0_14px_rgba(255,46,166,0.7)]" : "bg-marigold-600"
                     }`}
                   >
-                    {UI.finale[lang]}
-                  </p>
+                    {finaleBadge}
+                  </span>
+                  <h3 className={`mt-2 flex items-center gap-2 font-display text-3xl font-bold tracking-tight sm:text-4xl ${vegas ? "vegas-ink-gold" : "text-ink"}`}>
+                    <Icon name="star" className={`h-7 w-7 shrink-0 sm:h-8 sm:w-8 ${vegas ? "text-gold-600" : ""}`} /> {finaleTitle}
+                  </h3>
                   <p className="mt-1.5 text-sm font-semibold text-ink sm:text-base">{UI.finaleNote[lang]}</p>
                 </div>
               )}
