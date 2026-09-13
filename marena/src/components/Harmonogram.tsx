@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icon } from "@/components/Icons";
 import type { Lang } from "@/lib/homepage";
 import { SCHEDULE, KIND_CLASS, KIND_LABEL, UI, fmtDay, groupSlots, pick, placeOf } from "@/lib/schedule";
 
@@ -6,8 +7,9 @@ import { SCHEDULE, KIND_CLASS, KIND_LABEL, UI, fmtDay, groupSlots, pick, placeOf
 // program pod sebou jako štítky s barevným rámečkem — vždy začátek–konec, název a místo
 // (aula / dvůr / Fléda). Sousední položky stejného typu mají malý štítek typu
 // jen jednou nad sebou. Finálový čtvrtek výrazně zvýrazněný; věta o lístkách
-// samostatně pod harmonogramem jako blikající červený neon (odkaz na merch).
-export function Harmonogram({ lang }: { lang: Lang }) {
+// samostatně pod harmonogramem jako stejné tlačítko, jaké je nahoře u merche
+// (pulzující, odkaz na merch) — vzhled podle tématu webu (vegas / normální).
+export function Harmonogram({ lang, vegas = false }: { lang: Lang; vegas?: boolean }) {
   return (
     <div className="mt-8">
       <p className="text-sm font-semibold uppercase tracking-wide text-ink-soft">{UI.heading[lang]}</p>
@@ -73,13 +75,19 @@ export function Harmonogram({ lang }: { lang: Lang }) {
           );
         })}
       </ol>
-      {/* Lístky — samostatně pod harmonogramem, velké, na střed, blikající červený neon */}
-      <Link
-        href="/merch"
-        className="neon-red-blink mt-6 block text-center font-display text-2xl font-extrabold uppercase tracking-wide sm:text-3xl"
-      >
-        🎟️ {UI.tickets[lang]}
-      </Link>
+      {/* Lístky — samostatně pod harmonogramem, na střed, stejné tlačítko jako „Kup si lístek a merch" nahoře */}
+      <div className="mt-6 flex justify-center [text-shadow:none]">
+        <Link
+          href="/merch"
+          className={
+            vegas
+              ? "merch-pulse vegas-btn inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff2ea6] to-[#a020f0] px-7 py-3.5 text-center font-display text-xl font-extrabold text-white ring-2 ring-white/40 hover:from-[#ff49b6] hover:to-[#b53aff] sm:text-2xl"
+              : "merch-pulse inline-flex items-center gap-2 rounded-full bg-marigold-600 px-8 py-4 text-center font-display text-2xl font-extrabold text-white shadow-2xl ring-2 ring-white/40 hover:bg-marigold-700 sm:text-3xl"
+          }
+        >
+          <Icon name="cart" className="h-6 w-6 shrink-0 text-white sm:h-7 sm:w-7" /> {UI.tickets[lang]}
+        </Link>
+      </div>
     </div>
   );
 }
