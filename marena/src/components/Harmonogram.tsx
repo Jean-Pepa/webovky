@@ -7,7 +7,7 @@ import { SCHEDULE, KIND_CLASS, KIND_LABEL, UI, fmtDay, groupSlots, pick, placeOf
 // Harmonogram čt → čt: každý den jako karta („bublina") s tenkým světlým rámečkem,
 // karty se střídají zlatavá / bílá (čtvrtek začíná zlatavou); program pod sebou jako štítky s barevným rámečkem — vždy začátek–konec, název a místo
 // (aula / dvůr / Fléda). Sousední položky stejného typu mají malý štítek typu
-// jen jednou nad sebou. Finálový čtvrtek: zlatá karta se silným zlatým rámem
+// jen jednou nad sebou. Finálový čtvrtek: světle zlatá karta (gold-400 o 30 % světlejší)
 // a videem světelných čar na pozadí (FinaleVideo, černá → zlatá); věta o lístkách
 // samostatně pod harmonogramem jako stejné tlačítko, jaké je nahoře u merche
 // (pulzující, odkaz na merch) — vzhled podle tématu webu (vegas / normální).
@@ -24,7 +24,7 @@ export function Harmonogram({ lang, vegas = false }: { lang: Lang; vegas?: boole
               key={d.day}
               className={`rounded-xl p-3 ${
                 d.finale
-                  ? "relative isolate overflow-hidden border-[5px] border-gold-500 bg-gold-400 shadow-[0_0_0_6px_rgba(244,183,31,0.25)] md:col-span-2 lg:col-span-3"
+                  ? "relative isolate overflow-hidden border border-ink/30 bg-[#f8d370] md:col-span-2 lg:col-span-3"
                   : `border border-ink/30 ${di % 2 ? "bg-white" : "bg-gold-50"}`
               }`}
             >
