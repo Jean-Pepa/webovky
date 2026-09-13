@@ -366,6 +366,32 @@ html.theme-anim .input {
   color: #ff4536;
   text-shadow: 0 0 6px rgba(255, 80, 60, 0.95), 0 0 16px rgba(255, 45, 25, 0.75), 0 0 34px rgba(255, 20, 0, 0.55);
 }
+/* Neonová cedule (merch): tmavá tabule + nápis jako neonová trubice — bílé jádro
+   písma s červenou září kolem, jemné problikávání jako u Holiday Motel. */
+.neon-board {
+  background: #171018;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 70, 50, 0.45), 0 0 28px rgba(255, 40, 20, 0.28);
+}
+.neon-sign-red {
+  color: #fff;
+  -webkit-text-stroke: 0.4px rgba(255, 120, 105, 0.9);
+  text-shadow: 0 0 3px #fff, 0 0 8px #ff3b2f, 0 0 18px #ff2a1f, 0 0 36px rgba(255, 20, 0, 0.8), 0 0 64px rgba(255, 20, 0, 0.5);
+  animation: neon-sign-red 5s infinite;
+}
+@keyframes neon-sign-red {
+  0%, 19%, 21%, 23%, 55%, 57%, 100% {
+    opacity: 1;
+  }
+  20%, 22%, 56% {
+    opacity: 0.8;
+    text-shadow: 0 0 2px #fff, 0 0 6px #ff3b2f;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .neon-sign-red {
+    animation: none;
+  }
+}
 /* Problikávání jen neonového nápisu (Holiday Motel) v hero fotce — tmavý překryv
    jen přes oblast nápisu krátce zabliká (okolí je černá noční obloha, takže se
    zdá, že bliká jen nápis). Rytmus podobný blikání „56 ročník". */

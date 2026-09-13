@@ -247,6 +247,12 @@ export default function MerchOrderPage() {
 
         {status === "ready" && !done && (
           <div className="space-y-6">
+            {/* Neonová cedule: merch se kupuje na baru na dvorku (bílá trubice, červená záře) */}
+            <div className="neon-board rounded-2xl px-5 py-5 text-center sm:py-6">
+              <p className="neon-sign-red font-display text-2xl font-extrabold uppercase leading-tight tracking-wide sm:text-3xl">
+                Merch se kupuje na baru na dvorku
+              </p>
+            </div>
             {products.length === 0 ? (
               <div className="card p-8 text-center text-sm text-ink-soft">Nabídka se právě připravuje. Kdyžtak to zkus později.</div>
             ) : (
