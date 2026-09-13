@@ -14,7 +14,8 @@ import { SCHEDULE, KIND_CLASS, KIND_LABEL, UI, fmtDay, groupSlots, pick, placeOf
 export function Harmonogram({ lang, vegas = false }: { lang: Lang; vegas?: boolean }) {
   return (
     <div className="mt-8">
-      <p className="text-sm font-semibold uppercase tracking-wide text-ink-soft">{UI.heading[lang]}</p>
+      {/* nadpis HARMONOGRAM — ve Vegas tématu hnědozlatý přechod jako „Jak týden probíhá" */}
+      <p className={`text-sm font-bold uppercase tracking-wide ${vegas ? "vegas-ink-gold" : "text-ink-soft"}`}>{UI.heading[lang]}</p>
       <ol className="mt-2 grid gap-2 md:grid-cols-2 lg:grid-cols-3">
         {SCHEDULE.map((d, di) => {
           const groups = groupSlots(d.slots);
