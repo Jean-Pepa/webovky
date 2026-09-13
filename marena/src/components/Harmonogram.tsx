@@ -7,8 +7,8 @@ import { SCHEDULE, KIND_CLASS, KIND_LABEL, UI, fmtDay, groupSlots, pick, placeOf
 // Harmonogram čt → čt: každý den jako karta („bublina") s tenkým světlým rámečkem,
 // karty se střídají zlatavá / bílá (čtvrtek začíná zlatavou); program pod sebou jako štítky s barevným rámečkem — vždy začátek–konec, název a místo
 // (aula / dvůr / Fléda). Sousední položky stejného typu mají malý štítek typu
-// jen jednou nad sebou. Finálový čtvrtek: tmavá karta se zlatým rámem a bílými
-// záblesky, které se objevují a mizí (FinaleFlashes); věta o lístkách
+// jen jednou nad sebou. Finálový čtvrtek: zlatavá karta se silným zlatým rámem
+// a čistými světelnými čarami, které se objevují a mizí (FinaleFlashes); věta o lístkách
 // samostatně pod harmonogramem jako stejné tlačítko, jaké je nahoře u merche
 // (pulzující, odkaz na merch) — vzhled podle tématu webu (vegas / normální).
 export function Harmonogram({ lang, vegas = false }: { lang: Lang; vegas?: boolean }) {
@@ -23,14 +23,14 @@ export function Harmonogram({ lang, vegas = false }: { lang: Lang; vegas?: boole
               key={d.day}
               className={`rounded-xl p-3 ${
                 d.finale
-                  ? "relative overflow-hidden border-[5px] border-gold-500 bg-[#0b0b0d] text-white shadow-[0_0_0_6px_rgba(244,183,31,0.25)] md:col-span-2 lg:col-span-3"
+                  ? "relative overflow-hidden border-[5px] border-gold-500 bg-gold-50 shadow-[0_0_0_6px_rgba(244,183,31,0.25)] md:col-span-2 lg:col-span-3"
                   : `border border-ink/30 ${di % 2 ? "bg-white" : "bg-gold-50"}`
               }`}
             >
               {d.finale && <FinaleFlashes />}
               <div className="relative flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                <span className={`font-display font-bold leading-none ${d.finale ? "text-2xl text-white" : "text-lg text-ink"}`}>{d.dow[lang]}</span>
-                <span className={d.finale ? "text-sm font-semibold text-white/70" : "text-xs text-ink-soft"}>{fmtDay(d.day, lang, d.dayTo)}</span>
+                <span className={`font-display font-bold leading-none text-ink ${d.finale ? "text-2xl" : "text-lg"}`}>{d.dow[lang]}</span>
+                <span className={`text-ink-soft ${d.finale ? "text-sm font-semibold" : "text-xs"}`}>{fmtDay(d.day, lang, d.dayTo)}</span>
               </div>
               {d.finale && (
                 <div className="relative mt-1">
@@ -42,7 +42,7 @@ export function Harmonogram({ lang, vegas = false }: { lang: Lang; vegas?: boole
                   >
                     {UI.finale[lang]}
                   </p>
-                  <p className="mt-1.5 text-sm font-semibold text-white sm:text-base">{UI.finaleNote[lang]}</p>
+                  <p className="mt-1.5 text-sm font-semibold text-ink sm:text-base">{UI.finaleNote[lang]}</p>
                 </div>
               )}
               <div className="relative mt-1.5 space-y-1.5">
@@ -52,7 +52,7 @@ export function Harmonogram({ lang, vegas = false }: { lang: Lang; vegas?: boole
                   return (
                     <div key={gi}>
                       {/* štítek typu — jen jednou nad blokem; u „volno" žádný */}
-                      {label && <div className={`text-[10px] leading-4 ${d.finale ? "text-white/60" : "text-ink-soft"}`}>{label}</div>}
+                      {label && <div className="text-[10px] leading-4 text-ink-soft">{label}</div>}
                       <ul className="flex flex-col items-start gap-1">
                         {g.slots.map((s, i) => {
                           const place = placeOf(s);
