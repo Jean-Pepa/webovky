@@ -1,9 +1,9 @@
 import Link from "next/link";
 import type { Lang } from "@/lib/homepage";
-import { SCHEDULE, KIND_CLASS, KIND_CHIP, KIND_LABEL, UI, fmtDay, groupSlots, pick, placeOf } from "@/lib/schedule";
+import { SCHEDULE, KIND_CLASS, KIND_LABEL, UI, fmtDay, groupSlots, pick, placeOf } from "@/lib/schedule";
 
 // Harmonogram čt → čt: každý den jako karta („bublina") s černým rámečkem,
-// program pod sebou jako barevné štítky — vždy začátek–konec, název a místo
+// program pod sebou jako štítky s barevným rámečkem — vždy začátek–konec, název a místo
 // (aula / dvůr / Fléda). Sousední položky stejného typu mají malý štítek typu
 // jen jednou nad sebou. Finálový čtvrtek výrazně zvýrazněný; věta o lístkách
 // samostatně pod harmonogramem jako blikající červený neon (odkaz na merch).
@@ -46,14 +46,14 @@ export function Harmonogram({ lang }: { lang: Lang }) {
                           return (
                             <li
                               key={i}
-                              className={`inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 rounded-full px-2.5 py-0.5 text-xs ${KIND_CLASS[s.kind]}`}
+                              className={`inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 rounded-full border-2 bg-white px-2.5 py-0.5 text-xs text-ink ${KIND_CLASS[s.kind]}`}
                             >
                               {s.from && (
-                                <span className="whitespace-nowrap tabular-nums opacity-80">{s.to ? `${s.from}–${s.to}` : `${UI.from[lang]} ${s.from}`}</span>
+                                <span className="whitespace-nowrap tabular-nums text-ink-soft">{s.to ? `${s.from}–${s.to}` : `${UI.from[lang]} ${s.from}`}</span>
                               )}
                               <span className="font-medium">{pick(s.title, lang)}</span>
                               {place && (
-                                <span className={`rounded-full px-1.5 py-px text-[9px] font-bold uppercase tracking-wide ${KIND_CHIP[s.kind]}`}>{place[lang]}</span>
+                                <span className="rounded-full bg-paper2 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-ink-soft">{place[lang]}</span>
                               )}
                               {s.must && (
                                 <span className="rounded-full bg-white/95 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-700">{UI.must[lang]}</span>

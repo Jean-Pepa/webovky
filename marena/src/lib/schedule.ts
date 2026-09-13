@@ -25,32 +25,20 @@ export interface Day {
   finale?: boolean;
 }
 
-// Barvy štítků podle typu programu — paleta Mařeny Las Vegas (zlatá, VUT
-// červená, neon růžová / fialová / cyan, zeleň, Apple modrá, grafit).
+// Štítky bez výplně — jen barevný rámeček podle typu programu, paleta Mařeny
+// Las Vegas (zlatá, VUT červená, neon růžová / fialová / cyan, zeleň, Apple
+// modrá, grafit). Cyan je na bílé o něco sytější, ať je rámeček vidět.
 export const KIND_CLASS: Record<SlotKind, string> = {
-  zahajeni: "bg-gold-600 text-white",
-  special: "bg-[#ff2ea6] text-white",
-  film: "bg-[#a020f0] text-white",
-  vikend: "bg-plum-600 text-white",
-  prednaska: "bg-gold-400 text-ink",
-  kapela: "bg-sky text-white",
-  dj: "bg-marigold-600 text-white",
-  herni: "bg-leaf text-white",
-  pruvod: "bg-[#4ff0ff] text-ink",
-  volno: "bg-paper2 text-ink-soft",
-};
-// Štítek místa uvnitř pilulky — světlý na tmavých, tmavý na světlých (zlatá, cyan).
-export const KIND_CHIP: Record<SlotKind, string> = {
-  zahajeni: "bg-white/30",
-  special: "bg-white/30",
-  film: "bg-white/30",
-  vikend: "bg-white/25",
-  prednaska: "bg-black/10",
-  kapela: "bg-white/30",
-  dj: "bg-white/30",
-  herni: "bg-white/30",
-  pruvod: "bg-black/10",
-  volno: "bg-black/10",
+  zahajeni: "border-gold-600",
+  special: "border-[#ff2ea6]",
+  film: "border-[#a020f0]",
+  vikend: "border-plum-600",
+  prednaska: "border-gold-500",
+  kapela: "border-sky",
+  dj: "border-marigold-600",
+  herni: "border-leaf",
+  pruvod: "border-[#0bb5cc]",
+  volno: "border-ink/20",
 };
 
 // Štítek typu programu nad blokem (malými písmeny): [jednotné, množné číslo].
