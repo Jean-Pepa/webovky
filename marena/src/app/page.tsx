@@ -44,6 +44,18 @@ export default function Home() {
     if (siteOff) router.replace("/prihlaseni");
   }, [siteOff, router]);
 
+  // Hlavička webu je černá → i horní lišta Safari na iPhonu (theme-color) má být
+  // černá, ne bílá jako ve zbytku aplikace. Při odchodu ze stránky se vrátí.
+  useEffect(() => {
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    if (!meta) return;
+    const prev = meta.content;
+    meta.content = "#000000";
+    return () => {
+      meta.content = prev;
+    };
+  }, []);
+
   useEffect(() => {
     const saved = localStorage.getItem("marena_lang");
     // eslint-disable-next-line react-hooks/set-state-in-effect
