@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
   // Oba musí mít stejnou hodnotu = složka této appky.
   outputFileTracingRoot: appDir,
   turbopack: { root: appDir },
+  // Otisk nasazení (commit na Vercelu) — klient ho porovnává s /api/version a po
+  // novém nasazení si otevřená appka na telefonu sama načte novou verzi.
+  env: { NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_DEPLOYMENT_ID || "dev" },
 };
 
 export default nextConfig;
