@@ -110,7 +110,7 @@ export const SCHEDULE: Day[] = [
     slots: [
       { from: "19:00", to: "20:00", title: P("Zahájení semestru", "Semester opening", "Semesterauftakt"), kind: "zahajeni" },
       { from: "20:00", to: "21:00", title: "Hopsen Clark", kind: "kapela" },
-      { from: "21:00", to: "0:00", title: "DJ Vojta", kind: "dj" },
+      { from: "21:00", to: "0:00", title: "DJ Krysař a Helenizmus", kind: "dj" },
     ],
   },
   {
@@ -118,7 +118,7 @@ export const SCHEDULE: Day[] = [
     dow: P("Pá", "Fri", "Fr"),
     slots: [
       { from: "17:30", to: "19:00", title: P("Studentský speciál", "Student special", "Studenten-Spezial"), kind: "prednaska" },
-      { from: "19:00", to: "20:00", title: P("Kapela z řad našeho ročníku", "A band from our own year", "Band aus unserem Jahrgang"), kind: "kapela" },
+      { from: "19:00", to: "20:00", title: P("Kapela BBzde", "Band BBzde", "Band BBzde"), kind: "kapela" },
       { from: "20:00", to: "23:30", title: P("Film", "Film", "Film"), kind: "film" },
     ],
   },
@@ -146,7 +146,7 @@ export const SCHEDULE: Day[] = [
     day: 21,
     dow: P("Po", "Mon", "Mo"),
     slots: [
-      { from: "16:00", to: "17:00", title: "prof. Ing. arch. Monika Mitášová, Ph.D.", kind: "prednaska" },
+      { from: "16:00", to: "17:00", title: "prof. Monika Mitášová", kind: "prednaska" },
       { from: "17:00", to: "18:00", title: "Štěpán Flekna", kind: "prednaska" },
       { from: "18:00", to: "20:00", title: "Steve Davies", kind: "prednaska" },
       { from: "20:00", to: "22:00", title: "Stříbrný Rafael", kind: "kapela" },
@@ -158,7 +158,7 @@ export const SCHEDULE: Day[] = [
     slots: [
       { from: "16:30", to: "17:30", title: "INN", kind: "prednaska" },
       { from: "17:30", to: "18:30", title: "Městem na kole", kind: "prednaska" },
-      { from: "18:30", to: "19:30", title: "Grau architekti", kind: "prednaska" },
+      { from: "18:30", to: "19:30", title: "Grau architects", kind: "prednaska" },
       { from: "20:00", to: "23:30", title: "Albert Wawracz", kind: "dj" },
     ],
   },
@@ -169,7 +169,7 @@ export const SCHEDULE: Day[] = [
       { from: "16:30", to: "17:30", title: "Martina Mertová", kind: "prednaska" },
       { from: "17:30", to: "18:30", title: "AOSI", kind: "prednaska" },
       { from: "18:30", to: "19:30", title: "Henkai architekti", kind: "prednaska" },
-      { from: "20:00", to: "23:30", title: P("Herní večer", "Game night", "Spieleabend"), kind: "herni" },
+      { from: "20:00", to: "23:30", title: P("Herní večer a pizza", "Game night & pizza", "Spieleabend & Pizza"), kind: "herni" },
     ],
   },
   {
