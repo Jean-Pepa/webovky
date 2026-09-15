@@ -473,12 +473,7 @@ export default function FinancePage() {
 
       {/* Kdo co smí: výběrčí jen sleduje; jinak každý (s finanční rolí) přidává,
           upravuje jen správce; zamčený ročník = jen náhled */}
-      {viewOnly ? (
-        <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
-          <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>Vidíš výběr peněz — kolik je vybráno, kolik se vrátilo a kdo zaplatil. Jen k náhledu; celé finance má ekonom a správce. Svůj výdaj si zapíšeš níže.</span>
-        </div>
-      ) : vyberOnly ? (
+      {viewOnly ? null : vyberOnly ? (
         <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
           <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
           <span>Máš jen náhled — vidíš, kdo a kdy zaplatil. Zapisovat platby může ekonom nebo správce.</span>
