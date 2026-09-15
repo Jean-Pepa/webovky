@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { StoreProvider } from "@/lib/store";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
+import { VersionWatcher } from "@/components/VersionWatcher";
 import { ThirdPartyAnalytics } from "@/components/ThirdPartyAnalytics";
 
 export const metadata: Metadata = {
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <StoreProvider>
           <AnalyticsTracker />
+          <VersionWatcher />
           {children}
         </StoreProvider>
       </body>
