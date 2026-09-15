@@ -324,7 +324,14 @@ function AddProduct({ yearId }: { yearId: string }) {
 }
 
 function ProductCard({ product, yearId, editable, sold, soldVariant }: { product: MerchProduct; yearId: string; editable: boolean; sold: number; soldVariant?: Map<string, number> }) {
-  const { dispatch, configured } = useStore();
+  const { dispatch, configured, currentYear } = useStore();
+  // Čekající objednávky, kde je položka za jinou cenu než je teď v nabídce
+  // (např. lístek objednaný za 350 Kč, teď stojí 300) → nabídnout sjednocení.
+  const stale = (currentYear?.merchOrders ?? [])
+    .filter((o) => !o.done)
+    .flatMap((o) => o.items.filter((it) => it.productId === product.id && product.price != null && it.price != null && it.price !== product.price));
+  const staleQty = stale.reduce((sum, it) => sum + it.qty, 0);
+  const stalePrices = [...new Set(stale.map((it) => it.price as number))].sort((x, y) => x - y);
   const remaining = product.stock != null ? product.stock - sold : null;
   const soldOut = remaining != null && remaining <= 0;
   // Zbývá po variantách (velikost·barva): sklad varianty − prodáno varianty.
@@ -378,6 +385,23 @@ function ProductCard({ product, yearId, editable, sold, soldVariant }: { product
                 </p>
               ) : null;
             })()}
+            {editable && product.price != null && staleQty > 0 && (
+              <div className="mt-2 rounded-xl bg-amber-50 p-2 text-xs text-amber-900">
+                <p>
+                  {staleQty} ks v čekajících objednávkách za {stalePrices.map(fmtCZK).join(" / ")}.
+                </p>
+                <button
+                  className="mt-1 rounded-full bg-amber-500 px-2.5 py-1 font-semibold text-white transition hover:bg-amber-600"
+                  onClick={async () => {
+                    if (await dispatch({ type: "repriceMerchOrders", yearId, productId: product.id, price: product.price! })) {
+                      flash(`Cena sjednocena na ${fmtCZK(product.price!)} u čekajících objednávek`, "✅");
+                    }
+                  }}
+                >
+                  Sjednotit na {fmtCZK(product.price)}
+                </button>
+              </div>
+            )}
           </div>
           {editable && (
             <div className="flex shrink-0 items-center gap-1">
@@ -449,9 +473,18 @@ function ProductCard({ product, yearId, editable, sold, soldVariant }: { product
 }
 
 function EditProductModal({ product, yearId, onClose }: { product: MerchProduct; yearId: string; onClose: () => void }) {
-  const { dispatch } = useStore();
+  const { dispatch, currentYear } = useStore();
   const [name, setName] = useState(product.name);
   const [price, setPrice] = useState(product.price != null ? String(product.price) : "");
+  // Nová cena se dá rovnou propsat i do čekajících objednávek (vyřízené se nemění).
+  const [applyToOrders, setApplyToOrders] = useState(true);
+  const priceNow = parseInt(price.replace(/\s/g, ""), 10);
+  const pendingQty = Number.isFinite(priceNow)
+    ? (currentYear?.merchOrders ?? [])
+        .filter((o) => !o.done)
+        .flatMap((o) => o.items.filter((it) => it.productId === product.id && it.price !== priceNow))
+        .reduce((sum, it) => sum + it.qty, 0)
+    : 0;
   const [cost, setCost] = useState(product.cost != null ? String(product.cost) : "");
   const [sizes, setSizes] = useState((product.sizes ?? []).join(", "));
   const [colors, setColors] = useState((product.colors ?? []).join(", "));
@@ -486,6 +519,9 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
         note,
       },
     });
+    if (applyToOrders && Number.isFinite(priceNum) && pendingQty > 0) {
+      await dispatch({ type: "repriceMerchOrders", yearId, productId: product.id, price: priceNum });
+    }
     onClose();
   }
 
@@ -514,6 +550,14 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
             </p>
           ) : null;
         })()}
+        {pendingQty > 0 && (
+          <label className="flex items-start gap-2 rounded-xl bg-amber-50 p-2 text-xs text-amber-900">
+            <input type="checkbox" className="mt-0.5" checked={applyToOrders} onChange={(e) => setApplyToOrders(e.target.checked)} />
+            <span>
+              Použít cenu {fmtCZK(priceNow)} i u čekajících objednávek ({pendingQty} ks). Vyřízené a zaplacené objednávky se nemění.
+            </span>
+          </label>
+        )}
         <div>
           <label className="label">Velikosti (přes čárku)</label>
           <input className="input" placeholder="S, M, L, XL" value={sizes} onChange={(e) => setSizes(e.target.value)} />
@@ -544,6 +588,53 @@ function EditProductModal({ product, yearId, onClose }: { product: MerchProduct;
         </div>
       </div>
     </Modal>
+  );
+}
+
+// Cena položky čekající objednávky — kliknutím se dá přepsat (sleva, výjimka).
+function ItemPrice({ value, onChange }: { value?: number; onChange: (price?: number) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [v, setV] = useState("");
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        className="rounded-full bg-paper2 px-1.5 py-px text-xs text-ink-soft transition hover:bg-gold-100 hover:text-ink"
+        title="Upravit cenu za kus"
+        onClick={() => {
+          setV(value != null ? String(value) : "");
+          setEditing(true);
+        }}
+      >
+        {value != null ? fmtCZK(value) : "bez ceny"} ✎
+      </button>
+    );
+  }
+  const commit = () => {
+    const n = parseInt(v.replace(/\s/g, ""), 10);
+    onChange(Number.isFinite(n) ? n : undefined);
+    setEditing(false);
+  };
+  return (
+    <span className="inline-flex items-center gap-1">
+      <input
+        className="input h-7 w-20 px-2 py-0 text-xs"
+        inputMode="numeric"
+        value={v}
+        autoFocus
+        onChange={(e) => setV(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") setEditing(false);
+        }}
+      />
+      <button type="button" className="rounded-full bg-gold-500 px-2 py-0.5 text-xs font-semibold text-[#1d1d1f]" onClick={commit}>
+        OK
+      </button>
+      <button type="button" className="text-xs text-ink-soft hover:text-ink" onClick={() => setEditing(false)}>
+        zrušit
+      </button>
+    </span>
   );
 }
 
@@ -633,7 +724,23 @@ function OrderRow({
 
       {/* Řádek 2: jaký merch a jeho počet (+ poznámka a cena) */}
       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-ink/[0.05] pt-1 text-sm">
-        <span>{itemsText}</span>
+        {canManage && !order.done ? (
+          // u čekající objednávky jde cena každé položky přepsat (sleva, stará cena…)
+          <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+            {order.items.map((it, i) => (
+              <span key={i} className="inline-flex flex-wrap items-center gap-1">
+                <span>
+                  {i > 0 ? ", " : ""}
+                  {it.qty}× {it.name}
+                  {[it.size, it.color].filter(Boolean).length ? ` (${[it.size, it.color].filter(Boolean).join(" · ")})` : ""}
+                </span>
+                <ItemPrice value={it.price} onChange={(p) => dispatch({ type: "setMerchOrderItemPrice", yearId, orderId: order.id, index: i, price: p })} />
+              </span>
+            ))}
+          </span>
+        ) : (
+          <span>{itemsText}</span>
+        )}
         {order.note && <span className="text-xs text-ink-soft">· pozn.: {order.note}</span>}
         {total > 0 && <span className="ml-auto font-display font-bold text-ink">{fmtCZK(total)}</span>}
       </div>
