@@ -118,7 +118,7 @@ export const SCHEDULE: Day[] = [
     dow: P("Pá", "Fri", "Fr"),
     slots: [
       { from: "17:30", to: "19:00", title: P("Studentský speciál", "Student special", "Studenten-Spezial"), kind: "prednaska" },
-      { from: "19:00", to: "20:00", title: "BBzde", kind: "kapela" },
+      { from: "19:00", to: "20:00", title: P("Kapela BBzde", "Band BBzde", "Band BBzde"), kind: "kapela" },
       { from: "20:00", to: "23:30", title: P("Film", "Film", "Film"), kind: "film" },
     ],
   },
