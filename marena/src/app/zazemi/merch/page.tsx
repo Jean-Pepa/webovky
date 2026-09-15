@@ -106,9 +106,15 @@ export default function MerchPage() {
   // Prodáno na produkt (a po variantách) — pro „skladem / zbývá" přímo u karty.
   const soldByProduct = new Map<string, number>();
   const soldByVariant = new Map<string, Map<string, number>>();
+  // Kolik OBJEDNÁVEK produkt obsahuje — „prodáno" jsou kusy (jedna objednávka
+  // může mít 2 lístky), tak se ukazuje obojí, ať čísla nematou.
+  const ordersByProduct = new Map<string, number>();
   for (const o of orders)
     for (const it of o.items) {
       soldByProduct.set(it.productId, (soldByProduct.get(it.productId) ?? 0) + it.qty);
+      if (!o.items.slice(0, o.items.indexOf(it)).some((x) => x.productId === it.productId)) {
+        ordersByProduct.set(it.productId, (ordersByProduct.get(it.productId) ?? 0) + 1);
+      }
       const m = soldByVariant.get(it.productId) ?? new Map<string, number>();
       const k = variantKey(it.size, it.color);
       m.set(k, (m.get(k) ?? 0) + it.qty);
@@ -146,7 +152,7 @@ export default function MerchPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((p) => (
-              <ProductCard key={p.id} product={p} yearId={year.id} editable={canManage} sold={soldByProduct.get(p.id) ?? 0} soldVariant={soldByVariant.get(p.id)} />
+              <ProductCard key={p.id} product={p} yearId={year.id} editable={canManage} sold={soldByProduct.get(p.id) ?? 0} orderCount={ordersByProduct.get(p.id) ?? 0} soldVariant={soldByVariant.get(p.id)} />
             ))}
           </div>
         )}
@@ -323,7 +329,21 @@ function AddProduct({ yearId }: { yearId: string }) {
   );
 }
 
-function ProductCard({ product, yearId, editable, sold, soldVariant }: { product: MerchProduct; yearId: string; editable: boolean; sold: number; soldVariant?: Map<string, number> }) {
+function ProductCard({
+  product,
+  yearId,
+  editable,
+  sold,
+  orderCount,
+  soldVariant,
+}: {
+  product: MerchProduct;
+  yearId: string;
+  editable: boolean;
+  sold: number;
+  orderCount: number;
+  soldVariant?: Map<string, number>;
+}) {
   const { dispatch, configured, currentYear } = useStore();
   // Čekající objednávky, kde je položka za jinou cenu než je teď v nabídce
   // (např. lístek objednaný za 350 Kč, teď stojí 300) → nabídnout sjednocení.
@@ -442,7 +462,10 @@ function ProductCard({ product, yearId, editable, sold, soldVariant }: { product
             ) : (
               <span>Skladem: neomezeně</span>
             )}
-            <span>prodáno: {sold}</span>
+            <span>
+              prodáno: {sold} ks
+              {orderCount > 0 && orderCount !== sold && <span className="text-ink-soft/80"> · {orderCount} obj.</span>}
+            </span>
             {soldOut ? (
               <span className="rounded-full bg-red-100 px-2 py-0.5 font-bold text-red-700">Vyprodáno</span>
             ) : remaining != null ? (
@@ -731,7 +754,8 @@ function OrderRow({
               <span key={i} className="inline-flex flex-wrap items-center gap-1">
                 <span>
                   {i > 0 ? ", " : ""}
-                  {it.qty}× {it.name}
+                  {/* víc kusů v jedné objednávce zvýraznit — ať je vidět, proč je „prodáno" víc než objednávek */}
+                  {it.qty > 1 ? <span className="rounded bg-amber-100 px-1 font-bold text-amber-800">{it.qty}×</span> : `${it.qty}×`} {it.name}
                   {[it.size, it.color].filter(Boolean).length ? ` (${[it.size, it.color].filter(Boolean).join(" · ")})` : ""}
                 </span>
                 <ItemPrice value={it.price} onChange={(p) => dispatch({ type: "setMerchOrderItemPrice", yearId, orderId: order.id, index: i, price: p })} />
