@@ -193,6 +193,8 @@ export type Action =
   // a zapíše tržbu do financí. Odemknout ji pak může jen správce.
   | { type: "settleMerchOrder"; yearId: string; orderId: string; how?: string }
   | { type: "removeMerchOrder"; yearId: string; orderId: string }
+  | { type: "repriceMerchOrders"; yearId: string; productId: string; price: number } // nová cena u čekajících objednávek daného produktu
+  | { type: "setMerchOrderItemPrice"; yearId: string; orderId: string; index: number; price?: number } // cena jedné položky čekající objednávky
   // Uvolnění místa: smaže všechny fotky/účtenky ročníku (reference v DB; samotné
   // bloby maže klient zvlášť). Texty (finance, popisy) zůstávají.
   | { type: "clearYearMedia"; yearId: string };
@@ -1419,6 +1421,34 @@ export function applyAction(db: DB, a: Action): DB {
           finances: order?.financeId ? (y.finances ?? []).filter((f) => f.id !== order.financeId) : y.finances,
         };
       });
+    // Přecenění: lidé objednali za starou cenu (např. lístek za 350 Kč) a cena se
+    // změnila → u všech ČEKAJÍCÍCH objednávek se položky daného produktu přepíšou
+    // na novou cenu. Vyřízené/zaplacené se nemění (tržba už je ve financích).
+    case "repriceMerchOrders":
+      return mapYear(db, a.yearId, (y) => {
+        if (!Number.isFinite(a.price) || a.price < 0) return y;
+        return {
+          ...y,
+          merchOrders: (y.merchOrders ?? []).map((o) =>
+            o.done ? o : { ...o, items: o.items.map((it) => (it.productId === a.productId ? { ...it, price: a.price } : it)) },
+          ),
+        };
+      });
+    // Ruční cena jedné položky čekající objednávky (výjimka, sleva…).
+    case "setMerchOrderItemPrice":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        merchOrders: (y.merchOrders ?? []).map((o) =>
+          o.id !== a.orderId || o.done
+            ? o
+            : {
+                ...o,
+                items: o.items.map((it, i) =>
+                  i === a.index ? { ...it, price: a.price != null && Number.isFinite(a.price) && a.price >= 0 ? a.price : undefined } : it,
+                ),
+              },
+        ),
+      }));
 
     default:
       return db;
