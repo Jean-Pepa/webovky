@@ -272,12 +272,13 @@ export default function FinancePage() {
   // Výběrčí vkladů (vyberOnly): správce mu v Týmu zapnul „jen Výběr". Vidí
   // napevno jen pohled Výběr a smí odklikávat platby (jako by měl finanční roli).
   const vyberOnly = !isAdmin(me) && !!year.members.find((m) => sameName(m.name, me))?.vyberOnly;
-  const tab = vyberOnly ? "vyber" : tabState;
 
-  // Celé finance (bilance, kasy, merch, výběr, všechny položky) vidí KAŽDÝ člen —
-  // stejný přehled jako organizátor, ale jen ke čtení. Zapisovat/měnit smí dál
-  // jen hlavní koordinátor & finance + správce.
+  // Běžný člen (bez finanční role, není správce): vidí jen Výběr peněz — kolik je
+  // vybráno, kolik se vrátilo, celý seznam s hledáním — jen ke čtení. Jediné, co
+  // smí sám zapsat, je svůj výdaj k proplacení (níže). Celé finance vidí jen
+  // ekonom (finanční role) a správce.
   const viewOnly = !canEditSection(year, me, "finance") && !vyberOnly;
+  const tab = vyberOnly || viewOnly ? "vyber" : tabState;
 
   // Přidávat položky i kasy: hlavní koordinátor & finance + správce.
   // Upravovat / mazat / přepínat zaplaceno už jen správce (canEdit).
@@ -399,8 +400,8 @@ export default function FinancePage() {
       </div>
 
       {/* Přepínač financí (desktop) — na mobilu je dole ve svítící zlaté liště.
-          Výběrčí (vyberOnly) přepínač nemá — má jen pohled Výběr. */}
-      {!vyberOnly && (
+          Výběrčí (vyberOnly) ani běžný člen (viewOnly) přepínač nemají — mají jen pohled Výběr. */}
+      {!vyberOnly && !viewOnly && (
         <div className="hidden gap-1.5 md:flex">
           {FIN_TABS.map((t) => (
             <button
@@ -447,6 +448,13 @@ export default function FinancePage() {
                   { label: "Vloženo", text: `−${fmtCZK(merchIn)}` },
                   { label: "Zisk", text: `${merchProfit >= 0 ? "+" : "−"}${fmtCZK(Math.abs(merchProfit))}`, cls: merchProfit >= 0 ? "text-leaf-700" : "text-red-600" },
                 ]
+              : tab === "vyber" && viewOnly
+                ? [
+                    { label: "Vybráno celkem", text: `+${fmtCZK(vyber.total)}`, cls: "text-leaf-700" },
+                    { label: "V balíku", text: `+${fmtCZK(vyber.inPool)}`, cls: "text-leaf-700" },
+                    { label: "Vráceno", text: `−${fmtCZK(vyber.returned)}`, cls: vyber.returned > 0 ? "text-ink" : "text-ink-soft" },
+                    { label: "Zaplatili", text: `${vyber.paidCount}/${contributions.length}` },
+                  ]
               : tab === "vyber"
                 ? [
                     { label: "V balíku", text: `+${fmtCZK(vyber.inPool)}`, cls: "text-leaf-700" },
@@ -468,7 +476,7 @@ export default function FinancePage() {
       {viewOnly ? (
         <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
           <Icon name="finance" className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>Vidíš celý rozpočet — jen k náhledu. Měnit ho může ekonom a správce. Svůj výdaj si zapíšeš níže.</span>
+          <span>Vidíš výběr peněz — kolik je vybráno, kolik se vrátilo a kdo zaplatil. Jen k náhledu; celé finance má ekonom a správce. Svůj výdaj si zapíšeš níže.</span>
         </div>
       ) : vyberOnly ? (
         <div className="flex items-start gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
@@ -527,7 +535,7 @@ export default function FinancePage() {
 
       {/* ===== POHLED: VÝBĚR (vklady) ===== */}
       {tab === "vyber" &&
-      (contributions.length > 0 || canAdd || vyberOnly) && (
+      (contributions.length > 0 || canAdd || vyberOnly || viewOnly) && (
         <section id="vyber" className="card scroll-mt-20 p-4">
           <h2 className="mb-1 flex flex-wrap items-center gap-2">
             <span className="eyebrow">Výběr (vklady)</span>
@@ -653,6 +661,9 @@ export default function FinancePage() {
       )}
 
       {/* ===== POHLED: MERCH ===== */}
+      {/* Běžný člen (viewOnly): jediné, co smí sám zapsat — svůj výdaj k proplacení. */}
+      {viewOnly && <MyExpenses yearId={year.id} me={me} items={items} canSubmit={canEditCurrentYear} />}
+
       {tab === "merch" && (
         merchIn > 0 || merchTotal > 0 || merchExtras.length > 0 || merchSaleDays.length > 0 ? (
           <div className="space-y-4">
@@ -745,9 +756,6 @@ export default function FinancePage() {
         </div>
       )}
 
-      {/* Běžný člen (viewOnly): jediné, co smí sám zapsat — svůj výdaj k proplacení. */}
-      {viewOnly && <MyExpenses yearId={year.id} me={me} items={items} canSubmit={canEditCurrentYear} />}
-
       {/* Seznam položek (výdaje, vklady…) */}
       <h2 className="eyebrow">Položky</h2>
 
@@ -832,8 +840,8 @@ export default function FinancePage() {
       <NewKasaModal open={kasaOpen} yearId={year.id} onClose={() => setKasaOpen(false)} />
 
       {/* Svítící zlatá lišta (mobil) — 4 hlavní pohledy, jako stánky v Prodeji.
-          Výběrčí (vyberOnly) lištu nemá — má jen pohled Výběr. */}
-      {!vyberOnly && (
+          Výběrčí (vyberOnly) ani běžný člen (viewOnly) lištu nemají — mají jen pohled Výběr. */}
+      {!vyberOnly && !viewOnly && (
       <div className="fixed inset-x-3 bottom-[calc(5.1rem+env(safe-area-inset-bottom))] z-40 md:hidden">
         <div className="mx-auto max-w-3xl">
           <div className="drop-in-bounce grid grid-cols-4 gap-1 rounded-[28px] border-2 border-gold-500 bg-paper/95 p-1.5 shadow-lg backdrop-blur">
