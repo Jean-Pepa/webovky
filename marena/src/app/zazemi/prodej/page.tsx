@@ -509,8 +509,19 @@ function Pos() {
       <div>
         <div className="flex items-center justify-between gap-3">
           <PageTitle>Prodej</PageTitle>
-          {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
-          <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} />
+          <div className="flex shrink-0 items-center gap-2">
+            {/* Vlastní částka — když cena ještě není v nabídce (nebo se domluví na místě) */}
+            <button
+              onClick={() => setCustomOpen(true)}
+              className="flex min-h-11 items-center gap-1.5 rounded-full bg-paper2 px-3.5 text-[15px] font-semibold text-ink transition hover:bg-gold-100"
+              title="Zadat částku sám"
+            >
+              ✏️ <span className="hidden sm:inline">Vlastní částka</span>
+              <span className="sm:hidden">Částka</span>
+            </button>
+            {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
+            <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} />
+          </div>
         </div>
         {/* Účet pro QR — malý, ať nepřekáží; správce ho upraví ťuknutím */}
         <div className="mt-1">
@@ -720,29 +731,15 @@ function Pos() {
                   </button>
                 );
               })}
-              {/* Vlastní částka — když cena ještě není v nabídce (nebo se domluví na místě) */}
-              {!editNabidka && !soldMode && (
-                <button
-                  onClick={() => setCustomOpen(true)}
-                  className="flex min-h-14 flex-col items-start justify-center gap-0.5 rounded-lg border-l-4 border-l-zinc-400 border-dashed bg-surface px-3 py-2 text-left ring-1 ring-ink/10 transition hover:bg-gold-100 active:scale-[0.97]"
-                >
-                  <span className="w-full truncate text-[15px] font-semibold leading-tight">✏️ Vlastní částka</span>
-                  <span className="text-xs text-ink-soft">zadej Kč sám</span>
-                </button>
-              )}
             </div>
           </section>
         ) : (
           <section key={g.kind} className="card grid place-items-center gap-2 p-6 text-center">
             <p className="text-sm text-ink-soft">{EMPTY_HINT[g.kind].text} S cenou se tu objeví sama.</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              <button onClick={() => setCustomOpen(true)} className="btn-primary">
-                ✏️ Vlastní částka
-              </button>
-              <Link href={EMPTY_HINT[g.kind].href} className="btn-secondary">
-                {EMPTY_HINT[g.kind].cta} →
-              </Link>
-            </div>
+            <p className="text-xs text-ink-soft">Bez ceny jde prodat přes „✏️ Vlastní částka“ nahoře vedle kasy.</p>
+            <Link href={EMPTY_HINT[g.kind].href} className="btn-secondary">
+              {EMPTY_HINT[g.kind].cta} →
+            </Link>
           </section>
         ),
       )}
