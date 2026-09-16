@@ -36,7 +36,13 @@ type Line = {
   color?: string;
   price: number;
   qty: number;
+  category?: string; // vlastní částka: pod jakou kategorii tržba patří (merch / bar / kuchyně)
 };
+
+// Vlastní částka (ceny ještě nejsou v nabídce): kategorie tržby a výchozí popis podle stánku.
+const CUSTOM_CATEGORY: Record<Stand, string> = { merch: "merch", bar: "bar", kuchyne: "kuchyně" };
+const CUSTOM_DEFAULT: Record<Stand, string> = { merch: "Merch", bar: "Pití", kuchyne: "Jídlo" };
+const CUSTOM_WORD: Record<string, string> = { merch: "MERCH", bar: "BAR", "kuchyně": "JIDLO" };
 
 const STANDS: { id: Stand; label: string }[] = [
   { id: "merch", label: "🛍️ Merch" },
@@ -169,6 +175,10 @@ function Pos() {
   const [editNabidka, setEditNabidka] = useState(false);
   // Režim „Vyprodáno" (kdokoli u kasy): ťuknutím se položka vyprodá/odblokuje.
   const [soldMode, setSoldMode] = useState(false);
+  // Vlastní částka — okno: za co + kolik (jde do účtenky jako běžná položka)
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customLabel, setCustomLabel] = useState("");
+  const [customAmount, setCustomAmount] = useState("");
   const year = currentYear;
   const admin = isAdmin(me);
   // Pomocník u stánku nemá spodní navigaci — stánky sedí na jejím místě.
@@ -315,10 +325,11 @@ function Pos() {
   const pickerProduct = picker ? (year.merch ?? []).find((p) => p.id === picker.productId) : undefined;
   const total = lines.reduce((s, l) => s + l.price * l.qty, 0);
   const kinds = [...new Set(lines.map((l) => l.kind))];
+  const words = [...new Set(lines.map((l) => (l.kind === "custom" ? (CUSTOM_WORD[l.category ?? ""] ?? KIND_WORD.custom) : KIND_WORD[l.kind])))];
   const kindsWord =
-    kinds.length === 1
-      ? KIND_WORD[kinds[0]]
-      : kinds.every((k) => k === "bar" || k === "kuchyne")
+    words.length === 1
+      ? words[0]
+      : kinds.every((k) => k === "bar" || k === "kuchyne") || words.every((w) => w === "BAR" || w === "JIDLO")
         ? "JIDLO A PITI"
         : "KASA";
   const qrMessage = `MARENA ${kindsWord} ${lines.map((l) => `${l.qty}X ${lineLabel(l)}`).join(", ")}`;
@@ -330,13 +341,23 @@ function Pos() {
 
   // Klíč řádku nese id, variantu i cenu — stejně pojmenované položky
   // s jinou cenou se nesmí slít do jedné.
-  function addLine(kind: Kind, name: string, price: number, productId?: string, size?: string, color?: string) {
+  function addLine(kind: Kind, name: string, price: number, productId?: string, size?: string, color?: string, category?: string) {
     setLines((prev) => {
-      const key = `${kind}|${productId ?? name}|${size ?? ""}|${color ?? ""}|${price}`;
+      const key = `${kind}|${productId ?? name}|${size ?? ""}|${color ?? ""}|${price}|${category ?? ""}`;
       const i = prev.findIndex((l) => l.key === key);
       if (i >= 0) return prev.map((l, j) => (j === i ? { ...l, qty: l.qty + 1 } : l));
-      return [...prev, { key, kind, productId, name, size, color, price, qty: 1 }];
+      return [...prev, { key, kind, productId, name, size, color, price, qty: 1, category }];
     });
+  }
+  // Vlastní částka (např. merch, u kterého ještě není cena): popis + Kč → účtenka,
+  // tržba se zapíše pod kategorii stánku (merch / bar / kuchyně).
+  function addCustom() {
+    const n = parseInt(customAmount.replace(/\s/g, ""), 10);
+    if (!Number.isFinite(n) || n <= 0) return;
+    addLine("custom", customLabel.trim() || CUSTOM_DEFAULT[stand], n, undefined, undefined, undefined, CUSTOM_CATEGORY[stand]);
+    setCustomOpen(false);
+    setCustomLabel("");
+    setCustomAmount("");
   }
   function bump(key: string, delta: number) {
     setLines((prev) =>
@@ -415,9 +436,17 @@ function Pos() {
         if (ok) ok = await dispatch({ type: "settleMerchOrder", yearId: year.id, orderId, how: howText });
         if (ok) merch.forEach((l) => written.add(l.key));
       }
-      for (const kind of ["bar", "kuchyne", "custom"] as const) {
+      // Pití / jídlo po druhu; vlastní částky podle kategorie stánku (merch / bar / kuchyně)
+      const groups: { category: string; group: Line[] }[] = [
+        { category: KIND_CATEGORY.bar, group: lines.filter((l) => l.kind === "bar") },
+        { category: KIND_CATEGORY.kuchyne, group: lines.filter((l) => l.kind === "kuchyne") },
+        ...[...new Set(lines.filter((l) => l.kind === "custom").map((l) => l.category ?? KIND_CATEGORY.custom))].map((category) => ({
+          category,
+          group: lines.filter((l) => l.kind === "custom" && (l.category ?? KIND_CATEGORY.custom) === category),
+        })),
+      ];
+      for (const { category, group } of groups) {
         if (!ok) break;
-        const group = lines.filter((l) => l.kind === kind);
         if (group.length === 0) continue;
         ok = await dispatch({
           type: "addFinance",
@@ -425,7 +454,7 @@ function Pos() {
           kind: "prijem",
           label: "Prodej na místě",
           amount: group.reduce((s, l) => s + l.price * l.qty, 0),
-          category: KIND_CATEGORY[kind],
+          category,
           who: me,
           paid: true,
           date: todayISO(),
@@ -691,17 +720,59 @@ function Pos() {
                   </button>
                 );
               })}
+              {/* Vlastní částka — když cena ještě není v nabídce (nebo se domluví na místě) */}
+              {!editNabidka && !soldMode && (
+                <button
+                  onClick={() => setCustomOpen(true)}
+                  className="flex min-h-14 flex-col items-start justify-center gap-0.5 rounded-lg border-l-4 border-l-zinc-400 border-dashed bg-surface px-3 py-2 text-left ring-1 ring-ink/10 transition hover:bg-gold-100 active:scale-[0.97]"
+                >
+                  <span className="w-full truncate text-[15px] font-semibold leading-tight">✏️ Vlastní částka</span>
+                  <span className="text-xs text-ink-soft">zadej Kč sám</span>
+                </button>
+              )}
             </div>
           </section>
         ) : (
           <section key={g.kind} className="card grid place-items-center gap-2 p-6 text-center">
             <p className="text-sm text-ink-soft">{EMPTY_HINT[g.kind].text} S cenou se tu objeví sama.</p>
-            <Link href={EMPTY_HINT[g.kind].href} className="btn-secondary">
-              {EMPTY_HINT[g.kind].cta} →
-            </Link>
+            <div className="flex flex-wrap justify-center gap-2">
+              <button onClick={() => setCustomOpen(true)} className="btn-primary">
+                ✏️ Vlastní částka
+              </button>
+              <Link href={EMPTY_HINT[g.kind].href} className="btn-secondary">
+                {EMPTY_HINT[g.kind].cta} →
+              </Link>
+            </div>
           </section>
         ),
       )}
+
+      {/* Vlastní částka — okno: za co + kolik */}
+      <Modal open={customOpen} onClose={() => setCustomOpen(false)} title={`Vlastní částka — ${CUSTOM_DEFAULT[stand].toLowerCase()}`}>
+        <div className="space-y-3">
+          <p className="text-sm text-ink-soft">Když cena ještě není v nabídce: napiš, za co to je, a kolik. Do financí se to zapíše jako tržba stánku {CUSTOM_DEFAULT[stand].toLowerCase()}.</p>
+          <div>
+            <label className="label">Za co</label>
+            <input className="input" placeholder={CUSTOM_DEFAULT[stand]} value={customLabel} onChange={(e) => setCustomLabel(e.target.value)} autoFocus />
+          </div>
+          <div>
+            <label className="label">Částka (Kč)</label>
+            <input
+              className="input"
+              inputMode="numeric"
+              placeholder="např. 250"
+              value={customAmount}
+              onChange={(e) => setCustomAmount(e.target.value.replace(/[^\d\s]/g, ""))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") addCustom();
+              }}
+            />
+          </div>
+          <button className="btn-primary w-full justify-center" onClick={addCustom} disabled={!(parseInt(customAmount.replace(/\s/g, ""), 10) > 0)}>
+            🧾 Do účtenky
+          </button>
+        </div>
+      </Modal>
 
       {/* Doptání na velikost/barvu (merch s variantami) — u varianty se skladem
           se ukazuje „zbývá N" a vyprodané varianty nejdou vybrat. */}
