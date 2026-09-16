@@ -293,6 +293,12 @@ export default function FinancePage() {
   // Rozdíl kas = manko/přebytek při uzávěrkách (uzavřené kasy).
   const kasaDiff = (year.cashboxes ?? []).reduce((s, c) => s + (c.closedAt && c.closing != null ? c.closing - c.opening - (c.alreadyRecorded ?? 0) : 0), 0);
   const merchProfit = merchTotal - merchIn; // zisk z merche (výdělek − vloženo)
+  // Otevřené kasy: ranní vklad je fyzicky v šuplíku kasy, ne v hotovosti „v kase"
+  // → dokud se kasa neuzavře, odečítá se. Uzávěrka vklad vrátí (do financí jde jen
+  // tržba / rozdíl), takže se hotovost po uzavření přepočítá sama.
+  const openBoxes = (year.cashboxes ?? []).filter((c) => !c.closedAt);
+  const openFloat = openBoxes.reduce((s, c) => s + c.opening, 0);
+  const kasaNow = totals.kasa - openFloat;
 
   async function add() {
     const num = parseAmount(amount);
@@ -466,10 +472,21 @@ export default function FinancePage() {
                     { label: "Příjmy", text: `+${fmtCZK(totals.prijmy)}`, cls: "text-leaf-700" },
                     { label: "Výdaje", text: `−${fmtCZK(totals.vydaje)}` },
                     { label: "Bilance", text: `${totals.bilance >= 0 ? "+" : "−"}${fmtCZK(Math.abs(totals.bilance))}`, cls: totals.bilance >= 0 ? "text-leaf-700" : "text-red-600" },
-                    { label: "V kase", text: `${totals.kasa >= 0 ? "" : "−"}${fmtCZK(Math.abs(totals.kasa))}`, cls: totals.kasa >= 0 ? "text-ink" : "text-red-600" },
+                    { label: openFloat > 0 ? "V kase (bez vkladů)" : "V kase", text: `${kasaNow >= 0 ? "" : "−"}${fmtCZK(Math.abs(kasaNow))}`, cls: kasaNow >= 0 ? "text-ink" : "text-red-600" },
                   ]
         }
       />
+
+      {/* Otevřená kasa: vklad je v šuplíku → z hotovosti odečten, po uzavření se vrátí */}
+      {tab === "vse" && openFloat > 0 && (
+        <p className="-mt-2 flex items-start gap-2 rounded-xl bg-paper2 px-3 py-2 text-xs text-ink-soft">
+          <span aria-hidden>🧰</span>
+          <span>
+            <b className="text-ink">−{fmtCZK(openFloat)}</b> je teď vklad v otevřené kase {openBoxes.map((c) => (c.label ? `„${c.label}“` : "bez názvu")).join(", ")}.
+            Po uzavření kasy se hotovost přepočítá — vklad se vrátí a zapíše se tržba.
+          </span>
+        </p>
+      )}
 
       {/* Kdo co smí: výběrčí jen sleduje; jinak každý (s finanční rolí) přidává,
           upravuje jen správce; zamčený ročník = jen náhled */}
