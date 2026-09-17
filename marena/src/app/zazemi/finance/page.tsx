@@ -458,7 +458,7 @@ export default function FinancePage() {
               ]
             : tab === "merch"
               ? [
-                  { label: "Výdělek", text: `+${fmtCZK(merchTotal)}`, cls: "text-leaf-700" },
+                  { label: "Tržba", text: `+${fmtCZK(merchTotal)}`, cls: "text-leaf-700" },
                   { label: "Vloženo", text: `−${fmtCZK(merchIn)}` },
                   { label: "Zisk", text: `${merchProfit >= 0 ? "+" : "−"}${fmtCZK(Math.abs(merchProfit))}`, cls: merchProfit >= 0 ? "text-leaf-700" : "text-red-600" },
                 ]
@@ -740,9 +740,9 @@ export default function FinancePage() {
         ))}
       </div>
 
-      {/* Výdělek z prodeje a merche — sečtený po dnech (jednotlivé platby v Kasách/Merchi) */}
+      {/* Tržba z prodeje a merche — sečtená po dnech (jednotlivé platby v Kasách/Merchi) */}
       {filter !== "nezaplaceno" && allSaleDays.length > 0 && (
-        <SalesByDay days={allSaleDays} title="Výdělek z prodeje a merche" q={q} canDelete={canEdit} yearId={year.id} />
+        <SalesByDay days={allSaleDays} title="Tržba z prodeje a merche" q={q} canDelete={canEdit} yearId={year.id} />
       )}
       {/* Přidat */}
       {open && (
