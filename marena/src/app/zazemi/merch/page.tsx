@@ -7,6 +7,7 @@ import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { ImageViewer } from "@/components/ImageViewer";
 import { CopyContact } from "@/components/CopyContact";
+import { SearchClear } from "@/components/SearchBox";
 import Link from "next/link";
 import { PayQr } from "@/components/PayQr";
 import { parseAccount } from "@/lib/payment";
@@ -17,6 +18,7 @@ import { uid } from "@/lib/id";
 import { canSeeMerch, variantKey, productVariants } from "@/lib/merch";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { isAdmin } from "@/lib/admin";
+import { normName } from "@/lib/names";
 import { flash } from "@/components/Flash";
 import type { MerchProduct, MerchOrder } from "@/lib/types";
 
@@ -89,6 +91,10 @@ function orderTotal(order: MerchOrder, products: MerchProduct[]): number {
 
 export default function MerchPage() {
   const { currentYear, me, canEditCurrentYear } = useStore();
+  // Formulář „přidat do nabídky" je schovaný, dokud ho správce nerozbalí (zabíral půl obrazovky).
+  const [addOpen, setAddOpen] = useState(false);
+  // Hledání v objednávkách — jméno, telefon, e-mail.
+  const [q, setQ] = useState("");
   const year = currentYear;
   if (!year) return null;
 
@@ -98,6 +104,9 @@ export default function MerchPage() {
 
   const products = year.merch ?? [];
   const orders = [...(year.merchOrders ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  // Hledání: jméno / telefon / e-mail (bez diakritiky a velikosti písmen).
+  const needle = normName(q);
+  const filteredOrders = needle ? orders.filter((o) => normName(`${o.name} ${o.phone ?? ""} ${o.email ?? ""}`).includes(needle)) : orders;
   const pending = orders.filter((o) => !o.done).length;
   const doneCount = orders.length - pending;
   const totalQty = orders.reduce((s, o) => s + o.items.reduce((q, it) => q + it.qty, 0), 0);
@@ -143,8 +152,20 @@ export default function MerchPage() {
 
       {/* Nabídka (fotky merche) */}
       <section className="space-y-3">
-        <h2 className="eyebrow">Nabídka</h2>
-        {canManage && <AddProduct yearId={year.id} />}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="eyebrow">Nabídka</h2>
+          {canManage && (
+            <button
+              type="button"
+              onClick={() => setAddOpen((v) => !v)}
+              aria-expanded={addOpen}
+              className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${addOpen ? "bg-paper2 text-ink-soft hover:bg-gold-100" : "bg-gold-grad text-[#1d1d1f] shadow-sm"}`}
+            >
+              {addOpen ? "Skrýt přidávání" : "+ Přidat do nabídky"}
+            </button>
+          )}
+        </div>
+        {canManage && addOpen && <AddProduct yearId={year.id} />}
         {products.length === 0 ? (
           <div className="empty-state">
             {canManage ? "Zatím žádný merch. Nahraj první kousek." : "Zatím tu není žádný merch."}
@@ -170,13 +191,27 @@ export default function MerchPage() {
               <span className="badge bg-amber-100 text-amber-800">{pending} čeká</span>
             )}
           </h2>
+          {orders.length > 0 && (
+            <div className="relative">
+              <input
+                type="search"
+                className={`w-full rounded-2xl border-2 border-ink/10 bg-white px-5 py-3 text-base shadow-sm outline-none transition placeholder:text-ink-soft/60 focus:border-gold-500 focus:ring-1 focus:ring-gold-500 ${q ? "pr-14" : ""}`}
+                placeholder="🔎 Hledat jméno, telefon, e-mail…"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+              />
+              {q && <SearchClear onClear={() => setQ("")} className="absolute right-4 top-1/2 h-6 w-6 -translate-y-1/2" />}
+            </div>
+          )}
           {orders.length === 0 ? (
             <div className="empty-state">
               Zatím žádné objednávky. Lidi objednávají přes QR kód vedle.
             </div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="empty-state">Nikdo takový v objednávkách není.</div>
           ) : (
             <div className="card divide-y divide-ink/10 overflow-hidden">
-              {orders.map((o) => (
+              {filteredOrders.map((o) => (
                 <OrderRow key={o.id} order={o} yearId={year.id} canManage={canManage} canDelete={canDeleteOrders} canUnlock={canDeleteOrders} total={orderTotal(o, products)} account={year.paymentAccount} />
               ))}
             </div>
