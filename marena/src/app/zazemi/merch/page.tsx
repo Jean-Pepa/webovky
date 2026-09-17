@@ -135,11 +135,11 @@ export default function MerchPage() {
       {/* Upozornění „jen náhled" úplně nahoře, červeně (uzamčený ročník řeší
           globální proužek v layoutu). */}
       {canEditCurrentYear && !canManage && (
-        <ReadOnlyBanner>Merch máš jen k náhledu — spravovat nabídku může jen role Merch a správce.</ReadOnlyBanner>
+        <ReadOnlyBanner>Lístky & merch máš jen k náhledu — spravovat nabídku může jen role Merch a správce.</ReadOnlyBanner>
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <PageTitle>Merch</PageTitle>
+          <PageTitle>Lístky & merch</PageTitle>
         </div>
         {/* Prodej na místě probíhá v jednotné pokladně (předvolí merch);
             zaplacený prodej se sem vrátí jako uzamčená objednávka. */}
