@@ -1534,6 +1534,10 @@ function CashboxCard({
               V kase má být: vklad {fmtCZK(box.opening)} + hotově {fmtCZK(stats.cash)} ={" "}
               <strong className="font-display">{fmtCZK(expected)}</strong>
             </p>
+            {/* QR platby nejdou do šuplíku, ale na účet — pro kontrolu výpisu */}
+            <p className="text-sm text-ink-soft">
+              Na účtu přes QR má být: <strong className="font-display text-ink">+{fmtCZK(stats.qr)}</strong>
+            </p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <input
                 className="input w-44"

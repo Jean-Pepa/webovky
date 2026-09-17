@@ -520,7 +520,7 @@ function Pos() {
               <span className="sm:hidden">Částka</span>
             </button>
             {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
-            <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} />
+            <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} qrMarked={stats.qr} />
           </div>
         </div>
         {/* Účet pro QR — malý, ať nepřekáží; správce ho upraví ťuknutím */}
@@ -1093,7 +1093,7 @@ function DayGate({
 // v šuplíku, večer se spočítá a uzavře. Markovaná hotovost už ve
 // financích je, takže se při uzavření zapíše jen rozdíl — peníze se
 // nepočítají dvakrát.
-function KasaControl({ year, cashMarked }: { year: { id: string; cashboxes: Cashbox[] }; cashMarked: number }) {
+function KasaControl({ year, cashMarked, qrMarked }: { year: { id: string; cashboxes: Cashbox[] }; cashMarked: number; qrMarked: number }) {
   const todayCash = cashMarked;
   const { dispatch } = useStore();
   const [modal, setModal] = useState(false);
@@ -1161,6 +1161,10 @@ function KasaControl({ year, cashMarked }: { year: { id: string; cashboxes: Cash
             <p className="text-sm">
               V kase má být: vklad {fmtCZK(openBox.opening)} + hotově z prodeje {fmtCZK(todayCash)} ={" "}
               <strong className="font-display text-base">{fmtCZK(expected)}</strong>
+            </p>
+            {/* QR platby nejdou do šuplíku, ale na účet — pro kontrolu výpisu */}
+            <p className="text-sm text-ink-soft">
+              Na účtu přes QR má být: <strong className="font-display text-ink">+{fmtCZK(qrMarked)}</strong>
             </p>
             <div>
               <label className="label">Spočítaný stav (Kč)</label>
