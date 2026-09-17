@@ -15,6 +15,8 @@ import { sameName } from "@/lib/names";
 import { variantKey } from "@/lib/merch";
 import { flash } from "@/components/Flash";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
+import { SearchBox } from "@/components/SearchBox";
+import { matchesQuery } from "@/lib/search";
 import { POS_CATS, posStats, posOrders, OrderHistory, PayBreakdown, DayCard, boxDayFinances } from "@/lib/pos";
 import type { Cashbox, FinanceItem, MerchOrder, MerchProduct } from "@/lib/types";
 
@@ -169,6 +171,7 @@ function Pos() {
   const [editNabidka, setEditNabidka] = useState(false);
   // Režim „Vyprodáno" (kdokoli u kasy): ťuknutím se položka vyprodá/odblokuje.
   const [soldMode, setSoldMode] = useState(false);
+  const [orderQ, setOrderQ] = useState(""); // hledání v objednávkách k zaplacení (jméno nebo položka)
   const year = currentYear;
   const admin = isAdmin(me);
   // Pomocník u stánku nemá spodní navigaci — stánky sedí na jejím místě.
@@ -311,6 +314,7 @@ function Pos() {
     stand === "merch"
       ? [...(year.merchOrders ?? [])].filter((o) => !o.done).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       : [];
+  const shownOrders = pendingOrders.filter((o) => matchesQuery(orderQ, o.name, orderItemsText(o)));
 
   const pickerProduct = picker ? (year.merch ?? []).find((p) => p.id === picker.productId) : undefined;
   const total = lines.reduce((s, l) => s + l.price * l.qty, 0);
@@ -568,50 +572,6 @@ function Pos() {
         ))}
       </div>
 
-      {/* Čekající objednávky merche — QR platba se jménem objednatele */}
-      {pendingOrders.length > 0 && (
-        <section className="card border-l-4 border-l-amber-400 p-4">
-          <h2 className="flex items-center gap-2">
-            <span className="eyebrow">Objednávky k zaplacení</span>
-            <span className="grid h-7 min-w-7 place-items-center rounded-full bg-gold-500 px-2 font-display text-sm font-bold text-[#1d1d1f]">
-              {pendingOrders.length}
-            </span>
-          </h2>
-          <div className="mt-1 divide-y divide-ink/[0.06]">
-            {pendingOrders.map((o) => {
-              const t = orderTotal(o, year.merch ?? []);
-              return (
-                <div key={o.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[15px] font-semibold">{o.name}</p>
-                    <p className="truncate text-xs text-ink-soft">{orderItemsText(o)}</p>
-                  </div>
-                  <span className="text-[15px] font-semibold">{fmtCZK(t)}</span>
-                  <div className="flex shrink-0 gap-1.5">
-                    {t > 0 && accountOk && (
-                      <button
-                        className="min-h-9 rounded-full bg-gold-500 px-3.5 text-sm font-semibold text-[#1d1d1f] transition hover:bg-gold-400"
-                        disabled={busy}
-                        onClick={() => setPayOrder(o)}
-                      >
-                        QR
-                      </button>
-                    )}
-                    <button
-                      className="min-h-9 rounded-full bg-paper2 px-3.5 text-sm font-semibold transition hover:bg-gold-100"
-                      disabled={busy}
-                      onClick={() => setCashOrder(o)}
-                    >
-                      💵 Hotově
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
       {/* Nabídka stánku — nové položky s cenou se tu objeví samy */}
       {grids.map((g, gi) =>
         g.items.length > 0 ? (
@@ -701,6 +661,58 @@ function Pos() {
             </Link>
           </section>
         ),
+      )}
+
+      {/* Čekající objednávky merche — pod nabídkou, ať je prodej u kasy hned po ruce;
+          QR platba se jménem objednatele, hledání podle jména */}
+      {pendingOrders.length > 0 && (
+        <section className="card border-l-4 border-l-amber-400 p-4">
+          <h2 className="flex items-center gap-2">
+            <span className="eyebrow">Objednávky k zaplacení</span>
+            <span className="grid h-7 min-w-7 place-items-center rounded-full bg-gold-500 px-2 font-display text-sm font-bold text-[#1d1d1f]">
+              {pendingOrders.length}
+            </span>
+          </h2>
+          {/* Hledání podle jména (bez ohledu na diakritiku) i podle položky */}
+          {pendingOrders.length > 3 && (
+            <SearchBox className="mt-2" value={orderQ} onChange={setOrderQ} placeholder="Hledat jméno…" />
+          )}
+          {shownOrders.length === 0 && (
+            <p className="mt-3 text-center text-sm text-ink-soft">Nikdo takový tu není — zkus jinak napsat jméno.</p>
+          )}
+          <div className="mt-1 divide-y divide-ink/[0.06]">
+            {shownOrders.map((o) => {
+              const t = orderTotal(o, year.merch ?? []);
+              return (
+                <div key={o.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-semibold">{o.name}</p>
+                    <p className="truncate text-xs text-ink-soft">{orderItemsText(o)}</p>
+                  </div>
+                  <span className="text-[15px] font-semibold">{fmtCZK(t)}</span>
+                  <div className="flex shrink-0 gap-1.5">
+                    {t > 0 && accountOk && (
+                      <button
+                        className="min-h-9 rounded-full bg-gold-500 px-3.5 text-sm font-semibold text-[#1d1d1f] transition hover:bg-gold-400"
+                        disabled={busy}
+                        onClick={() => setPayOrder(o)}
+                      >
+                        QR
+                      </button>
+                    )}
+                    <button
+                      className="min-h-9 rounded-full bg-paper2 px-3.5 text-sm font-semibold transition hover:bg-gold-100"
+                      disabled={busy}
+                      onClick={() => setCashOrder(o)}
+                    >
+                      💵 Hotově
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       )}
 
       {/* Doptání na velikost/barvu (merch s variantami) — u varianty se skladem
