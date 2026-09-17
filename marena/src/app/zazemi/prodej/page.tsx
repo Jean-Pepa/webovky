@@ -15,7 +15,7 @@ import { sameName } from "@/lib/names";
 import { variantKey } from "@/lib/merch";
 import { flash } from "@/components/Flash";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
-import { POS_CATS, posStats, posOrders, OrderHistory, PayBreakdown, DayCard, boxDayFinances } from "@/lib/pos";
+import { POS_CATS, posStats, posOrders, OrderHistory, PayBreakdown, DayCard, boxDayFinances, makeCostLookup, type CostLookup } from "@/lib/pos";
 import type { Cashbox, FinanceItem, MerchOrder, MerchProduct } from "@/lib/types";
 
 // Prodej — jednotná pokladna pro celý festival (vzor z restauračních a
@@ -152,7 +152,7 @@ function ProdejReadOnly() {
       ) : (
         closed.map((c) => {
           const dayFin = boxDayFinances(finances, c, cashboxes);
-          return <DayCard key={c.id} box={c} stats={posStats(dayFin)} orders={posOrders(dayFin)} yearId={year.id} admin={false} />;
+          return <DayCard key={c.id} box={c} stats={posStats(dayFin, makeCostLookup(year))} orders={posOrders(dayFin)} yearId={year.id} admin={false} />;
         })
       )}
     </div>
@@ -217,7 +217,7 @@ function Pos() {
   const openBox = (year.cashboxes ?? []).find((c) => !c.closedAt);
   if (!openBox) {
     return (
-      <DayGate
+      <DayGate costOf={makeCostLookup(year)}
         yearId={year.id}
         cashboxes={year.cashboxes ?? []}
         finances={year.finances ?? []}
@@ -1015,6 +1015,7 @@ function DayGate({
   yearId,
   cashboxes,
   finances,
+  costOf,
   admin,
   account,
   accountOk,
@@ -1022,6 +1023,7 @@ function DayGate({
   yearId: string;
   cashboxes: Cashbox[];
   finances: FinanceItem[];
+  costOf: CostLookup;
   admin: boolean;
   account: string;
   accountOk: boolean;
@@ -1080,7 +1082,7 @@ function DayGate({
       ) : (
         closed.map((c) => {
           const dayFin = boxDayFinances(finances, c, cashboxes);
-          return <DayCard key={c.id} box={c} stats={posStats(dayFin)} orders={posOrders(dayFin)} yearId={yearId} admin={admin} />;
+          return <DayCard key={c.id} box={c} stats={posStats(dayFin, costOf)} orders={posOrders(dayFin)} yearId={yearId} admin={admin} />;
         })
       )}
     </div>

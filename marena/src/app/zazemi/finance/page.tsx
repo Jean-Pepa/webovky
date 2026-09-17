@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, fmtDateTime, fmtRelative, todayISO } from "@/lib/format";
-import { posStats, posOrders, boxDayFinances, DayCard, OrderHistory, PayBreakdown } from "@/lib/pos";
+import { posStats, posOrders, boxDayFinances, makeCostLookup, DayCard, OrderHistory, PayBreakdown, ProfitLine } from "@/lib/pos";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
@@ -135,6 +135,8 @@ export default function FinancePage() {
 
   const items = useMemo(() => year?.finances ?? [], [year]);
   const contributions = useMemo(() => year?.contributions ?? [], [year]);
+  // Nákupní ceny položek (suroviny pití/jídla, nákupní cena merche) → náklady a zisk kasy.
+  const costOf = useMemo(() => makeCostLookup({ bar: year?.bar, merch: year?.merch }), [year]);
 
   // Výběr: kolik je v balíku (nevrácené), kolik se vrátilo, kolik zbývá doplatit
   // a počty po stavech (do balíku jde jen skutečně zaplacené — sliby ne).
@@ -289,7 +291,11 @@ export default function FinancePage() {
   // Kasy: kolik se ráno vložilo (vklady) a kolik se vydělalo (tržba z uzavřených).
   const kasaOpenings = (year.cashboxes ?? []).reduce((s, c) => s + c.opening, 0);
   // Tržba kas = kolik se přes kasy prodalo (QR + hotově), NE rozdíl při uzávěrce.
-  const kasaTrzba = (year.cashboxes ?? []).reduce((s, c) => s + posStats(boxDayFinances(year.finances ?? [], c, year.cashboxes ?? [])).takings, 0);
+  const kasaStats = (year.cashboxes ?? []).map((c) => posStats(boxDayFinances(year.finances ?? [], c, year.cashboxes ?? []), costOf));
+  const kasaTrzba = kasaStats.reduce((s, x) => s + x.takings, 0);
+  // Náklady = prodané kusy × nákupní cena položky; zisk = tržba − náklady (za všechny kasy).
+  const kasaCost = kasaStats.reduce((s, x) => s + x.cost, 0);
+  const kasaProfit = kasaTrzba - kasaCost;
   // Rozdíl kas = manko/přebytek při uzávěrkách (uzavřené kasy).
   const kasaDiff = (year.cashboxes ?? []).reduce((s, c) => s + (c.closedAt && c.closing != null ? c.closing - c.opening - (c.alreadyRecorded ?? 0) : 0), 0);
   const merchProfit = merchTotal - merchIn; // zisk z merche (výdělek − vloženo)
@@ -445,6 +451,8 @@ export default function FinancePage() {
           tab === "kasy"
             ? [
                 { label: "Tržba", text: `+${fmtCZK(kasaTrzba)}`, cls: "text-leaf-700" },
+                { label: "Náklady", text: `−${fmtCZK(kasaCost)}` },
+                { label: "Zisk", text: `${kasaProfit >= 0 ? "+" : "−"}${fmtCZK(Math.abs(kasaProfit))}`, cls: kasaProfit >= 0 ? "text-leaf-700" : "text-red-600" },
                 { label: "Vklady", text: fmtCZK(kasaOpenings) },
                 { label: "Rozdíl", text: `${kasaDiff >= 0 ? "+" : "−"}${fmtCZK(Math.abs(kasaDiff))}`, cls: kasaDiff >= 0 ? "text-leaf-700" : "text-red-600" },
               ]
@@ -529,9 +537,9 @@ export default function FinancePage() {
                     // kategorie, historie objednávek). Otevřená kasa má navíc uzávěrku.
                     const dayFin = boxDayFinances(year.finances ?? [], c, year.cashboxes ?? []);
                     return c.closedAt ? (
-                      <DayCard key={c.id} box={c} stats={posStats(dayFin)} orders={posOrders(dayFin)} yearId={year.id} admin={canEdit} />
+                      <DayCard key={c.id} box={c} stats={posStats(dayFin, costOf)} orders={posOrders(dayFin)} yearId={year.id} admin={canEdit} />
                     ) : (
-                      <CashboxCard key={c.id} box={c} stats={posStats(dayFin)} orders={posOrders(dayFin)} yearId={year.id} canAdd={canAdd} canEdit={canEdit} />
+                      <CashboxCard key={c.id} box={c} stats={posStats(dayFin, costOf)} orders={posOrders(dayFin)} yearId={year.id} canAdd={canAdd} canEdit={canEdit} />
                     );
                   })}
                 </div>
@@ -1507,6 +1515,7 @@ function CashboxCard({
         </span>
         <PayBreakdown qr={stats.qr} cash={stats.cash} count={stats.count} />
       </div>
+      <ProfitLine stats={stats} />
 
       <OrderHistory orders={orders} canDelete={canEdit} yearId={yearId} />
 
