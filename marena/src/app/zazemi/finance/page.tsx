@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, fmtDateTime, fmtRelative, todayISO } from "@/lib/format";
-import { posStats, posOrders, boxDayFinances, makeCostLookup, DayCard, OrderHistory, PayBreakdown, ProfitLine } from "@/lib/pos";
+import { posStats, posOrders, boxDayFinances, makeCostLookup, groupSales, SaleGroupFrame, DayCard, OrderHistory, PayBreakdown, ProfitLine } from "@/lib/pos";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
@@ -79,7 +79,7 @@ const hhmmFin = (iso: string) => {
   return isNaN(d.getTime()) ? "" : `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 
-type SaleOrder = { id: string; at: string; items: string; cat: string; how: string; amount: number };
+type SaleOrder = { id: string; at: string; items: string; cat: string; how: string; amount: number; saleId?: string; who?: string };
 type SaleDay = { day: string; total: number; qr: number; cash: number; count: number; orders: SaleOrder[] };
 
 // Prodeje (markované platby) sečtené po dnech. `catOk` vybere jen relevantní
@@ -95,7 +95,7 @@ function buildSaleDays(items: FinanceItem[], catOk: (cat: string) => boolean): S
     g.count += 1;
     if (how === "QR") g.qr += f.amount;
     else if (how === "hotově") g.cash += f.amount;
-    g.orders.push({ id: f.id, at: f.createdAt, items: (f.note ?? "").split(" · ")[0], cat: f.category ?? "", how, amount: f.amount });
+    g.orders.push({ id: f.id, at: f.createdAt, items: (f.note ?? "").split(" · ")[0], cat: f.category ?? "", how, amount: f.amount, saleId: f.saleId, who: f.who });
     map.set(day, g);
   }
   return [...map.values()]
@@ -1688,9 +1688,18 @@ function SaleDayRow({ d, canDelete, yearId }: { d: SaleDay; canDelete: boolean; 
       {open && (
         <div className="border-t border-ink/[0.06]">
           <ul className="max-h-72 space-y-1 overflow-y-auto px-3 py-2">
-            {d.orders.map((o) => (
-              <SaleLine key={o.id} o={o} canDelete={canDelete} yearId={yearId} />
-            ))}
+            {/* jedna účtenka rozdělená po kategoriích → spojená žlutým rámečkem */}
+            {groupSales(d.orders).map((g) =>
+              g.length === 1 ? (
+                <SaleLine key={g[0].id} o={g[0]} canDelete={canDelete} yearId={yearId} />
+              ) : (
+                <SaleGroupFrame key={g[0].id} total={g.reduce((s, o) => s + o.amount, 0)} how={g[0].how}>
+                  {g.map((o) => (
+                    <SaleLine key={o.id} o={o} canDelete={canDelete} yearId={yearId} />
+                  ))}
+                </SaleGroupFrame>
+              ),
+            )}
           </ul>
           {/* Správce může smazat celý den (prodej se odečte z tržeb). */}
           {canDelete && (

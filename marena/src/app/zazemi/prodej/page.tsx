@@ -419,6 +419,8 @@ function Pos() {
     setBusy(true);
     try {
       const howText = how === "hotove" ? "hotově" : "QR platba";
+      // Jedna účtenka = jeden saleId; zápisy rozdělené po kategoriích se v přehledech spojí.
+      const saleId = uid("sale_");
       const merch = lines.filter((l) => l.kind === "merch");
       const written = new Set<string>();
       let ok = true;
@@ -433,7 +435,7 @@ function Pos() {
           note: `markoval(a): ${me} · ${howText}`,
           items: merch.map((l) => ({ productId: l.productId!, name: l.name, size: l.size, color: l.color, price: l.price, qty: l.qty })),
         });
-        if (ok) ok = await dispatch({ type: "settleMerchOrder", yearId: year.id, orderId, how: howText });
+        if (ok) ok = await dispatch({ type: "settleMerchOrder", yearId: year.id, orderId, how: howText, saleId });
         if (ok) merch.forEach((l) => written.add(l.key));
       }
       // Pití / jídlo po druhu; vlastní částky podle kategorie stánku (merch / bar / kuchyně)
@@ -459,6 +461,7 @@ function Pos() {
           paid: true,
           date: todayISO(),
           note: group.map((l) => `${l.qty}× ${lineLabel(l)}`).join(", ") + ` · ${howText}`,
+          saleId,
         });
         if (ok) group.forEach((l) => written.add(l.key));
       }

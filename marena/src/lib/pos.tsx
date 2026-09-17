@@ -5,7 +5,7 @@
 // tržba, QR vs. hotovost vedle sebe, kategorie, nejprodávanější a rolovací
 // historie objednávek. Správce může jednotlivý prodej i celou kasu smazat.
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useStore } from "@/lib/store";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
@@ -95,7 +95,7 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup) {
 
 // Historie objednávek dne — jednotlivé prodeje (zápisy s rozpisem „×")
 // od nejnovějšího. Slouží do rolovacího seznamu ve statistikách i archivu.
-export type PosOrder = { id: string; at: string; cat: string; items: string; amount: number; how: string };
+export type PosOrder = { id: string; at: string; cat: string; items: string; amount: number; how: string; saleId?: string; who?: string };
 export function posOrders(list: FinanceItem[]): PosOrder[] {
   return list
     .filter((f) => f.kind === "prijem" && (f.note ?? "").includes("×"))
@@ -103,9 +103,43 @@ export function posOrders(list: FinanceItem[]): PosOrder[] {
       const note = f.note ?? "";
       const items = note.split(" · ")[0];
       const how = note.includes("QR platba") ? "QR" : note.includes("hotově") ? "hotově" : "";
-      return { id: f.id, at: f.createdAt, cat: f.category ?? "", items, amount: f.amount, how };
+      return { id: f.id, at: f.createdAt, cat: f.category ?? "", items, amount: f.amount, how, saleId: f.saleId, who: f.who };
     })
     .sort((a, b) => b.at.localeCompare(a.at));
+}
+
+// Jedna účtenka = víc zápisů (rozdělené po kategoriích: bar + kuchyně + merch).
+// Spojí je do skupiny: nové zápisy podle saleId, starší (bez saleId) podle
+// stejné platby, stejného prodejce a času do 20 s. Řádky musí být seřazené podle času.
+export function groupSales<T extends { id: string; at: string; how: string; saleId?: string; who?: string }>(rows: T[]): T[][] {
+  const groups: T[][] = [];
+  for (const r of rows) {
+    const g = groups[groups.length - 1];
+    const prev = g?.[g.length - 1];
+    const same =
+      !!prev &&
+      (r.saleId && prev.saleId
+        ? r.saleId === prev.saleId
+        : !r.saleId && !prev.saleId && r.how === prev.how && (r.who ?? "") === (prev.who ?? "") && Math.abs(Date.parse(r.at) - Date.parse(prev.at)) <= 20_000);
+    if (same) g.push(r);
+    else groups.push([r]);
+  }
+  return groups;
+}
+
+// Žlutý rámeček kolem zápisů jedné účtenky (víc kategorií v jedné objednávce).
+export function SaleGroupFrame({ total, how, children }: { total: number; how: string; children: ReactNode }) {
+  return (
+    <li className="rounded-xl bg-gold-50/60 p-1 ring-2 ring-gold-400">
+      <div className="flex items-center justify-between gap-2 px-1.5 pb-1 pt-0.5 text-[11px] font-semibold text-gold-800">
+        <span>🧾 jedna objednávka</span>
+        <span>
+          {how === "QR" ? "QR" : how === "hotově" ? "💵" : ""} celkem {fmtCZK(total)}
+        </span>
+      </div>
+      <ul className="space-y-1">{children}</ul>
+    </li>
+  );
 }
 
 // Zápisy prodeje pro daný den (kasu): od otevření kasy do otevření další
@@ -155,9 +189,17 @@ export function OrderHistory({
       </button>
       {open && (
         <ul className="mt-2 max-h-72 space-y-1 overflow-y-auto pr-1">
-          {orders.map((o) => (
-            <OrderRow key={o.id} o={o} canDelete={canDelete && !!yearId} yearId={yearId} />
-          ))}
+          {groupSales(orders).map((g) =>
+            g.length === 1 ? (
+              <OrderRow key={g[0].id} o={g[0]} canDelete={canDelete && !!yearId} yearId={yearId} />
+            ) : (
+              <SaleGroupFrame key={g[0].id} total={g.reduce((s, o) => s + o.amount, 0)} how={g[0].how}>
+                {g.map((o) => (
+                  <OrderRow key={o.id} o={o} canDelete={canDelete && !!yearId} yearId={yearId} />
+                ))}
+              </SaleGroupFrame>
+            ),
+          )}
         </ul>
       )}
     </div>
