@@ -245,21 +245,6 @@ export function DayCard({
         <PayBreakdown qr={stats.qr} cash={stats.cash} count={stats.count} />
       </div>
 
-      {(stats.byCat.length > 0 || stats.purchases > 0) && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {stats.byCat.map((x) => (
-            <span key={x.cat} className="chip">
-              {x.cat} {fmtCZK(x.sum)}
-            </span>
-          ))}
-          {stats.purchases > 0 && (
-            <span className="chip bg-paper2 text-ink-soft" title="Výdaje za zboží zapsané během dne — nejsou tržba">
-              🛒 nákup zboží −{fmtCZK(stats.purchases)} · není tržba
-            </span>
-          )}
-        </div>
-      )}
-
       <p className="mt-2 border-t border-ink/[0.06] pt-2 text-sm text-ink-soft">
         Kasa: vklad {fmtCZK(box.opening)} → večer {fmtCZK(box.closing ?? 0)}
         {rozdil === 0 ? (
