@@ -24,10 +24,17 @@ export function posStats(list: FinanceItem[]) {
   let cash = 0;
   let count = 0;
   let kasaAdj = 0; // rekonciliace kasy (kategorie „kasa" — manko/přebytek), NENÍ tržba
+  let purchases = 0; // nákupy zboží (výdaje bar / kuchyně / merch) — NEJSOU tržba, jen se ukážou
   const byCat = new Map<string, number>();
   const items = new Map<string, number>();
   for (const f of list) {
     const sign = f.kind === "vydaj" ? -1 : 1;
+    // Výdaj mimo rekonciliaci kasy = nákup zboží (pivo, jídlo, merch do skladu).
+    // Platil se z účtu / balíku, ne ze šuplíku — do tržby dne nepatří.
+    if (sign < 0 && (f.category ?? "") !== "kasa") {
+      purchases += f.amount;
+      continue;
+    }
     total += sign * f.amount;
     const cat = f.category ?? "";
     if (cat === "kasa") kasaAdj += sign * f.amount;
@@ -55,6 +62,7 @@ export function posStats(list: FinanceItem[]) {
     cash,
     count,
     top,
+    purchases,
     byCat: [...byCat.entries()].filter(([, v]) => v !== 0).map(([cat, sum]) => ({ cat, sum })),
   };
 }
@@ -237,13 +245,18 @@ export function DayCard({
         <PayBreakdown qr={stats.qr} cash={stats.cash} count={stats.count} />
       </div>
 
-      {stats.byCat.length > 0 && (
+      {(stats.byCat.length > 0 || stats.purchases > 0) && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {stats.byCat.map((x) => (
             <span key={x.cat} className="chip">
               {x.cat} {fmtCZK(x.sum)}
             </span>
           ))}
+          {stats.purchases > 0 && (
+            <span className="chip bg-paper2 text-ink-soft" title="Výdaje za zboží zapsané během dne — nejsou tržba">
+              🛒 nákup zboží −{fmtCZK(stats.purchases)} · není tržba
+            </span>
+          )}
         </div>
       )}
 
