@@ -122,6 +122,7 @@ export interface FinanceItem {
   paid: boolean; // zaplaceno / proplaceno
   date?: string; // ISO datum
   note?: string;
+  saleId?: string; // jedna účtenka / platba u kasy — spojuje zápisy rozdělené po kategoriích (bar + kuchyně + merch)
   receiptId?: string; // starší pole (jedna účtenka) — kvůli zpětné kompatibilitě
   receiptIds?: string[]; // víc účtenek (fotky) — ukládají se zvlášť, ne v hlavní DB
   createdAt: string;

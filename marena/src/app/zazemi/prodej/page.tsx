@@ -17,7 +17,7 @@ import { flash } from "@/components/Flash";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
-import { POS_CATS, posStats, posOrders, OrderHistory, PayBreakdown, DayCard, boxDayFinances } from "@/lib/pos";
+import { POS_CATS, posStats, posOrders, OrderHistory, PayBreakdown, DayCard, boxDayFinances, makeCostLookup, type CostLookup } from "@/lib/pos";
 import type { Cashbox, FinanceItem, MerchOrder, MerchProduct } from "@/lib/types";
 
 // Prodej — jednotná pokladna pro celý festival (vzor z restauračních a
@@ -38,10 +38,16 @@ type Line = {
   color?: string;
   price: number;
   qty: number;
+  category?: string; // vlastní částka: pod jakou kategorii tržba patří (merch / bar / kuchyně)
 };
 
+// Vlastní částka (ceny ještě nejsou v nabídce): kategorie tržby a výchozí popis podle stánku.
+const CUSTOM_CATEGORY: Record<Stand, string> = { merch: "merch", bar: "bar", kuchyne: "kuchyně" };
+const CUSTOM_DEFAULT: Record<Stand, string> = { merch: "Lístek / merch", bar: "Pití", kuchyne: "Jídlo" };
+const CUSTOM_WORD: Record<string, string> = { merch: "MERCH", bar: "BAR", "kuchyně": "JIDLO" };
+
 const STANDS: { id: Stand; label: string }[] = [
-  { id: "merch", label: "🛍️ Merch" },
+  { id: "merch", label: "🎟️ Lístky & merch" },
   { id: "bar", label: "🍸 Bar" },
   { id: "kuchyne", label: "🍳 Kuchyně" },
 ];
@@ -148,7 +154,7 @@ function ProdejReadOnly() {
       ) : (
         closed.map((c) => {
           const dayFin = boxDayFinances(finances, c, cashboxes);
-          return <DayCard key={c.id} box={c} stats={posStats(dayFin)} orders={posOrders(dayFin)} yearId={year.id} admin={false} />;
+          return <DayCard key={c.id} box={c} stats={posStats(dayFin, makeCostLookup(year))} orders={posOrders(dayFin)} yearId={year.id} admin={false} />;
         })
       )}
     </div>
@@ -171,6 +177,10 @@ function Pos() {
   const [editNabidka, setEditNabidka] = useState(false);
   // Režim „Vyprodáno" (kdokoli u kasy): ťuknutím se položka vyprodá/odblokuje.
   const [soldMode, setSoldMode] = useState(false);
+  // Vlastní částka — okno: za co + kolik (jde do účtenky jako běžná položka)
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customLabel, setCustomLabel] = useState("");
+  const [customAmount, setCustomAmount] = useState("");
   const [orderQ, setOrderQ] = useState(""); // hledání v objednávkách k zaplacení (jméno nebo položka)
   const year = currentYear;
   const admin = isAdmin(me);
@@ -210,7 +220,7 @@ function Pos() {
   const openBox = (year.cashboxes ?? []).find((c) => !c.closedAt);
   if (!openBox) {
     return (
-      <DayGate
+      <DayGate costOf={makeCostLookup(year)}
         yearId={year.id}
         cashboxes={year.cashboxes ?? []}
         finances={year.finances ?? []}
@@ -228,7 +238,7 @@ function Pos() {
   const grids: { kind: Exclude<Kind, "custom">; title: string; items: { id: string; name: string; price: number }[] }[] = [
     {
       kind: "merch" as const,
-      title: "Merch",
+      title: "Lístky & merch",
       items: (year.merch ?? []).filter((p) => p.price != null && p.price > 0).map((p) => ({ id: p.id, name: p.name, price: p.price! })).sort(bySold),
     },
     {
@@ -319,10 +329,11 @@ function Pos() {
   const pickerProduct = picker ? (year.merch ?? []).find((p) => p.id === picker.productId) : undefined;
   const total = lines.reduce((s, l) => s + l.price * l.qty, 0);
   const kinds = [...new Set(lines.map((l) => l.kind))];
+  const words = [...new Set(lines.map((l) => (l.kind === "custom" ? (CUSTOM_WORD[l.category ?? ""] ?? KIND_WORD.custom) : KIND_WORD[l.kind])))];
   const kindsWord =
-    kinds.length === 1
-      ? KIND_WORD[kinds[0]]
-      : kinds.every((k) => k === "bar" || k === "kuchyne")
+    words.length === 1
+      ? words[0]
+      : kinds.every((k) => k === "bar" || k === "kuchyne") || words.every((w) => w === "BAR" || w === "JIDLO")
         ? "JIDLO A PITI"
         : "KASA";
   const qrMessage = `MARENA ${kindsWord} ${lines.map((l) => `${l.qty}X ${lineLabel(l)}`).join(", ")}`;
@@ -334,13 +345,23 @@ function Pos() {
 
   // Klíč řádku nese id, variantu i cenu — stejně pojmenované položky
   // s jinou cenou se nesmí slít do jedné.
-  function addLine(kind: Kind, name: string, price: number, productId?: string, size?: string, color?: string) {
+  function addLine(kind: Kind, name: string, price: number, productId?: string, size?: string, color?: string, category?: string) {
     setLines((prev) => {
-      const key = `${kind}|${productId ?? name}|${size ?? ""}|${color ?? ""}|${price}`;
+      const key = `${kind}|${productId ?? name}|${size ?? ""}|${color ?? ""}|${price}|${category ?? ""}`;
       const i = prev.findIndex((l) => l.key === key);
       if (i >= 0) return prev.map((l, j) => (j === i ? { ...l, qty: l.qty + 1 } : l));
-      return [...prev, { key, kind, productId, name, size, color, price, qty: 1 }];
+      return [...prev, { key, kind, productId, name, size, color, price, qty: 1, category }];
     });
+  }
+  // Vlastní částka (např. merch, u kterého ještě není cena): popis + Kč → účtenka,
+  // tržba se zapíše pod kategorii stánku (merch / bar / kuchyně).
+  function addCustom() {
+    const n = parseInt(customAmount.replace(/\s/g, ""), 10);
+    if (!Number.isFinite(n) || n <= 0) return;
+    addLine("custom", customLabel.trim() || CUSTOM_DEFAULT[stand], n, undefined, undefined, undefined, CUSTOM_CATEGORY[stand]);
+    setCustomOpen(false);
+    setCustomLabel("");
+    setCustomAmount("");
   }
   function bump(key: string, delta: number) {
     setLines((prev) =>
@@ -376,7 +397,7 @@ function Pos() {
   // přímo produkt/položka menu, takže zmizí i v Merchi / Kuchyně & bar.
   async function removeItem(kind: Exclude<Kind, "custom">, item: { id: string; name: string }) {
     if (!year || busy) return;
-    if (!window.confirm(`Smazat „${item.name}“ z nabídky? Zmizí i v sekci ${kind === "merch" ? "Merch" : "Kuchyně & bar"}.`)) return;
+    if (!window.confirm(`Smazat „${item.name}“ z nabídky? Zmizí i v sekci ${kind === "merch" ? "Lístky & merch" : "Kuchyně & bar"}.`)) return;
     setBusy(true);
     try {
       const ok = await dispatch(
@@ -402,6 +423,8 @@ function Pos() {
     setBusy(true);
     try {
       const howText = how === "hotove" ? "hotově" : "QR platba";
+      // Jedna účtenka = jeden saleId; zápisy rozdělené po kategoriích se v přehledech spojí.
+      const saleId = uid("sale_");
       const merch = lines.filter((l) => l.kind === "merch");
       const written = new Set<string>();
       let ok = true;
@@ -416,12 +439,20 @@ function Pos() {
           note: `markoval(a): ${me} · ${howText}`,
           items: merch.map((l) => ({ productId: l.productId!, name: l.name, size: l.size, color: l.color, price: l.price, qty: l.qty })),
         });
-        if (ok) ok = await dispatch({ type: "settleMerchOrder", yearId: year.id, orderId, how: howText });
+        if (ok) ok = await dispatch({ type: "settleMerchOrder", yearId: year.id, orderId, how: howText, saleId });
         if (ok) merch.forEach((l) => written.add(l.key));
       }
-      for (const kind of ["bar", "kuchyne", "custom"] as const) {
+      // Pití / jídlo po druhu; vlastní částky podle kategorie stánku (merch / bar / kuchyně)
+      const groups: { category: string; group: Line[] }[] = [
+        { category: KIND_CATEGORY.bar, group: lines.filter((l) => l.kind === "bar") },
+        { category: KIND_CATEGORY.kuchyne, group: lines.filter((l) => l.kind === "kuchyne") },
+        ...[...new Set(lines.filter((l) => l.kind === "custom").map((l) => l.category ?? KIND_CATEGORY.custom))].map((category) => ({
+          category,
+          group: lines.filter((l) => l.kind === "custom" && (l.category ?? KIND_CATEGORY.custom) === category),
+        })),
+      ];
+      for (const { category, group } of groups) {
         if (!ok) break;
-        const group = lines.filter((l) => l.kind === kind);
         if (group.length === 0) continue;
         ok = await dispatch({
           type: "addFinance",
@@ -429,11 +460,12 @@ function Pos() {
           kind: "prijem",
           label: "Prodej na místě",
           amount: group.reduce((s, l) => s + l.price * l.qty, 0),
-          category: KIND_CATEGORY[kind],
+          category,
           who: me,
           paid: true,
           date: todayISO(),
           note: group.map((l) => `${l.qty}× ${lineLabel(l)}`).join(", ") + ` · ${howText}`,
+          saleId,
         });
         if (ok) group.forEach((l) => written.add(l.key));
       }
@@ -484,8 +516,19 @@ function Pos() {
       <div>
         <div className="flex items-center justify-between gap-3">
           <PageTitle>Prodej</PageTitle>
-          {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
-          <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} />
+          <div className="flex shrink-0 items-center gap-2">
+            {/* Vlastní částka — když cena ještě není v nabídce (nebo se domluví na místě) */}
+            <button
+              onClick={() => setCustomOpen(true)}
+              className="flex min-h-11 items-center gap-1.5 rounded-full bg-paper2 px-3.5 text-[15px] font-semibold text-ink transition hover:bg-gold-100"
+              title="Zadat částku sám"
+            >
+              ✏️ <span className="hidden sm:inline">Vlastní částka</span>
+              <span className="sm:hidden">Částka</span>
+            </button>
+            {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
+            <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} qrMarked={stats.qr} />
+          </div>
         </div>
         {/* Účet pro QR — malý, ať nepřekáží; správce ho upraví ťuknutím */}
         <div className="mt-1">
@@ -656,6 +699,7 @@ function Pos() {
         ) : (
           <section key={g.kind} className="card grid place-items-center gap-2 p-6 text-center">
             <p className="text-sm text-ink-soft">{EMPTY_HINT[g.kind].text} S cenou se tu objeví sama.</p>
+            <p className="text-xs text-ink-soft">Bez ceny jde prodat přes „✏️ Vlastní částka“ nahoře vedle kasy.</p>
             <Link href={EMPTY_HINT[g.kind].href} className="btn-secondary">
               {EMPTY_HINT[g.kind].cta} →
             </Link>
@@ -714,6 +758,33 @@ function Pos() {
           </div>
         </section>
       )}
+
+      {/* Vlastní částka — okno: za co + kolik */}
+      <Modal open={customOpen} onClose={() => setCustomOpen(false)} title={`Vlastní částka — ${CUSTOM_DEFAULT[stand].toLowerCase()}`}>
+        <div className="space-y-3">
+          <p className="text-sm text-ink-soft">Když cena ještě není v nabídce: napiš, za co to je, a kolik. Do financí se to zapíše jako tržba stánku {CUSTOM_DEFAULT[stand].toLowerCase()}.</p>
+          <div>
+            <label className="label">Za co</label>
+            <input className="input" placeholder={CUSTOM_DEFAULT[stand]} value={customLabel} onChange={(e) => setCustomLabel(e.target.value)} autoFocus />
+          </div>
+          <div>
+            <label className="label">Částka (Kč)</label>
+            <input
+              className="input"
+              inputMode="numeric"
+              placeholder="např. 250"
+              value={customAmount}
+              onChange={(e) => setCustomAmount(e.target.value.replace(/[^\d\s]/g, ""))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") addCustom();
+              }}
+            />
+          </div>
+          <button className="btn-primary w-full justify-center" onClick={addCustom} disabled={!(parseInt(customAmount.replace(/\s/g, ""), 10) > 0)}>
+            🧾 Do účtenky
+          </button>
+        </div>
+      </Modal>
 
       {/* Doptání na velikost/barvu (merch s variantami) — u varianty se skladem
           se ukazuje „zbývá N" a vyprodané varianty nejdou vybrat. */}
@@ -959,6 +1030,7 @@ function DayGate({
   yearId,
   cashboxes,
   finances,
+  costOf,
   admin,
   account,
   accountOk,
@@ -966,6 +1038,7 @@ function DayGate({
   yearId: string;
   cashboxes: Cashbox[];
   finances: FinanceItem[];
+  costOf: CostLookup;
   admin: boolean;
   account: string;
   accountOk: boolean;
@@ -1024,7 +1097,7 @@ function DayGate({
       ) : (
         closed.map((c) => {
           const dayFin = boxDayFinances(finances, c, cashboxes);
-          return <DayCard key={c.id} box={c} stats={posStats(dayFin)} orders={posOrders(dayFin)} yearId={yearId} admin={admin} />;
+          return <DayCard key={c.id} box={c} stats={posStats(dayFin, costOf)} orders={posOrders(dayFin)} yearId={yearId} admin={admin} />;
         })
       )}
     </div>
@@ -1037,7 +1110,7 @@ function DayGate({
 // v šuplíku, večer se spočítá a uzavře. Markovaná hotovost už ve
 // financích je, takže se při uzavření zapíše jen rozdíl — peníze se
 // nepočítají dvakrát.
-function KasaControl({ year, cashMarked }: { year: { id: string; cashboxes: Cashbox[] }; cashMarked: number }) {
+function KasaControl({ year, cashMarked, qrMarked }: { year: { id: string; cashboxes: Cashbox[] }; cashMarked: number; qrMarked: number }) {
   const todayCash = cashMarked;
   const { dispatch } = useStore();
   const [modal, setModal] = useState(false);
@@ -1105,6 +1178,10 @@ function KasaControl({ year, cashMarked }: { year: { id: string; cashboxes: Cash
             <p className="text-sm">
               V kase má být: vklad {fmtCZK(openBox.opening)} + hotově z prodeje {fmtCZK(todayCash)} ={" "}
               <strong className="font-display text-base">{fmtCZK(expected)}</strong>
+            </p>
+            {/* QR platby nejdou do šuplíku, ale na účet — pro kontrolu výpisu */}
+            <p className="text-sm text-ink-soft">
+              Na účtu přes QR má být: <strong className="font-display text-ink">+{fmtCZK(qrMarked)}</strong>
             </p>
             <div>
               <label className="label">Spočítaný stav (Kč)</label>

@@ -111,7 +111,7 @@ export type Action =
   | { type: "dedupeTasks"; yearId: string }
   | { type: "addLink"; yearId: string; label: string; value: string; folder?: string; note?: string }
   | { type: "removeLink"; yearId: string; linkId: string }
-  | { type: "addFinance"; yearId: string; kind: FinanceKind; label: string; amount: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string }
+  | { type: "addFinance"; yearId: string; kind: FinanceKind; label: string; amount: number; net?: number; category?: string; who?: string; paid?: boolean; date?: string; note?: string; saleId?: string }
   | { type: "openCashbox"; yearId: string; label?: string; opening: number }
   // alreadyRecorded = hotovost už zapsaná ve financích z markování v Prodeji;
   // do financí pak jde jen rozdíl, aby se stejné peníze nepočítaly dvakrát.
@@ -191,8 +191,10 @@ export type Action =
   | { type: "toggleMerchOrderDone"; yearId: string; orderId: string }
   // Zaplaceno na místě (QR/hotově): vyřídí objednávku, uzamkne ji (paid)
   // a zapíše tržbu do financí. Odemknout ji pak může jen správce.
-  | { type: "settleMerchOrder"; yearId: string; orderId: string; how?: string }
+  | { type: "settleMerchOrder"; yearId: string; orderId: string; how?: string; saleId?: string }
   | { type: "removeMerchOrder"; yearId: string; orderId: string }
+  | { type: "repriceMerchOrders"; yearId: string; productId: string; price: number } // nová cena u čekajících objednávek daného produktu
+  | { type: "setMerchOrderItemPrice"; yearId: string; orderId: string; index: number; price?: number } // cena jedné položky čekající objednávky
   // Uvolnění místa: smaže všechny fotky/účtenky ročníku (reference v DB; samotné
   // bloby maže klient zvlášť). Texty (finance, popisy) zůstávají.
   | { type: "clearYearMedia"; yearId: string };
@@ -235,7 +237,7 @@ function mapYear(db: DB, yearId: string, fn: (y: Year) => Year): DB {
 
 // Vyřízení merch objednávky: označí done a zapíše tržbu jako příjem do financí.
 // S `paid` navíc objednávku uzamkne jako zaplacenou (QR/hotově na místě).
-function settleOrder(y: Year, orderId: string, opts: { paid?: boolean; how?: string }): Year {
+function settleOrder(y: Year, orderId: string, opts: { paid?: boolean; how?: string; saleId?: string }): Year {
   const order = (y.merchOrders ?? []).find((o) => o.id === orderId);
   if (!order || order.done) return y;
   const total = order.items.reduce((sum, it) => {
@@ -257,6 +259,7 @@ function settleOrder(y: Year, orderId: string, opts: { paid?: boolean; how?: str
     // při vyzvednutí patří do tržeb dne, kdy peníze přišly
     date: now().slice(0, 10),
     note: [itemsText, opts.how].filter(Boolean).join(" · "),
+    saleId: opts.saleId || undefined,
     createdAt: now(),
   };
   return {
@@ -774,6 +777,7 @@ export function applyAction(db: DB, a: Action): DB {
             paid: a.paid ?? true,
             date: a.date || undefined,
             note: a.note?.trim() || undefined,
+            saleId: a.saleId || undefined,
             createdAt: now(),
           },
         ],
@@ -1409,7 +1413,7 @@ export function applyAction(db: DB, a: Action): DB {
         };
       });
     case "settleMerchOrder":
-      return mapYear(db, a.yearId, (y) => settleOrder(y, a.orderId, { paid: true, how: a.how }));
+      return mapYear(db, a.yearId, (y) => settleOrder(y, a.orderId, { paid: true, how: a.how, saleId: a.saleId }));
     case "removeMerchOrder":
       return mapYear(db, a.yearId, (y) => {
         const order = (y.merchOrders ?? []).find((o) => o.id === a.orderId);
@@ -1419,6 +1423,34 @@ export function applyAction(db: DB, a: Action): DB {
           finances: order?.financeId ? (y.finances ?? []).filter((f) => f.id !== order.financeId) : y.finances,
         };
       });
+    // Přecenění: lidé objednali za starou cenu (např. lístek za 350 Kč) a cena se
+    // změnila → u všech ČEKAJÍCÍCH objednávek se položky daného produktu přepíšou
+    // na novou cenu. Vyřízené/zaplacené se nemění (tržba už je ve financích).
+    case "repriceMerchOrders":
+      return mapYear(db, a.yearId, (y) => {
+        if (!Number.isFinite(a.price) || a.price < 0) return y;
+        return {
+          ...y,
+          merchOrders: (y.merchOrders ?? []).map((o) =>
+            o.done ? o : { ...o, items: o.items.map((it) => (it.productId === a.productId ? { ...it, price: a.price } : it)) },
+          ),
+        };
+      });
+    // Ruční cena jedné položky čekající objednávky (výjimka, sleva…).
+    case "setMerchOrderItemPrice":
+      return mapYear(db, a.yearId, (y) => ({
+        ...y,
+        merchOrders: (y.merchOrders ?? []).map((o) =>
+          o.id !== a.orderId || o.done
+            ? o
+            : {
+                ...o,
+                items: o.items.map((it, i) =>
+                  i === a.index ? { ...it, price: a.price != null && Number.isFinite(a.price) && a.price >= 0 ? a.price : undefined } : it,
+                ),
+              },
+        ),
+      }));
 
     default:
       return db;

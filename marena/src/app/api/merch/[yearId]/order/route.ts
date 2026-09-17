@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readDB, applyActionAtomic } from "@/lib/server-db";
+import { isValidEmail, isValidPhone } from "@/lib/contact";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +24,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ yearId:
   if (!name) return NextResponse.json({ error: "name_required" }, { status: 400 });
   // Kupující musí zadat jméno, telefon i e-mail.
   if (!phone || !email) return NextResponse.json({ error: "contact_required" }, { status: 400 });
+  // …a musí to být skutečný e-mail (s @) a telefon jen z číslic.
+  if (!isValidEmail(email)) return NextResponse.json({ error: "invalid_email" }, { status: 400 });
+  if (!isValidPhone(phone)) return NextResponse.json({ error: "invalid_phone" }, { status: 400 });
 
   const db = await readDB();
   if (!db) return NextResponse.json({ error: "not_configured" }, { status: 503 });

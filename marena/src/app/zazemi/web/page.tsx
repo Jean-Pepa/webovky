@@ -25,7 +25,7 @@ import {
 
 // Textová pole s jedním řádkem / delším textem, seskupená podle sekcí webu.
 type ScalarKey =
-  | "heroKicker" | "heroTagline" | "heroBadge" | "ctaInsta" | "ctaScroll" | "merchCta"
+  | "heroKicker" | "heroTagline" | "heroBadge" | "ctaInsta" | "ctaScroll" | "ctaSchedule" | "merchCta"
   | "whatsKicker" | "whatsTitle" | "whatsIntro"
   | "finaleBadge" | "finaleTitle" | "finaleText"
   | "band" | "stepsTitle" | "newsTitle" | "instaTitle" | "instaText" | "footerTagline";
@@ -38,6 +38,7 @@ const GROUPS: { title: string; emoji: string; fields: { key: ScalarKey; label: s
       { key: "heroTagline", label: "Hlavní věta pod nápisem MAŘENA", area: true },
       { key: "ctaInsta", label: "Tlačítko — Instagram" },
       { key: "ctaScroll", label: "Tlačítko — „co tě čeká“" },
+      { key: "ctaSchedule", label: "Tlačítko — „harmonogram“" },
       { key: "merchCta", label: "Velké tlačítko — merch" },
     ],
   },
@@ -341,7 +342,7 @@ export default function WebEditorPage() {
         header={<span className="font-display text-[20px] font-semibold">📸 Instagram odkaz (společný)</span>}
       >
         <div className="mt-2 grid gap-4 sm:grid-cols-2">
-          <Field label="URL profilu" value={c.ig?.url ?? ""} placeholder="https://www.instagram.com/marena2k25" onChange={(v) => setIg("url", v)} />
+          <Field label="URL profilu" value={c.ig?.url ?? ""} placeholder="https://www.instagram.com/marena2k26" onChange={(v) => setIg("url", v)} />
           <Field label="Zobrazená přezdívka" value={c.ig?.handle ?? ""} placeholder="@marena2k25" onChange={(v) => setIg("handle", v)} />
         </div>
       </Collapsible>

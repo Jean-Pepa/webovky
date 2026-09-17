@@ -88,6 +88,8 @@ export function spdString(opts: { iban: string; bic?: string; amount: number; me
   const acc = opts.bic ? `${opts.iban}+${opts.bic}` : opts.iban;
   const parts = [`SPD*1.0*ACC:${acc}`, `AM:${Math.max(0, Math.round(opts.amount)).toFixed(2)}`, "CC:CZK"];
   const msg = opts.message ? sanitizeMsg(opts.message) : "";
-  if (msg) parts.push(`MSG:${msg}`);
+  // Zpráva pro příjemce se do QR záměrně NEDÁVÁ (na výpisu plátce se pak
+  // neukazuje, co koupil). `message` se přijímá kvůli volajícím, ale ignoruje.
+  void msg;
   return parts.join("*");
 }

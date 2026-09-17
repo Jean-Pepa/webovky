@@ -10,6 +10,7 @@ import { ImageViewer } from "@/components/ImageViewer";
 import { FlashHost, flash } from "@/components/Flash";
 import { trackFunnel } from "@/lib/analytics-client";
 import type { DB } from "@/lib/types";
+import { isValidEmail, isValidPhone, sanitizePhone, PHONE_ERR, EMAIL_ERR } from "@/lib/contact";
 
 const LS_DB = "marena_db"; // demo režim (localStorage) — stejný klíč jako ve store
 
@@ -157,7 +158,9 @@ export default function MerchOrderPage() {
     setErr(null);
     if (!name.trim()) return setErr("Vyplň prosím jméno.");
     if (!phone.trim()) return setErr("Vyplň telefon.");
+    if (!isValidPhone(phone)) return setErr(PHONE_ERR);
     if (!email.trim()) return setErr("Vyplň e-mail.");
+    if (!isValidEmail(email)) return setErr(EMAIL_ERR);
     if (cart.length === 0) return setErr("Košík je prázdný — přidej aspoň jednu věc z nabídky.");
 
     trackFunnel("merch_submit");
@@ -176,7 +179,8 @@ export default function MerchOrderPage() {
           }),
         });
         if (!res.ok) {
-          setErr("Objednávku se nepodařilo odeslat. Zkus to prosím znovu.");
+          const code = ((await res.json().catch(() => null)) as { error?: string } | null)?.error;
+          setErr(code === "invalid_email" ? EMAIL_ERR : code === "invalid_phone" ? PHONE_ERR : "Objednávku se nepodařilo odeslat. Zkus to prosím znovu.");
           setSubmitting(false);
           return;
         }
@@ -216,11 +220,11 @@ export default function MerchOrderPage() {
   return (
     <div className="min-h-screen bg-paper">
       <FlashHost />
-      <ImageViewer images={galleryImages} index={viewIdx} onIndex={setViewIdx} title="Merch" />
+      <ImageViewer images={galleryImages} index={viewIdx} onIndex={setViewIdx} title="Lístky & merch" />
       <div className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-6 text-center">
           <div className="marena-header-gold inline-block font-display text-3xl font-extrabold uppercase tracking-[0.08em]">MAŘENA</div>
-          <p className="mt-1 text-sm text-ink-soft">Merch{label ? ` · ${label}` : ""}</p>
+          <p className="mt-1 text-sm text-ink-soft">Lístky & merch{label ? ` · ${label}` : ""}</p>
         </div>
 
         {status === "loading" && <p className="text-center text-sm text-ink-soft">Načítám nabídku…</p>}
@@ -235,14 +239,28 @@ export default function MerchOrderPage() {
           <div className="card p-8 text-center">
             <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-leaf/15 text-2xl">✅</div>
             <h1 className="font-display text-xl font-semibold">Děkujeme, objednávka odeslána!</h1>
-            <p className="mt-1 text-sm text-ink-soft">
-              Zaplatíš při vyzvednutí na místě — prodejce ti ukáže QR kód (nebo vezme hotovost). Kdyby něco, ozveme se na zadaný kontakt.
+            {/* Neonová cedule: kde se objednávka vyzvedává (stejný styl jako nahoře v nabídce) */}
+            <div className="neon-board mt-4 rounded-2xl px-4 py-4 sm:py-5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-red-300/80">Vyzvednutí objednávky</p>
+              <p className="neon-sign-red mt-1 font-display text-2xl font-extrabold uppercase leading-tight tracking-wide sm:text-3xl">
+                Na baru na dvorku
+              </p>
+              <p className="mt-1 text-sm font-semibold text-white/85">Las Vegas Bar · zaplatíš až při vyzvednutí</p>
+            </div>
+            <p className="mt-3 text-sm text-ink-soft">
+              Tvůj lístek nebo merch už na tebe čeká na dvorku v Las Vegas Baru. Zaplatíš při vyzvednutí — prodejce ti ukáže QR kód (nebo vezme hotovost). Kdyby něco, ozveme se na zadaný kontakt.
             </p>
           </div>
         )}
 
         {status === "ready" && !done && (
           <div className="space-y-6">
+            {/* Neonová cedule: merch se kupuje na baru na dvorku (bílá trubice, červená záře) */}
+            <div className="neon-board rounded-2xl px-5 py-5 text-center sm:py-6">
+              <p className="neon-sign-red font-display text-2xl font-extrabold uppercase leading-tight tracking-wide sm:text-3xl">
+                Lístky a merch se kupují na baru na dvorku
+              </p>
+            </div>
             {products.length === 0 ? (
               <div className="card p-8 text-center text-sm text-ink-soft">Nabídka se právě připravuje. Kdyžtak to zkus později.</div>
             ) : (
@@ -377,9 +395,26 @@ export default function MerchOrderPage() {
                   )}
 
                   <div className="grid gap-2 pt-1 sm:grid-cols-2">
-                    <input className="input" placeholder="Jméno a příjmení" value={name} onChange={(e) => setName(e.target.value)} />
-                    <input className="input" placeholder="Telefon" value={phone} onChange={(e) => setPhone(e.target.value)} />
-                    <input className="input sm:col-span-2" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
+                    <input className="input" placeholder="Jméno a příjmení" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
+                    {/* jen číslice (+ mezery a „+" na začátku) — písmena se při psaní zahodí */}
+                    <input
+                      className="input"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      placeholder="Telefon (jen číslice)"
+                      value={phone}
+                      onChange={(e) => setPhone(sanitizePhone(e.target.value))}
+                    />
+                    <input
+                      className="input sm:col-span-2"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="E-mail (s @)"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
                     <input className="input sm:col-span-2" placeholder="Poznámka (nepovinné)" value={note} onChange={(e) => setNote(e.target.value)} />
                   </div>
 

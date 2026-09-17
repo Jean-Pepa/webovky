@@ -59,7 +59,7 @@ export function MyAgenda({ onOpenPost }: { onOpenPost?: (id: string) => void }) 
   if (myOpenPolls > 0)
     cards.push({ href: "/zazemi/hlasovani", emoji: "🗳️", label: "Hlasování", badge: `${myOpenPolls} k hlasování`, tone: "red" });
   if (has("merch") || (admin && pendingOrders > 0))
-    cards.push({ href: "/zazemi/merch", emoji: "🛍️", label: "Merch", badge: pendingOrders ? `${pendingOrders} čeká` : undefined });
+    cards.push({ href: "/zazemi/merch", emoji: "🎟️", label: "Lístky & merch", badge: pendingOrders ? `${pendingOrders} čeká` : undefined });
   if (has("bar")) cards.push({ href: "/zazemi/kuchyne", emoji: "🍳", label: "Kuchyně & bar" });
   if (has("merch", "bar")) cards.push({ href: "/zazemi/prodej", emoji: "🛒", label: "Prodej" });
   if (chief || (admin && unpaid > 0))

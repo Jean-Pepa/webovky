@@ -5,12 +5,13 @@
 // tržba, QR vs. hotovost vedle sebe, kategorie, nejprodávanější a rolovací
 // historie objednávek. Správce může jednotlivý prodej i celou kasu smazat.
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useStore } from "@/lib/store";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
 import { fmtCZK, fmtDate } from "@/lib/format";
-import type { Cashbox, FinanceItem } from "@/lib/types";
+import type { Cashbox, Drink, FinanceItem, MerchProduct } from "@/lib/types";
+import { normName } from "@/lib/names";
 
 // Kategorie financí, které patří prodeji (denní kase).
 export const POS_CATS = new Set(["merch", "bar", "kuchyně", "kasa"]);
@@ -18,16 +19,36 @@ export const POS_CATS = new Set(["merch", "bar", "kuchyně", "kasa"]);
 // Statistiky nad zápisy z prodeje: tržba (příjmy − výdaje, tedy včetně
 // případného manka z kasy), QR vs. hotovost, kategorie, počet prodejů
 // a nejprodávanější položky (z rozpisu v poznámkách).
-export function posStats(list: FinanceItem[]) {
+// Nákupní cena položky podle názvu — u pití/jídla součet surovin z Kuchyně & baru,
+// u merche nákupní cena produktu. Prodeje mají v poznámce jen názvy, tak se páruje
+// podle názvu (bez diakritiky a velikosti písmen; varianta v závorce se ignoruje).
+export type CostLookup = (name: string) => number | undefined;
+export function makeCostLookup(year: { bar?: Drink[]; merch?: MerchProduct[] }): CostLookup {
+  const map = new Map<string, number>();
+  for (const d of year.bar ?? []) map.set(normName(d.name), d.ingredients.reduce((sum, i) => sum + (i.cost || 0), 0));
+  for (const m of year.merch ?? []) if (m.cost != null) map.set(normName(m.name), m.cost);
+  return (name) => map.get(normName(name.replace(/\s*\(.*\)\s*$/, "")));
+}
+
+export function posStats(list: FinanceItem[], costOf?: CostLookup) {
   let total = 0;
+  let cost = 0; // náklady na prodané kusy (qty × nákupní cena)
+  let unknownQty = 0; // prodané kusy bez známé nákupní ceny
   let qr = 0;
   let cash = 0;
   let count = 0;
   let kasaAdj = 0; // rekonciliace kasy (kategorie „kasa" — manko/přebytek), NENÍ tržba
+  let purchases = 0; // nákupy zboží (výdaje bar / kuchyně / merch) — NEJSOU tržba, jen se ukážou
   const byCat = new Map<string, number>();
   const items = new Map<string, number>();
   for (const f of list) {
     const sign = f.kind === "vydaj" ? -1 : 1;
+    // Výdaj mimo rekonciliaci kasy = nákup zboží (pivo, jídlo, merch do skladu).
+    // Platil se z účtu / balíku, ne ze šuplíku — do tržby dne nepatří.
+    if (sign < 0 && (f.category ?? "") !== "kasa") {
+      purchases += f.amount;
+      continue;
+    }
     total += sign * f.amount;
     const cat = f.category ?? "";
     if (cat === "kasa") kasaAdj += sign * f.amount;
@@ -39,7 +60,14 @@ export function posStats(list: FinanceItem[]) {
       count++;
       for (const part of note.split(" · ")[0].split(", ")) {
         const m = part.match(/^(\d+)× (.+)$/);
-        if (m) items.set(m[2], (items.get(m[2]) ?? 0) + Number(m[1]));
+        if (!m) continue;
+        const qty = Number(m[1]);
+        items.set(m[2], (items.get(m[2]) ?? 0) + qty);
+        if (costOf) {
+          const c = costOf(m[2]);
+          if (c != null) cost += qty * c;
+          else unknownQty += qty;
+        }
       }
     }
   }
@@ -55,13 +83,19 @@ export function posStats(list: FinanceItem[]) {
     cash,
     count,
     top,
+    purchases,
+    // Náklady a zisk podle nákupních cen položek (jen když je předaný ceník).
+    withCosts: !!costOf,
+    cost,
+    profit: total - kasaAdj - cost,
+    unknownQty,
     byCat: [...byCat.entries()].filter(([, v]) => v !== 0).map(([cat, sum]) => ({ cat, sum })),
   };
 }
 
 // Historie objednávek dne — jednotlivé prodeje (zápisy s rozpisem „×")
 // od nejnovějšího. Slouží do rolovacího seznamu ve statistikách i archivu.
-export type PosOrder = { id: string; at: string; cat: string; items: string; amount: number; how: string };
+export type PosOrder = { id: string; at: string; cat: string; items: string; amount: number; how: string; saleId?: string; who?: string };
 export function posOrders(list: FinanceItem[]): PosOrder[] {
   return list
     .filter((f) => f.kind === "prijem" && (f.note ?? "").includes("×"))
@@ -69,9 +103,43 @@ export function posOrders(list: FinanceItem[]): PosOrder[] {
       const note = f.note ?? "";
       const items = note.split(" · ")[0];
       const how = note.includes("QR platba") ? "QR" : note.includes("hotově") ? "hotově" : "";
-      return { id: f.id, at: f.createdAt, cat: f.category ?? "", items, amount: f.amount, how };
+      return { id: f.id, at: f.createdAt, cat: f.category ?? "", items, amount: f.amount, how, saleId: f.saleId, who: f.who };
     })
     .sort((a, b) => b.at.localeCompare(a.at));
+}
+
+// Jedna účtenka = víc zápisů (rozdělené po kategoriích: bar + kuchyně + merch).
+// Spojí je do skupiny: nové zápisy podle saleId, starší (bez saleId) podle
+// stejné platby, stejného prodejce a času do 20 s. Řádky musí být seřazené podle času.
+export function groupSales<T extends { id: string; at: string; how: string; saleId?: string; who?: string }>(rows: T[]): T[][] {
+  const groups: T[][] = [];
+  for (const r of rows) {
+    const g = groups[groups.length - 1];
+    const prev = g?.[g.length - 1];
+    const same =
+      !!prev &&
+      (r.saleId && prev.saleId
+        ? r.saleId === prev.saleId
+        : !r.saleId && !prev.saleId && r.how === prev.how && (r.who ?? "") === (prev.who ?? "") && Math.abs(Date.parse(r.at) - Date.parse(prev.at)) <= 20_000);
+    if (same) g.push(r);
+    else groups.push([r]);
+  }
+  return groups;
+}
+
+// Žlutý rámeček kolem zápisů jedné účtenky (víc kategorií v jedné objednávce).
+export function SaleGroupFrame({ total, how, children }: { total: number; how: string; children: ReactNode }) {
+  return (
+    <li className="rounded-xl bg-gold-50/60 p-1 ring-2 ring-gold-400">
+      <div className="flex items-center justify-between gap-2 px-1.5 pb-1 pt-0.5 text-[11px] font-semibold text-gold-800">
+        <span>🧾 jedna objednávka</span>
+        <span>
+          {how === "QR" ? "QR" : how === "hotově" ? "💵" : ""} celkem {fmtCZK(total)}
+        </span>
+      </div>
+      <ul className="space-y-1">{children}</ul>
+    </li>
+  );
 }
 
 // Zápisy prodeje pro daný den (kasu): od otevření kasy do otevření další
@@ -121,9 +189,17 @@ export function OrderHistory({
       </button>
       {open && (
         <ul className="mt-2 max-h-72 space-y-1 overflow-y-auto pr-1">
-          {orders.map((o) => (
-            <OrderRow key={o.id} o={o} canDelete={canDelete && !!yearId} yearId={yearId} />
-          ))}
+          {groupSales(orders).map((g) =>
+            g.length === 1 ? (
+              <OrderRow key={g[0].id} o={g[0]} canDelete={canDelete && !!yearId} yearId={yearId} />
+            ) : (
+              <SaleGroupFrame key={g[0].id} total={g.reduce((s, o) => s + o.amount, 0)} how={g[0].how}>
+                {g.map((o) => (
+                  <OrderRow key={o.id} o={o} canDelete={canDelete && !!yearId} yearId={yearId} />
+                ))}
+              </SaleGroupFrame>
+            ),
+          )}
         </ul>
       )}
     </div>
@@ -195,6 +271,32 @@ export function PayBreakdown({ qr, cash, count }: { qr: number; cash: number; co
 // Uzamčený den (kasa) — evidence prodeje: tržba + QR/hotově vedle sebe,
 // kategorie, vyúčtování kasy, nejprodávanější a historie objednávek.
 // Smazat den může jen správce (odstraní kasu i všechny prodeje toho dne).
+// Náklady a zisk dne — pod tržbou; náklad = prodané kusy × nákupní cena položky
+// (suroviny u pití/jídla, nákupní cena u merche). Kusy bez nákupní ceny se hlásí.
+export function ProfitLine({ stats }: { stats: ReturnType<typeof posStats> }) {
+  if (!stats.withCosts || stats.count === 0) return null;
+  const up = stats.profit >= 0;
+  return (
+    <p className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm">
+      <span className="text-ink-soft">
+        Náklady <strong className="font-display text-ink">−{fmtCZK(stats.cost)}</strong>
+      </span>
+      <span className="text-ink-soft">
+        Zisk{" "}
+        <strong className={`font-display ${up ? "text-leaf-700" : "text-red-600"}`}>
+          {up ? "+" : "−"}
+          {fmtCZK(Math.abs(stats.profit))}
+        </strong>
+      </span>
+      {stats.unknownQty > 0 && (
+        <span className="text-xs text-amber-800" title="Doplň nákupní cenu (suroviny) u položky v Kuchyni & baru nebo u merche">
+          ⚠️ {stats.unknownQty} ks bez nákupní ceny
+        </span>
+      )}
+    </p>
+  );
+}
+
 export function DayCard({
   box,
   stats,
@@ -236,16 +338,7 @@ export function DayCard({
         </span>
         <PayBreakdown qr={stats.qr} cash={stats.cash} count={stats.count} />
       </div>
-
-      {stats.byCat.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {stats.byCat.map((x) => (
-            <span key={x.cat} className="chip">
-              {x.cat} {fmtCZK(x.sum)}
-            </span>
-          ))}
-        </div>
-      )}
+      <ProfitLine stats={stats} />
 
       <p className="mt-2 border-t border-ink/[0.06] pt-2 text-sm text-ink-soft">
         Kasa: vklad {fmtCZK(box.opening)} → večer {fmtCZK(box.closing ?? 0)}

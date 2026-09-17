@@ -55,7 +55,7 @@ export default function MerchIndexPage() {
 
   return (
     <div className="grid min-h-screen place-items-center bg-paper px-4 text-center text-sm text-ink-soft">
-      {status === "loading" ? "Načítám merch…" : "Merch zatím není dostupný."}
+      {status === "loading" ? "Načítám nabídku…" : "Lístky a merch zatím nejsou v prodeji."}
     </div>
   );
 }
