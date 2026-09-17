@@ -220,11 +220,11 @@ export default function MerchOrderPage() {
   return (
     <div className="min-h-screen bg-paper">
       <FlashHost />
-      <ImageViewer images={galleryImages} index={viewIdx} onIndex={setViewIdx} title="Merch" />
+      <ImageViewer images={galleryImages} index={viewIdx} onIndex={setViewIdx} title="Lístky & merch" />
       <div className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-6 text-center">
           <div className="marena-header-gold inline-block font-display text-3xl font-extrabold uppercase tracking-[0.08em]">MAŘENA</div>
-          <p className="mt-1 text-sm text-ink-soft">Merch{label ? ` · ${label}` : ""}</p>
+          <p className="mt-1 text-sm text-ink-soft">Lístky & merch{label ? ` · ${label}` : ""}</p>
         </div>
 
         {status === "loading" && <p className="text-center text-sm text-ink-soft">Načítám nabídku…</p>}
@@ -258,7 +258,7 @@ export default function MerchOrderPage() {
             {/* Neonová cedule: merch se kupuje na baru na dvorku (bílá trubice, červená záře) */}
             <div className="neon-board rounded-2xl px-5 py-5 text-center sm:py-6">
               <p className="neon-sign-red font-display text-2xl font-extrabold uppercase leading-tight tracking-wide sm:text-3xl">
-                Merch se kupuje na baru na dvorku
+                Lístky a merch se kupují na baru na dvorku
               </p>
             </div>
             {products.length === 0 ? (

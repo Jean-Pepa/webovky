@@ -41,11 +41,11 @@ type Line = {
 
 // Vlastní částka (ceny ještě nejsou v nabídce): kategorie tržby a výchozí popis podle stánku.
 const CUSTOM_CATEGORY: Record<Stand, string> = { merch: "merch", bar: "bar", kuchyne: "kuchyně" };
-const CUSTOM_DEFAULT: Record<Stand, string> = { merch: "Merch", bar: "Pití", kuchyne: "Jídlo" };
+const CUSTOM_DEFAULT: Record<Stand, string> = { merch: "Lístek / merch", bar: "Pití", kuchyne: "Jídlo" };
 const CUSTOM_WORD: Record<string, string> = { merch: "MERCH", bar: "BAR", "kuchyně": "JIDLO" };
 
 const STANDS: { id: Stand; label: string }[] = [
-  { id: "merch", label: "🛍️ Merch" },
+  { id: "merch", label: "🎟️ Lístky & merch" },
   { id: "bar", label: "🍸 Bar" },
   { id: "kuchyne", label: "🍳 Kuchyně" },
 ];
@@ -235,7 +235,7 @@ function Pos() {
   const grids: { kind: Exclude<Kind, "custom">; title: string; items: { id: string; name: string; price: number }[] }[] = [
     {
       kind: "merch" as const,
-      title: "Merch",
+      title: "Lístky & merch",
       items: (year.merch ?? []).filter((p) => p.price != null && p.price > 0).map((p) => ({ id: p.id, name: p.name, price: p.price! })).sort(bySold),
     },
     {
@@ -393,7 +393,7 @@ function Pos() {
   // přímo produkt/položka menu, takže zmizí i v Merchi / Kuchyně & bar.
   async function removeItem(kind: Exclude<Kind, "custom">, item: { id: string; name: string }) {
     if (!year || busy) return;
-    if (!window.confirm(`Smazat „${item.name}“ z nabídky? Zmizí i v sekci ${kind === "merch" ? "Merch" : "Kuchyně & bar"}.`)) return;
+    if (!window.confirm(`Smazat „${item.name}“ z nabídky? Zmizí i v sekci ${kind === "merch" ? "Lístky & merch" : "Kuchyně & bar"}.`)) return;
     setBusy(true);
     try {
       const ok = await dispatch(

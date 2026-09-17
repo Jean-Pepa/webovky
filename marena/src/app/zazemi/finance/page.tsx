@@ -884,7 +884,7 @@ export default function FinancePage() {
 const FIN_TABS: { id: "vse" | "kasy" | "merch" | "vyber"; emoji: string; label: string }[] = [
   { id: "vse", emoji: "📊", label: "Všechny finance" },
   { id: "kasy", emoji: "🧰", label: "Kasy" },
-  { id: "merch", emoji: "🛍️", label: "Merch" },
+  { id: "merch", emoji: "🎟️", label: "Lístky & merch" },
   { id: "vyber", emoji: "💰", label: "Výběr" },
 ];
 
