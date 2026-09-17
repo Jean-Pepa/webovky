@@ -1508,21 +1508,6 @@ function CashboxCard({
         <PayBreakdown qr={stats.qr} cash={stats.cash} count={stats.count} />
       </div>
 
-      {(stats.byCat.length > 0 || stats.purchases > 0) && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {stats.byCat.map((x) => (
-            <span key={x.cat} className="chip">
-              {x.cat} {fmtCZK(x.sum)}
-            </span>
-          ))}
-          {stats.purchases > 0 && (
-            <span className="chip bg-paper2 text-ink-soft" title="Výdaje za zboží zapsané během dne — nejsou tržba">
-              🛒 nákup zboží −{fmtCZK(stats.purchases)} · není tržba
-            </span>
-          )}
-        </div>
-      )}
-
       <OrderHistory orders={orders} canDelete={canEdit} yearId={yearId} />
 
       {/* Večerní uzávěrka */}
@@ -1533,6 +1518,10 @@ function CashboxCard({
             <p className="mt-1 text-sm">
               V kase má být: vklad {fmtCZK(box.opening)} + hotově {fmtCZK(stats.cash)} ={" "}
               <strong className="font-display">{fmtCZK(expected)}</strong>
+            </p>
+            {/* QR platby nejdou do šuplíku, ale na účet — pro kontrolu výpisu */}
+            <p className="text-sm text-ink-soft">
+              Na účtu přes QR má být: <strong className="font-display text-ink">+{fmtCZK(stats.qr)}</strong>
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <input
