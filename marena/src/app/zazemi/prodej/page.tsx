@@ -152,7 +152,7 @@ function ProdejReadOnly() {
       ) : (
         closed.map((c) => {
           const dayFin = boxDayFinances(finances, c, cashboxes);
-          return <DayCard key={c.id} box={c} stats={posStats(dayFin, makeCostLookup(year))} orders={posOrders(dayFin)} yearId={year.id} admin={false} />;
+          return <DayCard key={c.id} box={c} stats={posStats(dayFin, makeCostLookup(year))} orders={posOrders(dayFin)} yearId={year.id} admin={false} compact />;
         })
       )}
     </div>
@@ -1085,7 +1085,7 @@ function DayGate({
       ) : (
         closed.map((c) => {
           const dayFin = boxDayFinances(finances, c, cashboxes);
-          return <DayCard key={c.id} box={c} stats={posStats(dayFin, costOf)} orders={posOrders(dayFin)} yearId={yearId} admin={admin} />;
+          return <DayCard key={c.id} box={c} stats={posStats(dayFin, costOf)} orders={posOrders(dayFin)} yearId={yearId} admin={admin} compact={!admin} />;
         })
       )}
     </div>
