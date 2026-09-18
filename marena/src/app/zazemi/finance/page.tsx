@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, fmtDateTime, fmtRelative, todayISO } from "@/lib/format";
-import { posStats, posOrders, boxDayFinances, makeCostLookup, groupSales, SaleGroupFrame, DayCard, OrderHistory, PayBreakdown, ProfitLine, CopyDayButton, makeTicketSplit, TicketSplitLine, type TicketSplit } from "@/lib/pos";
+import { posStats, posOrders, boxDayFinances, makeCostLookup, groupSales, SaleGroupFrame, DayCard, OrderHistory, PayBreakdown, ProfitLine, CopyDayButton, makeTicketSplit, TicketSplitLine, type TicketSplit, type CostLookup } from "@/lib/pos";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
@@ -81,13 +81,39 @@ const hhmmFin = (iso: string) => {
 
 type SaleOrder = { id: string; at: string; items: string; cat: string; how: string; amount: number; saleId?: string; who?: string };
 // Rozpis dne „co za co": jídlo (kuchyně), pití (bar), merch (bez lístků), lístky (ks + Kč), ostatní.
-type SaleSplitSums = { food: number; drink: number; merch: number; tickets: number; ticketQty: number; other: number };
+// K tržbě i náklady (nákupní ceny položek jako na kartách kasy) → čistý zisk každé části.
+type SaleSplitSums = {
+  food: number;
+  foodCost: number;
+  drink: number;
+  drinkCost: number;
+  merch: number;
+  merchCost: number;
+  tickets: number;
+  ticketCost: number;
+  ticketQty: number;
+  other: number;
+  unknownQty: number; // prodané kusy bez známé nákupní ceny (zisk je pak nadsazený)
+};
 type SaleDay = SaleSplitSums & { day: string; total: number; qr: number; cash: number; count: number; orders: SaleOrder[] };
-const emptySplit = (): SaleSplitSums => ({ food: 0, drink: 0, merch: 0, tickets: 0, ticketQty: 0, other: 0 });
+const emptySplit = (): SaleSplitSums => ({ food: 0, foodCost: 0, drink: 0, drinkCost: 0, merch: 0, merchCost: 0, tickets: 0, ticketCost: 0, ticketQty: 0, other: 0, unknownQty: 0 });
+const addSplit = (a: SaleSplitSums, b: SaleSplitSums): SaleSplitSums => ({
+  food: a.food + b.food,
+  foodCost: a.foodCost + b.foodCost,
+  drink: a.drink + b.drink,
+  drinkCost: a.drinkCost + b.drinkCost,
+  merch: a.merch + b.merch,
+  merchCost: a.merchCost + b.merchCost,
+  tickets: a.tickets + b.tickets,
+  ticketCost: a.ticketCost + b.ticketCost,
+  ticketQty: a.ticketQty + b.ticketQty,
+  other: a.other + b.other,
+  unknownQty: a.unknownQty + b.unknownQty,
+});
 
 // Prodeje (markované platby) sečtené po dnech. `catOk` vybere jen relevantní
 // kategorie — Kasy berou bar/kuchyni/kasu, Merch jen merch.
-function buildSaleDays(items: FinanceItem[], catOk: (cat: string) => boolean, ticketOf?: TicketSplit): SaleDay[] {
+function buildSaleDays(items: FinanceItem[], catOk: (cat: string) => boolean, ticketOf?: TicketSplit, costOf?: CostLookup): SaleDay[] {
   const map = new Map<string, SaleDay>();
   for (const f of items) {
     if (!isPosSale(f) || !catOk(f.category ?? "")) continue;
@@ -98,14 +124,31 @@ function buildSaleDays(items: FinanceItem[], catOk: (cat: string) => boolean, ti
     g.count += 1;
     if (how === "QR") g.qr += f.amount;
     else if (how === "hotově") g.cash += f.amount;
+    // Náklady zápisu: prodané kusy × nákupní cena (stejně jako posStats na kartě kasy)
+    let entryCost = 0;
+    if (costOf) {
+      for (const part of (f.note ?? "").split(" · ")[0].split(", ")) {
+        const m = part.match(/^(\d+)× (.+)$/);
+        if (!m) continue;
+        const c = costOf(m[2]);
+        if (c != null) entryCost += Number(m[1]) * c;
+        else g.unknownQty += Number(m[1]);
+      }
+    }
     const cat = f.category ?? "";
-    if (cat === "kuchyně") g.food += f.amount;
-    else if (cat === "bar") g.drink += f.amount;
-    else if (cat === "merch") {
+    if (cat === "kuchyně") {
+      g.food += f.amount;
+      g.foodCost += entryCost;
+    } else if (cat === "bar") {
+      g.drink += f.amount;
+      g.drinkCost += entryCost;
+    } else if (cat === "merch") {
       const t = ticketOf ? ticketOf(f) : { revenue: 0, cost: 0, qty: 0 };
       g.tickets += t.revenue;
+      g.ticketCost += t.cost;
       g.ticketQty += t.qty;
       g.merch += f.amount - t.revenue;
+      g.merchCost += Math.max(0, entryCost - t.cost);
     } else g.other += f.amount;
     g.orders.push({ id: f.id, at: f.createdAt, items: (f.note ?? "").split(" · ")[0], cat: f.category ?? "", how, amount: f.amount, saleId: f.saleId, who: f.who });
     map.set(day, g);
@@ -262,13 +305,13 @@ export default function FinancePage() {
   // Merch prodeje po dnech (do pohledu Merch). Kasové prodeje (bar/kuchyně/kasa)
   // se ukazují přímo v denních kartách kasy; „bez kasy" jsou jen prodeje, které
   // nespadají pod žádnou kasu (starší data) — ty jdou samostatně, ať jdou smazat.
-  const merchSaleDays = useMemo(() => buildSaleDays(items, (c) => c === "merch", ticketOf), [items, ticketOf]);
+  const merchSaleDays = useMemo(() => buildSaleDays(items, (c) => c === "merch", ticketOf, costOf), [items, ticketOf, costOf]);
   // Výdělek z prodeje i merche po dnech — ať je vidět i ve „Všechny finance".
-  const allSaleDays = useMemo(() => buildSaleDays(items, () => true, ticketOf), [items, ticketOf]);
+  const allSaleDays = useMemo(() => buildSaleDays(items, () => true, ticketOf, costOf), [items, ticketOf, costOf]);
   const orphanSaleDays = useMemo(() => {
     const boxes = year?.cashboxes ?? [];
-    return buildSaleDays(items.filter((f) => !boxes.some((b) => b.openedAt <= f.createdAt)), (c) => c !== "merch", ticketOf);
-  }, [items, year, ticketOf]);
+    return buildSaleDays(items.filter((f) => !boxes.some((b) => b.openedAt <= f.createdAt)), (c) => c !== "merch", ticketOf, costOf);
+  }, [items, year, ticketOf, costOf]);
 
   const rows = useMemo(() => {
     return items
@@ -1658,15 +1701,7 @@ function SalesByDay({ days, title, q, canDelete, yearId }: { days: SaleDay[]; ti
   const view = q.trim() ? days.filter((d) => normName(fmtDate(d.day)).includes(normName(q))) : days;
   const count = days.reduce((s, d) => s + d.count, 0);
   const sum = days.reduce((s, d) => s + d.total, 0);
-  const split = days.reduce((acc, d) => {
-    acc.food += d.food;
-    acc.drink += d.drink;
-    acc.merch += d.merch;
-    acc.tickets += d.tickets;
-    acc.ticketQty += d.ticketQty;
-    acc.other += d.other;
-    return acc;
-  }, emptySplit());
+  const split = days.reduce((acc, d) => addSplit(acc, d), emptySplit());
   return (
     <section className="card p-4">
       <h2 className="flex flex-wrap items-center gap-2">
@@ -1692,25 +1727,42 @@ function SalesByDay({ days, title, q, canDelete, yearId }: { days: SaleDay[]; ti
   );
 }
 
-// Jednoduchý rozpis „co za co": 🍽️ jídlo · 🍺 pití · 🛍️ merch · 🎟️ lístky (ks + Kč).
+// Jednoduchý rozpis „co za co": 🍽️ jídlo · 🍺 pití · 🛍️ merch · 🎟️ lístky (ks + Kč),
+// u každé části i čistý zisk (tržba − nákupní ceny položek) a na konci čistý zisk celkem.
 // Ukáže jen nenulové položky; „ostatní" jen kdyby se něco nedalo zařadit.
 function SaleSplitLine({ s, className = "" }: { s: SaleSplitSums; className?: string }) {
-  const parts: { icon: string; label: string; value: string }[] = [];
-  if (s.food > 0) parts.push({ icon: "🍽️", label: "jídlo", value: fmtCZK(s.food) });
-  if (s.drink > 0) parts.push({ icon: "🍺", label: "pití", value: fmtCZK(s.drink) });
-  if (s.merch > 0) parts.push({ icon: "🛍️", label: "merch", value: fmtCZK(s.merch) });
-  if (s.tickets > 0 || s.ticketQty > 0) parts.push({ icon: "🎟️", label: s.ticketQty > 0 ? `lístky ${s.ticketQty} ks` : "lístky", value: fmtCZK(s.tickets) });
-  if (s.other > 0) parts.push({ icon: "•", label: "ostatní", value: fmtCZK(s.other) });
+  const sgn = (n: number) => `${n >= 0 ? "+" : "−"}${fmtCZK(Math.abs(n))}`;
+  const parts: { icon: string; label: string; value: string; profit: number }[] = [];
+  if (s.food > 0) parts.push({ icon: "🍽️", label: "jídlo", value: fmtCZK(s.food), profit: s.food - s.foodCost });
+  if (s.drink > 0) parts.push({ icon: "🍺", label: "pití", value: fmtCZK(s.drink), profit: s.drink - s.drinkCost });
+  if (s.merch > 0) parts.push({ icon: "🛍️", label: "merch", value: fmtCZK(s.merch), profit: s.merch - s.merchCost });
+  if (s.tickets > 0 || s.ticketQty > 0) {
+    parts.push({ icon: "🎟️", label: s.ticketQty > 0 ? `lístky ${s.ticketQty} ks` : "lístky", value: fmtCZK(s.tickets), profit: s.tickets - s.ticketCost });
+  }
+  if (s.other > 0) parts.push({ icon: "•", label: "ostatní", value: fmtCZK(s.other), profit: s.other });
   if (parts.length === 0) return null;
+  const profitTotal = parts.reduce((sum, p) => sum + p.profit, 0);
   return (
-    <div className={`flex flex-wrap gap-1.5 ${className}`}>
+    <div className={`flex flex-wrap items-center gap-1.5 ${className}`}>
       {parts.map((p) => (
         <span key={p.label} className="chip gap-1.5">
           <span aria-hidden>{p.icon}</span>
           <span>{p.label}</span>
           <span className="font-semibold tabular-nums text-ink">{p.value}</span>
+          <span className="text-ink-soft/60">·</span>
+          <span>zisk</span>
+          <span className={`font-semibold tabular-nums ${p.profit >= 0 ? "text-leaf-700" : "text-red-600"}`}>{sgn(p.profit)}</span>
         </span>
       ))}
+      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${profitTotal >= 0 ? "bg-leaf/12 text-leaf-700" : "bg-red-50 text-red-700"}`}>
+        <span>čistý zisk</span>
+        <span className="font-bold tabular-nums">{sgn(profitTotal)}</span>
+      </span>
+      {s.unknownQty > 0 && (
+        <span className="text-xs text-amber-800" title="Doplň nákupní cenu (suroviny) u položky v Kuchyni & baru nebo u merche">
+          ⚠️ {s.unknownQty} ks bez nákupní ceny
+        </span>
+      )}
     </div>
   );
 }

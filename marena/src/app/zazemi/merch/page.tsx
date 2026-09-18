@@ -6,7 +6,7 @@ import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
 import { ImageViewer } from "@/components/ImageViewer";
-import { CopyContact } from "@/components/CopyContact";
+import { CopyContact, copyText } from "@/components/CopyContact";
 import { SearchClear } from "@/components/SearchBox";
 import Link from "next/link";
 import { PayQr } from "@/components/PayQr";
@@ -109,10 +109,15 @@ export default function MerchPage() {
   const filteredOrders = needle ? orders.filter((o) => normName(`${o.name} ${o.phone ?? ""} ${o.email ?? ""}`).includes(needle)) : orders;
   const pending = orders.filter((o) => !o.done).length;
   // Objednávky vs. lístky: jedna objednávka může mít víc lístků (nebo žádný — jen merch).
-  const ticketQty = (list: MerchOrder[]) =>
-    list.reduce((s, o) => s + o.items.filter((it) => isTicketName(it.name) || isTicketName(products.find((p) => p.id === it.productId)?.name ?? "")).reduce((q, it) => q + it.qty, 0), 0);
+  const isTicketItem = (it: MerchOrder["items"][number]) => isTicketName(it.name) || isTicketName(products.find((p) => p.id === it.productId)?.name ?? "");
+  const ticketQty = (list: MerchOrder[]) => list.reduce((s, o) => s + o.items.filter(isTicketItem).reduce((q, it) => q + it.qty, 0), 0);
   const tickets = { total: ticketQty(orders), paid: ticketQty(orders.filter((o) => o.done)), pending: ticketQty(orders.filter((o) => !o.done)) };
-  const ticketOrders = orders.filter((o) => o.items.some((it) => isTicketName(it.name) || isTicketName(products.find((p) => p.id === it.productId)?.name ?? ""))).length;
+  const ticketOrderList = orders.filter((o) => o.items.some(isTicketItem));
+  const ticketOrders = ticketOrderList.length;
+  // E-maily lidí s lístkem (zaplacené i čekající) — na hromadné oznámení; bez duplicit,
+  // oddělené čárkou, ať se dají vložit rovnou do skryté kopie e-mailu.
+  const ticketEmails = [...new Set(ticketOrderList.map((o) => (o.email ?? "").trim().toLowerCase()).filter((e) => e.includes("@")))];
+  const ticketNoEmail = ticketOrderList.filter((o) => !(o.email ?? "").includes("@")).length;
   const doneCount = orders.length - pending;
   const totalQty = orders.reduce((s, o) => s + o.items.reduce((q, it) => q + it.qty, 0), 0);
   const revenue = orders.reduce((s, o) => s + orderTotal(o, products), 0);
@@ -214,6 +219,26 @@ export default function MerchPage() {
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Čeká na zaplacení</p>
                 <p className={`font-display text-lg font-bold ${tickets.pending > 0 ? "text-amber-800" : ""}`}>{tickets.pending} ks</p>
+              </div>
+              {/* Hromadná zpráva všem s lístkem: zkopíruje e-maily → vložit do skryté kopie */}
+              <div className="col-span-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-ink/[0.06] pt-2 sm:col-span-4">
+                <button
+                  type="button"
+                  className="chip transition hover:bg-gold-100 disabled:opacity-50"
+                  disabled={ticketEmails.length === 0}
+                  title="Zkopíruje e-maily všech, kdo mají v objednávce lístek (zaplacené i čekající) — vlož je do skryté kopie hromadného e-mailu"
+                  onClick={async () => {
+                    const ok = await copyText(ticketEmails.join(", "));
+                    flash(ok ? `Zkopírováno ${ticketEmails.length} e-mailů k lístkům` : "Kopírování se nepovedlo", ok ? "📧" : "⚠️");
+                  }}
+                >
+                  📧 Kopírovat e-maily k lístkům
+                  <span className="rounded-full bg-ink/[0.06] px-1.5 text-[11px] tabular-nums">{ticketEmails.length}</span>
+                </button>
+                <span className="text-xs text-ink-soft">
+                  na hromadnou zprávu · vlož do skryté kopie
+                  {ticketNoEmail > 0 && ` · ${ticketNoEmail} obj. bez e-mailu`}
+                </span>
               </div>
             </div>
           )}
