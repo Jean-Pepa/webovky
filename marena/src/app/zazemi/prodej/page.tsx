@@ -17,7 +17,7 @@ import { flash } from "@/components/Flash";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { SearchBox } from "@/components/SearchBox";
 import { matchesQuery } from "@/lib/search";
-import { POS_CATS, posStats, posOrders, OrderHistory, PayBreakdown, DayCard, boxDayFinances, makeCostLookup, type CostLookup } from "@/lib/pos";
+import { POS_CATS, posStats, posOrders, OrderHistory, PayBreakdown, DayCard, boxDayFinances, makeCostLookup, makeTicketSplit, type CostLookup, type TicketSplit } from "@/lib/pos";
 import type { Cashbox, FinanceItem, MerchOrder, MerchProduct } from "@/lib/types";
 
 // Prodej — jednotná pokladna pro celý festival (vzor z restauračních a
@@ -132,7 +132,7 @@ function ProdejReadOnly() {
       {/* Dnešní prodej — jen čísla, bez markování */}
       {openBox && openStats ? (
         <section className="card p-4">
-          <h2 className="eyebrow">Dnešní prodej</h2>
+          <h2 className="eyebrow">Dnešní tržba — jídlo & pití</h2>
           <p className="mt-1 font-display text-2xl font-bold tracking-tight text-leaf-700">+{fmtCZK(openStats.takings)}</p>
           <div className="mt-2">
             <PayBreakdown qr={openStats.qr} cash={openStats.cash} count={openStats.count} />
@@ -154,7 +154,7 @@ function ProdejReadOnly() {
       ) : (
         closed.map((c) => {
           const dayFin = boxDayFinances(finances, c, cashboxes);
-          return <DayCard key={c.id} box={c} stats={posStats(dayFin, makeCostLookup(year))} orders={posOrders(dayFin)} yearId={year.id} admin={false} compact />;
+          return <DayCard key={c.id} box={c} stats={posStats(dayFin, makeCostLookup(year), makeTicketSplit(year))} orders={posOrders(dayFin)} yearId={year.id} admin={false} compact />;
         })
       )}
     </div>
@@ -220,7 +220,7 @@ function Pos() {
   const openBox = (year.cashboxes ?? []).find((c) => !c.closedAt);
   if (!openBox) {
     return (
-      <DayGate costOf={makeCostLookup(year)}
+      <DayGate costOf={makeCostLookup(year)} ticketOf={makeTicketSplit(year)}
         yearId={year.id}
         cashboxes={year.cashboxes ?? []}
         finances={year.finances ?? []}
@@ -1031,6 +1031,7 @@ function DayGate({
   cashboxes,
   finances,
   costOf,
+  ticketOf,
   admin,
   account,
   accountOk,
@@ -1039,6 +1040,7 @@ function DayGate({
   cashboxes: Cashbox[];
   finances: FinanceItem[];
   costOf: CostLookup;
+  ticketOf: TicketSplit;
   admin: boolean;
   account: string;
   accountOk: boolean;
@@ -1097,7 +1099,7 @@ function DayGate({
       ) : (
         closed.map((c) => {
           const dayFin = boxDayFinances(finances, c, cashboxes);
-          return <DayCard key={c.id} box={c} stats={posStats(dayFin, costOf)} orders={posOrders(dayFin)} yearId={yearId} admin={admin} compact={!admin} />;
+          return <DayCard key={c.id} box={c} stats={posStats(dayFin, costOf, ticketOf)} orders={posOrders(dayFin)} yearId={yearId} admin={admin} compact={!admin} />;
         })
       )}
     </div>

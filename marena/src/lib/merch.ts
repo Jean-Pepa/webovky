@@ -6,6 +6,9 @@ import { isAdmin } from "./admin";
 
 export const MERCH_ROLE_ID = "merch";
 
+// Lístek (vstupenka) se pozná podle názvu produktu — Ticket / Lístek / Vstupenka.
+export const isTicketName = (name: string) => /ticket|l[ií]stek|vstupenk/i.test(name);
+
 // Klíč varianty (velikost|barva) pro sklad po velikostech/barvách.
 export function variantKey(size?: string, color?: string): string {
   return `${size ?? ""}|${color ?? ""}`;

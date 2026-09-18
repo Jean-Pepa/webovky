@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, fmtDateTime, fmtRelative, todayISO } from "@/lib/format";
-import { posStats, posOrders, boxDayFinances, makeCostLookup, groupSales, SaleGroupFrame, DayCard, OrderHistory, PayBreakdown, ProfitLine } from "@/lib/pos";
+import { posStats, posOrders, boxDayFinances, makeCostLookup, groupSales, SaleGroupFrame, DayCard, OrderHistory, PayBreakdown, ProfitLine, CopyDayButton, makeTicketSplit, TicketSplitLine } from "@/lib/pos";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
@@ -137,6 +137,8 @@ export default function FinancePage() {
   const contributions = useMemo(() => year?.contributions ?? [], [year]);
   // Nákupní ceny položek (suroviny pití/jídla, nákupní cena merche) → náklady a zisk kasy.
   const costOf = useMemo(() => makeCostLookup({ bar: year?.bar, merch: year?.merch }), [year]);
+  // Lístky zvlášť (podle názvu produktu) — v kase zůstávají, jen se ukážou odděleně.
+  const ticketOf = useMemo(() => makeTicketSplit({ merch: year?.merch, merchOrders: year?.merchOrders }), [year]);
 
   // Výběr: kolik je v balíku (nevrácené), kolik se vrátilo, kolik zbývá doplatit
   // a počty po stavech (do balíku jde jen skutečně zaplacené — sliby ne).
@@ -291,7 +293,7 @@ export default function FinancePage() {
   // Kasy: kolik se ráno vložilo (vklady) a kolik se vydělalo (tržba z uzavřených).
   const kasaOpenings = (year.cashboxes ?? []).reduce((s, c) => s + c.opening, 0);
   // Tržba kas = kolik se přes kasy prodalo (QR + hotově), NE rozdíl při uzávěrce.
-  const kasaStats = (year.cashboxes ?? []).map((c) => posStats(boxDayFinances(year.finances ?? [], c, year.cashboxes ?? []), costOf));
+  const kasaStats = (year.cashboxes ?? []).map((c) => posStats(boxDayFinances(year.finances ?? [], c, year.cashboxes ?? []), costOf, ticketOf));
   const kasaTrzba = kasaStats.reduce((s, x) => s + x.takings, 0);
   // Náklady = prodané kusy × nákupní cena položky; zisk = tržba − náklady (za všechny kasy).
   const kasaCost = kasaStats.reduce((s, x) => s + x.cost, 0);
@@ -450,7 +452,7 @@ export default function FinancePage() {
         cells={
           tab === "kasy"
             ? [
-                { label: "Tržba", text: `+${fmtCZK(kasaTrzba)}`, cls: "text-leaf-700" },
+                { label: "Tržba jídlo & pití", text: `+${fmtCZK(kasaTrzba)}`, cls: "text-leaf-700" },
                 { label: "Náklady", text: `−${fmtCZK(kasaCost)}` },
                 { label: "Zisk", text: `${kasaProfit >= 0 ? "+" : "−"}${fmtCZK(Math.abs(kasaProfit))}`, cls: kasaProfit >= 0 ? "text-leaf-700" : "text-red-600" },
                 { label: "Vklady", text: fmtCZK(kasaOpenings) },
@@ -537,9 +539,9 @@ export default function FinancePage() {
                     // kategorie, historie objednávek). Otevřená kasa má navíc uzávěrku.
                     const dayFin = boxDayFinances(year.finances ?? [], c, year.cashboxes ?? []);
                     return c.closedAt ? (
-                      <DayCard key={c.id} box={c} stats={posStats(dayFin, costOf)} orders={posOrders(dayFin)} yearId={year.id} admin={canEdit} />
+                      <DayCard key={c.id} box={c} stats={posStats(dayFin, costOf, ticketOf)} orders={posOrders(dayFin)} yearId={year.id} admin={canEdit} />
                     ) : (
-                      <CashboxCard key={c.id} box={c} stats={posStats(dayFin, costOf)} orders={posOrders(dayFin)} yearId={year.id} canAdd={canAdd} canEdit={canEdit} />
+                      <CashboxCard key={c.id} box={c} stats={posStats(dayFin, costOf, ticketOf)} orders={posOrders(dayFin)} yearId={year.id} canAdd={canAdd} canEdit={canEdit} />
                     );
                   })}
                 </div>
@@ -1497,6 +1499,7 @@ function CashboxCard({
           {box.label ? <span className="ml-1.5 font-normal text-ink-soft">· {box.label}</span> : null}
         </h3>
         <div className="flex items-center gap-2">
+          <CopyDayButton box={box} stats={stats} orders={orders} />
           <span className="badge badge-wait">🟢 otevřeno</span>
           {canEdit && (
             <DeleteButton
@@ -1510,12 +1513,13 @@ function CashboxCard({
       {/* Tržba vlevo (zeleně — kolik se zatím vydělalo), platby vpravo */}
       <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <span className="flex items-baseline gap-2">
-          <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">Tržba</span>
+          <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">Tržba jídlo & pití</span>
           <span className="font-display text-[22px] font-bold tracking-tight text-leaf-700">{fmtCZK(stats.takings)}</span>
         </span>
         <PayBreakdown qr={stats.qr} cash={stats.cash} count={stats.count} />
       </div>
       <ProfitLine stats={stats} />
+      <TicketSplitLine stats={stats} />
 
       <OrderHistory orders={orders} canDelete={canEdit} yearId={yearId} />
 
