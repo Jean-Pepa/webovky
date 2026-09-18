@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, fmtDateTime, fmtRelative, todayISO } from "@/lib/format";
-import { posStats, posOrders, boxDayFinances, makeCostLookup, groupSales, SaleGroupFrame, DayCard, OrderHistory, PayBreakdown, ProfitLine } from "@/lib/pos";
+import { posStats, posOrders, boxDayFinances, makeCostLookup, groupSales, SaleGroupFrame, DayCard, OrderHistory, PayBreakdown, ProfitLine, CopyDayButton } from "@/lib/pos";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
@@ -1497,6 +1497,7 @@ function CashboxCard({
           {box.label ? <span className="ml-1.5 font-normal text-ink-soft">· {box.label}</span> : null}
         </h3>
         <div className="flex items-center gap-2">
+          <CopyDayButton box={box} stats={stats} orders={orders} />
           <span className="badge badge-wait">🟢 otevřeno</span>
           {canEdit && (
             <DeleteButton

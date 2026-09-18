@@ -9,7 +9,9 @@ import { useState, type ReactNode } from "react";
 import { useStore } from "@/lib/store";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Modal } from "@/components/Modal";
-import { fmtCZK, fmtDate } from "@/lib/format";
+import { fmtCZK, fmtDate, fmtDateTime } from "@/lib/format";
+import { copyText } from "@/components/CopyContact";
+import { flash } from "@/components/Flash";
 import type { Cashbox, Drink, FinanceItem, MerchProduct } from "@/lib/types";
 import { normName } from "@/lib/names";
 
@@ -271,6 +273,56 @@ export function PayBreakdown({ qr, cash, count }: { qr: number; cash: number; co
 // Uzamčený den (kasa) — evidence prodeje: tržba + QR/hotově vedle sebe,
 // kategorie, vyúčtování kasy, nejprodávanější a historie objednávek.
 // Smazat den může jen správce (odstraní kasu i všechny prodeje toho dne).
+// Textový výpis dne pro zkopírování (do zprávy, tabulky, e-mailu): souhrn +
+// každá objednávka; zápisy jedné účtenky (bar + kuchyně…) jsou pod sebou s celkem.
+export function dayReportText(box: Cashbox, stats: ReturnType<typeof posStats>, orders: PosOrder[]): string {
+  const lines: string[] = [];
+  lines.push(`Kasa ${fmtDate(box.openedAt)}${box.label ? ` · ${box.label}` : ""}${box.closedAt ? " · uzavřeno" : " · otevřeno"}`);
+  lines.push(`Tržba ${fmtCZK(stats.takings)} (QR ${fmtCZK(stats.qr)} · hotově ${fmtCZK(stats.cash)} · ${stats.count}× prodej)`);
+  if (stats.withCosts) {
+    lines.push(`Náklady −${fmtCZK(stats.cost)} · Zisk ${stats.profit >= 0 ? "+" : "−"}${fmtCZK(Math.abs(stats.profit))}${stats.unknownQty > 0 ? ` (${stats.unknownQty} ks bez nákupní ceny)` : ""}`);
+  }
+  if (box.closedAt && box.closing != null) {
+    const rozdil = box.closing - box.opening - (box.alreadyRecorded ?? 0);
+    lines.push(`Vklad ${fmtCZK(box.opening)} → večer ${fmtCZK(box.closing)} · rozdíl ${rozdil >= 0 ? "+" : "−"}${fmtCZK(Math.abs(rozdil))}`);
+  } else {
+    lines.push(`Vklad ${fmtCZK(box.opening)} (otevřeno ${fmtDateTime(box.openedAt)})`);
+  }
+  lines.push("");
+  lines.push(`Objednávky (${orders.length}):`);
+  // chronologicky; skupiny (jedna účtenka) drží pohromadě
+  const desc = [...orders].sort((a, b) => b.at.localeCompare(a.at));
+  for (const g of groupSales(desc).reverse()) {
+    const items = [...g].reverse();
+    if (items.length === 1) {
+      const o = items[0];
+      lines.push(`${hhmm(o.at)}  ${o.items}  [${o.cat}]  ${o.how === "QR" ? "QR" : o.how === "hotově" ? "hotově" : "—"}  ${fmtCZK(o.amount)}`);
+    } else {
+      const total = items.reduce((s, o) => s + o.amount, 0);
+      lines.push(`${hhmm(items[0].at)}  jedna objednávka · ${items[0].how === "QR" ? "QR" : "hotově"} · celkem ${fmtCZK(total)}`);
+      for (const o of items) lines.push(`        ${o.items}  [${o.cat}]  ${fmtCZK(o.amount)}`);
+    }
+  }
+  return lines.join("\n");
+}
+
+// Tlačítko „kopírovat" u nadpisu kasy — zkopíruje celý výpis dne do schránky.
+export function CopyDayButton({ box, stats, orders }: { box: Cashbox; stats: ReturnType<typeof posStats>; orders: PosOrder[] }) {
+  return (
+    <button
+      type="button"
+      className="chip transition hover:bg-gold-100"
+      title="Zkopírovat souhrn a všechny objednávky dne"
+      onClick={async () => {
+        const ok = await copyText(dayReportText(box, stats, orders));
+        flash(ok ? `Zkopírováno: ${orders.length} objednávek` : "Kopírování se nepovedlo", ok ? "📋" : "⚠️");
+      }}
+    >
+      📋 Kopírovat
+    </button>
+  );
+}
+
 // Náklady a zisk dne — pod tržbou; náklad = prodané kusy × nákupní cena položky
 // (suroviny u pití/jídla, nákupní cena u merche). Kusy bez nákupní ceny se hlásí.
 export function ProfitLine({ stats }: { stats: ReturnType<typeof posStats> }) {
@@ -333,6 +385,7 @@ export function DayCard({
           {box.label ? <span className="ml-1.5 font-normal text-ink-soft">· {box.label}</span> : null}
         </h3>
         <div className="flex items-center gap-2">
+          <CopyDayButton box={box} stats={stats} orders={orders} />
           <span className="chip">🔒 uzamčeno</span>
           {admin && (
             <DeleteButton
