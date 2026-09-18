@@ -303,15 +303,28 @@ export function DayCard({
   orders,
   yearId,
   admin,
+  compact = false,
 }: {
   box: Cashbox;
   stats: ReturnType<typeof posStats>;
   orders: PosOrder[];
   yearId: string;
   admin: boolean;
+  compact?: boolean; // jen datum + „uzamčeno" (prodejci a ostatní bez správce nevidí tržby)
 }) {
   const { dispatch } = useStore();
   const rozdil = (box.closing ?? 0) - box.opening - (box.alreadyRecorded ?? 0);
+  if (compact) {
+    return (
+      <section className="card flex flex-wrap items-center justify-between gap-2 p-4">
+        <h3 className="font-display text-base font-semibold">
+          📅 {fmtDate(box.openedAt)}
+          {box.label ? <span className="ml-1.5 font-normal text-ink-soft">· {box.label}</span> : null}
+        </h3>
+        <span className="chip">🔒 uzamčeno</span>
+      </section>
+    );
+  }
   return (
     <section className="card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
