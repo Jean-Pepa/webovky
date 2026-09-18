@@ -452,7 +452,7 @@ export default function FinancePage() {
         cells={
           tab === "kasy"
             ? [
-                { label: "Tržba", text: `+${fmtCZK(kasaTrzba)}`, cls: "text-leaf-700" },
+                { label: "Tržba jídlo & pití", text: `+${fmtCZK(kasaTrzba)}`, cls: "text-leaf-700" },
                 { label: "Náklady", text: `−${fmtCZK(kasaCost)}` },
                 { label: "Zisk", text: `${kasaProfit >= 0 ? "+" : "−"}${fmtCZK(Math.abs(kasaProfit))}`, cls: kasaProfit >= 0 ? "text-leaf-700" : "text-red-600" },
                 { label: "Vklady", text: fmtCZK(kasaOpenings) },
@@ -1513,7 +1513,7 @@ function CashboxCard({
       {/* Tržba vlevo (zeleně — kolik se zatím vydělalo), platby vpravo */}
       <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <span className="flex items-baseline gap-2">
-          <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">Tržba</span>
+          <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">Tržba jídlo & pití</span>
           <span className="font-display text-[22px] font-bold tracking-tight text-leaf-700">{fmtCZK(stats.takings)}</span>
         </span>
         <PayBreakdown qr={stats.qr} cash={stats.cash} count={stats.count} />

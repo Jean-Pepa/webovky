@@ -132,7 +132,7 @@ function ProdejReadOnly() {
       {/* Dnešní prodej — jen čísla, bez markování */}
       {openBox && openStats ? (
         <section className="card p-4">
-          <h2 className="eyebrow">Dnešní prodej</h2>
+          <h2 className="eyebrow">Dnešní tržba — jídlo & pití</h2>
           <p className="mt-1 font-display text-2xl font-bold tracking-tight text-leaf-700">+{fmtCZK(openStats.takings)}</p>
           <div className="mt-2">
             <PayBreakdown qr={openStats.qr} cash={openStats.cash} count={openStats.count} />

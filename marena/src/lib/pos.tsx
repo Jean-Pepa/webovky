@@ -66,12 +66,15 @@ export function makeTicketSplit(year: { merch?: MerchProduct[]; merchOrders?: Me
 }
 
 export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: TicketSplit) {
-  let total = 0;
-  let cost = 0; // náklady na prodané kusy (qty × nákupní cena)
-  let unknownQty = 0; // prodané kusy bez známé nákupní ceny
-  let ticketRevenue = 0; // lístky zvlášť (jsou i v tržbě)
+  let total = 0; // všechny příjmy z prodeje (bez nákupů), včetně rekonciliace kasy
+  let food = 0; // tržba jídlo & pití (bar + kuchyně) — hlavní číslo kasy
+  let foodCost = 0;
+  let merch = 0; // merch bez lístků
+  let merchCost = 0;
+  let ticketRevenue = 0; // lístky zvlášť
   let ticketCost = 0;
   let ticketQty = 0;
+  let unknownQty = 0; // prodané kusy bez známé nákupní ceny
   let qr = 0;
   let cash = 0;
   let count = 0;
@@ -88,19 +91,18 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
       continue;
     }
     total += sign * f.amount;
-    if (ticketOf && sign > 0) {
-      const t = ticketOf(f);
-      ticketRevenue += t.revenue;
-      ticketCost += t.cost;
-      ticketQty += t.qty;
-    }
     const cat = f.category ?? "";
-    if (cat === "kasa") kasaAdj += sign * f.amount;
     byCat.set(cat, (byCat.get(cat) ?? 0) + sign * f.amount);
+    if (cat === "kasa") {
+      kasaAdj += sign * f.amount;
+      continue;
+    }
     const note = f.note ?? "";
-    if (sign > 0 && note.includes("QR platba")) qr += f.amount;
-    else if (sign > 0 && note.includes("hotově")) cash += f.amount;
-    if (sign > 0 && note.includes("×")) {
+    if (note.includes("QR platba")) qr += f.amount;
+    else if (note.includes("hotově")) cash += f.amount;
+    // Náklady zápisu: prodané kusy × nákupní cena (z poznámky „2× Pivo, 1× Chleba")
+    let entryCost = 0;
+    if (note.includes("×")) {
       count++;
       for (const part of note.split(" · ")[0].split(", ")) {
         const m = part.match(/^(\d+)× (.+)$/);
@@ -109,10 +111,22 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
         items.set(m[2], (items.get(m[2]) ?? 0) + qty);
         if (costOf) {
           const c = costOf(m[2]);
-          if (c != null) cost += qty * c;
+          if (c != null) entryCost += qty * c;
           else unknownQty += qty;
         }
       }
+    }
+    if (cat === "merch") {
+      // Lístky se z merche vyčlení (podle objednávky); zbytek je merch.
+      const t = ticketOf ? ticketOf(f) : { revenue: 0, cost: 0, qty: 0 };
+      ticketRevenue += t.revenue;
+      ticketCost += t.cost;
+      ticketQty += t.qty;
+      merch += f.amount - t.revenue;
+      merchCost += Math.max(0, entryCost - t.cost);
+    } else {
+      food += f.amount;
+      foodCost += entryCost;
     }
   }
   const top = [...items.entries()]
@@ -121,26 +135,30 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
     .map(([name, qty]) => ({ name, qty }));
   return {
     total,
-    // Tržba = prodej (QR + hotově), bez rekonciliace kasy. Přesně to, co se prodalo.
-    takings: total - kasaAdj,
+    // Tržba kasy = jen jídlo & pití (bar + kuchyně). Lístky a merch jsou zvlášť níže.
+    takings: food,
+    // Všechno, co prošlo kasou (jídlo & pití + lístky + merch), bez rekonciliace.
+    allRevenue: total - kasaAdj,
     qr,
     cash,
     count,
     top,
     purchases,
-    // Náklady a zisk podle nákupních cen položek (jen když je předaný ceník).
+    // Náklady a zisk (jídlo & pití) podle nákupních cen položek — jen když je předaný ceník.
     withCosts: !!costOf,
-    cost,
-    profit: total - kasaAdj - cost,
+    cost: foodCost,
+    profit: food - foodCost,
     unknownQty,
-    // Lístky zvlášť (jen když je předaný rozklad): tržba, náklady, zisk, kusy — a zbytek.
+    // Lístky zvlášť (podle názvu produktu, rozpad přes objednávku).
     withTickets: !!ticketOf,
     ticketRevenue,
     ticketCost,
     ticketQty,
     ticketProfit: ticketRevenue - ticketCost,
-    restRevenue: total - kasaAdj - ticketRevenue,
-    restProfit: total - kasaAdj - cost - (ticketRevenue - ticketCost),
+    // Merch bez lístků.
+    merchRevenue: merch,
+    merchCost,
+    merchProfit: merch - merchCost,
     byCat: [...byCat.entries()].filter(([, v]) => v !== 0).map(([cat, sum]) => ({ cat, sum })),
   };
 }
@@ -328,14 +346,11 @@ export function PayBreakdown({ qr, cash, count }: { qr: number; cash: number; co
 export function dayReportText(box: Cashbox, stats: ReturnType<typeof posStats>, orders: PosOrder[]): string {
   const lines: string[] = [];
   lines.push(`Kasa ${fmtDate(box.openedAt)}${box.label ? ` · ${box.label}` : ""}${box.closedAt ? " · uzavřeno" : " · otevřeno"}`);
-  lines.push(`Tržba ${fmtCZK(stats.takings)} (QR ${fmtCZK(stats.qr)} · hotově ${fmtCZK(stats.cash)} · ${stats.count}× prodej)`);
-  if (stats.withCosts) {
-    lines.push(`Náklady −${fmtCZK(stats.cost)} · Zisk ${stats.profit >= 0 ? "+" : "−"}${fmtCZK(Math.abs(stats.profit))}${stats.unknownQty > 0 ? ` (${stats.unknownQty} ks bez nákupní ceny)` : ""}`);
-  }
-  if (stats.withTickets && stats.ticketQty > 0) {
-    lines.push(`Lístky: ${stats.ticketQty} ks · tržba ${fmtCZK(stats.ticketRevenue)}${stats.withCosts ? ` · zisk ${stats.ticketProfit >= 0 ? "+" : "−"}${fmtCZK(Math.abs(stats.ticketProfit))}` : ""}`);
-    lines.push(`Bar, kuchyně & merch: tržba ${fmtCZK(stats.restRevenue)}${stats.withCosts ? ` · zisk ${stats.restProfit >= 0 ? "+" : "−"}${fmtCZK(Math.abs(stats.restProfit))}` : ""}`);
-  }
+  const sgn = (n: number) => `${n >= 0 ? "+" : "−"}${fmtCZK(Math.abs(n))}`;
+  lines.push(`Tržba jídlo & pití ${fmtCZK(stats.takings)}${stats.withCosts ? ` · náklady −${fmtCZK(stats.cost)} · zisk ${sgn(stats.profit)}` : ""}${stats.unknownQty > 0 ? ` (${stats.unknownQty} ks bez nákupní ceny)` : ""}`);
+  if (stats.ticketQty > 0) lines.push(`Lístky: ${stats.ticketQty} ks · tržba ${fmtCZK(stats.ticketRevenue)}${stats.withCosts ? ` · zisk ${sgn(stats.ticketProfit)}` : ""}`);
+  if (stats.merchRevenue > 0) lines.push(`Merch: tržba ${fmtCZK(stats.merchRevenue)}${stats.withCosts ? ` · zisk ${sgn(stats.merchProfit)}` : ""}`);
+  lines.push(`Kasou prošlo celkem ${fmtCZK(stats.allRevenue)} (QR ${fmtCZK(stats.qr)} · hotově ${fmtCZK(stats.cash)} · ${stats.count}× prodej)`);
   if (box.closedAt && box.closing != null) {
     const rozdil = box.closing - box.opening - (box.alreadyRecorded ?? 0);
     lines.push(`Vklad ${fmtCZK(box.opening)} → večer ${fmtCZK(box.closing)} · rozdíl ${rozdil >= 0 ? "+" : "−"}${fmtCZK(Math.abs(rozdil))}`);
@@ -360,35 +375,40 @@ export function dayReportText(box: Cashbox, stats: ReturnType<typeof posStats>, 
   return lines.join("\n");
 }
 
-// Lístky zvlášť pod tržbou: kolik lístků, tržba a zisk z nich, a zbytek (bar, kuchyně, merch).
+// Pod tržbou (jídlo & pití): lístky zvlášť, merch zvlášť a kolik celkem prošlo kasou.
 export function TicketSplitLine({ stats }: { stats: ReturnType<typeof posStats> }) {
-  if (!stats.withTickets || stats.ticketQty === 0) return null;
+  if (stats.ticketQty === 0 && stats.merchRevenue === 0) return null;
   const sgn = (n: number) => `${n >= 0 ? "+" : "−"}${fmtCZK(Math.abs(n))}`;
   return (
     <div className="mt-1.5 grid gap-0.5 rounded-lg bg-paper2/60 px-2.5 py-1.5 text-sm">
-      <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-        <span className="font-semibold">🎟️ Lístky</span>
-        <span className="text-ink-soft">{stats.ticketQty} ks</span>
-        <span className="text-ink-soft">
-          tržba <strong className="text-leaf-700">+{fmtCZK(stats.ticketRevenue)}</strong>
-        </span>
-        {stats.withCosts && (
+      {stats.ticketQty > 0 && (
+        <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+          <span className="font-semibold">🎟️ Lístky</span>
+          <span className="text-ink-soft">{stats.ticketQty} ks</span>
           <span className="text-ink-soft">
-            zisk <strong className={stats.ticketProfit >= 0 ? "text-leaf-700" : "text-red-600"}>{sgn(stats.ticketProfit)}</strong>
+            tržba <strong className="text-leaf-700">+{fmtCZK(stats.ticketRevenue)}</strong>
           </span>
-        )}
-      </p>
-      <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-        <span className="font-semibold">🍺 Bar, kuchyně & merch</span>
-        <span className="text-ink-soft">
-          tržba <strong className="text-leaf-700">+{fmtCZK(stats.restRevenue)}</strong>
-        </span>
-        {stats.withCosts && (
+          {stats.withCosts && (
+            <span className="text-ink-soft">
+              zisk <strong className={stats.ticketProfit >= 0 ? "text-leaf-700" : "text-red-600"}>{sgn(stats.ticketProfit)}</strong>
+            </span>
+          )}
+        </p>
+      )}
+      {stats.merchRevenue > 0 && (
+        <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+          <span className="font-semibold">🛍️ Merch</span>
           <span className="text-ink-soft">
-            zisk <strong className={stats.restProfit >= 0 ? "text-leaf-700" : "text-red-600"}>{sgn(stats.restProfit)}</strong>
+            tržba <strong className="text-leaf-700">+{fmtCZK(stats.merchRevenue)}</strong>
           </span>
-        )}
-      </p>
+          {stats.withCosts && (
+            <span className="text-ink-soft">
+              zisk <strong className={stats.merchProfit >= 0 ? "text-leaf-700" : "text-red-600"}>{sgn(stats.merchProfit)}</strong>
+            </span>
+          )}
+        </p>
+      )}
+      <p className="text-xs text-ink-soft">Kasou prošlo celkem {fmtCZK(stats.allRevenue)} (QR + hotově výše) — lístky a merch se do tržby jídla & pití nepočítají.</p>
     </div>
   );
 }
@@ -486,7 +506,7 @@ export function DayCard({
       {/* Tržba vlevo (zeleně — kolik se vydělalo), platby (QR + hotově) vpravo */}
       <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <span className="flex items-baseline gap-2">
-          <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">Tržba</span>
+          <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">Tržba jídlo & pití</span>
           <span className="font-display text-[22px] font-bold tracking-tight text-leaf-700">{fmtCZK(stats.takings)}</span>
         </span>
         <PayBreakdown qr={stats.qr} cash={stats.cash} count={stats.count} />
