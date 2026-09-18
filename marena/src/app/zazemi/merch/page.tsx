@@ -15,7 +15,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { fmtCZK, fmtDateTime } from "@/lib/format";
 import { uid } from "@/lib/id";
-import { canSeeMerch, variantKey, productVariants } from "@/lib/merch";
+import { canSeeMerch, variantKey, productVariants, isTicketName } from "@/lib/merch";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { isAdmin } from "@/lib/admin";
 import { normName } from "@/lib/names";
@@ -108,6 +108,11 @@ export default function MerchPage() {
   const needle = normName(q);
   const filteredOrders = needle ? orders.filter((o) => normName(`${o.name} ${o.phone ?? ""} ${o.email ?? ""}`).includes(needle)) : orders;
   const pending = orders.filter((o) => !o.done).length;
+  // Objednávky vs. lístky: jedna objednávka může mít víc lístků (nebo žádný — jen merch).
+  const ticketQty = (list: MerchOrder[]) =>
+    list.reduce((s, o) => s + o.items.filter((it) => isTicketName(it.name) || isTicketName(products.find((p) => p.id === it.productId)?.name ?? "")).reduce((q, it) => q + it.qty, 0), 0);
+  const tickets = { total: ticketQty(orders), paid: ticketQty(orders.filter((o) => o.done)), pending: ticketQty(orders.filter((o) => !o.done)) };
+  const ticketOrders = orders.filter((o) => o.items.some((it) => isTicketName(it.name) || isTicketName(products.find((p) => p.id === it.productId)?.name ?? ""))).length;
   const doneCount = orders.length - pending;
   const totalQty = orders.reduce((s, o) => s + o.items.reduce((q, it) => q + it.qty, 0), 0);
   const revenue = orders.reduce((s, o) => s + orderTotal(o, products), 0);
@@ -191,6 +196,27 @@ export default function MerchPage() {
               <span className="badge bg-amber-100 text-amber-800">{pending} čeká</span>
             )}
           </h2>
+          {/* Objednávky vs. lístky — ať je jasné, kolik lidí vs. kolik vstupenek */}
+          {tickets.total > 0 && (
+            <div className="grid grid-cols-2 gap-2 rounded-xl border border-ink/[0.06] bg-surface p-3 text-sm sm:grid-cols-4">
+              <div>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Objednávek s lístkem</p>
+                <p className="font-display text-lg font-bold">{ticketOrders}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Lístků celkem</p>
+                <p className="font-display text-lg font-bold">🎟️ {tickets.total} ks</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Zaplaceno</p>
+                <p className="font-display text-lg font-bold text-leaf-700">{tickets.paid} ks</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Čeká na zaplacení</p>
+                <p className={`font-display text-lg font-bold ${tickets.pending > 0 ? "text-amber-800" : ""}`}>{tickets.pending} ks</p>
+              </div>
+            </div>
+          )}
           {orders.length > 0 && (
             <div className="relative">
               <input
