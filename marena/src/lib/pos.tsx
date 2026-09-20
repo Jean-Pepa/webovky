@@ -147,7 +147,9 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
     // Náklady a zisk (jídlo & pití) podle nákupních cen položek — jen když je předaný ceník.
     withCosts: !!costOf,
     cost: foodCost,
-    profit: food - foodCost,
+    // Rozdíl při uzávěrce (přebytek / manko, kategorie „kasa") jde do zisku dne.
+    cashDiff: kasaAdj,
+    profit: food - foodCost + kasaAdj,
     unknownQty,
     // Lístky zvlášť (podle názvu produktu, rozpad přes objednávku).
     withTickets: !!ticketOf,
@@ -347,7 +349,9 @@ export function dayReportText(box: Cashbox, stats: ReturnType<typeof posStats>, 
   const lines: string[] = [];
   lines.push(`Kasa ${fmtDate(box.openedAt)}${box.label ? ` · ${box.label}` : ""}${box.closedAt ? " · uzavřeno" : " · otevřeno"}`);
   const sgn = (n: number) => `${n >= 0 ? "+" : "−"}${fmtCZK(Math.abs(n))}`;
-  lines.push(`Tržba jídlo & pití ${fmtCZK(stats.takings)}${stats.withCosts ? ` · náklady −${fmtCZK(stats.cost)} · zisk ${sgn(stats.profit)}` : ""}${stats.unknownQty > 0 ? ` (${stats.unknownQty} ks bez nákupní ceny)` : ""}`);
+  lines.push(
+    `Tržba jídlo & pití ${fmtCZK(stats.takings)}${stats.withCosts ? ` · náklady −${fmtCZK(stats.cost)} · zisk ${sgn(stats.profit)}${stats.cashDiff !== 0 ? ` (vč. rozdílu v kase ${sgn(stats.cashDiff)})` : ""}` : ""}${stats.unknownQty > 0 ? ` (${stats.unknownQty} ks bez nákupní ceny)` : ""}`,
+  );
   if (stats.ticketQty > 0) lines.push(`Lístky: ${stats.ticketQty} ks · tržba ${fmtCZK(stats.ticketRevenue)}${stats.withCosts ? ` · zisk ${sgn(stats.ticketProfit)}` : ""}`);
   if (stats.merchRevenue > 0) lines.push(`Merch: tržba ${fmtCZK(stats.merchRevenue)}${stats.withCosts ? ` · zisk ${sgn(stats.merchProfit)}` : ""}`);
   lines.push(`Kasou prošlo celkem ${fmtCZK(stats.allRevenue)} (QR ${fmtCZK(stats.qr)} · hotově ${fmtCZK(stats.cash)} · ${stats.count}× prodej)`);
@@ -433,8 +437,9 @@ export function CopyDayButton({ box, stats, orders }: { box: Cashbox; stats: Ret
 // Náklady a zisk dne — pod tržbou; náklad = prodané kusy × nákupní cena položky
 // (suroviny u pití/jídla, nákupní cena u merche). Kusy bez nákupní ceny se hlásí.
 export function ProfitLine({ stats }: { stats: ReturnType<typeof posStats> }) {
-  if (!stats.withCosts || stats.count === 0) return null;
+  if (!stats.withCosts || (stats.count === 0 && stats.cashDiff === 0)) return null;
   const up = stats.profit >= 0;
+  const sgn = (n: number) => `${n >= 0 ? "+" : "−"}${fmtCZK(Math.abs(n))}`;
   return (
     <p className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm">
       <span className="text-ink-soft">
@@ -442,11 +447,13 @@ export function ProfitLine({ stats }: { stats: ReturnType<typeof posStats> }) {
       </span>
       <span className="text-ink-soft">
         Zisk{" "}
-        <strong className={`font-display ${up ? "text-leaf-700" : "text-red-600"}`}>
-          {up ? "+" : "−"}
-          {fmtCZK(Math.abs(stats.profit))}
-        </strong>
+        <strong className={`font-display ${up ? "text-leaf-700" : "text-red-600"}`}>{sgn(stats.profit)}</strong>
       </span>
+      {stats.cashDiff !== 0 && (
+        <span className="text-xs text-ink-soft" title="Přebytek v kase zisk zvyšuje, manko snižuje">
+          vč. rozdílu v kase <strong className={stats.cashDiff > 0 ? "text-leaf-700" : "text-red-600"}>{sgn(stats.cashDiff)}</strong>
+        </span>
+      )}
       {stats.unknownQty > 0 && (
         <span className="text-xs text-amber-800" title="Doplň nákupní cenu (suroviny) u položky v Kuchyni & baru nebo u merche">
           ⚠️ {stats.unknownQty} ks bez nákupní ceny
@@ -523,6 +530,7 @@ export function DayCard({
             {" "}
             · rozdíl {rozdil > 0 ? "+" : "−"}
             {fmtCZK(Math.abs(rozdil))}
+            <span className="text-ink-soft"> ({rozdil > 0 ? "přebytek, v zisku" : "manko, odečteno ze zisku"})</span>
           </span>
         )}
       </p>

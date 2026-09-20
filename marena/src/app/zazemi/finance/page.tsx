@@ -350,9 +350,10 @@ export default function FinancePage() {
   // Tržba kas = kolik se přes kasy prodalo (QR + hotově), NE rozdíl při uzávěrce.
   const kasaStats = (year.cashboxes ?? []).map((c) => posStats(boxDayFinances(year.finances ?? [], c, year.cashboxes ?? []), costOf, ticketOf));
   const kasaTrzba = kasaStats.reduce((s, x) => s + x.takings, 0);
-  // Náklady = prodané kusy × nákupní cena položky; zisk = tržba − náklady (za všechny kasy).
+  // Náklady = prodané kusy × nákupní cena položky; zisk = tržba − náklady + rozdíl
+  // při uzávěrce (přebytek / manko) — za všechny kasy.
   const kasaCost = kasaStats.reduce((s, x) => s + x.cost, 0);
-  const kasaProfit = kasaTrzba - kasaCost;
+  const kasaProfit = kasaStats.reduce((s, x) => s + x.profit, 0);
   // Rozdíl kas = manko/přebytek při uzávěrkách (uzavřené kasy).
   const kasaDiff = (year.cashboxes ?? []).reduce((s, c) => s + (c.closedAt && c.closing != null ? c.closing - c.opening - (c.alreadyRecorded ?? 0) : 0), 0);
   const merchProfit = merchTotal - merchIn; // zisk z merche (výdělek − vloženo)
@@ -511,7 +512,7 @@ export default function FinancePage() {
                 { label: "Náklady", text: `−${fmtCZK(kasaCost)}` },
                 { label: "Zisk", text: `${kasaProfit >= 0 ? "+" : "−"}${fmtCZK(Math.abs(kasaProfit))}`, cls: kasaProfit >= 0 ? "text-leaf-700" : "text-red-600" },
                 { label: "Vklady", text: fmtCZK(kasaOpenings) },
-                { label: "Rozdíl", text: `${kasaDiff >= 0 ? "+" : "−"}${fmtCZK(Math.abs(kasaDiff))}`, cls: kasaDiff >= 0 ? "text-leaf-700" : "text-red-600" },
+                { label: "Rozdíl kas (v zisku)", text: `${kasaDiff >= 0 ? "+" : "−"}${fmtCZK(Math.abs(kasaDiff))}`, cls: kasaDiff >= 0 ? "text-leaf-700" : "text-red-600" },
               ]
             : tab === "merch"
               ? [
