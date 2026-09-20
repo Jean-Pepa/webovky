@@ -1154,7 +1154,7 @@ function KasaControl({ year, cashMarked, qrMarked }: { year: { id: string; cashb
       setClosing("");
       setModal(false);
       const diff = n - expected;
-      flash(diff === 0 ? "Kasa uzavřena — sedí přesně ✓" : `Kasa uzavřena — rozdíl ${diff > 0 ? "+" : "−"}${fmtCZK(Math.abs(diff))} zapsán do financí`, "🧰");
+      flash(diff === 0 ? "Kasa uzavřena — sedí přesně ✓" : `Kasa uzavřena — rozdíl ${diff > 0 ? "+" : "−"}${fmtCZK(Math.abs(diff))} zapsán do financí a do zisku dne`, "🧰");
     } finally {
       setBusy(false);
     }
