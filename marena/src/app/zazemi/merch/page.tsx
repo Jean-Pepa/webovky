@@ -668,7 +668,7 @@ function ProductCard({
               onClick={toggleWeb}
               title={onWeb ? "Skrýt z obchodu na webu" : "Zobrazit v obchodě na webu"}
               className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                onWeb ? "bg-leaf/12 text-leaf-700 hover:bg-red-50 hover:text-red-700" : "bg-gold-grad text-[#1d1d1f] shadow-sm hover:brightness-105"
+                onWeb ? "bg-leaf/12 text-leaf-700 hover:bg-leaf/20" : "bg-gold-grad text-[#1d1d1f] shadow-sm hover:brightness-105"
               }`}
             >
               {onWeb ? "Na webu ✓ · skrýt" : "🌐 Zobrazit na webu"}
