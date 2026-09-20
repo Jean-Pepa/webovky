@@ -279,9 +279,10 @@ export default function MerchOrderPage() {
       <ImageViewer images={galleryImages} index={viewIdx} onIndex={setViewIdx} title="Lístky" />
       <div className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-6 text-center">
-          <div className="marena-header-gold inline-block font-display text-3xl font-extrabold uppercase tracking-[0.08em]">MAŘENA</div>
+          {/* Nadpis 2× větší (text-3xl 30px → 60px, text-2xl 24px → 48px) */}
+          <div className="marena-header-gold inline-block font-display text-[60px] font-extrabold uppercase leading-none tracking-[0.08em]">MAŘENA</div>
           {/* Růžový neon „Fléda" (stejný neon jako na homepage) */}
-          <div className="vegas-neon-pink vegas-glow font-display text-2xl font-extrabold uppercase tracking-[0.14em]">Fléda</div>
+          <div className="vegas-neon-pink vegas-glow mt-1 font-display text-[48px] font-extrabold uppercase leading-none tracking-[0.14em]">Fléda</div>
           <p className="mt-1 text-sm text-ink-soft">Lístky{label ? ` · ${label}` : ""}</p>
           <ReservationCountdown />
         </div>
