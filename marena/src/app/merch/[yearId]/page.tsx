@@ -250,8 +250,8 @@ export default function MerchOrderPage() {
               <p className="mt-1 text-sm font-semibold text-white/85">zaplatíš až při vyzvednutí</p>
             </div>
             <p className="mt-3 text-sm text-ink-soft">
-              Lístky si vyzvedneš buď na baru na dvorku fakulty (Las Vegas Bar), nebo na Flédě při vstupu. Merch je k vyzvednutí na baru na dvorku. Zaplatíš při
-              vyzvednutí — prodejce ti ukáže QR kód nebo vezme hotovost. Kdyby něco, ozveme se na zadaný kontakt.
+              Merch je k vyzvednutí jen na baru na dvorku (Las Vegas Bar). Zaplatíš při vyzvednutí — prodejce ti ukáže QR kód nebo vezme hotovost. Kdyby něco, ozveme
+              se na zadaný kontakt.
             </p>
           </div>
         )}
