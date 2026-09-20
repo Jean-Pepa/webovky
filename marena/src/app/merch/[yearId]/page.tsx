@@ -76,7 +76,10 @@ function ReservationCountdown() {
               { v: parts ? two(parts.s) : "––", l: "s" },
             ].map((x) => (
               <span key={x.l} className="flex flex-col items-center leading-none">
-                <span className="text-2xl font-extrabold text-ink">{x.v}</span>
+                {/* key = hodnota → při každé změně se číslice přemountuje a červeně problikne */}
+                <span key={x.v} className="countdown-tick text-2xl font-extrabold text-ink">
+                  {x.v}
+                </span>
                 <span className="mt-1 text-[10px] font-medium uppercase tracking-wide text-ink-soft">{x.l}</span>
               </span>
             ))}

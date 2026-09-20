@@ -810,3 +810,27 @@ input[type="search"]::-webkit-search-decoration {
     animation: none;
   }
 }
+
+/* Odpočet rezervací (veřejná stránka lístků): číslice při změně hodnoty červeně
+   problikne a vrátí se do barvy textu. Spouští se přemountováním prvku (key = hodnota). */
+@keyframes countdown-tick {
+  0% {
+    color: #e11d48;
+    text-shadow: 0 0 10px rgba(225, 29, 72, 0.55);
+    transform: scale(1.12);
+  }
+  100% {
+    color: var(--color-ink);
+    text-shadow: none;
+    transform: scale(1);
+  }
+}
+.countdown-tick {
+  display: inline-block;
+  animation: countdown-tick 0.7s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .countdown-tick {
+    animation: none;
+  }
+}
