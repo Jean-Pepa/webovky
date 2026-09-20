@@ -453,14 +453,14 @@ export default function MerchOrderPage() {
                     <div className="flex gap-2">
                       {/* pevná šířka — nativní select by se jinak roztáhl podle nejdelšího názvu země */}
                       <select
-                        className="input w-[7.75rem] shrink-0 truncate pr-6"
+                        className="input w-[9rem] shrink-0 truncate pr-6"
                         aria-label="Telefonní předvolba"
                         value={dial}
                         onChange={(e) => setDial(e.target.value)}
                       >
                         {dialList.map((c) => (
                           <option key={c.iso} value={c.dial}>
-                            {c.flag} {c.dial} {c.name}
+                            {c.dial} {c.flag} {c.name}
                           </option>
                         ))}
                       </select>
