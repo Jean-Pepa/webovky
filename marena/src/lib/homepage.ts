@@ -61,7 +61,7 @@ export const STRINGS: Record<Lang, Strings> = {
     ctaInsta: "Sleduj nás na Instagramu →",
     ctaScroll: "Co tě čeká ↓",
     ctaSchedule: "Harmonogram ↓",
-    merchCta: "Kup si lístek a merch Mařeny →",
+    merchCta: "Rezervuj si lístky, než se vyprodají →",
     whatsKicker: "Na co se těšit",
     whatsTitle: "Co tě na Mařeně čeká",
     whatsIntro:
@@ -101,7 +101,7 @@ export const STRINGS: Record<Lang, Strings> = {
     ctaInsta: "Follow us on Instagram →",
     ctaScroll: "What's in store ↓",
     ctaSchedule: "Schedule ↓",
-    merchCta: "Get your ticket & Mařena merch →",
+    merchCta: "Reserve your tickets before they sell out →",
     whatsKicker: "What to look forward to",
     whatsTitle: "What awaits you at Mařena",
     whatsIntro:
@@ -141,7 +141,7 @@ export const STRINGS: Record<Lang, Strings> = {
     ctaInsta: "Folge uns auf Instagram →",
     ctaScroll: "Was dich erwartet ↓",
     ctaSchedule: "Programm ↓",
-    merchCta: "Hol dir Ticket & Mařena-Merch →",
+    merchCta: "Reserviere dir Tickets, bevor sie ausverkauft sind →",
     whatsKicker: "Worauf du dich freuen kannst",
     whatsTitle: "Was dich bei Mařena erwartet",
     whatsIntro:

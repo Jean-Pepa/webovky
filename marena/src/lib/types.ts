@@ -300,6 +300,9 @@ export interface MerchProduct {
   stock?: number; // kolik kusů máme skladem celkem (prázdné = neomezeně); u variant = součet
   variantStock?: Record<string, number>; // sklad po variantách: klíč „velikost|barva" → počet kusů
   note?: string; // další detaily (materiál apod.)
+  // Zobrazit ve veřejném obchodě na webu (QR stránka). Chybí = ano (starší položky),
+  // nové položky začínají skryté (false) a správce je na web pustí tlačítkem.
+  onWeb?: boolean;
   createdAt: string;
 }
 

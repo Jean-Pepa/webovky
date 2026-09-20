@@ -21,8 +21,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ yearId:
   }
 
   const redis = getRedis();
+  // Jen položky, které správce pustil na web (onWeb; chybí = ano u starších položek).
   const products = await Promise.all(
-    (year.merch ?? []).map(async (p) => {
+    (year.merch ?? []).filter((p) => p.onWeb !== false).map(async (p) => {
       let image: string | null = null;
       if (p.blobId && redis) image = (await redis.get(receiptKey(p.blobId))) as string | null;
       const sold = soldByProduct.get(p.id) ?? 0;

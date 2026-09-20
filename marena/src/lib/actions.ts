@@ -185,7 +185,7 @@ export type Action =
   | { type: "removeKitchenFile"; yearId: string; fileId: string }
   // Merch — nabídka produktů (správce / role merch) a objednávky (veřejná stránka).
   | { type: "addMerchProduct"; yearId: string; name: string; price?: number; cost?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; variantStock?: Record<string, number>; note?: string }
-  | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; cost?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; variantStock?: Record<string, number>; note?: string } }
+  | { type: "updateMerchProduct"; yearId: string; productId: string; patch: { name?: string; price?: number; cost?: number; blobId?: string; sizes?: string[]; colors?: string[]; stock?: number; variantStock?: Record<string, number>; note?: string; onWeb?: boolean } }
   | { type: "removeMerchProduct"; yearId: string; productId: string }
   | { type: "addMerchOrder"; yearId: string; name: string; phone?: string; email?: string; items: MerchOrderItem[]; note?: string; id?: string }
   | { type: "toggleMerchOrderDone"; yearId: string; orderId: string }
@@ -1341,6 +1341,7 @@ export function applyAction(db: DB, a: Action): DB {
             variantStock: cleanVariantStock(a.variantStock),
             stock: variantStockSum(cleanVariantStock(a.variantStock)) ?? (Number.isFinite(a.stock) ? a.stock : undefined),
             note: a.note?.trim() || undefined,
+            onWeb: false, // na web až po zapnutí tlačítkem u produktu
             createdAt: now(),
           },
         ],

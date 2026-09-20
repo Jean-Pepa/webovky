@@ -103,7 +103,7 @@ export default function MerchOrderPage() {
           for (const it of o.items) soldByProduct.set(it.productId, (soldByProduct.get(it.productId) ?? 0) + it.qty);
         }
         const list = await Promise.all(
-          (year.merch ?? []).map(async (p) =>
+          (year.merch ?? []).filter((p) => p.onWeb !== false).map(async (p) =>
             norm({
               id: p.id,
               name: p.name,
@@ -220,16 +220,16 @@ export default function MerchOrderPage() {
   return (
     <div className="min-h-screen bg-paper">
       <FlashHost />
-      <ImageViewer images={galleryImages} index={viewIdx} onIndex={setViewIdx} title="Lístky & merch" />
+      <ImageViewer images={galleryImages} index={viewIdx} onIndex={setViewIdx} title="Lístky" />
       <div className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-6 text-center">
           <div className="marena-header-gold inline-block font-display text-3xl font-extrabold uppercase tracking-[0.08em]">MAŘENA</div>
-          <p className="mt-1 text-sm text-ink-soft">Lístky & merch{label ? ` · ${label}` : ""}</p>
+          <p className="mt-1 text-sm text-ink-soft">Lístky{label ? ` · ${label}` : ""}</p>
         </div>
 
         {status === "loading" && <p className="text-center text-sm text-ink-soft">Načítám nabídku…</p>}
         {status === "notfound" && (
-          <div className="card p-8 text-center text-sm text-ink-soft">Tahle nabídka merche není dostupná.</div>
+          <div className="card p-8 text-center text-sm text-ink-soft">Tahle nabídka není dostupná.</div>
         )}
         {status === "error" && (
           <div className="card p-8 text-center text-sm text-red-600">Nepodařilo se načíst nabídku.</div>
@@ -238,18 +238,12 @@ export default function MerchOrderPage() {
         {status === "ready" && done && (
           <div className="card p-8 text-center">
             <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-leaf/15 text-2xl">✅</div>
-            <h1 className="font-display text-xl font-semibold">Děkujeme, objednávka odeslána!</h1>
-            {/* Neonová cedule: kde se objednávka vyzvedává (stejný styl jako nahoře v nabídce) */}
-            <div className="neon-board mt-4 rounded-2xl px-4 py-4 sm:py-5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-red-300/80">Vyzvednutí objednávky</p>
-              <p className="neon-sign-red mt-1 font-display text-2xl font-extrabold uppercase leading-tight tracking-wide sm:text-3xl">
-                Na baru na dvorku
-              </p>
-              <p className="mt-1 text-sm font-semibold text-white/85">Las Vegas Bar · zaplatíš až při vyzvednutí</p>
-            </div>
-            <p className="mt-3 text-sm text-ink-soft">
-              Tvůj lístek nebo merch už na tebe čeká na dvorku v Las Vegas Baru. Zaplatíš při vyzvednutí — prodejce ti ukáže QR kód (nebo vezme hotovost). Kdyby něco, ozveme se na zadaný kontakt.
+            <h1 className="font-display text-xl font-semibold">Děkujeme za rezervaci!</h1>
+            {/* Kde a jak se lístky vyzvedávají — jasně a jednou (neon je nahoře v nabídce) */}
+            <p className="mt-3 text-base font-semibold text-ink">
+              Lístky si vyzvedneš na baru na dvorku fakulty (Las Vegas Bar) nebo na Flédě při vstupu.
             </p>
+            <p className="mt-2 text-sm text-ink-soft">Zaplatíš až při vyzvednutí — QR kódem nebo hotově. Kdyby něco, ozveme se na zadaný kontakt.</p>
           </div>
         )}
 
@@ -258,7 +252,7 @@ export default function MerchOrderPage() {
             {/* Neonová cedule: merch se kupuje na baru na dvorku (bílá trubice, červená záře) */}
             <div className="neon-board rounded-2xl px-5 py-5 text-center sm:py-6">
               <p className="neon-sign-red font-display text-2xl font-extrabold uppercase leading-tight tracking-wide sm:text-3xl">
-                Lístky a merch se kupují na baru na dvorku
+                Lístky se kupují na baru na dvorku nebo na Flédě při vstupu
               </p>
             </div>
             {products.length === 0 ? (
