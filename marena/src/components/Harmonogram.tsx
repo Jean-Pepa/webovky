@@ -101,7 +101,7 @@ export function Harmonogram({
           );
         })}
       </ol>
-      {/* Lístky — samostatně pod harmonogramem, na střed, stejné tlačítko jako „Kup si lístek a merch" nahoře */}
+      {/* Lístky — samostatně pod harmonogramem, na střed, stejné tlačítko jako „Rezervuj si lístky" nahoře */}
       <div className="mt-6 flex justify-center [text-shadow:none]">
         <Link
           href="/merch"

@@ -241,14 +241,17 @@ export default function MerchOrderPage() {
             <h1 className="font-display text-xl font-semibold">Děkujeme, objednávka odeslána!</h1>
             {/* Neonová cedule: kde se objednávka vyzvedává (stejný styl jako nahoře v nabídce) */}
             <div className="neon-board mt-4 rounded-2xl px-4 py-4 sm:py-5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-red-300/80">Vyzvednutí objednávky</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-red-300/80">Vyzvednutí lístků</p>
               <p className="neon-sign-red mt-1 font-display text-2xl font-extrabold uppercase leading-tight tracking-wide sm:text-3xl">
-                Na baru na dvorku
+                Na baru na dvorku fakulty
+                <br />
+                nebo na Flédě při vstupu
               </p>
-              <p className="mt-1 text-sm font-semibold text-white/85">Las Vegas Bar · zaplatíš až při vyzvednutí</p>
+              <p className="mt-1 text-sm font-semibold text-white/85">zaplatíš až při vyzvednutí</p>
             </div>
             <p className="mt-3 text-sm text-ink-soft">
-              Tvůj lístek nebo merch už na tebe čeká na dvorku v Las Vegas Baru. Zaplatíš při vyzvednutí — prodejce ti ukáže QR kód (nebo vezme hotovost). Kdyby něco, ozveme se na zadaný kontakt.
+              Lístky si vyzvedneš buď na baru na dvorku fakulty (Las Vegas Bar), nebo na Flédě při vstupu. Merch je k vyzvednutí na baru na dvorku. Zaplatíš při
+              vyzvednutí — prodejce ti ukáže QR kód nebo vezme hotovost. Kdyby něco, ozveme se na zadaný kontakt.
             </p>
           </div>
         )}

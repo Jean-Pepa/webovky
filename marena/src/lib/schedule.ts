@@ -95,9 +95,9 @@ export const UI: Record<"heading" | "finale" | "finaleNote" | "must" | "from" | 
   finale: { cs: "Velké finále", en: "Grand finale", de: "Großes Finale" },
   must: { cs: "povinné", en: "mandatory", de: "Pflicht" },
   tickets: {
-    cs: "Kupuj lístky, než se vyprodají.",
-    en: "Buy tickets before they sell out.",
-    de: "Kauf dir Tickets, bevor sie ausverkauft sind.",
+    cs: "Rezervuj si lístky, než se vyprodají.",
+    en: "Reserve your tickets before they sell out.",
+    de: "Reserviere dir Tickets, bevor sie ausverkauft sind.",
   },
 };
 
