@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { applyAction } from "@/lib/actions";
 import { loadReceipt } from "@/lib/receipts";
@@ -10,7 +10,8 @@ import { ImageViewer } from "@/components/ImageViewer";
 import { FlashHost, flash } from "@/components/Flash";
 import { trackFunnel } from "@/lib/analytics-client";
 import type { DB } from "@/lib/types";
-import { isValidEmail, isValidPhone, sanitizePhone, PHONE_ERR, EMAIL_ERR } from "@/lib/contact";
+import { isValidEmail, sanitizePhone, PHONE_ERR, EMAIL_ERR } from "@/lib/contact";
+import { DEFAULT_DIAL, dialOptions, withDial, isValidNational } from "@/lib/dialcodes";
 
 const LS_DB = "marena_db"; // demo režim (localStorage) — stejný klíč jako ve store
 
@@ -107,6 +108,8 @@ export default function MerchOrderPage() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [dial, setDial] = useState(DEFAULT_DIAL); // předvolba, výchozí Česko
+  const dialList = useMemo(() => dialOptions("cs"), []);
   const [email, setEmail] = useState("");
   const [note, setNote] = useState("");
   const [err, setErr] = useState<string | null>(null);
@@ -214,7 +217,8 @@ export default function MerchOrderPage() {
     setErr(null);
     if (!name.trim()) return setErr("Vyplň prosím jméno.");
     if (!phone.trim()) return setErr("Vyplň telefon.");
-    if (!isValidPhone(phone)) return setErr(PHONE_ERR);
+    if (!isValidNational(phone, dial)) return setErr(PHONE_ERR);
+    const fullPhone = withDial(phone, dial); // „+420 777 123 456"
     if (!email.trim()) return setErr("Vyplň e-mail.");
     if (!isValidEmail(email)) return setErr(EMAIL_ERR);
     if (cart.length === 0) return setErr("Košík je prázdný — přidej aspoň jednu věc z nabídky.");
@@ -228,7 +232,7 @@ export default function MerchOrderPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name,
-            phone,
+            phone: fullPhone,
             email,
             note,
             selections: cart.map((l) => ({ productId: l.productId, qty: l.qty, size: l.size, color: l.color })),
@@ -252,7 +256,7 @@ export default function MerchOrderPage() {
           type: "addMerchOrder",
           yearId,
           name,
-          phone,
+          phone: fullPhone,
           email,
           note,
           items: cart.map((l) => ({ productId: l.productId, name: l.name, size: l.size, color: l.color, price: l.price ?? undefined, qty: l.qty })),
@@ -444,16 +448,32 @@ export default function MerchOrderPage() {
 
                   <div className="grid gap-2 pt-1 sm:grid-cols-2">
                     <input className="input" placeholder="Jméno a příjmení" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
-                    {/* jen číslice (+ mezery a „+" na začátku) — písmena se při psaní zahodí */}
-                    <input
-                      className="input"
-                      type="tel"
-                      inputMode="tel"
-                      autoComplete="tel"
-                      placeholder="Telefon (jen číslice)"
-                      value={phone}
-                      onChange={(e) => setPhone(sanitizePhone(e.target.value))}
-                    />
+                    {/* Předvolba (výchozí 🇨🇿 +420, kliknutím jde vybrat jiná země) + číslo;
+                        do čísla jdou jen číslice (písmena se při psaní zahodí) */}
+                    <div className="flex gap-2">
+                      {/* pevná šířka — nativní select by se jinak roztáhl podle nejdelšího názvu země */}
+                      <select
+                        className="input w-[7.75rem] shrink-0 truncate pr-6"
+                        aria-label="Telefonní předvolba"
+                        value={dial}
+                        onChange={(e) => setDial(e.target.value)}
+                      >
+                        {dialList.map((c) => (
+                          <option key={c.iso} value={c.dial}>
+                            {c.flag} {c.dial} {c.name}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        className="input min-w-0 flex-1"
+                        type="tel"
+                        inputMode="tel"
+                        autoComplete="tel-national"
+                        placeholder={dial === "+420" || dial === "+421" ? "Telefon (9 číslic)" : "Telefon (bez předvolby)"}
+                        value={phone}
+                        onChange={(e) => setPhone(sanitizePhone(e.target.value))}
+                      />
+                    </div>
                     <input
                       className="input sm:col-span-2"
                       type="email"
