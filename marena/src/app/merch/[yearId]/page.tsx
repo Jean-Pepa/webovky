@@ -39,6 +39,57 @@ type Status = "loading" | "ready" | "notfound" | "error";
 
 const variantLabel = (l: { size?: string; color?: string }) => [l.size, l.color].filter(Boolean).join(" · ");
 
+// Konec rezervací lístků (pražský čas) a cena lístku na místě bez rezervace.
+const RESERVATION_DEADLINE = new Date("2026-09-24T16:00:00+02:00");
+const ONSITE_PRICE = 350;
+
+// Odpočet do konce rezervací — počítá se až na klientovi (žádný nesoulad při hydrataci),
+// tiká po sekundě. Po termínu ukáže, že rezervace skončily a lístky jsou na místě za 350 Kč.
+function ReservationCountdown() {
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const left = now == null ? null : RESERVATION_DEADLINE.getTime() - now;
+  const over = left != null && left <= 0;
+  const parts = (() => {
+    if (left == null || left <= 0) return null;
+    const total = Math.floor(left / 1000);
+    return { d: Math.floor(total / 86400), h: Math.floor((total % 86400) / 3600), m: Math.floor((total % 3600) / 60), s: total % 60 };
+  })();
+  const two = (n: number) => String(n).padStart(2, "0");
+  return (
+    <div className="mx-auto mt-4 max-w-md rounded-2xl border border-ink/10 bg-white px-4 py-3 text-center shadow-sm">
+      {over ? (
+        <p className="font-display text-base font-semibold">Rezervace skončily.</p>
+      ) : (
+        <>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ink-soft">Rezervace končí 24. 9. 2026 v 16:00</p>
+          <div className="mt-1.5 flex items-end justify-center gap-3 font-display tabular-nums" aria-live="off">
+            {[
+              { v: parts ? String(parts.d) : "–", l: parts && parts.d === 1 ? "den" : parts && parts.d >= 2 && parts.d <= 4 ? "dny" : "dní" },
+              { v: parts ? two(parts.h) : "––", l: "hod" },
+              { v: parts ? two(parts.m) : "––", l: "min" },
+              { v: parts ? two(parts.s) : "––", l: "s" },
+            ].map((x) => (
+              <span key={x.l} className="flex flex-col items-center leading-none">
+                <span className="text-2xl font-extrabold text-ink">{x.v}</span>
+                <span className="mt-1 text-[10px] font-medium uppercase tracking-wide text-ink-soft">{x.l}</span>
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+      <p className="mt-2 text-sm text-ink-soft">
+        Lístky na místě bez rezervace stojí <strong className="text-ink">{fmtCZK(ONSITE_PRICE)}</strong>.
+      </p>
+    </div>
+  );
+}
+
 export default function MerchOrderPage() {
   const { yearId } = useParams<{ yearId: string }>();
   const [status, setStatus] = useState<Status>("loading");
@@ -224,7 +275,10 @@ export default function MerchOrderPage() {
       <div className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-6 text-center">
           <div className="marena-header-gold inline-block font-display text-3xl font-extrabold uppercase tracking-[0.08em]">MAŘENA</div>
+          {/* Růžový neon „Fléda" (stejný neon jako na homepage) */}
+          <div className="vegas-neon-pink vegas-glow font-display text-2xl font-extrabold uppercase tracking-[0.14em]">Fléda</div>
           <p className="mt-1 text-sm text-ink-soft">Lístky{label ? ` · ${label}` : ""}</p>
+          <ReservationCountdown />
         </div>
 
         {status === "loading" && <p className="text-center text-sm text-ink-soft">Načítám nabídku…</p>}
@@ -379,7 +433,7 @@ export default function MerchOrderPage() {
                       )}
                     </ul>
                   ) : (
-                    <p className="text-sm text-ink-soft">Košík je prázdný — nahoře vyber velikost/barvu a klikni na 🛒 Do košíku.</p>
+                    <p className="text-sm text-ink-soft">Košík je prázdný.</p>
                   )}
 
                   <div className="grid gap-2 pt-1 sm:grid-cols-2">
