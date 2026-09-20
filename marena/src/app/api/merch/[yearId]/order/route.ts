@@ -33,7 +33,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ yearId:
   const year = db.years.find((y) => y.id === yearId);
   if (!year) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  const catalog = new Map((year.merch ?? []).map((p) => [p.id, p]));
+  // Z webu jde objednat jen to, co je na webu vidět (skryté položky se prodávají jen na baru).
+  const catalog = new Map((year.merch ?? []).filter((p) => p.onWeb !== false).map((p) => [p.id, p]));
   const items: { productId: string; name: string; size?: string; color?: string; price?: number; qty: number }[] = [];
   for (const s of selections) {
     const sel = s as { productId?: unknown; qty?: unknown; size?: unknown; color?: unknown };

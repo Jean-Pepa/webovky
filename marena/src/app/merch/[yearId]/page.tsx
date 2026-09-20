@@ -103,7 +103,7 @@ export default function MerchOrderPage() {
           for (const it of o.items) soldByProduct.set(it.productId, (soldByProduct.get(it.productId) ?? 0) + it.qty);
         }
         const list = await Promise.all(
-          (year.merch ?? []).map(async (p) =>
+          (year.merch ?? []).filter((p) => p.onWeb !== false).map(async (p) =>
             norm({
               id: p.id,
               name: p.name,

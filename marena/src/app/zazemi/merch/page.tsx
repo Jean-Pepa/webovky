@@ -535,6 +535,14 @@ function ProductCard({
     await dispatch({ type: "removeMerchProduct", yearId, productId: product.id });
   }
 
+  // Na webu / jen na baru — veřejný obchod ukáže jen položky s onWeb (chybí = ano u starších).
+  const onWeb = product.onWeb !== false;
+  async function toggleWeb() {
+    if (await dispatch({ type: "updateMerchProduct", yearId, productId: product.id, patch: { onWeb: !onWeb } })) {
+      flash(onWeb ? `${product.name}: skryto z webu, prodává se jen na baru` : `${product.name}: zobrazeno v obchodě na webu`, onWeb ? "🙈" : "🌐");
+    }
+  }
+
   return (
     <div className="card overflow-hidden">
       <button className="block w-full" onClick={() => img && setViewIdx(0)} aria-label="Zvětšit foto">
@@ -550,7 +558,10 @@ function ProductCard({
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="break-words font-semibold">{product.name}</p>
+            <p className="break-words font-semibold">
+              {product.name}
+              {!onWeb && <span className="ml-1.5 align-middle rounded-full bg-paper2 px-2 py-0.5 text-[11px] font-medium text-ink-soft">jen na baru</span>}
+            </p>
             {product.price != null && (
               <p className="text-sm">
                 <span className="font-semibold text-leaf-700">{fmtCZK(product.price)}</span>
@@ -644,6 +655,24 @@ function ProductCard({
                 </span>
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Web: tlačítkem správce položku pustí do obchodu na webu (QR stránka) nebo ji z něj stáhne.
+            Prodej na místě (Prodat na místě / Prodej) funguje vždy. */}
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-ink/[0.05] pt-2">
+          <span className="text-xs text-ink-soft">{onWeb ? "🌐 Zobrazuje se v obchodě na webu" : "🙈 Na webu není vidět, prodává se jen na baru"}</span>
+          {editable && (
+            <button
+              type="button"
+              onClick={toggleWeb}
+              title={onWeb ? "Skrýt z obchodu na webu" : "Zobrazit v obchodě na webu"}
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                onWeb ? "bg-leaf/12 text-leaf-700 hover:bg-red-50 hover:text-red-700" : "bg-gold-grad text-[#1d1d1f] shadow-sm hover:brightness-105"
+              }`}
+            >
+              {onWeb ? "Na webu ✓ · skrýt" : "🌐 Zobrazit na webu"}
+            </button>
           )}
         </div>
       </div>
