@@ -14,11 +14,12 @@ export function sanitizePhone(v: string): string {
   return plus + s.replace(/\+/g, "").replace(/\s{2,}/g, " ").trimStart();
 }
 
-// Platný = aspoň 9 číslic (české číslo), max 15 (mezinárodní formát).
+// Platný = 7–15 číslic (mezinárodní formát E.164 i s předvolbou; české číslo
+// s +420 má 12). Přesnější kontrola podle předvolby je v dialcodes.ts (klient).
 export function isValidPhone(v: string): boolean {
   const digits = v.replace(/\D/g, "");
-  return digits.length >= 9 && digits.length <= 15;
+  return digits.length >= 7 && digits.length <= 15;
 }
 
-export const PHONE_ERR = "Zadej platný telefon — jen číslice, aspoň 9 (např. 777 123 456).";
+export const PHONE_ERR = "Zadej platný telefon — jen číslice (české číslo má 9, např. 777 123 456).";
 export const EMAIL_ERR = "Zadej platný e-mail s @ (např. jmeno@email.cz).";
