@@ -68,14 +68,15 @@ function ReservationCountdown() {
       ) : (
         <>
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ink-soft">Rezervace končí 24. 9. 2026 v 16:00</p>
-          <div className="mt-1.5 flex items-end justify-center gap-3 font-display tabular-nums" aria-live="off">
+          {/* Jednotky oddělené tenkou svislou čarou (divide-x) */}
+          <div className="mt-1.5 flex items-end justify-center divide-x divide-ink/15 font-display tabular-nums" aria-live="off">
             {[
               { v: parts ? String(parts.d) : "–", l: parts && parts.d === 1 ? "den" : parts && parts.d >= 2 && parts.d <= 4 ? "dny" : "dní" },
               { v: parts ? two(parts.h) : "––", l: "hod" },
               { v: parts ? two(parts.m) : "––", l: "min" },
               { v: parts ? two(parts.s) : "––", l: "s" },
             ].map((x) => (
-              <span key={x.l} className="flex flex-col items-center leading-none">
+              <span key={x.l} className="flex min-w-14 flex-col items-center px-2 leading-none">
                 {/* key = hodnota → při každé změně se číslice přemountuje a červeně problikne */}
                 <span key={x.v} className="countdown-tick text-2xl font-extrabold text-ink">
                   {x.v}
