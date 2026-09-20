@@ -469,7 +469,7 @@ export default function MerchOrderPage() {
                         type="tel"
                         inputMode="tel"
                         autoComplete="tel-national"
-                        placeholder={dial === "+420" || dial === "+421" ? "Telefon (9 číslic)" : "Telefon (bez předvolby)"}
+                        placeholder="Telefon"
                         value={phone}
                         onChange={(e) => setPhone(sanitizePhone(e.target.value))}
                       />
@@ -479,7 +479,7 @@ export default function MerchOrderPage() {
                       type="email"
                       inputMode="email"
                       autoComplete="email"
-                      placeholder="E-mail (s @)"
+                      placeholder="E-mail"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />
