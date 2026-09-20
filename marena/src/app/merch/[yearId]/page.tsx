@@ -220,16 +220,16 @@ export default function MerchOrderPage() {
   return (
     <div className="min-h-screen bg-paper">
       <FlashHost />
-      <ImageViewer images={galleryImages} index={viewIdx} onIndex={setViewIdx} title="Lístky & merch" />
+      <ImageViewer images={galleryImages} index={viewIdx} onIndex={setViewIdx} title="Lístky" />
       <div className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-6 text-center">
           <div className="marena-header-gold inline-block font-display text-3xl font-extrabold uppercase tracking-[0.08em]">MAŘENA</div>
-          <p className="mt-1 text-sm text-ink-soft">Lístky & merch{label ? ` · ${label}` : ""}</p>
+          <p className="mt-1 text-sm text-ink-soft">Lístky{label ? ` · ${label}` : ""}</p>
         </div>
 
         {status === "loading" && <p className="text-center text-sm text-ink-soft">Načítám nabídku…</p>}
         {status === "notfound" && (
-          <div className="card p-8 text-center text-sm text-ink-soft">Tahle nabídka merche není dostupná.</div>
+          <div className="card p-8 text-center text-sm text-ink-soft">Tahle nabídka není dostupná.</div>
         )}
         {status === "error" && (
           <div className="card p-8 text-center text-sm text-red-600">Nepodařilo se načíst nabídku.</div>
@@ -250,8 +250,7 @@ export default function MerchOrderPage() {
               <p className="mt-1 text-sm font-semibold text-white/85">zaplatíš až při vyzvednutí</p>
             </div>
             <p className="mt-3 text-sm text-ink-soft">
-              Merch je k vyzvednutí jen na baru na dvorku (Las Vegas Bar). Zaplatíš při vyzvednutí — prodejce ti ukáže QR kód nebo vezme hotovost. Kdyby něco, ozveme
-              se na zadaný kontakt.
+              Zaplatíš až při vyzvednutí — prodejce ti ukáže QR kód nebo vezme hotovost. Kdyby něco, ozveme se na zadaný kontakt.
             </p>
           </div>
         )}
@@ -261,7 +260,7 @@ export default function MerchOrderPage() {
             {/* Neonová cedule: merch se kupuje na baru na dvorku (bílá trubice, červená záře) */}
             <div className="neon-board rounded-2xl px-5 py-5 text-center sm:py-6">
               <p className="neon-sign-red font-display text-2xl font-extrabold uppercase leading-tight tracking-wide sm:text-3xl">
-                Lístky a merch se kupují na baru na dvorku
+                Lístky se kupují na baru na dvorku nebo na Flédě při vstupu
               </p>
             </div>
             {products.length === 0 ? (
