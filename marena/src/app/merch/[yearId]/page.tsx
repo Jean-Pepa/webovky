@@ -83,9 +83,9 @@ function ReservationCountdown() {
           </div>
         </>
       )}
-      {/* Zvýrazněná cena na místě — ať je jasné, proč se vyplatí rezervovat */}
-      <p className="mt-2.5 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
-        ⚠️ Na místě bez rezervace stojí lístek <span className="font-display text-lg font-extrabold">{fmtCZK(ONSITE_PRICE)}</span>
+      {/* Cena na místě — jen mírně zvýrazněná (tučná cena), ať je jasné, proč se vyplatí rezervovat */}
+      <p className="mt-2.5 border-t border-ink/[0.06] pt-2 text-sm text-ink">
+        Na místě bez rezervace stojí lístek <strong className="font-display text-base font-extrabold text-red-700">{fmtCZK(ONSITE_PRICE)}</strong>.
       </p>
     </div>
   );
