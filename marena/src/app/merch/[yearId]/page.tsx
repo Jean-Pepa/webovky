@@ -83,8 +83,9 @@ function ReservationCountdown() {
           </div>
         </>
       )}
-      <p className="mt-2 text-sm text-ink-soft">
-        Lístky na místě bez rezervace stojí <strong className="text-ink">{fmtCZK(ONSITE_PRICE)}</strong>.
+      {/* Zvýrazněná cena na místě — ať je jasné, proč se vyplatí rezervovat */}
+      <p className="mt-2.5 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+        ⚠️ Na místě bez rezervace stojí lístek <span className="font-display text-lg font-extrabold">{fmtCZK(ONSITE_PRICE)}</span>
       </p>
     </div>
   );
@@ -464,7 +465,6 @@ export default function MerchOrderPage() {
                   <button className="btn-primary w-full justify-center" onClick={submit} disabled={submitting}>
                     {submitting ? "Odesílám…" : "Objednat"}
                   </button>
-                  <p className="text-center text-[11px] text-ink-soft">Objednávka je nezávazná rezervace — tým Mařeny se ti ozve.</p>
                 </section>
               </>
             )}
