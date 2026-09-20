@@ -238,20 +238,12 @@ export default function MerchOrderPage() {
         {status === "ready" && done && (
           <div className="card p-8 text-center">
             <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-leaf/15 text-2xl">✅</div>
-            <h1 className="font-display text-xl font-semibold">Děkujeme, objednávka odeslána!</h1>
-            {/* Neonová cedule: kde se objednávka vyzvedává (stejný styl jako nahoře v nabídce) */}
-            <div className="neon-board mt-4 rounded-2xl px-4 py-4 sm:py-5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-red-300/80">Vyzvednutí lístků</p>
-              <p className="neon-sign-red mt-1 font-display text-2xl font-extrabold uppercase leading-tight tracking-wide sm:text-3xl">
-                Na baru na dvorku fakulty
-                <br />
-                nebo na Flédě při vstupu
-              </p>
-              <p className="mt-1 text-sm font-semibold text-white/85">zaplatíš až při vyzvednutí</p>
-            </div>
-            <p className="mt-3 text-sm text-ink-soft">
-              Zaplatíš až při vyzvednutí — prodejce ti ukáže QR kód nebo vezme hotovost. Kdyby něco, ozveme se na zadaný kontakt.
+            <h1 className="font-display text-xl font-semibold">Děkujeme za rezervaci!</h1>
+            {/* Kde a jak se lístky vyzvedávají — jasně a jednou (neon je nahoře v nabídce) */}
+            <p className="mt-3 text-base font-semibold text-ink">
+              Lístky si vyzvedneš na baru na dvorku fakulty (Las Vegas Bar) nebo na Flédě při vstupu.
             </p>
+            <p className="mt-2 text-sm text-ink-soft">Zaplatíš až při vyzvednutí — QR kódem nebo hotově. Kdyby něco, ozveme se na zadaný kontakt.</p>
           </div>
         )}
 
