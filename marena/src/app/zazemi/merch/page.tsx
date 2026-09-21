@@ -850,6 +850,180 @@ function ItemPrice({ value, onChange }: { value?: number; onChange: (price?: num
   );
 }
 
+// Správce: úprava celé rezervace — jméno, telefon, e-mail, poznámka a položky
+// (produkt, velikost / barva, cena za kus, počet). U vyřízené / zaplacené objednávky
+// se přepíše i zápis ve financích (částka, jméno, rozpis).
+type EditItem = { key: string; productId: string; name: string; size: string; color: string; price: string; qty: string };
+function EditOrderModal({ order, yearId, onClose }: { order: MerchOrder; yearId: string; onClose: () => void }) {
+  const { dispatch, currentYear } = useStore();
+  const products = currentYear?.merch ?? [];
+  const [name, setName] = useState(order.name);
+  const [phone, setPhone] = useState(order.phone ?? "");
+  const [email, setEmail] = useState(order.email ?? "");
+  const [note, setNote] = useState(order.note ?? "");
+  const [items, setItems] = useState<EditItem[]>(
+    order.items.map((it, i) => ({
+      key: `${i}`,
+      productId: it.productId,
+      name: it.name,
+      size: it.size ?? "",
+      color: it.color ?? "",
+      price: it.price != null ? String(it.price) : "",
+      qty: String(it.qty),
+    })),
+  );
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const patchItem = (key: string, patch: Partial<EditItem>) => setItems((prev) => prev.map((it) => (it.key === key ? { ...it, ...patch } : it)));
+  const num = (v: string) => {
+    const n = parseInt(v.replace(/\s/g, ""), 10);
+    return Number.isFinite(n) ? n : undefined;
+  };
+  const total = items.reduce((sum, it) => sum + (num(it.price) ?? products.find((p) => p.id === it.productId)?.price ?? 0) * (num(it.qty) ?? 0), 0);
+
+  function addItem() {
+    const p = products[0];
+    setItems((prev) => [
+      ...prev,
+      { key: `n${Date.now()}`, productId: p?.id ?? "", name: p?.name ?? "", size: "", color: "", price: p?.price != null ? String(p.price) : "", qty: "1" },
+    ]);
+  }
+
+  async function save() {
+    setErr(null);
+    if (!name.trim()) return setErr("Vyplň jméno.");
+    if (items.length === 0) return setErr("Rezervace musí mít aspoň jednu položku.");
+    if (items.some((it) => !it.name.trim() || (num(it.qty) ?? 0) < 1)) return setErr("Každá položka potřebuje název a počet aspoň 1.");
+    setBusy(true);
+    try {
+      const ok = await dispatch({
+        type: "updateMerchOrder",
+        yearId,
+        orderId: order.id,
+        patch: {
+          name,
+          phone,
+          email,
+          note,
+          items: items.map((it) => ({ productId: it.productId, name: it.name, size: it.size || undefined, color: it.color || undefined, price: num(it.price), qty: num(it.qty) ?? 1 })),
+        },
+      });
+      if (!ok) return setErr("Nepodařilo se uložit — zkontroluj připojení.");
+      flash(`Rezervace ${name.trim()} upravena`, "✏️");
+      onClose();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Upravit rezervaci">
+      <div className="space-y-3">
+        {order.done && (
+          <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            Objednávka je už vyřízená{order.paid ? " a zaplacená" : ""} — nová částka, jméno a rozpis se přepíšou i ve financích.
+          </p>
+        )}
+        <div className="grid gap-2 sm:grid-cols-2">
+          <input className="input sm:col-span-2" placeholder="Jméno a příjmení" value={name} onChange={(e) => setName(e.target.value)} />
+          <input className="input" type="tel" inputMode="tel" placeholder="Telefon" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <input className="input" type="email" inputMode="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input className="input sm:col-span-2" placeholder="Poznámka" value={note} onChange={(e) => setNote(e.target.value)} />
+        </div>
+
+        <div className="space-y-2">
+          <p className="eyebrow">Položky</p>
+          {items.map((it) => {
+            const product = products.find((p) => p.id === it.productId);
+            return (
+              <div key={it.key} className="space-y-1.5 rounded-xl border border-ink/10 bg-paper2/40 p-2">
+                <div className="flex gap-2">
+                  {/* produkt z nabídky (název se převezme); ručně zadaný název jde přepsat */}
+                  <select
+                    className="input min-w-0 flex-1"
+                    value={products.some((p) => p.id === it.productId) ? it.productId : ""}
+                    onChange={(e) => {
+                      const p = products.find((x) => x.id === e.target.value);
+                      if (p) patchItem(it.key, { productId: p.id, name: p.name, price: p.price != null ? String(p.price) : it.price });
+                    }}
+                  >
+                    {!products.some((p) => p.id === it.productId) && <option value="">— mimo nabídku —</option>}
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="shrink-0 rounded-full px-2 text-ink-soft/70 transition hover:text-red-600"
+                    aria-label="Odebrat položku"
+                    title="Odebrat položku"
+                    onClick={() => setItems((prev) => prev.filter((x) => x.key !== it.key))}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <input className="input" placeholder="Název položky" value={it.name} onChange={(e) => patchItem(it.key, { name: e.target.value })} />
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+                  {product?.sizes?.length ? (
+                    <select className="input" value={it.size} onChange={(e) => patchItem(it.key, { size: e.target.value })}>
+                      <option value="">velikost</option>
+                      {product.sizes.map((sz) => (
+                        <option key={sz} value={sz}>
+                          {sz}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input className="input" placeholder="Velikost" value={it.size} onChange={(e) => patchItem(it.key, { size: e.target.value })} />
+                  )}
+                  {product?.colors?.length ? (
+                    <select className="input" value={it.color} onChange={(e) => patchItem(it.key, { color: e.target.value })}>
+                      <option value="">barva</option>
+                      {product.colors.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input className="input" placeholder="Barva" value={it.color} onChange={(e) => patchItem(it.key, { color: e.target.value })} />
+                  )}
+                  <label className="flex items-center gap-1 text-xs text-ink-soft">
+                    <input className="input" inputMode="numeric" placeholder="Cena / ks" aria-label="Cena za kus (Kč)" value={it.price} onChange={(e) => patchItem(it.key, { price: e.target.value })} />
+                    Kč
+                  </label>
+                  <label className="flex items-center gap-1 text-xs text-ink-soft">
+                    <input className="input" inputMode="numeric" placeholder="Počet" aria-label="Počet kusů" value={it.qty} onChange={(e) => patchItem(it.key, { qty: e.target.value })} />
+                    ks
+                  </label>
+                </div>
+              </div>
+            );
+          })}
+          <button type="button" className="btn-ghost text-sm" onClick={addItem}>
+            + Přidat položku
+          </button>
+        </div>
+
+        <p className="text-right text-sm text-ink-soft">
+          Celkem <strong className="font-display text-base text-ink">{fmtCZK(total)}</strong>
+        </p>
+        {err && <p className="text-sm text-red-600">{err}</p>}
+        <div className="flex items-center gap-2">
+          <button className="btn-primary flex-1" onClick={save} disabled={busy}>
+            {busy ? "Ukládám…" : "Uložit změny"}
+          </button>
+          <button className="btn-ghost" onClick={onClose}>
+            Zrušit
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 function OrderRow({
   order,
   yearId,
@@ -869,6 +1043,7 @@ function OrderRow({
 }) {
   const { dispatch } = useStore();
   const [qrOpen, setQrOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false); // správce: úprava celé rezervace
   // QR ukazuje prodávající při předání — jen u nevyřízených objednávek s cenou.
   const canQr = canManage && !order.done && total > 0 && !!account && !("error" in parseAccount(account));
   const itemsText = order.items
@@ -930,9 +1105,16 @@ function OrderRow({
               {order.done ? "✓ Vyřízeno" : "⏳ Čeká"}
             </span>
           )}
+          {/* Správce může upravit veškeré údaje rezervace (kontakt, položky, ceny) */}
+          {canUnlock && (
+            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEditOpen(true)} title="Upravit rezervaci (jméno, kontakt, položky, ceny)">
+              Upravit
+            </button>
+          )}
           {canDelete && <DeleteButton onConfirm={() => dispatch({ type: "removeMerchOrder", yearId, orderId: order.id })} />}
         </div>
       </div>
+      {editOpen && <EditOrderModal order={order} yearId={yearId} onClose={() => setEditOpen(false)} />}
 
       {/* Řádek 2: jaký merch a jeho počet (+ poznámka a cena) */}
       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-ink/[0.05] pt-1 text-sm">
