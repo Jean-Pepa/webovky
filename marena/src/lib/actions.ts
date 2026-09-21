@@ -195,6 +195,7 @@ export type Action =
   | { type: "removeMerchOrder"; yearId: string; orderId: string }
   | { type: "repriceMerchOrders"; yearId: string; productId: string; price: number } // nová cena u čekajících objednávek daného produktu
   | { type: "setMerchOrderItemPrice"; yearId: string; orderId: string; index: number; price?: number } // cena jedné položky čekající objednávky
+  | { type: "updateMerchOrder"; yearId: string; orderId: string; patch: { name?: string; phone?: string; email?: string; note?: string; items?: MerchOrderItem[] } } // správce: úprava celé rezervace
   // Uvolnění místa: smaže všechny fotky/účtenky ročníku (reference v DB; samotné
   // bloby maže klient zvlášť). Texty (finance, popisy) zůstávají.
   | { type: "clearYearMedia"; yearId: string };
@@ -1436,6 +1437,49 @@ export function applyAction(db: DB, a: Action): DB {
             o.done ? o : { ...o, items: o.items.map((it) => (it.productId === a.productId ? { ...it, price: a.price } : it)) },
           ),
         };
+      });
+    // Správce: úprava celé rezervace (kontakt, poznámka, položky, ceny). U vyřízené /
+    // zaplacené objednávky se přepíše i navázaný zápis ve financích (částka, jméno,
+    // rozpis), způsob platby (QR / hotově) zůstává.
+    case "updateMerchOrder":
+      return mapYear(db, a.yearId, (y) => {
+        const order = (y.merchOrders ?? []).find((o) => o.id === a.orderId);
+        if (!order) return y;
+        const q = a.patch;
+        const items: MerchOrderItem[] = q.items
+          ? q.items
+              .map((it) => ({
+                productId: String(it.productId ?? ""),
+                name: String(it.name ?? "").trim(),
+                size: it.size?.trim() || undefined,
+                color: it.color?.trim() || undefined,
+                price: it.price != null && Number.isFinite(it.price) && it.price >= 0 ? Math.round(it.price) : undefined,
+                qty: Math.max(1, Math.min(99, Math.round(Number(it.qty) || 1))),
+              }))
+              .filter((it) => it.name)
+          : order.items;
+        if (items.length === 0) return y;
+        const next = {
+          ...order,
+          name: q.name !== undefined ? q.name.trim() || order.name : order.name,
+          phone: "phone" in q ? q.phone?.trim() || undefined : order.phone,
+          email: "email" in q ? q.email?.trim() || undefined : order.email,
+          note: "note" in q ? q.note?.trim() || undefined : order.note,
+          items,
+        };
+        let finances = y.finances ?? [];
+        if (order.financeId) {
+          const total = items.reduce((sum, it) => sum + (it.price ?? (y.merch ?? []).find((p) => p.id === it.productId)?.price ?? 0) * it.qty, 0);
+          const itemsText = items
+            .map((it) => `${it.qty}× ${it.name}${[it.size, it.color].filter(Boolean).length ? ` (${[it.size, it.color].filter(Boolean).join(" · ")})` : ""}`)
+            .join(", ");
+          finances = finances.map((f) => {
+            if (f.id !== order.financeId) return f;
+            const how = (f.note ?? "").match(/(QR platba|hotově)$/)?.[1];
+            return { ...f, label: `Merch — ${next.name}`, amount: total, note: [itemsText, how].filter(Boolean).join(" · ") };
+          });
+        }
+        return { ...y, merchOrders: (y.merchOrders ?? []).map((o) => (o.id === a.orderId ? next : o)), finances };
       });
     // Ruční cena jedné položky čekající objednávky (výjimka, sleva…).
     case "setMerchOrderItemPrice":
