@@ -114,6 +114,8 @@ export default function MerchPage() {
   const tickets = { total: ticketQty(orders), paid: ticketQty(orders.filter((o) => o.done)), pending: ticketQty(orders.filter((o) => !o.done)) };
   const ticketOrderList = orders.filter((o) => o.items.some(isTicketItem));
   const ticketOrders = ticketOrderList.length;
+  // Lístky prodané na místě (stánek „Lístky na místě" v Prodeji) — položka nese „(na místě)".
+  const onsiteQty = orders.reduce((s, o) => s + o.items.filter((it) => isTicketItem(it) && /\(na místě\)\s*$/.test(it.name)).reduce((q, it) => q + it.qty, 0), 0);
   // Kontakty lidí s lístkem na hromadnou zprávu — e-maily (skrytá kopie), telefony (SMS)
   // a jména (seznam na vstup). Bez duplicit; zvlášť „všichni" a „jen nezaplacené".
   const phoneKey = (t: string) => t.replace(/\D/g, "").replace(/^(00420|420)(?=\d{9}$)/, "");
@@ -244,7 +246,10 @@ export default function MerchPage() {
               </div>
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Lístků celkem</p>
-                <p className="font-display text-lg font-bold">🎟️ {tickets.total} ks</p>
+                <p className="font-display text-lg font-bold">
+                  🎟️ {tickets.total} ks
+                  {onsiteQty > 0 && <span className="ml-1.5 rounded-full bg-fuchsia-100 px-2 py-0.5 text-xs font-semibold text-fuchsia-800">🎫 na místě {onsiteQty}</span>}
+                </p>
               </div>
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Zaplaceno</p>
