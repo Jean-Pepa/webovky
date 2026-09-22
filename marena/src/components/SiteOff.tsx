@@ -6,7 +6,16 @@ import Link from "next/link";
 // systémového světlého / tmavého režimu (třídy .siteoff* v globals.css).
 export function SiteOff() {
   return (
-    <main className="siteoff grid min-h-screen place-items-center px-6 text-center">
+    <main className="siteoff relative grid min-h-screen place-items-center px-6 text-center">
+      {/* Vstup pro správce vpravo nahoře (kde je na hlavní stránce přihlášení) — jen malé
+          prázdné, skoro neviditelné kolečko; plocha na ťuknutí je větší než kolečko. */}
+      <Link
+        href="/prihlaseni"
+        aria-label="Správce"
+        className="absolute right-3 top-[calc(0.75rem+env(safe-area-inset-top))] grid h-11 w-11 place-items-center"
+      >
+        <span className="siteoff-sub block h-3.5 w-3.5 rounded-full border border-current opacity-20" aria-hidden />
+      </Link>
       <div className="w-full max-w-xs">
         <div className="siteoff-icon mx-auto grid h-20 w-20 place-items-center rounded-full">
           {/* klíč + šroubovák (údržba) */}
@@ -16,11 +25,6 @@ export function SiteOff() {
         </div>
         <h1 className="mt-6 text-[22px] font-semibold tracking-tight">Web je dočasně nefunkční</h1>
         <p className="siteoff-sub mt-2 text-[15px] leading-snug">Pracujeme na tom. Zkus to prosím za chvíli.</p>
-        <p className="siteoff-sub mt-12 text-xs">
-          <Link href="/prihlaseni" className="underline-offset-2 hover:underline">
-            Správce
-          </Link>
-        </p>
       </div>
     </main>
   );
