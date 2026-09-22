@@ -834,3 +834,28 @@ input[type="search"]::-webkit-search-decoration {
     animation: none;
   }
 }
+
+/* Stránka „Web je dočasně nefunkční" (vypnutý veřejný web) — systémové barvy iOS,
+   světlý / tmavý režim podle nastavení telefonu. */
+.siteoff {
+  background: #f2f2f7;
+  color: #1c1c1e;
+}
+.siteoff-sub {
+  color: #6e6e73;
+}
+.siteoff-icon {
+  background: #e5e5ea;
+}
+@media (prefers-color-scheme: dark) {
+  .siteoff {
+    background: #000;
+    color: #f2f2f7;
+  }
+  .siteoff-sub {
+    color: #8e8e93;
+  }
+  .siteoff-icon {
+    background: #1c1c1e;
+  }
+}

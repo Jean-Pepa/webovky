@@ -1,15 +1,25 @@
 import Link from "next/link";
 
 // Veřejný web vypnutý správcem — místo hlavní stránky / rezervací se ukáže tohle.
-// Serverová komponenta (bez hooků), ať se nic z webu nenačte ani nepřeblikne.
+// Klidná obrazovka ve stylu systémových hlášek iOS: ikona, tučný nadpis, šedý
+// podtitulek, modré tlačítko. Serverová komponenta (bez hooků). Barvy podle
+// systémového světlého / tmavého režimu (třídy .siteoff* v globals.css).
 export function SiteOff() {
   return (
-    <main className="grid min-h-screen place-items-center bg-[#0b0b0e] px-6 text-center text-white">
-      <div className="max-w-md">
-        <p className="vegas-neon-gold font-display text-4xl font-extrabold uppercase tracking-[0.12em]">Mařena</p>
-        <h1 className="mt-6 font-display text-2xl font-semibold">Web je dočasně vypnutý.</h1>
-        <p className="mt-2 text-sm text-white/70">Zkus to prosím později.</p>
-        <p className="mt-10 text-xs text-white/35">
+    <main className="siteoff grid min-h-screen place-items-center px-6 text-center">
+      <div className="w-full max-w-xs">
+        <div className="siteoff-icon mx-auto grid h-20 w-20 place-items-center rounded-full">
+          {/* klíč + šroubovák (údržba) */}
+          <svg viewBox="0 0 24 24" className="siteoff-sub h-9 w-9" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+          </svg>
+        </div>
+        <h1 className="mt-6 text-[22px] font-semibold tracking-tight">Web je dočasně nefunkční</h1>
+        <p className="siteoff-sub mt-2 text-[15px] leading-snug">Pracujeme na tom. Zkus to prosím za chvíli.</p>
+        <a href="/" className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-[#007aff] px-6 py-3 text-[17px] font-semibold text-white transition active:opacity-80">
+          Zkusit znovu
+        </a>
+        <p className="siteoff-sub mt-10 text-xs">
           <Link href="/prihlaseni" className="underline-offset-2 hover:underline">
             Správce
           </Link>
