@@ -51,7 +51,7 @@ export function dedupeTasks(tasks: Task[]): Task[] {
 
 export type Action =
   | { type: "createYear"; id: string; label?: string; theme?: string; fledaDate?: string; copyFromYearId?: string }
-  | { type: "updateYear"; yearId: string; patch: Partial<Pick<Year, "label" | "theme" | "fledaDate" | "plannedPeople" | "deposit" | "paymentAccount">> }
+  | { type: "updateYear"; yearId: string; patch: Partial<Pick<Year, "label" | "theme" | "fledaDate" | "plannedPeople" | "deposit" | "paymentAccount" | "ticketSaleOpen">> }
   | { type: "deleteYear"; yearId: string }
   | { type: "addMember"; yearId: string; name: string; roleIds: string[]; email?: string; phone?: string; contact?: string; note?: string; approved?: boolean }
   | { type: "approveMember"; yearId: string; memberId: string }

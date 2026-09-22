@@ -12,7 +12,8 @@ import { uid } from "@/lib/id";
 import { isAdmin } from "@/lib/admin";
 import { canEditProdej } from "@/lib/access";
 import { sameName } from "@/lib/names";
-import { variantKey } from "@/lib/merch";
+import { variantKey, isTicketName } from "@/lib/merch";
+import { ONSITE_PRICE } from "@/lib/reservations";
 import { flash } from "@/components/Flash";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { SearchBox } from "@/components/SearchBox";
@@ -27,7 +28,9 @@ import type { Cashbox, FinanceItem, MerchOrder, MerchProduct } from "@/lib/types
 // zaplacení, po kategoriích (merch/bar/kuchyně/kasa) + kdo a jak platil.
 
 type Kind = "merch" | "bar" | "kuchyne" | "custom";
-type Stand = "merch" | "bar" | "kuchyne";
+// Stánek „ticket" = prodej lístků NA MÍSTĚ (bez rezervace, za ONSITE_PRICE). Zapisuje se
+// jako merch (objednávka „Prodej na místě" + tržba merch), položka nese „(na místě)".
+type Stand = "merch" | "bar" | "kuchyne" | "ticket";
 
 type Line = {
   key: string;
@@ -39,18 +42,21 @@ type Line = {
   price: number;
   qty: number;
   category?: string; // vlastní částka: pod jakou kategorii tržba patří (merch / bar / kuchyně)
+  onsite?: boolean; // lístek prodaný na místě (stánek „Lístky na místě") — jiná barva v účtence
 };
 
 // Vlastní částka (ceny ještě nejsou v nabídce): kategorie tržby a výchozí popis podle stánku.
-const CUSTOM_CATEGORY: Record<Stand, string> = { merch: "merch", bar: "bar", kuchyne: "kuchyně" };
-const CUSTOM_DEFAULT: Record<Stand, string> = { merch: "Lístek / merch", bar: "Pití", kuchyne: "Jídlo" };
+const CUSTOM_CATEGORY: Record<Stand, string> = { merch: "merch", bar: "bar", kuchyne: "kuchyně", ticket: "merch" };
+const CUSTOM_DEFAULT: Record<Stand, string> = { merch: "Lístek / merch", bar: "Pití", kuchyne: "Jídlo", ticket: "Lístek na místě" };
 const CUSTOM_WORD: Record<string, string> = { merch: "MERCH", bar: "BAR", "kuchyně": "JIDLO" };
 
 const STANDS: { id: Stand; label: string }[] = [
   { id: "merch", label: "🎟️ Lístky & merch" },
   { id: "bar", label: "🍸 Bar" },
   { id: "kuchyne", label: "🍳 Kuchyně" },
+  { id: "ticket", label: "🎫 Lístky na místě" },
 ];
+const ONSITE_SUFFIX = " (na místě)";
 
 // Slovo do zprávy pro banku, kategorie financí a barva dlaždic (obsluha
 // hledá barvou dřív než čtením — vzor z barových POS).
@@ -231,18 +237,24 @@ function Pos() {
     );
   }
 
+  // Stánek „Lístky na místě" vidí správce vždy (má tam přepínač); prodejci jen když je zapnutý.
+  const stands = STANDS.filter((s) => s.id !== "ticket" || admin || !!year.ticketSaleOpen);
+  const activeStand: Stand = stands.some((s) => s.id === stand) ? stand : "merch";
+
   // Nabídka po druzích; nejprodávanější dlaždice první (podle prodejů
   // z tohoto zařízení — barový vzor „top sellers first"). Nové položky
   // s prodejní cenou se tu objeví samy.
   const bySold = (a: { id: string }, b: { id: string }) => (tally[b.id] ?? 0) - (tally[a.id] ?? 0);
-  const grids: { kind: Exclude<Kind, "custom">; title: string; items: { id: string; name: string; price: number }[] }[] = [
+  const grids: { kind: Exclude<Kind, "custom">; stand: Stand; onsite?: boolean; title: string; items: { id: string; name: string; price: number }[] }[] = [
     {
       kind: "merch" as const,
+      stand: "merch" as const,
       title: "Lístky & merch",
       items: (year.merch ?? []).filter((p) => p.price != null && p.price > 0).map((p) => ({ id: p.id, name: p.name, price: p.price! })).sort(bySold),
     },
     {
       kind: "bar" as const,
+      stand: "bar" as const,
       title: "Pití",
       items: (year.bar ?? [])
         .filter((d) => (d.place ?? "bar") === "bar" && d.price != null && d.price > 0)
@@ -251,13 +263,22 @@ function Pos() {
     },
     {
       kind: "kuchyne" as const,
+      stand: "kuchyne" as const,
       title: "Jídlo",
       items: (year.bar ?? [])
         .filter((d) => (d.place ?? "bar") === "kuchyne" && d.price != null && d.price > 0)
         .map((d) => ({ id: d.id, name: d.name, price: d.price! }))
         .sort(bySold),
     },
-  ].filter((g) => g.kind === stand);
+    {
+      // Lístky na místě: jen lístky z nabídky, vždy za cenu na místě (bez rezervace)
+      kind: "merch" as const,
+      stand: "ticket" as const,
+      onsite: true,
+      title: `Lístky na místě · ${fmtCZK(ONSITE_PRICE)}`,
+      items: (year.merch ?? []).filter((p) => isTicketName(p.name)).map((p) => ({ id: p.id, name: p.name, price: ONSITE_PRICE })),
+    },
+  ].filter((g) => g.stand === activeStand);
   // Přepínač úprav bydlí u první neprázdné sekce nabídky.
   const firstNonEmpty = grids.findIndex((g) => g.items.length > 0);
 
@@ -321,7 +342,7 @@ function Pos() {
   // Čekající objednávky merche (z webu i odložené) — platí se tady:
   // QR se jménem objednatele, nebo hotově jedním ťuknutím.
   const pendingOrders =
-    stand === "merch"
+    activeStand === "merch"
       ? [...(year.merchOrders ?? [])].filter((o) => !o.done).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       : [];
   const shownOrders = pendingOrders.filter((o) => matchesQuery(orderQ, o.name, orderItemsText(o)));
@@ -345,12 +366,12 @@ function Pos() {
 
   // Klíč řádku nese id, variantu i cenu — stejně pojmenované položky
   // s jinou cenou se nesmí slít do jedné.
-  function addLine(kind: Kind, name: string, price: number, productId?: string, size?: string, color?: string, category?: string) {
+  function addLine(kind: Kind, name: string, price: number, productId?: string, size?: string, color?: string, category?: string, onsite?: boolean) {
     setLines((prev) => {
-      const key = `${kind}|${productId ?? name}|${size ?? ""}|${color ?? ""}|${price}|${category ?? ""}`;
+      const key = `${kind}|${productId ?? name}|${size ?? ""}|${color ?? ""}|${price}|${category ?? ""}|${onsite ? "onsite" : ""}`;
       const i = prev.findIndex((l) => l.key === key);
       if (i >= 0) return prev.map((l, j) => (j === i ? { ...l, qty: l.qty + 1 } : l));
-      return [...prev, { key, kind, productId, name, size, color, price, qty: 1, category }];
+      return [...prev, { key, kind, productId, name, size, color, price, qty: 1, category, onsite: onsite || undefined }];
     });
   }
   // Vlastní částka (např. merch, u kterého ještě není cena): popis + Kč → účtenka,
@@ -370,9 +391,14 @@ function Pos() {
   }
   // Ťuknutí na dlaždici: merch s velikostmi/barvami se doptá (chipy),
   // všechno ostatní letí rovnou do účtenky.
-  function tapItem(kind: Kind, item: { id: string; name: string; price: number }) {
+  function tapItem(kind: Kind, item: { id: string; name: string; price: number }, onsite?: boolean) {
     // Pojistka: vyprodané / na skladě už nic (i s ohledem na účtenku) se nepřidá.
     if (kind !== "custom" && isSoldOut(kind, item.id)) return;
+    if (onsite) {
+      // Lístek na místě: bez variant, za cenu na místě, v názvu „(na místě)" — ať je to všude poznat.
+      addLine("merch", `${item.name}${ONSITE_SUFFIX}`, ONSITE_PRICE, item.id, undefined, undefined, undefined, true);
+      return;
+    }
     const product = kind === "merch" ? (year!.merch ?? []).find((p) => p.id === item.id) : undefined;
     if (product && ((product.sizes?.length ?? 0) > 0 || (product.colors?.length ?? 0) > 0)) {
       setPicker({ productId: product.id });
@@ -562,7 +588,10 @@ function Pos() {
               </div>
               <div className="divide-y divide-ink/[0.06]">
                 {lines.map((l) => (
-                  <div key={l.key} className="flex min-h-9 items-center gap-2 py-1 text-sm">
+                  <div
+                    key={l.key}
+                    className={`flex min-h-9 items-center gap-2 py-1 text-sm ${l.onsite ? "rounded-lg border-l-4 border-l-fuchsia-500 bg-fuchsia-50 pl-2 pr-1" : ""}`}
+                  >
                     <span className="min-w-0 flex-1 truncate font-medium">{lineLabel(l)}</span>
                     <div className="flex items-center gap-0.5">
                       <button className="grid h-7 w-7 place-items-center rounded-full bg-paper2 leading-none hover:bg-ink/10" onClick={() => bump(l.key, -1)} aria-label="Ubrat">
@@ -602,12 +631,16 @@ function Pos() {
 
       {/* Výběr stánku (desktop) — na mobilu je dole ve žluté bublině */}
       <div className="hidden gap-1.5 md:flex">
-        {STANDS.map((s) => (
+        {stands.map((s) => (
           <button
             key={s.id}
             onClick={() => pickStand(s.id)}
             className={`min-h-10 shrink-0 rounded-full px-4 text-[15px] font-semibold transition ${
-              stand === s.id ? "bg-gold-grad text-[#1d1d1f] shadow-sm" : "bg-paper2 text-ink-soft hover:bg-gold-100"
+              activeStand === s.id
+                ? s.id === "ticket"
+                  ? "bg-fuchsia-500 text-white shadow-sm"
+                  : "bg-gold-grad text-[#1d1d1f] shadow-sm"
+                : "bg-paper2 text-ink-soft hover:bg-gold-100"
             }`}
           >
             {s.label}
@@ -615,10 +648,38 @@ function Pos() {
         ))}
       </div>
 
+      {/* Lístky na místě — přepínač pro správce: zapnout stánek i pro prodejce */}
+      {activeStand === "ticket" && admin && (
+        <section className="card flex flex-wrap items-center justify-between gap-3 border-l-4 border-l-fuchsia-500 p-4">
+          <div className="min-w-0">
+            <p className="font-semibold">🎫 Prodej lístků na místě</p>
+            <p className="text-xs text-ink-soft">
+              Lístek bez rezervace za {fmtCZK(ONSITE_PRICE)}. Zapíše se jako merch s označením „(na místě)“. Prodejci stánek uvidí, jen když je zapnutý.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={!!year.ticketSaleOpen}
+            onClick={async () => {
+              const next = !year.ticketSaleOpen;
+              if (await dispatch({ type: "updateYear", yearId: year.id, patch: { ticketSaleOpen: next } })) {
+                flash(next ? "Prodej lístků na místě zapnutý pro prodejce" : "Prodej lístků na místě vypnutý pro prodejce", "🎫");
+              }
+            }}
+            className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
+              year.ticketSaleOpen ? "bg-fuchsia-500 text-white hover:bg-fuchsia-600" : "bg-paper2 text-ink-soft hover:bg-fuchsia-100"
+            }`}
+          >
+            {year.ticketSaleOpen ? "Zapnuto pro prodejce ✓" : "Vypnuto · zapnout"}
+          </button>
+        </section>
+      )}
+
       {/* Nabídka stánku — nové položky s cenou se tu objeví samy */}
       {grids.map((g, gi) =>
         g.items.length > 0 ? (
-          <section key={g.kind} className="card p-4">
+          <section key={g.stand} className="card p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="eyebrow">{g.title}</h2>
               {gi === firstNonEmpty && (
@@ -664,7 +725,7 @@ function Pos() {
                   <button
                     key={i.id}
                     onClick={() =>
-                      editNabidka ? removeItem(g.kind, i) : soldMode ? toggleSoldOut(i.id) : tapItem(g.kind, i)
+                      editNabidka ? removeItem(g.kind, i) : soldMode ? toggleSoldOut(i.id) : tapItem(g.kind, i, g.onsite)
                     }
                     disabled={soldMode ? stockSold || busy : editNabidka ? false : sold}
                     className={`flex min-h-14 flex-col items-start justify-center gap-0.5 rounded-lg border-l-4 px-3 py-2 text-left transition active:scale-[0.97] disabled:active:scale-100 ${
@@ -672,7 +733,9 @@ function Pos() {
                         ? "border-l-red-400 bg-red-50 ring-1 ring-red-200 hover:bg-red-100"
                         : sold
                           ? "border-l-ink/20 bg-paper2/50 opacity-60"
-                          : `bg-paper2 hover:bg-gold-100 ${KIND_BORDER[g.kind]}`
+                          : g.onsite
+                            ? "border-l-fuchsia-500 bg-fuchsia-50 hover:bg-fuchsia-100"
+                            : `bg-paper2 hover:bg-gold-100 ${KIND_BORDER[g.kind]}`
                     } ${soldMode ? "ring-1 ring-ink/15" : ""}`}
                   >
                     {/* Hlavní je NÁZEV (přes celou šířku); cena a „zbývá" jsou malé pod ním. */}
@@ -697,12 +760,25 @@ function Pos() {
             </div>
           </section>
         ) : (
-          <section key={g.kind} className="card grid place-items-center gap-2 p-6 text-center">
-            <p className="text-sm text-ink-soft">{EMPTY_HINT[g.kind].text} S cenou se tu objeví sama.</p>
-            <p className="text-xs text-ink-soft">Bez ceny jde prodat přes „✏️ Vlastní částka“ nahoře vedle kasy.</p>
-            <Link href={EMPTY_HINT[g.kind].href} className="btn-secondary">
-              {EMPTY_HINT[g.kind].cta} →
-            </Link>
+          <section key={g.stand} className="card grid place-items-center gap-2 p-6 text-center">
+            {g.onsite ? (
+              <>
+                <p className="text-sm text-ink-soft">
+                  Zatím žádný lístek v nabídce. V Lístkách & merchi přidej položku s „Ticket“ nebo „Lístek“ v názvu — tady se objeví sama za {fmtCZK(ONSITE_PRICE)}.
+                </p>
+                <Link href="/zazemi/merch" className="btn-secondary">
+                  Přidat lístek →
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-ink-soft">{EMPTY_HINT[g.kind].text} S cenou se tu objeví sama.</p>
+                <p className="text-xs text-ink-soft">Bez ceny jde prodat přes „✏️ Vlastní částka“ nahoře vedle kasy.</p>
+                <Link href={EMPTY_HINT[g.kind].href} className="btn-secondary">
+                  {EMPTY_HINT[g.kind].cta} →
+                </Link>
+              </>
+            )}
           </section>
         ),
       )}
@@ -892,13 +968,17 @@ function Pos() {
         }`}
       >
         <div className="mx-auto max-w-3xl">
-          <div className="drop-in-bounce grid grid-cols-3 gap-1 rounded-[28px] border-2 border-gold-500 bg-paper/95 p-1.5 shadow-lg backdrop-blur">
-            {STANDS.map((s) => (
+          <div
+            className={`drop-in-bounce grid gap-1 rounded-[28px] border-2 border-gold-500 bg-paper/95 p-1.5 shadow-lg backdrop-blur ${
+              stands.length === 4 ? "grid-cols-4" : "grid-cols-3"
+            }`}
+          >
+            {stands.map((s) => (
               <button
                 key={s.id}
                 onClick={() => pickStand(s.id)}
-                className={`${posOnly ? "min-h-14 text-base" : "min-h-11 text-[15px]"} rounded-full font-semibold transition ${
-                  stand === s.id ? "bg-gold-100 text-ink" : "text-ink-soft active:scale-[0.97]"
+                className={`${posOnly ? "min-h-14 text-base" : "min-h-11 text-[15px]"} rounded-full px-1 font-semibold leading-tight transition ${
+                  activeStand === s.id ? (s.id === "ticket" ? "bg-fuchsia-100 text-fuchsia-900" : "bg-gold-100 text-ink") : "text-ink-soft active:scale-[0.97]"
                 }`}
               >
                 {s.label}

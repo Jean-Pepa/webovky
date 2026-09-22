@@ -12,6 +12,7 @@ import { trackFunnel } from "@/lib/analytics-client";
 import type { DB } from "@/lib/types";
 import { isValidEmail, sanitizePhone, PHONE_ERR, EMAIL_ERR } from "@/lib/contact";
 import { DEFAULT_DIAL, dialOptions, withDial, isValidNational } from "@/lib/dialcodes";
+import { RESERVATION_DEADLINE, RESERVATION_DEADLINE_LABEL, ONSITE_PRICE, reservationsOpen } from "@/lib/reservations";
 
 const LS_DB = "marena_db"; // demo režim (localStorage) — stejný klíč jako ve store
 
@@ -40,13 +41,9 @@ type Status = "loading" | "ready" | "notfound" | "error";
 
 const variantLabel = (l: { size?: string; color?: string }) => [l.size, l.color].filter(Boolean).join(" · ");
 
-// Konec rezervací lístků (pražský čas) a cena lístku na místě bez rezervace.
-const RESERVATION_DEADLINE = new Date("2026-09-24T16:00:00+02:00");
-const ONSITE_PRICE = 350;
-
-// Odpočet do konce rezervací — počítá se až na klientovi (žádný nesoulad při hydrataci),
-// tiká po sekundě. Po termínu ukáže, že rezervace skončily a lístky jsou na místě za 350 Kč.
-function ReservationCountdown() {
+// Aktuální čas tikající po sekundě — až na klientovi (žádný nesoulad při hydrataci).
+// Řídí odpočet i zamknutí stránky po termínu rezervací.
+function useNow(): number | null {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -54,6 +51,11 @@ function ReservationCountdown() {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+  return now;
+}
+
+// Odpočet do konce rezervací. Po termínu ukáže, že rezervace skončily a lístky jsou na místě za 350 Kč.
+function ReservationCountdown({ now }: { now: number | null }) {
   const left = now == null ? null : RESERVATION_DEADLINE.getTime() - now;
   const over = left != null && left <= 0;
   const parts = (() => {
@@ -68,7 +70,7 @@ function ReservationCountdown() {
         <p className="font-display text-base font-semibold">Rezervace skončily.</p>
       ) : (
         <>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ink-soft">Rezervace končí 24. 9. 2026 v 16:00</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ink-soft">Rezervace končí {RESERVATION_DEADLINE_LABEL}</p>
           {/* Jednotky oddělené tenkou svislou čarou (divide-x) */}
           <div className="mt-1.5 flex items-end justify-center divide-x divide-ink/15 font-display tabular-nums" aria-live="off">
             {[
@@ -108,6 +110,9 @@ export default function MerchOrderPage() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const now = useNow();
+  // Po termínu se nabídka i formulář schovají (server objednávky po termínu odmítá také).
+  const closed = now != null && !reservationsOpen(now);
   const [dial, setDial] = useState(DEFAULT_DIAL); // předvolba, výchozí Česko
   const dialList = useMemo(() => dialOptions("cs"), []);
   const [email, setEmail] = useState("");
@@ -215,6 +220,7 @@ export default function MerchOrderPage() {
 
   async function submit() {
     setErr(null);
+    if (!reservationsOpen()) return setErr(`Rezervace skončily ${RESERVATION_DEADLINE_LABEL}. Lístky koupíš na místě za ${fmtCZK(ONSITE_PRICE)}.`);
     if (!name.trim()) return setErr("Vyplň prosím jméno.");
     if (!phone.trim()) return setErr("Vyplň telefon.");
     if (!isValidNational(phone, dial)) return setErr(PHONE_ERR);
@@ -240,7 +246,15 @@ export default function MerchOrderPage() {
         });
         if (!res.ok) {
           const code = ((await res.json().catch(() => null)) as { error?: string } | null)?.error;
-          setErr(code === "invalid_email" ? EMAIL_ERR : code === "invalid_phone" ? PHONE_ERR : "Objednávku se nepodařilo odeslat. Zkus to prosím znovu.");
+          setErr(
+            code === "closed"
+              ? `Rezervace skončily ${RESERVATION_DEADLINE_LABEL}. Lístky koupíš na místě za ${fmtCZK(ONSITE_PRICE)}.`
+              : code === "invalid_email"
+                ? EMAIL_ERR
+                : code === "invalid_phone"
+                  ? PHONE_ERR
+                  : "Objednávku se nepodařilo odeslat. Zkus to prosím znovu.",
+          );
           setSubmitting(false);
           return;
         }
@@ -288,7 +302,7 @@ export default function MerchOrderPage() {
           {/* Růžový neon „Fléda" (stejný neon jako na homepage) */}
           <div className="vegas-neon-pink vegas-glow mt-1 font-display text-[48px] font-extrabold uppercase leading-none tracking-[0.14em]">Fléda</div>
           <p className="mt-1 text-sm text-ink-soft">Lístky{label ? ` · ${label}` : ""}</p>
-          <ReservationCountdown />
+          <ReservationCountdown now={now} />
         </div>
 
         {status === "loading" && <p className="text-center text-sm text-ink-soft">Načítám nabídku…</p>}
@@ -311,7 +325,18 @@ export default function MerchOrderPage() {
           </div>
         )}
 
-        {status === "ready" && !done && (
+        {status === "ready" && !done && closed && (
+          <div className="card p-8 text-center">
+            <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-paper2 text-2xl">🎟️</div>
+            <h1 className="font-display text-xl font-semibold">Rezervace lístků skončily</h1>
+            <p className="mt-2 text-sm text-ink-soft">Rezervovat šlo do {RESERVATION_DEADLINE_LABEL}.</p>
+            <p className="mt-3 text-base font-semibold text-ink">
+              Lístky koupíš na místě na baru na dvorku fakulty nebo na Flédě při vstupu za {fmtCZK(ONSITE_PRICE)}.
+            </p>
+          </div>
+        )}
+
+        {status === "ready" && !done && !closed && (
           <div className="space-y-6">
             {products.length === 0 ? (
               <div className="card p-8 text-center text-sm text-ink-soft">Nabídka se právě připravuje. Kdyžtak to zkus později.</div>
