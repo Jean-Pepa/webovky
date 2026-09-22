@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getSiteOff } from "@/lib/maintenance";
+import { isAdminAuthed } from "@/lib/auth";
 import { readDB } from "@/lib/server-db";
 import { getRedis, receiptKey } from "@/lib/redis";
 
@@ -9,6 +11,8 @@ export const dynamic = "force-dynamic";
 // Vrací jen produkty daného ročníku a jejich fotky (nic jiného z DB se neodhalí).
 export async function GET(_req: Request, { params }: { params: Promise<{ yearId: string }> }) {
   const { yearId } = await params;
+  // Vypnutý veřejný web → nabídka se nevydá (správce projde).
+  if ((await getSiteOff()) && !(await isAdminAuthed())) return NextResponse.json({ error: "site_off" }, { status: 503 });
   const db = await readDB();
   if (!db) return NextResponse.json({ error: "not_configured" }, { status: 503 });
   const year = db.years.find((y) => y.id === yearId);

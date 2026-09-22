@@ -162,6 +162,7 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
   }, []);
   const [boardUnread, setBoardUnread] = useState(0);
   const [maint, setMaint] = useState<boolean | null>(null); // režim údržby (null = ještě nevíme)
+  const [siteOff, setSiteOff] = useState<boolean | null>(null); // veřejný web vypnutý (null = ještě nevíme)
   const { dark, toggle: toggleTheme } = useZazemiTheme();
 
   useEffect(() => {
@@ -175,8 +176,11 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
     const load = () =>
       fetch("/api/maintenance", { cache: "no-store" })
         .then((r) => r.json())
-        .then((d: { maintenance?: boolean }) => {
-          if (alive) setMaint(!!d.maintenance);
+        .then((d: { maintenance?: boolean; siteOff?: boolean }) => {
+          if (alive) {
+            setMaint(!!d.maintenance);
+            setSiteOff(!!d.siteOff);
+          }
         })
         .catch(() => {});
     load();
@@ -421,6 +425,15 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
               <Icon name="chart" className="h-4 w-4" /> Statistiky
             </Link>
           )}
+          {isAdmin(me) && (
+            <SiteOffButton
+              siteOff={siteOff}
+              onChanged={(off) => {
+                setSiteOff(off);
+                setMaint(off);
+              }}
+            />
+          )}
           {isAdmin(me) && db && (
             <button
               onClick={() => setArchiveOpen(true)}
@@ -497,6 +510,17 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                 >
                   <Icon name="chart" className="h-5 w-5" /> Statistiky
                 </Link>
+              )}
+              {isAdmin(me) && (
+                <SiteOffButton
+                  siteOff={siteOff}
+                  mobile
+                  onChanged={(off) => {
+                    setSiteOff(off);
+                    setMaint(off);
+                    setMenuOpen(false);
+                  }}
+                />
               )}
               {isAdmin(me) && db && (
                 <button
@@ -794,6 +818,51 @@ function NewPostAlert() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Vypnout web (jen správce): jedním tlačítkem zamkne zázemí (údržba) i veřejný web
+// (hlavní stránka, rezervace lístků a jejich API) pro všechny kromě správce.
+// Zpět zapne obojí. Funguje jen se sdíleným úložištěm (Redis).
+function SiteOffButton({ siteOff, mobile = false, onChanged }: { siteOff: boolean | null; mobile?: boolean; onChanged: (off: boolean) => void }) {
+  const [busy, setBusy] = useState(false);
+  const off = siteOff === true;
+
+  async function toggle() {
+    if (siteOff === null || busy) return;
+    const next = !off;
+    if (next && !window.confirm("Vypnout web pro všechny kromě tebe? Zamkne se zázemí (údržba) i veřejný web s rezervacemi. Zpět to zapneš stejným tlačítkem.")) return;
+    setBusy(true);
+    const r = await fetch("/api/maintenance", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ all: next }),
+    }).catch(() => null);
+    setBusy(false);
+    if (r && r.ok) onChanged(next);
+    else alert("Přepnutí se nepovedlo. (Vypínač funguje jen s Redisem, ne v demu.)");
+  }
+
+  const label = off ? "Web vypnutý · zapnout" : "Vypnout web";
+  const title = off ? "Web i zázemí jsou vypnuté pro všechny kromě tebe — kliknutím zapneš zpět" : "Vypne zázemí i veřejný web pro všechny kromě tebe";
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={siteOff === null || busy}
+      title={title}
+      className={
+        mobile
+          ? `inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-medium disabled:opacity-50 ${
+              off ? "bg-red-600 text-white" : "text-red-700 ring-1 ring-red-200 hover:bg-red-50"
+            }`
+          : `inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${
+              off ? "bg-red-600 text-white hover:bg-red-500" : "text-red-700 ring-1 ring-red-200 hover:bg-red-50"
+            }`
+      }
+    >
+      {off ? "🔴" : "⛔"} {label}
+    </button>
   );
 }
 

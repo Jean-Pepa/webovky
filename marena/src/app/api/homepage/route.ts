@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { isAuthed } from "@/lib/auth";
+import { isAuthed, isAdminAuthed } from "@/lib/auth";
+import { getSiteOff } from "@/lib/maintenance";
 import { isConfigured } from "@/lib/server-db";
 import { getHomepage, setHomepage } from "@/lib/homepage-server";
 import type { HomeContent } from "@/lib/homepage";
@@ -9,6 +10,8 @@ export const dynamic = "force-dynamic";
 
 // Obsah homepage si čte veřejný web (bez přihlášení) — proto GET bez autorizace.
 export async function GET() {
+  // Vypnutý veřejný web → obsah hlavní stránky se nevydá (správce projde).
+  if ((await getSiteOff()) && !(await isAdminAuthed())) return NextResponse.json({ error: "site_off" }, { status: 503 });
   return NextResponse.json({ content: await getHomepage() });
 }
 

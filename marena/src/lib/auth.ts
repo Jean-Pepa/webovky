@@ -35,6 +35,13 @@ export function authToken(): string {
   return createHash("sha256").update(`marena:auth:v2:${secret}`).digest("hex");
 }
 
+// Správce podle správcovské cookie (záložní login + heslo). Používá se tam, kde
+// má správce projít i při vypnutém webu (veřejné stránky a jejich API).
+export async function isAdminAuthed(): Promise<boolean> {
+  const jar = await cookies();
+  return jar.get(ADMIN_COOKIE)?.value === adminToken();
+}
+
 export async function isAuthed(): Promise<boolean> {
   const jar = await cookies();
   // Správcovský záložní login (login + heslo) — plný přístup, obchází Supabase.
