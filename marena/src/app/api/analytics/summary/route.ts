@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthed } from "@/lib/auth";
-import { getSummary } from "@/lib/analytics";
+import { getSummary, persistAllAnalytics } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,6 +10,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   if (!(await isAuthed())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const days = Math.min(60, Math.max(1, Number(new URL(req.url).searchParams.get("days")) || 14));
+  // Zrušit případné staré expirace (data se nemažou) — nejvýš jednou za hodinu.
+  await persistAllAnalytics();
   const summary = await getSummary(days);
   return NextResponse.json(summary);
 }

@@ -8,7 +8,9 @@ import { isAdmin } from "./admin";
 //  - „živý" feed posledních událostí + adresář uživatelů (jméno/token/IP)
 // Vše je best-effort: když Redis není, tiše se nic neděje.
 
-const TTL = 60 * 60 * 24 * 70; // denní klíče se samy smažou po ~70 dnech
+// Data se NEMAŽOU — žádné expirace (dřív se denní klíče mazaly po ~70 dnech).
+// Klíče, které ještě mají starou expiraci, se při zápisu i při otevření statistik
+// přepnou na trvalé (PERSIST), ať se nic z historie neztratí.
 
 // Datum v pražském čase (YYYY-MM-DD) — správné hranice dne pro festival.
 export function pragueDate(d: Date = new Date()): string {
@@ -77,7 +79,7 @@ export async function recordEvents(events: IncomingEvent[], ip: string, ua: stri
       p.hincrby(`av:dev:${today}`, `br:${info.browser}`, 1);
       p.hincrby("av:hits", uk, 1); // počet zobrazení na uživatele
       p.sadd(`av:uip:${uk}`, ip);
-      p.expire(`av:uip:${uk}`, TTL);
+      p.persist(`av:uip:${uk}`);
       p.hset("av:users", {
         [uk]: JSON.stringify({ name: name?.trim() || null, anon: !loggedIn, dev: info.device, os: info.os, br: info.browser, ip, last: Date.now() }),
       });
@@ -97,9 +99,30 @@ export async function recordEvents(events: IncomingEvent[], ip: string, ua: stri
     }
   }
 
-  p.ltrim("av:recent", 0, 400);
-  for (const k of touched) p.expire(k, TTL);
+  // Živý feed se neořezává a denní klíče se nikdy nemažou (trvalé).
+  for (const k of touched) p.persist(k);
   await p.exec().catch(() => {});
+}
+
+// Jednorázově (nejvýš jednou za hodinu) zruší expiraci u VŠECH klíčů analytiky —
+// kvůli starším dnům, které ještě mají nastavené mazání po 70 dnech.
+export async function persistAllAnalytics(): Promise<void> {
+  const redis = getRedis();
+  if (!redis) return;
+  try {
+    const stamp = "av:persisted_at";
+    const last = Number((await redis.get(stamp)) ?? 0);
+    if (Date.now() - last < 60 * 60 * 1000) return;
+    const keys = (await redis.keys("av:*")) as string[];
+    if (keys.length) {
+      const p = redis.pipeline();
+      for (const k of keys) p.persist(k);
+      await p.exec();
+    }
+    await redis.set(stamp, Date.now());
+  } catch {
+    /* best-effort */
+  }
 }
 
 // ---------- Čtení / agregace pro přehled správce ----------
