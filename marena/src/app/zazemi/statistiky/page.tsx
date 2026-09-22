@@ -165,7 +165,7 @@ export default function StatistikyPage() {
           </Card>
 
           <p className="text-center text-[11px] text-ink-soft">
-            Sbírá se první-strana (vlastní) analytika do Redisu. Denní data se po ~70 dnech samy mažou.
+            Sbírá se první-strana (vlastní) analytika do Redisu. Data se nemažou, zůstávají natrvalo.
           </p>
         </>
       )}
