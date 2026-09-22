@@ -2,7 +2,7 @@ import Link from "next/link";
 
 // Veřejný web vypnutý správcem — místo hlavní stránky / rezervací se ukáže tohle.
 // Klidná obrazovka ve stylu systémových hlášek iOS: ikona, tučný nadpis, šedý
-// podtitulek, modré tlačítko. Serverová komponenta (bez hooků). Barvy podle
+// podtitulek. Serverová komponenta (bez hooků). Barvy podle
 // systémového světlého / tmavého režimu (třídy .siteoff* v globals.css).
 export function SiteOff() {
   return (
@@ -16,10 +16,7 @@ export function SiteOff() {
         </div>
         <h1 className="mt-6 text-[22px] font-semibold tracking-tight">Web je dočasně nefunkční</h1>
         <p className="siteoff-sub mt-2 text-[15px] leading-snug">Pracujeme na tom. Zkus to prosím za chvíli.</p>
-        <a href="/" className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-[#007aff] px-6 py-3 text-[17px] font-semibold text-white transition active:opacity-80">
-          Zkusit znovu
-        </a>
-        <p className="siteoff-sub mt-10 text-xs">
+        <p className="siteoff-sub mt-12 text-xs">
           <Link href="/prihlaseni" className="underline-offset-2 hover:underline">
             Správce
           </Link>
