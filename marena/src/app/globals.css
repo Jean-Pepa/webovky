@@ -859,3 +859,18 @@ input[type="search"]::-webkit-search-decoration {
     background: #1c1c1e;
   }
 }
+.siteoff-input {
+  background: #fff;
+  color: #1c1c1e;
+  border: 1px solid #d1d1d6;
+}
+.siteoff-input::placeholder {
+  color: #8e8e93;
+}
+@media (prefers-color-scheme: dark) {
+  .siteoff-input {
+    background: #1c1c1e;
+    color: #f2f2f7;
+    border-color: #3a3a3c;
+  }
+}

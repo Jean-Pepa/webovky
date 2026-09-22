@@ -10,7 +10,7 @@ export function SiteOff() {
       {/* Vstup pro správce vpravo nahoře (kde je na hlavní stránce přihlášení) — jen malé
           prázdné, skoro neviditelné kolečko; plocha na ťuknutí je větší než kolečko. */}
       <Link
-        href="/prihlaseni"
+        href="/spravce"
         aria-label="Správce"
         className="absolute right-3 top-[calc(0.75rem+env(safe-area-inset-top))] grid h-11 w-11 place-items-center"
       >
