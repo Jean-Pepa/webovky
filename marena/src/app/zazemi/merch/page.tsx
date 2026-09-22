@@ -114,20 +114,34 @@ export default function MerchPage() {
   const tickets = { total: ticketQty(orders), paid: ticketQty(orders.filter((o) => o.done)), pending: ticketQty(orders.filter((o) => !o.done)) };
   const ticketOrderList = orders.filter((o) => o.items.some(isTicketItem));
   const ticketOrders = ticketOrderList.length;
-  // E-maily lidí s lístkem (zaplacené i čekající) — na hromadné oznámení; bez duplicit,
-  // oddělené čárkou, ať se dají vložit rovnou do skryté kopie e-mailu.
-  const ticketEmails = [...new Set(ticketOrderList.map((o) => (o.email ?? "").trim().toLowerCase()).filter((e) => e.includes("@")))];
-  const ticketNoEmail = ticketOrderList.filter((o) => !(o.email ?? "").includes("@")).length;
-  // Telefony (na hromadnou SMS) — bez duplicit (stejné číslo s +420 i bez), jinak jak byly zadané.
+  // Kontakty lidí s lístkem na hromadnou zprávu — e-maily (skrytá kopie), telefony (SMS)
+  // a jména (seznam na vstup). Bez duplicit; zvlášť „všichni" a „jen nezaplacené".
   const phoneKey = (t: string) => t.replace(/\D/g, "").replace(/^(00420|420)(?=\d{9}$)/, "");
-  const ticketPhones = [...new Map(ticketOrderList.map((o) => (o.phone ?? "").trim()).filter((t) => phoneKey(t).length >= 9).map((t) => [phoneKey(t), t])).values()];
-  const ticketNoPhone = ticketOrderList.filter((o) => phoneKey(o.phone ?? "").length < 9).length;
-  // Jména (seznam na vstup) — abecedně, u víc lístků v jedné objednávce „×2".
-  const ticketNames = ticketOrderList
-    .map((o) => ({ name: o.name.trim(), qty: o.items.filter(isTicketItem).reduce((q, it) => q + it.qty, 0) }))
-    .filter((n) => n.name)
-    .sort((a, b) => normName(a.name).localeCompare(normName(b.name), "cs"))
-    .map((n) => (n.qty > 1 ? `${n.name} ×${n.qty}` : n.name));
+  const contactsOf = (list: MerchOrder[]) => ({
+    emails: [...new Set(list.map((o) => (o.email ?? "").trim().toLowerCase()).filter((e) => e.includes("@")))],
+    noEmail: list.filter((o) => !(o.email ?? "").includes("@")).length,
+    // stejné číslo s +420 i bez se počítá jednou, jinak jak bylo zadané
+    phones: [...new Map(list.map((o) => (o.phone ?? "").trim()).filter((t) => phoneKey(t).length >= 9).map((t) => [phoneKey(t), t])).values()],
+    noPhone: list.filter((o) => phoneKey(o.phone ?? "").length < 9).length,
+    // abecedně, u víc lístků v jedné objednávce „×2"
+    names: list
+      .map((o) => ({ name: o.name.trim(), qty: o.items.filter(isTicketItem).reduce((q, it) => q + it.qty, 0) }))
+      .filter((n) => n.name)
+      .sort((a, b) => normName(a.name).localeCompare(normName(b.name), "cs"))
+      .map((n) => (n.qty > 1 ? `${n.name} ×${n.qty}` : n.name)),
+  });
+  const allC = contactsOf(ticketOrderList);
+  const unpaidC = contactsOf(ticketOrderList.filter((o) => !o.done));
+  const ticketEmails = allC.emails;
+  const ticketNoEmail = allC.noEmail;
+  const ticketPhones = allC.phones;
+  const ticketNoPhone = allC.noPhone;
+  const ticketNames = allC.names;
+  // Zkopíruje seznam a ohlásí to.
+  const copyList = async (items: string[], sep: string, what: string, emoji: string) => {
+    const ok = await copyText(items.join(sep));
+    flash(ok ? `Zkopírováno ${items.length} ${what}` : "Kopírování se nepovedlo", ok ? emoji : "⚠️");
+  };
   // Holky / kluci — odhad podle jména (příjmení -ová/-á, křestní -a…). Jen orientačně.
   const gender = ticketOrderList.reduce(
     (acc, o) => {
@@ -257,62 +271,69 @@ export default function MerchPage() {
                 odhad podle jména, počítá lidi (objednávky s lístkem)
                 {gender["?"].all > 0 && ` · ${gender["?"].all} nejasné`}
               </p>
-              {/* Hromadná zpráva všem s lístkem: telefony (SMS), jména (seznam), e-maily (skrytá kopie) */}
-              <div className="col-span-2 space-y-1.5 border-t border-ink/[0.06] pt-2 sm:col-span-4">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <button
-                    type="button"
-                    className="chip transition hover:bg-gold-100 disabled:opacity-50"
-                    disabled={ticketPhones.length === 0}
-                    title="Zkopíruje telefony všech, kdo mají v objednávce lístek (zaplacené i čekající) — na hromadnou SMS"
-                    onClick={async () => {
-                      const ok = await copyText(ticketPhones.join(", "));
-                      flash(ok ? `Zkopírováno ${ticketPhones.length} telefonů k lístkům` : "Kopírování se nepovedlo", ok ? "📱" : "⚠️");
-                    }}
-                  >
-                    📱 Kopírovat telefony k lístkům
-                    <span className="rounded-full bg-ink/[0.06] px-1.5 text-[11px] tabular-nums">{ticketPhones.length}</span>
-                  </button>
-                  <span className="text-xs text-ink-soft">
-                    na hromadnou SMS
-                    {ticketNoPhone > 0 && ` · ${ticketNoPhone} obj. bez telefonu`}
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <button
-                    type="button"
-                    className="chip transition hover:bg-gold-100 disabled:opacity-50"
-                    disabled={ticketNames.length === 0}
-                    title="Zkopíruje jména všech, kdo mají v objednávce lístek — abecedně, každé na řádek, u víc lístků ×počet"
-                    onClick={async () => {
-                      const ok = await copyText(ticketNames.join("\n"));
-                      flash(ok ? `Zkopírováno ${ticketNames.length} jmen k lístkům` : "Kopírování se nepovedlo", ok ? "👤" : "⚠️");
-                    }}
-                  >
-                    👤 Kopírovat jména k lístkům
-                    <span className="rounded-full bg-ink/[0.06] px-1.5 text-[11px] tabular-nums">{ticketNames.length}</span>
-                  </button>
-                  <span className="text-xs text-ink-soft">abecedně, každé na řádek · seznam na vstup</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <button
-                    type="button"
-                    className="chip transition hover:bg-gold-100 disabled:opacity-50"
-                    disabled={ticketEmails.length === 0}
-                    title="Zkopíruje e-maily všech, kdo mají v objednávce lístek (zaplacené i čekající) — vlož je do skryté kopie hromadného e-mailu"
-                    onClick={async () => {
-                      const ok = await copyText(ticketEmails.join(", "));
-                      flash(ok ? `Zkopírováno ${ticketEmails.length} e-mailů k lístkům` : "Kopírování se nepovedlo", ok ? "📧" : "⚠️");
-                    }}
-                  >
-                    📧 Kopírovat e-maily k lístkům
-                    <span className="rounded-full bg-ink/[0.06] px-1.5 text-[11px] tabular-nums">{ticketEmails.length}</span>
-                  </button>
-                  <span className="text-xs text-ink-soft">
-                    na hromadnou zprávu · vlož do skryté kopie
-                    {ticketNoEmail > 0 && ` · ${ticketNoEmail} obj. bez e-mailu`}
-                  </span>
-                </div>
+              {/* Hromadná zpráva všem s lístkem: telefony (SMS), jména (seznam), e-maily (skrytá kopie).
+                  U každého i varianta „jen nezaplacené" — třeba upomínka lidem, co ještě nezaplatili. */}
+              <div className="col-span-2 space-y-2 border-t border-ink/[0.06] pt-2 sm:col-span-4">
+                {[
+                  {
+                    key: "phones",
+                    icon: "📱",
+                    label: "Kopírovat telefony k lístkům",
+                    what: "telefonů k lístkům",
+                    sep: ", ",
+                    all: ticketPhones,
+                    unpaid: unpaidC.phones,
+                    hint: `na hromadnou SMS${ticketNoPhone > 0 ? ` · ${ticketNoPhone} obj. bez telefonu` : ""}`,
+                    title: "Zkopíruje telefony všech, kdo mají v objednávce lístek (zaplacené i čekající) — na hromadnou SMS",
+                  },
+                  {
+                    key: "names",
+                    icon: "👤",
+                    label: "Kopírovat jména k lístkům",
+                    what: "jmen k lístkům",
+                    sep: "\n",
+                    all: ticketNames,
+                    unpaid: unpaidC.names,
+                    hint: "abecedně, každé na řádek · seznam na vstup",
+                    title: "Zkopíruje jména všech, kdo mají v objednávce lístek — abecedně, každé na řádek, u víc lístků ×počet",
+                  },
+                  {
+                    key: "emails",
+                    icon: "📧",
+                    label: "Kopírovat e-maily k lístkům",
+                    what: "e-mailů k lístkům",
+                    sep: ", ",
+                    all: ticketEmails,
+                    unpaid: unpaidC.emails,
+                    hint: `na hromadnou zprávu · vlož do skryté kopie${ticketNoEmail > 0 ? ` · ${ticketNoEmail} obj. bez e-mailu` : ""}`,
+                    title: "Zkopíruje e-maily všech, kdo mají v objednávce lístek (zaplacené i čekající) — vlož je do skryté kopie hromadného e-mailu",
+                  },
+                ].map((row) => (
+                  <div key={row.key} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <button
+                      type="button"
+                      className="chip transition hover:bg-gold-100 disabled:opacity-50"
+                      disabled={row.all.length === 0}
+                      title={row.title}
+                      onClick={() => copyList(row.all, row.sep, row.what, row.icon)}
+                    >
+                      {row.icon} {row.label}
+                      <span className="rounded-full bg-ink/[0.06] px-1.5 text-[11px] tabular-nums">{row.all.length}</span>
+                    </button>
+                    {/* jen lidé, co ještě nezaplatili (objednávka čeká) */}
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 transition hover:bg-amber-200 disabled:opacity-50"
+                      disabled={row.unpaid.length === 0}
+                      title="Jen lidé s lístkem, kteří ještě nezaplatili (objednávka čeká)"
+                      onClick={() => copyList(row.unpaid, row.sep, `${row.what} (jen nezaplacené)`, row.icon)}
+                    >
+                      ⏳ jen nezaplacené
+                      <span className="rounded-full bg-amber-200/70 px-1.5 text-[11px] tabular-nums">{row.unpaid.length}</span>
+                    </button>
+                    <span className="text-xs text-ink-soft">{row.hint}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
