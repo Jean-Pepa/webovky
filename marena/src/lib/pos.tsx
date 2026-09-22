@@ -463,6 +463,83 @@ export function ProfitLine({ stats }: { stats: ReturnType<typeof posStats> }) {
   );
 }
 
+// Správce: úprava uložené kasy — název, ranní vklad, večerní stav. Rozdíl (přebytek /
+// manko) se přepočítá a přepíše i ve financích; markovaná hotovost z prodejů se nemění.
+function EditCashboxModal({ box, yearId, onClose }: { box: Cashbox; yearId: string; onClose: () => void }) {
+  const { dispatch } = useStore();
+  const [label, setLabel] = useState(box.label ?? "");
+  const [opening, setOpening] = useState(String(box.opening));
+  const [closing, setClosing] = useState(box.closing != null ? String(box.closing) : "");
+  const [busy, setBusy] = useState(false);
+  const num = (v: string) => {
+    const n = parseInt(v.replace(/\s/g, ""), 10);
+    return Number.isFinite(n) ? n : NaN;
+  };
+  const o = num(opening);
+  const c = num(closing);
+  const already = box.alreadyRecorded ?? 0;
+  const diff = Number.isFinite(o) && Number.isFinite(c) ? c - o - already : null;
+  const sgn = (n: number) => `${n >= 0 ? "+" : "−"}${fmtCZK(Math.abs(n))}`;
+  const valid = Number.isFinite(o) && o >= 0 && (!box.closedAt || (Number.isFinite(c) && c >= 0));
+
+  async function save() {
+    if (!valid || busy) return;
+    setBusy(true);
+    try {
+      const ok = await dispatch({ type: "updateCashbox", yearId, cashboxId: box.id, patch: { label, opening: o, closing: box.closedAt ? c : undefined } });
+      if (!ok) return;
+      flash(`Kasa ${fmtDate(box.openedAt)} upravena`, "✏️");
+      onClose();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title={`Upravit kasu · ${fmtDate(box.openedAt)}`}>
+      <div className="space-y-3">
+        <label className="block text-sm">
+          <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">Název</span>
+          <input className="input mt-1" placeholder="např. Bar" value={label} onChange={(e) => setLabel(e.target.value)} />
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="block text-sm">
+            <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">Ranní vklad (Kč)</span>
+            <input className="input mt-1" inputMode="numeric" value={opening} onChange={(e) => setOpening(e.target.value)} />
+          </label>
+          {box.closedAt && (
+            <label className="block text-sm">
+              <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">Večer v kase (Kč)</span>
+              <input className="input mt-1" inputMode="numeric" value={closing} onChange={(e) => setClosing(e.target.value)} />
+            </label>
+          )}
+        </div>
+        {box.closedAt && (
+          <p className="rounded-xl bg-paper2/60 px-3 py-2 text-sm text-ink-soft">
+            Markováno hotově z prodejů: <strong className="text-ink">{fmtCZK(already)}</strong> (nemění se)
+            {diff != null && (
+              <>
+                {" "}
+                · rozdíl{" "}
+                <strong className={diff === 0 ? "text-ink" : diff > 0 ? "text-leaf-700" : "text-red-600"}>{diff === 0 ? "0 Kč · sedí" : sgn(diff)}</strong>
+                {diff !== 0 && <span> ({diff > 0 ? "přebytek, do zisku" : "manko, ze zisku"} — přepíše se i ve financích)</span>}
+              </>
+            )}
+          </p>
+        )}
+        <div className="flex items-center gap-2">
+          <button className="btn-primary flex-1" onClick={save} disabled={!valid || busy}>
+            {busy ? "Ukládám…" : "Uložit změny"}
+          </button>
+          <button className="btn-ghost" onClick={onClose}>
+            Zrušit
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export function DayCard({
   box,
   stats,
@@ -479,6 +556,7 @@ export function DayCard({
   compact?: boolean; // jen datum + „uzamčeno" (prodejci a ostatní bez správce nevidí tržby)
 }) {
   const { dispatch } = useStore();
+  const [editOpen, setEditOpen] = useState(false); // správce: úprava uložené kasy
   const rozdil = (box.closing ?? 0) - box.opening - (box.alreadyRecorded ?? 0);
   if (compact) {
     return (
@@ -498,9 +576,14 @@ export function DayCard({
           📅 {fmtDate(box.openedAt)}
           {box.label ? <span className="ml-1.5 font-normal text-ink-soft">· {box.label}</span> : null}
         </h3>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <CopyDayButton box={box} stats={stats} orders={orders} />
           <span className="chip">🔒 uzamčeno</span>
+          {admin && (
+            <button type="button" className="chip transition hover:bg-gold-100" onClick={() => setEditOpen(true)} title="Upravit název, ranní vklad a večerní stav kasy">
+              ✏️ Upravit
+            </button>
+          )}
           {admin && (
             <DeleteButton
               what={`den ${fmtDate(box.openedAt)} — smaže i všechny prodeje toho dne (všude)`}
@@ -509,6 +592,7 @@ export function DayCard({
           )}
         </div>
       </div>
+      {editOpen && <EditCashboxModal box={box} yearId={yearId} onClose={() => setEditOpen(false)} />}
 
       {/* Tržba vlevo (zeleně — kolik se vydělalo), platby (QR + hotově) vpravo */}
       <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
