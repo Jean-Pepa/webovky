@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { readDB, applyActionAtomic } from "@/lib/server-db";
 import { isValidEmail, isValidPhone } from "@/lib/contact";
+import { reservationsOpen } from "@/lib/reservations";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,6 +10,8 @@ export const dynamic = "force-dynamic";
 // atomicky do DB. Položky se ověří proti skutečné nabídce ročníku (žádný cizí text).
 export async function POST(req: Request, { params }: { params: Promise<{ yearId: string }> }) {
   const { yearId } = await params;
+  // Po konci rezervací se objednávky nepřijímají (i kdyby někdo měl starou stránku otevřenou).
+  if (!reservationsOpen()) return NextResponse.json({ error: "closed" }, { status: 410 });
   const body = (await req.json().catch(() => null)) as
     | { name?: unknown; phone?: unknown; email?: unknown; note?: unknown; selections?: unknown }
     | null;
