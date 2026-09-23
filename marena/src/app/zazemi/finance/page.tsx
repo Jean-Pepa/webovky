@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, fmtDateTime, fmtRelative, todayISO } from "@/lib/format";
-import { posStats, posOrders, boxDayFinances, makeCostLookup, groupSales, SaleGroupFrame, DayCard, OrderHistory, PayBreakdown, ProfitLine, CopyDayButton, makeTicketSplit, TicketSplitLine, EditCashboxModal, type TicketSplit, type CostLookup } from "@/lib/pos";
+import { posStats, posOrders, boxDayFinances, makeCostLookup, groupSales, SaleGroupFrame, DayCard, OrderHistory, PayBreakdown, ProfitLine, CopyDayButton, makeTicketSplit, TicketSplitLine, ManualLine, EditCashboxModal, type TicketSplit, type CostLookup } from "@/lib/pos";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
@@ -1583,6 +1583,7 @@ function CashboxCard({
       </div>
       <ProfitLine stats={stats} />
       <TicketSplitLine stats={stats} />
+      <ManualLine stats={stats} />
 
       <OrderHistory orders={orders} canDelete={canEdit} yearId={yearId} />
 

@@ -80,6 +80,10 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
   let count = 0;
   let kasaAdj = 0; // rekonciliace kasy (kategorie „kasa" — manko/přebytek), NENÍ tržba
   let purchases = 0; // nákupy zboží (výdaje bar / kuchyně / merch) — NEJSOU tržba, jen se ukážou
+  // Příjmy bez způsobu platby (nemají „QR platba" ani „hotově") — ručně přidané položky
+  // ve Financích, ne prodeje z Prodeje. Počítají se do tržby, ale ne do QR/hotově,
+  // proto se vypisují zvlášť, ať je vidět, co v kase je navíc.
+  const manual: { label: string; amount: number; date?: string }[] = [];
   const byCat = new Map<string, number>();
   const items = new Map<string, number>();
   for (const f of list) {
@@ -100,6 +104,7 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
     const note = f.note ?? "";
     if (note.includes("QR platba")) qr += f.amount;
     else if (note.includes("hotově")) cash += f.amount;
+    else manual.push({ label: f.label, amount: f.amount, date: f.date });
     // Náklady zápisu: prodané kusy × nákupní cena (z poznámky „2× Pivo, 1× Chleba")
     let entryCost = 0;
     if (note.includes("×")) {
@@ -144,6 +149,8 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
     count,
     top,
     purchases,
+    manual,
+    manualTotal: manual.reduce((sum, m) => sum + m.amount, 0),
     // Náklady a zisk (jídlo & pití) podle nákupních cen položek — jen když je předaný ceník.
     withCosts: !!costOf,
     cost: foodCost,
@@ -355,6 +362,9 @@ export function dayReportText(box: Cashbox, stats: ReturnType<typeof posStats>, 
   if (stats.ticketQty > 0) lines.push(`Lístky: ${stats.ticketQty} ks · tržba ${fmtCZK(stats.ticketRevenue)}${stats.withCosts ? ` · zisk ${sgn(stats.ticketProfit)}` : ""}`);
   if (stats.merchRevenue > 0) lines.push(`Merch: tržba ${fmtCZK(stats.merchRevenue)}${stats.withCosts ? ` · zisk ${sgn(stats.merchProfit)}` : ""}`);
   lines.push(`Kasou prošlo celkem ${fmtCZK(stats.allRevenue)} (QR ${fmtCZK(stats.qr)} · hotově ${fmtCZK(stats.cash)} · ${stats.count}× prodej)`);
+  if (stats.manual.length) {
+    lines.push(`Ručně zapsané položky (bez QR/hotově): ${fmtCZK(stats.manualTotal)} — ${stats.manual.map((m) => `${m.label} ${fmtCZK(m.amount)}${m.date ? ` (datum ${fmtDate(m.date)})` : ""}`).join(", ")}`);
+  }
   if (box.closedAt && box.closing != null) {
     const rozdil = box.closing - box.opening - (box.alreadyRecorded ?? 0);
     lines.push(`Vklad ${fmtCZK(box.opening)} → večer ${fmtCZK(box.closing)} · rozdíl ${rozdil >= 0 ? "+" : "−"}${fmtCZK(Math.abs(rozdil))}`);
@@ -418,6 +428,19 @@ export function TicketSplitLine({ stats }: { stats: ReturnType<typeof posStats> 
 }
 
 // Tlačítko „kopírovat" u nadpisu kasy — zkopíruje celý výpis dne do schránky.
+// Ručně přidané položky ve Financích (bez QR/hotově), které spadly do kasy podle času
+// zápisu — ať je jasné, proč tržba nesedí s QR + hotově.
+export function ManualLine({ stats }: { stats: ReturnType<typeof posStats> }) {
+  if (!stats.manual.length) return null;
+  return (
+    <p className="mt-1.5 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
+      ✍️ Ručně zapsáno do financí (bez QR/hotově): <strong>{fmtCZK(stats.manualTotal)}</strong> —{" "}
+      {stats.manual.map((m) => `${m.label} ${fmtCZK(m.amount)}${m.date ? ` (datum ${fmtDate(m.date)})` : ""}`).join(", ")}. Do kasy patří podle času zápisu, ne podle
+      data položky.
+    </p>
+  );
+}
+
 export function CopyDayButton({ box, stats, orders }: { box: Cashbox; stats: ReturnType<typeof posStats>; orders: PosOrder[] }) {
   return (
     <button
@@ -623,6 +646,7 @@ export function DayCard({
       </div>
       <ProfitLine stats={stats} />
       <TicketSplitLine stats={stats} />
+      <ManualLine stats={stats} />
 
       <p className="mt-2 border-t border-ink/[0.06] pt-2 text-sm text-ink-soft">
         Kasa: vklad {fmtCZK(box.opening)} → večer {fmtCZK(box.closing ?? 0)}
