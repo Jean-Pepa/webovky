@@ -314,14 +314,40 @@ function renderAlmanach(): string {
   return `<section class="year"><h1>Almanach — manuál Mařeny</h1>${chapters}</section>`;
 }
 
+// Jen peníze: souhrn, kasy po dnech, rozpis tržby, prodané položky, lístky & merch,
+// výběr, ceník s náklady a celá pokladní kniha. Bez týmu, programu, statistik a almanachu.
+function renderYearFinance(y: Year): string {
+  return `<section class="year">
+    <h1>${esc(y.label)} — finance a prodej</h1>
+    ${section("1. Finance — souhrn", renderFinanceSummary(y))}
+    ${section("2. Denní kasy", renderCashboxes(y))}
+    ${section("3. Tržba z prodeje — rozpis za ročník", renderSalesBreakdown(y))}
+    ${section("4. Prodané položky za ročník", renderSoldItems(y))}
+    ${section("5. Lístky & merch", renderMerch(y))}
+    ${section("6. Výběr od lidí", renderContributions(y))}
+    ${section("7. Ceník a náklady (receptury)", renderBarAndKitchen(y))}
+    ${section("8. Pokladní kniha (všechny zápisy)", renderFinance(y))}
+  </section>`;
+}
+
+function buildFinanceHtml(db: DB, stamp: string): string {
+  const years = [...db.years].sort((a, b) => a.id.localeCompare(b.id, "cs", { numeric: true }));
+  const obsah = years.map((y) => `<li>${esc(y.label)} — 8 kapitol (souhrn, kasy, tržba, položky, lístky & merch, výběr, ceník, pokladní kniha)</li>`).join("");
+  return documentHtml(`Marena_finance_${stamp}`, "Finance a prodej", stamp, obsah, years.map(renderYearFinance).join(""));
+}
+
 function buildArchiveHtml(db: DB, stamp: string, analytics: AnalyticsSummary | null): string {
   const years = [...db.years].sort((a, b) => a.id.localeCompare(b.id, "cs", { numeric: true }));
   const obsah = years.map((y) => `<li>${esc(y.label)} — 22 kapitol (tým, program, nabídka, lístky, kasy, finance…)</li>`).join("") + `<li>Statistiky webu</li><li>Almanach</li>`;
-  const body = years.map(renderYear).join("") + `<section class="year"><h1>Statistiky webu</h1>${section("Návštěvnost, kliky, trychtýř, zařízení, uživatelé", renderAnalytics(analytics))}</section>`;
+  const body = years.map(renderYear).join("") + `<section class="year"><h1>Statistiky webu</h1>${section("Návštěvnost, kliky, trychtýř, zařízení, uživatelé", renderAnalytics(analytics))}</section>` + renderAlmanach();
+  return documentHtml(`Marena_archiv_${stamp}`, "Kompletní archiv", stamp, obsah, body);
+}
 
+// Společný obal dokumentu (styl, lišta s tiskem, titulní strana).
+function documentHtml(title: string, heading: string, stamp: string, obsah: string, body: string): string {
   return `<!doctype html>
 <html lang="cs"><head><meta charset="utf-8">
-<title>Marena_archiv_${esc(stamp)}</title>
+<title>${esc(title)}</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color:#1d1d1f; margin:0; line-height:1.5; font-size:12px; }
@@ -353,15 +379,36 @@ function buildArchiveHtml(db: DB, stamp: string, analytics: AnalyticsSummary | n
   <div class="wrap">
     <div class="cover">
       <div class="big">MAŘENA</div>
-      <h1>Kompletní archiv</h1>
+      <h1>${esc(heading)}</h1>
       <p class="muted">Vygenerováno ${esc(stamp)} · Fakulta architektury VUT</p>
-      <p>Obsah (ročníky):</p>
+      <p>Obsah:</p>
       <ul style="display:inline-block; text-align:left">${obsah}</ul>
     </div>
     ${body}
-    ${renderAlmanach()}
   </div>
 </body></html>`;
+}
+
+// Otevře nové okno jen s financemi a prodejem a spustí tisk (→ Uložit jako PDF).
+export function downloadFinanceArchive(db: DB): void {
+  const now = new Date();
+  const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const w = window.open("", "_blank");
+  if (!w) {
+    alert("Pro stažení PDF prosím povolte vyskakovací okna (pop-up) pro tento web a zkuste to znovu.");
+    return;
+  }
+  w.document.open();
+  w.document.write(buildFinanceHtml(db, stamp));
+  w.document.close();
+  w.focus();
+  setTimeout(() => {
+    try {
+      w.print();
+    } catch {
+      /* uživatel může použít tlačítko v okně */
+    }
+  }, 500);
 }
 
 // Otevře nové okno s archivem a spustí tisk (→ Uložit jako PDF). Okno se otevře hned
