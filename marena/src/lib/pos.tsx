@@ -80,9 +80,9 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
   let count = 0;
   let kasaAdj = 0; // rekonciliace kasy (kategorie „kasa" — manko/přebytek), NENÍ tržba
   let purchases = 0; // nákupy zboží (výdaje bar / kuchyně / merch) — NEJSOU tržba, jen se ukážou
-  // Příjmy bez způsobu platby (nemají „QR platba" ani „hotově") — ručně přidané položky
-  // ve Financích, ne prodeje z Prodeje. Počítají se do tržby, ale ne do QR/hotově,
-  // proto se vypisují zvlášť, ať je vidět, co v kase je navíc.
+  // Ručně přidané příjmy ve Financích (bez rozpisu „×", např. vrácená záloha sudu) —
+  // NEJSOU prodej, do kasy se nepočítají vůbec (zůstávají jen v Bilanci). Jen se vypíšou
+  // ve výpisu dne, ať je jasné, co v tom dni ještě bylo zapsáno.
   const manual: { label: string; amount: number; date?: string }[] = [];
   const byCat = new Map<string, number>();
   const items = new Map<string, number>();
@@ -94,8 +94,13 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
       purchases += f.amount;
       continue;
     }
-    total += sign * f.amount;
     const cat = f.category ?? "";
+    // Kasa = jen prodané věci (zápis s rozpisem „×") + rekonciliace kasy. Ruční příjem mimo.
+    if (cat !== "kasa" && !(f.note ?? "").includes("×")) {
+      manual.push({ label: f.label, amount: f.amount, date: f.date });
+      continue;
+    }
+    total += sign * f.amount;
     byCat.set(cat, (byCat.get(cat) ?? 0) + sign * f.amount);
     if (cat === "kasa") {
       kasaAdj += sign * f.amount;
@@ -104,7 +109,6 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
     const note = f.note ?? "";
     if (note.includes("QR platba")) qr += f.amount;
     else if (note.includes("hotově")) cash += f.amount;
-    else manual.push({ label: f.label, amount: f.amount, date: f.date });
     // Náklady zápisu: prodané kusy × nákupní cena (z poznámky „2× Pivo, 1× Chleba")
     let entryCost = 0;
     if (note.includes("×")) {
@@ -363,7 +367,7 @@ export function dayReportText(box: Cashbox, stats: ReturnType<typeof posStats>, 
   if (stats.merchRevenue > 0) lines.push(`Merch: tržba ${fmtCZK(stats.merchRevenue)}${stats.withCosts ? ` · zisk ${sgn(stats.merchProfit)}` : ""}`);
   lines.push(`Kasou prošlo celkem ${fmtCZK(stats.allRevenue)} (QR ${fmtCZK(stats.qr)} · hotově ${fmtCZK(stats.cash)} · ${stats.count}× prodej)`);
   if (stats.manual.length) {
-    lines.push(`Ručně zapsané položky (bez QR/hotově): ${fmtCZK(stats.manualTotal)} — ${stats.manual.map((m) => `${m.label} ${fmtCZK(m.amount)}${m.date ? ` (datum ${fmtDate(m.date)})` : ""}`).join(", ")}`);
+    lines.push(`Mimo kasu (ruční zápisy ve financích, nepočítají se): ${stats.manual.map((m) => `${m.label} ${fmtCZK(m.amount)}${m.date ? ` (datum ${fmtDate(m.date)})` : ""}`).join(", ")}`);
   }
   if (box.closedAt && box.closing != null) {
     const rozdil = box.closing - box.opening - (box.alreadyRecorded ?? 0);
@@ -428,19 +432,6 @@ export function TicketSplitLine({ stats }: { stats: ReturnType<typeof posStats> 
 }
 
 // Tlačítko „kopírovat" u nadpisu kasy — zkopíruje celý výpis dne do schránky.
-// Ručně přidané položky ve Financích (bez QR/hotově), které spadly do kasy podle času
-// zápisu — ať je jasné, proč tržba nesedí s QR + hotově.
-export function ManualLine({ stats }: { stats: ReturnType<typeof posStats> }) {
-  if (!stats.manual.length) return null;
-  return (
-    <p className="mt-1.5 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
-      ✍️ Ručně zapsáno do financí (bez QR/hotově): <strong>{fmtCZK(stats.manualTotal)}</strong> —{" "}
-      {stats.manual.map((m) => `${m.label} ${fmtCZK(m.amount)}${m.date ? ` (datum ${fmtDate(m.date)})` : ""}`).join(", ")}. Do kasy patří podle času zápisu, ne podle
-      data položky.
-    </p>
-  );
-}
-
 export function CopyDayButton({ box, stats, orders }: { box: Cashbox; stats: ReturnType<typeof posStats>; orders: PosOrder[] }) {
   return (
     <button
@@ -646,7 +637,6 @@ export function DayCard({
       </div>
       <ProfitLine stats={stats} />
       <TicketSplitLine stats={stats} />
-      <ManualLine stats={stats} />
 
       <p className="mt-2 border-t border-ink/[0.06] pt-2 text-sm text-ink-soft">
         Kasa: vklad {fmtCZK(box.opening)} → večer {fmtCZK(box.closing ?? 0)}
