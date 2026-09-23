@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { Modal } from "@/components/Modal";
 import { Icon } from "@/components/Icons";
-import { downloadArchive } from "@/lib/export";
+import { downloadArchive, downloadFinanceArchive } from "@/lib/export";
 import { collectMedia, mediaCountsByYear, downloadMediaZip, deleteBlobs } from "@/lib/media";
 
 // Okno „Stáhnout / archiv" pro správce: PDF dokumentace, ZIP všech fotek/účtenek
@@ -59,17 +59,39 @@ export function ArchiveModal({ open, onClose }: { open: boolean; onClose: () => 
             </span>
             <div className="flex-1">
               <p className="font-semibold">Kompletní archiv do PDF</p>
-              <p className="text-xs text-ink-soft">Všechny ročníky a almanach jako dokument k tisku / uložení do PDF.</p>
+              <p className="text-xs text-ink-soft">Všechny ročníky (tým, program, nabídka, lístky, kasy, finance, sponzoři…), statistiky webu a almanach jako dokument k tisku / uložení do PDF.</p>
             </div>
           </div>
           <button
             onClick={() => {
-              downloadArchive(db);
+              void downloadArchive(db);
               onClose();
             }}
             className="btn-primary mt-3 w-full justify-center"
           >
             <Icon name="download" className="h-4 w-4" /> Otevřít PDF
+          </button>
+        </section>
+
+        {/* 1b) Jen finance a prodej */}
+        <section className="rounded-xl border border-ink/10 p-4">
+          <div className="flex items-start gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gold-100 text-gold-700">
+              <Icon name="chart" className="h-5 w-5" />
+            </span>
+            <div className="flex-1">
+              <p className="font-semibold">Jen finance a prodej do PDF</p>
+              <p className="text-xs text-ink-soft">Souhrn, denní kasy, rozpis tržby, prodané položky, lístky & merch, výběr, ceník s náklady a celá pokladní kniha. Bez týmu, programu a statistik.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              downloadFinanceArchive(db);
+              onClose();
+            }}
+            className="btn-primary mt-3 w-full justify-center"
+          >
+            <Icon name="download" className="h-4 w-4" /> Otevřít PDF financí
           </button>
         </section>
 
