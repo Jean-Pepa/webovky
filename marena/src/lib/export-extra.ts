@@ -8,7 +8,8 @@ import { fmtDate, fmtDateTime, fmtCZK } from "./format";
 import { roleById } from "./roles";
 import { posStats, boxDayFinances, makeCostLookup, makeTicketSplit } from "./pos";
 import { isTicketName } from "./merch";
-import { guessGender } from "./names";
+import { guessGender, normName } from "./names";
+import { ONSITE_PRICE } from "./reservations";
 import type { AnalyticsSummary } from "./analytics";
 
 export function esc(s: unknown): string {
@@ -155,23 +156,59 @@ export function renderSalesBreakdown(y: Year): string {
 }
 
 // ---------- Prodané položky za ročník ----------
+// Tržba položky: u účtenky s jedinou položkou přesně (částka zápisu), u smíšené
+// účtenky se částka rozdělí podle cen v nabídce (lístek na místě = cena na místě).
+// Součet tržeb tedy sedí s kasou. Zisk = tržba − prodané kusy × nákupka.
 export function renderSoldItems(y: Year): string {
   const sales = (y.finances ?? []).filter(isSale);
   if (!sales.length) return "";
   const costOf = makeCostLookup(y);
-  const tally = new Map<string, { qty: number; cat: string }>();
-  for (const f of sales) for (const it of parseItems(f.note)) {
-    const cur = tally.get(it.name) ?? { qty: 0, cat: f.category ?? "" };
-    cur.qty += it.qty;
-    tally.set(it.name, cur);
+  const prices = new Map<string, number>();
+  for (const d of y.bar ?? []) if (d.price != null) prices.set(normName(d.name), d.price);
+  for (const m of y.merch ?? []) if (m.price != null) prices.set(normName(m.name), m.price);
+  const priceOf = (name: string): number | undefined => {
+    if (isOnsiteName(name)) return ONSITE_PRICE;
+    return prices.get(normName(name.replace(/\s*\(.*\)\s*$/, "")));
+  };
+  const tally = new Map<string, { qty: number; cat: string; revenue: number }>();
+  const bump = (name: string, cat: string, qty: number, revenue: number) => {
+    const cur = tally.get(name) ?? { qty: 0, cat, revenue: 0 };
+    cur.qty += qty;
+    cur.revenue += revenue;
+    tally.set(name, cur);
+  };
+  for (const f of sales) {
+    const items = parseItems(f.note);
+    if (!items.length) continue;
+    const cat = f.category ?? "";
+    if (items.length === 1) {
+      bump(items[0].name, cat, items[0].qty, f.amount);
+      continue;
+    }
+    const weights = items.map((it) => (priceOf(it.name) ?? 1) * it.qty);
+    const sumW = weights.reduce((a, b) => a + b, 0) || 1;
+    items.forEach((it, i) => bump(it.name, cat, it.qty, (f.amount * weights[i]) / sumW));
   }
+  let tQty = 0, tRev = 0, tCost = 0;
   const rows = [...tally.entries()]
     .sort((a, b) => b[1].qty - a[1].qty)
     .map(([name, v]) => {
       const c = costOf(name);
-      return `<tr>${td(name)}${td(v.cat)}${td(v.qty, true)}${td(c != null ? fmtCZK(c) : "—", true)}${td(c != null ? fmtCZK(c * v.qty) : "—", true)}</tr>`;
+      const cost = c != null ? c * v.qty : 0;
+      const rev = Math.round(v.revenue);
+      tQty += v.qty; tRev += rev; tCost += cost;
+      return `<tr>${td(name)}${td(v.cat)}${td(v.qty, true)}${td(fmtCZK(rev), true)}${td(c != null ? fmtCZK(c) : "—", true)}${td(c != null ? `−${fmtCZK(cost)}` : "—", true)}${td(
+        c != null ? sgn(rev - cost) : `${sgn(rev)} (bez nákupky)`,
+        true,
+      )}</tr>`;
     });
-  return table(["Položka", "Stánek", "Prodáno ks", "Nákupka / ks", "Náklady celkem"], rows, 2);
+  rows.push(
+    `<tr><th>Celkem</th><th></th><th style="text-align:right">${tQty}</th><th style="text-align:right">${esc(fmtCZK(tRev))}</th><th></th><th style="text-align:right">−${esc(fmtCZK(tCost))}</th><th style="text-align:right">${esc(sgn(tRev - tCost))}</th></tr>`,
+  );
+  return (
+    table(["Položka", "Stánek", "Prodáno ks", "Tržba", "Nákupka / ks", "Náklady", "Zisk"], rows, 2) +
+    `<p class="muted">Tržba položky je z účtenek (u smíšené účtenky rozdělená podle cen v nabídce), proto součet sedí s kasou. Zisk = tržba − prodané kusy × nákupka.</p>`
+  );
 }
 
 // ---------- Výběr od lidí ----------
