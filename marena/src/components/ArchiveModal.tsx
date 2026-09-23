@@ -59,12 +59,12 @@ export function ArchiveModal({ open, onClose }: { open: boolean; onClose: () => 
             </span>
             <div className="flex-1">
               <p className="font-semibold">Kompletní archiv do PDF</p>
-              <p className="text-xs text-ink-soft">Všechny ročníky a almanach jako dokument k tisku / uložení do PDF.</p>
+              <p className="text-xs text-ink-soft">Všechny ročníky (tým, program, nabídka, lístky, kasy, finance, sponzoři…), statistiky webu a almanach jako dokument k tisku / uložení do PDF.</p>
             </div>
           </div>
           <button
             onClick={() => {
-              downloadArchive(db);
+              void downloadArchive(db);
               onClose();
             }}
             className="btn-primary mt-3 w-full justify-center"

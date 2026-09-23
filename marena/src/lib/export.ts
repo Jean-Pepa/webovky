@@ -8,6 +8,21 @@ import { fmtDate, fmtCZK } from "./format";
 import { roleById } from "./roles";
 import { KINDS } from "./kinds";
 import { ALMANACH } from "./almanach";
+import {
+  renderFinanceSummary,
+  renderCashboxes,
+  renderSalesBreakdown,
+  renderSoldItems,
+  renderContributions,
+  renderMerch,
+  renderBarAndKitchen,
+  renderFreshmen,
+  renderDecor,
+  renderSponsors,
+  renderAnnouncements,
+  renderAnalytics,
+} from "./export-extra";
+import type { AnalyticsSummary } from "./analytics";
 
 const INTEREST: Record<string, string> = {
   nevim: "nevím",
@@ -43,6 +58,7 @@ function renderOverview(y: Year): string {
     ["Termín průvodu / Flédy", y.fledaDate ? fmtDate(y.fledaDate) : "—"],
     ["Plánovaný počet lidí", y.plannedPeople != null ? String(y.plannedPeople) : "—"],
     ["Třídní vklad / osoba", y.deposit != null ? fmtCZK(y.deposit) : "—"],
+    ["Účet pro QR platby", y.paymentAccount || "—"],
     ["Založeno", y.createdAt ? fmtDate(y.createdAt) : "—"],
   ];
   return `<table>${rows
@@ -206,15 +222,15 @@ function renderFinance(y: Year): string {
           f.category ?? "",
         )}</td><td>${esc(f.who ?? "")}</td><td>${esc(f.date ? fmtDate(f.date) : "")}</td><td>${
           f.paid ? "ano" : "ne"
-        }</td><td style="text-align:right">${f.kind === "prijem" ? "+" : "−"}${esc(fmtCZK(f.amount))}</td></tr>`,
+        }</td><td style="text-align:right">${f.kind === "prijem" ? "+" : "−"}${esc(fmtCZK(f.amount))}</td><td class="muted">${esc(f.note ?? "")}</td></tr>`,
     )
     .join("");
-  return `<table>
-    <tr><th>Druh</th><th>Popis</th><th>Kategorie</th><th>Kdo</th><th>Datum</th><th>Zapl.</th><th style="text-align:right">Částka</th></tr>
+  return `<p class="muted">${fin.length} zápisů, od nejnovějšího. U prodejů je v poznámce rozpis položek a způsob platby.</p><table>
+    <tr><th>Druh</th><th>Popis</th><th>Kategorie</th><th>Kdo</th><th>Datum</th><th>Zapl.</th><th style="text-align:right">Částka</th><th>Poznámka</th></tr>
     ${rows}
-    <tr><th colspan="6">Příjmy celkem</th><th style="text-align:right">${esc(fmtCZK(prijmy))}</th></tr>
-    <tr><th colspan="6">Výdaje celkem</th><th style="text-align:right">${esc(fmtCZK(vydaje))}</th></tr>
-    <tr><th colspan="6">Bilance</th><th style="text-align:right">${esc(fmtCZK(prijmy - vydaje))}</th></tr>
+    <tr><th colspan="6">Příjmy celkem</th><th style="text-align:right">${esc(fmtCZK(prijmy))}</th><th></th></tr>
+    <tr><th colspan="6">Výdaje celkem</th><th style="text-align:right">${esc(fmtCZK(vydaje))}</th><th></th></tr>
+    <tr><th colspan="6">Bilance</th><th style="text-align:right">${esc(fmtCZK(prijmy - vydaje))}</th><th></th></tr>
   </table>`;
 }
 
@@ -259,17 +275,28 @@ function renderKitchen(y: Year): string {
 function renderYear(y: Year): string {
   return `<section class="year">
     <h1>${esc(y.label)}</h1>
-    ${section("Přehled ročníku", renderOverview(y))}
-    ${section("Tým a role", renderTeam(y))}
-    ${section("Nástěnka", renderBoard(y))}
-    ${section("Hlasování", renderPolls(y))}
-    ${section("Kalendář", renderCalendar(y))}
-    ${section("Program (přednášející, kapely)", renderProgram(y))}
-    ${section("Úkoly", renderTasks(y))}
-    ${section("Provoz a směny", renderShifts(y))}
-    ${section("Kuchyně (nahrané fotky a soubory)", renderKitchen(y))}
-    ${section("Finance", renderFinance(y))}
-    ${section("Kontakty", renderContacts(y))}
+    ${section("1. Přehled ročníku", renderOverview(y))}
+    ${section("2. Tým a role", renderTeam(y))}
+    ${section("3. Prváci", renderFreshmen(y))}
+    ${section("4. Nástěnka", renderBoard(y))}
+    ${section("5. Hlasování", renderPolls(y))}
+    ${section("6. Oznámení", renderAnnouncements(y))}
+    ${section("7. Kalendář", renderCalendar(y))}
+    ${section("8. Program (přednášející, kapely)", renderProgram(y))}
+    ${section("9. Úkoly", renderTasks(y))}
+    ${section("10. Provoz a směny", renderShifts(y))}
+    ${section("11. Kuchyně & bar — nabídka, receptury, menu, nákupy", renderBarAndKitchen(y))}
+    ${section("12. Kuchyně — nahrané fotky a soubory", renderKitchen(y))}
+    ${section("13. Lístky & merch", renderMerch(y))}
+    ${section("14. Finance — souhrn", renderFinanceSummary(y))}
+    ${section("15. Denní kasy", renderCashboxes(y))}
+    ${section("16. Tržba z prodeje — rozpis za ročník", renderSalesBreakdown(y))}
+    ${section("17. Prodané položky za ročník", renderSoldItems(y))}
+    ${section("18. Výběr od lidí", renderContributions(y))}
+    ${section("19. Pokladní kniha (všechny zápisy)", renderFinance(y))}
+    ${section("20. Sponzoři", renderSponsors(y))}
+    ${section("21. Výzdoba", renderDecor(y))}
+    ${section("22. Kontakty a odkazy", renderContacts(y))}
   </section>`;
 }
 
@@ -287,10 +314,10 @@ function renderAlmanach(): string {
   return `<section class="year"><h1>Almanach — manuál Mařeny</h1>${chapters}</section>`;
 }
 
-function buildArchiveHtml(db: DB, stamp: string): string {
+function buildArchiveHtml(db: DB, stamp: string, analytics: AnalyticsSummary | null): string {
   const years = [...db.years].sort((a, b) => a.id.localeCompare(b.id, "cs", { numeric: true }));
-  const obsah = years.map((y) => `<li>${esc(y.label)}</li>`).join("");
-  const body = years.map(renderYear).join("");
+  const obsah = years.map((y) => `<li>${esc(y.label)} — 22 kapitol (tým, program, nabídka, lístky, kasy, finance…)</li>`).join("") + `<li>Statistiky webu</li><li>Almanach</li>`;
+  const body = years.map(renderYear).join("") + `<section class="year"><h1>Statistiky webu</h1>${section("Návštěvnost, kliky, trychtýř, zařízení, uživatelé", renderAnalytics(analytics))}</section>`;
 
   return `<!doctype html>
 <html lang="cs"><head><meta charset="utf-8">
@@ -304,7 +331,8 @@ function buildArchiveHtml(db: DB, stamp: string): string {
   h3 { font-size: 14px; margin:14px 0 4px; }
   p { margin: 4px 0; }
   .muted { color:#6e6e73; font-size: 11px; }
-  table { border-collapse: collapse; width:100%; font-size:11px; margin:4px 0 10px; }
+  table { border-collapse: collapse; width:100%; font-size:11px; margin:4px 0 10px; page-break-inside:auto; }
+  tr { page-break-inside: avoid; }
   th, td { border:1px solid #ddd; padding:4px 6px; text-align:left; vertical-align:top; }
   th { background:#f5f5f7; }
   ul { margin:4px 0; padding-left:18px; }
@@ -336,16 +364,28 @@ function buildArchiveHtml(db: DB, stamp: string): string {
 </body></html>`;
 }
 
-// Otevře nové okno s archivem a spustí tisk (→ Uložit jako PDF).
-export function downloadArchive(db: DB): void {
+// Otevře nové okno s archivem a spustí tisk (→ Uložit jako PDF). Okno se otevře hned
+// (jinak ho prohlížeč zablokuje jako pop-up), statistiky webu se dotáhnou ze serveru
+// a pak se vypíše celý dokument.
+export async function downloadArchive(db: DB): Promise<void> {
   const now = new Date();
   const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const html = buildArchiveHtml(db, stamp);
   const w = window.open("", "_blank");
   if (!w) {
     alert("Pro stažení PDF prosím povolte vyskakovací okna (pop-up) pro tento web a zkuste to znovu.");
     return;
   }
+  w.document.open();
+  w.document.write("<!doctype html><html lang=\"cs\"><head><meta charset=\"utf-8\"><title>Archiv Mařeny</title></head><body style=\"font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:24px\">Připravuji archiv…</body></html>");
+  w.document.close();
+  let analytics: AnalyticsSummary | null = null;
+  try {
+    const r = await fetch("/api/analytics/summary?days=400", { cache: "no-store" });
+    if (r.ok) analytics = (await r.json()) as AnalyticsSummary;
+  } catch {
+    /* bez statistik */
+  }
+  const html = buildArchiveHtml(db, stamp, analytics);
   w.document.open();
   w.document.write(html);
   w.document.close();
