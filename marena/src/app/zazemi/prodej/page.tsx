@@ -341,10 +341,11 @@ function Pos() {
 
   // Čekající objednávky merche (z webu i odložené) — platí se tady:
   // QR se jménem objednatele, nebo hotově jedním ťuknutím.
-  const pendingOrders =
-    activeStand === "merch"
-      ? [...(year.merchOrders ?? [])].filter((o) => !o.done).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      : [];
+  // Na stánku „Lístky na místě" jsou vidět i čekající REZERVACE lístků (jen objednávky
+  // s lístkem), ať se dají u vstupu rovnou zaplatit. Na Lístkách & merchi všechny.
+  const allPending = [...(year.merchOrders ?? [])].filter((o) => !o.done).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const hasTicket = (o: MerchOrder) => o.items.some((it) => isTicketName(it.name) || isTicketName((year.merch ?? []).find((p) => p.id === it.productId)?.name ?? ""));
+  const pendingOrders = activeStand === "merch" ? allPending : activeStand === "ticket" ? allPending.filter(hasTicket) : [];
   const shownOrders = pendingOrders.filter((o) => matchesQuery(orderQ, o.name, orderItemsText(o)));
 
   const pickerProduct = picker ? (year.merch ?? []).find((p) => p.id === picker.productId) : undefined;
@@ -786,9 +787,9 @@ function Pos() {
       {/* Čekající objednávky merche — pod nabídkou, ať je prodej u kasy hned po ruce;
           QR platba se jménem objednatele, hledání podle jména */}
       {pendingOrders.length > 0 && (
-        <section className="card border-l-4 border-l-amber-400 p-4">
+        <section className={`card border-l-4 p-4 ${activeStand === "ticket" ? "border-l-fuchsia-500" : "border-l-amber-400"}`}>
           <h2 className="flex items-center gap-2">
-            <span className="eyebrow">Objednávky k zaplacení</span>
+            <span className="eyebrow">{activeStand === "ticket" ? "Rezervace lístků k zaplacení" : "Objednávky k zaplacení"}</span>
             <span className="grid h-7 min-w-7 place-items-center rounded-full bg-gold-500 px-2 font-display text-sm font-bold text-[#1d1d1f]">
               {pendingOrders.length}
             </span>
