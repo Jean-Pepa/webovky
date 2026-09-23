@@ -12,7 +12,7 @@ import { uid } from "@/lib/id";
 import { isAdmin } from "@/lib/admin";
 import { canEditProdej } from "@/lib/access";
 import { sameName } from "@/lib/names";
-import { variantKey, isTicketName } from "@/lib/merch";
+import { variantKey, isTicketName, TICKET_SUFFIX, type TicketChannel } from "@/lib/merch";
 import { ONSITE_PRICE } from "@/lib/reservations";
 import { flash } from "@/components/Flash";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
@@ -56,7 +56,6 @@ const STANDS: { id: Stand; label: string }[] = [
   { id: "kuchyne", label: "🍳 Kuchyně" },
   { id: "ticket", label: "🎫 Lístky na místě" },
 ];
-const ONSITE_SUFFIX = " (na místě)";
 
 // Slovo do zprávy pro banku, kategorie financí a barva dlaždic (obsluha
 // hledá barvou dřív než čtením — vzor z barových POS).
@@ -245,7 +244,8 @@ function Pos() {
   // z tohoto zařízení — barový vzor „top sellers first"). Nové položky
   // s prodejní cenou se tu objeví samy.
   const bySold = (a: { id: string }, b: { id: string }) => (tally[b.id] ?? 0) - (tally[a.id] ?? 0);
-  const grids: { kind: Exclude<Kind, "custom">; stand: Stand; onsite?: boolean; title: string; items: { id: string; name: string; price: number }[] }[] = [
+  type Tile = { id: string; name: string; price: number; productId?: string; base?: string; channel?: Exclude<TicketChannel, "web"> };
+  const grids: { kind: Exclude<Kind, "custom">; stand: Stand; onsite?: boolean; title: string; items: Tile[] }[] = [
     {
       kind: "merch" as const,
       stand: "merch" as const,
@@ -271,12 +271,18 @@ function Pos() {
         .sort(bySold),
     },
     {
-      // Lístky na místě: jen lístky z nabídky, vždy za cenu na místě (bez rezervace)
+      // Lístky na místě: ke každému lístku z nabídky dvě dlaždice —
+      // „na baru" (předprodej před Flédou, za cenu rezervace) a „na Flédě" (u vstupu, cena na místě).
       kind: "merch" as const,
       stand: "ticket" as const,
       onsite: true,
-      title: `Lístky na místě · ${fmtCZK(ONSITE_PRICE)}`,
-      items: (year.merch ?? []).filter((p) => isTicketName(p.name)).map((p) => ({ id: p.id, name: p.name, price: ONSITE_PRICE })),
+      title: `Lístky na místě · na baru za cenu rezervace · na Flédě ${fmtCZK(ONSITE_PRICE)}`,
+      items: (year.merch ?? [])
+        .filter((p) => isTicketName(p.name))
+        .flatMap((p): Tile[] => [
+          { id: `${p.id}::bar`, productId: p.id, base: p.name, channel: "bar", name: `${p.name} · na baru (předprodej)`, price: p.price ?? ONSITE_PRICE },
+          { id: `${p.id}::fleda`, productId: p.id, base: p.name, channel: "fleda", name: `${p.name} · na Flédě`, price: ONSITE_PRICE },
+        ]),
     },
   ].filter((g) => g.stand === activeStand);
   // Přepínač úprav bydlí u první neprázdné sekce nabídky.
@@ -392,12 +398,12 @@ function Pos() {
   }
   // Ťuknutí na dlaždici: merch s velikostmi/barvami se doptá (chipy),
   // všechno ostatní letí rovnou do účtenky.
-  function tapItem(kind: Kind, item: { id: string; name: string; price: number }, onsite?: boolean) {
+  function tapItem(kind: Kind, item: { id: string; name: string; price: number; productId?: string; base?: string; channel?: Exclude<TicketChannel, "web"> }, onsite?: boolean) {
     // Pojistka: vyprodané / na skladě už nic (i s ohledem na účtenku) se nepřidá.
-    if (kind !== "custom" && isSoldOut(kind, item.id)) return;
-    if (onsite) {
-      // Lístek na místě: bez variant, za cenu na místě, v názvu „(na místě)" — ať je to všude poznat.
-      addLine("merch", `${item.name}${ONSITE_SUFFIX}`, ONSITE_PRICE, item.id, undefined, undefined, undefined, true);
+    if (kind !== "custom" && isSoldOut(kind, item.productId ?? item.id)) return;
+    if (onsite && item.productId && item.base && item.channel) {
+      // Lístek na místě: bez variant; v názvu „(na baru)" / „(na Flédě)" — ať je kanál všude poznat.
+      addLine("merch", `${item.base}${TICKET_SUFFIX[item.channel]}`, item.price, item.productId, undefined, undefined, undefined, true);
       return;
     }
     const product = kind === "merch" ? (year!.merch ?? []).find((p) => p.id === item.id) : undefined;
@@ -655,7 +661,7 @@ function Pos() {
           <div className="min-w-0">
             <p className="font-semibold">🎫 Prodej lístků na místě</p>
             <p className="text-xs text-ink-soft">
-              Lístek bez rezervace za {fmtCZK(ONSITE_PRICE)}. Zapíše se jako merch s označením „(na místě)“. Prodejci stánek uvidí, jen když je zapnutý.
+              Dvě dlaždice: „na baru“ = předprodej před Flédou za cenu rezervace, „na Flédě“ = u vstupu za {fmtCZK(ONSITE_PRICE)}. Zapíše se jako merch s označením kanálu. Prodejci stánek uvidí, jen když je zapnutý.
             </p>
           </div>
           <button
@@ -718,10 +724,10 @@ function Pos() {
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {g.items.map((i) => {
-                const sold = isSoldOut(g.kind, i.id);
-                const manualSold = soldOutManual.has(i.id);
+                const sold = isSoldOut(g.kind, i.productId ?? i.id) || soldOutManual.has(i.id);
+                const manualSold = soldOutManual.has(i.id) || soldOutManual.has(i.productId ?? "");
                 const stockSold = sold && !manualSold; // vyprodáno skladem (merch) — ručně nejde vrátit
-                const left = g.kind === "merch" ? merchLeft(i.id) : null; // zbývá skladem (null = neomezeně)
+                const left = g.kind === "merch" ? merchLeft(i.productId ?? i.id) : null; // zbývá skladem (null = neomezeně)
                 return (
                   <button
                     key={i.id}
@@ -735,7 +741,9 @@ function Pos() {
                         : sold
                           ? "border-l-ink/20 bg-paper2/50 opacity-60"
                           : g.onsite
-                            ? "border-l-fuchsia-500 bg-fuchsia-50 hover:bg-fuchsia-100"
+                            ? i.channel === "fleda"
+                              ? "border-l-fuchsia-600 bg-fuchsia-100 hover:bg-fuchsia-200"
+                              : "border-l-fuchsia-400 bg-fuchsia-50 hover:bg-fuchsia-100"
                             : `bg-paper2 hover:bg-gold-100 ${KIND_BORDER[g.kind]}`
                     } ${soldMode ? "ring-1 ring-ink/15" : ""}`}
                   >

@@ -43,3 +43,14 @@ export function hasMerchRole(year: Year | null | undefined, me: string): boolean
 export function canSeeMerch(year: Year | null | undefined, me: string): boolean {
   return isAdmin(me) || hasMerchRole(year, me);
 }
+
+// Kanál lístku podle přípony v názvu položky objednávky:
+//  • web   — rezervace z webu (bez přípony)
+//  • bar   — prodej na místě před Flédou, na baru na dvorku („(na baru)"; starší zápisy „(na místě)")
+//  • fleda — prodej na Flédě při vstupu („(na Flédě)")
+export type TicketChannel = "web" | "bar" | "fleda";
+export const ticketChannel = (itemName: string): TicketChannel =>
+  /\(na Flédě\)\s*$/i.test(itemName) ? "fleda" : /\((na místě|na baru)\)\s*$/i.test(itemName) ? "bar" : "web";
+export const TICKET_SUFFIX: Record<Exclude<TicketChannel, "web">, string> = { bar: " (na baru)", fleda: " (na Flédě)" };
+// Objednávka vzniklá prodejem na místě (bez kontaktu) — do počtů lidí se nepočítá.
+export const ONSITE_ORDER_NAME = "Prodej na místě";

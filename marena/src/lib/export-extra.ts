@@ -7,7 +7,7 @@ import type { Year, FinanceItem, Cashbox, MerchOrder } from "./types";
 import { fmtDate, fmtDateTime, fmtCZK } from "./format";
 import { roleById } from "./roles";
 import { posStats, boxDayFinances, makeCostLookup, makeTicketSplit } from "./pos";
-import { isTicketName } from "./merch";
+import { isTicketName, ticketChannel, ONSITE_ORDER_NAME } from "./merch";
 import { guessGender, normName } from "./names";
 import { ONSITE_PRICE } from "./reservations";
 import type { AnalyticsSummary } from "./analytics";
@@ -47,7 +47,8 @@ function parseItems(note?: string): { qty: number; name: string }[] {
     .filter(Boolean)
     .map((m) => ({ qty: Number(m![1]), name: m![2] }));
 }
-const isOnsiteName = (name: string) => /\(na místě\)\s*$/.test(name);
+const isOnsiteName = (name: string) => ticketChannel(name) !== "web";
+const isFullPriceName = (name: string) => /\((na místě|na Flédě)\)\s*$/i.test(name); // prodáno za cenu na místě
 
 // ---------- Finance — souhrn ----------
 export function renderFinanceSummary(y: Year): string {
@@ -113,14 +114,18 @@ export function renderSalesBreakdown(y: Year): string {
   if (!sales.length) return "";
   const costOf = makeCostLookup(y);
   const ticketOf = makeTicketSplit(y);
-  const acc = { food: 0, foodCost: 0, drink: 0, drinkCost: 0, merch: 0, merchCost: 0, tickets: 0, ticketCost: 0, ticketQty: 0, onsiteQty: 0, unknown: 0, qr: 0, cash: 0, count: 0 };
+  const acc = { food: 0, foodCost: 0, drink: 0, drinkCost: 0, merch: 0, merchCost: 0, tickets: 0, ticketCost: 0, ticketQty: 0, barQty: 0, fledaQty: 0, unknown: 0, qr: 0, cash: 0, count: 0 };
   for (const f of sales) {
     let cost = 0;
     for (const it of parseItems(f.note)) {
       const c = costOf(it.name);
       if (c != null) cost += c * it.qty;
       else acc.unknown += it.qty;
-      if (isTicketName(it.name) && isOnsiteName(it.name)) acc.onsiteQty += it.qty;
+      if (isTicketName(it.name)) {
+        const ch = ticketChannel(it.name);
+        if (ch === "bar") acc.barQty += it.qty;
+        else if (ch === "fleda") acc.fledaQty += it.qty;
+      }
     }
     const note = f.note ?? "";
     if (note.includes("QR platba")) acc.qr += f.amount;
@@ -146,7 +151,7 @@ export function renderSalesBreakdown(y: Year): string {
         row("🍽️ Jídlo (kuchyně)", acc.food, acc.foodCost),
         row("🍺 Pití (bar)", acc.drink, acc.drinkCost),
         row("🛍️ Merch", acc.merch, acc.merchCost),
-        row("🎟️ Lístky", acc.tickets, acc.ticketCost, `${acc.ticketQty} ks${acc.onsiteQty ? ` (z toho na místě ${acc.onsiteQty})` : ""}`),
+        row("🎟️ Lístky", acc.tickets, acc.ticketCost, `${acc.ticketQty} ks (web ${acc.ticketQty - acc.barQty - acc.fledaQty} · na baru ${acc.barQty} · na Flédě ${acc.fledaQty})`),
         `<tr><th>Celkem</th><th></th><th style="text-align:right">${esc(fmtCZK(total))}</th><th style="text-align:right">−${esc(fmtCZK(total - profit))}</th><th style="text-align:right">${esc(sgn(profit))}</th></tr>`,
       ],
       2,
@@ -167,7 +172,7 @@ export function renderSoldItems(y: Year): string {
   for (const d of y.bar ?? []) if (d.price != null) prices.set(normName(d.name), d.price);
   for (const m of y.merch ?? []) if (m.price != null) prices.set(normName(m.name), m.price);
   const priceOf = (name: string): number | undefined => {
-    if (isOnsiteName(name)) return ONSITE_PRICE;
+    if (isFullPriceName(name)) return ONSITE_PRICE;
     return prices.get(normName(name.replace(/\s*\(.*\)\s*$/, "")));
   };
   const tally = new Map<string, { qty: number; cat: string; revenue: number }>();
@@ -235,12 +240,17 @@ export function renderMerch(y: Year): string {
   const isTicketItem = (it: MerchOrder["items"][number]) => isTicketName(it.name) || isTicketName(products.find((p) => p.id === it.productId)?.name ?? "");
   const qtyOf = (list: MerchOrder[], pred: (it: MerchOrder["items"][number]) => boolean) => list.reduce((s, o) => s + o.items.filter(pred).reduce((q, it) => q + it.qty, 0), 0);
   const withTicket = orders.filter((o) => o.items.some(isTicketItem));
-  const gender = withTicket.reduce((acc, o) => { acc[guessGender(o.name)]++; return acc; }, { f: 0, m: 0, "?": 0 } as Record<string, number>);
+  const isOnsiteOrder = (o: MerchOrder) => o.name === ONSITE_ORDER_NAME || o.items.some((it) => isTicketItem(it) && isOnsiteName(it.name));
+  const webOrders = withTicket.filter((o) => !isOnsiteOrder(o));
+  const gender = webOrders.reduce((acc, o) => { acc[guessGender(o.name)]++; return acc; }, { f: 0, m: 0, "?": 0 } as Record<string, number>);
+  const webQty = (list: MerchOrder[]) => qtyOf(list, (it) => isTicketItem(it) && ticketChannel(it.name) === "web");
   const stats = kv([
-    ["Objednávek celkem / s lístkem", `${orders.length} / ${withTicket.length}`],
+    ["Objednávek celkem / s lístkem (vč. prodejů na místě)", `${orders.length} / ${withTicket.length}`],
+    ["Rezervace z webu — lidí / lístků (zaplaceno / čeká)", `${webOrders.length} / ${webQty(orders)} (${webQty(orders.filter((o) => o.done))} / ${webQty(orders.filter((o) => !o.done))})`],
+    ["Prodáno na baru před Flédou", `${qtyOf(orders, (it) => isTicketItem(it) && ticketChannel(it.name) === "bar")} ks`],
+    ["Prodáno na Flédě", `${qtyOf(orders, (it) => isTicketItem(it) && ticketChannel(it.name) === "fleda")} ks`],
     ["Lístků celkem / zaplaceno / čeká", `${qtyOf(orders, isTicketItem)} / ${qtyOf(orders.filter((o) => o.done), isTicketItem)} / ${qtyOf(orders.filter((o) => !o.done), isTicketItem)}`],
-    ["Z toho prodáno na místě (bez rezervace)", `${qtyOf(orders, (it) => isTicketItem(it) && isOnsiteName(it.name))} ks`],
-    ["Holky / kluci (odhad podle jména, lidé s lístkem)", `${gender.f} / ${gender.m}${gender["?"] ? ` (nejasné ${gender["?"]})` : ""}`],
+    ["Holky / kluci (odhad podle jména, lidé z rezervací)", `${gender.f} / ${gender.m}${gender["?"] ? ` (nejasné ${gender["?"]})` : ""}`],
   ]);
   const soldByProduct = new Map<string, number>();
   for (const o of orders) for (const it of o.items) soldByProduct.set(it.productId, (soldByProduct.get(it.productId) ?? 0) + it.qty);
