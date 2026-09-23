@@ -117,7 +117,7 @@ export type Action =
   // do financí pak jde jen rozdíl, aby se stejné peníze nepočítaly dvakrát.
   | { type: "closeCashbox"; yearId: string; cashboxId: string; closing: number; alreadyRecorded?: number }
   | { type: "removeCashbox"; yearId: string; cashboxId: string }
-  | { type: "updateCashbox"; yearId: string; cashboxId: string; patch: { label?: string; opening?: number; closing?: number } } // správce: úprava uložené kasy
+  | { type: "updateCashbox"; yearId: string; cashboxId: string; patch: { label?: string; opening?: number; closing?: number; openedAt?: string } } // správce: úprava kasy (i datum)
   // Vyprodáno (ručně) — přepne položku (merch/pití/jídlo) jako vyprodanou; platí jen pro danou kasu/den.
   | { type: "toggleSoldOut"; yearId: string; cashboxId: string; itemId: string }
   // pledged = kolik má dát celkem (amount = kolik zaplatil teď; 0 = založeno dopředu)
@@ -860,6 +860,8 @@ export function applyAction(db: DB, a: Action): DB {
         const opening = q.opening != null && Number.isFinite(q.opening) ? Math.max(0, Math.round(q.opening)) : box.opening;
         const label = q.label !== undefined ? q.label.trim() || undefined : box.label;
         const closing = box.closedAt ? (q.closing != null && Number.isFinite(q.closing) ? Math.max(0, Math.round(q.closing)) : box.closing) : box.closing;
+        // Datum/čas otevření: určuje, které prodeje do kasy patří (od otevření do další kasy).
+        const openedAt = q.openedAt && !Number.isNaN(Date.parse(q.openedAt)) ? new Date(q.openedAt).toISOString() : box.openedAt;
         let finances = y.finances ?? [];
         let financeId = box.financeId;
         if (box.closedAt && closing != null) {
@@ -868,25 +870,25 @@ export function applyAction(db: DB, a: Action): DB {
           const lbl = label ? ` — ${label}` : "";
           const kind = (trzba >= 0 ? "prijem" : "vydaj") as FinanceKind;
           const note =
-            `Kasa${label ? " " + label : ""}: ráno ${opening} Kč (${hhmm(box.openedAt)}) → večer ${closing} Kč (${hhmm(box.closedAt)})` +
+            `Kasa${label ? " " + label : ""}: ráno ${opening} Kč (${hhmm(openedAt)}) → večer ${closing} Kč (${hhmm(box.closedAt)})` +
             (already > 0 ? `; markováno v Prodeji ${already} Kč; rozdíl ${trzba} Kč` : `; tržba ${trzba} Kč`) +
             " · upraveno správcem";
           if (trzba === 0) {
             if (financeId) finances = finances.filter((f) => f.id !== financeId);
             financeId = undefined;
           } else if (financeId && finances.some((f) => f.id === financeId)) {
-            finances = finances.map((f) => (f.id !== financeId ? f : { ...f, kind, label: `Kasa${lbl}`, amount: Math.abs(trzba), note }));
+            finances = finances.map((f) => (f.id !== financeId ? f : { ...f, kind, label: `Kasa${lbl}`, amount: Math.abs(trzba), note, date: openedAt.slice(0, 10) }));
           } else {
             financeId = uid("f_");
             finances = [
-              { id: financeId, kind, label: `Kasa${lbl}`, amount: Math.abs(trzba), category: "kasa", paid: true, date: box.openedAt.slice(0, 10), note, createdAt: box.closedAt },
+              { id: financeId, kind, label: `Kasa${lbl}`, amount: Math.abs(trzba), category: "kasa", paid: true, date: openedAt.slice(0, 10), note, createdAt: box.closedAt },
               ...finances,
             ];
           }
         }
         return {
           ...y,
-          cashboxes: (y.cashboxes ?? []).map((c) => (c.id === a.cashboxId ? { ...c, label, opening, closing, financeId } : c)),
+          cashboxes: (y.cashboxes ?? []).map((c) => (c.id === a.cashboxId ? { ...c, label, opening, closing, financeId, openedAt } : c)),
           finances,
         };
       });
