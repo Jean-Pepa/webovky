@@ -465,9 +465,14 @@ export function ProfitLine({ stats }: { stats: ReturnType<typeof posStats> }) {
 
 // Správce: úprava uložené kasy — název, ranní vklad, večerní stav. Rozdíl (přebytek /
 // manko) se přepočítá a přepíše i ve financích; markovaná hotovost z prodejů se nemění.
-function EditCashboxModal({ box, yearId, onClose }: { box: Cashbox; yearId: string; onClose: () => void }) {
+const localDateOf = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+export function EditCashboxModal({ box, yearId, onClose }: { box: Cashbox; yearId: string; onClose: () => void }) {
   const { dispatch } = useStore();
   const [label, setLabel] = useState(box.label ?? "");
+  const [date, setDate] = useState(localDateOf(box.openedAt)); // datum kasy (den prodeje)
   const [opening, setOpening] = useState(String(box.opening));
   const [closing, setClosing] = useState(box.closing != null ? String(box.closing) : "");
   const [busy, setBusy] = useState(false);
@@ -480,13 +485,16 @@ function EditCashboxModal({ box, yearId, onClose }: { box: Cashbox; yearId: stri
   const already = box.alreadyRecorded ?? 0;
   const diff = Number.isFinite(o) && Number.isFinite(c) ? c - o - already : null;
   const sgn = (n: number) => `${n >= 0 ? "+" : "−"}${fmtCZK(Math.abs(n))}`;
-  const valid = Number.isFinite(o) && o >= 0 && (!box.closedAt || (Number.isFinite(c) && c >= 0));
+  const dateChanged = /^\d{4}-\d{2}-\d{2}$/.test(date) && date !== localDateOf(box.openedAt);
+  const valid = Number.isFinite(o) && o >= 0 && (!box.closedAt || (Number.isFinite(c) && c >= 0)) && /^\d{4}-\d{2}-\d{2}$/.test(date);
 
   async function save() {
     if (!valid || busy) return;
     setBusy(true);
     try {
-      const ok = await dispatch({ type: "updateCashbox", yearId, cashboxId: box.id, patch: { label, opening: o, closing: box.closedAt ? c : undefined } });
+      // Změna data = začátek kasy 0:00 zvoleného dne (v čase telefonu) → spadnou do ní všechny prodeje od té chvíle.
+      const openedAt = dateChanged ? new Date(`${date}T00:00:00`).toISOString() : undefined;
+      const ok = await dispatch({ type: "updateCashbox", yearId, cashboxId: box.id, patch: { label, opening: o, closing: box.closedAt ? c : undefined, openedAt } });
       if (!ok) return;
       flash(`Kasa ${fmtDate(box.openedAt)} upravena`, "✏️");
       onClose();
@@ -498,10 +506,21 @@ function EditCashboxModal({ box, yearId, onClose }: { box: Cashbox; yearId: stri
   return (
     <Modal open onClose={onClose} title={`Upravit kasu · ${fmtDate(box.openedAt)}`}>
       <div className="space-y-3">
-        <label className="block text-sm">
-          <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">Název</span>
-          <input className="input mt-1" placeholder="např. Bar" value={label} onChange={(e) => setLabel(e.target.value)} />
-        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="block text-sm">
+            <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">Název</span>
+            <input className="input mt-1" placeholder="např. Bar" value={label} onChange={(e) => setLabel(e.target.value)} />
+          </label>
+          <label className="block text-sm">
+            <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">Datum kasy</span>
+            <input className="input mt-1" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </label>
+        </div>
+        {dateChanged && (
+          <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            Kasa se přesune na {date.split("-").reverse().join(". ")} od 0:00 — budou do ní patřit všechny prodeje od té chvíle (do otevření další kasy).
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-2">
           <label className="block text-sm">
             <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">Ranní vklad (Kč)</span>

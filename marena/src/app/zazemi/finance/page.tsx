@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, fmtDateTime, fmtRelative, todayISO } from "@/lib/format";
-import { posStats, posOrders, boxDayFinances, makeCostLookup, groupSales, SaleGroupFrame, DayCard, OrderHistory, PayBreakdown, ProfitLine, CopyDayButton, makeTicketSplit, TicketSplitLine, type TicketSplit, type CostLookup } from "@/lib/pos";
+import { posStats, posOrders, boxDayFinances, makeCostLookup, groupSales, SaleGroupFrame, DayCard, OrderHistory, PayBreakdown, ProfitLine, CopyDayButton, makeTicketSplit, TicketSplitLine, EditCashboxModal, type TicketSplit, type CostLookup } from "@/lib/pos";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
@@ -1538,6 +1538,7 @@ function CashboxCard({
 }) {
   const { dispatch } = useStore();
   const [closeVal, setCloseVal] = useState("");
+  const [editOpen, setEditOpen] = useState(false); // správce: název, vklad, datum otevřené kasy
   const expected = box.opening + stats.cash; // co má být večer v šuplíku
 
   function close() {
@@ -1558,6 +1559,11 @@ function CashboxCard({
           <CopyDayButton box={box} stats={stats} orders={orders} />
           <span className="badge badge-wait">🟢 otevřeno</span>
           {canEdit && (
+            <button type="button" className="chip transition hover:bg-gold-100" onClick={() => setEditOpen(true)} title="Upravit název, datum a ranní vklad kasy">
+              ✏️ Upravit
+            </button>
+          )}
+          {canEdit && (
             <DeleteButton
               what={`kasu ${fmtDate(box.openedAt)} — smaže i všechny prodeje toho dne`}
               onConfirm={() => dispatch({ type: "removeCashbox", yearId, cashboxId: box.id })}
@@ -1565,6 +1571,7 @@ function CashboxCard({
           )}
         </div>
       </div>
+      {editOpen && <EditCashboxModal box={box} yearId={yearId} onClose={() => setEditOpen(false)} />}
 
       {/* Tržba vlevo (zeleně — kolik se zatím vydělalo), platby vpravo */}
       <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
