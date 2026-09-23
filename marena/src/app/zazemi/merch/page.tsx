@@ -15,7 +15,8 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { fmtCZK, fmtDate, fmtDateTime } from "@/lib/format";
 import { uid } from "@/lib/id";
-import { canSeeMerch, variantKey, productVariants, isTicketName, ticketChannel, ONSITE_ORDER_NAME } from "@/lib/merch";
+import { canSeeMerch, variantKey, productVariants, isTicketName, orderTicketChannel, pickedUpAfterDeadline, ONSITE_ORDER_NAME } from "@/lib/merch";
+import { RESERVATION_DEADLINE_LABEL } from "@/lib/reservations";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { isAdmin } from "@/lib/admin";
 import { normName, guessGender } from "@/lib/names";
@@ -114,13 +115,17 @@ export default function MerchPage() {
   const tickets = { total: ticketQty(orders), paid: ticketQty(orders.filter((o) => o.done)), pending: ticketQty(orders.filter((o) => !o.done)) };
   const ticketOrderList = orders.filter((o) => o.items.some(isTicketItem));
   // Tři kanály: rezervace z webu (lidé s kontaktem) / prodáno na baru před Flédou / prodáno na Flédě.
-  const isOnsiteOrder = (o: MerchOrder) => o.name === ONSITE_ORDER_NAME || o.items.some((it) => isTicketItem(it) && ticketChannel(it.name) !== "web");
+  const isOnsiteOrder = (o: MerchOrder) => o.name === ONSITE_ORDER_NAME || o.items.some((it) => isTicketItem(it) && orderTicketChannel(o, it.name) !== "web");
   const webOrderList = ticketOrderList.filter((o) => !isOnsiteOrder(o));
   const qtyByChannel = (ch: "web" | "bar" | "fleda", list: MerchOrder[] = orders) =>
-    list.reduce((s, o) => s + o.items.filter((it) => isTicketItem(it) && ticketChannel(it.name) === ch).reduce((q, it) => q + it.qty, 0), 0);
+    list.reduce((s, o) => s + o.items.filter((it) => isTicketItem(it) && orderTicketChannel(o, it.name) === ch).reduce((q, it) => q + it.qty, 0), 0);
   const web = { orders: webOrderList.length, qty: qtyByChannel("web"), paid: qtyByChannel("web", orders.filter((o) => o.done)), pending: qtyByChannel("web", orders.filter((o) => !o.done)) };
   const barQty = qtyByChannel("bar");
   const fledaQty = qtyByChannel("fleda");
+  // Rezervace z webu vyzvednuté až po konci odpočtu (= na Flédě u vstupu): podle času zápisu platby.
+  const finById = new Map((year.finances ?? []).map((f) => [f.id, f]));
+  const lateList = webOrderList.filter((o) => pickedUpAfterDeadline(o, o.financeId ? finById.get(o.financeId) : undefined));
+  const late = { orders: lateList.length, qty: qtyByChannel("web", lateList) };
   // Kontakty lidí s lístkem na hromadnou zprávu — e-maily (skrytá kopie), telefony (SMS)
   // a jména (seznam na vstup). Bez duplicit; zvlášť „všichni" a „jen nezaplacené".
   const phoneKey = (t: string) => t.replace(/\D/g, "").replace(/^(00420|420)(?=\d{9}$)/, "");
@@ -269,6 +274,14 @@ export default function MerchPage() {
                 <p className="text-xs text-ink-soft">
                   <span className="text-leaf-700">zaplaceno {tickets.paid}</span> · <span className={tickets.pending > 0 ? "text-amber-800" : ""}>čeká {tickets.pending}</span>
                 </p>
+              </div>
+              {/* Rezervace vyzvednuté až po odpočtu — lidé, kteří si rezervovali na webu, ale zaplatili až na Flédě */}
+              <div className="col-span-2">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">🎫 Rezervace vyzvednuté až na Flédě</p>
+                <p className="font-display text-lg font-bold">
+                  {late.orders} <span className="text-sm font-semibold text-ink-soft">lidí</span> · {late.qty} ks
+                </p>
+                <p className="text-xs text-ink-soft">rezervace z webu zaplacené po konci odpočtu ({RESERVATION_DEADLINE_LABEL})</p>
               </div>
               {/* Kdo kupuje — holky / kluci podle jména (orientační; příjmení -ová/-á, křestní -a…) */}
               <div>
@@ -1082,9 +1095,8 @@ function TicketAnalytics({
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     };
     const finById = new Map(finances.map((f) => [f.id, f]));
-    const chanOf = (it: MerchOrder["items"][number]) => ticketChannel(it.name);
     const buckets: Record<string, { orders: number; tickets: number }> = { "1": { orders: 0, tickets: 0 }, "2": { orders: 0, tickets: 0 }, "3": { orders: 0, tickets: 0 }, "4+": { orders: 0, tickets: 0 } };
-    let webTotal = 0, webPaid = 0, webPending = 0, bar = 0, fleda = 0, qr = 0, cash = 0, other = 0, ordersWithTicket = 0, ticketsTotal = 0;
+    let webTotal = 0, webPaid = 0, webPending = 0, bar = 0, fleda = 0, qr = 0, cash = 0, other = 0, ordersWithTicket = 0, ticketsTotal = 0, lateOrders = 0, lateQty = 0;
     const byDay = new Map<string, { reservedOrders: number; reservedTickets: number; paidTickets: number; barTickets: number; fledaTickets: number }>();
     const day = (k: string) => {
       const cur = byDay.get(k) ?? { reservedOrders: 0, reservedTickets: 0, paidTickets: 0, barTickets: 0, fledaTickets: 0 };
@@ -1100,8 +1112,8 @@ function TicketAnalytics({
       const b = qty >= 4 ? "4+" : String(qty);
       buckets[b].orders++;
       buckets[b].tickets += qty;
-      const barQty = tItems.filter((it) => chanOf(it) === "bar").reduce((q, it) => q + it.qty, 0);
-      const fledaQty = tItems.filter((it) => chanOf(it) === "fleda").reduce((q, it) => q + it.qty, 0);
+      const barQty = tItems.filter((it) => orderTicketChannel(o, it.name) === "bar").reduce((q, it) => q + it.qty, 0);
+      const fledaQty = tItems.filter((it) => orderTicketChannel(o, it.name) === "fleda").reduce((q, it) => q + it.qty, 0);
       const webQty = qty - barQty - fledaQty;
       bar += barQty;
       fleda += fledaQty;
@@ -1123,10 +1135,14 @@ function TicketAnalytics({
         if (barQty > 0) d.barTickets += barQty;
         if (fledaQty > 0) d.fledaTickets += fledaQty;
         if (webQty > 0) d.paidTickets += webQty;
+        if (webQty > 0 && pickedUpAfterDeadline(o, fin)) {
+          lateOrders++;
+          lateQty += webQty;
+        }
       }
     }
     const days = [...byDay.entries()].sort((x, y) => y[0].localeCompare(x[0]));
-    return { buckets, webTotal, webPaid, webPending, bar, fleda, qr, cash, other, ordersWithTicket, ticketsTotal, days, avg: ordersWithTicket ? ticketsTotal / ordersWithTicket : 0 };
+    return { buckets, webTotal, webPaid, webPending, bar, fleda, qr, cash, other, ordersWithTicket, ticketsTotal, lateOrders, lateQty, days, avg: ordersWithTicket ? ticketsTotal / ordersWithTicket : 0 };
   }, [orders, finances, isTicketItem]);
 
   const maxOrders = Math.max(1, ...Object.values(a.buckets).map((b) => b.orders));
@@ -1168,6 +1184,9 @@ function TicketAnalytics({
               <p className="mt-1">
                 🌐 Rezervace z webu <strong>{a.webTotal} ks</strong>
                 <span className="text-xs text-ink-soft"> (zaplaceno {a.webPaid} · čeká {a.webPending})</span>
+              </p>
+              <p className="pl-5 text-xs text-ink-soft">
+                ↳ vyzvednuto až na Flédě (po odpočtu): <strong className="text-ink">{a.lateOrders} lidí · {a.lateQty} ks</strong>
               </p>
               <p>
                 🍺 Prodáno na baru před Flédou <strong>{a.bar} ks</strong>
