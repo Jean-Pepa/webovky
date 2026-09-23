@@ -411,6 +411,11 @@ function Pos() {
       setPicker({ productId: product.id });
       return;
     }
+    if (product && isTicketName(product.name)) {
+      // Lístek prodaný přes stánek merch = prodej na baru (před Flédou) — přípona, ať se nepočítá jako rezervace.
+      addLine("merch", `${product.name}${TICKET_SUFFIX.bar}`, item.price, item.id, undefined, undefined, undefined, true);
+      return;
+    }
     addLine(kind, item.name, item.price, item.id);
   }
   function confirmPicker() {

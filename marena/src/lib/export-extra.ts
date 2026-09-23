@@ -7,7 +7,7 @@ import type { Year, FinanceItem, Cashbox, MerchOrder } from "./types";
 import { fmtDate, fmtDateTime, fmtCZK } from "./format";
 import { roleById } from "./roles";
 import { posStats, boxDayFinances, makeCostLookup, makeTicketSplit } from "./pos";
-import { isTicketName, ticketChannel, ONSITE_ORDER_NAME } from "./merch";
+import { isTicketName, orderTicketChannel, pickedUpAfterDeadline, ONSITE_ORDER_NAME } from "./merch";
 import { guessGender, normName } from "./names";
 import { ONSITE_PRICE } from "./reservations";
 import type { AnalyticsSummary } from "./analytics";
@@ -47,7 +47,6 @@ function parseItems(note?: string): { qty: number; name: string }[] {
     .filter(Boolean)
     .map((m) => ({ qty: Number(m![1]), name: m![2] }));
 }
-const isOnsiteName = (name: string) => ticketChannel(name) !== "web";
 const isFullPriceName = (name: string) => /\((na místě|na Flédě)\)\s*$/i.test(name); // prodáno za cenu na místě
 
 // ---------- Finance — souhrn ----------
@@ -114,6 +113,9 @@ export function renderSalesBreakdown(y: Year): string {
   if (!sales.length) return "";
   const costOf = makeCostLookup(y);
   const ticketOf = makeTicketSplit(y);
+  // Kanál lístku: přes navázanou objednávku; bez ní podle štítku zápisu („Prodej na místě" = na baru).
+  const orderByFin = new Map<string, MerchOrder>();
+  for (const o of y.merchOrders ?? []) if (o.financeId) orderByFin.set(o.financeId, o);
   const acc = { food: 0, foodCost: 0, drink: 0, drinkCost: 0, merch: 0, merchCost: 0, tickets: 0, ticketCost: 0, ticketQty: 0, barQty: 0, fledaQty: 0, unknown: 0, qr: 0, cash: 0, count: 0 };
   for (const f of sales) {
     let cost = 0;
@@ -122,7 +124,7 @@ export function renderSalesBreakdown(y: Year): string {
       if (c != null) cost += c * it.qty;
       else acc.unknown += it.qty;
       if (isTicketName(it.name)) {
-        const ch = ticketChannel(it.name);
+        const ch = orderTicketChannel(orderByFin.get(f.id) ?? { name: f.label.includes(ONSITE_ORDER_NAME) ? ONSITE_ORDER_NAME : f.label }, it.name);
         if (ch === "bar") acc.barQty += it.qty;
         else if (ch === "fleda") acc.fledaQty += it.qty;
       }
@@ -240,15 +242,19 @@ export function renderMerch(y: Year): string {
   const isTicketItem = (it: MerchOrder["items"][number]) => isTicketName(it.name) || isTicketName(products.find((p) => p.id === it.productId)?.name ?? "");
   const qtyOf = (list: MerchOrder[], pred: (it: MerchOrder["items"][number]) => boolean) => list.reduce((s, o) => s + o.items.filter(pred).reduce((q, it) => q + it.qty, 0), 0);
   const withTicket = orders.filter((o) => o.items.some(isTicketItem));
-  const isOnsiteOrder = (o: MerchOrder) => o.name === ONSITE_ORDER_NAME || o.items.some((it) => isTicketItem(it) && isOnsiteName(it.name));
+  const isOnsiteOrder = (o: MerchOrder) => o.name === ONSITE_ORDER_NAME || o.items.some((it) => isTicketItem(it) && orderTicketChannel(o, it.name) !== "web");
   const webOrders = withTicket.filter((o) => !isOnsiteOrder(o));
   const gender = webOrders.reduce((acc, o) => { acc[guessGender(o.name)]++; return acc; }, { f: 0, m: 0, "?": 0 } as Record<string, number>);
-  const webQty = (list: MerchOrder[]) => qtyOf(list, (it) => isTicketItem(it) && ticketChannel(it.name) === "web");
+  const chQty = (list: MerchOrder[], ch: "web" | "bar" | "fleda") => list.reduce((s, o) => s + o.items.filter((it) => isTicketItem(it) && orderTicketChannel(o, it.name) === ch).reduce((q, it) => q + it.qty, 0), 0);
+  const webQty = (list: MerchOrder[]) => chQty(list, "web");
+  const finById = new Map((y.finances ?? []).map((f) => [f.id, f]));
+  const lateOrders = webOrders.filter((o) => pickedUpAfterDeadline(o, o.financeId ? finById.get(o.financeId) : undefined));
   const stats = kv([
     ["Objednávek celkem / s lístkem (vč. prodejů na místě)", `${orders.length} / ${withTicket.length}`],
     ["Rezervace z webu — lidí / lístků (zaplaceno / čeká)", `${webOrders.length} / ${webQty(orders)} (${webQty(orders.filter((o) => o.done))} / ${webQty(orders.filter((o) => !o.done))})`],
-    ["Prodáno na baru před Flédou", `${qtyOf(orders, (it) => isTicketItem(it) && ticketChannel(it.name) === "bar")} ks`],
-    ["Prodáno na Flédě", `${qtyOf(orders, (it) => isTicketItem(it) && ticketChannel(it.name) === "fleda")} ks`],
+    ["Prodáno na baru před Flédou", `${chQty(orders, "bar")} ks`],
+    ["Prodáno na Flédě", `${chQty(orders, "fleda")} ks`],
+    ["Rezervace vyzvednuté až na Flédě (zaplaceno po odpočtu) — lidí / lístků", `${lateOrders.length} / ${webQty(lateOrders)}`],
     ["Lístků celkem / zaplaceno / čeká", `${qtyOf(orders, isTicketItem)} / ${qtyOf(orders.filter((o) => o.done), isTicketItem)} / ${qtyOf(orders.filter((o) => !o.done), isTicketItem)}`],
     ["Holky / kluci (odhad podle jména, lidé z rezervací)", `${gender.f} / ${gender.m}${gender["?"] ? ` (nejasné ${gender["?"]})` : ""}`],
   ]);

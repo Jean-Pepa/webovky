@@ -2,6 +2,7 @@
 // v týmu roli „Merch". Identita je jen jméno, role se berou z členů ročníku.
 
 import type { Year, MerchProduct } from "./types";
+import { RESERVATION_DEADLINE } from "./reservations";
 import { isAdmin } from "./admin";
 
 export const MERCH_ROLE_ID = "merch";
@@ -54,3 +55,14 @@ export const ticketChannel = (itemName: string): TicketChannel =>
 export const TICKET_SUFFIX: Record<Exclude<TicketChannel, "web">, string> = { bar: " (na baru)", fleda: " (na Flédě)" };
 // Objednávka vzniklá prodejem na místě (bez kontaktu) — do počtů lidí se nepočítá.
 export const ONSITE_ORDER_NAME = "Prodej na místě";
+// Kanál lístku v konkrétní objednávce: přípona v názvu vítězí; bez přípony rozhoduje
+// objednávka — „Prodej na místě" (markováno v Prodeji, i přes stánek merch) = na baru,
+// cokoli se jménem člověka = rezervace z webu.
+export const orderTicketChannel = (order: { name: string }, itemName: string): TicketChannel => {
+  const ch = ticketChannel(itemName);
+  return ch !== "web" ? ch : order.name === ONSITE_ORDER_NAME ? "bar" : "web";
+};
+// Rezervace z webu vyzvednutá (zaplacená) až po konci odpočtu — tedy na Flédě u vstupu.
+// Rozhoduje čas zápisu platby (finance.createdAt), ne den vytvoření rezervace.
+export const pickedUpAfterDeadline = (order: { name: string; done?: boolean }, fin: { createdAt: string } | undefined): boolean =>
+  order.name !== ONSITE_ORDER_NAME && !!order.done && !!fin && new Date(fin.createdAt).getTime() >= RESERVATION_DEADLINE.getTime();
