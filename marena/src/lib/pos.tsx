@@ -74,6 +74,7 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
   let ticketRevenue = 0; // lístky zvlášť
   let ticketCost = 0;
   let ticketQty = 0;
+  let ticketOrders = 0; // kolik zápisů (objednávek) lístky obsahovalo
   let unknownQty = 0; // prodané kusy bez známé nákupní ceny
   let qr = 0;
   let cash = 0;
@@ -131,6 +132,7 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
       ticketRevenue += t.revenue;
       ticketCost += t.cost;
       ticketQty += t.qty;
+      if (t.qty > 0) ticketOrders++;
       merch += f.amount - t.revenue;
       merchCost += Math.max(0, entryCost - t.cost);
     } else {
@@ -167,6 +169,7 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
     ticketRevenue,
     ticketCost,
     ticketQty,
+    ticketOrders,
     ticketProfit: ticketRevenue - ticketCost,
     // Merch bez lístků.
     merchRevenue: merch,
@@ -363,7 +366,7 @@ export function dayReportText(box: Cashbox, stats: ReturnType<typeof posStats>, 
   lines.push(
     `Tržba jídlo & pití ${fmtCZK(stats.takings)}${stats.withCosts ? ` · náklady −${fmtCZK(stats.cost)} · zisk ${sgn(stats.profit)}${stats.cashDiff !== 0 ? ` (vč. rozdílu v kase ${sgn(stats.cashDiff)})` : ""}` : ""}${stats.unknownQty > 0 ? ` (${stats.unknownQty} ks bez nákupní ceny)` : ""}`,
   );
-  if (stats.ticketQty > 0) lines.push(`Lístky: ${stats.ticketQty} ks · tržba ${fmtCZK(stats.ticketRevenue)}${stats.withCosts ? ` · zisk ${sgn(stats.ticketProfit)}` : ""}`);
+  if (stats.ticketQty > 0) lines.push(`Lístky: ${stats.ticketQty} ks (${stats.ticketOrders} obj.) · tržba ${fmtCZK(stats.ticketRevenue)}${stats.withCosts ? ` · zisk ${sgn(stats.ticketProfit)}` : ""}`);
   if (stats.merchRevenue > 0) lines.push(`Merch: tržba ${fmtCZK(stats.merchRevenue)}${stats.withCosts ? ` · zisk ${sgn(stats.merchProfit)}` : ""}`);
   lines.push(`Kasou prošlo celkem ${fmtCZK(stats.allRevenue)} (QR ${fmtCZK(stats.qr)} · hotově ${fmtCZK(stats.cash)} · ${stats.count}× prodej)`);
   if (stats.manual.length) {
@@ -402,7 +405,9 @@ export function TicketSplitLine({ stats }: { stats: ReturnType<typeof posStats> 
       {stats.ticketQty > 0 && (
         <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
           <span className="font-semibold">🎟️ Lístky</span>
-          <span className="text-ink-soft">{stats.ticketQty} ks</span>
+          <span className="text-ink-soft">
+            {stats.ticketQty} ks · {stats.ticketOrders} obj.
+          </span>
           <span className="text-ink-soft">
             tržba <strong className="text-leaf-700">+{fmtCZK(stats.ticketRevenue)}</strong>
           </span>

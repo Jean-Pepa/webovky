@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { Icon } from "@/components/Icons";
@@ -13,14 +13,14 @@ import { PayQr } from "@/components/PayQr";
 import { parseAccount } from "@/lib/payment";
 import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
-import { fmtCZK, fmtDateTime } from "@/lib/format";
+import { fmtCZK, fmtDate, fmtDateTime } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { canSeeMerch, variantKey, productVariants, isTicketName } from "@/lib/merch";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { isAdmin } from "@/lib/admin";
 import { normName, guessGender } from "@/lib/names";
 import { flash } from "@/components/Flash";
-import type { MerchProduct, MerchOrder } from "@/lib/types";
+import type { MerchProduct, MerchOrder, FinanceItem } from "@/lib/types";
 
 // Marže na kus = prodejní − nákupní cena (+ procento z prodejní). Vrací null,
 // pokud některá cena chybí — pak se marže nezobrazí.
@@ -342,6 +342,8 @@ export default function MerchPage() {
               </div>
             </div>
           )}
+          {/* Analytika lístků: kolik lístků má jedna objednávka, odkud jsou, čím se platily, po dnech */}
+          {tickets.total > 0 && <TicketAnalytics orders={orders} finances={year.finances ?? []} isTicketItem={isTicketItem} />}
           {orders.length > 0 && (
             <div className="relative">
               <input
@@ -1047,6 +1049,153 @@ function EditOrderModal({ order, yearId, onClose }: { order: MerchOrder; yearId:
         </div>
       </div>
     </Modal>
+  );
+}
+
+// Analytika lístků — odpovídá na: kolik lístků má jedna objednávka, odkud lístky jsou
+// (rezervace z webu vs. prodej na místě), čím se zaplatily a jak rezervace a platby
+// přibývaly po dnech. Počítá se z objednávek a navázaných zápisů ve financích.
+function TicketAnalytics({
+  orders,
+  finances,
+  isTicketItem,
+}: {
+  orders: MerchOrder[];
+  finances: FinanceItem[];
+  isTicketItem: (it: MerchOrder["items"][number]) => boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const a = useMemo(() => {
+    const localDay = (iso: string) => {
+      const d = new Date(iso);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    };
+    const finById = new Map(finances.map((f) => [f.id, f]));
+    const isOnsite = (it: MerchOrder["items"][number]) => /\(na místě\)\s*$/.test(it.name);
+    const buckets: Record<string, { orders: number; tickets: number }> = { "1": { orders: 0, tickets: 0 }, "2": { orders: 0, tickets: 0 }, "3": { orders: 0, tickets: 0 }, "4+": { orders: 0, tickets: 0 } };
+    let webTotal = 0, webPaid = 0, webPending = 0, onsite = 0, qr = 0, cash = 0, other = 0, ordersWithTicket = 0, ticketsTotal = 0;
+    const byDay = new Map<string, { reservedOrders: number; reservedTickets: number; paidTickets: number; onsiteTickets: number }>();
+    const day = (k: string) => {
+      const cur = byDay.get(k) ?? { reservedOrders: 0, reservedTickets: 0, paidTickets: 0, onsiteTickets: 0 };
+      byDay.set(k, cur);
+      return cur;
+    };
+    for (const o of orders) {
+      const tItems = o.items.filter(isTicketItem);
+      const qty = tItems.reduce((q, it) => q + it.qty, 0);
+      if (qty === 0) continue;
+      ordersWithTicket++;
+      ticketsTotal += qty;
+      const b = qty >= 4 ? "4+" : String(qty);
+      buckets[b].orders++;
+      buckets[b].tickets += qty;
+      const onsiteQty = tItems.filter(isOnsite).reduce((q, it) => q + it.qty, 0);
+      const webQty = qty - onsiteQty;
+      onsite += onsiteQty;
+      webTotal += webQty;
+      if (webQty > 0) {
+        const d = day(localDay(o.createdAt));
+        d.reservedOrders++;
+        d.reservedTickets += webQty;
+        if (o.done) webPaid += webQty;
+        else webPending += webQty;
+      }
+      const fin = o.financeId ? finById.get(o.financeId) : undefined;
+      if (fin) {
+        const note = fin.note ?? "";
+        if (note.includes("QR platba")) qr += qty;
+        else if (note.includes("hotově")) cash += qty;
+        else other += qty;
+        const d = day(fin.date || localDay(fin.createdAt));
+        if (onsiteQty > 0) d.onsiteTickets += onsiteQty;
+        if (webQty > 0) d.paidTickets += webQty;
+      }
+    }
+    const days = [...byDay.entries()].sort((x, y) => y[0].localeCompare(x[0]));
+    return { buckets, webTotal, webPaid, webPending, onsite, qr, cash, other, ordersWithTicket, ticketsTotal, days, avg: ordersWithTicket ? ticketsTotal / ordersWithTicket : 0 };
+  }, [orders, finances, isTicketItem]);
+
+  const maxOrders = Math.max(1, ...Object.values(a.buckets).map((b) => b.orders));
+  const summary = `1 lístek: ${a.buckets["1"].orders} obj. · 2: ${a.buckets["2"].orders} · 3: ${a.buckets["3"].orders} · 4+: ${a.buckets["4+"].orders} · na místě ${a.onsite} ks`;
+
+  return (
+    <div className="card p-4">
+      <button type="button" className="flex w-full items-center justify-between gap-2 text-left" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        <span>
+          <span className="eyebrow">📊 Analytika lístků</span>
+          {!open && <span className="mt-0.5 block text-xs text-ink-soft">{summary}</span>}
+        </span>
+        <span className={`text-xs transition-transform ${open ? "rotate-180" : ""}`}>▾</span>
+      </button>
+      {open && (
+        <div className="mt-3 space-y-4 text-sm">
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Kolik lístků má jedna objednávka</p>
+            <div className="mt-1 space-y-1">
+              {(["1", "2", "3", "4+"] as const).map((k) => (
+                <div key={k} className="flex items-center gap-2">
+                  <span className="w-14 shrink-0 tabular-nums">{k === "1" ? "1 lístek" : `${k} lístky`}</span>
+                  <div className="h-3 flex-1 overflow-hidden rounded-full bg-paper2">
+                    <div className="h-full rounded-full bg-gold-400" style={{ width: `${(a.buckets[k].orders / maxOrders) * 100}%` }} />
+                  </div>
+                  <span className="w-36 shrink-0 text-right text-xs tabular-nums text-ink-soft">
+                    <strong className="text-ink">{a.buckets[k].orders}</strong> obj. · {a.buckets[k].tickets} ks
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-ink-soft">
+              Průměrně <strong className="text-ink">{a.avg.toFixed(2).replace(".", ",")}</strong> lístku na objednávku · {a.ordersWithTicket} objednávek · {a.ticketsTotal} lístků
+            </p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="rounded-xl bg-paper2/60 p-3">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Odkud lístky jsou</p>
+              <p className="mt-1">
+                🌐 Rezervace z webu <strong>{a.webTotal} ks</strong>
+                <span className="text-xs text-ink-soft"> (zaplaceno {a.webPaid} · čeká {a.webPending})</span>
+              </p>
+              <p>
+                🎫 Prodáno na místě <strong>{a.onsite} ks</strong>
+              </p>
+            </div>
+            <div className="rounded-xl bg-paper2/60 p-3">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Čím se zaplacené lístky platily</p>
+              <p className="mt-1">
+                QR <strong>{a.qr} ks</strong> · hotově <strong>{a.cash} ks</strong>
+                {a.other > 0 && <span className="text-xs text-ink-soft"> · bez uvedení {a.other} ks (přepnuto „Vyřízeno“ bez platby)</span>}
+              </p>
+            </div>
+          </div>
+          {a.days.length > 0 && (
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Po dnech</p>
+              <table className="mt-1 w-full text-xs tabular-nums">
+                <thead>
+                  <tr className="text-left text-ink-soft">
+                    <th className="py-1 font-medium">Den</th>
+                    <th className="py-1 text-right font-medium">Rezervováno</th>
+                    <th className="py-1 text-right font-medium">Zaplaceno z webu</th>
+                    <th className="py-1 text-right font-medium">Na místě</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {a.days.map(([d, v]) => (
+                    <tr key={d} className="border-t border-ink/[0.06]">
+                      <td className="py-1">{fmtDate(d)}</td>
+                      <td className="py-1 text-right">{v.reservedTickets > 0 ? `${v.reservedTickets} ks · ${v.reservedOrders} obj.` : "—"}</td>
+                      <td className="py-1 text-right">{v.paidTickets > 0 ? `${v.paidTickets} ks` : "—"}</td>
+                      <td className="py-1 text-right">{v.onsiteTickets > 0 ? `${v.onsiteTickets} ks` : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="mt-1 text-[11px] text-ink-soft">Rezervováno = den vytvoření rezervace na webu. Zaplaceno / na místě = den zaplacení (zápis ve financích).</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
