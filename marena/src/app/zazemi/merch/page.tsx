@@ -15,7 +15,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
 import { fmtCZK, fmtDate, fmtDateTime } from "@/lib/format";
 import { uid } from "@/lib/id";
-import { canSeeMerch, variantKey, productVariants, isTicketName } from "@/lib/merch";
+import { canSeeMerch, variantKey, productVariants, isTicketName, ticketChannel, ONSITE_ORDER_NAME } from "@/lib/merch";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { isAdmin } from "@/lib/admin";
 import { normName, guessGender } from "@/lib/names";
@@ -113,9 +113,14 @@ export default function MerchPage() {
   const ticketQty = (list: MerchOrder[]) => list.reduce((s, o) => s + o.items.filter(isTicketItem).reduce((q, it) => q + it.qty, 0), 0);
   const tickets = { total: ticketQty(orders), paid: ticketQty(orders.filter((o) => o.done)), pending: ticketQty(orders.filter((o) => !o.done)) };
   const ticketOrderList = orders.filter((o) => o.items.some(isTicketItem));
-  const ticketOrders = ticketOrderList.length;
-  // Lístky prodané na místě (stánek „Lístky na místě" v Prodeji) — položka nese „(na místě)".
-  const onsiteQty = orders.reduce((s, o) => s + o.items.filter((it) => isTicketItem(it) && /\(na místě\)\s*$/.test(it.name)).reduce((q, it) => q + it.qty, 0), 0);
+  // Tři kanály: rezervace z webu (lidé s kontaktem) / prodáno na baru před Flédou / prodáno na Flédě.
+  const isOnsiteOrder = (o: MerchOrder) => o.name === ONSITE_ORDER_NAME || o.items.some((it) => isTicketItem(it) && ticketChannel(it.name) !== "web");
+  const webOrderList = ticketOrderList.filter((o) => !isOnsiteOrder(o));
+  const qtyByChannel = (ch: "web" | "bar" | "fleda", list: MerchOrder[] = orders) =>
+    list.reduce((s, o) => s + o.items.filter((it) => isTicketItem(it) && ticketChannel(it.name) === ch).reduce((q, it) => q + it.qty, 0), 0);
+  const web = { orders: webOrderList.length, qty: qtyByChannel("web"), paid: qtyByChannel("web", orders.filter((o) => o.done)), pending: qtyByChannel("web", orders.filter((o) => !o.done)) };
+  const barQty = qtyByChannel("bar");
+  const fledaQty = qtyByChannel("fleda");
   // Kontakty lidí s lístkem na hromadnou zprávu — e-maily (skrytá kopie), telefony (SMS)
   // a jména (seznam na vstup). Bez duplicit; zvlášť „všichni" a „jen nezaplacené".
   const phoneKey = (t: string) => t.replace(/\D/g, "").replace(/^(00420|420)(?=\d{9}$)/, "");
@@ -132,8 +137,9 @@ export default function MerchPage() {
       .sort((a, b) => normName(a.name).localeCompare(normName(b.name), "cs"))
       .map((n) => (n.qty > 1 ? `${n.name} ×${n.qty}` : n.name)),
   });
-  const allC = contactsOf(ticketOrderList);
-  const unpaidC = contactsOf(ticketOrderList.filter((o) => !o.done));
+  // Kontakty a lidé jen z rezervací z webu (prodeje na místě žádný kontakt nemají).
+  const allC = contactsOf(webOrderList);
+  const unpaidC = contactsOf(webOrderList.filter((o) => !o.done));
   const ticketEmails = allC.emails;
   const ticketNoEmail = allC.noEmail;
   const ticketPhones = allC.phones;
@@ -145,7 +151,7 @@ export default function MerchPage() {
     flash(ok ? `Zkopírováno ${items.length} ${what}` : "Kopírování se nepovedlo", ok ? emoji : "⚠️");
   };
   // Holky / kluci — odhad podle jména (příjmení -ová/-á, křestní -a…). Jen orientačně.
-  const gender = ticketOrderList.reduce(
+  const gender = webOrderList.reduce(
     (acc, o) => {
       const g = guessGender(o.name);
       acc[g].all += 1;
@@ -241,23 +247,28 @@ export default function MerchPage() {
           {tickets.total > 0 && (
             <div className="grid grid-cols-2 gap-2 rounded-xl border border-ink/[0.06] bg-surface p-3 text-sm sm:grid-cols-4">
               <div>
-                <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Objednávek s lístkem</p>
-                <p className="font-display text-lg font-bold">{ticketOrders}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Lístků celkem</p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">🌐 Rezervace z webu</p>
                 <p className="font-display text-lg font-bold">
-                  🎟️ {tickets.total} ks
-                  {onsiteQty > 0 && <span className="ml-1.5 rounded-full bg-fuchsia-100 px-2 py-0.5 text-xs font-semibold text-fuchsia-800">🎫 na místě {onsiteQty}</span>}
+                  {web.orders} <span className="text-sm font-semibold text-ink-soft">lidí</span> · {web.qty} ks
+                </p>
+                <p className="text-xs text-ink-soft">
+                  <span className="text-leaf-700">zaplaceno {web.paid}</span> · <span className={web.pending > 0 ? "text-amber-800" : ""}>čeká {web.pending}</span>
                 </p>
               </div>
               <div>
-                <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Zaplaceno</p>
-                <p className="font-display text-lg font-bold text-leaf-700">{tickets.paid} ks</p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">🍺 Prodáno na baru (před Flédou)</p>
+                <p className="font-display text-lg font-bold text-fuchsia-800">{barQty} ks</p>
               </div>
               <div>
-                <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Čeká na zaplacení</p>
-                <p className={`font-display text-lg font-bold ${tickets.pending > 0 ? "text-amber-800" : ""}`}>{tickets.pending} ks</p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">🎫 Prodáno na Flédě</p>
+                <p className="font-display text-lg font-bold text-fuchsia-800">{fledaQty} ks</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">🎟️ Lístků celkem</p>
+                <p className="font-display text-lg font-bold">{tickets.total} ks</p>
+                <p className="text-xs text-ink-soft">
+                  <span className="text-leaf-700">zaplaceno {tickets.paid}</span> · <span className={tickets.pending > 0 ? "text-amber-800" : ""}>čeká {tickets.pending}</span>
+                </p>
               </div>
               {/* Kdo kupuje — holky / kluci podle jména (orientační; příjmení -ová/-á, křestní -a…) */}
               <div>
@@ -273,7 +284,7 @@ export default function MerchPage() {
                 </p>
               </div>
               <p className="col-span-2 -mt-1 text-[11px] text-ink-soft sm:col-span-4">
-                odhad podle jména, počítá lidi (objednávky s lístkem)
+                odhad podle jména, počítá lidi z rezervací z webu (prodeje na místě nemají jméno)
                 {gender["?"].all > 0 && ` · ${gender["?"].all} nejasné`}
               </p>
               {/* Hromadná zpráva všem s lístkem: telefony (SMS), jména (seznam), e-maily (skrytá kopie).
@@ -1071,12 +1082,12 @@ function TicketAnalytics({
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     };
     const finById = new Map(finances.map((f) => [f.id, f]));
-    const isOnsite = (it: MerchOrder["items"][number]) => /\(na místě\)\s*$/.test(it.name);
+    const chanOf = (it: MerchOrder["items"][number]) => ticketChannel(it.name);
     const buckets: Record<string, { orders: number; tickets: number }> = { "1": { orders: 0, tickets: 0 }, "2": { orders: 0, tickets: 0 }, "3": { orders: 0, tickets: 0 }, "4+": { orders: 0, tickets: 0 } };
-    let webTotal = 0, webPaid = 0, webPending = 0, onsite = 0, qr = 0, cash = 0, other = 0, ordersWithTicket = 0, ticketsTotal = 0;
-    const byDay = new Map<string, { reservedOrders: number; reservedTickets: number; paidTickets: number; onsiteTickets: number }>();
+    let webTotal = 0, webPaid = 0, webPending = 0, bar = 0, fleda = 0, qr = 0, cash = 0, other = 0, ordersWithTicket = 0, ticketsTotal = 0;
+    const byDay = new Map<string, { reservedOrders: number; reservedTickets: number; paidTickets: number; barTickets: number; fledaTickets: number }>();
     const day = (k: string) => {
-      const cur = byDay.get(k) ?? { reservedOrders: 0, reservedTickets: 0, paidTickets: 0, onsiteTickets: 0 };
+      const cur = byDay.get(k) ?? { reservedOrders: 0, reservedTickets: 0, paidTickets: 0, barTickets: 0, fledaTickets: 0 };
       byDay.set(k, cur);
       return cur;
     };
@@ -1089,9 +1100,11 @@ function TicketAnalytics({
       const b = qty >= 4 ? "4+" : String(qty);
       buckets[b].orders++;
       buckets[b].tickets += qty;
-      const onsiteQty = tItems.filter(isOnsite).reduce((q, it) => q + it.qty, 0);
-      const webQty = qty - onsiteQty;
-      onsite += onsiteQty;
+      const barQty = tItems.filter((it) => chanOf(it) === "bar").reduce((q, it) => q + it.qty, 0);
+      const fledaQty = tItems.filter((it) => chanOf(it) === "fleda").reduce((q, it) => q + it.qty, 0);
+      const webQty = qty - barQty - fledaQty;
+      bar += barQty;
+      fleda += fledaQty;
       webTotal += webQty;
       if (webQty > 0) {
         const d = day(localDay(o.createdAt));
@@ -1107,16 +1120,17 @@ function TicketAnalytics({
         else if (note.includes("hotově")) cash += qty;
         else other += qty;
         const d = day(fin.date || localDay(fin.createdAt));
-        if (onsiteQty > 0) d.onsiteTickets += onsiteQty;
+        if (barQty > 0) d.barTickets += barQty;
+        if (fledaQty > 0) d.fledaTickets += fledaQty;
         if (webQty > 0) d.paidTickets += webQty;
       }
     }
     const days = [...byDay.entries()].sort((x, y) => y[0].localeCompare(x[0]));
-    return { buckets, webTotal, webPaid, webPending, onsite, qr, cash, other, ordersWithTicket, ticketsTotal, days, avg: ordersWithTicket ? ticketsTotal / ordersWithTicket : 0 };
+    return { buckets, webTotal, webPaid, webPending, bar, fleda, qr, cash, other, ordersWithTicket, ticketsTotal, days, avg: ordersWithTicket ? ticketsTotal / ordersWithTicket : 0 };
   }, [orders, finances, isTicketItem]);
 
   const maxOrders = Math.max(1, ...Object.values(a.buckets).map((b) => b.orders));
-  const summary = `1 lístek: ${a.buckets["1"].orders} obj. · 2: ${a.buckets["2"].orders} · 3: ${a.buckets["3"].orders} · 4+: ${a.buckets["4+"].orders} · na místě ${a.onsite} ks`;
+  const summary = `1 lístek: ${a.buckets["1"].orders} obj. · 2: ${a.buckets["2"].orders} · 3: ${a.buckets["3"].orders} · 4+: ${a.buckets["4+"].orders} · web ${a.webTotal} · bar ${a.bar} · Fléda ${a.fleda} ks`;
 
   return (
     <div className="card p-4">
@@ -1145,7 +1159,7 @@ function TicketAnalytics({
               ))}
             </div>
             <p className="mt-1 text-xs text-ink-soft">
-              Průměrně <strong className="text-ink">{a.avg.toFixed(2).replace(".", ",")}</strong> lístku na objednávku · {a.ordersWithTicket} objednávek · {a.ticketsTotal} lístků
+              Průměrně <strong className="text-ink">{a.avg.toFixed(2).replace(".", ",")}</strong> lístku na objednávku · {a.ordersWithTicket} objednávek (vč. prodejů na místě) · {a.ticketsTotal} lístků
             </p>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -1156,7 +1170,10 @@ function TicketAnalytics({
                 <span className="text-xs text-ink-soft"> (zaplaceno {a.webPaid} · čeká {a.webPending})</span>
               </p>
               <p>
-                🎫 Prodáno na místě <strong>{a.onsite} ks</strong>
+                🍺 Prodáno na baru před Flédou <strong>{a.bar} ks</strong>
+              </p>
+              <p>
+                🎫 Prodáno na Flédě <strong>{a.fleda} ks</strong>
               </p>
             </div>
             <div className="rounded-xl bg-paper2/60 p-3">
@@ -1176,7 +1193,8 @@ function TicketAnalytics({
                     <th className="py-1 font-medium">Den</th>
                     <th className="py-1 text-right font-medium">Rezervováno</th>
                     <th className="py-1 text-right font-medium">Zaplaceno z webu</th>
-                    <th className="py-1 text-right font-medium">Na místě</th>
+                    <th className="py-1 text-right font-medium">Na baru</th>
+                    <th className="py-1 text-right font-medium">Na Flédě</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1185,12 +1203,13 @@ function TicketAnalytics({
                       <td className="py-1">{fmtDate(d)}</td>
                       <td className="py-1 text-right">{v.reservedTickets > 0 ? `${v.reservedTickets} ks · ${v.reservedOrders} obj.` : "—"}</td>
                       <td className="py-1 text-right">{v.paidTickets > 0 ? `${v.paidTickets} ks` : "—"}</td>
-                      <td className="py-1 text-right">{v.onsiteTickets > 0 ? `${v.onsiteTickets} ks` : "—"}</td>
+                      <td className="py-1 text-right">{v.barTickets > 0 ? `${v.barTickets} ks` : "—"}</td>
+                      <td className="py-1 text-right">{v.fledaTickets > 0 ? `${v.fledaTickets} ks` : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <p className="mt-1 text-[11px] text-ink-soft">Rezervováno = den vytvoření rezervace na webu. Zaplaceno / na místě = den zaplacení (zápis ve financích).</p>
+              <p className="mt-1 text-[11px] text-ink-soft">Rezervováno = den vytvoření rezervace na webu. Zaplaceno / na baru / na Flédě = den zaplacení (zápis ve financích).</p>
             </div>
           )}
         </div>
