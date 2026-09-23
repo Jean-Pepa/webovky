@@ -80,6 +80,10 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
   let count = 0;
   let kasaAdj = 0; // rekonciliace kasy (kategorie „kasa" — manko/přebytek), NENÍ tržba
   let purchases = 0; // nákupy zboží (výdaje bar / kuchyně / merch) — NEJSOU tržba, jen se ukážou
+  // Ručně přidané příjmy ve Financích (bez rozpisu „×", např. vrácená záloha sudu) —
+  // NEJSOU prodej, do kasy se nepočítají vůbec (zůstávají jen v Bilanci). Jen se vypíšou
+  // ve výpisu dne, ať je jasné, co v tom dni ještě bylo zapsáno.
+  const manual: { label: string; amount: number; date?: string }[] = [];
   const byCat = new Map<string, number>();
   const items = new Map<string, number>();
   for (const f of list) {
@@ -90,8 +94,13 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
       purchases += f.amount;
       continue;
     }
-    total += sign * f.amount;
     const cat = f.category ?? "";
+    // Kasa = jen prodané věci (zápis s rozpisem „×") + rekonciliace kasy. Ruční příjem mimo.
+    if (cat !== "kasa" && !(f.note ?? "").includes("×")) {
+      manual.push({ label: f.label, amount: f.amount, date: f.date });
+      continue;
+    }
+    total += sign * f.amount;
     byCat.set(cat, (byCat.get(cat) ?? 0) + sign * f.amount);
     if (cat === "kasa") {
       kasaAdj += sign * f.amount;
@@ -144,6 +153,8 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
     count,
     top,
     purchases,
+    manual,
+    manualTotal: manual.reduce((sum, m) => sum + m.amount, 0),
     // Náklady a zisk (jídlo & pití) podle nákupních cen položek — jen když je předaný ceník.
     withCosts: !!costOf,
     cost: foodCost,
@@ -355,6 +366,9 @@ export function dayReportText(box: Cashbox, stats: ReturnType<typeof posStats>, 
   if (stats.ticketQty > 0) lines.push(`Lístky: ${stats.ticketQty} ks · tržba ${fmtCZK(stats.ticketRevenue)}${stats.withCosts ? ` · zisk ${sgn(stats.ticketProfit)}` : ""}`);
   if (stats.merchRevenue > 0) lines.push(`Merch: tržba ${fmtCZK(stats.merchRevenue)}${stats.withCosts ? ` · zisk ${sgn(stats.merchProfit)}` : ""}`);
   lines.push(`Kasou prošlo celkem ${fmtCZK(stats.allRevenue)} (QR ${fmtCZK(stats.qr)} · hotově ${fmtCZK(stats.cash)} · ${stats.count}× prodej)`);
+  if (stats.manual.length) {
+    lines.push(`Mimo kasu (ruční zápisy ve financích, nepočítají se): ${stats.manual.map((m) => `${m.label} ${fmtCZK(m.amount)}${m.date ? ` (datum ${fmtDate(m.date)})` : ""}`).join(", ")}`);
+  }
   if (box.closedAt && box.closing != null) {
     const rozdil = box.closing - box.opening - (box.alreadyRecorded ?? 0);
     lines.push(`Vklad ${fmtCZK(box.opening)} → večer ${fmtCZK(box.closing)} · rozdíl ${rozdil >= 0 ? "+" : "−"}${fmtCZK(Math.abs(rozdil))}`);
