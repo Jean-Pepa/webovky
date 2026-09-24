@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, fmtDateTime, fmtRelative, todayISO } from "@/lib/format";
-import { posStats, posOrders, boxDayFinances, makeCostLookup, groupSales, SaleGroupFrame, DayCard, OrderHistory, PayBreakdown, ProfitLine, CopyDayButton, makeTicketSplit, TicketSplitLine, EditCashboxModal, soldItems, type TicketSplit, type CostLookup, type SoldItemRow } from "@/lib/pos";
+import { posStats, posOrders, boxDayFinances, makeCostLookup, groupSales, SaleGroupFrame, DayCard, OrderHistory, PayBreakdown, ProfitLine, CopyDayButton, makeTicketSplit, TicketSplitLine, EditCashboxModal, soldItems, ticketBreakdown, TicketPlacesLine, type TicketSplit, type CostLookup, type SoldItemRow } from "@/lib/pos";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
@@ -314,6 +314,8 @@ export default function FinancePage() {
     }
     return { revenue, cost, qty, expense, profit: revenue - cost - expense };
   }, [items, ticketOf]);
+  // Lístky podle místa a rezervace (na baru / na Flédě × bez rezervace / s rezervací).
+  const ticketPlaces = useMemo(() => ticketBreakdown(items, { merch: year?.merch, merchOrders: year?.merchOrders }), [items, year]);
   // Merch bez lístků: tržba = příjmy merche minus lístky; vloženo = nákupy + zboží skladem.
   const merchOnly = useMemo(() => {
     const revenue = merchTotal - ticketTot.revenue;
@@ -540,6 +542,7 @@ export default function FinancePage() {
               { label: "Prodáno", text: `${ticketTot.qty} ks` },
             ]}
           />
+          <TicketPlacesLine data={ticketPlaces} className="px-1" />
           <SummaryStrip
             title="🛍️ Merch"
             cells={[
