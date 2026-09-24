@@ -236,9 +236,12 @@ function Pos() {
     );
   }
 
-  // Stánek „Lístky na místě" vidí správce vždy (má tam přepínač); prodejci jen když je zapnutý.
-  const stands = STANDS.filter((s) => s.id !== "ticket" || admin || !!year.ticketSaleOpen);
-  const activeStand: Stand = stands.some((s) => s.id === stand) ? stand : "merch";
+  // Stánek „Lístky na místě": správce vidí všechny stánky vždy (má tam přepínač).
+  // Prodejci: když je prodej lístků zapnutý, vidí JEN lístky na místě (žádný jiný
+  // stánek ani přepínač); když je vypnutý, vidí merch / bar / kuchyni bez lístků.
+  const ticketOnly = !admin && !!year.ticketSaleOpen;
+  const stands = ticketOnly ? STANDS.filter((s) => s.id === "ticket") : STANDS.filter((s) => s.id !== "ticket" || admin);
+  const activeStand: Stand = stands.some((s) => s.id === stand) ? stand : stands[0].id;
 
   // Nabídka po druzích; nejprodávanější dlaždice první (podle prodejů
   // z tohoto zařízení — barový vzor „top sellers first"). Nové položky
@@ -641,7 +644,8 @@ function Pos() {
           )}
       </section>
 
-      {/* Výběr stánku (desktop) — na mobilu je dole ve žluté bublině */}
+      {/* Výběr stánku (desktop) — na mobilu je dole ve žluté bublině; s jediným stánkem se neukazuje */}
+      {stands.length > 1 && (
       <div className="hidden gap-1.5 md:flex">
         {stands.map((s) => (
           <button
@@ -659,6 +663,7 @@ function Pos() {
           </button>
         ))}
       </div>
+      )}
 
       {/* Lístky na místě — přepínač pro správce: zapnout stánek i pro prodejce */}
       {activeStand === "ticket" && admin && (
@@ -975,7 +980,9 @@ function Pos() {
       </section>
 
       {/* Stánky (mobil) — svítící žlutá bublina nad hlavní lištou; pomocník
-          u stánku lištu nemá, takže bublina sedí přímo dole na jejím místě */}
+          u stánku lištu nemá, takže bublina sedí přímo dole na jejím místě.
+          S jediným stánkem (prodejce při zapnutém prodeji lístků) se neukazuje. */}
+      {stands.length > 1 && (
       <div
         className={`fixed inset-x-3 z-40 md:hidden ${
           posOnly ? "bottom-[calc(0.75rem+env(safe-area-inset-bottom))]" : "bottom-[calc(5.1rem+env(safe-area-inset-bottom))]"
@@ -1001,6 +1008,7 @@ function Pos() {
           </div>
         </div>
       </div>
+      )}
 
       {/* QR platba čekající objednávky — se jménem objednatele ve zprávě */}
       <Modal open={!!payOrder} onClose={() => setPayOrder(null)} title={payOrder ? `Platba — ${payOrder.name}` : ""}>
