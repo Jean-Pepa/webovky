@@ -773,7 +773,8 @@ function Pos() {
                     ) : (
                       <span className="flex w-full items-center gap-2 text-xs">
                         <span className="font-semibold text-ink-soft">+ {fmtCZK(i.price)}</span>
-                        {left != null && <span className="ml-auto font-medium text-ink-soft/80">zbývá {left}</span>}
+                        {/* „zbývá N": prodejce při zapnutém prodeji lístků ho nevidí (jen prodává) */}
+                        {left != null && !ticketOnly && <span className="ml-auto font-medium text-ink-soft/80">zbývá {left}</span>}
                       </span>
                     )}
                   </button>
