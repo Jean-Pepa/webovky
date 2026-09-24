@@ -6,10 +6,9 @@
 import type { Year, FinanceItem, Cashbox, MerchOrder } from "./types";
 import { fmtDate, fmtDateTime, fmtCZK } from "./format";
 import { roleById } from "./roles";
-import { posStats, boxDayFinances, makeCostLookup, makeTicketSplit } from "./pos";
+import { posStats, boxDayFinances, makeCostLookup, makeTicketSplit, soldItems } from "./pos";
 import { isTicketName, orderTicketChannel, pickedUpAfterDeadline, ONSITE_ORDER_NAME } from "./merch";
-import { guessGender, normName } from "./names";
-import { ONSITE_PRICE } from "./reservations";
+import { guessGender } from "./names";
 import type { AnalyticsSummary } from "./analytics";
 
 export function esc(s: unknown): string {
@@ -47,7 +46,6 @@ function parseItems(note?: string): { qty: number; name: string }[] {
     .filter(Boolean)
     .map((m) => ({ qty: Number(m![1]), name: m![2] }));
 }
-const isFullPriceName = (name: string) => /\((na místě|na Flédě)\)\s*$/i.test(name); // prodáno za cenu na místě
 
 // ---------- Finance — souhrn ----------
 export function renderFinanceSummary(y: Year): string {
@@ -167,50 +165,17 @@ export function renderSalesBreakdown(y: Year): string {
 // účtenky se částka rozdělí podle cen v nabídce (lístek na místě = cena na místě).
 // Součet tržeb tedy sedí s kasou. Zisk = tržba − prodané kusy × nákupka.
 export function renderSoldItems(y: Year): string {
-  const sales = (y.finances ?? []).filter(isSale);
-  if (!sales.length) return "";
-  const costOf = makeCostLookup(y);
-  const prices = new Map<string, number>();
-  for (const d of y.bar ?? []) if (d.price != null) prices.set(normName(d.name), d.price);
-  for (const m of y.merch ?? []) if (m.price != null) prices.set(normName(m.name), m.price);
-  const priceOf = (name: string): number | undefined => {
-    if (isFullPriceName(name)) return ONSITE_PRICE;
-    return prices.get(normName(name.replace(/\s*\(.*\)\s*$/, "")));
-  };
-  const tally = new Map<string, { qty: number; cat: string; revenue: number }>();
-  const bump = (name: string, cat: string, qty: number, revenue: number) => {
-    const cur = tally.get(name) ?? { qty: 0, cat, revenue: 0 };
-    cur.qty += qty;
-    cur.revenue += revenue;
-    tally.set(name, cur);
-  };
-  for (const f of sales) {
-    const items = parseItems(f.note);
-    if (!items.length) continue;
-    const cat = f.category ?? "";
-    if (items.length === 1) {
-      bump(items[0].name, cat, items[0].qty, f.amount);
-      continue;
-    }
-    const weights = items.map((it) => (priceOf(it.name) ?? 1) * it.qty);
-    const sumW = weights.reduce((a, b) => a + b, 0) || 1;
-    items.forEach((it, i) => bump(it.name, cat, it.qty, (f.amount * weights[i]) / sumW));
-  }
-  let tQty = 0, tRev = 0, tCost = 0;
-  const rows = [...tally.entries()]
-    .sort((a, b) => b[1].qty - a[1].qty)
-    .map(([name, v]) => {
-      const c = costOf(name);
-      const cost = c != null ? c * v.qty : 0;
-      const rev = Math.round(v.revenue);
-      tQty += v.qty; tRev += rev; tCost += cost;
-      return `<tr>${td(name)}${td(v.cat)}${td(v.qty, true)}${td(fmtCZK(rev), true)}${td(c != null ? fmtCZK(c) : "—", true)}${td(c != null ? `−${fmtCZK(cost)}` : "—", true)}${td(
-        c != null ? sgn(rev - cost) : `${sgn(rev)} (bez nákupky)`,
+  const sold = soldItems(y.finances ?? [], y);
+  if (!sold.rows.length) return "";
+  const rows = sold.rows.map(
+    (r) =>
+      `<tr>${td(r.name)}${td(r.cat)}${td(r.qty, true)}${td(fmtCZK(r.revenue), true)}${td(r.unitCost != null ? fmtCZK(r.unitCost) : "—", true)}${td(r.unitCost != null ? `−${fmtCZK(r.cost)}` : "—", true)}${td(
+        r.unitCost != null ? sgn(r.profit) : `${sgn(r.revenue)} (bez nákupky)`,
         true,
-      )}</tr>`;
-    });
+      )}</tr>`,
+  );
   rows.push(
-    `<tr><th>Celkem</th><th></th><th style="text-align:right">${tQty}</th><th style="text-align:right">${esc(fmtCZK(tRev))}</th><th></th><th style="text-align:right">−${esc(fmtCZK(tCost))}</th><th style="text-align:right">${esc(sgn(tRev - tCost))}</th></tr>`,
+    `<tr><th>Celkem</th><th></th><th style="text-align:right">${sold.qty}</th><th style="text-align:right">${esc(fmtCZK(sold.revenue))}</th><th></th><th style="text-align:right">−${esc(fmtCZK(sold.cost))}</th><th style="text-align:right">${esc(sgn(sold.profit))}</th></tr>`,
   );
   return (
     table(["Položka", "Stánek", "Prodáno ks", "Tržba", "Nákupka / ks", "Náklady", "Zisk"], rows, 2) +

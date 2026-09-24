@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { fmtCZK, fmtDate, fmtDateTime, fmtRelative, todayISO } from "@/lib/format";
-import { posStats, posOrders, boxDayFinances, makeCostLookup, groupSales, SaleGroupFrame, DayCard, OrderHistory, PayBreakdown, ProfitLine, CopyDayButton, makeTicketSplit, TicketSplitLine, EditCashboxModal, type TicketSplit, type CostLookup } from "@/lib/pos";
+import { posStats, posOrders, boxDayFinances, makeCostLookup, groupSales, SaleGroupFrame, DayCard, OrderHistory, PayBreakdown, ProfitLine, CopyDayButton, makeTicketSplit, TicketSplitLine, EditCashboxModal, soldItems, type TicketSplit, type CostLookup, type SoldItemRow } from "@/lib/pos";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Icon } from "@/components/Icons";
 import { Modal } from "@/components/Modal";
@@ -332,6 +332,8 @@ export default function FinancePage() {
   const merchSaleDays = useMemo(() => buildSaleDays(items, (c) => c === "merch", ticketOf, costOf), [items, ticketOf, costOf]);
   // Výdělek z prodeje i merche po dnech — ať je vidět i ve „Všechny finance".
   const allSaleDays = useMemo(() => buildSaleDays(items, () => true, ticketOf, costOf), [items, ticketOf, costOf]);
+  // Prodané položky za ročník (kusy, tržba, zisk) — do „Všechny finance".
+  const sold = useMemo(() => soldItems(items, { bar: year?.bar, merch: year?.merch }), [items, year]);
   const orphanSaleDays = useMemo(() => {
     const boxes = year?.cashboxes ?? [];
     return buildSaleDays(items.filter((f) => !boxes.some((b) => b.openedAt <= f.createdAt)), (c) => c !== "merch", ticketOf, costOf);
@@ -841,6 +843,8 @@ export default function FinancePage() {
       {filter !== "nezaplaceno" && allSaleDays.length > 0 && (
         <SalesByDay days={allSaleDays} title="Tržba z prodeje a merche" q={q} canDelete={canEdit} yearId={year.id} />
       )}
+      {/* Prodané položky — co se za ročník prodalo: kusy, tržba a zisk po položkách */}
+      {filter !== "nezaplaceno" && sold.rows.length > 0 && <SoldItemsCard sold={sold} q={q} />}
       {/* Přidat */}
       {open && (
         <div id="add-finance" className="card scroll-mt-20 space-y-3 p-4 ring-2 ring-gold-200">
@@ -1717,6 +1721,72 @@ function NewKasaModal({ open, yearId, onClose }: { open: boolean; yearId: string
 }
 
 // Sbalovací obal: ukáže jen „peek" (kousek) a tlačítkem se šipkou rozbalí celé.
+// Prodané položky (kusy · tržba · zisk). Tržba z účtenek, zisk = tržba − kusy × nákupka.
+function SoldItemsCard({ sold, q }: { sold: ReturnType<typeof soldItems>; q: string }) {
+  const nq = normName(q);
+  const rows = nq ? sold.rows.filter((r) => normName(r.name).includes(nq) || normName(r.cat).includes(nq)) : sold.rows;
+  if (rows.length === 0) return null;
+  const emoji = (r: SoldItemRow) => (r.cat === "merch" ? (isTicketName(r.name) ? "🎟️" : "🛍️") : r.cat === "kuchyně" ? "🍽️" : r.cat === "bar" ? "🍺" : "🧾");
+  const sgn = (n: number) => `${n >= 0 ? "+" : "−"}${fmtCZK(Math.abs(n))}`;
+  return (
+    <section className="card p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="eyebrow">Prodané položky</span>
+        <span className="chip">{sold.rows.length} položek</span>
+        <span className="chip">{sold.qty} ks</span>
+        <span className="chip">
+          tržba <b className="text-leaf-700">{fmtCZK(sold.revenue)}</b>
+        </span>
+        <span className="chip">
+          zisk <b className={sold.profit >= 0 ? "text-leaf-700" : "text-red-600"}>{sgn(sold.profit)}</b>
+        </span>
+        {sold.unknownQty > 0 && <span className="chip text-amber-800">⚠️ {sold.unknownQty} ks bez nákupní ceny</span>}
+      </div>
+      <Collapsible peekClass="max-h-[340px]" expandable={rows.length > 8} total={rows.length}>
+        <table className="mt-2 w-full text-sm">
+          <thead>
+            <tr className="text-left text-[10px] font-medium uppercase tracking-wide text-ink-soft">
+              <th className="py-1 font-medium">Položka</th>
+              <th className="py-1 text-right font-medium">Prodáno</th>
+              <th className="py-1 text-right font-medium">Tržba</th>
+              <th className="py-1 text-right font-medium">Zisk</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.name} className="border-t border-ink/[0.06]">
+                <td className="max-w-0 py-1.5 pr-2">
+                  <span className="mr-1" aria-hidden>{emoji(r)}</span>
+                  <span className="font-medium">{r.name}</span>
+                  {r.unitCost != null && <span className="ml-1.5 hidden text-[11px] text-ink-soft sm:inline">nákupka {fmtCZK(r.unitCost)}/ks</span>}
+                </td>
+                <td className="whitespace-nowrap py-1.5 text-right tabular-nums">{r.qty} ks</td>
+                <td className="whitespace-nowrap py-1.5 text-right tabular-nums">{fmtCZK(r.revenue)}</td>
+                <td className={`whitespace-nowrap py-1.5 text-right font-semibold tabular-nums ${r.unitCost == null ? "text-ink-soft" : r.profit >= 0 ? "text-leaf-700" : "text-red-600"}`}>
+                  {r.unitCost == null ? <span title="bez nákupní ceny — zisk se nepočítá">— ⚠️</span> : sgn(r.profit)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          {!nq && (
+            <tfoot>
+              <tr className="border-t-2 border-ink/10 font-semibold">
+                <td className="py-1.5">Celkem</td>
+                <td className="py-1.5 text-right tabular-nums">{sold.qty} ks</td>
+                <td className="py-1.5 text-right tabular-nums">{fmtCZK(sold.revenue)}</td>
+                <td className={`py-1.5 text-right tabular-nums ${sold.profit >= 0 ? "text-leaf-700" : "text-red-600"}`}>{sgn(sold.profit)}</td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </Collapsible>
+      <p className="mt-2 text-[11px] text-ink-soft">
+        Tržba položky je z účtenek (smíšená účtenka rozdělená podle cen v nabídce), proto součet sedí s kasou. Zisk = tržba − prodané kusy × nákupka; položky bez nákupní ceny zisk nemají.
+      </p>
+    </section>
+  );
+}
+
 function Collapsible({
   peekClass,
   expandable,

@@ -15,6 +15,7 @@ import { flash } from "@/components/Flash";
 import type { Cashbox, Drink, FinanceItem, MerchOrder, MerchProduct } from "@/lib/types";
 import { normName } from "@/lib/names";
 import { isTicketName, ONSITE_ORDER_NAME } from "@/lib/merch";
+import { ONSITE_PRICE, RESERVATION_DEADLINE } from "@/lib/reservations";
 
 // Kategorie financí, které patří prodeji (denní kase).
 export const POS_CATS = new Set(["merch", "bar", "kuchyně", "kasa"]);
@@ -179,6 +180,63 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
   };
 }
 
+// Rozpis položek z poznámky prodeje: „2× Pivo, 1× Ticket Fléda (na baru) · hotově" → [{qty, name}].
+export function parseSaleItems(note?: string): { qty: number; name: string }[] {
+  return (note ?? "")
+    .split(" · ")[0]
+    .split(", ")
+    .map((p) => p.match(/^(\d+)× (.+)$/))
+    .filter(Boolean)
+    .map((m) => ({ qty: Number(m![1]), name: m![2] }));
+}
+
+// Prodané položky — kusy, tržba, nákupka a zisk po položkách. Tržba položky je
+// z účtenek (smíšená účtenka se rozdělí podle cen v nabídce), takže součet sedí
+// s kasou. Zisk = tržba − prodané kusy × nákupka; bez nákupky se zisk nepočítá.
+export type SoldItemRow = { name: string; cat: string; qty: number; revenue: number; unitCost: number | null; cost: number; profit: number };
+export function soldItems(list: FinanceItem[], year: { bar?: Drink[]; merch?: MerchProduct[] }) {
+  const costOf = makeCostLookup(year);
+  const prices = new Map<string, number>();
+  for (const d of year.bar ?? []) if (d.price != null) prices.set(normName(d.name), d.price);
+  for (const m of year.merch ?? []) if (m.price != null) prices.set(normName(m.name), m.price);
+  const priceOf = (name: string): number | undefined =>
+    /\((na místě|na Flédě)\)\s*$/i.test(name) ? ONSITE_PRICE : prices.get(normName(name.replace(/\s*\(.*\)\s*$/, "")));
+  const tally = new Map<string, { qty: number; cat: string; revenue: number }>();
+  const bump = (name: string, cat: string, qty: number, revenue: number) => {
+    const cur = tally.get(name) ?? { qty: 0, cat, revenue: 0 };
+    cur.qty += qty;
+    cur.revenue += revenue;
+    tally.set(name, cur);
+  };
+  for (const f of list) {
+    if (f.kind !== "prijem" || !POS_CATS.has(f.category ?? "")) continue;
+    const items = parseSaleItems(f.note);
+    if (!items.length) continue;
+    const cat = f.category ?? "";
+    if (items.length === 1) {
+      bump(items[0].name, cat, items[0].qty, f.amount);
+      continue;
+    }
+    const weights = items.map((it) => (priceOf(it.name) ?? 1) * it.qty);
+    const sumW = weights.reduce((a, b) => a + b, 0) || 1;
+    items.forEach((it, i) => bump(it.name, cat, it.qty, (f.amount * weights[i]) / sumW));
+  }
+  let qty = 0, revenue = 0, cost = 0, unknownQty = 0;
+  const rows: SoldItemRow[] = [...tally.entries()]
+    .sort((a, b) => b[1].qty - a[1].qty)
+    .map(([name, v]) => {
+      const c = costOf(name);
+      const rev = Math.round(v.revenue);
+      const rowCost = c != null ? c * v.qty : 0;
+      qty += v.qty;
+      revenue += rev;
+      cost += rowCost;
+      if (c == null) unknownQty += v.qty;
+      return { name, cat: v.cat, qty: v.qty, revenue: rev, unitCost: c ?? null, cost: rowCost, profit: rev - rowCost };
+    });
+  return { rows, qty, revenue, cost, profit: revenue - cost, unknownQty };
+}
+
 // Historie objednávek dne — jednotlivé prodeje (zápisy s rozpisem „×")
 // od nejnovějšího. Slouží do rolovacího seznamu ve statistikách i archivu.
 // `sale`: merch objednávka — „onsite" = prodej bez rezervace (Prodej na místě),
@@ -294,12 +352,11 @@ export function OrderHistory({
       </button>
       {open && orders.some((o) => saleTag(o)) && (
         <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-ink-soft">
-          <span>
-            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-fuchsia-500 align-[-1px]" /> lístky bez rezervace (na baru / na Flédě)
-          </span>
-          <span>
-            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-sky-500 align-[-1px]" /> vyzvednutá rezervace z webu
-          </span>
+          {TAG_LEGEND.map((l) => (
+            <span key={l.kind}>
+              <span className={`inline-block h-2.5 w-2.5 rounded-sm align-[-1px] ${l.dot}`} /> {l.label}
+            </span>
+          ))}
         </p>
       )}
       {open && (
@@ -321,16 +378,41 @@ export function OrderHistory({
   );
 }
 
-// Štítek prodeje: lístky bez rezervace (růžově) vs. vyzvednutá rezervace z webu (modře).
-function saleTag(o: PosOrder): { kind: "onsite" | "reservation"; text: string } | null {
-  if (o.sale === "onsite" && o.ticket) return { kind: "onsite", text: `🎫 bez rezervace · ${/\(na Flédě\)/i.test(o.items) ? "na Flédě" : "na baru"}` };
-  if (o.sale === "reservation") return { kind: "reservation", text: `🌐 rezervace · ${o.customer ?? ""}` };
+// Štítek prodeje lístků — čtyři případy, každý svou barvou:
+//  • na baru · bez rezervace   (růžová)   — prodáno na místě před Flédou, za cenu rezervace
+//  • na baru · s rezervací     (modrá)    — rezervace z webu vyzvednutá na baru (před koncem odpočtu)
+//  • na Flédě · s rezervací    (fialová)  — rezervace z webu zaplacená až po konci odpočtu, stále za cenu rezervace
+//  • na Flédě · bez rezervace  (oranžová) — prodáno u vstupu bez rezervace za 350 Kč
+type SaleTagKind = "onsiteBar" | "resBar" | "resFleda" | "onsiteFleda";
+function saleTag(o: PosOrder): { kind: SaleTagKind; text: string } | null {
+  if (o.sale === "onsite" && o.ticket) {
+    const fleda = /\(na Flédě\)/i.test(o.items);
+    return { kind: fleda ? "onsiteFleda" : "onsiteBar", text: `🎫 ${fleda ? "na Flédě" : "na baru"} · bez rezervace` };
+  }
+  if (o.sale === "reservation") {
+    const fleda = new Date(o.at).getTime() >= RESERVATION_DEADLINE.getTime();
+    return { kind: fleda ? "resFleda" : "resBar", text: `🌐 ${fleda ? "na Flédě" : "na baru"} · s rezervací · ${o.customer ?? ""}` };
+  }
   return null;
 }
-const ROW_TONE = {
-  onsite: "border-l-4 border-l-fuchsia-500 bg-fuchsia-50",
-  reservation: "border-l-4 border-l-sky-500 bg-sky-50",
-} as const;
+const ROW_TONE: Record<SaleTagKind, string> = {
+  onsiteBar: "border-l-4 border-l-fuchsia-500 bg-fuchsia-50",
+  onsiteFleda: "border-l-4 border-l-orange-500 bg-orange-50",
+  resBar: "border-l-4 border-l-sky-500 bg-sky-50",
+  resFleda: "border-l-4 border-l-indigo-500 bg-indigo-50",
+};
+const CHIP_TONE: Record<SaleTagKind, string> = {
+  onsiteBar: "bg-fuchsia-100 text-fuchsia-900",
+  onsiteFleda: "bg-orange-100 text-orange-900",
+  resBar: "bg-sky-100 text-sky-900",
+  resFleda: "bg-indigo-100 text-indigo-900",
+};
+const TAG_LEGEND: { kind: SaleTagKind; dot: string; label: string }[] = [
+  { kind: "onsiteBar", dot: "bg-fuchsia-500", label: "na baru · bez rezervace (za cenu rezervace)" },
+  { kind: "resBar", dot: "bg-sky-500", label: "na baru · s rezervací" },
+  { kind: "resFleda", dot: "bg-indigo-500", label: "na Flédě · s rezervací (za cenu rezervace)" },
+  { kind: "onsiteFleda", dot: "bg-orange-500", label: `na Flédě · bez rezervace (${fmtCZK(ONSITE_PRICE)})` },
+];
 
 function OrderRow({ o, canDelete, yearId }: { o: PosOrder; canDelete: boolean; yearId?: string }) {
   const { dispatch } = useStore();
@@ -342,7 +424,7 @@ function OrderRow({ o, canDelete, yearId }: { o: PosOrder; canDelete: boolean; y
       <span className="min-w-0 flex-1 truncate">{o.items}</span>
       {tag && (
         <span
-          className={`chip max-w-[11rem] shrink-0 truncate text-[11px] font-semibold ${tag.kind === "onsite" ? "bg-fuchsia-100 text-fuchsia-900" : "bg-sky-100 text-sky-900"}`}
+          className={`chip max-w-[14rem] shrink-0 truncate text-[11px] font-semibold ${CHIP_TONE[tag.kind]}`}
           title={tag.text}
         >
           {tag.text}
