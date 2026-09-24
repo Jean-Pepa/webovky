@@ -13,7 +13,7 @@ import { isAdmin } from "@/lib/admin";
 import { canEditProdej } from "@/lib/access";
 import { sameName } from "@/lib/names";
 import { variantKey, isTicketName, TICKET_SUFFIX, type TicketChannel } from "@/lib/merch";
-import { ONSITE_PRICE } from "@/lib/reservations";
+import { ONSITE_PRICE, reservationsOpen, RESERVATION_DEADLINE_LABEL } from "@/lib/reservations";
 import { flash } from "@/components/Flash";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { SearchBox } from "@/components/SearchBox";
@@ -240,6 +240,8 @@ function Pos() {
   // Prodejci: když je prodej lístků zapnutý, vidí JEN lístky na místě (žádný jiný
   // stánek ani přepínač); když je vypnutý, vidí merch / bar / kuchyni bez lístků.
   const ticketOnly = !admin && !!year.ticketSaleOpen;
+  // Předprodej na baru (za cenu rezervace) jen dokud běží rezervace; potom už jen lístek na Flédě.
+  const presale = reservationsOpen();
   const stands = ticketOnly ? STANDS.filter((s) => s.id === "ticket") : STANDS.filter((s) => s.id !== "ticket" || admin);
   const activeStand: Stand = stands.some((s) => s.id === stand) ? stand : stands[0].id;
 
@@ -276,14 +278,15 @@ function Pos() {
     {
       // Lístky na místě: ke každému lístku z nabídky dvě dlaždice —
       // „na baru" (předprodej před Flédou, za cenu rezervace) a „na Flédě" (u vstupu, cena na místě).
+      // Po konci rezervací (odpočet doběhl) zůstává jen „na Flédě" za 350 Kč — předprodej skončil.
       kind: "merch" as const,
       stand: "ticket" as const,
       onsite: true,
-      title: `Lístky na místě · na baru za cenu rezervace · na Flédě ${fmtCZK(ONSITE_PRICE)}`,
+      title: presale ? `Lístky na místě · na baru za cenu rezervace · na Flédě ${fmtCZK(ONSITE_PRICE)}` : `Lístky na místě · na Flédě ${fmtCZK(ONSITE_PRICE)}`,
       items: (year.merch ?? [])
         .filter((p) => isTicketName(p.name))
         .flatMap((p): Tile[] => [
-          { id: `${p.id}::bar`, productId: p.id, base: p.name, channel: "bar", name: `${p.name} · na baru (předprodej)`, price: p.price ?? ONSITE_PRICE },
+          ...(presale ? [{ id: `${p.id}::bar`, productId: p.id, base: p.name, channel: "bar" as const, name: `${p.name} · na baru (předprodej)`, price: p.price ?? ONSITE_PRICE }] : []),
           { id: `${p.id}::fleda`, productId: p.id, base: p.name, channel: "fleda", name: `${p.name} · na Flédě`, price: ONSITE_PRICE },
         ]),
     },
@@ -674,7 +677,10 @@ function Pos() {
           <div className="min-w-0">
             <p className="font-semibold">🎫 Prodej lístků na místě</p>
             <p className="text-xs text-ink-soft">
-              Dvě dlaždice: „na baru“ = předprodej před Flédou za cenu rezervace, „na Flédě“ = u vstupu za {fmtCZK(ONSITE_PRICE)}. Zapíše se jako merch s označením kanálu. Prodejci stánek uvidí, jen když je zapnutý.
+              {presale
+                ? `Dvě dlaždice: „na baru“ = předprodej před Flédou za cenu rezervace, „na Flédě“ = u vstupu za ${fmtCZK(ONSITE_PRICE)}. Po konci rezervací (${RESERVATION_DEADLINE_LABEL}) zůstane jen lístek na Flédě.`
+                : `Rezervace skončily (${RESERVATION_DEADLINE_LABEL}) — prodává se jen lístek na Flédě za ${fmtCZK(ONSITE_PRICE)}; rezervace se vyzvedávají za cenu rezervace níže.`}{" "}
+              Zapíše se jako merch s označením kanálu. Prodejci stánek uvidí, jen když je zapnutý — a při zapnutí vidí jen ten.
             </p>
           </div>
           <button
