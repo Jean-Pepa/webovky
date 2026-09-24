@@ -414,6 +414,74 @@ const TAG_LEGEND: { kind: SaleTagKind; dot: string; label: string }[] = [
   { kind: "onsiteFleda", dot: "bg-orange-500", label: `na Flédě · bez rezervace (${fmtCZK(ONSITE_PRICE)})` },
 ];
 
+// Lístky podle místa a rezervace za období (stejné čtyři případy jako štítky
+// v seznamu objednávek): kusy, tržba a počet prodejů. Z merch zápisů — položky
+// z navázané objednávky (cena z objednávky), bez ní z rozpisu v poznámce.
+export type TicketPlace = SaleTagKind;
+export type TicketPlaceStat = { qty: number; revenue: number; sales: number };
+export function ticketBreakdown(list: FinanceItem[], year: { merch?: MerchProduct[]; merchOrders?: MerchOrder[] }): Record<TicketPlace, TicketPlaceStat> {
+  const acc: Record<TicketPlace, TicketPlaceStat> = {
+    onsiteBar: { qty: 0, revenue: 0, sales: 0 },
+    resBar: { qty: 0, revenue: 0, sales: 0 },
+    resFleda: { qty: 0, revenue: 0, sales: 0 },
+    onsiteFleda: { qty: 0, revenue: 0, sales: 0 },
+  };
+  const byFinance = new Map<string, MerchOrder>();
+  for (const o of year.merchOrders ?? []) if (o.financeId) byFinance.set(o.financeId, o);
+  const products = new Map((year.merch ?? []).map((p) => [p.id, p]));
+  const priceByName = new Map<string, number>();
+  for (const p of year.merch ?? []) if (p.price != null) priceByName.set(normName(p.name), p.price);
+  const baseName = (name: string) => name.replace(/\s*\(.*\)\s*$/, "");
+  for (const f of list) {
+    if (f.kind !== "prijem" || (f.category ?? "") !== "merch") continue;
+    const m = f.label.match(/^Merch — (.+)$/);
+    const customer = m ? m[1].trim() : f.label === ONSITE_ORDER_NAME ? ONSITE_ORDER_NAME : undefined;
+    if (!customer) continue;
+    const onsite = customer === ONSITE_ORDER_NAME;
+    const afterDeadline = new Date(f.createdAt).getTime() >= RESERVATION_DEADLINE.getTime();
+    const order = byFinance.get(f.id);
+    const items: { name: string; qty: number; price: number }[] = order
+      ? order.items
+          .filter((it) => isTicketName(it.name) || isTicketName(products.get(it.productId)?.name ?? ""))
+          .map((it) => ({ name: it.name, qty: it.qty, price: it.price ?? products.get(it.productId)?.price ?? 0 }))
+      : parseSaleItems(f.note)
+          .filter((it) => isTicketName(it.name))
+          .map((it) => ({
+            name: it.name,
+            qty: it.qty,
+            price: /\((na místě|na Flédě)\)\s*$/i.test(it.name) ? ONSITE_PRICE : (priceByName.get(normName(baseName(it.name))) ?? 0),
+          }));
+    const touched = new Set<TicketPlace>();
+    for (const it of items) {
+      const place: TicketPlace = onsite ? (/\(na Flédě\)/i.test(it.name) ? "onsiteFleda" : "onsiteBar") : afterDeadline ? "resFleda" : "resBar";
+      acc[place].qty += it.qty;
+      acc[place].revenue += it.price * it.qty;
+      touched.add(place);
+    }
+    for (const p of touched) acc[p].sales++;
+  }
+  return acc;
+}
+
+// Řádek se čtyřmi štítky (stejné barvy jako v seznamu objednávek): kusy · tržba.
+export function TicketPlacesLine({ data, className = "" }: { data: Record<TicketPlace, TicketPlaceStat>; className?: string }) {
+  const total = TAG_LEGEND.reduce((s, l) => s + data[l.kind].qty, 0);
+  if (total === 0) return null;
+  return (
+    <div className={`flex flex-wrap items-center gap-1.5 ${className}`}>
+      <span className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">Kde se prodaly</span>
+      {TAG_LEGEND.map((l) => {
+        const d = data[l.kind];
+        return (
+          <span key={l.kind} className={`chip text-[11px] font-semibold ${CHIP_TONE[l.kind]} ${d.qty === 0 ? "opacity-50" : ""}`} title={`${d.sales}× prodej`}>
+            {l.kind === "onsiteBar" || l.kind === "onsiteFleda" ? "🎫" : "🌐"} {l.label} <b>{d.qty} ks</b> · {fmtCZK(d.revenue)}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 function OrderRow({ o, canDelete, yearId }: { o: PosOrder; canDelete: boolean; yearId?: string }) {
   const { dispatch } = useStore();
   const [ask, setAsk] = useState(false);
