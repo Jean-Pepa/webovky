@@ -14,7 +14,7 @@ import { copyText } from "@/components/CopyContact";
 import { flash } from "@/components/Flash";
 import type { Cashbox, Drink, FinanceItem, MerchOrder, MerchProduct } from "@/lib/types";
 import { normName } from "@/lib/names";
-import { isTicketName } from "@/lib/merch";
+import { isTicketName, ONSITE_ORDER_NAME } from "@/lib/merch";
 
 // Kategorie financí, které patří prodeji (denní kase).
 export const POS_CATS = new Set(["merch", "bar", "kuchyně", "kasa"]);
@@ -181,7 +181,21 @@ export function posStats(list: FinanceItem[], costOf?: CostLookup, ticketOf?: Ti
 
 // Historie objednávek dne — jednotlivé prodeje (zápisy s rozpisem „×")
 // od nejnovějšího. Slouží do rolovacího seznamu ve statistikách i archivu.
-export type PosOrder = { id: string; at: string; cat: string; items: string; amount: number; how: string; saleId?: string; who?: string };
+// `sale`: merch objednávka — „onsite" = prodej bez rezervace (Prodej na místě),
+// „reservation" = vyzvednutá rezervace z webu (customer = jméno). `ticket` = jsou v ní lístky.
+export type PosOrder = {
+  id: string;
+  at: string;
+  cat: string;
+  items: string;
+  amount: number;
+  how: string;
+  saleId?: string;
+  who?: string;
+  sale?: "onsite" | "reservation";
+  customer?: string;
+  ticket?: boolean;
+};
 export function posOrders(list: FinanceItem[]): PosOrder[] {
   return list
     .filter((f) => f.kind === "prijem" && (f.note ?? "").includes("×"))
@@ -189,7 +203,12 @@ export function posOrders(list: FinanceItem[]): PosOrder[] {
       const note = f.note ?? "";
       const items = note.split(" · ")[0];
       const how = note.includes("QR platba") ? "QR" : note.includes("hotově") ? "hotově" : "";
-      return { id: f.id, at: f.createdAt, cat: f.category ?? "", items, amount: f.amount, how, saleId: f.saleId, who: f.who };
+      // Merch zápis nese jméno objednatele („Merch — Jana Nováková"); „Prodej na místě" = bez rezervace.
+      const m = f.label.match(/^Merch — (.+)$/);
+      const customer = m ? m[1].trim() : f.label === ONSITE_ORDER_NAME ? ONSITE_ORDER_NAME : undefined;
+      const sale = customer ? (customer === ONSITE_ORDER_NAME ? ("onsite" as const) : ("reservation" as const)) : undefined;
+      const ticket = items.split(", ").some((p) => isTicketName(p.replace(/^\d+× /, "")));
+      return { id: f.id, at: f.createdAt, cat: f.category ?? "", items, amount: f.amount, how, saleId: f.saleId, who: f.who, sale, customer: sale === "reservation" ? customer : undefined, ticket };
     })
     .sort((a, b) => b.at.localeCompare(a.at));
 }
@@ -273,6 +292,16 @@ export function OrderHistory({
         <span>🧾 {label} ({orders.length})</span>
         <span className={`text-xs transition-transform ${open ? "rotate-180" : ""}`}>▾</span>
       </button>
+      {open && orders.some((o) => saleTag(o)) && (
+        <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-ink-soft">
+          <span>
+            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-fuchsia-500 align-[-1px]" /> lístky bez rezervace (na baru / na Flédě)
+          </span>
+          <span>
+            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-sky-500 align-[-1px]" /> vyzvednutá rezervace z webu
+          </span>
+        </p>
+      )}
       {open && (
         <ul className="mt-2 max-h-72 space-y-1 overflow-y-auto pr-1">
           {groupSales(orders).map((g) =>
@@ -292,13 +321,33 @@ export function OrderHistory({
   );
 }
 
+// Štítek prodeje: lístky bez rezervace (růžově) vs. vyzvednutá rezervace z webu (modře).
+function saleTag(o: PosOrder): { kind: "onsite" | "reservation"; text: string } | null {
+  if (o.sale === "onsite" && o.ticket) return { kind: "onsite", text: `🎫 bez rezervace · ${/\(na Flédě\)/i.test(o.items) ? "na Flédě" : "na baru"}` };
+  if (o.sale === "reservation") return { kind: "reservation", text: `🌐 rezervace · ${o.customer ?? ""}` };
+  return null;
+}
+const ROW_TONE = {
+  onsite: "border-l-4 border-l-fuchsia-500 bg-fuchsia-50",
+  reservation: "border-l-4 border-l-sky-500 bg-sky-50",
+} as const;
+
 function OrderRow({ o, canDelete, yearId }: { o: PosOrder; canDelete: boolean; yearId?: string }) {
   const { dispatch } = useStore();
   const [ask, setAsk] = useState(false);
+  const tag = saleTag(o);
   return (
-    <li className="flex items-center gap-2 rounded-lg bg-paper2/60 px-2.5 py-1.5 text-sm">
+    <li className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm ${tag ? ROW_TONE[tag.kind] : "bg-paper2/60"}`}>
       <span className="shrink-0 tabular-nums text-xs text-ink-soft">{hhmm(o.at)}</span>
       <span className="min-w-0 flex-1 truncate">{o.items}</span>
+      {tag && (
+        <span
+          className={`chip max-w-[11rem] shrink-0 truncate text-[11px] font-semibold ${tag.kind === "onsite" ? "bg-fuchsia-100 text-fuchsia-900" : "bg-sky-100 text-sky-900"}`}
+          title={tag.text}
+        >
+          {tag.text}
+        </span>
+      )}
       {o.cat && <span className="chip shrink-0 text-[11px]">{o.cat}</span>}
       {o.how && <span className="shrink-0 text-xs text-ink-soft">{o.how === "QR" ? "QR" : "💵"}</span>}
       <span className="shrink-0 font-semibold tabular-nums">{fmtCZK(o.amount)}</span>
@@ -384,13 +433,17 @@ export function dayReportText(box: Cashbox, stats: ReturnType<typeof posStats>, 
   const desc = [...orders].sort((a, b) => b.at.localeCompare(a.at));
   for (const g of groupSales(desc).reverse()) {
     const items = [...g].reverse();
+    const mark = (o: PosOrder) => {
+      const t = saleTag(o);
+      return t ? `  [${t.text.replace(/^\S+\s/, "")}]` : "";
+    };
     if (items.length === 1) {
       const o = items[0];
-      lines.push(`${hhmm(o.at)}  ${o.items}  [${o.cat}]  ${o.how === "QR" ? "QR" : o.how === "hotově" ? "hotově" : "—"}  ${fmtCZK(o.amount)}`);
+      lines.push(`${hhmm(o.at)}  ${o.items}${mark(o)}  [${o.cat}]  ${o.how === "QR" ? "QR" : o.how === "hotově" ? "hotově" : "—"}  ${fmtCZK(o.amount)}`);
     } else {
       const total = items.reduce((s, o) => s + o.amount, 0);
       lines.push(`${hhmm(items[0].at)}  jedna objednávka · ${items[0].how === "QR" ? "QR" : "hotově"} · celkem ${fmtCZK(total)}`);
-      for (const o of items) lines.push(`        ${o.items}  [${o.cat}]  ${fmtCZK(o.amount)}`);
+      for (const o of items) lines.push(`        ${o.items}${mark(o)}  [${o.cat}]  ${fmtCZK(o.amount)}`);
     }
   }
   return lines.join("\n");
