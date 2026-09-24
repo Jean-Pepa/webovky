@@ -103,8 +103,12 @@
   --color-plum-200: #3e3f47;
   --color-fuchsia-50: #3a2338; /* lístky bez rezervace (kasa, účtenka) */
   --color-fuchsia-100: #4a2a47;
-  --color-sky-50: #1f2f3d; /* vyzvednutá rezervace z webu */
+  --color-sky-50: #1f2f3d; /* rezervace vyzvednutá na baru */
   --color-sky-100: #27394a;
+  --color-orange-50: #3d2a17; /* lístek bez rezervace na Flédě (350 Kč) */
+  --color-orange-100: #4b331b;
+  --color-indigo-50: #26283f; /* rezervace vyzvednutá na Flédě */
+  --color-indigo-100: #30334f;
 }
 /* Tmavý text na tintech → světlý odstín téže barvy. */
 .dark .text-fuchsia-800,
@@ -113,6 +117,12 @@
 }
 .dark .text-sky-900 {
   color: #7dd3fc;
+}
+.dark .text-orange-900 {
+  color: #fdba74;
+}
+.dark .text-indigo-900 {
+  color: #a5b4fc;
 }
 
 /* Bílé plochy (karty, inputy, pruhy) → tmavý povrch. Výjimky (QR, kolečko
