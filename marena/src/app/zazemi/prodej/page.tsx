@@ -13,7 +13,7 @@ import { isAdmin } from "@/lib/admin";
 import { canEditProdej } from "@/lib/access";
 import { sameName } from "@/lib/names";
 import { variantKey, isTicketName, TICKET_SUFFIX, type TicketChannel } from "@/lib/merch";
-import { ONSITE_PRICE } from "@/lib/reservations";
+import { ONSITE_PRICE, reservationsOpen, RESERVATION_DEADLINE_LABEL } from "@/lib/reservations";
 import { flash } from "@/components/Flash";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { SearchBox } from "@/components/SearchBox";
@@ -236,9 +236,14 @@ function Pos() {
     );
   }
 
-  // Stánek „Lístky na místě" vidí správce vždy (má tam přepínač); prodejci jen když je zapnutý.
-  const stands = STANDS.filter((s) => s.id !== "ticket" || admin || !!year.ticketSaleOpen);
-  const activeStand: Stand = stands.some((s) => s.id === stand) ? stand : "merch";
+  // Stánek „Lístky na místě": správce vidí všechny stánky vždy (má tam přepínač).
+  // Prodejci: když je prodej lístků zapnutý, vidí JEN lístky na místě (žádný jiný
+  // stánek ani přepínač); když je vypnutý, vidí merch / bar / kuchyni bez lístků.
+  const ticketOnly = !admin && !!year.ticketSaleOpen;
+  // Předprodej na baru (za cenu rezervace) jen dokud běží rezervace; potom už jen lístek na Flédě.
+  const presale = reservationsOpen();
+  const stands = ticketOnly ? STANDS.filter((s) => s.id === "ticket") : STANDS.filter((s) => s.id !== "ticket" || admin);
+  const activeStand: Stand = stands.some((s) => s.id === stand) ? stand : stands[0].id;
 
   // Nabídka po druzích; nejprodávanější dlaždice první (podle prodejů
   // z tohoto zařízení — barový vzor „top sellers first"). Nové položky
@@ -273,14 +278,15 @@ function Pos() {
     {
       // Lístky na místě: ke každému lístku z nabídky dvě dlaždice —
       // „na baru" (předprodej před Flédou, za cenu rezervace) a „na Flédě" (u vstupu, cena na místě).
+      // Po konci rezervací (odpočet doběhl) zůstává jen „na Flédě" za 350 Kč — předprodej skončil.
       kind: "merch" as const,
       stand: "ticket" as const,
       onsite: true,
-      title: `Lístky na místě · na baru za cenu rezervace · na Flédě ${fmtCZK(ONSITE_PRICE)}`,
+      title: presale ? `Lístky na místě · na baru za cenu rezervace · na Flédě ${fmtCZK(ONSITE_PRICE)}` : `Lístky na místě · na Flédě ${fmtCZK(ONSITE_PRICE)}`,
       items: (year.merch ?? [])
         .filter((p) => isTicketName(p.name))
         .flatMap((p): Tile[] => [
-          { id: `${p.id}::bar`, productId: p.id, base: p.name, channel: "bar", name: `${p.name} · na baru (předprodej)`, price: p.price ?? ONSITE_PRICE },
+          ...(presale ? [{ id: `${p.id}::bar`, productId: p.id, base: p.name, channel: "bar" as const, name: `${p.name} · na baru (předprodej)`, price: p.price ?? ONSITE_PRICE }] : []),
           { id: `${p.id}::fleda`, productId: p.id, base: p.name, channel: "fleda", name: `${p.name} · na Flédě`, price: ONSITE_PRICE },
         ]),
     },
@@ -554,19 +560,22 @@ function Pos() {
       <div>
         <div className="flex items-center justify-between gap-3">
           <PageTitle>Prodej</PageTitle>
-          <div className="flex shrink-0 items-center gap-2">
-            {/* Vlastní částka — když cena ještě není v nabídce (nebo se domluví na místě) */}
-            <button
-              onClick={() => setCustomOpen(true)}
-              className="flex min-h-11 items-center gap-1.5 rounded-full bg-paper2 px-3.5 text-[15px] font-semibold text-ink transition hover:bg-gold-100"
-              title="Zadat částku sám"
-            >
-              ✏️ <span className="hidden sm:inline">Vlastní částka</span>
-              <span className="sm:hidden">Částka</span>
-            </button>
-            {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
-            <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} qrMarked={stats.qr} />
-          </div>
+          {/* Prodejce při zapnutém prodeji lístků: jen lístky — bez vlastní částky a bez zavírání kasy */}
+          {!ticketOnly && (
+            <div className="flex shrink-0 items-center gap-2">
+              {/* Vlastní částka — když cena ještě není v nabídce (nebo se domluví na místě) */}
+              <button
+                onClick={() => setCustomOpen(true)}
+                className="flex min-h-11 items-center gap-1.5 rounded-full bg-paper2 px-3.5 text-[15px] font-semibold text-ink transition hover:bg-gold-100"
+                title="Zadat částku sám"
+              >
+                ✏️ <span className="hidden sm:inline">Vlastní částka</span>
+                <span className="sm:hidden">Částka</span>
+              </button>
+              {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
+              <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} qrMarked={stats.qr} />
+            </div>
+          )}
         </div>
         {/* Účet pro QR — malý, ať nepřekáží; správce ho upraví ťuknutím */}
         <div className="mt-1">
@@ -641,7 +650,8 @@ function Pos() {
           )}
       </section>
 
-      {/* Výběr stánku (desktop) — na mobilu je dole ve žluté bublině */}
+      {/* Výběr stánku (desktop) — na mobilu je dole ve žluté bublině; s jediným stánkem se neukazuje */}
+      {stands.length > 1 && (
       <div className="hidden gap-1.5 md:flex">
         {stands.map((s) => (
           <button
@@ -659,6 +669,7 @@ function Pos() {
           </button>
         ))}
       </div>
+      )}
 
       {/* Lístky na místě — přepínač pro správce: zapnout stánek i pro prodejce */}
       {activeStand === "ticket" && admin && (
@@ -666,7 +677,10 @@ function Pos() {
           <div className="min-w-0">
             <p className="font-semibold">🎫 Prodej lístků na místě</p>
             <p className="text-xs text-ink-soft">
-              Dvě dlaždice: „na baru“ = předprodej před Flédou za cenu rezervace, „na Flédě“ = u vstupu za {fmtCZK(ONSITE_PRICE)}. Zapíše se jako merch s označením kanálu. Prodejci stánek uvidí, jen když je zapnutý.
+              {presale
+                ? `Dvě dlaždice: „na baru“ = předprodej před Flédou za cenu rezervace, „na Flédě“ = u vstupu za ${fmtCZK(ONSITE_PRICE)}. Po konci rezervací (${RESERVATION_DEADLINE_LABEL}) zůstane jen lístek na Flédě.`
+                : `Rezervace skončily (${RESERVATION_DEADLINE_LABEL}) — prodává se jen lístek na Flédě za ${fmtCZK(ONSITE_PRICE)}; rezervace se vyzvedávají za cenu rezervace níže.`}{" "}
+              Zapíše se jako merch s označením kanálu. Prodejci stánek uvidí, jen když je zapnutý — a při zapnutí vidí jen ten.
             </p>
           </div>
           <button
@@ -765,7 +779,8 @@ function Pos() {
                     ) : (
                       <span className="flex w-full items-center gap-2 text-xs">
                         <span className="font-semibold text-ink-soft">+ {fmtCZK(i.price)}</span>
-                        {left != null && <span className="ml-auto font-medium text-ink-soft/80">zbývá {left}</span>}
+                        {/* „zbývá N": prodejce při zapnutém prodeji lístků ho nevidí (jen prodává) */}
+                        {left != null && !ticketOnly && <span className="ml-auto font-medium text-ink-soft/80">zbývá {left}</span>}
                       </span>
                     )}
                   </button>
@@ -958,24 +973,30 @@ function Pos() {
         );
       })()}
 
-      {/* ---------- Přehled dne ---------- */}
-      <h2 className="pt-2 eyebrow">Přehled dne</h2>
+      {/* ---------- Přehled dne (prodejce při zapnutém prodeji lístků ho nevidí) ---------- */}
+      {!ticketOnly && (
+        <>
+          <h2 className="pt-2 eyebrow">Přehled dne</h2>
 
-      {/* U otevřené kasy jen historie objednávek — čísla (statistiky dne) jsou
-          ve Financích a v archivu uzavřených dnů, ať obsluhu nerozptylují. */}
-      <section className="card p-4">
-        {posOrders(dayFinances).length === 0 ? (
-          <>
-            <h3 className="eyebrow">Objednávky dne</h3>
-            <p className="mt-1 text-sm text-ink-soft">Zatím žádná objednávka — první prodej se tu hned ukáže.</p>
-          </>
-        ) : (
-          <OrderHistory orders={posOrders(dayFinances)} label="Objednávky dne" defaultOpen topBorder={false} canDelete={admin} yearId={year.id} />
-        )}
-      </section>
+          {/* U otevřené kasy jen historie objednávek — čísla (statistiky dne) jsou
+              ve Financích a v archivu uzavřených dnů, ať obsluhu nerozptylují. */}
+          <section className="card p-4">
+            {posOrders(dayFinances).length === 0 ? (
+              <>
+                <h3 className="eyebrow">Objednávky dne</h3>
+                <p className="mt-1 text-sm text-ink-soft">Zatím žádná objednávka — první prodej se tu hned ukáže.</p>
+              </>
+            ) : (
+              <OrderHistory orders={posOrders(dayFinances)} label="Objednávky dne" defaultOpen topBorder={false} canDelete={admin} yearId={year.id} />
+            )}
+          </section>
+        </>
+      )}
 
       {/* Stánky (mobil) — svítící žlutá bublina nad hlavní lištou; pomocník
-          u stánku lištu nemá, takže bublina sedí přímo dole na jejím místě */}
+          u stánku lištu nemá, takže bublina sedí přímo dole na jejím místě.
+          S jediným stánkem (prodejce při zapnutém prodeji lístků) se neukazuje. */}
+      {stands.length > 1 && (
       <div
         className={`fixed inset-x-3 z-40 md:hidden ${
           posOnly ? "bottom-[calc(0.75rem+env(safe-area-inset-bottom))]" : "bottom-[calc(5.1rem+env(safe-area-inset-bottom))]"
@@ -1001,6 +1022,7 @@ function Pos() {
           </div>
         </div>
       </div>
+      )}
 
       {/* QR platba čekající objednávky — se jménem objednatele ve zprávě */}
       <Modal open={!!payOrder} onClose={() => setPayOrder(null)} title={payOrder ? `Platba — ${payOrder.name}` : ""}>
