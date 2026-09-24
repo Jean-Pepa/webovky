@@ -557,19 +557,22 @@ function Pos() {
       <div>
         <div className="flex items-center justify-between gap-3">
           <PageTitle>Prodej</PageTitle>
-          <div className="flex shrink-0 items-center gap-2">
-            {/* Vlastní částka — když cena ještě není v nabídce (nebo se domluví na místě) */}
-            <button
-              onClick={() => setCustomOpen(true)}
-              className="flex min-h-11 items-center gap-1.5 rounded-full bg-paper2 px-3.5 text-[15px] font-semibold text-ink transition hover:bg-gold-100"
-              title="Zadat částku sám"
-            >
-              ✏️ <span className="hidden sm:inline">Vlastní částka</span>
-              <span className="sm:hidden">Částka</span>
-            </button>
-            {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
-            <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} qrMarked={stats.qr} />
-          </div>
+          {/* Prodejce při zapnutém prodeji lístků: jen lístky — bez vlastní částky a bez zavírání kasy */}
+          {!ticketOnly && (
+            <div className="flex shrink-0 items-center gap-2">
+              {/* Vlastní částka — když cena ještě není v nabídce (nebo se domluví na místě) */}
+              <button
+                onClick={() => setCustomOpen(true)}
+                className="flex min-h-11 items-center gap-1.5 rounded-full bg-paper2 px-3.5 text-[15px] font-semibold text-ink transition hover:bg-gold-100"
+                title="Zadat částku sám"
+              >
+                ✏️ <span className="hidden sm:inline">Vlastní částka</span>
+                <span className="sm:hidden">Částka</span>
+              </button>
+              {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
+              <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} qrMarked={stats.qr} />
+            </div>
+          )}
         </div>
         {/* Účet pro QR — malý, ať nepřekáží; správce ho upraví ťuknutím */}
         <div className="mt-1">
@@ -963,21 +966,25 @@ function Pos() {
         );
       })()}
 
-      {/* ---------- Přehled dne ---------- */}
-      <h2 className="pt-2 eyebrow">Přehled dne</h2>
+      {/* ---------- Přehled dne (prodejce při zapnutém prodeji lístků ho nevidí) ---------- */}
+      {!ticketOnly && (
+        <>
+          <h2 className="pt-2 eyebrow">Přehled dne</h2>
 
-      {/* U otevřené kasy jen historie objednávek — čísla (statistiky dne) jsou
-          ve Financích a v archivu uzavřených dnů, ať obsluhu nerozptylují. */}
-      <section className="card p-4">
-        {posOrders(dayFinances).length === 0 ? (
-          <>
-            <h3 className="eyebrow">Objednávky dne</h3>
-            <p className="mt-1 text-sm text-ink-soft">Zatím žádná objednávka — první prodej se tu hned ukáže.</p>
-          </>
-        ) : (
-          <OrderHistory orders={posOrders(dayFinances)} label="Objednávky dne" defaultOpen topBorder={false} canDelete={admin} yearId={year.id} />
-        )}
-      </section>
+          {/* U otevřené kasy jen historie objednávek — čísla (statistiky dne) jsou
+              ve Financích a v archivu uzavřených dnů, ať obsluhu nerozptylují. */}
+          <section className="card p-4">
+            {posOrders(dayFinances).length === 0 ? (
+              <>
+                <h3 className="eyebrow">Objednávky dne</h3>
+                <p className="mt-1 text-sm text-ink-soft">Zatím žádná objednávka — první prodej se tu hned ukáže.</p>
+              </>
+            ) : (
+              <OrderHistory orders={posOrders(dayFinances)} label="Objednávky dne" defaultOpen topBorder={false} canDelete={admin} yearId={year.id} />
+            )}
+          </section>
+        </>
+      )}
 
       {/* Stánky (mobil) — svítící žlutá bublina nad hlavní lištou; pomocník
           u stánku lištu nemá, takže bublina sedí přímo dole na jejím místě.
