@@ -11,6 +11,7 @@ import { Modal } from "@/components/Modal";
 import { ImageViewer } from "@/components/ImageViewer";
 import { SearchClear } from "@/components/SearchBox";
 import { isAdmin } from "@/lib/admin";
+import { isTicketName } from "@/lib/merch";
 import { canEditSection } from "@/lib/access";
 import { normName, sameName } from "@/lib/names";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
@@ -286,15 +287,38 @@ export default function FinancePage() {
   // Kolik jsme do merche vložili: výdaje kategorie „merch" + pořízení zboží
   // podle nabídky (nákupní cena × skladem). Tak „vloženo" sedí i když se
   // nákup zapíše jen u produktu (kolik kusů + za kolik), ne jako výdaj.
+  // Výdaje s „lístek / lístky / ticket / vstupenka" v názvu (tisk apod.) patří k lístkům, ostatní k merchi.
+  const isTicketExpense = (label: string) => isTicketName(label) || /l[ií]stk/i.test(label);
   const merchExpense = useMemo(
-    () => items.filter((f) => f.category === "merch" && f.kind === "vydaj").reduce((s, f) => s + f.amount, 0),
+    () => items.filter((f) => f.category === "merch" && f.kind === "vydaj" && !isTicketExpense(f.label)).reduce((s, f) => s + f.amount, 0),
     [items],
   );
   const merchInvest = useMemo(
-    () => (year?.merch ?? []).reduce((s, p) => s + (p.cost != null && p.stock != null ? p.cost * p.stock : 0), 0),
+    () => (year?.merch ?? []).filter((p) => !isTicketName(p.name)).reduce((s, p) => s + (p.cost != null && p.stock != null ? p.cost * p.stock : 0), 0),
     [year],
   );
   const merchIn = merchExpense + merchInvest;
+  // Lístky zvlášť: tržba, náklad a kusy podle rozpisu prodejů (ticketOf) + výdaje na lístky.
+  const ticketTot = useMemo(() => {
+    let revenue = 0, cost = 0, qty = 0, expense = 0;
+    for (const f of items) {
+      if (f.category !== "merch") continue;
+      if (f.kind === "vydaj") {
+        if (isTicketExpense(f.label)) expense += f.amount;
+        continue;
+      }
+      const t = ticketOf(f);
+      revenue += t.revenue;
+      cost += t.cost;
+      qty += t.qty;
+    }
+    return { revenue, cost, qty, expense, profit: revenue - cost - expense };
+  }, [items, ticketOf]);
+  // Merch bez lístků: tržba = příjmy merche minus lístky; vloženo = nákupy + zboží skladem.
+  const merchOnly = useMemo(() => {
+    const revenue = merchTotal - ticketTot.revenue;
+    return { revenue, profit: revenue - merchIn };
+  }, [merchTotal, ticketTot.revenue, merchIn]);
   // Do seznamu merche jen „neprodejní" položky (nákupy zboží, refundace…).
   // Jednotlivé prodeje merche (rozpis „×") se sčítají po dnech v „Prodej po dnech".
   const merchExtras = useMemo(
@@ -356,7 +380,6 @@ export default function FinancePage() {
   const kasaProfit = kasaStats.reduce((s, x) => s + x.profit, 0);
   // Rozdíl kas = manko/přebytek při uzávěrkách (uzavřené kasy).
   const kasaDiff = (year.cashboxes ?? []).reduce((s, c) => s + (c.closedAt && c.closing != null ? c.closing - c.opening - (c.alreadyRecorded ?? 0) : 0), 0);
-  const merchProfit = merchTotal - merchIn; // zisk z merche (výdělek − vloženo)
   // Otevřené kasy: ranní vklad je fyzicky v šuplíku kasy, ne v hotovosti „v kase"
   // → dokud se kasa neuzavře, odečítá se. Uzávěrka vklad vrátí (do financí jde jen
   // tržba / rozdíl), takže se hotovost po uzavření přepočítá sama.
@@ -504,6 +527,27 @@ export default function FinancePage() {
 
       {/* Základní přehled podle pohledu — jednoduše a jasně, hned pod hledáním
           (kasa / merch / výběr / vše zvlášť: výdělek, vklady, bilance). */}
+      {tab === "merch" ? (
+        <div className="space-y-2">
+          <SummaryStrip
+            title="🎟️ Lístky"
+            cells={[
+              { label: "Tržba", text: `+${fmtCZK(ticketTot.revenue)}`, cls: "text-leaf-700" },
+              { label: "Náklady", text: `−${fmtCZK(ticketTot.cost + ticketTot.expense)}` },
+              { label: "Zisk", text: `${ticketTot.profit >= 0 ? "+" : "−"}${fmtCZK(Math.abs(ticketTot.profit))}`, cls: ticketTot.profit >= 0 ? "text-leaf-700" : "text-red-600" },
+              { label: "Prodáno", text: `${ticketTot.qty} ks` },
+            ]}
+          />
+          <SummaryStrip
+            title="🛍️ Merch"
+            cells={[
+              { label: "Tržba", text: `+${fmtCZK(merchOnly.revenue)}`, cls: "text-leaf-700" },
+              { label: "Vloženo", text: `−${fmtCZK(merchIn)}` },
+              { label: "Zisk", text: `${merchOnly.profit >= 0 ? "+" : "−"}${fmtCZK(Math.abs(merchOnly.profit))}`, cls: merchOnly.profit >= 0 ? "text-leaf-700" : "text-red-600" },
+            ]}
+          />
+        </div>
+      ) : (
       <SummaryStrip
         cells={
           tab === "kasy"
@@ -514,13 +558,7 @@ export default function FinancePage() {
                 { label: "Vklady", text: fmtCZK(kasaOpenings) },
                 { label: "Rozdíl kas (v zisku)", text: `${kasaDiff >= 0 ? "+" : "−"}${fmtCZK(Math.abs(kasaDiff))}`, cls: kasaDiff >= 0 ? "text-leaf-700" : "text-red-600" },
               ]
-            : tab === "merch"
-              ? [
-                  { label: "Tržba", text: `+${fmtCZK(merchTotal)}`, cls: "text-leaf-700" },
-                  { label: "Vloženo", text: `−${fmtCZK(merchIn)}` },
-                  { label: "Zisk", text: `${merchProfit >= 0 ? "+" : "−"}${fmtCZK(Math.abs(merchProfit))}`, cls: merchProfit >= 0 ? "text-leaf-700" : "text-red-600" },
-                ]
-              : tab === "vyber" && viewOnly
+            : tab === "vyber" && viewOnly
                 ? [
                     { label: "Vybráno celkem", text: `+${fmtCZK(vyber.total)}`, cls: "text-leaf-700" },
                     { label: "V balíku", text: `+${fmtCZK(vyber.inPool)}`, cls: "text-leaf-700" },
@@ -542,6 +580,7 @@ export default function FinancePage() {
                   ]
         }
       />
+      )}
 
       {/* Otevřená kasa: vklad je v šuplíku → z hotovosti odečten, po uzavření se vrátí */}
       {tab === "vse" && openFloat > 0 && (
@@ -956,11 +995,17 @@ const FIN_TABS: { id: "vse" | "kasy" | "merch" | "vyber"; emoji: string; label: 
 
 // Základní přehled pohledu (výdělek / vklady / bilance) — buňky vedle sebe,
 // přes celou šířku, hned pod hledáním. Text i barvu si volí každý pohled sám.
-function SummaryStrip({ cells }: { cells: { label: string; text: string; cls?: string }[] }) {
+function SummaryStrip({ cells, title }: { cells: { label: string; text: string; cls?: string }[]; title?: string }) {
   return (
-    <div className="flex items-stretch overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface text-center shadow-sm">
+    <div className="flex flex-wrap items-stretch overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface text-center shadow-sm">
+      {/* Titulek: na telefonu jako řádek nad buňkami, od sm vlevo vedle nich */}
+      {title && (
+        <div className="flex w-full items-center border-b border-ink/[0.06] bg-paper2/70 px-3 py-2 text-left font-display text-sm font-bold sm:w-auto sm:border-b-0 sm:py-3 sm:px-4 sm:text-base">
+          {title}
+        </div>
+      )}
       {cells.map((c, i) => (
-        <div key={c.label} className={`flex-1 px-2 py-3 ${i > 0 ? "border-l border-ink/[0.06]" : ""}`}>
+        <div key={c.label} className={`min-w-0 flex-1 px-1.5 py-3 sm:px-2 ${i > 0 ? "border-l border-ink/[0.06]" : title ? "sm:border-l sm:border-ink/[0.06]" : ""}`}>
           <p className="text-[9px] font-medium uppercase tracking-wide text-ink-soft sm:text-[10px]">{c.label}</p>
           <p className={`mt-0.5 font-display text-sm font-bold leading-tight sm:text-base ${c.cls ?? "text-ink"}`}>{c.text}</p>
         </div>
