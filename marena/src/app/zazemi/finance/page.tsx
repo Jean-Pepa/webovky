@@ -12,7 +12,7 @@ import { ImageViewer } from "@/components/ImageViewer";
 import { SearchClear } from "@/components/SearchBox";
 import { isAdmin } from "@/lib/admin";
 import { isTicketName } from "@/lib/merch";
-import { DonutChart, SplitBar, SignedBars, VIZ, VIZ_OTHER } from "@/components/Charts";
+import { DonutChart, SplitBar, SignedBars, StatTiles, ColumnChart, BarList, VIZ, VIZ_OTHER } from "@/components/Charts";
 import type { TicketPlace, TicketPlaceStat } from "@/lib/pos";
 import { canEditSection } from "@/lib/access";
 import { normName, sameName } from "@/lib/names";
@@ -851,7 +851,7 @@ export default function FinancePage() {
       {/* Prodané položky — co se za ročník prodalo: kusy, tržba a zisk po položkách */}
       {filter !== "nezaplaceno" && sold.rows.length > 0 && <SoldItemsCard sold={sold} q={q} />}
       {/* Koláče: tržba a zisk po druzích, položky, platby, lístky podle místa */}
-      {filter !== "nezaplaceno" && allSaleDays.length > 0 && <SalesAnalyticsCard days={allSaleDays} sold={sold} places={ticketPlaces} />}
+      {filter !== "nezaplaceno" && allSaleDays.length > 0 && <SalesAnalyticsCard days={allSaleDays} sold={sold} places={ticketPlaces} sales={items.filter(isPosSale)} />}
       {/* Přidat */}
       {open && (
         <div id="add-finance" className="card scroll-mt-20 space-y-3 p-4 ring-2 ring-gold-200">
@@ -1730,13 +1730,30 @@ function NewKasaModal({ open, yearId, onClose }: { open: boolean; yearId: string
 // Sbalovací obal: ukáže jen „peek" (kousek) a tlačítkem se šipkou rozbalí celé.
 // Analytika prodeje — koláče a podíly nad stejnými čísly jako „Prodeje po dnech"
 // a „Prodané položky": tržba/zisk po druzích, top položky, QR vs. hotově, lístky podle místa.
-function SalesAnalyticsCard({ days, sold, places }: { days: SaleDay[]; sold: ReturnType<typeof soldItems>; places: Record<TicketPlace, TicketPlaceStat> }) {
+function SalesAnalyticsCard({ days, sold, places, sales }: { days: SaleDay[]; sold: ReturnType<typeof soldItems>; places: Record<TicketPlace, TicketPlaceStat>; sales: FinanceItem[] }) {
   const [open, setOpen] = useState(false);
   const split = days.reduce((acc, d) => addSplit(acc, d), emptySplit());
   const total = days.reduce((s, d) => s + d.total, 0);
   const qr = days.reduce((s, d) => s + d.qr, 0);
   const cash = days.reduce((s, d) => s + d.cash, 0);
+  const count = days.reduce((s, d) => s + d.count, 0);
+  const cost = split.foodCost + split.drinkCost + split.merchCost + split.ticketCost;
+  const profit = total - cost;
   const kc = (n: number) => fmtCZK(n);
+  const shortDay = (iso: string) => `${Number(iso.slice(8, 10))}.${Number(iso.slice(5, 7))}.`;
+  // Po dnech vzestupně (nejstarší vlevo) — pro sloupce.
+  const asc = [...days].sort((a, b) => a.day.localeCompare(b.day));
+  // Podle hodiny (přes všechny dny): kdy se nejvíc prodává. Čas zápisu prodeje.
+  const byHour = Array.from({ length: 24 }, () => [0, 0, 0]);
+  for (const f of sales) {
+    const h = new Date(f.createdAt).getHours();
+    const how = saleHow(f.note);
+    byHour[h][0] += f.amount;
+    if (how === "QR") byHour[h][1] += f.amount;
+    else if (how === "hotově") byHour[h][2] += f.amount;
+  }
+  const busiestHour = byHour.reduce((best, row, h) => (row[0] > byHour[best][0] ? h : best), 0);
+  const busiestDay = asc.reduce((best, d) => (d.total > best.total ? d : best), asc[0]);
   const kinds = [
     { label: "🎟️ Lístky", value: split.tickets, profit: split.tickets - split.ticketCost, color: VIZ[0] },
     { label: "🍽️ Jídlo", value: split.food, profit: split.food - split.foodCost, color: VIZ[1] },
@@ -1759,7 +1776,69 @@ function SalesAnalyticsCard({ days, sold, places }: { days: SaleDay[]; sold: Ret
         <span className={`text-xs transition-transform ${open ? "rotate-180" : ""}`}>▾</span>
       </button>
       {open && (
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <div className="mt-3 space-y-3">
+          {/* Přehled v číslech */}
+          <StatTiles
+            stats={[
+              { label: "Tržba", value: kc(total), sub: `${days.length} ${days.length === 1 ? "den" : days.length < 5 ? "dny" : "dní"} prodeje` },
+              { label: "Zisk", value: `${profit >= 0 ? "+" : "−"}${kc(Math.abs(profit))}`, sub: `náklady −${kc(cost)}`, tone: profit >= 0 ? "good" : "bad" },
+              { label: "Marže", value: total > 0 ? `${Math.round((profit / total) * 100)} %` : "—", sub: split.unknownQty > 0 ? `${split.unknownQty} ks bez nákupky` : "z tržby" },
+              { label: "Účtenek", value: fmtCount(count), sub: `průměr ${count > 0 ? kc(total / count) : "—"}` },
+              { label: "Prodaných kusů", value: fmtCount(sold.qty), sub: `${sold.rows.length} položek` },
+              { label: "Nejsilnější den", value: busiestDay ? shortDay(busiestDay.day) : "—", sub: busiestDay ? `${kc(busiestDay.total)} · špička ${busiestHour}–${busiestHour + 1} h` : undefined },
+            ]}
+          />
+          <div className="grid gap-2 sm:grid-cols-2">
+          <ColumnChart
+            title="Tržba po dnech"
+            format={kc}
+            categories={asc.map((d) => shortDay(d.day))}
+            series={[
+              { key: "tickets", label: "Lístky", color: VIZ[0] },
+              { key: "food", label: "Jídlo", color: VIZ[1] },
+              { key: "drink", label: "Pití", color: VIZ[2] },
+              { key: "merch", label: "Merch", color: VIZ[3] },
+            ]}
+            data={asc.map((d) => [d.tickets, d.food, d.drink, d.merch])}
+            note="Skládané sloupce podle druhu; najetí ukáže den nahoře."
+          />
+          <ColumnChart
+            title="Prodej podle hodiny"
+            format={kc}
+            categories={byHour.map((_, h) => `${h}h`)}
+            series={[
+              { key: "qr", label: "QR", color: VIZ[0] },
+              { key: "cash", label: "Hotově", color: VIZ[1] },
+            ]}
+            data={byHour.map((row) => [row[1], row[2]])}
+            labelEvery={3}
+            note="Součet přes všechny dny podle času zápisu prodeje. Ukazuje, kdy je nejvíc práce."
+          />
+          <ColumnChart
+            title="QR vs. hotově po dnech"
+            format={kc}
+            categories={asc.map((d) => shortDay(d.day))}
+            series={[
+              { key: "qr", label: "QR", color: VIZ[0] },
+              { key: "cash", label: "Hotově", color: VIZ[1] },
+            ]}
+            data={asc.map((d) => [d.qr, d.cash])}
+          />
+          <ColumnChart
+            title="Účtenek po dnech"
+            unit="účtenek"
+            categories={asc.map((d) => shortDay(d.day))}
+            series={[{ key: "n", label: "Účtenky", color: VIZ[2] }]}
+            data={asc.map((d) => [d.count])}
+            note="Kolik prodejů (účtenek) se za den namarkovalo."
+          />
+          <BarList
+            title="Top položky podle tržby"
+            format={kc}
+            rows={sold.rows.map((r) => ({ label: `${emoji(r)} ${r.name}`, value: r.revenue, sub: r.unitCost != null ? `zisk ${r.profit >= 0 ? "+" : "−"}${kc(Math.abs(r.profit))}` : "bez nákupky" }))}
+            note="Deset položek s největší tržbou; vpravo zisk položky."
+          />
+          <BarList title="Top položky podle kusů" unit="ks" rows={sold.rows.map((r) => ({ label: `${emoji(r)} ${r.name}`, value: r.qty, sub: kc(r.revenue) }))} note="Deset nejprodávanějších položek; vpravo tržba." />
           <DonutChart title="Tržba podle druhu" format={kc} sort={false} items={kinds.map((k) => ({ label: k.label, value: k.value, color: k.color }))} note={`Celkem ${kc(total)} z účtenek.`} />
           <SignedBars
             title="Zisk podle druhu"
@@ -1790,11 +1869,13 @@ function SalesAnalyticsCard({ days, sold, places }: { days: SaleDay[]; sold: Ret
             ]}
             note="Zaplacené lístky podle toho, kde a jak se prodaly."
           />
+          </div>
         </div>
       )}
     </section>
   );
 }
+const fmtCount = (n: number) => Math.round(n).toLocaleString("cs-CZ");
 
 // Prodané položky (kusy · tržba · zisk). Tržba z účtenek, zisk = tržba − kusy × nákupka.
 function SoldItemsCard({ sold, q }: { sold: ReturnType<typeof soldItems>; q: string }) {

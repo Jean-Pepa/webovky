@@ -257,3 +257,183 @@ export function SignedBars({
     </Frame>
   );
 }
+
+// ---------- Přehledové dlaždice (KPI řádek) ----------
+export type Stat = { label: string; value: string; sub?: string; tone?: "good" | "bad" };
+export function StatTiles({ stats }: { stats: Stat[] }) {
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+      {stats.map((t) => (
+        <div key={t.label} className="rounded-xl border border-ink/[0.06] bg-surface px-3 py-2">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">{t.label}</p>
+          <p className={`mt-0.5 text-lg font-semibold leading-tight ${t.tone === "good" ? "text-leaf-700" : t.tone === "bad" ? "text-red-600" : ""}`}>{t.value}</p>
+          {t.sub && <p className="text-[11px] leading-tight text-ink-soft">{t.sub}</p>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------- Sloupce v čase (po dnech / po hodinách), volitelně skládané ----------
+export type Series = { key: string; label: string; color?: string };
+// „Hezký" strop osy: 1 / 2 / 5 × 10^k nad maximem.
+function niceCeil(n: number): number {
+  if (n <= 0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(n)));
+  for (const m of [1, 2, 5, 10]) if (m * p >= n) return m * p;
+  return 10 * p;
+}
+export function ColumnChart({
+  title,
+  categories,
+  series,
+  data,
+  unit = "",
+  format,
+  note,
+  labelEvery,
+  empty = "Zatím žádná data.",
+}: {
+  title: string;
+  categories: string[]; // popisky sloupců (dny, hodiny…)
+  series: Series[];
+  data: number[][]; // data[sloupec][řada]
+  unit?: string;
+  format?: Fmt;
+  note?: string;
+  labelEvery?: number; // popisek pod každým n-tým sloupcem (jinak automaticky ~8 popisků)
+  empty?: string;
+}) {
+  const [active, setActive] = useState<number | null>(null);
+  const f = format ?? ((n: number) => `${fmtNum(n)}${unit ? ` ${unit}` : ""}`);
+  const ser = series.map((s, j) => ({ ...s, color: s.color ?? VIZ[j % VIZ.length] }));
+  const totals = data.map((row) => row.reduce((sum, v) => sum + Math.max(0, v), 0));
+  const max = Math.max(0, ...totals);
+  if (max <= 0) {
+    return (
+      <Frame title={title} note={note}>
+        <p className="mt-2 text-xs text-ink-soft">{empty}</p>
+      </Frame>
+    );
+  }
+  const top = niceCeil(max);
+  const step = labelEvery ?? Math.max(1, Math.ceil(categories.length / 8));
+  const peak = totals.indexOf(max);
+  const shown = active ?? peak; // bez najetí: nejsilnější sloupec
+  return (
+    <Frame title={title} note={note}>
+      {/* Odečet: hodnoty najetého (jinak nejsilnějšího) sloupce — přímé popisky nad grafem */}
+      <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-xs">
+        <span className="font-semibold">{categories[shown]}</span>
+        {ser.length > 1 &&
+          ser.map((s, j) => (
+            <span key={s.key} className="inline-flex items-center gap-1 text-ink-soft">
+              <span className="inline-block h-2 w-2 rounded-sm" style={{ background: s.color }} aria-hidden />
+              {s.label} <b className="text-ink">{f(data[shown][j])}</b>
+            </span>
+          ))}
+        <span className="text-ink-soft">
+          {ser.length > 1 ? "celkem " : ""}
+          <b className="text-ink">{f(totals[shown])}</b>
+        </span>
+        {shown === peak && <span className="text-[10px] text-ink-soft">(nejvíc)</span>}
+      </p>
+      <div className="relative mt-2 h-32">
+        {/* Vlásková mřížka: strop a polovina (vždy „hezké" hodnoty), popisky vpravo */}
+        {[1, 1 / 2].map((fr) => (
+          <div key={fr} className="absolute inset-x-0 border-t border-ink/[0.08]" style={{ top: `${(1 - fr) * 100}%` }}>
+            <span className="absolute -top-2 right-0 bg-paper2/60 pl-1 text-[9px] tabular-nums text-ink-soft">{f(top * fr)}</span>
+          </div>
+        ))}
+        <div className="absolute inset-0 flex items-end gap-[3px]" role="img" aria-label={`${title}: ${categories.map((c, i) => `${c} ${f(totals[i])}`).join(", ")}`}>
+          {categories.map((c, i) => {
+            const topIdx = ser.reduce((acc, _s, j) => (data[i][j] > 0 ? j : acc), -1);
+            return (
+              <div
+                key={c}
+                className="flex h-full flex-1 items-end justify-center"
+                onMouseEnter={() => setActive(i)}
+                onMouseLeave={() => setActive(null)}
+                title={`${c}: ${f(totals[i])}`}
+              >
+                <div
+                  className={`flex w-full max-w-6 flex-col-reverse gap-[2px] transition-opacity ${active != null && active !== i ? "opacity-60" : ""}`}
+                  style={{ height: `${(totals[i] / top) * 100}%` }}
+                >
+                  {ser.map((s, j) =>
+                    data[i][j] > 0 ? (
+                      <div key={s.key} className={j === topIdx ? "rounded-t-[4px]" : ""} style={{ flex: `${data[i][j]} 0 0`, background: s.color, minHeight: 2 }} />
+                    ) : null,
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="mt-1 flex gap-[3px] text-[9px] leading-tight text-ink-soft">
+        {categories.map((c, i) => (
+          <div key={c} className={`min-w-0 flex-1 overflow-visible whitespace-nowrap text-center ${i === active ? "font-semibold text-ink" : ""}`}>
+            {i % step === 0 || i === active ? c : ""}
+          </div>
+        ))}
+      </div>
+      {ser.length > 1 && (
+        <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-ink-soft">
+          {ser.map((s) => (
+            <li key={s.key} className="inline-flex items-center gap-1">
+              <span className="inline-block h-2 w-2 rounded-sm" style={{ background: s.color }} aria-hidden /> {s.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Frame>
+  );
+}
+
+// ---------- Žebříček: vodorovné pruhy s hodnotou na konci (jedna řada, jedna barva) ----------
+export function BarList({
+  title,
+  rows,
+  unit = "",
+  format,
+  note,
+  max = 10,
+  empty = "Zatím žádná data.",
+}: {
+  title: string;
+  rows: { label: string; value: number; sub?: string }[];
+  unit?: string;
+  format?: Fmt;
+  note?: string;
+  max?: number;
+  empty?: string;
+}) {
+  const f = format ?? ((n: number) => `${fmtNum(n)}${unit ? ` ${unit}` : ""}`);
+  const list = [...rows].filter((r) => r.value > 0).sort((a, b) => b.value - a.value).slice(0, max);
+  const top = Math.max(1, ...list.map((r) => r.value));
+  if (!list.length) {
+    return (
+      <Frame title={title} note={note}>
+        <p className="mt-2 text-xs text-ink-soft">{empty}</p>
+      </Frame>
+    );
+  }
+  return (
+    <Frame title={title} note={note}>
+      <ol className="mt-2 space-y-1.5 text-xs">
+        {list.map((r, i) => (
+          <li key={r.label} className="flex items-center gap-2">
+            <span className="w-4 shrink-0 text-right tabular-nums text-ink-soft">{i + 1}.</span>
+            <span className="w-28 shrink-0 truncate sm:w-36" title={r.label}>{r.label}</span>
+            <div className="h-3 flex-1 overflow-hidden rounded-r-[4px] bg-ink/[0.06]" title={`${r.label}: ${f(r.value)}`}>
+              <div className="h-full rounded-r-[4px]" style={{ width: `${(r.value / top) * 100}%`, background: VIZ[0] }} />
+            </div>
+            <span className="w-20 shrink-0 text-right font-semibold tabular-nums">{f(r.value)}</span>
+            {r.sub && <span className="hidden w-24 shrink-0 text-right tabular-nums text-ink-soft sm:inline">{r.sub}</span>}
+          </li>
+        ))}
+      </ol>
+    </Frame>
+  );
+}
