@@ -68,6 +68,21 @@
    `--sheen-top` je jemný horní „lesk" (bílý přísvit) — přeloží se PŘES zlatý
    přechod, takže tlačítka vypadají hmatatelně/naleštěně (jako fyzická zlatá plocha). */
 :root {
+  /* Grafy (analytika): kategorická paleta v pevném pořadí, zvalidovaná pro
+     barvoslepost; „ostatní" je tlumená šedá; ordinální řada = jedna modrá
+     světlá→tmavá; záporná hodnota červená. Noční varianty jsou níže v `.dark`. */
+  --viz-1: #2a78d6;
+  --viz-2: #eb6834;
+  --viz-3: #1baf7a;
+  --viz-4: #eda100;
+  --viz-5: #e87ba4;
+  --viz-6: #008300;
+  --viz-other: #a3a29b;
+  --viz-ord-1: #86b6ef;
+  --viz-ord-2: #5598e7;
+  --viz-ord-3: #2a78d6;
+  --viz-ord-4: #184f95;
+  --viz-neg: #e34948;
   --grad-gold: linear-gradient(135deg, #ffce4a 0%, #f7c02a 38%, #ec9f14 74%, #db8a08 100%);
   --grad-gold-hover: linear-gradient(135deg, #ffd867 0%, #fbca38 38%, #f2aa1e 74%, #e79710 100%);
   --sheen-top: linear-gradient(180deg, rgba(255, 255, 255, 0.36) 0%, rgba(255, 255, 255, 0.08) 42%, rgba(255, 255, 255, 0) 62%);
@@ -109,6 +124,19 @@
   --color-orange-100: #4b331b;
   --color-indigo-50: #26283f; /* rezervace vyzvednutá na Flédě */
   --color-indigo-100: #30334f;
+  /* Grafy na tmavém podkladu (stejné odstíny, stupně pro tmavou plochu). */
+  --viz-1: #3987e5;
+  --viz-2: #d95926;
+  --viz-3: #199e70;
+  --viz-4: #c98500;
+  --viz-5: #d55181;
+  --viz-6: #008300;
+  --viz-other: #6f6f78;
+  --viz-ord-1: #256abf;
+  --viz-ord-2: #3987e5;
+  --viz-ord-3: #6da7ec;
+  --viz-ord-4: #9ec5f4;
+  --viz-neg: #e66767;
 }
 /* Tmavý text na tintech → světlý odstín téže barvy. */
 .dark .text-fuchsia-800,

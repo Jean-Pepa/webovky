@@ -16,6 +16,8 @@ import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/re
 import { fmtCZK, fmtDate, fmtDateTime } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { canSeeMerch, variantKey, productVariants, isTicketName, orderTicketChannel, pickedUpAfterDeadline, ONSITE_ORDER_NAME } from "@/lib/merch";
+import { ticketBreakdown, type TicketPlace, type TicketPlaceStat } from "@/lib/pos";
+import { DonutChart, SplitBar, StatTiles, ColumnChart, VIZ, VIZ_ORD, VIZ_OTHER } from "@/components/Charts";
 import { RESERVATION_DEADLINE_LABEL } from "@/lib/reservations";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { isAdmin } from "@/lib/admin";
@@ -367,7 +369,15 @@ export default function MerchPage() {
             </div>
           )}
           {/* Analytika lístků: kolik lístků má jedna objednávka, odkud jsou, čím se platily, po dnech */}
-          {tickets.total > 0 && <TicketAnalytics orders={orders} finances={year.finances ?? []} isTicketItem={isTicketItem} />}
+          {tickets.total > 0 && (
+            <TicketAnalytics
+              orders={orders}
+              finances={year.finances ?? []}
+              isTicketItem={isTicketItem}
+              places={ticketBreakdown(year.finances ?? [], { merch: products, merchOrders: orders })}
+              gender={{ f: gender.f.all, m: gender.m.all, unknown: gender["?"].all }}
+            />
+          )}
           {orders.length > 0 && (
             <div className="relative">
               <input
@@ -1083,10 +1093,14 @@ function TicketAnalytics({
   orders,
   finances,
   isTicketItem,
+  places,
+  gender,
 }: {
   orders: MerchOrder[];
   finances: FinanceItem[];
   isTicketItem: (it: MerchOrder["items"][number]) => boolean;
+  places: Record<TicketPlace, TicketPlaceStat>;
+  gender: { f: number; m: number; unknown: number };
 }) {
   const [open, setOpen] = useState(false);
   const a = useMemo(() => {
@@ -1097,6 +1111,10 @@ function TicketAnalytics({
     const finById = new Map(finances.map((f) => [f.id, f]));
     const buckets: Record<string, { orders: number; tickets: number }> = { "1": { orders: 0, tickets: 0 }, "2": { orders: 0, tickets: 0 }, "3": { orders: 0, tickets: 0 }, "4+": { orders: 0, tickets: 0 } };
     let webTotal = 0, webPaid = 0, webPending = 0, bar = 0, fleda = 0, qr = 0, cash = 0, other = 0, ordersWithTicket = 0, ticketsTotal = 0, lateOrders = 0, lateQty = 0;
+    // Podle hodiny (čas zápisu platby): [web vyzvednuto, na baru bez rezervace, na Flédě bez rezervace]
+    const byHour = Array.from({ length: 24 }, () => [0, 0, 0]);
+    // Doba od rezervace k zaplacení (jen web): tentýž den / 1–3 dny / 4–7 dní / 8+ dní
+    const lead = { d0: 0, d1: 0, d4: 0, d8: 0 };
     const byDay = new Map<string, { reservedOrders: number; reservedTickets: number; paidTickets: number; barTickets: number; fledaTickets: number }>();
     const day = (k: string) => {
       const cur = byDay.get(k) ?? { reservedOrders: 0, reservedTickets: 0, paidTickets: 0, barTickets: 0, fledaTickets: 0 };
@@ -1139,10 +1157,21 @@ function TicketAnalytics({
           lateOrders++;
           lateQty += webQty;
         }
+        const h = new Date(fin.createdAt).getHours();
+        byHour[h][0] += webQty;
+        byHour[h][1] += barQty;
+        byHour[h][2] += fledaQty;
+        if (webQty > 0) {
+          const diff = Math.floor((new Date(fin.createdAt).getTime() - new Date(o.createdAt).getTime()) / 86400000);
+          if (diff <= 0) lead.d0 += webQty;
+          else if (diff <= 3) lead.d1 += webQty;
+          else if (diff <= 7) lead.d4 += webQty;
+          else lead.d8 += webQty;
+        }
       }
     }
     const days = [...byDay.entries()].sort((x, y) => y[0].localeCompare(x[0]));
-    return { buckets, webTotal, webPaid, webPending, bar, fleda, qr, cash, other, ordersWithTicket, ticketsTotal, lateOrders, lateQty, days, avg: ordersWithTicket ? ticketsTotal / ordersWithTicket : 0 };
+    return { buckets, webTotal, webPaid, webPending, bar, fleda, qr, cash, other, ordersWithTicket, ticketsTotal, lateOrders, lateQty, days, byHour, lead, avg: ordersWithTicket ? ticketsTotal / ordersWithTicket : 0 };
   }, [orders, finances, isTicketItem]);
 
   const maxOrders = Math.max(1, ...Object.values(a.buckets).map((b) => b.orders));
@@ -1177,6 +1206,118 @@ function TicketAnalytics({
             <p className="mt-1 text-xs text-ink-soft">
               Průměrně <strong className="text-ink">{a.avg.toFixed(2).replace(".", ",")}</strong> lístku na objednávku · {a.ordersWithTicket} objednávek (vč. prodejů na místě) · {a.ticketsTotal} lístků
             </p>
+          </div>
+          {/* Přehled v číslech */}
+          <StatTiles
+            stats={[
+              { label: "Lístků celkem", value: String(a.ticketsTotal), sub: `${a.ordersWithTicket} objednávek` },
+              { label: "Rezervace z webu", value: `${a.webTotal} ks`, sub: `${a.webPaid} zaplaceno · ${a.webPending} čeká` },
+              { label: "Vyzvednuto", value: a.webTotal > 0 ? `${Math.round((a.webPaid / a.webTotal) * 100)} %` : "—", sub: "z rezervovaných lístků", tone: a.webTotal > 0 && a.webPaid / a.webTotal >= 0.8 ? "good" : undefined },
+              { label: "Bez rezervace", value: `${a.bar + a.fleda} ks`, sub: `na baru ${a.bar} · na Flédě ${a.fleda}` },
+              { label: "Až na Flédě", value: `${a.lateQty} ks`, sub: `${a.lateOrders} lidí vyzvedlo po odpočtu` },
+              { label: "Průměr", value: a.avg.toFixed(2).replace(".", ","), sub: "lístku na objednávku" },
+            ]}
+          />
+          {/* Průběh v čase */}
+          <div className="grid gap-2 sm:grid-cols-2">
+            <ColumnChart
+              title="Nové rezervace po dnech"
+              unit="ks"
+              categories={[...a.days].reverse().map(([d]) => `${Number(d.slice(8, 10))}.${Number(d.slice(5, 7))}.`)}
+              series={[{ key: "res", label: "Rezervované lístky", color: VIZ[0] }]}
+              data={[...a.days].reverse().map(([, v]) => [v.reservedTickets])}
+              note="Den vytvoření rezervace na webu; nahoře najetý (jinak nejsilnější) den."
+            />
+            <ColumnChart
+              title="Zaplacené lístky po dnech"
+              unit="ks"
+              categories={[...a.days].reverse().map(([d]) => `${Number(d.slice(8, 10))}.${Number(d.slice(5, 7))}.`)}
+              series={[
+                { key: "web", label: "Vyzvednuté rezervace", color: VIZ[0] },
+                { key: "bar", label: "Na baru bez rezervace", color: VIZ[1] },
+                { key: "fleda", label: "Na Flédě bez rezervace", color: VIZ[2] },
+              ]}
+              data={[...a.days].reverse().map(([, v]) => [v.paidTickets, v.barTickets, v.fledaTickets])}
+              note="Den zaplacení (zápis ve financích)."
+            />
+            <ColumnChart
+              title="Prodej lístků podle hodiny"
+              unit="ks"
+              categories={a.byHour.map((_, h) => `${h}h`)}
+              series={[
+                { key: "web", label: "Vyzvednuté rezervace", color: VIZ[0] },
+                { key: "bar", label: "Na baru bez rezervace", color: VIZ[1] },
+                { key: "fleda", label: "Na Flédě bez rezervace", color: VIZ[2] },
+              ]}
+              data={a.byHour.map((row) => [row[0], row[1], row[2]])}
+              labelEvery={3}
+              note="Součet přes všechny dny podle času zaplacení — kdy je u vstupu nejvíc lidí."
+            />
+            <DonutChart
+              title="Jak dlouho od rezervace k zaplacení"
+              unit="ks"
+              sort={false}
+              items={[
+                { label: "Tentýž den", value: a.lead.d0, color: VIZ_ORD[0] },
+                { label: "1–3 dny", value: a.lead.d1, color: VIZ_ORD[1] },
+                { label: "4–7 dní", value: a.lead.d4, color: VIZ_ORD[2] },
+                { label: "8 a více dní", value: a.lead.d8, color: VIZ_ORD[3] },
+              ]}
+              note="Jen zaplacené rezervace z webu. Kolik dní uplynulo mezi rezervací a zaplacením."
+            />
+          </div>
+          {/* Koláče a podíly — stejné údaje jako v textu níže, jen na jeden pohled */}
+          <div className="grid gap-2 sm:grid-cols-2">
+            <DonutChart
+              title="Prodané lístky podle místa"
+              unit="ks"
+              sort={false}
+              items={[
+                { label: "Na baru · bez rezervace", value: places.onsiteBar.qty, color: VIZ[0] },
+                { label: "Na baru · s rezervací", value: places.resBar.qty, color: VIZ[1] },
+                { label: "Na Flédě · s rezervací", value: places.resFleda.qty, color: VIZ[2] },
+                { label: "Na Flédě · bez rezervace", value: places.onsiteFleda.qty, color: VIZ[3] },
+              ]}
+              note="Jen zaplacené lístky (zápisy ve financích). Nezaplacené rezervace jsou v pruhu níže."
+            />
+            <DonutChart
+              title="Lístků na jednu objednávku"
+              unit="obj."
+              sort={false}
+              items={[
+                { label: "1 lístek", value: a.buckets["1"].orders, color: VIZ_ORD[0], sub: `${a.buckets["1"].tickets} ks` },
+                { label: "2 lístky", value: a.buckets["2"].orders, color: VIZ_ORD[1], sub: `${a.buckets["2"].tickets} ks` },
+                { label: "3 lístky", value: a.buckets["3"].orders, color: VIZ_ORD[2], sub: `${a.buckets["3"].tickets} ks` },
+                { label: "4+ lístky", value: a.buckets["4+"].orders, color: VIZ_ORD[3], sub: `${a.buckets["4+"].tickets} ks` },
+              ]}
+              note="Objednávky s lístkem včetně prodejů na místě."
+            />
+            <SplitBar
+              title="Rezervace z webu · zaplaceno vs. čeká"
+              unit="ks"
+              parts={[
+                { label: "Zaplaceno", value: a.webPaid, color: VIZ[2] },
+                { label: "Čeká na zaplacení", value: a.webPending, color: VIZ[3] },
+              ]}
+            />
+            <SplitBar
+              title="Čím se zaplacené lístky platily"
+              unit="ks"
+              parts={[
+                { label: "QR platba", value: a.qr, color: VIZ[0] },
+                { label: "Hotově", value: a.cash, color: VIZ[1] },
+                { label: "Bez uvedení", value: a.other, color: VIZ_OTHER },
+              ]}
+            />
+            <SplitBar
+              title="Holky / kluci (odhad podle jména)"
+              unit="lidí"
+              parts={[
+                { label: "Holky", value: gender.f, color: VIZ[4] },
+                { label: "Kluci", value: gender.m, color: VIZ[0] },
+              ]}
+              note={`Lidé z rezervací z webu.${gender.unknown > 0 ? ` Nejasné jméno: ${gender.unknown}.` : ""}`}
+            />
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="rounded-xl bg-paper2/60 p-3">
