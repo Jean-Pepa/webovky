@@ -5,6 +5,7 @@ import { PageTitle } from "@/components/PageTitle";
 import { useStore } from "@/lib/store";
 import { isAdmin } from "@/lib/admin";
 import type { AnalyticsSummary, RecentItem, UserRow } from "@/lib/analytics";
+import { DonutChart, SplitBar, StatTiles, ColumnChart, BarList as RankList, VIZ } from "@/components/Charts";
 
 const nf = (n: number) => n.toLocaleString("cs-CZ");
 
@@ -96,43 +97,61 @@ export default function StatistikyPage() {
             <Stat label="Měsíc (MAU)" value={data.mau} tone="plum" hint="za 30 dní" />
             <Stat label={`Za ${data.periodDays} dní`} value={data.uniquesInPeriod} hint="unikátních lidí" />
           </div>
+          <Overview data={data} />
+
+          {/* Návštěvnost v čase — lidé a boti po dnech */}
+          <Card title="Zobrazení stránek v čase">
+            <ColumnChart
+              title={`Zobrazení po dnech (${data.periodDays} dní)`}
+              unit="zobr."
+              categories={data.series.map((s) => shortDay(s.date))}
+              series={[
+                { key: "human", label: "Lidé", color: VIZ[0] },
+                { key: "bot", label: "Boti / AI", color: VIZ[1] },
+              ]}
+              data={data.series.map((s) => [s.human ?? s.pv, s.bot ?? 0])}
+              note={`Celkem ${nf(data.pageviews)} zobrazení za období. Nahoře nejsilnější (nebo najetý) den.`}
+            />
+          </Card>
 
           <div className="grid gap-4 lg:grid-cols-2">
             {/* Kdo to otevírá */}
             <Card title="Kdo to otevírá">
-              <TwoBar
-                a={{ label: "🔑 Přihlášení (tým)", value: data.loggedInUniques, cls: "bg-leaf" }}
-                b={{ label: "👤 Návštěvníci", value: data.visitorUniques, cls: "bg-gold-500" }}
+              <SplitBar
+                title={`Unikátní lidé za ${data.periodDays} dní`}
+                unit="lidí"
+                parts={[
+                  { label: "🔑 Přihlášení (tým)", value: data.loggedInUniques, color: VIZ[0] },
+                  { label: "👤 Návštěvníci", value: data.visitorUniques, color: VIZ[1] },
+                ]}
+                note="Přihlášení podle jména, návštěvníci podle tokenu / IP."
               />
-              <p className="mt-2 text-xs text-ink-soft">Unikátní lidé za {data.periodDays} dní (přihlášení podle jména, návštěvníci podle tokenu/IP).</p>
             </Card>
 
             {/* Lidé vs boti */}
             <Card title="Lidé vs. boti (AI)">
-              <TwoBar
-                a={{ label: "🙂 Lidé", value: data.humans, cls: "bg-leaf" }}
-                b={{ label: "🤖 Boti / AI", value: data.bots, cls: "bg-plum-600" }}
+              <SplitBar
+                title="Zobrazení stránek"
+                unit="zobr."
+                parts={[
+                  { label: "🙂 Lidé", value: data.humans, color: VIZ[0] },
+                  { label: "🤖 Boti / AI", value: data.bots, color: VIZ[1] },
+                ]}
               />
               {data.botNames.length > 0 && (
                 <div className="mt-3">
-                  <BarList items={data.botNames} tone="plum" />
+                  <DonutChart title="Kteří boti" unit="zobr." items={data.botNames.map((b) => ({ label: b.label, value: b.count }))} note="Podle hlavičky prohlížeče; nejvýš šest, zbytek jako Ostatní." />
                 </div>
               )}
             </Card>
           </div>
 
-          {/* Návštěvnost v čase */}
-          <Card title="Zobrazení stránek v čase">
-            <Sparkline series={data.series} />
-            <p className="mt-2 text-xs text-ink-soft">Celkem zobrazení za období: <strong className="text-ink">{nf(data.pageviews)}</strong></p>
-          </Card>
-
           <div className="grid gap-4 lg:grid-cols-2">
             <Card title="Nejnavštěvovanější stránky">
-              {data.topPages.length ? <BarList items={data.topPages} tone="gold" /> : <Empty />}
+              {data.topPages.length ? <RankList title="Zobrazení podle stránky" unit="zobr." rows={data.topPages.map((p) => ({ label: p.label, value: p.count }))} /> : <Empty />}
             </Card>
             <Card title="Na co se nejvíc kliká">
-              {data.topClicks.length ? <BarList items={data.topClicks} tone="leaf" /> : <Empty />}
+              {data.topClicks.length ? <RankList title="Kliknutí podle prvku" unit="klik." rows={data.topClicks.map((p) => ({ label: p.label, value: p.count }))} /> : <Empty />}
             </Card>
           </div>
 
@@ -141,16 +160,16 @@ export default function StatistikyPage() {
             <Funnel steps={data.funnel} />
           </Card>
 
-          {/* Zařízení */}
+          {/* Zařízení — koláče */}
           <div className="grid gap-4 sm:grid-cols-3">
             <Card title="Zařízení">
-              {data.devices.length ? <BarList items={data.devices} tone="gold" /> : <Empty />}
+              {data.devices.length ? <DonutChart title="Podle typu zařízení" unit="zobr." items={data.devices.map((d) => ({ label: d.label, value: d.count }))} /> : <Empty />}
             </Card>
             <Card title="Systém">
-              {data.os.length ? <BarList items={data.os} tone="leaf" /> : <Empty />}
+              {data.os.length ? <DonutChart title="Podle systému" unit="zobr." items={data.os.map((d) => ({ label: d.label, value: d.count }))} /> : <Empty />}
             </Card>
             <Card title="Prohlížeč">
-              {data.browsers.length ? <BarList items={data.browsers} tone="plum" /> : <Empty />}
+              {data.browsers.length ? <DonutChart title="Podle prohlížeče" unit="zobr." items={data.browsers.map((d) => ({ label: d.label, value: d.count }))} /> : <Empty />}
             </Card>
           </div>
 
@@ -170,6 +189,29 @@ export default function StatistikyPage() {
         </>
       )}
     </div>
+  );
+}
+
+const shortDay = (iso: string) => `${Number(iso.slice(8, 10))}.${Number(iso.slice(5, 7))}.`;
+
+// Druhá řada čísel: zobrazení, průměr na den, nejsilnější den, podíl lidí, konverze.
+function Overview({ data }: { data: AnalyticsSummary }) {
+  const days = data.series.length || 1;
+  const peak = data.series.reduce((best, s) => (s.pv > best.pv ? s : best), data.series[0] ?? { date: "", pv: 0, human: 0, bot: 0 });
+  const total = data.humans + data.bots;
+  const funnelTop = data.funnel[0]?.count || 0;
+  const funnelEnd = data.funnel[data.funnel.length - 1]?.count || 0;
+  return (
+    <StatTiles
+      stats={[
+        { label: "Zobrazení", value: nf(data.pageviews), sub: `za ${data.periodDays} dní` },
+        { label: "Průměr za den", value: nf(Math.round(data.pageviews / days)), sub: "zobrazení" },
+        { label: "Nejsilnější den", value: peak.date ? shortDay(peak.date) : "—", sub: peak.date ? `${nf(peak.pv)} zobrazení` : undefined },
+        { label: "Lidé", value: total ? `${Math.round((data.humans / total) * 100)} %` : "—", sub: `${nf(data.humans)} zobrazení` },
+        { label: "Boti / AI", value: total ? `${Math.round((data.bots / total) * 100)} %` : "—", sub: `${nf(data.bots)} zobrazení` },
+        { label: "Konverze merche", value: funnelTop ? `${Math.round((funnelEnd / funnelTop) * 100)} %` : "—", sub: funnelTop ? `${nf(funnelEnd)} z ${nf(funnelTop)} dokončilo` : "zatím nikdo neotevřel nabídku", tone: funnelTop && funnelEnd / funnelTop >= 0.3 ? "good" : undefined },
+      ]}
+    />
   );
 }
 
@@ -197,63 +239,8 @@ function Empty() {
   return <p className="text-sm text-ink-soft">Zatím žádná data.</p>;
 }
 
-function BarList({ items, tone }: { items: { label: string; count: number }[]; tone: "gold" | "leaf" | "plum" }) {
-  const max = Math.max(...items.map((i) => i.count), 1);
-  const bar = tone === "gold" ? "bg-gold-400" : tone === "leaf" ? "bg-leaf/70" : "bg-plum-500/70";
-  return (
-    <ul className="space-y-1.5">
-      {items.map((it) => (
-        <li key={it.label}>
-          <div className="flex items-center justify-between gap-2 text-sm">
-            <span className="min-w-0 truncate text-ink" title={it.label}>{it.label}</span>
-            <span className="shrink-0 font-semibold tabular-nums text-ink-soft">{nf(it.count)}</span>
-          </div>
-          <div className="mt-0.5 h-1.5 w-full overflow-hidden rounded-full bg-paper2">
-            <div className={`h-full rounded-full ${bar}`} style={{ width: `${(it.count / max) * 100}%` }} />
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
 
-function TwoBar({ a, b }: { a: { label: string; value: number; cls: string }; b: { label: string; value: number; cls: string } }) {
-  const total = a.value + b.value || 1;
-  return (
-    <div className="space-y-2">
-      {[a, b].map((x) => (
-        <div key={x.label}>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-ink">{x.label}</span>
-            <span className="font-semibold tabular-nums text-ink-soft">
-              {nf(x.value)} · {Math.round((x.value / total) * 100)}%
-            </span>
-          </div>
-          <div className="mt-0.5 h-2 w-full overflow-hidden rounded-full bg-paper2">
-            <div className={`h-full rounded-full ${x.cls}`} style={{ width: `${(x.value / total) * 100}%` }} />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
-function Sparkline({ series }: { series: { date: string; pv: number }[] }) {
-  const max = Math.max(...series.map((s) => s.pv), 1);
-  return (
-    <div className="flex h-28 items-end gap-1">
-      {series.map((s) => (
-        <div key={s.date} className="group flex min-w-0 flex-1 flex-col items-center justify-end" title={`${s.date}: ${s.pv}`}>
-          <div
-            className="w-full rounded-t bg-gold-400 transition-all group-hover:bg-gold-500"
-            style={{ height: `${Math.max(2, (s.pv / max) * 100)}%` }}
-          />
-          <span className="mt-1 hidden text-[9px] tabular-nums text-ink-soft sm:block">{s.date.slice(8)}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function Funnel({ steps }: { steps: { step: string; label: string; count: number }[] }) {
   const top = steps[0]?.count || 0;

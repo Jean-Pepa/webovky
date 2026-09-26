@@ -151,7 +151,7 @@ export interface AnalyticsSummary {
   pageviews: number;
   humans: number;
   bots: number;
-  series: { date: string; pv: number }[];
+  series: { date: string; pv: number; human: number; bot: number }[];
   topPages: { label: string; count: number }[];
   topClicks: { label: string; count: number }[];
   devices: { label: string; count: number }[];
@@ -241,7 +241,7 @@ export async function getSummary(periodDays = 14): Promise<AnalyticsSummary> {
   const split = (pre: string) =>
     topN(Object.fromEntries(Object.entries(devAll).filter(([k]) => k.startsWith(pre)).map(([k, v]) => [k.slice(pre.length), v])), 12);
 
-  const series = dP.map((date, i) => ({ date, pv: num((days[i] || {})["pv"]) })).reverse();
+  const series = dP.map((date, i) => ({ date, pv: num((days[i] || {})["pv"]), human: num((days[i] || {})["human"]), bot: num((days[i] || {})["bot"]) })).reverse();
 
   const funnelSum = sumHashes(funnels);
   const funnel = FUNNEL_STEPS.map(([step, label]) => ({ step, label, count: funnelSum[step] || 0 }));

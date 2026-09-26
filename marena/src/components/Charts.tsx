@@ -68,7 +68,7 @@ function Legend({
 
 function Frame({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
   return (
-    <figure className="rounded-xl bg-paper2/60 p-3">
+    <figure className="@container rounded-xl bg-paper2/60 p-3">
       <figcaption className="text-[10px] font-medium uppercase tracking-wide text-ink-soft">{title}</figcaption>
       {children}
       {note && <p className="mt-1.5 text-[11px] text-ink-soft">{note}</p>}
@@ -132,8 +132,8 @@ export function DonutChart({
   const label = `${title}: ${data.map((d) => `${d.label} ${f(d.value)} (${pct(d.value, total)})`).join(", ")}`;
   return (
     <Frame title={title} note={note}>
-      {/* Na úzkém sloupci legenda pod koláčem, od md vedle něj. */}
-      <div className="mt-2 flex flex-col items-center gap-2 md:flex-row md:gap-3">
+      {/* Podle šířky karty (container query): v úzké legenda pod koláčem, v široké vedle něj. */}
+      <div className="mt-2 flex flex-col items-center gap-2 @md:flex-row @md:gap-3">
         <div className="relative h-[128px] w-[128px] shrink-0">
           <svg viewBox="0 0 100 100" className="h-full w-full" role="img" aria-label={label}>
             {arcs.map((s) => (
