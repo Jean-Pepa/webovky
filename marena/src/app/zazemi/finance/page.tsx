@@ -12,6 +12,8 @@ import { ImageViewer } from "@/components/ImageViewer";
 import { SearchClear } from "@/components/SearchBox";
 import { isAdmin } from "@/lib/admin";
 import { isTicketName } from "@/lib/merch";
+import { DonutChart, SplitBar, SignedBars, VIZ, VIZ_OTHER } from "@/components/Charts";
+import type { TicketPlace, TicketPlaceStat } from "@/lib/pos";
 import { canEditSection } from "@/lib/access";
 import { normName, sameName } from "@/lib/names";
 import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/receipts";
@@ -848,6 +850,8 @@ export default function FinancePage() {
       )}
       {/* Prodané položky — co se za ročník prodalo: kusy, tržba a zisk po položkách */}
       {filter !== "nezaplaceno" && sold.rows.length > 0 && <SoldItemsCard sold={sold} q={q} />}
+      {/* Koláče: tržba a zisk po druzích, položky, platby, lístky podle místa */}
+      {filter !== "nezaplaceno" && allSaleDays.length > 0 && <SalesAnalyticsCard days={allSaleDays} sold={sold} places={ticketPlaces} />}
       {/* Přidat */}
       {open && (
         <div id="add-finance" className="card scroll-mt-20 space-y-3 p-4 ring-2 ring-gold-200">
@@ -1724,6 +1728,74 @@ function NewKasaModal({ open, yearId, onClose }: { open: boolean; yearId: string
 }
 
 // Sbalovací obal: ukáže jen „peek" (kousek) a tlačítkem se šipkou rozbalí celé.
+// Analytika prodeje — koláče a podíly nad stejnými čísly jako „Prodeje po dnech"
+// a „Prodané položky": tržba/zisk po druzích, top položky, QR vs. hotově, lístky podle místa.
+function SalesAnalyticsCard({ days, sold, places }: { days: SaleDay[]; sold: ReturnType<typeof soldItems>; places: Record<TicketPlace, TicketPlaceStat> }) {
+  const [open, setOpen] = useState(false);
+  const split = days.reduce((acc, d) => addSplit(acc, d), emptySplit());
+  const total = days.reduce((s, d) => s + d.total, 0);
+  const qr = days.reduce((s, d) => s + d.qr, 0);
+  const cash = days.reduce((s, d) => s + d.cash, 0);
+  const kc = (n: number) => fmtCZK(n);
+  const kinds = [
+    { label: "🎟️ Lístky", value: split.tickets, profit: split.tickets - split.ticketCost, color: VIZ[0] },
+    { label: "🍽️ Jídlo", value: split.food, profit: split.food - split.foodCost, color: VIZ[1] },
+    { label: "🍺 Pití", value: split.drink, profit: split.drink - split.drinkCost, color: VIZ[2] },
+    { label: "🛍️ Merch", value: split.merch, profit: split.merch - split.merchCost, color: VIZ[3] },
+    { label: "Ostatní", value: split.other, profit: split.other, color: VIZ_OTHER },
+  ];
+  const emoji = (r: SoldItemRow) => (r.cat === "merch" ? (isTicketName(r.name) ? "🎟️" : "🛍️") : r.cat === "kuchyně" ? "🍽️" : r.cat === "bar" ? "🍺" : "🧾");
+  const summary = kinds
+    .filter((k) => k.value > 0)
+    .map((k) => `${k.label.replace(/^\S+\s/, "")} ${kc(k.value)}`)
+    .join(" · ");
+  return (
+    <section className="card p-4">
+      <button type="button" className="flex w-full items-center justify-between gap-2 text-left" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        <span>
+          <span className="eyebrow">📊 Analytika prodeje</span>
+          {!open && <span className="mt-0.5 block text-xs text-ink-soft">Koláče: {summary}</span>}
+        </span>
+        <span className={`text-xs transition-transform ${open ? "rotate-180" : ""}`}>▾</span>
+      </button>
+      {open && (
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <DonutChart title="Tržba podle druhu" format={kc} sort={false} items={kinds.map((k) => ({ label: k.label, value: k.value, color: k.color }))} note={`Celkem ${kc(total)} z účtenek.`} />
+          <SignedBars
+            title="Zisk podle druhu"
+            format={(n) => `${n >= 0 ? "+" : "−"}${kc(Math.abs(n))}`}
+            rows={kinds.filter((k) => k.value > 0 && k.label !== "Ostatní").map((k) => ({ label: k.label, value: k.profit }))}
+            note={split.unknownQty > 0 ? `${split.unknownQty} ks bez nákupní ceny — zisk je u nich nadsazený.` : "Zisk = tržba − prodané kusy × nákupka."}
+          />
+          <DonutChart title="Prodané kusy podle položky" unit="ks" items={sold.rows.map((r) => ({ label: `${emoji(r)} ${r.name}`, value: r.qty }))} note="Pět nejprodávanějších, zbytek jako Ostatní." />
+          <DonutChart title="Tržba podle položky" format={kc} items={sold.rows.map((r) => ({ label: `${emoji(r)} ${r.name}`, value: r.revenue }))} note="Pět položek s největší tržbou, zbytek jako Ostatní." />
+          <SplitBar
+            title="QR vs. hotově"
+            format={kc}
+            parts={[
+              { label: "QR platba", value: qr, color: VIZ[0] },
+              { label: "Hotově", value: cash, color: VIZ[1] },
+              { label: "Bez uvedení", value: Math.max(0, total - qr - cash), color: VIZ_OTHER },
+            ]}
+          />
+          <DonutChart
+            title="Lístky podle místa"
+            unit="ks"
+            sort={false}
+            items={[
+              { label: "Na baru · bez rezervace", value: places.onsiteBar.qty, color: VIZ[0] },
+              { label: "Na baru · s rezervací", value: places.resBar.qty, color: VIZ[1] },
+              { label: "Na Flédě · s rezervací", value: places.resFleda.qty, color: VIZ[2] },
+              { label: "Na Flédě · bez rezervace", value: places.onsiteFleda.qty, color: VIZ[3] },
+            ]}
+            note="Zaplacené lístky podle toho, kde a jak se prodaly."
+          />
+        </div>
+      )}
+    </section>
+  );
+}
+
 // Prodané položky (kusy · tržba · zisk). Tržba z účtenek, zisk = tržba − kusy × nákupka.
 function SoldItemsCard({ sold, q }: { sold: ReturnType<typeof soldItems>; q: string }) {
   const nq = normName(q);

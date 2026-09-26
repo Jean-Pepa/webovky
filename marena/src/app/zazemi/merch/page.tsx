@@ -16,6 +16,8 @@ import { compressImage, saveReceipt, loadReceipt, deleteReceipt } from "@/lib/re
 import { fmtCZK, fmtDate, fmtDateTime } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { canSeeMerch, variantKey, productVariants, isTicketName, orderTicketChannel, pickedUpAfterDeadline, ONSITE_ORDER_NAME } from "@/lib/merch";
+import { ticketBreakdown, type TicketPlace, type TicketPlaceStat } from "@/lib/pos";
+import { DonutChart, SplitBar, VIZ, VIZ_ORD, VIZ_OTHER } from "@/components/Charts";
 import { RESERVATION_DEADLINE_LABEL } from "@/lib/reservations";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 import { isAdmin } from "@/lib/admin";
@@ -367,7 +369,15 @@ export default function MerchPage() {
             </div>
           )}
           {/* Analytika lístků: kolik lístků má jedna objednávka, odkud jsou, čím se platily, po dnech */}
-          {tickets.total > 0 && <TicketAnalytics orders={orders} finances={year.finances ?? []} isTicketItem={isTicketItem} />}
+          {tickets.total > 0 && (
+            <TicketAnalytics
+              orders={orders}
+              finances={year.finances ?? []}
+              isTicketItem={isTicketItem}
+              places={ticketBreakdown(year.finances ?? [], { merch: products, merchOrders: orders })}
+              gender={{ f: gender.f.all, m: gender.m.all, unknown: gender["?"].all }}
+            />
+          )}
           {orders.length > 0 && (
             <div className="relative">
               <input
@@ -1083,10 +1093,14 @@ function TicketAnalytics({
   orders,
   finances,
   isTicketItem,
+  places,
+  gender,
 }: {
   orders: MerchOrder[];
   finances: FinanceItem[];
   isTicketItem: (it: MerchOrder["items"][number]) => boolean;
+  places: Record<TicketPlace, TicketPlaceStat>;
+  gender: { f: number; m: number; unknown: number };
 }) {
   const [open, setOpen] = useState(false);
   const a = useMemo(() => {
@@ -1177,6 +1191,59 @@ function TicketAnalytics({
             <p className="mt-1 text-xs text-ink-soft">
               Průměrně <strong className="text-ink">{a.avg.toFixed(2).replace(".", ",")}</strong> lístku na objednávku · {a.ordersWithTicket} objednávek (vč. prodejů na místě) · {a.ticketsTotal} lístků
             </p>
+          </div>
+          {/* Koláče a podíly — stejné údaje jako v textu níže, jen na jeden pohled */}
+          <div className="grid gap-2 sm:grid-cols-2">
+            <DonutChart
+              title="Prodané lístky podle místa"
+              unit="ks"
+              sort={false}
+              items={[
+                { label: "Na baru · bez rezervace", value: places.onsiteBar.qty, color: VIZ[0] },
+                { label: "Na baru · s rezervací", value: places.resBar.qty, color: VIZ[1] },
+                { label: "Na Flédě · s rezervací", value: places.resFleda.qty, color: VIZ[2] },
+                { label: "Na Flédě · bez rezervace", value: places.onsiteFleda.qty, color: VIZ[3] },
+              ]}
+              note="Jen zaplacené lístky (zápisy ve financích). Nezaplacené rezervace jsou v pruhu níže."
+            />
+            <DonutChart
+              title="Lístků na jednu objednávku"
+              unit="obj."
+              sort={false}
+              items={[
+                { label: "1 lístek", value: a.buckets["1"].orders, color: VIZ_ORD[0], sub: `${a.buckets["1"].tickets} ks` },
+                { label: "2 lístky", value: a.buckets["2"].orders, color: VIZ_ORD[1], sub: `${a.buckets["2"].tickets} ks` },
+                { label: "3 lístky", value: a.buckets["3"].orders, color: VIZ_ORD[2], sub: `${a.buckets["3"].tickets} ks` },
+                { label: "4+ lístky", value: a.buckets["4+"].orders, color: VIZ_ORD[3], sub: `${a.buckets["4+"].tickets} ks` },
+              ]}
+              note="Objednávky s lístkem včetně prodejů na místě."
+            />
+            <SplitBar
+              title="Rezervace z webu · zaplaceno vs. čeká"
+              unit="ks"
+              parts={[
+                { label: "Zaplaceno", value: a.webPaid, color: VIZ[2] },
+                { label: "Čeká na zaplacení", value: a.webPending, color: VIZ[3] },
+              ]}
+            />
+            <SplitBar
+              title="Čím se zaplacené lístky platily"
+              unit="ks"
+              parts={[
+                { label: "QR platba", value: a.qr, color: VIZ[0] },
+                { label: "Hotově", value: a.cash, color: VIZ[1] },
+                { label: "Bez uvedení", value: a.other, color: VIZ_OTHER },
+              ]}
+            />
+            <SplitBar
+              title="Holky / kluci (odhad podle jména)"
+              unit="lidí"
+              parts={[
+                { label: "Holky", value: gender.f, color: VIZ[4] },
+                { label: "Kluci", value: gender.m, color: VIZ[0] },
+              ]}
+              note={`Lidé z rezervací z webu.${gender.unknown > 0 ? ` Nejasné jméno: ${gender.unknown}.` : ""}`}
+            />
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="rounded-xl bg-paper2/60 p-3">
