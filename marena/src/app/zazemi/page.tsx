@@ -502,6 +502,23 @@ export default function NastenkaPage() {
           </button>
         </div>
 
+        {/* Po festivalu: závěrečné shrnutí ročníku (jen správce) — všechna čísla na jednom místě */}
+        {isAdmin(me) && (
+          <Link
+            href="/zazemi/shrnuti"
+            className="group flex items-center gap-4 rounded-2xl border border-gold-300 bg-gold-grad p-4 text-[#1d1d1f] shadow-sm transition hover:shadow-md"
+          >
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/70 text-2xl" aria-hidden>
+              🏁
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-lg font-bold leading-tight">Závěrečné shrnutí ročníku</span>
+              <span className="block text-sm text-[#1d1d1f]/75">Finance, prodej, lístky, kasy, tým, program i web — všechna čísla na jedné stránce, koláče a grafy, PDF archiv.</span>
+            </span>
+            <span className="shrink-0 rounded-full bg-[#1d1d1f] px-3.5 py-2 text-sm font-semibold text-white transition group-hover:scale-105">Otevřít →</span>
+          </Link>
+        )}
+
         {/* Osobní rozcestník podle rolí — každý má svoje věci na jeden ťuk */}
         <MyAgenda onOpenPost={openPost} />
 

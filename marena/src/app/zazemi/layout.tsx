@@ -426,6 +426,17 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
             </Link>
           )}
           {isAdmin(me) && (
+            <Link
+              href="/zazemi/shrnuti"
+              title="Závěrečné shrnutí ročníku — všechna čísla na jedné stránce"
+              className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                pathname === "/zazemi/shrnuti" ? "bg-ink text-white" : "text-ink-soft ring-1 ring-ink/10 hover:bg-ink/5"
+              }`}
+            >
+              <Icon name="flag" className="h-4 w-4" /> Shrnutí
+            </Link>
+          )}
+          {isAdmin(me) && (
             <SiteOffButton
               siteOff={siteOff}
               onChanged={(off) => {
@@ -509,6 +520,15 @@ export default function ZazemiLayout({ children }: { children: React.ReactNode }
                   className="inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-medium text-ink ring-1 ring-ink/10 hover:bg-ink/5"
                 >
                   <Icon name="chart" className="h-5 w-5" /> Statistiky
+                </Link>
+              )}
+              {isAdmin(me) && (
+                <Link
+                  href="/zazemi/shrnuti"
+                  onClick={() => setMenuOpen(false)}
+                  className="inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-medium text-ink ring-1 ring-ink/10 hover:bg-ink/5"
+                >
+                  <Icon name="flag" className="h-5 w-5" /> Závěrečné shrnutí
                 </Link>
               )}
               {isAdmin(me) && (
