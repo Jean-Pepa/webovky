@@ -182,6 +182,13 @@ function Pos() {
   const [editNabidka, setEditNabidka] = useState(false);
   // Režim „Vyprodáno" (kdokoli u kasy): ťuknutím se položka vyprodá/odblokuje.
   const [soldMode, setSoldMode] = useState(false);
+  // Zpětný zápis (jen správce): účtenky se uloží s tímto časem (např. lístky
+  // prodané u vstupu, které se nestihly namarkovat). Lokální „YYYY-MM-DDTHH:mm".
+  const [backAt, setBackAt] = useState<string | null>(null);
+  const [backOpen, setBackOpen] = useState(false);
+  const [backDraft, setBackDraft] = useState("");
+  const backIso = backAt ? new Date(backAt).toISOString() : undefined;
+  const backDate = backAt ? backAt.slice(0, 10) : undefined;
   // Vlastní částka — okno: za co + kolik (jde do účtenky jako běžná položka)
   const [customOpen, setCustomOpen] = useState(false);
   const [customLabel, setCustomLabel] = useState("");
@@ -406,7 +413,11 @@ function Pos() {
   // všechno ostatní letí rovnou do účtenky.
   function tapItem(kind: Kind, item: { id: string; name: string; price: number; productId?: string; base?: string; channel?: Exclude<TicketChannel, "web"> }, onsite?: boolean) {
     // Pojistka: vyprodané / na skladě už nic (i s ohledem na účtenku) se nepřidá.
-    if (kind !== "custom" && isSoldOut(kind, item.productId ?? item.id)) return;
+    // Výjimka: lístky u vstupu sklad nikdy neblokuje (jen ruční „Vyprodáno") —
+    // lidé stojí ve frontě a prodej se musí zapsat, i když je počítadlo na nule.
+    if (onsite) {
+      if (soldOutManual.has(item.id) || soldOutManual.has(item.productId ?? "")) return;
+    } else if (kind !== "custom" && isSoldOut(kind, item.productId ?? item.id)) return;
     if (onsite && item.productId && item.base && item.channel) {
       // Lístek na místě: bez variant; v názvu „(na baru)" / „(na Flédě)" — ať je kanál všude poznat.
       addLine("merch", `${item.base}${TICKET_SUFFIX[item.channel]}`, item.price, item.productId, undefined, undefined, undefined, true);
@@ -480,10 +491,11 @@ function Pos() {
           yearId: year.id,
           id: orderId,
           name: "Prodej na místě",
-          note: `markoval(a): ${me} · ${howText}`,
+          note: `markoval(a): ${me} · ${howText}${backAt ? " · zapsáno zpětně" : ""}`,
           items: merch.map((l) => ({ productId: l.productId!, name: l.name, size: l.size, color: l.color, price: l.price, qty: l.qty })),
+          at: backIso,
         });
-        if (ok) ok = await dispatch({ type: "settleMerchOrder", yearId: year.id, orderId, how: howText, saleId });
+        if (ok) ok = await dispatch({ type: "settleMerchOrder", yearId: year.id, orderId, how: howText, saleId, at: backIso, date: backDate });
         if (ok) merch.forEach((l) => written.add(l.key));
       }
       // Pití / jídlo po druhu; vlastní částky podle kategorie stánku (merch / bar / kuchyně)
@@ -507,9 +519,10 @@ function Pos() {
           category,
           who: me,
           paid: true,
-          date: todayISO(),
+          date: backDate ?? todayISO(),
           note: group.map((l) => `${l.qty}× ${lineLabel(l)}`).join(", ") + ` · ${howText}`,
           saleId,
+          at: backIso,
         });
         if (ok) group.forEach((l) => written.add(l.key));
       }
@@ -530,7 +543,7 @@ function Pos() {
       setLines([]);
       setQrOpen(false);
       setCashOpen(false);
-      flash(`Zaplaceno ${fmtCZK(total)} (${howText}) — zapsáno`, "💰");
+      flash(`Zaplaceno ${fmtCZK(total)} (${howText}) — zapsáno${backIso ? ` zpětně k ${fmtDateTime(backIso)}` : ""}`, "💰");
     } finally {
       setBusy(false);
     }
@@ -543,7 +556,7 @@ function Pos() {
     setBusy(true);
     try {
       const howText = how === "hotove" ? "hotově" : "QR platba";
-      if (!(await dispatch({ type: "settleMerchOrder", yearId: year.id, orderId: order.id, how: howText }))) {
+      if (!(await dispatch({ type: "settleMerchOrder", yearId: year.id, orderId: order.id, how: howText, at: backIso, date: backDate }))) {
         flash("Nezapsáno — zkontroluj připojení a zkus to znovu", "⚠️");
         return;
       }
@@ -572,11 +585,36 @@ function Pos() {
                 ✏️ <span className="hidden sm:inline">Vlastní částka</span>
                 <span className="sm:hidden">Částka</span>
               </button>
+              {/* Zpětný zápis (správce): účtenky s jiným datem a časem */}
+              {admin && (
+                <button
+                  onClick={() => {
+                    setBackDraft(backAt ?? `${todayISO()}T20:00`);
+                    setBackOpen(true);
+                  }}
+                  className={`flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-[15px] font-semibold transition ${
+                    backAt ? "bg-amber-100 text-amber-900 ring-2 ring-amber-400" : "bg-paper2 text-ink hover:bg-gold-100"
+                  }`}
+                  title="Zapsat prodej zpětně k jinému datu a času"
+                >
+                  🕓 <span className="hidden sm:inline">Zpětně</span>
+                </button>
+              )}
               {/* Jednotná kasa pro celý prodej: otevřít → přes den → uzavřít */}
               <KasaControl year={{ id: year.id, cashboxes: year.cashboxes ?? [] }} cashMarked={stats.cash} qrMarked={stats.qr} />
             </div>
           )}
         </div>
+        {backAt && backIso && (
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <span>
+              🕓 <strong>Zapisuješ zpětně k {fmtDateTime(backIso)}.</strong> Každá účtenka i zaplacená rezervace se uloží s tímto časem a spadne do kasy toho dne.
+            </span>
+            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setBackAt(null)}>
+              Zrušit zpětný zápis
+            </button>
+          </div>
+        )}
         {/* Účet pro QR — malý, ať nepřekáží; správce ho upraví ťuknutím */}
         <div className="mt-1">
           <AccountChip admin={admin} account={account} accountOk={accountOk} yearId={year.id} />
@@ -743,8 +781,9 @@ function Pos() {
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {g.items.map((i) => {
-                const sold = isSoldOut(g.kind, i.productId ?? i.id) || soldOutManual.has(i.id);
                 const manualSold = soldOutManual.has(i.id) || soldOutManual.has(i.productId ?? "");
+                // Lístky na místě: sklad neblokuje (jen ruční vyprodání) — viz tapItem.
+                const sold = g.onsite ? manualSold : isSoldOut(g.kind, i.productId ?? i.id) || soldOutManual.has(i.id);
                 const stockSold = sold && !manualSold; // vyprodáno skladem (merch) — ručně nejde vrátit
                 const left = g.kind === "merch" ? merchLeft(i.productId ?? i.id) : null; // zbývá skladem (null = neomezeně)
                 return (
@@ -780,7 +819,13 @@ function Pos() {
                       <span className="flex w-full items-center gap-2 text-xs">
                         <span className="font-semibold text-ink-soft">+ {fmtCZK(i.price)}</span>
                         {/* „zbývá N": prodejce při zapnutém prodeji lístků ho nevidí (jen prodává) */}
-                        {left != null && !ticketOnly && <span className="ml-auto font-medium text-ink-soft/80">zbývá {left}</span>}
+                        {left != null && !ticketOnly && (
+                          g.onsite && left <= 0 ? (
+                            <span className="ml-auto font-medium text-amber-800" title="Počítadlo skladu je na nule, prodej u vstupu ale běží dál">sklad 0 · prodává dál</span>
+                          ) : (
+                            <span className="ml-auto font-medium text-ink-soft/80">zbývá {left}</span>
+                          )
+                        )}
                       </span>
                     )}
                   </button>
@@ -1023,6 +1068,39 @@ function Pos() {
         </div>
       </div>
       )}
+
+      {/* Zpětný zápis — výběr data a času (správce) */}
+      <Modal open={backOpen} onClose={() => setBackOpen(false)} title="Zapsat prodej zpětně">
+        <p className="text-sm text-ink-soft">
+          Účtenky, které teď namarkuješ, se uloží s tímto datem a časem — spadnou do kasy a tržeb toho dne (např. lístky prodané
+          u vstupu, které se nestihly zapsat). Platí, dokud zpětný zápis nezrušíš.
+        </p>
+        <label className="label mt-3">Datum a čas prodeje</label>
+        <input type="datetime-local" className="input" value={backDraft} onChange={(e) => setBackDraft(e.target.value)} />
+        <div className="mt-4 flex items-center gap-2">
+          <button
+            className="btn-primary flex-1"
+            disabled={!backDraft || isNaN(new Date(backDraft).getTime())}
+            onClick={() => {
+              setBackAt(backDraft);
+              setBackOpen(false);
+            }}
+          >
+            Zapisovat k tomuto času
+          </button>
+          {backAt && (
+            <button
+              className="btn-ghost"
+              onClick={() => {
+                setBackAt(null);
+                setBackOpen(false);
+              }}
+            >
+              Zrušit
+            </button>
+          )}
+        </div>
+      </Modal>
 
       {/* QR platba čekající objednávky — se jménem objednatele ve zprávě */}
       <Modal open={!!payOrder} onClose={() => setPayOrder(null)} title={payOrder ? `Platba — ${payOrder.name}` : ""}>
