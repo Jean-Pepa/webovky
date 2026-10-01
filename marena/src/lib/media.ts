@@ -197,7 +197,7 @@ function sanitize(s: string): string {
     .slice(0, 80);
 }
 
-function triggerDownload(blob: Blob, filename: string): void {
+export function triggerDownload(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -209,6 +209,20 @@ function triggerDownload(blob: Blob, filename: string): void {
 export function dateStamp(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+// Export všech dat (celá DB všech ročníků + statistiky webu, když jdou načíst)
+// jako jeden JSON — pro zálohu, analýzu a plánování dalšího ročníku.
+export async function downloadDataJson(db: unknown): Promise<void> {
+  let analytics: unknown = null;
+  try {
+    const r = await fetch("/api/analytics/summary?days=400", { cache: "no-store" });
+    if (r.ok) analytics = await r.json();
+  } catch {
+    /* bez statistik */
+  }
+  const payload = { app: "marena", exportedAt: new Date().toISOString(), db, analytics };
+  triggerDownload(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }), `Marena_data_${dateStamp()}.json`);
 }
 
 // Stáhne všechny (nebo zadané) soubory jako jeden ZIP. Vrací počty úspěch/chyba.

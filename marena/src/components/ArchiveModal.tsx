@@ -5,7 +5,7 @@ import { useStore } from "@/lib/store";
 import { Modal } from "@/components/Modal";
 import { Icon } from "@/components/Icons";
 import { downloadArchive, downloadFinanceArchive } from "@/lib/export";
-import { collectMedia, mediaCountsByYear, downloadMediaZip, deleteBlobs } from "@/lib/media";
+import { collectMedia, mediaCountsByYear, downloadMediaZip, deleteBlobs, downloadDataJson } from "@/lib/media";
 
 // Okno „Stáhnout / archiv" pro správce: PDF dokumentace, ZIP všech fotek/účtenek
 // a uvolnění místa (smazání fotek ročníku) pro další roky.
@@ -92,6 +92,27 @@ export function ArchiveModal({ open, onClose }: { open: boolean; onClose: () => 
             className="btn-primary mt-3 w-full justify-center"
           >
             <Icon name="download" className="h-4 w-4" /> Otevřít PDF financí
+          </button>
+        </section>
+
+        {/* 1c) Data jako JSON — záloha a podklad pro analýzu / plánování */}
+        <section className="rounded-xl border border-ink/10 p-4">
+          <div className="flex items-start gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-plum-100 text-plum-700">
+              <Icon name="file" className="h-5 w-5" />
+            </span>
+            <div className="flex-1">
+              <p className="font-semibold">Všechna data (JSON)</p>
+              <p className="text-xs text-ink-soft">Celá databáze všech ročníků (tým, finance, kasy, objednávky, lístky, nabídka, program…) plus statistiky webu v jednom souboru. Záloha a podklad pro rozbor a plánování.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              void downloadDataJson(db);
+            }}
+            className="btn-primary mt-3 w-full justify-center"
+          >
+            <Icon name="download" className="h-4 w-4" /> Stáhnout JSON
           </button>
         </section>
 
