@@ -150,6 +150,7 @@ export interface Contribution {
   name: string; // jméno (a příjmení) přispěvatele
   email?: string; // kontakt — dá se doplnit zpětně (úprava)
   phone?: string; // kontakt — dá se doplnit zpětně (úprava)
+  account?: string; // bankovní účet pro vrácení vkladu (číslo/kód banky nebo IBAN)
   amount: number; // kolik už zaplatil (Kč); 0 = založený dopředu, zatím nedal nic
   pledged?: number; // kolik má dát celkem; chybí = zaplaceno celé najednou
   returned?: boolean; // na konci vráceno
