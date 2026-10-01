@@ -189,7 +189,7 @@ export function renderContributions(y: Year): string {
   if (!cts.length) return "";
   const rows = cts.map(
     (c) =>
-      `<tr>${td(c.name)}${td([c.email, c.phone].filter(Boolean).join(" · "))}${td(c.pledged != null ? fmtCZK(c.pledged) : "—", true)}${td(fmtCZK(c.amount), true)}${td(
+      `<tr>${td(c.name)}${td([c.email, c.phone, c.account ? `účet ${c.account}` : ""].filter(Boolean).join(" · "))}${td(c.pledged != null ? fmtCZK(c.pledged) : "—", true)}${td(fmtCZK(c.amount), true)}${td(
         c.returned ? `ano${c.returnedAt ? ` (${fmtDate(c.returnedAt)})` : ""}` : "ne",
       )}${td(c.paidAt ? fmtDate(c.paidAt) : fmtDate(c.createdAt))}</tr>`,
   );

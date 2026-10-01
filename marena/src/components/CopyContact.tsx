@@ -30,7 +30,7 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
-// Klikací e-mail / telefon — kliknutím se zkopíruje do schránky (+ potvrzení).
+// Klikací e-mail / telefon / číslo účtu — kliknutím se zkopíruje do schránky (+ potvrzení).
 // Používá se všude, kde se zobrazuje kontakt (tým, kontakty, sponzoři, merch, finance, prváci).
 export function CopyContact({
   value,
@@ -39,11 +39,12 @@ export function CopyContact({
   icon = true,
 }: {
   value: string;
-  kind: "email" | "phone";
+  kind: "email" | "phone" | "account";
   className?: string;
   icon?: boolean;
 }) {
-  const emoji = kind === "email" ? "✉️" : "📞";
+  const emoji = kind === "email" ? "✉️" : kind === "phone" ? "📞" : "🏦";
+  const what = kind === "email" ? "e-mail" : kind === "phone" ? "telefon" : "číslo účtu";
   async function handle(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation(); // ať se nespustí klik na rodičovské kartě
@@ -54,7 +55,7 @@ export function CopyContact({
     <button
       type="button"
       onClick={handle}
-      title={`Klikni a ${kind === "email" ? "e-mail" : "telefon"} se zkopíruje`}
+      title={`Klikni a ${what} se zkopíruje`}
       className={`cursor-pointer border-0 bg-transparent p-0 text-left ${className}`}
     >
       {icon ? `${emoji} ${value}` : value}

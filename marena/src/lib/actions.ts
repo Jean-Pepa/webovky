@@ -127,7 +127,7 @@ export type Action =
   // Doplatil zbytek — amount se dorovná na slíbenou částku.
   | { type: "settleContribution"; yearId: string; contributionId: string }
   | { type: "toggleContributionReturned"; yearId: string; contributionId: string }
-  | { type: "updateContribution"; yearId: string; contributionId: string; patch: { name?: string; amount?: number; pledged?: number | null; email?: string; phone?: string } }
+  | { type: "updateContribution"; yearId: string; contributionId: string; patch: { name?: string; amount?: number; pledged?: number | null; email?: string; phone?: string; account?: string } }
   | { type: "removeContribution"; yearId: string; contributionId: string }
   | { type: "addFreshman"; yearId: string; name: string; email?: string; note?: string }
   | { type: "updateFreshman"; yearId: string; freshmanId: string; patch: { name?: string; email?: string; note?: string } }
@@ -980,6 +980,7 @@ export function applyAction(db: DB, a: Action): DB {
             name: p.name?.trim() || c.name,
             email: p.email !== undefined ? p.email.trim() || undefined : c.email,
             phone: p.phone !== undefined ? p.phone.trim() || undefined : c.phone,
+            account: p.account !== undefined ? p.account.trim() || undefined : c.account,
             amount,
             pledged,
             // Ruční navýšení částky = zaplatil teď.

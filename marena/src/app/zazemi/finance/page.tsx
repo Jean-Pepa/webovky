@@ -1383,6 +1383,8 @@ function ContributionRow({ c, yearId, canEdit, onEdit }: { c: Contribution; year
           <p className={`font-semibold leading-tight ${c.returned ? "text-ink-soft line-through" : "text-ink"}`}>{c.name}</p>
           {c.email && <CopyContact value={c.email} kind="email" className="mt-0.5 block break-all text-xs text-ink-soft hover:text-gold-700" />}
           {c.phone && <CopyContact value={c.phone} kind="phone" className="mt-0.5 block break-all text-xs text-ink-soft hover:text-gold-700" />}
+          {/* Účet pro vrácení vkladu — kliknutím se zkopíruje (doplní se v „Upravit") */}
+          {c.account && <CopyContact value={c.account} kind="account" className="mt-0.5 block break-all text-xs text-ink-soft hover:text-gold-700" />}
         </div>
         <div className="shrink-0 text-right leading-tight">
           <p className={`font-display text-lg font-bold ${amountColor}`}>{fmtCZK(c.amount)}</p>
@@ -1510,6 +1512,7 @@ function ContributionEditModal({ c, yearId, onClose }: { c: Contribution; yearId
   const [name, setName] = useState(c.name);
   const [email, setEmail] = useState(c.email ?? "");
   const [phone, setPhone] = useState(c.phone ?? "");
+  const [account, setAccount] = useState(c.account ?? "");
   const [amount, setAmount] = useState(String(c.amount));
   const [pledged, setPledged] = useState(c.pledged != null ? String(c.pledged) : "");
 
@@ -1523,6 +1526,7 @@ function ContributionEditModal({ c, yearId, onClose }: { c: Contribution; yearId
         name: name.trim(),
         email,
         phone,
+        account,
         amount: parseAmount(amount),
         pledged: pledged.trim() ? parseAmount(pledged) : null,
       },
@@ -1544,6 +1548,11 @@ function ContributionEditModal({ c, yearId, onClose }: { c: Contribution; yearId
         <div>
           <label className="label">Telefon</label>
           <input className="input" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+420…" />
+        </div>
+        <div>
+          <label className="label">Bankovní účet (pro vrácení vkladu)</label>
+          <input className="input" inputMode="text" autoComplete="off" value={account} onChange={(e) => setAccount(e.target.value)} placeholder="123456789/0800 nebo IBAN" />
+          <p className="mt-1 text-[11px] text-ink-soft">Kam poslat vklad zpátky na konci. Jde kliknutím zkopírovat přímo z karty.</p>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
