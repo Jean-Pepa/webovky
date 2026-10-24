@@ -21,16 +21,21 @@ export function ProjectDocsSection({
 
   return (
     <section className="card mt-8 p-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <IconFile className="h-4 w-4 text-teal-700" />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <IconFile className="h-4 w-4 shrink-0 text-teal-700" />
           <h2 className="text-sm font-semibold text-stone-900">Originální dokumentace stavby</h2>
           {documents.length > 0 && (
             <span className="text-xs text-stone-400">· {documents.length}</span>
           )}
         </div>
         {editable && (
-          <button onClick={() => setOpen((o) => !o)} className="btn-ghost btn-sm text-teal-700">
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            className="btn-ghost btn-sm min-h-10 text-teal-700"
+            aria-expanded={open}
+          >
             <IconPlus className="h-4 w-4" />
             Nahrát dokument
           </button>
@@ -64,6 +69,7 @@ export function ProjectDocsSection({
                       <DocumentRow
                         key={doc.id}
                         doc={doc}
+                        propertyId={propertyId}
                         onDelete={editable ? () => deleteDocument(propertyId, doc.id) : undefined}
                       />
                     ))}

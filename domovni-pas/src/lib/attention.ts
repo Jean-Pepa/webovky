@@ -1,5 +1,7 @@
-import type { Property } from "./store";
+import type { Entry, Property } from "./store";
 import { dueStatus, formatDate } from "./format";
+import { daysUntil, deadlineState, relativeDueLabel } from "./deadlines";
+import { elementName } from "./elements";
 
 export type AttentionKind = "reminder" | "warranty" | "defect";
 export type AttentionSeverity = "overdue" | "soon";
@@ -12,19 +14,25 @@ export type AttentionItem = {
   severity: AttentionSeverity;
   label: string;
   sortDate: string;
+  elementId?: string; // prvek domu, ke kterému položka patří
 };
 
 export const ATTENTION_KIND_LABELS: Record<AttentionKind, string> = {
-  reminder: "Připomínka",
+  reminder: "Termín",
   warranty: "Záruka",
   defect: "Závada",
 };
 
-function daysUntil(date: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const d = new Date(`${date}T00:00:00`);
-  return Math.round((d.getTime() - today.getTime()) / 86_400_000);
+// Závada je vyřešená pozdější opravou. Když mají závada i oprava prvky,
+// musí oprava sdílet aspoň jeden prvek; bez prvků platí původní pravidlo (jakákoli pozdější oprava).
+function isDefectResolved(defect: Entry, repairs: Entry[]): boolean {
+  const defectEls = defect.elementIds ?? [];
+  return repairs.some((r) => {
+    if (r.date < defect.date) return false;
+    const repairEls = r.elementIds ?? [];
+    if (defectEls.length === 0 || repairEls.length === 0) return true;
+    return repairEls.some((id) => defectEls.includes(id));
+  });
 }
 
 // Proaktivní přehled toho, co „hoří" — napříč zadanými nemovitostmi.
@@ -34,38 +42,41 @@ export function getAttentionItems(properties: Property[]): AttentionItem[] {
   const items: AttentionItem[] = [];
 
   for (const p of properties) {
-    // Připomínky (nesplněné) — jen po termínu nebo brzy (≤30 dní)
-    for (const rem of p.reminders) {
-      if (rem.done) continue;
-      const st = dueStatus(rem.dueDate);
-      if (st.overdue) {
-        items.push({ id: `rem-${rem.id}`, kind: "reminder", title: rem.title, property: p, severity: "overdue", label: st.label, sortDate: rem.dueDate });
-      } else if (st.soon) {
-        items.push({ id: `rem-${rem.id}`, kind: "reminder", title: rem.title, property: p, severity: "soon", label: st.label, sortDate: rem.dueDate });
-      }
+    // Termíny (nesplněné) — po termínu, nebo v okně „upozornit předem" u termínu
+    for (const rem of p.reminders ?? []) {
+      if (rem.done || !rem.dueDate) continue;
+      const { state, daysLeft } = deadlineState(rem);
+      if (state !== "OVERDUE" && state !== "SOON") continue;
+      const el = elementName(p, rem.elementId);
+      items.push({
+        id: `rem-${rem.id}`,
+        kind: "reminder",
+        title: el ? `${el} — ${rem.title}` : rem.title,
+        property: p,
+        severity: state === "OVERDUE" ? "overdue" : "soon",
+        label: relativeDueLabel(daysLeft),
+        sortDate: rem.dueDate,
+        elementId: el ? rem.elementId : undefined,
+      });
     }
 
     // Záruky z vybavení — automaticky hlídané
-    for (const it of p.inventory) {
+    for (const it of p.inventory ?? []) {
       if (!it.warrantyUntil) continue;
       const st = dueStatus(it.warrantyUntil);
       if (st.overdue) {
-        items.push({ id: `war-${it.id}`, kind: "warranty", title: `Záruka: ${it.name}`, property: p, severity: "overdue", label: "Záruka skončila", sortDate: it.warrantyUntil });
+        items.push({ id: `war-${it.id}`, kind: "warranty", title: `Záruka: ${it.name}`, property: p, severity: "overdue", label: "Záruka skončila", sortDate: it.warrantyUntil, elementId: it.elementId });
       } else if (daysUntil(it.warrantyUntil) <= WARRANTY_SOON_DAYS) {
-        items.push({ id: `war-${it.id}`, kind: "warranty", title: `Záruka: ${it.name}`, property: p, severity: "soon", label: `Záruka do ${formatDate(it.warrantyUntil)}`, sortDate: it.warrantyUntil });
+        items.push({ id: `war-${it.id}`, kind: "warranty", title: `Záruka: ${it.name}`, property: p, severity: "soon", label: `Záruka do ${formatDate(it.warrantyUntil)}`, sortDate: it.warrantyUntil, elementId: it.elementId });
       }
     }
 
-    // Nevyřešené závady — DEFECT bez pozdější opravy (REPAIR)
-    const lastRepair = p.entries
-      .filter((e) => e.type === "REPAIR")
-      .map((e) => e.date)
-      .sort()
-      .at(-1);
-    for (const e of p.entries) {
+    // Nevyřešené závady — DEFECT bez pozdější opravy (REPAIR) téhož prvku
+    const repairs = (p.entries ?? []).filter((e) => e.type === "REPAIR");
+    for (const e of p.entries ?? []) {
       if (e.type !== "DEFECT") continue;
-      if (lastRepair && lastRepair >= e.date) continue;
-      items.push({ id: `def-${e.id}`, kind: "defect", title: e.title, property: p, severity: "soon", label: "Nevyřešená závada", sortDate: e.date });
+      if (isDefectResolved(e, repairs)) continue;
+      items.push({ id: `def-${e.id}`, kind: "defect", title: e.title, property: p, severity: "soon", label: "Nevyřešená závada", sortDate: e.date, elementId: e.elementIds?.[0] });
     }
   }
 

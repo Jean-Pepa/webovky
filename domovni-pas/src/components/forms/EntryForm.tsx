@@ -6,12 +6,25 @@ import { useState } from "react";
 import { useStore, type EntryType, type Media } from "@/lib/store";
 import { fileToMedia } from "@/lib/media";
 import { ENTRY_TYPES } from "@/lib/enums";
-import { toDateInputValue } from "@/lib/format";
+import { localIsoDate } from "@/lib/deadlines";
+import { ElementPicker } from "@/components/elements/ElementPicker";
+import { elementHref } from "@/components/elements/element-utils";
 
-export function EntryForm({ propertyId }: { propertyId: string }) {
-  const { addEntry } = useStore();
+export function EntryForm({
+  propertyId,
+  initialElementId,
+}: {
+  propertyId: string;
+  initialElementId?: string; // zápis začatý z prvku (?prvek=) — předvybere ho a vrátí se na něj
+}) {
+  const { addEntry, getProperty } = useStore();
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const elements = getProperty(propertyId)?.elements ?? [];
+  const fromElement =
+    initialElementId && elements.some((e) => e.id === initialElementId) ? initialElementId : undefined;
+  const [elementIds, setElementIds] = useState<string[]>(() => (fromElement ? [fromElement] : []));
+  const backHref = fromElement ? elementHref(propertyId, fromElement) : `/nemovitost/${propertyId}`;
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -24,18 +37,22 @@ export function EntryForm({ propertyId }: { propertyId: string }) {
     const media: Media[] = [];
     for (const f of files) media.push(await fileToMedia(f));
 
-    const costRaw = String(fd.get("cost") || "").replace(/\s/g, "");
+    const costRaw = String(fd.get("cost") || "").replace(/\s/g, "").replace(",", ".");
+    const cost = costRaw ? Number(costRaw) : NaN;
     const desc = String(fd.get("description") || "").trim();
+    // jen prvky, které pořád existují
+    const linked = elementIds.filter((id) => elements.some((el) => el.id === id));
 
     addEntry(propertyId, {
       type: String(fd.get("type") || "OTHER") as EntryType,
       title,
       description: desc || undefined,
-      date: String(fd.get("date") || toDateInputValue(new Date())),
-      cost: costRaw ? Number(costRaw) : undefined,
+      date: String(fd.get("date") || localIsoDate()),
+      cost: Number.isFinite(cost) ? cost : undefined,
       media,
+      elementIds: linked.length ? linked : undefined,
     });
-    router.push(`/nemovitost/${propertyId}`);
+    router.push(backHref);
   }
 
   return (
@@ -62,7 +79,7 @@ export function EntryForm({ propertyId }: { propertyId: string }) {
             name="date"
             type="date"
             className="input"
-            defaultValue={toDateInputValue(new Date())}
+            defaultValue={localIsoDate()}
           />
         </div>
       </div>
@@ -79,6 +96,15 @@ export function EntryForm({ propertyId }: { propertyId: string }) {
           placeholder="Např. Výměna plynového kotle"
         />
       </div>
+
+      <ElementPicker
+        elements={elements}
+        value={elementIds}
+        onChange={setElementIds}
+        propertyId={propertyId}
+        label="Týká se prvku domu"
+        hint="Záznam se pak ukáže u prvku — revize u rozvaděče, oprava u kotle."
+      />
 
       <div>
         <label className="label" htmlFor="description">
@@ -120,7 +146,7 @@ export function EntryForm({ propertyId }: { propertyId: string }) {
         <button type="submit" className="btn-primary" disabled={pending}>
           {pending ? "Ukládám…" : "Uložit záznam"}
         </button>
-        <Link href={`/nemovitost/${propertyId}`} className="btn-secondary">
+        <Link href={backHref} className="btn-secondary">
           Zrušit
         </Link>
       </div>

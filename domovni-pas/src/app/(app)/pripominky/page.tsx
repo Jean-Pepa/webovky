@@ -1,42 +1,71 @@
 "use client";
 
 import Link from "next/link";
-import { useStore, type Property, type Reminder } from "@/lib/store";
+import { useState } from "react";
+import { useStore, type Property } from "@/lib/store";
 import { Loading } from "@/components/Loading";
-import { REMINDER_TYPES } from "@/lib/enums";
-import { dueStatus } from "@/lib/format";
-import { canSeeProperty } from "@/lib/access";
-import { IconCalendar, IconCheck, IconTrash } from "@/components/Icons";
-
-type Item = { r: Reminder; p: Property };
+import { canEditProperty, canSeeProperty } from "@/lib/access";
+import { collectDeadlines, type DeadlineRow } from "@/lib/deadlines";
+import { DeadlineItem, DoneDeadlines } from "@/components/deadlines/DeadlineItem";
+import { IcsExportButton } from "@/components/deadlines/IcsExportButton";
+import { NotificationCard } from "@/components/deadlines/NotificationCard";
+import { IconCalendar, IconClose } from "@/components/Icons";
 
 export default function RemindersPage() {
-  const { properties, hydrated, role, toggleReminder, deleteReminder } = useStore();
+  const { properties, hydrated, role } = useStore();
+  const [notice, setNotice] = useState<string | null>(null);
+
   if (!hydrated) return <Loading />;
 
   const visible = role ? properties.filter((p) => canSeeProperty(p, role)) : [];
-  const all: Item[] = visible.flatMap((p) => p.reminders.map((r) => ({ r, p })));
-  const active = all.filter((i) => !i.r.done).sort((a, b) => a.r.dueDate.localeCompare(b.r.dueDate));
-  const overdue = active.filter((i) => dueStatus(i.r.dueDate).overdue);
-  const upcoming = active.filter((i) => !dueStatus(i.r.dueDate).overdue);
-  const done = all.filter((i) => i.r.done);
+  const editableFor = (p: Property) => (role ? canEditProperty(p, role) : false);
+  const rows = collectDeadlines(visible, { includeDone: true });
+  const open = rows.filter((r) => r.state !== "DONE");
+  const overdue = open.filter((r) => r.state === "OVERDUE");
+  const soon = open.filter((r) => r.state === "SOON");
+  const ok = open.filter((r) => r.state === "OK");
+  const done = rows.filter((r) => r.state === "DONE");
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight text-stone-900">Připomínky</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-stone-900">Termíny a revize</h1>
       <p className="mt-1 text-sm text-stone-500">
-        Revize, údržba a záruky napříč všemi vašimi nemovitostmi.
+        Revize, servis a záruky napříč vašimi nemovitostmi. „Blíží se“ podle toho, kolik dní předem
+        chcete u termínu upozornit.
       </p>
 
-      {all.length === 0 ? (
+      {open.length > 0 && (
+        <div className="mt-4">
+          <IcsExportButton items={open} filename="bulo-terminy.ics" />
+        </div>
+      )}
+
+      {notice && (
+        <div
+          role="status"
+          className="mt-4 flex items-start gap-2 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800"
+        >
+          <p className="min-w-0 flex-1 break-words">✓ {notice}</p>
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            className="-m-2 grid h-10 w-10 shrink-0 place-items-center text-emerald-700 hover:text-emerald-900"
+            aria-label="Zavřít"
+          >
+            <IconClose className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {rows.length === 0 ? (
         <div className="card mt-8 flex flex-col items-center px-6 py-16 text-center">
           <div className="grid h-14 w-14 place-items-center rounded-2xl bg-teal-50 text-teal-700">
             <IconCalendar className="h-7 w-7" />
           </div>
-          <p className="mt-4 text-sm font-medium text-stone-800">Žádné připomínky</p>
+          <p className="mt-4 text-sm font-medium text-stone-800">Žádné termíny</p>
           <p className="mt-1 max-w-sm text-sm text-stone-500">
-            Připomínky přidáte u konkrétní nemovitosti — třeba termín příští revize kotle nebo konec
-            záruky.
+            Termíny přidáte u konkrétní nemovitosti — třeba příští revizi kotle nebo konec záruky.
+            Nejrychleji z nahraného protokolu.
           </p>
           <Link href="/prehled" className="btn-secondary mt-6">
             Na přehled nemovitostí
@@ -44,84 +73,59 @@ export default function RemindersPage() {
         </div>
       ) : (
         <div className="mt-6 space-y-8">
-          <Group title="Po termínu" items={overdue} toggle={toggleReminder} remove={deleteReminder} />
-          <Group title="Nadcházející" items={upcoming} toggle={toggleReminder} remove={deleteReminder} />
-          <Group title="Splněné" items={done} toggle={toggleReminder} remove={deleteReminder} />
+          {open.length === 0 && (
+            <p className="card p-5 text-sm text-stone-600">
+              Všechny termíny jsou splněné. Nové přidáte u konkrétní nemovitosti.
+            </p>
+          )}
+          <Group title="Po termínu" tone="text-red-600" rows={overdue} editableFor={editableFor} onNotice={setNotice} />
+          <Group title="Blíží se" tone="text-amber-700" rows={soon} editableFor={editableFor} onNotice={setNotice} />
+          <Group title="V pořádku" tone="text-stone-500" rows={ok} editableFor={editableFor} onNotice={setNotice} />
+          {done.length > 0 && (
+            <div className="card px-4 py-2 sm:px-5">
+              <DoneDeadlines rows={done} editableFor={editableFor} showProperty />
+            </div>
+          )}
         </div>
       )}
+
+      <div className="mt-8">
+        <NotificationCard properties={visible} />
+      </div>
     </div>
   );
 }
 
 function Group({
   title,
-  items,
-  toggle,
-  remove,
+  tone,
+  rows,
+  editableFor,
+  onNotice,
 }: {
   title: string;
-  items: Item[];
-  toggle: (propertyId: string, reminderId: string) => void;
-  remove: (propertyId: string, reminderId: string) => void;
+  tone: string;
+  rows: DeadlineRow[];
+  editableFor: (p: Property) => boolean;
+  onNotice: (message: string) => void;
 }) {
-  if (items.length === 0) return null;
+  if (rows.length === 0) return null;
   return (
-    <section>
-      <h2 className="text-sm font-semibold text-stone-500">
-        {title} <span className="text-stone-400">· {items.length}</span>
+    <section className="@container">
+      <h2 className={`text-sm font-semibold ${tone}`}>
+        {title} <span className="text-stone-400">· {rows.length}</span>
       </h2>
-      <ul className="card mt-2 divide-y divide-stone-100 px-5">
-        {items.map(({ r, p }) => {
-          const st = dueStatus(r.dueDate);
-          return (
-            <li key={r.id} className="flex items-start gap-3 py-3">
-              <button
-                onClick={() => toggle(p.id, r.id)}
-                className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border transition ${
-                  r.done
-                    ? "border-teal-600 bg-teal-600 text-white"
-                    : "border-stone-300 text-transparent hover:border-teal-500"
-                }`}
-                aria-label="Označit jako splněné"
-              >
-                <IconCheck className="h-3.5 w-3.5" />
-              </button>
-              <div className="min-w-0 flex-1">
-                <p
-                  className={`text-sm font-medium ${
-                    r.done ? "text-stone-400 line-through" : "text-stone-800"
-                  }`}
-                >
-                  {r.title}
-                </p>
-                <p className="truncate text-xs text-stone-400">
-                  {REMINDER_TYPES[r.type]} ·{" "}
-                  <Link href={`/nemovitost/${p.id}`} className="hover:text-teal-700 hover:underline">
-                    {p.name}
-                  </Link>
-                </p>
-              </div>
-              {!r.done && (
-                <span
-                  className={`shrink-0 text-xs font-medium ${
-                    st.overdue ? "text-red-600" : st.soon ? "text-amber-600" : "text-stone-500"
-                  }`}
-                >
-                  {st.label}
-                </span>
-              )}
-              <button
-                onClick={() => {
-                  if (confirm("Smazat připomínku?")) remove(p.id, r.id);
-                }}
-                className="btn-ghost btn-sm text-stone-400 hover:text-red-600"
-                aria-label="Smazat"
-              >
-                <IconTrash className="h-4 w-4" />
-              </button>
-            </li>
-          );
-        })}
+      <ul className="card mt-2 divide-y divide-stone-100 px-4 sm:px-5">
+        {rows.map(({ reminder, property }) => (
+          <DeadlineItem
+            key={`${property.id}-${reminder.id}`}
+            property={property}
+            reminder={reminder}
+            editable={editableFor(property)}
+            showProperty
+            onNotice={onNotice}
+          />
+        ))}
       </ul>
     </section>
   );

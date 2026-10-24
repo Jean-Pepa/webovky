@@ -3,14 +3,30 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useStore } from "@/lib/store";
+import { useStore, type ElementCategory } from "@/lib/store";
 import { fileToDataUrl } from "@/lib/media";
 import { ROOM_SUGGESTIONS } from "@/lib/enums";
+import { ELEMENT_CATEGORIES, ELEMENT_CATEGORY_ORDER } from "@/lib/elements";
+import { elementHref, sortElements } from "@/components/elements/element-utils";
 
-export function InventoryForm({ propertyId }: { propertyId: string }) {
-  const { addInventoryItem } = useStore();
+const NEW_ELEMENT = "__novy__";
+
+export function InventoryForm({
+  propertyId,
+  initialElementId,
+}: {
+  propertyId: string;
+  initialElementId?: string; // přidání vybavení z prvku (?prvek=)
+}) {
+  const { addInventoryItem, addElement, getProperty } = useStore();
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const elements = sortElements(getProperty(propertyId)?.elements ?? []);
+  const fromElement =
+    initialElementId && elements.some((e) => e.id === initialElementId) ? initialElementId : undefined;
+  const [elementChoice, setElementChoice] = useState(fromElement ?? "");
+  const [newCategory, setNewCategory] = useState<ElementCategory>("ZARIZENI");
+  const backHref = fromElement ? elementHref(propertyId, fromElement) : `/nemovitost/${propertyId}`;
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -23,7 +39,8 @@ export function InventoryForm({ propertyId }: { propertyId: string }) {
       const v = String(fd.get(k) || "").trim();
       return v || undefined;
     };
-    const priceRaw = String(fd.get("price") || "").replace(/\s/g, "");
+    const priceRaw = String(fd.get("price") || "").replace(/\s/g, "").replace(",", ".");
+    const price = priceRaw ? Number(priceRaw) : NaN;
 
     let fileName: string | undefined;
     let dataUrl: string | undefined;
@@ -33,18 +50,34 @@ export function InventoryForm({ propertyId }: { propertyId: string }) {
       dataUrl = await fileToDataUrl(file);
     }
 
+    // Prvek domu: existující, nebo nový vytvořený z této položky
+    let elementId: string | undefined;
+    if (elementChoice === NEW_ELEMENT) {
+      elementId = addElement(propertyId, {
+        name,
+        category: newCategory,
+        room: opt("location"),
+        source: "ZADAL_UZIVATEL",
+        condition: "UNKNOWN",
+      });
+    } else if (elementChoice && elements.some((el) => el.id === elementChoice)) {
+      elementId = elementChoice;
+    }
+
     addInventoryItem(propertyId, {
       name,
       location: opt("location"),
       brand: opt("brand"),
-      price: priceRaw ? Number(priceRaw) : undefined,
+      price: Number.isFinite(price) ? price : undefined,
       warrantyUntil: opt("warrantyUntil"),
       productUrl: opt("productUrl"),
       note: opt("note"),
       fileName,
       dataUrl,
+      elementId,
     });
-    router.push(`/nemovitost/${propertyId}`);
+    // nový prvek rovnou otevřít (ať ho jde zakreslit do modelu), jinak zpět, odkud uživatel přišel
+    router.push(elementId && elementChoice === NEW_ELEMENT ? elementHref(propertyId, elementId) : backHref);
   }
 
   return (
@@ -95,6 +128,62 @@ export function InventoryForm({ propertyId }: { propertyId: string }) {
       </div>
 
       <div>
+        <label className="label" htmlFor="element">
+          Prvek domu
+        </label>
+        <select
+          id="element"
+          className="input"
+          value={elementChoice}
+          onChange={(e) => setElementChoice(e.target.value)}
+        >
+          <option value="">— bez prvku —</option>
+          {ELEMENT_CATEGORY_ORDER.map((cat) => {
+            const group = elements.filter((el) => el.category === cat);
+            if (group.length === 0) return null;
+            return (
+              <optgroup key={cat} label={ELEMENT_CATEGORIES[cat]}>
+                {group.map((el) => (
+                  <option key={el.id} value={el.id}>
+                    {el.name}
+                    {el.room ? ` · ${el.room}` : ""}
+                  </option>
+                ))}
+              </optgroup>
+            );
+          })}
+          <option value={NEW_ELEMENT}>+ Vytvořit nový prvek z této položky</option>
+        </select>
+        {elementChoice === NEW_ELEMENT ? (
+          <div className="mt-3 rounded-xl bg-stone-50 p-3">
+            <label className="label" htmlFor="newCategory">
+              Vrstva nového prvku
+            </label>
+            <select
+              id="newCategory"
+              className="input"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value as ElementCategory)}
+            >
+              {ELEMENT_CATEGORY_ORDER.map((c) => (
+                <option key={c} value={c}>
+                  {ELEMENT_CATEGORIES[c]}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-xs text-stone-500">
+              Prvek dostane název a místnost z této položky. Polohu zatím neznáme — zakreslíte ji
+              později v modelu domu.
+            </p>
+          </div>
+        ) : (
+          <p className="mt-1.5 text-xs text-stone-400">
+            Záruka a doklad pak budou vidět u prvku (např. záruka ke kotli).
+          </p>
+        )}
+      </div>
+
+      <div>
         <label className="label" htmlFor="productUrl">
           Odkaz na produkt
         </label>
@@ -130,7 +219,7 @@ export function InventoryForm({ propertyId }: { propertyId: string }) {
         <button type="submit" className="btn-primary" disabled={pending}>
           {pending ? "Ukládám…" : "Přidat do vybavení"}
         </button>
-        <Link href={`/nemovitost/${propertyId}`} className="btn-secondary">
+        <Link href={backHref} className="btn-secondary">
           Zrušit
         </Link>
       </div>

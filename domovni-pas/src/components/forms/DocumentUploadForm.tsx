@@ -4,10 +4,13 @@ import { useState } from "react";
 import { useStore, type DocCategory, type DocSection } from "@/lib/store";
 import { fileToDataUrl } from "@/lib/media";
 import { DOCUMENT_CATEGORIES, DOC_SECTIONS } from "@/lib/enums";
+import { ElementPicker } from "@/components/elements/ElementPicker";
 
 export function DocumentUploadForm({ propertyId }: { propertyId: string }) {
-  const { addDocument } = useStore();
+  const { addDocument, getProperty } = useStore();
   const [pending, setPending] = useState(false);
+  const [elementIds, setElementIds] = useState<string[]>([]);
+  const elements = getProperty(propertyId)?.elements ?? [];
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -18,14 +21,17 @@ export function DocumentUploadForm({ propertyId }: { propertyId: string }) {
 
     setPending(true);
     const dataUrl = await fileToDataUrl(file);
+    const linked = elementIds.filter((id) => elements.some((el) => el.id === id));
     addDocument(propertyId, {
       title: String(fd.get("title") || "").trim() || file.name,
       category: String(fd.get("category") || "OTHER") as DocCategory,
       section: String(fd.get("section") || "BUDOVA") as DocSection,
       fileName: file.name,
       dataUrl,
+      elementIds: linked.length ? linked : undefined,
     });
     form.reset();
+    setElementIds([]);
     setPending(false);
   }
 
@@ -49,6 +55,16 @@ export function DocumentUploadForm({ propertyId }: { propertyId: string }) {
       </div>
 
       <input name="title" className="input" placeholder="Název dokumentu (volitelné)" />
+
+      {elements.length > 0 && (
+        <ElementPicker
+          elements={elements}
+          value={elementIds}
+          onChange={setElementIds}
+          propertyId={propertyId}
+          label="Týká se prvku (volitelné)"
+        />
+      )}
 
       <input
         name="file"

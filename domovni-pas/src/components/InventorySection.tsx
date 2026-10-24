@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useStore, type InventoryItem } from "@/lib/store";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { IconBox, IconPlus, IconTrash, IconExternal, IconDownload } from "@/components/Icons";
+import { ElementChips } from "@/components/elements/ElementChip";
 
 function warrantyInfo(it: InventoryItem) {
   if (!it.warrantyUntil) return null;
@@ -27,7 +28,8 @@ export function InventorySection({
   inventory: InventoryItem[];
   editable?: boolean;
 }) {
-  const { deleteInventoryItem } = useStore();
+  const { deleteInventoryItem, getProperty } = useStore();
+  const property = getProperty(propertyId);
 
   const groups = new Map<string, InventoryItem[]>();
   for (const item of inventory) {
@@ -51,7 +53,7 @@ export function InventorySection({
         )}
       </div>
       <p className="mt-1 text-sm text-stone-500">
-        „Co je v mém domě" — baterie, spotřebiče, podlahy… s cenou, zárukou a doklady.
+        „Co je v mém domě“ — baterie, spotřebiče, podlahy… s cenou, zárukou a doklady.
       </p>
 
       {inventory.length === 0 ? (
@@ -86,7 +88,7 @@ export function InventorySection({
                     <li key={it.id} className="py-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-stone-800">{it.name}</p>
+                          <p className="break-words text-sm font-medium text-stone-800">{it.name}</p>
                           {it.brand && <p className="text-xs text-stone-400">{it.brand}</p>}
                         </div>
                         {editable && (
@@ -95,8 +97,9 @@ export function InventorySection({
                               if (confirm("Smazat položku vybavení?"))
                                 deleteInventoryItem(propertyId, it.id);
                             }}
-                            className="btn-ghost btn-sm shrink-0 text-stone-400 hover:text-red-600"
-                            aria-label="Smazat"
+                            type="button"
+                            className="btn-ghost btn-sm -mr-2 -mt-2 min-h-10 min-w-10 shrink-0 text-stone-400 hover:text-red-600"
+                            aria-label={`Smazat ${it.name}`}
                           >
                             <IconTrash className="h-4 w-4" />
                           </button>
@@ -136,6 +139,10 @@ export function InventorySection({
                       </div>
 
                       {it.note && <p className="mt-1 text-xs text-stone-500">{it.note}</p>}
+
+                      {property && it.elementId && (
+                        <ElementChips property={property} ids={[it.elementId]} className="mt-2" />
+                      )}
                     </li>
                   );
                 })}

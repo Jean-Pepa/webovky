@@ -1,11 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { useStore, type Reminder, type ReminderType } from "@/lib/store";
-import { REMINDER_TYPES } from "@/lib/enums";
-import { dueStatus } from "@/lib/format";
-import { IconTrash, IconCheck, IconPlus } from "@/components/Icons";
+import { useStore, type Reminder } from "@/lib/store";
+import { Badge } from "@/components/ui/Badge";
+import { compareDeadlineRows, deadlineState } from "@/lib/deadlines";
+import { icsSlug } from "@/lib/ics";
+import { DeadlineItem, DoneDeadlines } from "@/components/deadlines/DeadlineItem";
+import { DeadlineForm } from "@/components/deadlines/DeadlineForm";
+import { IcsExportButton } from "@/components/deadlines/IcsExportButton";
+import { IconCalendar, IconClose, IconPlus, IconSparkles } from "@/components/Icons";
 
+// Termíny a revize u nemovitosti: stav, prvek, lhůta, doklad — a „Provedeno" jedním klepnutím.
 export function ReminderSection({
   propertyId,
   reminders,
@@ -15,137 +21,133 @@ export function ReminderSection({
   reminders: Reminder[];
   editable?: boolean;
 }) {
-  const { addReminder, toggleReminder, deleteReminder } = useStore();
-  const [open, setOpen] = useState(false);
+  const { getProperty, addReminder } = useStore();
+  const [adding, setAdding] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const sorted = [...reminders].sort(
-    (a, b) => Number(a.done) - Number(b.done) || a.dueDate.localeCompare(b.dueDate),
-  );
+  const property = getProperty(propertyId);
+  if (!property) return null;
 
-  function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const fd = new FormData(form);
-    const title = String(fd.get("title") || "").trim();
-    const dueDate = String(fd.get("dueDate") || "");
-    if (!title || !dueDate) return;
-    addReminder(propertyId, {
-      title,
-      type: String(fd.get("type") || "INSPECTION") as ReminderType,
-      dueDate,
-    });
-    form.reset();
-    setOpen(false);
-  }
+  const open = reminders
+    .filter((r) => !r.done)
+    .map((r) => ({ reminder: r, ...deadlineState(r) }))
+    .sort(compareDeadlineRows);
+  const done = reminders.filter((r) => r.done).map((r) => ({ reminder: r, property }));
+  const overdue = open.filter((o) => o.state === "OVERDUE").length;
+  const soon = open.filter((o) => o.state === "SOON").length;
 
   return (
-    <section className="card p-5">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-stone-900">Připomínky</h2>
-        {editable && (
-          <button onClick={() => setOpen((o) => !o)} className="btn-ghost btn-sm text-teal-700">
+    <section id="terminy" className="card @container scroll-mt-24 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <IconCalendar className="h-4 w-4 shrink-0 text-teal-700" />
+          <h2 className="text-sm font-semibold text-stone-900">Termíny a revize</h2>
+        </div>
+        {editable && !adding && (
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="btn-ghost btn-sm min-h-10 text-teal-700"
+          >
             <IconPlus className="h-4 w-4" />
-            Přidat
+            Přidat termín
           </button>
         )}
       </div>
 
-      {sorted.length > 0 ? (
-        <ul className="mt-2 divide-y divide-stone-100">
-          {sorted.map((r) => {
-            const st = dueStatus(r.dueDate);
-            return (
-              <li key={r.id} className="flex items-start gap-2.5 py-2.5">
-                {editable ? (
-                  <button
-                    onClick={() => toggleReminder(propertyId, r.id)}
-                    className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border transition ${
-                      r.done
-                        ? "border-teal-600 bg-teal-600 text-white"
-                        : "border-stone-300 text-transparent hover:border-teal-500"
-                    }`}
-                    aria-label="Označit jako splněné"
-                  >
-                    <IconCheck className="h-3.5 w-3.5" />
-                  </button>
-                ) : (
-                  <span
-                    className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border ${
-                      r.done
-                        ? "border-teal-600 bg-teal-600 text-white"
-                        : "border-stone-300 text-transparent"
-                    }`}
-                  >
-                    <IconCheck className="h-3.5 w-3.5" />
-                  </span>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p
-                    className={`text-sm font-medium ${
-                      r.done ? "text-stone-400 line-through" : "text-stone-800"
-                    }`}
-                  >
-                    {r.title}
-                  </p>
-                  <p className="text-xs">
-                    <span className="text-stone-400">{REMINDER_TYPES[r.type]} · </span>
-                    {r.done ? (
-                      <span className="text-stone-400">splněno</span>
-                    ) : (
-                      <span
-                        className={
-                          st.overdue
-                            ? "font-medium text-red-600"
-                            : st.soon
-                              ? "font-medium text-amber-600"
-                              : "text-stone-500"
-                        }
-                      >
-                        {st.label}
-                      </span>
-                    )}
-                  </p>
-                </div>
-                {editable && (
-                  <button
-                    onClick={() => {
-                      if (confirm("Smazat připomínku?")) deleteReminder(propertyId, r.id);
-                    }}
-                    className="btn-ghost btn-sm text-stone-400 hover:text-red-600"
-                    aria-label="Smazat"
-                  >
-                    <IconTrash className="h-4 w-4" />
-                  </button>
-                )}
-              </li>
-            );
-          })}
+      {(overdue > 0 || soon > 0) && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {overdue > 0 && <Badge color="red">{overdue} po termínu</Badge>}
+          {soon > 0 && <Badge color="amber">{soon} se blíží</Badge>}
+        </div>
+      )}
+
+      {notice && (
+        <div
+          role="status"
+          className="mt-3 flex items-start gap-2 rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800"
+        >
+          <p className="min-w-0 flex-1 break-words">✓ {notice}</p>
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            className="-m-2 grid h-10 w-10 shrink-0 place-items-center text-emerald-700 hover:text-emerald-900"
+            aria-label="Zavřít"
+          >
+            <IconClose className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {editable && adding && (
+        <div className="mt-3 border-t border-stone-100 pt-3">
+          <h3 className="mb-2 text-sm font-medium text-stone-800">Nový termín</h3>
+          <DeadlineForm
+            property={property}
+            submitLabel="Přidat termín"
+            onCancel={() => setAdding(false)}
+            onSave={(data) => {
+              addReminder(propertyId, data);
+              setAdding(false);
+              setNotice(`Termín „${data.title}“ přidán.`);
+            }}
+          />
+        </div>
+      )}
+
+      {open.length > 0 ? (
+        <ul className="mt-1 divide-y divide-stone-100">
+          {open.map(({ reminder }) => (
+            <DeadlineItem
+              key={reminder.id}
+              property={property}
+              reminder={reminder}
+              editable={editable}
+              onNotice={setNotice}
+            />
+          ))}
         </ul>
       ) : (
-        !open && (
-          <p className="mt-2 text-sm text-stone-500">
-            Žádné připomínky. Nastavte si termín příští revize nebo konce záruky.
-          </p>
+        !adding && (
+          <div className="mt-2 text-sm text-stone-500">
+            {done.length > 0 ? (
+              <p>Všechny termíny jsou splněné.</p>
+            ) : editable ? (
+              <p>
+                Zatím žádné termíny. Přidejte příští revizi, servis nebo konec záruky — upozorníme
+                vás předem.
+              </p>
+            ) : (
+              <p>Zatím žádné termíny.</p>
+            )}
+            {editable && (
+              <Link
+                href={`/nemovitost/${propertyId}/zaznam/z-dokladu`}
+                className="mt-2 inline-flex min-h-10 items-center gap-1.5 text-sm font-medium text-teal-700 hover:underline"
+              >
+                <IconSparkles className="h-4 w-4" />
+                Termín z posledního protokolu (AI)
+              </Link>
+            )}
+          </div>
         )
       )}
 
-      {open && (
-        <form onSubmit={submit} className="mt-3 space-y-2 border-t border-stone-100 pt-3">
-          <input name="title" required className="input" placeholder="Např. Revize kotle" />
-          <div className="grid grid-cols-2 gap-2">
-            <select name="type" className="input" defaultValue="INSPECTION">
-              {Object.entries(REMINDER_TYPES).map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
-                </option>
-              ))}
-            </select>
-            <input name="dueDate" type="date" required className="input" />
-          </div>
-          <button className="btn-secondary w-full" type="submit">
-            Uložit připomínku
-          </button>
-        </form>
+      <DoneDeadlines
+        rows={done}
+        editableFor={() => editable}
+        className="mt-2 border-t border-stone-100 pt-2"
+      />
+
+      {open.length > 0 && (
+        <div className="mt-3 border-t border-stone-100 pt-3">
+          <IcsExportButton
+            items={open.map(({ reminder }) => ({ reminder, property }))}
+            filename={`bulo-terminy-${icsSlug(property.name)}.ics`}
+            label="Do kalendáře (.ics)"
+            className="btn-ghost btn-sm min-h-10 -ml-3 text-stone-600"
+          />
+        </div>
       )}
     </section>
   );
