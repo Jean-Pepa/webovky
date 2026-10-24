@@ -2,6 +2,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
 import { DocsPanel } from "@/components/DocsPanel";
 import { AppGuard } from "@/components/AppGuard";
+import { DeadlineNotifier } from "@/components/deadlines/DeadlineNotifier";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
         </div>
         <DocsPanel />
+        <DeadlineNotifier />
       </div>
     </AppGuard>
   );

@@ -15,6 +15,8 @@ import { DesignSection } from "@/components/DesignSection";
 import { ArchHistorySection } from "@/components/ArchHistorySection";
 import { ProjectDocsSection } from "@/components/ProjectDocsSection";
 import { ProjectCard } from "@/components/ProjectCard";
+import { ElementsSection } from "@/components/elements/ElementsSection";
+import { InboxSection } from "@/components/inbox/InboxSection";
 import {
   IconPlus,
   IconShare,
@@ -26,6 +28,9 @@ import {
   IconTrash,
   IconShield,
   IconWrench,
+  IconBox,
+  IconUsers,
+  IconSparkles,
 } from "@/components/Icons";
 import { PROPERTY_TYPES } from "@/lib/enums";
 import { addressLine, formatCurrency } from "@/lib/format";
@@ -82,7 +87,15 @@ export default function PropertyDetailPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Link href={`/nemovitost/${id}/report`} className="btn-primary btn-sm">
+          <Link href={`/nemovitost/${id}/model`} className="btn-primary btn-sm">
+            <IconBox className="h-4 w-4" />
+            Model domu
+          </Link>
+          <Link href={`/nemovitost/${id}/prvky`} className="btn-secondary btn-sm">
+            <IconBuilding className="h-4 w-4" />
+            Prvky domu
+          </Link>
+          <Link href={`/nemovitost/${id}/report`} className="btn-secondary btn-sm">
             <IconFile className="h-4 w-4" />
             Vygenerovat report
           </Link>
@@ -104,6 +117,10 @@ export default function PropertyDetailPage() {
           )}
           {editable && (
             <>
+              <Link href={`/nemovitost/${id}/pozvanky`} className="btn-secondary btn-sm">
+                <IconUsers className="h-4 w-4" />
+                Pozvat řemeslníka
+              </Link>
               <Link href={`/nemovitost/${id}/prodej`} className="btn-secondary btn-sm">
                 <IconMoney className="h-4 w-4" />
                 Připravit na prodej
@@ -124,6 +141,8 @@ export default function PropertyDetailPage() {
         </div>
       </div>
 
+      <InboxSection property={property} editable={editable} />
+
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat icon={<IconCalendar className="h-4 w-4" />} label="Záznamů" value={String(property.entries.length)} />
         <Stat icon={<IconFile className="h-4 w-4" />} label="Dokumentů" value={String(property.documents.length)} />
@@ -141,6 +160,8 @@ export default function PropertyDetailPage() {
 
       <ProjectCard property={property} className="mt-6" />
 
+      <ElementsSection property={property} editable={editable} />
+
       <ArchHistorySection
         propertyId={id}
         milestones={property.milestones ?? []}
@@ -152,10 +173,16 @@ export default function PropertyDetailPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-stone-900">Historie</h2>
             {editable && (
-              <Link href={`/nemovitost/${id}/zaznam/novy`} className="btn-primary btn-sm">
-                <IconPlus className="h-4 w-4" />
-                Přidat záznam
-              </Link>
+              <div className="flex flex-wrap gap-2">
+                <Link href={`/nemovitost/${id}/zaznam/z-dokladu`} className="btn-secondary btn-sm">
+                  <IconSparkles className="h-4 w-4" />
+                  Z protokolu / faktury
+                </Link>
+                <Link href={`/nemovitost/${id}/zaznam/novy`} className="btn-primary btn-sm">
+                  <IconPlus className="h-4 w-4" />
+                  Přidat záznam
+                </Link>
+              </div>
             )}
           </div>
 
@@ -183,6 +210,7 @@ export default function PropertyDetailPage() {
                 <EntryCard
                   key={entry.id}
                   entry={entry}
+                  property={property}
                   onDelete={editable ? () => deleteEntry(id, entry.id) : undefined}
                 />
               ))}

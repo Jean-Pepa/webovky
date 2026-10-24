@@ -1,7 +1,10 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { newId } from "./id";
+import { newId, newToken } from "./id";
+import { addMonths } from "./deadlines";
+import { withDemoModel } from "./demo-plan";
+import type { ExtractionResult, InspectionResult, InviteRole } from "./submission";
 
 // Sdílený „pas" pro server — bez datových příloh (dataUrl), ať je payload malý.
 function toShareSnapshot(p: Property): Property {
@@ -16,6 +19,9 @@ function toShareSnapshot(p: Property): Property {
     consultations: [], // interní konzultace nesdílíme veřejně
     bids: [], // nabídky firem jsou interní
     designs: [], // návrhy (velká média) nesdílíme přes server
+    models: (p.models ?? []).map((m) => ({ ...m, dataUrl: undefined })),
+    invites: [], // pozvánky (tokeny) jsou tajné
+    ownerKey: undefined, // klíč majitele k inboxu nikdy neopouští jeho prohlížeč
   };
 }
 
@@ -38,14 +44,85 @@ export type DocCategory =
   | "CONTRACT"
   | "PLAN"
   | "CERTIFICATE"
+  | "PROTOCOL"
   | "ENERGY_LABEL"
   | "INVOICE"
+  | "WARRANTY"
+  | "MANUAL"
   | "OTHER";
 
 // Fáze/sekce projektu, do které dokument patří
 export type DocSection = "POZEMEK" | "NAVRH" | "REALIZACE" | "BUDOVA";
 
 export type Media = { id: string; name: string; kind: "image" | "file"; dataUrl?: string };
+
+// --- Kniha domu: model domu jako páteř ---------------------------------------
+// Všechno (záznamy, dokumenty, termíny, vybavení) se váže ke konkrétnímu PRVKU domu.
+
+export type ElementCategory = "ELEKTRO" | "VODA" | "TOPENI" | "PLYN" | "KONSTRUKCE" | "ZARIZENI";
+
+// Odkud známe polohu / údaj (viz lib/elements.ts → třída přesnosti)
+export type ElementSource =
+  | "SKEN"
+  | "FOTO_OTEVRENE_ZDI"
+  | "KOTA_VYKRESU"
+  | "MERITKO_VYKRESU"
+  | "MODEL_IFC"
+  | "TYPOLOGIE"
+  | "ZADAL_UZIVATEL";
+
+export type AccuracyClass = "MEASURED" | "DRAWING" | "ESTIMATE"; // změřeno / z výkresu / odhad
+
+export type ElementCondition = "OK" | "ATTENTION" | "DEFECT" | "UNKNOWN";
+
+// Poloha na podkladu modelu: souřadnice 0–1 vůči šířce/výšce podkladu.
+// 1 bod = zařízení (kotel, rozvaděč), ≥ 2 body = trasa (okruh, stoupačka, stěna).
+export type PlanGeometry = { modelId: string; points: [number, number][] };
+
+export type HouseElement = {
+  id: string;
+  name: string;
+  category: ElementCategory;
+  kind?: string; // druh: rozvaděč, kotel, okruh, stoupačka, stěna, okno…
+  room?: string;
+  location?: string; // slovní popis polohy („ve stěně 30 cm pod stropem")
+  source: ElementSource;
+  accuracyMm?: number; // přesnost polohy ±mm
+  condition: ElementCondition;
+  installDate?: string; // YYYY-MM-DD
+  installDateEstimated?: boolean; // datum odvozené (např. ze stáří domu)
+  ifcGlobalId?: string;
+  plan?: PlanGeometry;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ElementInput = Omit<HouseElement, "id" | "createdAt" | "updatedAt">;
+
+// Podklad modelu: půdorys (obrázek) nebo IFC soubor. Verzuje se.
+export type HouseModelKind = "FLOORPLAN" | "IFC";
+
+export type HouseModel = {
+  id: string;
+  kind: HouseModelKind;
+  title: string; // „Přízemí", „1. NP"…
+  fileName?: string;
+  dataUrl?: string; // zmenšený obrázek půdorysu
+  width?: number; // px podkladu (poměr stran)
+  height?: number;
+  version: number;
+  date: string; // YYYY-MM-DD (stav k)
+  source?: string; // odkud podklad je (projekt, zaměření, vlastní nákres)
+  createdAt: string;
+};
+
+export type ModelInput = Omit<HouseModel, "id" | "version" | "createdAt"> & { version?: number };
+
+// Kdo zápis udělal
+export type AuthorRole = "OWNER" | "CRAFTSMAN" | "INSPECTOR" | "ARCHITECT";
+
+export type EntryAuthor = { name: string; role: AuthorRole; company?: string; phone?: string };
 
 export type Entry = {
   id: string;
@@ -55,6 +132,12 @@ export type Entry = {
   date: string; // YYYY-MM-DD
   cost?: number;
   media: Media[];
+  elementIds?: string[]; // prvky, kterých se zápis týká
+  documentIds?: string[]; // doklady (protokol, faktura) uložené s tímto zápisem
+  author?: EntryAuthor; // chybí = zapsal majitel sám
+  result?: InspectionResult; // výsledek revize
+  submissionId?: string; // přišlo jako zápis od řemeslníka (potvrzeno majitelem)
+  confirmedAt?: string;
   createdAt: string;
 };
 
@@ -65,6 +148,9 @@ export type DocItem = {
   section?: DocSection;
   fileName?: string;
   dataUrl?: string;
+  elementIds?: string[];
+  extracted?: ExtractionResult; // co z dokladu vyčetla AI (a člověk potvrdil)
+  createdAt?: string;
 };
 
 export type Property = {
@@ -100,6 +186,10 @@ export type Property = {
   bids?: ContractorBid[];
   designs?: DesignProposal[];
   milestones?: ArchMilestone[];
+  elements?: HouseElement[]; // prvky domu (páteř knihy)
+  models?: HouseModel[]; // podklady modelu (půdorysy, IFC)
+  invites?: Invite[]; // pozvánky pro řemeslníky / revizní techniky
+  ownerKey?: string; // tajný klíč majitele k inboxu zápisů na serveru (nesdílí se)
   createdAt: string;
   updatedAt: string;
 };
@@ -132,6 +222,12 @@ export type EntryInput = {
   date: string;
   cost?: number;
   media: Media[];
+  elementIds?: string[];
+  documentIds?: string[];
+  author?: EntryAuthor;
+  result?: InspectionResult;
+  submissionId?: string;
+  confirmedAt?: string;
 };
 
 export type DocumentInput = {
@@ -140,17 +236,37 @@ export type DocumentInput = {
   section?: DocSection;
   fileName?: string;
   dataUrl?: string;
+  elementIds?: string[];
+  extracted?: ExtractionResult;
 };
 
 export type ReminderType = "INSPECTION" | "MAINTENANCE" | "WARRANTY" | "OTHER";
 
+// Jedno provedení termínu (revize, servis) — historie u termínu
+export type ReminderCompletion = {
+  date: string; // YYYY-MM-DD
+  entryId?: string;
+  documentId?: string; // doklad (protokol)
+  result?: InspectionResult;
+  note?: string;
+};
+
+// Termín / revize. Opakovaný termín má intervalMonths: po provedení se posune další termín.
 export type Reminder = {
   id: string;
   title: string;
   type: ReminderType;
-  dueDate: string; // YYYY-MM-DD
+  dueDate: string; // YYYY-MM-DD — další termín
   note?: string;
   done: boolean;
+  elementId?: string; // prvek, ke kterému termín patří (revize → rozvaděč, záruka → kotel)
+  intervalMonths?: number; // lhůta opakování; nevymýšlí se — zadá ji člověk / protokol
+  intervalConfirmed?: boolean; // lhůtu potvrdil revizní technik
+  confirmedBy?: string; // kdo lhůtu potvrdil
+  lastDone?: string; // poslední provedení (YYYY-MM-DD)
+  notifyDaysBefore?: number; // upozornit předem (dny), výchozí 30
+  documentId?: string; // doklad posledního provedení
+  history?: ReminderCompletion[];
 };
 
 export type ReminderInput = {
@@ -158,6 +274,46 @@ export type ReminderInput = {
   type: ReminderType;
   dueDate: string;
   note?: string;
+  elementId?: string;
+  intervalMonths?: number;
+  intervalConfirmed?: boolean;
+  confirmedBy?: string;
+  lastDone?: string;
+  notifyDaysBefore?: number;
+  documentId?: string;
+};
+
+// Pozvánka pro řemeslníka / revizního technika: odkaz nebo QR bez registrace.
+// Smí jen přidat zápis (čeká na potvrzení majitelem); nic dalšího o domě nevidí.
+export type Invite = {
+  token: string;
+  role: InviteRole;
+  elementId?: string; // pozvánka ke konkrétnímu prvku (QR na rozvaděči)
+  label?: string; // pro koho („Elektro Dvořák")
+  expiresAt: string; // YYYY-MM-DD (platí včetně)
+  createdAt: string;
+  revoked?: boolean;
+};
+
+export type InviteInput = Pick<Invite, "role" | "elementId" | "label" | "expiresAt">;
+
+// Návrh zápisu (z AI vyčtení nebo od řemeslníka) — uloží se až po potvrzení majitelem.
+export type EntryProposal = {
+  entry: EntryInput;
+  documents?: DocumentInput[]; // protokol, faktura… (navážou se na zápis)
+  // Termín: buď provedení existujícího (reminderId), nebo nový / posunutý další termín
+  deadline?: {
+    reminderId?: string;
+    type: ReminderType;
+    title: string;
+    elementId?: string;
+    nextDueDate?: string;
+    intervalMonths?: number;
+    intervalConfirmed?: boolean;
+    confirmedBy?: string;
+  };
+  // Zápis zpřesňuje model (např. fotka otevřené zdi s metrem → „změřeno")
+  refineElement?: { elementId: string; source: ElementSource; accuracyMm?: number };
 };
 
 export type TransferRecord = {
@@ -235,6 +391,7 @@ export type InventoryItem = {
   note?: string;
   fileName?: string; // doklad (faktura / záruční list)
   dataUrl?: string;
+  elementId?: string; // prvek domu (kotel ↔ záruka na kotel)
 };
 
 export type InventoryInput = {
@@ -247,6 +404,7 @@ export type InventoryInput = {
   note?: string;
   fileName?: string;
   dataUrl?: string;
+  elementId?: string;
 };
 
 type Store = {
@@ -283,6 +441,25 @@ type Store = {
   deleteMilestone: (propertyId: string, milestoneId: string) => void;
   transferProperty: (propertyId: string, toName: string, note?: string) => void;
   setShare: (propertyId: string, enabled: boolean) => void;
+  // Kniha domu — prvky a model
+  addElement: (propertyId: string, data: ElementInput) => string;
+  updateElement: (propertyId: string, elementId: string, data: Partial<ElementInput>) => void;
+  deleteElement: (propertyId: string, elementId: string) => void;
+  addModel: (propertyId: string, data: ModelInput) => string;
+  deleteModel: (propertyId: string, modelId: string) => void;
+  // Navázání existujících záznamů na prvky
+  setEntryElements: (propertyId: string, entryId: string, elementIds: string[]) => void;
+  setDocumentElements: (propertyId: string, docId: string, elementIds: string[]) => void;
+  setInventoryElement: (propertyId: string, itemId: string, elementId?: string) => void;
+  // Termíny / revize
+  updateReminder: (propertyId: string, reminderId: string, data: Partial<ReminderInput>) => void;
+  completeReminder: (propertyId: string, reminderId: string, completion: ReminderCompletion) => void;
+  // Pozvánky pro řemeslníky
+  createInvite: (propertyId: string, data: InviteInput) => Invite;
+  revokeInvite: (propertyId: string, token: string) => void;
+  ensureOwnerKey: (propertyId: string) => string;
+  // Potvrzení návrhu zápisu (AI / řemeslník) jedním klepnutím
+  applyProposal: (propertyId: string, proposal: EntryProposal) => string;
   role: Role | null;
   login: (password: string) => boolean;
   logout: () => void;
@@ -303,6 +480,56 @@ const PASSWORDS: Record<string, Role> = {
 };
 
 const now = () => new Date().toISOString();
+
+// Doplní chybějící kolekce u starších dat (localStorage, zálohy).
+function normalizeProperty(p: Property): Property {
+  return upgradeDemo({
+    ...p,
+    entries: p.entries ?? [],
+    documents: p.documents ?? [],
+    reminders: p.reminders ?? [],
+    transfers: p.transfers ?? [],
+    inventory: p.inventory ?? [],
+    consultations: p.consultations ?? [],
+    bids: p.bids ?? [],
+    designs: p.designs ?? [],
+    milestones: p.milestones ?? [],
+    elements: p.elements ?? [],
+    models: p.models ?? [],
+    invites: p.invites ?? [],
+  }, p.elements === undefined);
+}
+
+// Demo dům dostane ukázkový model (půdorys + prvky) jen jednou — při první migraci na prvky.
+function upgradeDemo(p: Property, firstMigration: boolean): Property {
+  if (!firstMigration || p.id !== "demo-dum") return p;
+  return withDemoModel(p);
+}
+
+// Aktualizace jednoho domu (beze změny ostatních)
+function patchProperty(
+  list: Property[],
+  propertyId: string,
+  fn: (p: Property) => Property,
+): Property[] {
+  return list.map((p) => (p.id === propertyId ? fn(p) : p));
+}
+
+// Provedení termínu: zapíše historii, opakovaný termín posune o interval.
+function completeReminderIn(r: Reminder, c: ReminderCompletion): Reminder {
+  const history = [c, ...(r.history ?? [])];
+  const lastDone = !r.lastDone || c.date > r.lastDone ? c.date : r.lastDone;
+  const base = {
+    ...r,
+    history,
+    lastDone,
+    documentId: c.documentId ?? r.documentId,
+  };
+  if (r.intervalMonths && r.intervalMonths > 0) {
+    return { ...base, dueDate: addMonths(c.date, r.intervalMonths), done: false };
+  }
+  return { ...base, done: true };
+}
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -327,24 +554,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Property[];
-        // migrace starších dat bez reminders/transfers
-        setProperties(
-          parsed.map((p) => ({
-            ...p,
-            reminders: p.reminders ?? [],
-            transfers: p.transfers ?? [],
-            inventory: p.inventory ?? [],
-            consultations: p.consultations ?? [],
-            bids: p.bids ?? [],
-            designs: p.designs ?? [],
-            milestones: p.milestones ?? [],
-          })),
-        );
+        // migrace starších dat (chybějící kolekce, prvky domu)
+        setProperties(parsed.map(normalizeProperty));
       } else {
-        setProperties(seed());
+        setProperties(seed().map(normalizeProperty));
       }
     } catch {
-      setProperties(seed());
+      setProperties(seed().map(normalizeProperty));
     }
     setHydrated(true);
   }, []);
@@ -407,6 +623,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         bids: [],
         designs: [],
         milestones: [],
+        elements: [],
+        models: [],
+        invites: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -428,7 +647,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         createdByRole: role ?? "CLIENT",
         handedOver: false,
         entries: entries.map((e) => ({ ...e, id: newId(), createdAt: now() })),
-        documents: documents.map((d) => ({ ...d, id: newId() })),
+        documents: documents.map((d) => ({ ...d, id: newId(), createdAt: now() })),
         reminders: [],
         transfers: [],
         inventory: [],
@@ -436,6 +655,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         bids: [],
         designs: [],
         milestones: [],
+        elements: [],
+        models: [],
+        invites: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -457,20 +679,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Obnova ze zálohy (správce). Doplní chybějící kolekce u starších záloh.
   const importProperties = useCallback((data: Property[]) => {
-    setProperties(
-      data.map((p) => ({
-        ...p,
-        entries: p.entries ?? [],
-        documents: p.documents ?? [],
-        reminders: p.reminders ?? [],
-        transfers: p.transfers ?? [],
-        inventory: p.inventory ?? [],
-        consultations: p.consultations ?? [],
-        bids: p.bids ?? [],
-        designs: p.designs ?? [],
-        milestones: p.milestones ?? [],
-      })),
-    );
+    setProperties(data.map(normalizeProperty));
   }, []);
 
   const addEntry = useCallback((propertyId: string, data: EntryInput) => {
@@ -495,7 +704,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addDocument = useCallback((propertyId: string, data: DocumentInput) => {
-    const doc: DocItem = { ...data, id: newId() };
+    const doc: DocItem = { ...data, id: newId(), createdAt: now() };
     setProperties((prev) =>
       prev.map((p) =>
         p.id === propertyId
@@ -722,6 +931,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           shareEnabled: false,
           handedOver: true,
           transfers: [record, ...p.transfers],
+          // pozvánky předchozího majitele po převodu neplatí
+          invites: (p.invites ?? []).map((i) => ({ ...i, revoked: true })),
           updatedAt: now(),
         };
       }),
@@ -732,6 +943,296 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setProperties((prev) =>
       prev.map((p) => (p.id === propertyId ? { ...p, shareEnabled: enabled } : p)),
     );
+  }, []);
+
+  // --- Kniha domu: prvky ---
+
+  const addElement = useCallback((propertyId: string, data: ElementInput) => {
+    const id = newId();
+    const el: HouseElement = { ...data, id, createdAt: now(), updatedAt: now() };
+    setProperties((prev) =>
+      patchProperty(prev, propertyId, (p) => ({
+        ...p,
+        elements: [...(p.elements ?? []), el],
+        updatedAt: now(),
+      })),
+    );
+    return id;
+  }, []);
+
+  const updateElement = useCallback(
+    (propertyId: string, elementId: string, data: Partial<ElementInput>) => {
+      setProperties((prev) =>
+        patchProperty(prev, propertyId, (p) => ({
+          ...p,
+          elements: (p.elements ?? []).map((e) =>
+            e.id === elementId ? { ...e, ...data, updatedAt: now() } : e,
+          ),
+          updatedAt: now(),
+        })),
+      );
+    },
+    [],
+  );
+
+  // Smaže prvek a odpojí ho od záznamů, dokumentů, termínů a vybavení (ty zůstávají).
+  const deleteElement = useCallback((propertyId: string, elementId: string) => {
+    const unlink = (ids?: string[]) => {
+      if (!ids) return ids;
+      const next = ids.filter((x) => x !== elementId);
+      return next.length ? next : undefined;
+    };
+    setProperties((prev) =>
+      patchProperty(prev, propertyId, (p) => ({
+        ...p,
+        elements: (p.elements ?? []).filter((e) => e.id !== elementId),
+        entries: p.entries.map((e) => ({ ...e, elementIds: unlink(e.elementIds) })),
+        documents: p.documents.map((d) => ({ ...d, elementIds: unlink(d.elementIds) })),
+        reminders: p.reminders.map((r) =>
+          r.elementId === elementId ? { ...r, elementId: undefined } : r,
+        ),
+        inventory: p.inventory.map((i) =>
+          i.elementId === elementId ? { ...i, elementId: undefined } : i,
+        ),
+        invites: (p.invites ?? []).map((i) =>
+          i.elementId === elementId ? { ...i, revoked: true } : i,
+        ),
+        updatedAt: now(),
+      })),
+    );
+  }, []);
+
+  // --- Kniha domu: podklady modelu ---
+
+  const addModel = useCallback((propertyId: string, data: ModelInput) => {
+    const id = newId();
+    setProperties((prev) =>
+      patchProperty(prev, propertyId, (p) => {
+        const sameTitle = (p.models ?? []).filter((m) => m.title === data.title);
+        const version = data.version ?? sameTitle.reduce((v, m) => Math.max(v, m.version), 0) + 1;
+        const model: HouseModel = { ...data, id, version, createdAt: now() };
+        return { ...p, models: [...(p.models ?? []), model], updatedAt: now() };
+      }),
+    );
+    return id;
+  }, []);
+
+  // Smaže podklad; prvkům na něm umístěným zůstane vše kromě polohy na tomto podkladu.
+  const deleteModel = useCallback((propertyId: string, modelId: string) => {
+    setProperties((prev) =>
+      patchProperty(prev, propertyId, (p) => ({
+        ...p,
+        models: (p.models ?? []).filter((m) => m.id !== modelId),
+        elements: (p.elements ?? []).map((e) =>
+          e.plan?.modelId === modelId ? { ...e, plan: undefined } : e,
+        ),
+        updatedAt: now(),
+      })),
+    );
+  }, []);
+
+  // --- Navázání existujících záznamů na prvky ---
+
+  const setEntryElements = useCallback(
+    (propertyId: string, entryId: string, elementIds: string[]) => {
+      setProperties((prev) =>
+        patchProperty(prev, propertyId, (p) => ({
+          ...p,
+          entries: p.entries.map((e) =>
+            e.id === entryId ? { ...e, elementIds: elementIds.length ? elementIds : undefined } : e,
+          ),
+          updatedAt: now(),
+        })),
+      );
+    },
+    [],
+  );
+
+  const setDocumentElements = useCallback(
+    (propertyId: string, docId: string, elementIds: string[]) => {
+      setProperties((prev) =>
+        patchProperty(prev, propertyId, (p) => ({
+          ...p,
+          documents: p.documents.map((d) =>
+            d.id === docId ? { ...d, elementIds: elementIds.length ? elementIds : undefined } : d,
+          ),
+          updatedAt: now(),
+        })),
+      );
+    },
+    [],
+  );
+
+  const setInventoryElement = useCallback(
+    (propertyId: string, itemId: string, elementId?: string) => {
+      setProperties((prev) =>
+        patchProperty(prev, propertyId, (p) => ({
+          ...p,
+          inventory: p.inventory.map((i) => (i.id === itemId ? { ...i, elementId } : i)),
+          updatedAt: now(),
+        })),
+      );
+    },
+    [],
+  );
+
+  // --- Termíny / revize ---
+
+  const updateReminder = useCallback(
+    (propertyId: string, reminderId: string, data: Partial<ReminderInput>) => {
+      setProperties((prev) =>
+        patchProperty(prev, propertyId, (p) => ({
+          ...p,
+          reminders: p.reminders.map((r) => (r.id === reminderId ? { ...r, ...data } : r)),
+          updatedAt: now(),
+        })),
+      );
+    },
+    [],
+  );
+
+  const completeReminder = useCallback(
+    (propertyId: string, reminderId: string, completion: ReminderCompletion) => {
+      setProperties((prev) =>
+        patchProperty(prev, propertyId, (p) => ({
+          ...p,
+          reminders: p.reminders.map((r) =>
+            r.id === reminderId ? completeReminderIn(r, completion) : r,
+          ),
+          updatedAt: now(),
+        })),
+      );
+    },
+    [],
+  );
+
+  // --- Pozvánky ---
+
+  // Klíč majitele k inboxu na serveru (vznikne při první pozvánce, zůstává v prohlížeči).
+  // Vrací existující klíč, nebo vygeneruje nový a uloží ho.
+  const ensureOwnerKey = useCallback(
+    (propertyId: string) => {
+      const existing = properties.find((p) => p.id === propertyId)?.ownerKey;
+      if (existing) return existing;
+      const key = newToken();
+      setProperties((prev) =>
+        patchProperty(prev, propertyId, (p) => (p.ownerKey ? p : { ...p, ownerKey: key })),
+      );
+      return key;
+    },
+    [properties],
+  );
+
+  const createInvite = useCallback((propertyId: string, data: InviteInput) => {
+    const invite: Invite = { ...data, token: newToken(), createdAt: now() };
+    setProperties((prev) =>
+      patchProperty(prev, propertyId, (p) => ({
+        ...p,
+        invites: [invite, ...(p.invites ?? [])],
+        updatedAt: now(),
+      })),
+    );
+    return invite;
+  }, []);
+
+  const revokeInvite = useCallback((propertyId: string, token: string) => {
+    setProperties((prev) =>
+      patchProperty(prev, propertyId, (p) => ({
+        ...p,
+        invites: (p.invites ?? []).map((i) => (i.token === token ? { ...i, revoked: true } : i)),
+        updatedAt: now(),
+      })),
+    );
+  }, []);
+
+  // --- Potvrzení návrhu zápisu (vše v jednom kroku) ---
+  // Uloží doklady, zápis (s odkazy na doklady a prvky), provede/posune termín
+  // a případně zpřesní polohu prvku. Vrací id nového zápisu.
+  const applyProposal = useCallback((propertyId: string, proposal: EntryProposal) => {
+    const entryId = newId();
+    const stamp = now();
+    const docs: DocItem[] = (proposal.documents ?? []).map((d) => ({
+      ...d,
+      id: newId(),
+      elementIds: d.elementIds ?? proposal.entry.elementIds,
+      createdAt: stamp,
+    }));
+    const entry: Entry = {
+      ...proposal.entry,
+      id: entryId,
+      documentIds: [...(proposal.entry.documentIds ?? []), ...docs.map((d) => d.id)],
+      confirmedAt: proposal.entry.confirmedAt ?? stamp,
+      createdAt: stamp,
+    };
+    if (!entry.documentIds?.length) entry.documentIds = undefined;
+
+    setProperties((prev) =>
+      patchProperty(prev, propertyId, (p) => {
+        let reminders = p.reminders;
+        const dl = proposal.deadline;
+        if (dl) {
+          const protocolId = docs.find((d) => d.category === "PROTOCOL" || d.category === "CERTIFICATE")?.id;
+          const completion: ReminderCompletion = {
+            date: entry.date,
+            entryId,
+            documentId: protocolId,
+            result: entry.result,
+          };
+          const existing = dl.reminderId ? reminders.find((r) => r.id === dl.reminderId) : undefined;
+          if (existing) {
+            reminders = reminders.map((r) => {
+              if (r.id !== existing.id) return r;
+              const withInterval: Reminder = {
+                ...r,
+                intervalMonths: dl.intervalMonths ?? r.intervalMonths,
+                intervalConfirmed: dl.intervalConfirmed ?? r.intervalConfirmed,
+                confirmedBy: dl.confirmedBy ?? r.confirmedBy,
+                elementId: r.elementId ?? dl.elementId,
+              };
+              const done = completeReminderIn(withInterval, completion);
+              // výslovně uvedený další termín (z protokolu) má přednost před výpočtem
+              return dl.nextDueDate ? { ...done, dueDate: dl.nextDueDate, done: false } : done;
+            });
+          } else if (dl.nextDueDate) {
+            const created: Reminder = {
+              id: newId(),
+              title: dl.title,
+              type: dl.type,
+              dueDate: dl.nextDueDate,
+              done: false,
+              elementId: dl.elementId,
+              intervalMonths: dl.intervalMonths,
+              intervalConfirmed: dl.intervalConfirmed,
+              confirmedBy: dl.confirmedBy,
+              lastDone: entry.date,
+              documentId: protocolId,
+              history: [completion],
+            };
+            reminders = [...reminders, created];
+          }
+        }
+
+        let elements = p.elements ?? [];
+        const rf = proposal.refineElement;
+        if (rf) {
+          elements = elements.map((e) =>
+            e.id === rf.elementId
+              ? { ...e, source: rf.source, accuracyMm: rf.accuracyMm ?? e.accuracyMm, updatedAt: stamp }
+              : e,
+          );
+        }
+
+        return {
+          ...p,
+          entries: [entry, ...p.entries],
+          documents: [...docs, ...p.documents],
+          reminders,
+          elements,
+          updatedAt: stamp,
+        };
+      }),
+    );
+    return entryId;
   }, []);
 
   const login = useCallback((password: string) => {
@@ -794,6 +1295,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteMilestone,
     transferProperty,
     setShare,
+    addElement,
+    updateElement,
+    deleteElement,
+    addModel,
+    deleteModel,
+    setEntryElements,
+    setDocumentElements,
+    setInventoryElement,
+    updateReminder,
+    completeReminder,
+    createInvite,
+    revokeInvite,
+    ensureOwnerKey,
+    applyProposal,
     role,
     login,
     logout,

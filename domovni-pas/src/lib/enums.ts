@@ -35,7 +35,10 @@ export const DOCUMENT_CATEGORIES: Record<string, string> = {
   PLAN: "Projekt / plány",
   ENERGY_LABEL: "Energetický štítek (PENB)",
   CERTIFICATE: "Certifikát / revize",
+  PROTOCOL: "Protokol / revizní zpráva",
   INVOICE: "Faktura / doklad",
+  WARRANTY: "Záruční list",
+  MANUAL: "Návod / technický list",
   OTHER: "Ostatní",
 };
 
@@ -62,7 +65,10 @@ export const CATEGORY_TO_SECTION: Record<string, string> = {
   PLAN: "NAVRH",
   ENERGY_LABEL: "BUDOVA",
   CERTIFICATE: "BUDOVA",
+  PROTOCOL: "BUDOVA",
   INVOICE: "REALIZACE",
+  WARRANTY: "BUDOVA",
+  MANUAL: "BUDOVA",
   OTHER: "BUDOVA",
 };
 

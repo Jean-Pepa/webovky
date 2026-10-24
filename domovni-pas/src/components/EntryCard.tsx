@@ -5,7 +5,7 @@ import { AttachmentThumb } from "@/components/AttachmentThumb";
 import { IconMoney, IconTrash } from "@/components/Icons";
 import { ENTRY_TYPES, ENTRY_TYPE_COLORS } from "@/lib/enums";
 import { formatDate, formatCurrency } from "@/lib/format";
-import type { Entry } from "@/lib/store";
+import type { Entry, Property } from "@/lib/store";
 
 const DOT: Record<string, string> = {
   blue: "bg-blue-500",
@@ -17,7 +17,16 @@ const DOT: Record<string, string> = {
   gray: "bg-stone-400",
 };
 
-export function EntryCard({ entry, onDelete }: { entry: Entry; onDelete?: () => void }) {
+export function EntryCard({
+  entry,
+  property,
+  onDelete,
+}: {
+  entry: Entry;
+  property?: Property; // pro názvy navázaných prvků a dokladů
+  onDelete?: () => void;
+}) {
+  void property;
   const color = ENTRY_TYPE_COLORS[entry.type] ?? "gray";
 
   return (
