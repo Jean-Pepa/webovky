@@ -114,6 +114,7 @@ export type HouseModel = {
   version: number;
   date: string; // YYYY-MM-DD (stav k)
   source?: string; // odkud podklad je (projekt, zaměření, vlastní nákres)
+  pxPerMeter?: number; // měřítko podkladu (px obrázku na 1 m) — z kalibrace dvěma body
   createdAt: string;
 };
 
@@ -446,6 +447,7 @@ type Store = {
   updateElement: (propertyId: string, elementId: string, data: Partial<ElementInput>) => void;
   deleteElement: (propertyId: string, elementId: string) => void;
   addModel: (propertyId: string, data: ModelInput) => string;
+  updateModel: (propertyId: string, modelId: string, data: Partial<ModelInput>) => void;
   deleteModel: (propertyId: string, modelId: string) => void;
   // Navázání existujících záznamů na prvky
   setEntryElements: (propertyId: string, entryId: string, elementIds: string[]) => void;
@@ -1017,6 +1019,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return id;
   }, []);
 
+  const updateModel = useCallback(
+    (propertyId: string, modelId: string, data: Partial<ModelInput>) => {
+      setProperties((prev) =>
+        patchProperty(prev, propertyId, (p) => ({
+          ...p,
+          models: (p.models ?? []).map((m) => (m.id === modelId ? { ...m, ...data } : m)),
+          updatedAt: now(),
+        })),
+      );
+    },
+    [],
+  );
+
   // Smaže podklad; prvkům na něm umístěným zůstane vše kromě polohy na tomto podkladu.
   const deleteModel = useCallback((propertyId: string, modelId: string) => {
     setProperties((prev) =>
@@ -1299,6 +1314,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     updateElement,
     deleteElement,
     addModel,
+    updateModel,
     deleteModel,
     setEntryElements,
     setDocumentElements,
