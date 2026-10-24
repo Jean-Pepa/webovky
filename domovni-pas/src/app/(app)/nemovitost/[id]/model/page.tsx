@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useStore, type ElementCategory, type HouseElement, type HouseModel, type Property } from "@/lib/store";
 import { canEditProperty, canSeeProperty } from "@/lib/access";
 import { ELEMENT_CATEGORY_COLORS, ELEMENT_CATEGORY_ORDER, findElement } from "@/lib/elements";
@@ -35,6 +35,29 @@ type Mode =
   | { type: "calibrate"; points: Pt[] }; // body v px podkladu
 
 const VIEW: Mode = { type: "view" };
+// Výška lepivé horní lišty (TopBar h-14) — nad ní půdorys na mobilu neodkrýváme
+const TOP_BAR_PX = 56;
+
+// Mobil / tablet (spodní list): když list zakrývá většinu půdorysu (nebo always), posune stránku
+// tak, aby půdorys začínal pod horní lištou. Vrací horní hranu listu (px okna), nebo null,
+// když spodní list není (desktop → boční panel).
+function scrollPlanAboveSheet(
+  sheetEl: HTMLElement | null,
+  planEl: HTMLElement | null,
+  always = false,
+): number | null {
+  const sheet = sheetEl?.getBoundingClientRect();
+  if (!sheet || sheet.height <= 0) return null;
+  const plan = planEl?.getBoundingClientRect();
+  if (plan && plan.height > 0) {
+    const room = Math.min(plan.height, sheet.top - TOP_BAR_PX);
+    const visible = Math.min(plan.bottom, sheet.top) - Math.max(plan.top, TOP_BAR_PX);
+    if (always || visible < room * 0.6) {
+      window.scrollBy({ top: plan.top - TOP_BAR_PX, behavior: "instant" });
+    }
+  }
+  return sheet.top;
+}
 
 export default function ModelPage() {
   return (
@@ -68,10 +91,11 @@ function ModelRoute() {
   }
 
   const editable = role ? canEditProperty(property, role) : false;
-  // nové parametry v adrese (?prvek=…) = nový výchozí stav
+  // nový prvek v adrese (?prvek=…) = nový výchozí stav; ?umistit=1 platí jen při otevření
+  // (po umístění se z adresy uklidí — stav stránky přitom zůstane)
   return (
     <ModelWorkspace
-      key={`${prvek ?? ""}|${place ? 1 : 0}`}
+      key={prvek ?? ""}
       property={property}
       editable={editable}
       initialElementId={prvek}
@@ -117,6 +141,7 @@ function ModelWorkspace({
   const viewerRef = useRef<PlanViewerHandle>(null);
   const workRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
+  const planBoxRef = useRef<HTMLDivElement>(null);
 
   const current: HouseModel | undefined = plans.find((m) => m.id === modelId) ?? groups[0]?.latest;
   const dims = current ? planDims(current) : null;
@@ -142,6 +167,17 @@ function ModelWorkspace({
   useEffect(() => {
     if (initialPlace && editable) workRef.current?.scrollIntoView({ block: "start" });
   }, [initialPlace, editable]);
+
+  // Umísťování z adresy (?umistit=1) skončilo (Hotovo / Zrušit / Esc) → uklidit adresu,
+  // ať ho obnovení stránky ani tlačítko Zpět nespustí znovu u už umístěného prvku
+  const router = useRouter();
+  const pathname = usePathname();
+  const placing = active.type === "place";
+  useEffect(() => {
+    if (!initialPlace || placing) return;
+    const q = initialElementId ? `?prvek=${encodeURIComponent(initialElementId)}` : "";
+    router.replace(`${pathname}${q}`, { scroll: false });
+  }, [initialPlace, placing, initialElementId, pathname, router]);
 
   // Escape: zruší umísťování / kalibraci, jinak zavře panel prvku
   const activeType = active.type;
@@ -175,13 +211,34 @@ function ModelWorkspace({
     scrollToPlan();
   }
 
+  // Mobil / tablet (spodní list): po výběru prvku musí půdorys i prvek zůstat vidět nad listem —
+  // nejdřív posun stránky, pak pohledu. Vrací false, když spodní list není (desktop).
+  function revealAboveSheet(pts: Pt[] | null): boolean {
+    const sheetTop = scrollPlanAboveSheet(sheetRef.current, planBoxRef.current);
+    if (sheetTop == null) return false;
+    if (pts) viewerRef.current?.reveal(pts, sheetTop, TOP_BAR_PX);
+    return true;
+  }
+
+  // Otevření s vybraným prvkem (?prvek=…, např. „Otevřít v modelu“): na mobilu je panel prvku
+  // hned vidět jako spodní list — posunout stránku, ať nad ním je půdorys (prvek je ve středu
+  // pohledu). Okamžitý posun v efektu zároveň zastaví plynulý posun Next.js na začátek stránky.
+  useEffect(() => {
+    if (initialElementId && !initialPlace) scrollPlanAboveSheet(sheetRef.current, planBoxRef.current, true);
+  }, [initialElementId, initialPlace]);
+
   function focusElement(el: HouseElement) {
     setSelectedId(el.id);
     setHidden((h) => h.filter((c) => c !== el.category));
-    if (current && dims && isOnModel(el, current.id) && el.plan) {
-      viewerRef.current?.focusOn(denormalizePoints(el.plan.points, dims.w, dims.h));
-    }
-    scrollToPlan();
+    const pts =
+      current && dims && isOnModel(el, current.id) && el.plan
+        ? denormalizePoints(el.plan.points, dims.w, dims.h)
+        : null;
+    if (pts) viewerRef.current?.focusOn(pts);
+    // po vykreslení listu: na mobilu půdorys nad list, na desktopu plynule k půdorysu
+    requestAnimationFrame(() => {
+      if (!revealAboveSheet(pts)) workRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   // Výběr klepnutím do půdorysu; na mobilu posunout půdorys, ať prvek nezakryje spodní list
@@ -190,10 +247,7 @@ function ModelWorkspace({
     const el = id ? elements.find((e) => e.id === id) : undefined;
     if (!el?.plan || !current || !dims || !isOnModel(el, current.id)) return;
     const pts = denormalizePoints(el.plan.points, dims.w, dims.h);
-    requestAnimationFrame(() => {
-      const sheet = sheetRef.current?.getBoundingClientRect();
-      if (sheet && sheet.height > 0) viewerRef.current?.reveal(pts, sheet.top);
-    });
+    requestAnimationFrame(() => revealAboveSheet(pts));
   }
 
   function showOnModel(el: HouseElement) {
@@ -441,7 +495,10 @@ function ModelWorkspace({
               />
             )}
 
-            <div className="-mx-6 mt-3 overflow-hidden border-y border-stone-200 sm:mx-0 sm:rounded-2xl sm:border">
+            <div
+              ref={planBoxRef}
+              className="-mx-6 mt-3 overflow-hidden border-y border-stone-200 sm:mx-0 sm:rounded-2xl sm:border"
+            >
               <PlanViewer
                 key={current.id}
                 ref={viewerRef}

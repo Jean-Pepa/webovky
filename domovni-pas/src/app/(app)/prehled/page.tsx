@@ -108,7 +108,8 @@ export default function DashboardPage() {
             {attention.slice(0, 6).map((a) => (
               <li key={a.id}>
                 <Link
-                  href={`/nemovitost/${a.property.id}`}
+                  // termín → rovnou na sekci „Termíny a revize" (na telefonu je hluboko dole)
+                  href={`/nemovitost/${a.property.id}${a.kind === "reminder" ? "#terminy" : ""}`}
                   className="-mx-1 flex items-center justify-between gap-3 rounded px-1 py-2.5 hover:bg-stone-50"
                 >
                   <div className="flex min-w-0 items-center gap-2.5">

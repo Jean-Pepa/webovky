@@ -321,7 +321,7 @@ function EventRow({
             type="button"
             onClick={() => setCompleting(true)}
             className="btn-ghost btn-sm min-h-10 shrink-0 text-teal-700"
-            aria-label={`Označit „${e.title}" jako provedené`}
+            aria-label={`Označit „${e.title}“ jako provedené`}
           >
             <IconCheck className="h-4 w-4" />
             <span className="hidden sm:inline">Provedeno</span>

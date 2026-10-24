@@ -37,7 +37,8 @@ export type PlanViewerHandle = {
   fit: () => void;
   zoomBy: (factor: number) => void;
   focusOn: (points: Pt[]) => void; // px podkladu
-  reveal: (points: Pt[], clientBottom: number) => void; // posun, ať prvek nezakryje nic pod clientBottom
+  // posun, ať prvek nezakryje nic pod clientBottom (spodní list) ani nad clientTop (horní lišta)
+  reveal: (points: Pt[], clientBottom: number, clientTop?: number) => void;
 };
 
 type Size = { w: number; h: number };
@@ -192,13 +193,13 @@ export function PlanViewer({
 
   // Jen posun (bez zoomu), aby byl prvek vidět nad spodním listem na mobilu
   const reveal = useCallback(
-    (points: Pt[], clientBottom: number) => {
+    (points: Pt[], clientBottom: number, clientTop = 0) => {
       const v = viewRef.current;
       const s = sizeRef.current;
       const b = bbox(points);
       if (!v || !s || !b || !boxRef.current) return;
       const rect = boxRef.current.getBoundingClientRect();
-      const top = clamp(-rect.top, 0, s.h);
+      const top = clamp(clientTop - rect.top, 0, s.h);
       const bottom = clamp(clientBottom - rect.top, 0, s.h);
       if (bottom - top < 80) return;
       const px = b.x + b.w / 2;

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { formatCurrency, dueStatus } from "@/lib/format";
 import { PROPERTY_TYPES } from "@/lib/enums";
 import { canSeeProperty } from "@/lib/access";
+import { localIsoDate } from "@/lib/deadlines";
 import { IconDownload, IconBox } from "@/components/Icons";
 
 export default function StatsPage() {
@@ -19,9 +20,13 @@ export default function StatsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `bulo-zaloha-${new Date().toISOString().slice(0, 10)}.json`;
+    // dnešní MÍSTNÍ datum (toISOString je UTC — po půlnoci by soubor nesl včerejšek)
+    a.download = `bulo-zaloha-${localIsoDate()}.json`;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    a.remove();
+    // okamžité zrušení URL umí v Safari/Firefoxu stažení zrušit
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   async function importData(file: File) {

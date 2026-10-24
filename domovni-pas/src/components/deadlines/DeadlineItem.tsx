@@ -166,9 +166,9 @@ export function DeadlineItem({
   const element = findElement(property, reminder.elementId);
   const history = reminder.history ?? [];
   const notify = reminder.notifyDaysBefore ?? DEFAULT_NOTIFY_DAYS;
-  const aiHref =
-    `/nemovitost/${property.id}/zaznam/z-dokladu?termin=${encodeURIComponent(reminder.id)}` +
-    (element ? `&prvek=${encodeURIComponent(element.id)}` : "");
+  // Jen ?termin= — prvek se doplní z termínu, a po potvrzení se majitel vrátí na nemovitost
+  // (s ?prvek= by skončil na stránce prvku, odkud nepřišel)
+  const aiHref = `/nemovitost/${property.id}/zaznam/z-dokladu?termin=${encodeURIComponent(reminder.id)}`;
 
   return (
     <li className="py-4">
