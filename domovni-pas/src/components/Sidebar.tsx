@@ -24,7 +24,7 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { href: "/prehled", label: "Moje nemovitosti", icon: IconHome },
     { href: "/kalendar", label: "Záruky a revize", icon: IconShield },
     { href: "/statistiky", label: "Statistiky", icon: IconChart },
-    { href: "/pripominky", label: "Připomínky", icon: IconCalendar },
+    { href: "/pripominky", label: "Termíny a revize", icon: IconCalendar },
     { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
   ],
   ARCHITECT: [
@@ -36,7 +36,7 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { href: "/hledat", label: "Hledat", icon: IconSearch },
     { href: "/statistiky", label: "Statistiky", icon: IconChart },
     { href: "/kalendar", label: "Kalendář", icon: IconShield },
-    { href: "/pripominky", label: "Připomínky", icon: IconCalendar },
+    { href: "/pripominky", label: "Termíny a revize", icon: IconCalendar },
     { href: "/dokumenty", label: "Dokumenty", icon: IconFile },
   ],
 };

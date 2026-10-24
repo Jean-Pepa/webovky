@@ -14,6 +14,8 @@ function toShareSnapshot(p: Property): Property {
     entries: p.entries.map((e) => ({
       ...e,
       media: e.media.map((m) => ({ ...m, dataUrl: undefined })),
+      // telefon řemeslníka zůstává jen majiteli
+      author: e.author ? { ...e.author, phone: undefined } : undefined,
     })),
     inventory: p.inventory.map((i) => ({ ...i, dataUrl: undefined })),
     consultations: [], // interní konzultace nesdílíme veřejně
@@ -525,7 +527,8 @@ function completeReminderIn(r: Reminder, c: ReminderCompletion): Reminder {
     ...r,
     history,
     lastDone,
-    documentId: c.documentId ?? r.documentId,
+    // doklad patří k poslednímu provedení (bez dokladu → žádný, starší zůstanou v historii)
+    documentId: c.date >= (r.lastDone ?? "") ? c.documentId : r.documentId,
   };
   if (r.intervalMonths && r.intervalMonths > 0) {
     return { ...base, dueDate: addMonths(c.date, r.intervalMonths), done: false };
@@ -1192,6 +1195,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             entryId,
             documentId: protocolId,
             result: entry.result,
+            note: entry.description,
           };
           const existing = dl.reminderId ? reminders.find((r) => r.id === dl.reminderId) : undefined;
           if (existing) {

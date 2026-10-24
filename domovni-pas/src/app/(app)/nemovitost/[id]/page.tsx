@@ -17,6 +17,7 @@ import { ProjectDocsSection } from "@/components/ProjectDocsSection";
 import { ProjectCard } from "@/components/ProjectCard";
 import { ElementsSection } from "@/components/elements/ElementsSection";
 import { InboxSection } from "@/components/inbox/InboxSection";
+import { BookQuestion } from "@/components/extract/BookQuestion";
 import {
   IconPlus,
   IconShare,
@@ -142,6 +143,8 @@ export default function PropertyDetailPage() {
       </div>
 
       <InboxSection property={property} editable={editable} />
+
+      <BookQuestion property={property} className="mt-6" />
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat icon={<IconCalendar className="h-4 w-4" />} label="Záznamů" value={String(property.entries.length)} />

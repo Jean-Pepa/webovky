@@ -55,7 +55,7 @@ export const ELEMENT_SOURCES: Record<ElementSource, string> = {
   KOTA_VYKRESU: "Kóta z výkresu",
   MERITKO_VYKRESU: "Odměřeno z výkresu (měřítko)",
   MODEL_IFC: "Model projektu (IFC)",
-  TYPOLOGIE: "Typické vedení (odhad)",
+  TYPOLOGIE: "Typické vedení",
   ZADAL_UZIVATEL: "Zadal uživatel",
 };
 

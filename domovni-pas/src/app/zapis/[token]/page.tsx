@@ -899,8 +899,9 @@ function SubmissionForm({
       <div className="rounded-xl bg-stone-100/70 p-3 text-xs leading-relaxed text-stone-600">
         <p className="font-medium text-stone-700">Co se odešle</p>
         <p className="mt-0.5">
-          Vaše jméno, firma a telefon, údaje o práci a přiložené soubory. Uvidí je jen majitel domu
-          a do knihy se zápis uloží až po jeho potvrzení. Tlačítko AI pošle doklad k automatickému
+          Vaše jméno, firma a telefon, údaje o práci a přiložené soubory. Uvidí je majitel domu
+          a do knihy se zápis uloží až po jeho potvrzení. Jméno a firma pak zůstanou u zápisu
+          v historii domu (tu může majitel sdílet, např. při prodeji); telefon nikdy. Tlačítko AI pošle doklad k automatickému
           přečtení — výsledek je jen návrh, který kontrolujete vy i majitel.
         </p>
       </div>

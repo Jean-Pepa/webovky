@@ -178,7 +178,7 @@ export default function ReportPage() {
         ) : (
           <ol className="mt-5 space-y-4 border-l-2 border-stone-200 pl-7">
             {entries.map((entry) => (
-              <EntryCard key={entry.id} entry={entry} />
+              <EntryCard key={entry.id} entry={entry} property={property} />
             ))}
           </ol>
         )}

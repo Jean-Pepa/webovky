@@ -39,6 +39,7 @@ import { Badge } from "@/components/ui/Badge";
 import { EntryCard } from "@/components/EntryCard";
 import { DocumentRow } from "@/components/DocumentRow";
 import { PlanMini } from "@/components/model/PlanMini";
+import { BookQuestion } from "@/components/extract/BookQuestion";
 import {
   IconAlert,
   IconBox,
@@ -203,6 +204,8 @@ export default function ElementDetailPage() {
         </section>
       )}
 
+      <BookQuestion property={property} elementId={el.id} className="mt-6" />
+
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <WhereSection property={property} element={el} editable={editable} />
         <WhatSection property={property} element={el} inventory={links.inventory} editable={editable} />
@@ -325,7 +328,6 @@ function WhereSection({
   editable: boolean;
 }) {
   const placed = isPlaced(property, el);
-  const model = placed ? property.models?.find((m) => m.id === el.plan?.modelId) : undefined;
   const cls = accuracyClass(el);
 
   return (
@@ -334,15 +336,7 @@ function WhereSection({
 
       <div className="mt-3">
         {placed ? (
-          <>
-            <PlanMini property={property} elementId={el.id} className="w-full" />
-            {model && (
-              <p className="mt-1.5 text-xs text-stone-400">
-                Podklad: {model.title}
-                {model.version > 1 ? ` (verze ${model.version})` : ""}
-              </p>
-            )}
-          </>
+          <PlanMini property={property} elementId={el.id} className="w-full" />
         ) : (
           <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50 px-4 py-5 text-center">
             <p className="text-sm text-stone-600">Poloha zatím není zakreslená.</p>
