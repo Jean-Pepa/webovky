@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BULO · Open space Zero to Done</title>
+<meta name="description" content="Pas místnosti v BULO: 3D model open space na Zero to Done s rozvody nad podhledem a zařízením. Ukázková data.">
+<meta property="og:title" content="BULO · Co je nad stropem?">
+<meta property="og:description" content="3D pas místnosti s rozvody nad podhledem. Ukázka BULO.">
+<meta name="theme-color" content="#F2F0ED">
+<style>html{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}*,*::before,*::after{box-sizing:inherit;margin:0}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: one phone-first app column: header, 3D x-ray of the room, info sheet, floating glass tab bar. Deliberately light only, like the BULO app. */
+:root{
+  --bg:#F2F0ED; --card:#FFFFFF; --ink:#141414; --muted:#6F6A65; --line:#E3DED7; --clay:#B5543A; --clay-soft:#F4E4DD;
+  --cu:#C27A45; --vzt:#7A8A99; --el:#E8892B; --eps:#D64535; --cond:#5B9BD5; --ok:#2E7D4F;
+  --f:'Inter',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+  color-scheme:light;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);-webkit-font-smoothing:antialiased;overflow:hidden}
+.app{position:relative;height:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{padding-block:14px 8px;display:flex;flex-direction:column;gap:6px}
+.brand{display:flex;align-items:center;justify-content:space-between}
+.mark{font-weight:700;letter-spacing:.22em;color:var(--clay);font-size:14px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:13px;font-size:12px;font-weight:600;background:#EEEBE7;color:var(--muted);white-space:nowrap}
+.chip.live{background:var(--clay-soft);color:var(--clay)}
+h1{font-size:26px;line-height:1.1;font-weight:800;letter-spacing:-.01em;text-wrap:balance}
+.sub{font-size:13px;color:var(--muted)}
+.view{position:relative;flex:1;min-height:240px;border-radius:24px;overflow:hidden;background:#E7E2DB;touch-action:none}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hint{position:absolute;left:12px;top:12px;font-size:12px;font-weight:600;color:var(--muted);background:rgba(255,255,255,.75);padding:6px 10px;border-radius:12px;pointer-events:none}
+.lbl{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;white-space:nowrap;
+  font-size:11.5px;font-weight:700;color:var(--ink);background:rgba(255,255,255,.92);border:1px solid rgba(0,0,0,.06);
+  padding:4px 8px 4px 6px;border-radius:12px;box-shadow:0 2px 6px rgba(40,30,20,.12);display:flex;align-items:center;gap:5px}
+.lbl i{width:8px;height:8px;border-radius:4px;display:inline-block}
+.lbl.off{display:none}
+.lbl:focus-visible{outline:2px solid var(--clay);outline-offset:2px}
+.sheet{margin-top:10px;background:var(--card);border-radius:24px;padding:16px 16px 92px;max-height:38%;overflow:auto;
+  box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.sheet h2{font-size:17px;font-weight:700;margin-bottom:10px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.fact{background:var(--bg);border-radius:16px;padding:10px 11px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.fact b{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+.fact span{font-size:11.5px;color:var(--muted)}
+.note{margin-top:10px;font-size:12px;color:var(--muted);line-height:1.45}
+.layers{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.tg{border:0;font:inherit;font-size:13px;font-weight:600;height:32px;padding:0 12px;border-radius:16px;display:inline-flex;align-items:center;gap:7px;
+  background:var(--bg);color:var(--ink);cursor:pointer}
+.tg i{width:10px;height:10px;border-radius:5px}
+.tg[aria-pressed="false"]{opacity:.45}
+.tg:focus-visible,.row:focus-visible,.gti:focus-visible{outline:2px solid var(--clay);outline-offset:2px}
+.leg{display:flex;flex-direction:column;gap:8px}
+.leg div{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.4}
+.leg i{flex:none;width:18px;height:4px;border-radius:2px;margin-top:8px}
+.rows{display:flex;flex-direction:column}
+.row{display:flex;align-items:center;gap:12px;padding:10px 4px;border:0;border-bottom:1px solid var(--line);background:none;font:inherit;text-align:left;cursor:pointer;color:var(--ink)}
+.row:last-child{border-bottom:0}
+.row .dot{flex:none;width:34px;height:34px;border-radius:17px;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff}
+.row .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.row .t b{font-size:15px;font-weight:600}
+.row .t span{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .k{font-size:12px;font-weight:600;color:var(--ok);background:#E5F1EA;padding:3px 8px;border-radius:10px;white-space:nowrap}
+.card{display:flex;flex-direction:column;gap:10px}
+.card .top{display:flex;align-items:center;gap:10px}
+.card .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px}
+.card .kv span{color:var(--muted)}
+.back{border:0;background:none;font:inherit;color:var(--clay);font-weight:600;font-size:14px;cursor:pointer;padding:0;align-self:flex-start}
+/* Liquid Glass tab bar */
+.gtab{position:absolute;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(320px,calc(100% - 40px));height:62px;border-radius:31px;
+  display:flex;padding:0 6px;z-index:5;
+  background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,.22) 55%,rgba(255,255,255,.3));
+  -webkit-backdrop-filter:blur(14px) saturate(180%);backdrop-filter:blur(14px) saturate(180%);
+  border:1px solid rgba(255,255,255,.75);
+  box-shadow:0 14px 30px -12px rgba(58,38,26,.35),0 3px 8px rgba(58,38,26,.1),inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 12px rgba(255,255,255,.3)}
+.gbub{position:absolute;top:5px;left:6px;height:50px;border-radius:25px;z-index:0;
+  background:radial-gradient(130% 100% at 50% -10%,rgba(255,255,255,.85),rgba(255,255,255,.3) 40%,rgba(255,255,255,.12) 70%,rgba(255,255,255,.2));
+  border:1px solid rgba(255,255,255,.95);box-shadow:0 4px 10px -3px rgba(58,38,26,.22),inset 0 -3px 6px rgba(150,108,82,.1);
+  transition:transform 440ms cubic-bezier(.34,1.28,.5,1),width 440ms cubic-bezier(.34,1.28,.5,1)}
+.gbub.mv{animation:drop 440ms ease-in-out}
+@keyframes drop{0%{scale:1 1}45%{scale:1.22 .9}80%{scale:.97 1.03}100%{scale:1 1}}
+.gti{position:relative;z-index:1;flex:1;border:0;background:none;font:inherit;font-size:11px;font-weight:600;color:#6F6A65;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
+.gti.on{color:var(--ink)}
+.gti svg{width:22px;height:22px}
+@media (prefers-reduced-motion:reduce){.gbub{transition:none}.gbub.mv{animation:none}}
+@media (min-width:720px){h1{font-size:30px}.sheet{max-height:34%}}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><span class="mark">BULO</span><span class="chip live">Ukázková data</span></div>
+    <h1>Open space · Zero to Done</h1>
+    <div class="sub">Pas místnosti · co je nad podhledem a kde to vede</div>
+  </header>
+  <div class="view" id="view">
+    <canvas id="c" aria-label="3D model místnosti s rozvody nad podhledem"></canvas>
+    <div class="hint" id="hint">Táhněte prstem pro otočení</div>
+    <div id="labels"></div>
+  </div>
+  <section class="sheet" id="sheet" aria-live="polite"></section>
+  <nav class="gtab" id="gtab" aria-label="Sekce">
+    <div class="gbub" id="gbub"></div>
+    <button class="gti on" data-tab="room" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5V20H3z"/><path d="M9.5 20v-5.5h5V20"/></svg>Místnost</button>
+    <button class="gti" data-tab="routes" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h7a3 3 0 0 1 3 3v4a3 3 0 0 0 3 3h5"/><path d="M3 17h4M17 7h4"/></svg>Rozvody</button>
+    <button class="gti" data-tab="devices" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>Zařízení</button>
+  </nav>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+// ---------- room model (metres). x: window wall left→right, z: from window wall (0) to stage end, y: up ----------
+const R = { w: 10.8, d: 14.4, h: 2.85 };          // 18 × 24 tiles of 600 mm, estimated from the photos
+const C = { cu: 0xC27A45, vzt: 0x8A99A8, el: 0xE8892B, eps: 0xD64535, cond: 0x5B9BD5 };
+const AC = [
+  { id: 'K1', x: 5.7, z: 3.3, name: 'Klimatizace K1', sub: 'Kazetová jednotka 7,1 kW · u oken', service: '4/2026', next: '4/2027', extra: 'Chladivo R32 · venkovní jednotka na fasádě' },
+  { id: 'K2', x: 7.5, z: 7.5, name: 'Klimatizace K2', sub: 'Kazetová jednotka 7,1 kW · nad stoly', service: '4/2026', next: '4/2027', extra: 'Kondenzát do stoupačky u okna' },
+  { id: 'K3', x: 8.1, z: 11.7, name: 'Klimatizace K3', sub: 'Kazetová jednotka 5,0 kW · u pódia', service: '4/2026', next: '4/2027', extra: 'Filtry vyčištěny při servisu' },
+];
+const VENTS = [[2.7, 3.3], [2.7, 7.5], [2.7, 11.7], [5.1, 9.9], [5.4, 5.7], [9.3, 5.1]];
+const LIGHTS = [[1.5, 2.1], [1.5, 6.3], [1.5, 10.5], [4.2, 2.1], [4.2, 6.6], [4.2, 10.8], [6.9, 2.1], [6.9, 5.4], [6.9, 9.6], [9.3, 2.1], [9.3, 8.7], [9.3, 12.9], [4.2, 13.2], [6.6, 13.2]];
+const SMOKE = [[3.6, 4.5], [6.3, 8.7], [3.6, 12.3], [8.7, 3.9]];
+const FACADE = { x: 10.2, z: 0 };
+
+// ---------- three.js scene ----------
+const canvas = document.getElementById('c');
+const view = document.getElementById('view');
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); }
+catch (e) { document.getElementById('hint').textContent = 'Tento prohlížeč neumí 3D zobrazení.'; return; }
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(48, 1, 0.1, 200);
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd8d0c6, 0.9));
+const sun = new THREE.DirectionalLight(0xffffff, 0.55); sun.position.set(-6, 14, -4); scene.add(sun);
+
+const groups = { room: new THREE.Group(), ceil: new THREE.Group(), dev: new THREE.Group(), cu: new THREE.Group(), vzt: new THREE.Group(), el: new THREE.Group(), eps: new THREE.Group() };
+Object.values(groups).forEach(g => scene.add(g));
+
+const mat = (color, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.55, metalness: 0.05 }, o));
+function box(g, w, h, d, x, y, z, m) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); g.add(b); return b; }
+function tube(g, a, b, r, m) { // straight round segment between two points
+  const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b); const len = A.distanceTo(B); if (len < 1e-3) return;
+  const t = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 12), m);
+  t.position.copy(A).add(B).multiplyScalar(0.5); t.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize()); g.add(t);
+}
+function path(g, pts, r, m) { for (let i = 1; i < pts.length; i++) tube(g, pts[i - 1], pts[i], r, m); pts.slice(1, -1).forEach(p => { const s = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), m); s.position.set(...p); g.add(s); }); }
+
+// floor, walls, windows, stage
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(R.w, R.d), mat(0xCFCAC3, { roughness: 0.95 }));
+floor.rotation.x = -Math.PI / 2; floor.position.set(R.w / 2, 0, R.d / 2); groups.room.add(floor);
+const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(R.w, R.h, R.d)), new THREE.LineBasicMaterial({ color: 0x9C948B }));
+edges.position.set(R.w / 2, R.h / 2, R.d / 2); groups.room.add(edges);
+const wallM = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false });
+[[R.w / 2, R.h / 2, 0, 0], [0, R.h / 2, R.d / 2, Math.PI / 2], [R.w, R.h / 2, R.d / 2, Math.PI / 2]].forEach(([x, y, z, ry], i) => {
+  const p = new THREE.Mesh(new THREE.PlaneGeometry(i ? R.d : R.w, R.h), wallM); p.position.set(x, y, z); p.rotation.y = ry; groups.room.add(p); });
+const winM = new THREE.MeshStandardMaterial({ color: 0xA9C8DE, transparent: true, opacity: 0.55, side: THREE.DoubleSide });
+[1.9, 5.1, 8.4].forEach(x => { const w = new THREE.Mesh(new THREE.PlaneGeometry(2.7, 1.9), winM); w.position.set(x, 1.55, 0.02); groups.room.add(w); });
+box(groups.room, 4.2, 0.3, 2.4, 3.3, 0.15, 13.2, mat(0x2A2522));                       // stage
+box(groups.room, 3.2, 1.8, 0.08, 3.3, 1.6, 14.3, mat(0x1B1816));                       // wall of fame with the screen
+box(groups.room, 0.06, 2.6, 4.8, 10.77, 1.3, 11.6, mat(0xC9A97E));                     // slatted wall
+box(groups.room, 0.6, R.h, 0.6, 0.3, R.h / 2, 9.0, mat(0x3E6EB4));                       // blue column
+// desks
+const deskM = mat(0xE6DCCD);
+for (const [x, z] of [[2.4, 2.4], [2.4, 4.2], [5.4, 3.0], [5.4, 4.8], [7.8, 3.0], [7.8, 4.8], [5.4, 7.2], [7.8, 7.2], [2.4, 7.2]]) box(groups.room, 1.6, 0.04, 0.8, x, 0.74, z, deskM);
+
+// ceiling grid (600 mm) and tiles
+const gridPts = [];
+for (let x = 0; x <= R.w + 1e-6; x += 0.6) gridPts.push(x, R.h, 0, x, R.h, R.d);
+for (let z = 0; z <= R.d + 1e-6; z += 0.6) gridPts.push(0, R.h, z, R.w, R.h, z);
+const gridG = new THREE.BufferGeometry(); gridG.setAttribute('position', new THREE.Float32BufferAttribute(gridPts, 3));
+const grid = new THREE.LineSegments(gridG, new THREE.LineBasicMaterial({ color: 0x8E867D, transparent: true, opacity: 0.55 })); groups.ceil.add(grid);
+const tiles = new THREE.Mesh(new THREE.PlaneGeometry(R.w, R.d), new THREE.MeshStandardMaterial({ color: 0xF7F5F2, transparent: true, opacity: 0.88, side: THREE.DoubleSide, depthWrite: false }));
+tiles.rotation.x = Math.PI / 2; tiles.position.set(R.w / 2, R.h + 0.002, R.d / 2); groups.ceil.add(tiles);
+
+// ceiling devices
+const Y = R.h - 0.012;
+const acM = mat(0xFFFFFF), grilleM = mat(0x8C8F94);
+AC.forEach(a => { box(groups.dev, 0.62, 0.03, 0.62, a.x, Y, a.z, acM); box(groups.dev, 0.36, 0.034, 0.36, a.x, Y - 0.002, a.z, grilleM); });
+const ventM = mat(0xE9ECEF), ventC = mat(0x9AA3AD);
+VENTS.forEach(([x, z]) => { const v = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.03, 28), ventM); v.position.set(x, Y, z); groups.dev.add(v);
+  const c = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.034, 18), ventC); c.position.set(x, Y - 0.003, z); groups.dev.add(c); });
+const ledM = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, emissive: 0xFFF6E8, emissiveIntensity: 0.6 });
+LIGHTS.forEach(([x, z]) => box(groups.dev, 0.58, 0.02, 0.58, x, Y, z, ledM));
+const smM = mat(0xFFFFFF);
+SMOKE.forEach(([x, z]) => { const s = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 16), smM); s.position.set(x, Y - 0.01, z); groups.dev.add(s); });
+
+// ---------- routes above the suspended ceiling (illustrative) ----------
+const cuM = mat(C.cu, { metalness: 0.6, roughness: 0.35 }), condM = mat(C.cond), vztM = mat(C.vzt, { metalness: 0.4, roughness: 0.4 }), elM = mat(C.el), epsM = mat(C.eps);
+// refrigerant pair + condensate: each cassette → trunk along x = 9.9 → facade at z = 0
+const yR = R.h + 0.22;
+AC.forEach((a, i) => {
+  [-0.045, 0.045].forEach(o => path(groups.cu, [[a.x, R.h + 0.02, a.z + o], [a.x, yR, a.z + o], [9.9 + o, yR, a.z + o]], 0.022, cuM));
+  path(groups.cu, [[a.x - 0.2, R.h + 0.02, a.z], [a.x - 0.2, yR - 0.09, a.z], [a.x - 0.2, yR - 0.09, a.z - 0.25], [9.75, yR - 0.09, a.z - 0.25]], 0.016, condM);
+});
+const zMax = Math.max(...AC.map(a => a.z));
+[-0.045, 0.045].forEach(o => path(groups.cu, [[9.9 + o, yR, zMax + o], [9.9 + o, yR, 0.35], [FACADE.x + o, yR, 0.06]], 0.024, cuM));
+path(groups.cu, [[9.75, yR - 0.09, zMax - 0.25], [9.75, yR - 0.09, 0.35], [9.75, 0.6, 0.12]], 0.018, condM);
+// ventilation: main duct along x = 3.9 from the riser at the stage end, round branches to every swirl diffuser
+const yV = R.h + 0.34;
+box(groups.vzt, 0.5, 0.25, 12.6, 3.9, yV, 7.4, vztM);
+box(groups.vzt, 0.5, 0.25, 0.5, 3.9, (yV + 3.6) / 2 + 0.3, 13.95, vztM);
+VENTS.forEach(([x, z]) => path(groups.vzt, [[3.9, yV - 0.04, z], [x, yV - 0.04, z], [x, R.h + 0.02, z]], 0.1, vztM));
+// lighting: cable tray along x = 6.6, drops to every LED panel
+const yE = R.h + 0.12;
+box(groups.el, 0.22, 0.05, 13.4, 6.6, yE, 7.2, elM);
+LIGHTS.forEach(([x, z]) => path(groups.el, [[6.6, yE, z], [x, yE, z], [x, R.h + 0.01, z]], 0.012, elM));
+path(groups.el, [[6.6, yE, 13.9], [0.5, yE, 13.9], [0.5, 1.5, 13.9]], 0.014, elM);
+// fire detection loop from the panel at the entrance
+const yF = R.h + 0.06;
+const loop = [[0.4, 1.6, 13.6], [0.4, yF, 13.6], [3.6, yF, 13.6], [3.6, yF, 12.3], [3.6, yF, 4.5], [8.7, yF, 4.5], [8.7, yF, 3.9], [8.7, yF, 8.7], [6.3, yF, 8.7], [6.3, yF, 13.6], [0.6, yF, 13.6], [0.6, 1.6, 13.6]];
+path(groups.eps, loop, 0.012, epsM);
+SMOKE.forEach(([x, z]) => tube(groups.eps, [x, yF, z], [x, R.h + 0.01, z], 0.012, epsM));
+box(groups.eps, 0.36, 0.48, 0.1, 0.06, 1.6, 13.0, mat(0xC23B2E));                      // fire panel
+
+// ---------- labels ----------
+const DEV = [
+  ...AC.map(a => ({ key: a.id, layer: 'cu', color: '#C27A45', dot: a.id, pos: [a.x, R.h, a.z], name: a.name, sub: a.sub,
+    kv: [['Poslední servis', a.service], ['Další servis', a.next], ['Poznámka', a.extra]] })),
+  { key: 'VZT', layer: 'vzt', color: '#7A8A99', dot: 'VZ', pos: [3.9, R.h + 0.5, 7.4], name: 'Vzduchotechnika', sub: 'Přívod 1 200 m³/h · 6 vířivých výustek',
+    kv: [['Potrubí', 'hlavní 500 × 250 mm, odbočky Ø 200'], ['Výměna filtrů', '9/2026'], ['Další', '3/2027']] },
+  { key: 'EL', layer: 'el', color: '#E8892B', dot: 'EL', pos: [6.6, R.h + 0.2, 10.5], name: 'Osvětlení', sub: '14 LED panelů · okruh L2',
+    kv: [['Revize elektro', '1/2026'], ['Další revize', '1/2031'], ['Rozvaděč', 'R2 u vstupu']] },
+  { key: 'EPS', layer: 'eps', color: '#D64535', dot: 'EP', pos: [3.6, R.h + 0.1, 12.3], name: 'Hlásiče kouře', sub: 'Smyčka EPS 3 · 4 hlásiče',
+    kv: [['Zkouška', '2/2026'], ['Další zkouška', '2/2027'], ['Ústředna', 'u vstupu do místnosti']] },
+];
+const labelsEl = document.getElementById('labels');
+DEV.forEach(d => { const b = document.createElement('button'); b.type = 'button'; b.className = 'lbl'; b.innerHTML = `<i style="background:${d.color}"></i>${d.key}`;
+  b.addEventListener('click', e => { e.stopPropagation(); showCard(d.key); }); labelsEl.appendChild(b); d.el = b; });
+
+// ---------- camera orbit (drag, pinch, wheel) ----------
+const target = new THREE.Vector3(R.w / 2, 1.3, R.d / 2);
+let th = -0.62, ph = 1.02, rad = 19, autoRot = true;
+function placeCam() { cam.position.set(target.x + rad * Math.sin(ph) * Math.sin(th), target.y + rad * Math.cos(ph), target.z + rad * Math.sin(ph) * Math.cos(th)); cam.lookAt(target); }
+const ptrs = new Map(); let pinch0 = 0, rad0 = rad;
+view.addEventListener('pointerdown', e => { if (e.target.closest('.lbl')) return; view.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); autoRot = false;
+  document.getElementById('hint').hidden = true; if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); rad0 = rad; } });
+view.addEventListener('pointermove', e => { if (!ptrs.has(e.pointerId)) return; const p = ptrs.get(e.pointerId);
+  if (ptrs.size === 1) { th -= (e.clientX - p[0]) * 0.006; ph = Math.min(1.5, Math.max(0.25, ph - (e.clientY - p[1]) * 0.005)); }
+  ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+  if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; const dd = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pinch0) rad = Math.min(34, Math.max(5, rad0 * pinch0 / dd)); } });
+['pointerup', 'pointercancel'].forEach(t => view.addEventListener(t, e => { ptrs.delete(e.pointerId); pinch0 = 0; }));
+view.addEventListener('wheel', e => { e.preventDefault(); rad = Math.min(34, Math.max(5, rad * (1 + e.deltaY * 0.001))); autoRot = false; }, { passive: false });
+
+// ---------- render loop ----------
+function resize() { const r = view.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); cam.aspect = r.width / Math.max(1, r.height); cam.updateProjectionMatrix(); }
+window.addEventListener('resize', resize);
+const v3 = new THREE.Vector3();
+let flyTo = null, t0 = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - t0) / 1000); t0 = now;
+  if (autoRot && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) th += dt * 0.08;
+  if (flyTo) { flyTo.u = Math.min(1, flyTo.u + dt / 0.9); const e = flyTo.u < .5 ? 4 * flyTo.u ** 3 : 1 - Math.pow(-2 * flyTo.u + 2, 3) / 2;
+    target.lerpVectors(flyTo.a, flyTo.b, e); rad = flyTo.r0 + (flyTo.r1 - flyTo.r0) * e; if (flyTo.u >= 1) flyTo = null; }
+  placeCam(); renderer.render(scene, cam);
+  const r = view.getBoundingClientRect();
+  DEV.forEach(d => { if (d.el.classList.contains('off')) return; v3.set(...d.pos).project(cam);
+    const vis = v3.z < 1 && Math.abs(v3.x) < 1.05 && Math.abs(v3.y) < 1.05;
+    d.el.style.visibility = vis ? 'visible' : 'hidden'; d.el.style.left = ((v3.x + 1) / 2 * r.width) + 'px'; d.el.style.top = ((1 - v3.y) / 2 * r.height - 6) + 'px'; });
+  requestAnimationFrame(frame);
+}
+
+// ---------- sheet content ----------
+const sheet = document.getElementById('sheet');
+const LAYERS = [['cu', 'Klimatizace', '#C27A45'], ['vzt', 'Vzduchotechnika', '#7A8A99'], ['el', 'Elektro', '#E8892B'], ['eps', 'Hlásiče kouře', '#D64535']];
+const on = { cu: true, vzt: true, el: true, eps: true };
+function applyLayers() { LAYERS.forEach(([k]) => { groups[k].visible = on[k]; DEV.filter(d => d.layer === k).forEach(d => d.el.classList.toggle('off', !on[k])); }); }
+function roomView() { tiles.visible = true; grid.material.opacity = 0.55;
+  sheet.innerHTML = `<h2>Pas místnosti</h2>
+  <div class="facts">
+    <div class="fact"><b>155 m²</b><span>plocha</span></div><div class="fact"><b>2,85 m</b><span>výška podhledu</span></div><div class="fact"><b>600 × 600</b><span>rastr podhledu</span></div>
+    <div class="fact"><b>3</b><span>klimatizace</span></div><div class="fact"><b>6</b><span>výustek</span></div><div class="fact"><b>14</b><span>LED panelů</span></div>
+  </div>
+  <p class="note">Rozměry jsou odhadnuté z fotek podle rastru podhledu. Rozvody a termíny jsou ukázkové, skutečné doplní technici svými zápisy.</p>`; }
+function routesView() { tiles.visible = false; grid.material.opacity = 0.35;
+  sheet.innerHTML = `<h2>Nad podhledem</h2><div class="layers">${LAYERS.map(([k, n, c]) => `<button class="tg" type="button" data-l="${k}" aria-pressed="${on[k]}"><i style="background:${c}"></i>${n}</button>`).join('')}</div>
+  <div class="leg"><div><i style="background:#C27A45"></i><span>Chladivo a kondenzát z klimatizací vedou ke stoupačce u okna a na fasádu.</span></div>
+  <div><i style="background:#7A8A99"></i><span>Hlavní potrubí vzduchotechniky 500 × 250 mm, odbočky Ø 200 k výustkám.</span></div>
+  <div><i style="background:#E8892B"></i><span>Kabelový žlab, z něj vývody ke světlům. Okruh L2 z rozvaděče u vstupu.</span></div>
+  <div><i style="background:#D64535"></i><span>Smyčka hlásičů kouře z ústředny u vstupu.</span></div></div>`;
+  sheet.querySelectorAll('.tg').forEach(b => b.addEventListener('click', () => { const k = b.dataset.l; on[k] = !on[k]; b.setAttribute('aria-pressed', on[k]); applyLayers(); })); }
+function devicesView() { tiles.visible = true; grid.material.opacity = 0.55;
+  sheet.innerHTML = `<h2>Zařízení v místnosti</h2><div class="rows">${DEV.map(d => `<button class="row" type="button" data-k="${d.key}"><span class="dot" style="background:${d.color}">${d.dot}</span><span class="t"><b>${d.name}</b><span>${d.sub}</span></span><span class="k">v pořádku</span></button>`).join('')}</div>`;
+  sheet.querySelectorAll('.row').forEach(b => b.addEventListener('click', () => showCard(b.dataset.k))); }
+function showCard(key) { const d = DEV.find(x => x.key === key); if (!d) return; autoRot = false;
+  flyTo = { u: 0, a: target.clone(), b: new THREE.Vector3(d.pos[0], 1.8, d.pos[2]), r0: rad, r1: 8.5 };
+  sheet.innerHTML = `<div class="card"><button class="back" type="button">‹ Zpět</button><div class="top"><span class="row" style="padding:0;border:0;cursor:default"><span class="dot" style="background:${d.color}">${d.dot}</span></span><div><h2 style="margin:0">${d.name}</h2><div class="sub">${d.sub}</div></div></div>
+  <div class="kv">${d.kv.map(([k, v]) => `<span>${k}</span><b>${v}</b>`).join('')}</div><p class="note">Ukázková data. V BULO je sem zapíše technik po servisu.</p></div>`;
+  sheet.querySelector('.back').addEventListener('click', () => { flyTo = { u: 0, a: target.clone(), b: new THREE.Vector3(R.w / 2, 1.3, R.d / 2), r0: rad, r1: 19 }; render(cur); }); }
+
+// ---------- glass tab bar ----------
+const tabs = [...document.querySelectorAll('.gti')], bub = document.getElementById('gbub');
+let cur = 'room';
+function moveBubble(i, animate) { const b = tabs[i]; const r = b.getBoundingClientRect(), pr = b.parentElement.getBoundingClientRect();
+  bub.style.width = (r.width - 4) + 'px'; bub.style.transform = `translateX(${r.left - pr.left - 4}px)`;
+  if (animate) { bub.classList.remove('mv'); void bub.offsetWidth; bub.classList.add('mv'); } }
+function render(t) { cur = t; tabs.forEach(b => b.classList.toggle('on', b.dataset.tab === t)); ({ room: roomView, routes: routesView, devices: devicesView })[t](); applyLayers(); }
+tabs.forEach((b, i) => b.addEventListener('click', () => { if (b.dataset.tab !== cur) moveBubble(i, true); render(b.dataset.tab); }));
+window.addEventListener('resize', () => moveBubble(tabs.findIndex(b => b.dataset.tab === cur), false));
+
+resize(); render('room'); requestAnimationFrame(() => moveBubble(0, false)); requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
