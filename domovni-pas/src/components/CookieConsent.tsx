@@ -18,6 +18,8 @@ const APP_PREFIXES = [
   "/kalendar",
   "/hledat",
   "/ucet",
+  "/aplikace",
+  "/q/",
 ];
 
 export function CookieConsent() {
