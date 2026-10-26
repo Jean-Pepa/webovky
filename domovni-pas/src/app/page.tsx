@@ -55,7 +55,7 @@ export default function HomePage() {
             <div className="flex items-center gap-3">
               <LanguageSwitcher light />
               <Link
-                href="/prihlaseni"
+                href="/aplikace"
                 className="rounded-lg bg-brass px-4 py-2 text-sm font-medium text-white transition hover:bg-[#9c4732]"
               >
                 {t.nav.enter}
@@ -74,7 +74,7 @@ export default function HomePage() {
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
-                href="/prihlaseni"
+                href="/aplikace"
                 className="inline-flex items-center gap-2 rounded-xl bg-brass px-6 py-3.5 text-base font-medium text-white shadow-lg shadow-black/20 transition hover:bg-[#9c4732]"
               >
                 <IconArrowRight className="h-5 w-5" />
@@ -193,7 +193,7 @@ export default function HomePage() {
           <p className="mx-auto mt-3 max-w-xl text-white/85">{t.cta.sub}</p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/prihlaseni"
+              href="/aplikace"
               className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-base font-medium text-[#b5543a] shadow-lg shadow-black/20 transition hover:bg-white/90"
             >
               <IconArrowRight className="h-5 w-5" />
