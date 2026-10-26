@@ -76,6 +76,15 @@ const DUR = 440;
 
 const norm = (r: Route | string): Route => (typeof r === "string" ? { name: r } : r);
 
+function pushTrap(): boolean {
+  try {
+    window.history.pushState({ bulo: true }, "");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function NavProvider({ initial, children }: { initial: Route[]; children: ReactNode }) {
   const [s, dispatch] = useReducer(reducer, undefined, () => ({
     stack: initial.map((r, i) => ({ ...r, key: i + 1 })),
@@ -98,6 +107,7 @@ export function NavProvider({ initial, children }: { initial: Route[]; children:
   );
 
   // Tlačítko Zpět v prohlížeči / gesto zpět na iOS: držíme jednu „past“ v historii.
+  // Když historie nejde měnit (vložený rámeček), appka jen nepřebírá tlačítko Zpět.
   const armed = useRef(false);
   const ignore = useRef(false);
   const depth = s.stack.length;
@@ -105,12 +115,15 @@ export function NavProvider({ initial, children }: { initial: Route[]; children:
   useEffect(() => {
     depthRef.current = depth;
     if (depth > 1 && !armed.current) {
-      window.history.pushState({ bulo: true }, "");
-      armed.current = true;
+      armed.current = pushTrap();
     } else if (depth <= 1 && armed.current) {
       armed.current = false;
       ignore.current = true;
-      window.history.back();
+      try {
+        window.history.back();
+      } catch {
+        ignore.current = false;
+      }
     }
   }, [depth]);
   useEffect(() => {
@@ -123,10 +136,7 @@ export function NavProvider({ initial, children }: { initial: Route[]; children:
       if (depthRef.current > 1) {
         dispatch({ t: "pop", n: 1 });
         settleLater();
-        if (depthRef.current - 1 > 1) {
-          window.history.pushState({ bulo: true }, "");
-          armed.current = true;
-        }
+        if (depthRef.current - 1 > 1) armed.current = pushTrap();
       }
     };
     window.addEventListener("popstate", onPop);
