@@ -8,7 +8,7 @@
 ## 1. Baseline: assembled container size and weight, units per truck, crane needs, Czech costs, and moving a 100-bed camp
 
 ### Takeaway
-A 20′ office or accommodation container is light (about 1.6–2.9 t) but bulky (about 6.06 × 2.44 × 2.59–2.80 m). A truck runs out of space long before it reaches its weight limit: it carries 1 unit (solo HDS truck) or 2 units (HDS truck with trailer, or a semi) and uses only about 10–15% of its gross-weight allowance. Every move also needs lifting at both ends (HDS, mobile crane, or a special self-loader). Published Czech rates (35–65 Kč/km plus about 800 Kč/h of handling) put pure trucking for a 100-bed camp at about **17–31 truckloads and about 150–480 k Kč per 100 km move**, before any site works.
+A 20′ office or accommodation container is light (about 1.6–2.9 t) but bulky (about 6.06 × 2.44 × 2.59–2.80 m). A truck runs out of space long before it reaches its weight limit: it carries 1 unit (solo HDS truck) or 2 units (HDS truck with trailer, or a semi) and its 3.2–5.7 t load is only about 8–14% of the 40 t gross-combination limit. Every move also needs lifting at both ends (HDS, mobile crane, or a special self-loader). Published Czech rates (35–65 Kč/km plus about 800 Kč/h of handling) put pure trucking for a 100-bed camp at about **17–31 truckloads and about 150–480 k Kč per 100 km move**, before any site works.
 
 ### Cited Findings
 **Dimensions and weights**
@@ -108,12 +108,11 @@ EU limits cap vehicle width at **2.55 m** and height at **4.00 m**. Any module w
 Shrinking the box in transport attacks the space problem directly:
 - **Flat-pack** 20′ units: vendors claim **4–8 units per 40′ HQ** shipping container (against 2 assembled units per road semi), with **1–4 h assembly per unit using 2–4 workers**.
 - **Folding** units: Continest claims **20 folded CN10 units per standard truck, or 24 on a mega trailer**, at **900 kg** each.
-- **Self-deploying** products are fast but immature or not available in the EU. Ten Fold (UK) unfolds in 8–10 min to about 3× its transport size and has no visible commercial activity since about 2022. Boxabl Casita (US) unfolds in about 1 h, but folds to 2.59 m, above the EU's 2.55 m limit.
+- **Self-deploying** products are fast but immature or not available in the EU. Ten Fold (UK) unfolds in 8–10 min to about 3× its transport size and has no visible commercial activity since about 2022. Boxabl Casita (US) unfolds in about 1 h, but it is sold only in the US and has no EU certification. Its folded width is reported as about 8 ft (2.44 m), or 8.5 ft (2.59 m) in one source, which would exceed the EU's 2.55 m limit.
 - **Expandable double-wing** 20′ units give **about 2.8× floor area per transport footprint** but still need lifting.
 
 ### Cited Findings
 **Flat-pack**
-- [Vendor] Continest CN10 folding container: **900 kg**. **"1 truck = 20 units"**. **24 units on a mega trailer** (3 m loading height) or **20 folded units on a standard trailer**. — [Continest CN10 datasheet 2023-03](https://www.continest.com/wp-content/uploads/2023/04/CN_CN10_datasheet_2023-03.pdf); [datasheet 2023-01](https://www.continest.com/wp-content/uploads/2023/01/CN_CN10_datasheet_2023-01.pdf)
 - [Vendor, Chinese] Units per 40′ HQ shipping container vary by supplier:
   - **6 flat-packed units** — [Global Sources listing 1223677454](https://www.globalsources.com/Container-house/Container-houses-1223677454p.htm)
   - **4 flat-pack modules**, installed in **2–3 h per module** — [GS Housing flat-pack guide](https://www.gshousinggroup.com/news/flat-pack-container-housing/)
@@ -126,6 +125,7 @@ Shrinking the box in transport attacks the space problem directly:
 - [Listing] CONTAINEX sells its 20′ BASIC office container in a "Transpack-Ausführung" (transport-pack version). — [profi-bau-shop BASIC Line](https://www.profi-bau-shop.de/profi-bau-shop/shop/lagertechnik/buerocontainer/containex-buerocontainer-20-ctx-basic-line-detail)
 
 **Folding and self-deploying**
+- [Vendor] Continest CN10 folding container: **900 kg**. **"1 truck = 20 units"**. **24 units on a mega trailer** (3 m loading height) or **20 folded units on a standard trailer**. The CN10 size, insulation, crew and deploy time were not retrieved. — [Continest CN10 datasheet 2023-03](https://www.continest.com/wp-content/uploads/2023/04/CN_CN10_datasheet_2023-03.pdf); [datasheet 2023-01](https://www.continest.com/wp-content/uploads/2023/01/CN_CN10_datasheet_2023-01.pdf)
 - [Press, 2017–2022] Ten Fold Engineering (UK):
   - Deploys in **about 8 min** ([WebUrbanist 2017](https://weburbanist.com/2017/07/11/flat-pack-mobile-architecture-this-building-will-self-construct-in-8-minutes/)) or **under 10 min** ([Scottish Construction Now](https://www.scottishconstructionnow.com/articles/and-finally-engineers-devise-flatpack-home-that-can-be-unfolded-in-10-minutes); [Infobae 2022](https://www.infobae.com/en/2022/03/20/what-are-the-incredible-folding-houses-that-move-by-truck-and-put-together-at-the-push-of-a-button-and-in-just-10-minutes)).
   - Unfolds to **about 64 m²**, roughly **3× its transport size**, with no crane or foundations; a hand-held battery drill is the only tool needed.
@@ -134,7 +134,7 @@ Shrinking the box in transport attacks the space problem directly:
   - In 2017 most designs were at concept stage. A 2020 interview said only that the company was "actively working with interested parties".
   — [Springwise](https://springwise.com/self-deployable-building-assembles); [designboom](https://designboom.com/?p=439042); [Design Engineering 2020](https://www.design-engineering.com/transforming-house-travels-with-you-1004030894/); [POSCO/worldsteel newsroom](https://newsroom.posco.com/en/worldsteel-foldable-tech-revolutionises-temporary-structures)
 - [Press] Boxabl Casita (US):
-  - Ships **20 ft long and folded to about 8.5 ft (2.59 m) wide**; unfolds to **375 sq ft (about 34.8 m²)** in **about 1 h**, or "within a day" in other reports.
+  - Ships **20 ft long**. Folded width is **about 8 ft (2.44 m)** in several sources and **8.5 ft (2.59 m)** in one. Unfolds to **375 sq ft (about 34.8 m²)** in **about 1 h**, or "within a day" in other reports.
   - Base price **about $49,500 (April 2024)**, with reader reports of $60k. Delivery **$3–10 per mile from Las Vegas**, plus a Boxabl-certified, state-licensed installer.
   — [Tiny House Talk](https://tinyhousetalk.com/50k-prefab-tiny-house-ships-at-20-ft-and-unfolds-to-375-sq-ft-in-an-hour/); [Prefabium 2025](https://blog.prefabium.com/2025/10/boxable-casita-sip-panels-prefabricated.html); [Freethink](https://www.freethink.com/society/foldable-house); [Fox News (Baby Box, the smaller model)](https://www.foxnews.com/tech/20k-foldable-tiny-home-box-you-can-set-up-just-1-hour)
 
@@ -150,14 +150,14 @@ Shrinking the box in transport attacks the space problem directly:
   - Flat-pack: about 2–4× fewer truckloads. This takes the 40′ HQ counts (4–8) as a stand-in for a 13.6 m trailer, which is my assumption.
   - Continest-type folding: up to about 10× by unit count (20 against 2). The model name suggests CN10 is a 10-ft unit (unverified), so by floor area the gain is more likely about 4–5×.
   - Expandable: about 2.5× more floor area per load (2 × 37.3 m² against 2 × 14.8 m²).
-  - Boxabl: about 2.2× (15.8 m² folded footprint to 34.8 m²).
+  - Boxabl: about 2.2–2.3× (14.9–15.8 m² folded footprint to 34.8 m²).
   - Ten Fold: about 3×.
 - **[Calc] The same 100-bed camp (33–62 units) in flat-pack form:**
   - Truckloads: **about 5–16** instead of 17–31, roughly 50–70% fewer.
   - Labour: on vendor ranges, assembly takes **about 66 person-hours** (33 units × 1 h × 2 workers) to **about 990 person-hours** (62 × 4 h × 4 workers), and teardown adds a similar order.
   - Flat-pack therefore **trades trucking cost for assembly labour**. It pays off on long hauls and storage (depots hold several times more units per m²). On short hops with expensive labour it may not.
 - **Folding beats flat-pack on labour.** It needs minutes to hours and few or no loose parts. But durability over repeated fold cycles, weather sealing at the hinges and EU compliance are unproven in the sources found.
-- **Boxabl does not fit EU limits as shipped.** At 2.59 m folded it exceeds 2.55 m, so EU moves would need permits. No EU certification was found.
+- **Boxabl's EU fit is unclear.** If the folded width is 8.5 ft (2.59 m) it exceeds 2.55 m and EU moves would need permits; at 8 ft (2.44 m) it would comply. Either way, no EU certification or distribution was found.
 - **Comfort parity is not automatic.** Flat-pack and expandable units are panel-built, and the insulation, fire class and acoustic performance of joints and wings must be checked against Czech requirements. I found no data.
 
 ### Gaps
@@ -172,7 +172,7 @@ Shrinking the box in transport attacks the space problem directly:
 
 ### Takeaway
 Mature crane-free handling methods exist:
-- **Hooklift (Abroll) bodies** to DIN 30722, 4–7 m long. Czech waste hauliers charge about 65 Kč/km and only about 100 Kč per load or unload event.
+- **Hooklift (Abroll) bodies** to DIN 30722, 4–7 m long. One Czech container haulier (ASOMPO; whether hooklift or skip-loader is not verified) charges 65 Kč/km and only 100 Kč per load or unload event.
 - **Sidelifters**, with payloads up to 36 t.
 - **Portable container jacks** in sets of 4, rated 4–15 t, stocked in MSF's catalogue.
 - **Wheeled units**: Bauwagen limited to 25 km/h, or 80/100 km/h versions under about 1.5 t; tiny houses within 2.55 m width, 4 m height and 3.5 t in Germany.
@@ -216,7 +216,7 @@ These methods cut crane dependence, crew and handling time, but **not the space 
 - [Forum, CZ] A 4 m-wide mobilheim is oversize and needs a paid special permit. — [poradte.cz](https://www.poradte.cz/auto-moto/40965-nadmerny-prives-za-auto-administrativa.html)
 
 ### Inferences
-- **Hooklift accommodation pods fit Czech conditions best.** Hooklift trucks are standard equipment in Czech waste and municipal haulage, as the Czech-language hooklift tests and price lists show. Loading and unloading become a one-driver operation, and ASOMPO charges just 100 Kč per load or unload event against about 800 Kč/h for HDS handling at Skanska.
+- **Hooklift accommodation pods fit Czech conditions best.** Hooklift trucks are standard equipment in Czech waste and municipal haulage, as the Czech-language hooklift tests and price lists show. Loading and unloading become a one-driver operation. ASOMPO, a self-loading container truck (hooklift or skip-loader, not verified), charges just 100 Kč per load or unload event, against about 800 Kč/h for HDS handling at Skanska.
   - Constraints: body length up to about 7 m (DIN 30722) and width up to 2.55 m. Body height is limited to roughly 2.6–2.7 m so the total stays under 4.0 m on the truck. That limit is my estimate and is unverified.
   - The hook frame and rails add weight and cost, and the pod must tolerate being tilted during loading, which matters for sanitary fittings and furniture fixings.
   - No Czech accommodation-grade hooklift product was found. That looks like a **product gap and an opportunity**, unverified.
@@ -255,7 +255,7 @@ I found **no current documentation** of accommodation trains (Wohnzug, Unterkunf
 - [Press, NL 2022–23] Silja Europa in Velsen-Noord:
   - **1,000** asylum seekers, rising to **1,200 for at most 30 days** at peaks.
   - Agreed stay of up to **6 months (until 1 March)**, paid for by central government and run by the asylum agency COA.
-  - The ship left after mid-April 2023.
+  - NOS later reported that the ship would leave after mid-April (2023).
   — [NOS](https://nos.nl/l/2441786); [NOS](https://nos.nl/l/2466953)
 - [Press] A worker "flotel" berthed at Morrison Dock, Shetland (no capacity or cost data). — [Shetland Times](https://www.shetlandtimes.co.uk/?p=1047113)
 
@@ -288,7 +288,7 @@ Berlin's Tegel emergency site, built from lightweight halls and containers, show
 ### Cited Findings
 - **Better Shelter**:
   - [Database, updated Feb 2024] **17.5 m²** for a family of **4–5**. Built by **4 people in 5–6 h** without electricity, and needs at least 4 people. — [Engineering for Change](https://www.engineeringforchange.org/solutions/product/better-shelter)
-  - [Press, 2015] Built by 4 people in **about 4 h** ([BGR](https://bgr.com/2015/03/26/ikea-better-shelter-modular-home/)), or by a team of 8 in **under 8 h** ([MacPlas](https://macplas.it/en/node/11872)).
+  - [Press, 2015] Other reports give **about 4 h for 4 people**, or **under 8 h for a team of 8**. The two figures come from these articles; the snippets did not say which figure is from which. — [BGR](https://bgr.com/2015/03/26/ikea-better-shelter-modular-home/); [MacPlas](https://macplas.it/en/node/11872)
   - Packed in **2 boxes** with all tools, each box liftable by 4 people. Expected life **about 3 years**, against about 6 months for conventional refugee shelters; some sources say up to 20 years. — [UNHCR document](https://www.unhcr.org/uk/sites/uk/files/legacy-pdf/5c1127d24.pdf); [Sustainable Brands 2015, on UNHCR's bulk order](https://sustainablebrands.com/read/innovation-tech/un-refugee-agency-buys0-000-of-ikea-s-lightweight-better-shelters)
 - **Weatherhaven**:
   - [Vendor, 2026] **TRECC** expandable container: fully set up in **under 3 min by 2 people** using electric actuators with a manual backup. Rated **−40 to +120 °F** and wind of 55 mph sustained / 75 mph gusts; includes a 12,000 BTU/h air-conditioner and a 500 W heater. The trailer-mounted TRECC-T is used by NATO nations as a command post. — [Weatherhaven 2026 Capabilities Statement](https://usubc.org/wp-content/uploads/2026/08/Weatherhaven-2026-Capabilities-Statement-1.pdf); [Army Technology](https://www.army-technology.com/?p=307087)
@@ -297,7 +297,7 @@ Berlin's Tegel emergency site, built from lightweight halls and containers, show
   - [Press, 2015] A 10-person Weatherhaven survey camp was donated for the Ebola response, giving insulation against extreme weather. — [Mining Weekly](https://www.miningweekly.com/article/mine-survey-camp-donated-to-support-fight-against-ebola-2015-01-23)
 - **Sprung**:
   - [Vendor] Insulated buildings reach about **R-25 to R-47**, using up to 9 in. of fibreglass. — [Sprung: Performance Insulation](https://sprung.com/?p=9867)
-  - [Vendor] Shipping and erection at **up to 2,000 ft² (186 m²) per day**; delivered to site **within two weeks** of order. — [Sprung office brochure 2024](https://www.sprung.com/wp-content/uploads/2024/02/br_24_BROCHURE-Office.pdf)
+  - [Vendor] Shipping and erection at **up to 2,000 ft² (186 m²) per day**; delivered to site **within two weeks** of order. These figures are from Sprung's brochures; which brochure holds each figure was not verified. — [Sprung office brochure 2024](https://www.sprung.com/wp-content/uploads/2024/02/br_24_BROCHURE-Office.pdf); [Sprung ski brochure 2025](https://www.sprung.com/wp-content/uploads/2025/12/br_25_BROCHURE-Ski.pdf)
   - [Press] Generally available **within three weeks** of order. — [OGN News](https://ognnews.com/Article/33796/Safe_shelter_from_Sprung)
   - [Third-party database] Shelter variant: **R-21 to R-30**, **30 days off-site plus 4 days on-site**. — [Housing Innovation "RapidShelter: Sprung"](https://housinginnovation.co/rapidshelter/sprung-navigation/)
   - [Vendor] A ski-resort building was completed in 4 months including fit-out. — [Sprung ski brochure 2025](https://www.sprung.com/wp-content/uploads/2025/12/br_25_BROCHURE-Ski.pdf)
@@ -400,9 +400,9 @@ This research found no product that is EU-certified, crane-free and folds to 2.5
 | Flat-pack (CONTAINEX Transpack, Chinese flat-pack) | 4–8 per 40′ HQ, **about 2–4×** | Forklift or HDS for bundles; no lifting of assembled boxes | **1–4 h per unit, 2–4 workers** (vendor) | 50–70% fewer loads for 100 beds; adds about 66–990 person-hours |
 | Folding container (Continest CN10) | **20 per standard truck, 24 per mega** (vendor), up to about 10× by count | Unknown (probably forklift) | Unknown | Unknown |
 | Self-deploying folding (Ten Fold) | 1 per truck, about 3× area on deployment | None (drill only, per press) | **8–10 min** | $129–167k or £100k (2017–22) |
-| Boxabl Casita (US) | 1 per truck, about 2.2× area | Licensed installer | About 1 h to 1 day | About $49.5–60k plus $3–10/mile |
+| Boxabl Casita (US) | 1 per truck, about 2.2–2.3× area | Licensed installer | About 1 h to 1 day | About $49.5–60k plus $3–10/mile |
 | Expandable double-wing 20′ | 2 per truck, about 2.8× area each, **about 2.5× m² per load** | Yes (HDS or crane) | About 1 h unfold (weak source) | Unknown |
-| Hooklift (Abroll) module | 1–2 bodies of 7 m or less (1×) | **No**: truck self-loads (DIN 30722 / DIN 14505) | One driver, minutes (my estimate) | About 65 Kč/km, **100 Kč per load or unload event** (waste-haulage rate) |
+| Hooklift (Abroll) module | 1–2 bodies of 7 m or less (1×) | **No**: truck self-loads (DIN 30722 / DIN 14505) | One driver, minutes (my estimate) | About 65 Kč/km, **100 Kč per load or unload event** (container-haulage rate; vehicle type not verified) |
 | Sidelifter | 1–2 units (payload up to 36 t) | **No** | One driver | Not known for CZ |
 | Container jacks (set of 4) | Any flatbed (1×) | **No** (jacks rated 4–15 t, 0.5–1.75 m lift) | 1–2 people, slower | Low capital cost (no price found) |
 | Wheeled unit (Bauwagen, tiny house) | 1 unit per tow, about 1–2 beds (my assumption) | **No** | Minutes | Bauwagen 25 km/h, or 80/100 km/h versions at about 1.35–1.5 t |
@@ -419,7 +419,7 @@ This research found no product that is EU-certified, crane-free and folds to 2.5
 | Flat-pack | Similar if same panels; joints to be verified | Mature mass market | **Not verified** for Chinese units | CONTAINEX (Transpack), Trimo; Chinese makers (GS Housing) |
 | Folding (Continest) | Unknown | Commercial (2023 datasheets) | Not verified | Continest |
 | Ten Fold | Fully fitted (press) | **Pre-commercial**; no news after about 2022 | None found | Ten Fold (UK) |
-| Boxabl | Full small home | US market | **None for the EU**; 2.59 m folded exceeds 2.55 m | None in the EU |
+| Boxabl | Full small home | US market | **None for the EU**; folded width 2.44–2.59 m depending on source (2.59 m would exceed 2.55 m) | None in the EU |
 | Expandable | Panel-built, wing seals | Mass market (CN) | Not verified | Chinese makers; UK reseller (YPC) |
 | Hooklift pod | Fire-service version: WC, kitchenette, independent power, **no beds** | Proven technology; accommodation version niche | DIN 30722 / DIN 14505 for the interface | DE fire-service bodies (about €125k); **no CZ product found** |
 | Sidelifter / jacks | Same as the unit carried | Mature | Not applicable | Steelbro, Containerlift (UK), Joloda; MSF catalogue; CZ not verified |
