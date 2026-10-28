@@ -107,6 +107,26 @@ Když místo chybí, postupuj od nejbezpečnějšího:
 tehdy, když je notebook pomalý nebo nestabilní. Předtím zálohuj a ověř si licence Revitu
 a Archicadu.
 
+### Kdy koupit SSD
+
+**Koupi SSD potřebuješ jen tehdy, když ani po úklidu nemáš na C: aspoň 150 GB volna.**
+Rychlost disku ovlivňuje jen to, jak rychle se model načte (pár sekund). Rychlost
+odpovídání určuje grafika a RAM, ne disk.
+
+- **Externí NVMe SSD v rámečku Thunderbolt 4 / USB4** (doporučeno). Notebook má porty
+  Thunderbolt 4, takže disk jede rychlostí až kolem 3–3,8 GB/s. Používej ho pro modely
+  a zálohy Mozku.
+  - Modely na něj přesuneš tak, že ukončíš Ollamu a spustíš
+    `setx OLLAMA_MODELS "E:\ollama-models"` (písmeno disku si v Správě disků nastav napevno).
+    Pak přesuneš obsah `C:\Users\<jméno>\.ollama\models` a Ollamu spustíš znovu.
+  - Zálohy na něm měj šifrované. Na Windows Pro použij BitLocker To Go, na Windows Home třeba
+    VeraCrypt.
+- **Výměna vnitřního SSD za větší** (2–4 TB, M.2 2280 PCIe 4.0). Notebook má jen **jeden** slot
+  M.2, takže jde jen o výměnu s naklonováním disku. Před klonováním pozastav BitLocker.
+  Vyplatí se, když ti místo chybí i na práci, ne kvůli agentovi.
+- **Na interním disku nech vždycky** `Mozek`, WSL a odkládací soubor Windows. Agent je potřebuje
+  pořád a externí disk se dá ztratit.
+
 ---
 
 ## Krok 2: Aktualizace a nastavení výkonu (30–45 minut)
