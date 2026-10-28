@@ -83,7 +83,7 @@ Nenašel jsem žádnou soukromou službu, která by automaticky generovala repor
 ## 3. Německo a Rakousko: GeoMap, on-geo, Sprengnetter, 21st Real Estate, PriceHubble DACH, XPlanung, AI pro stavební povolení
 
 ### Takeaway
-V DACH dominují B2B datové a oceňovací platformy pro banky, znalce a portály: on-geo (Tinsa), Sprengnetter (Scout24) včetně 21st Real Estate, PriceHubble a GeoMap. Specializované nástroje „co se tu dá postavit“ tu převládající nejsou a trh se silně konsoliduje. AI analýza B-Planů (GRZ/GFZ apod.) přichází hlavně od poradenských a menších hráčů. Veřejná AI v povolování je zatím jen kontrola úplnosti podání (Durynsko od 2025, Vídeň BRISE 2019–2023).
+V DACH dominují B2B datové a oceňovací platformy pro banky, znalce a portály: on-geo (Tinsa), Sprengnetter (Scout24) včetně 21st Real Estate, PriceHubble a GeoMap. Specializované nástroje „co se tu dá postavit“ tu převládající nejsou a trh se silně konsoliduje. AI analýza B-Planů (GRZ/GFZ apod.) přichází hlavně od poradenských a menších hráčů. Veřejná AI v povolování zatím jen kontroluje podání: úplnost a konzistenci v Durynsku (od 2025), plausibilitu, správnost a úplnost ve Vídni (BRISE 2019–2023). O povolení nerozhoduje.
 
 ### Cited Findings
 **GeoMap (Lipsko)**
@@ -153,7 +153,7 @@ V DACH dominují B2B datové a oceňovací platformy pro banky, znalce a portál
 ### Inferences
 - Peníze v DACH tečou hlavně do B2B dat a oceňování pro banky (zástavní hodnota, AVM) a do portálů. Nástroje „co se tu dá postavit“ jsou okrajové: buď poradenské (ki-syndikat), nebo funkce větších platforem. Pro český startup z toho plyne, že banky a znalci (přes API) jsou přirozený druhý segment vedle architektů a developerů.
 - Typickou exitovou cestou je akvizice datovým či oceňovacím hráčem nebo portálem: Tinsa koupila on-geo, Scout24 Sprengnetter a Sprengnetter 21st Real Estate.
-- Veřejná AI v povolování kontroluje úplnost podání, nerozhoduje. Soukromý prostor je proto v přípravě podkladů a předběžné prověrce na straně architekta a stavebníka a v napojení na digitální podání.
+- Veřejná AI v povolování kontroluje úplnost, konzistenci a plausibilitu podání, nerozhoduje. Soukromý prostor je proto v přípravě podkladů a předběžné prověrce na straně architekta a stavebníka a v napojení na digitální podání.
 - BRISE i ki-syndikat ukazují, že bez strukturovaných dat (BIM, strojově čitelné plány) AI nefunguje spolehlivě. Kvalita a strukturovanost zdrojových dat bude hlavním rizikem i v ČR.
 
 ### Gaps
@@ -313,7 +313,7 @@ B2C report za jednotlivý pozemek (onGeo, 10–200 zł) je levný, závislý na 
   - Urbanease jako B2B SaaS pro realitní profesionály — [PriceHubble](https://www.pricehubble.com/en/pricehubble-news/pricehubble-acquires-urbanease).
 - Veřejný sektor:
   - buduje bezplatné „one-stop shopy“, např. ÖREB zdarma v Basel-Stadt od 2020 — [bs.ch](https://www.bs.ch/medienmitteilungen/bvd/2020-neuer-und-kostenloser-zugang-zu-grundstuecksinformationen);
-  - AI nasazuje jen na kontrolu úplnosti (Durynsko, BRISE) — [kommunal.de](https://kommunal.de/ki-prueft-bauantraege-thueringen); [ORF Wien](https://wien.orf.at/stories/3153084/).
+  - AI nasazuje jen na kontroly podání: úplnost a konzistence (Durynsko), plausibilita, správnost a úplnost (BRISE) — [kommunal.de](https://kommunal.de/ki-prueft-bauantraege-thueringen); [ORF Wien](https://wien.orf.at/stories/3153084/).
 - Limity AI: nad skenovanými plány neověří měřítko, každý výstup je nutné zkontrolovat proti originálu a Grundbuch, služebnosti a zátěže zůstávají ruční prací — [ki-syndikat](https://www.ki-syndikat.de/usecases/architektur/01-baugenehmigungsunterlagen/); [ki-syndikat](https://www.ki-syndikat.de/usecases/architektur/03-grundstuecksanalyse/)
 
 ### Inferences
@@ -330,8 +330,8 @@ B2C report za jednotlivý pozemek (onGeo, 10–200 zł) je levný, závislý na 
 | Popety.io | CH | SaaS pro potenciál parcel | n/a | ano (AI odhad vhodnosti) | n/a | investor Vaudoise |
 | Archilyse | CH | data a analytika | n/a | n/a | n/a | 4 mil. CHF, kolo A (2020) |
 | ÖREB-Kataster | CH | veřejný výpis | všichni | ne | zdarma (Basel-Stadt) | 19 témat (Basel-Landschaft) |
-| BRISE-Vienna | AT | veřejný pilot | úřad a žadatelé | AI kontrola úplnosti | – | 2019–2023 |
-| Durynsko, pilot | DE | veřejný pilot | úřad | AI kontrola úplnosti | – | od podzimu 2025 |
+| BRISE-Vienna | AT | veřejný pilot | úřad a žadatelé | AI kontrola plausibility, správnosti a úplnosti (nad BIM) | – | 2019–2023 |
+| Durynsko, pilot | DE | veřejný pilot | úřad | AI kontrola úplnosti a konzistence | – | od podzimu 2025 |
 
 **Kdo by mohl přijít do ČR** (podle schopností, ne podle nalezených oznámení):
 1. PriceHubble: panevropská expanze přes akvizice, nově s modulem pro pozemky z Urbanease.
