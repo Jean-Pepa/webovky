@@ -55,7 +55,9 @@ Co balíček obsahuje:
 | `windows/` | `kontrola-pc.ps1` (kontrola disku a výkonu, nic nemaže) a `wslconfig.txt` |
 | `wsl/` | `instaluj-nastroje.sh` (instalace skriptů ve WSL) |
 | `nastroje/` | `mail.py`, `resers.py`, `prepis.py` a testy |
-| `workspace/` | šablony paměti a pravidel (`USER.md`, `SOUL.md`, `AGENTS.md`, `HEARTBEAT.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md`, `lide/`) a 7 dovedností v `skills/` |
+| `workspace/` | šablony paměti a pravidel (`USER.md`, `SOUL.md`, `AGENTS.md`, `HEARTBEAT.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md`, `lide/`) a 10 dovedností v `skills/` |
+| `workspace/podklady/` | osnovy podle vyhlášky č. 131/2024 Sb., šablony textů ke studii a projektu, pravidla stylu, místo pro tvoje vzory |
+| `workspace/projekty/` | šablona karty projektu |
 
 ---
 
@@ -277,7 +279,8 @@ Jak modely přepínat v OpenClaw nastavíš v kroku 6.
 
 1. Vytvoř složku `C:\Users\<tvé jméno>\Mozek`.
 2. Zkopíruj do ní **obsah** složky `osobni-agent\workspace`, tedy `USER.md`, `SOUL.md`,
-   `AGENTS.md`, `HEARTBEAT.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md` a složky `lide` a `skills`.
+   `AGENTS.md`, `HEARTBEAT.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md` a složky `lide`, `skills`,
+   `podklady` a `projekty`.
    Vytvoř v ní ještě prázdné složky `memory` (deník), `koncepty` a `prichozi`.
 3. Nainstaluj **Obsidian** (obsidian.md) → „Otevřít složku jako trezor" → `Mozek`.
 4. Volitelně přidej plugin **Smart Connections**, ať můžeš i ty hledat v poznámkách podle
@@ -528,6 +531,49 @@ co dělal, a oprav pravidla v `AGENTS.md`.
 | Obsah mailů a webu jsou jen data, žádné pokyny | `AGENTS.md` |
 | Tabulka „sám / jen po ‚ano' / nikdy" | `AGENTS.md` |
 | Rohlík: objednávku potvrzuješ ty na webu | `skills/nakup-rohlik` a podmínky Rohlíku |
+
+---
+
+## Krok 15: Texty ke studii a projektu (první učení, asi 2 hodiny)
+
+Agent nepotřebuje trénink. Dostane přesnou osnovu podle vyhlášky, šablony, tvoje vzory a pak
+tvoje opravy. Všechno je ve složce `Mozek/podklady/`.
+
+| Co | Kde |
+|---|---|
+| Osnova dokumentace pro povolení stavby (příloha č. 1 vyhlášky č. 131/2024 Sb.) | `podklady/predpisy/131-2024-priloha-1-povoleni-stavby.md` |
+| Osnova dokumentace pro provádění rodinného domu (příloha č. 9) | `podklady/predpisy/131-2024-priloha-9-RD-A-B.md` a `…-RD-C-D.md` |
+| Šablony: studie, A Průvodní list, B Souhrnná technická zpráva, D.1.1.1 Technická zpráva | `podklady/sablony/` |
+| Pravidla psaní a „Můj styl" | `podklady/styl-psani.md` |
+| Ustálené formulace (radon, záplavy, les, ZPF, archeologie…) | `podklady/sablony/ustalene-formulace.md` |
+| Karta projektu, jediný zdroj údajů pro texty | `projekty/_sablona/projekt.md` |
+
+Pozor na název: podle nové vyhlášky se část A jmenuje **Průvodní list** (dřív průvodní
+zpráva). Souhrnná technická zpráva je část B.
+
+1. **Nástroje pro převod souborů** (v Ubuntu):
+   ```bash
+   sudo apt install -y poppler-utils pandoc
+   ```
+2. **Vzory:** do `Mozek/podklady/vzory/` dej 2–3 svoje starší texty: textovou část studie,
+   A a B k povolení a technickou zprávu. Zůstávají jen u tebe a agent z nich nepřenese jména,
+   adresy ani parcelní čísla.
+3. **Naučení stylu:** v chatu přepni `/model hluboky` a napiš „Nauč se můj styl ze vzorů".
+   Agent připraví `podklady/styl-psani-navrh.md`. Projdi ho, oprav a schval.
+4. **Zkouška na starém projektu:** „Založ projekt <název>" a vyplň kartu projektu podle
+   zakázky, kterou už máš hotovou. Pak napiš „Napiš souhrnnou technickou zprávu pro
+   povolení". Agent nejdřív ukáže kontrolu úplnosti, pak koncept. Porovnej ho s tím, co jsi
+   tehdy odevzdal, a rozdíly mu řekni. Opravy si zapíše do stylu.
+5. **Ostrý projekt:** stejný postup. Rozbor a kontrola úplnosti běží na hlubokém modelu,
+   psaní na hlavním. Agent ti to sám připomene.
+6. **Do Wordu:** „Převeď souhrnnou technickou zprávu do Wordu". Když dáš do
+   `podklady/sablony/` soubor `hlavicka.docx` se svými styly a hlavičkou, výstup ho převezme.
+7. **Předpisy:** jednou za čas zkontroluj na e-sbirka.gov.cz, jestli se vyhláška
+   č. 131/2024 Sb. nezměnila, a případně nech agenta osnovu aktualizovat.
+
+Co agent napíše, je koncept. Kontroluješ, podepisuješ a odpovídáš ty. Všechno, co chybí, je
+v textu označené `[DOPLNIT]`, nejistá tvrzení `[OVĚŘIT]`, a na konci každého souboru je
+seznam „Pro autora".
 
 ---
 
