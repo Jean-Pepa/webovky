@@ -1,0 +1,30 @@
+// Seznam příkazů, které agent smí spustit sám. Ověřeno proti OpenClaw 2026.10.8.
+//
+// Použití (NAVOD.md, krok 6b):
+//   openclaw approvals set --file ~/osobni-agent/zamky/exec-approvals.json5
+//   openclaw approvals get
+//
+// Cokoli, co tu není, OpenClaw nespustí, dokud to neschválíš v aplikaci v iPhonu
+// (Approvals) nebo v ovládacím panelu. Když nikdo neodpoví, příkaz se zamítne.
+// Hlavně: odeslání dotazu ven (agent-resers odeslat) a uložení konceptu mailu
+// (agent-mail koncept) tu schválně nejsou, takže je vždycky potvrzuješ ty.
+{
+  version: 1,
+  defaults: { security: "allowlist", ask: "on-miss", askFallback: "deny" },
+  agents: {
+    main: {
+      allowlist: [
+        // Maily: jen číst.
+        { pattern: "~/.local/bin/agent-mail", argPattern: "^(nove|precti)( .*)?$" },
+        // Rešerše: jen připravit dotaz a prohlížet záznam odeslaného.
+        { pattern: "~/.local/bin/agent-resers", argPattern: "^(priprav|log)( .*)?$" },
+        // Přepis diktátu a jednání (běží lokálně).
+        { pattern: "~/.local/bin/agent-prepis" },
+        { pattern: "~/.local/bin/agent-jednani" },
+        // Převod PDF na text a dokumentů do Wordu.
+        { pattern: "/usr/bin/pdftotext" },
+        { pattern: "/usr/bin/pandoc" },
+      ],
+    },
+  },
+}

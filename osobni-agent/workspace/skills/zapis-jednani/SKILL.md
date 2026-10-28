@@ -9,7 +9,7 @@ description: Zápis z jednání z nahrávky – lokální přepis s rozlišením
    („Nahrávám si to kvůli zápisu, nikam to neposílám. Je to v pořádku?"). Když souhlas
    v nahrávce nezazní, zeptej se mě, jestli jsem ho získal jinak.
 2. **Nahrávku** ulož do `projekty/<zakázka>/jednani/` (nebo `prichozi/`, když zakázka není jasná).
-3. **Přepis:** spusť `$HOME/.local/bin/agent-jednani <nahrávka>`, případně s `--mluvcich N`,
+3. **Přepis:** spusť `~/.local/bin/agent-jednani <nahrávka>`, případně s `--mluvcich N`,
    když vím, kolik lidí mluvilo. U hodinového jednání to na grafice trvá řádově minuty. Když
    běží velký jazykový model, skript si sám přejde na procesor, ale bude to pomalejší.
 4. **Kdo je kdo:** ukaž mi ukázky ze sekce „Kdo je kdo" a zeptej se, kdo je SPEAKER_00, 01…

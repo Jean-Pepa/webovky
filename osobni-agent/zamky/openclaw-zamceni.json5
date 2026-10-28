@@ -1,0 +1,83 @@
+// Zamčené nastavení OpenClaw pro osobního agenta na notebooku (Ubuntu ve WSL).
+// Ověřeno proti OpenClaw 2026.10.8 (`openclaw config validate`).
+//
+// Použití po `openclaw onboard` (NAVOD.md, krok 6b):
+//   openclaw config patch --file ~/osobni-agent/zamky/openclaw-zamceni.json5 --dry-run
+//   openclaw config patch --file ~/osobni-agent/zamky/openclaw-zamceni.json5
+//
+// Soubor se sloučí s tvým nastavením: přepíše jen klíče, které jsou tady.
+{
+  // Brána poslouchá jen v notebooku. Do iPhonu ji pustíš až v kroku 12, a to jen
+  // přes svou soukromou síť Tailscale, nikdy do veřejného internetu.
+  gateway: {
+    mode: "local",
+    bind: "loopback",
+  },
+
+  agents: {
+    defaults: {
+      // Pravidelná kontrola běží uvnitř notebooku a výsledky zapisuje do deníku.
+      // Nic nikam neposílá. Upozornění do mobilu jsou volitelná (NAVOD.md, krok 12).
+      heartbeat: { every: "30m", target: "none" },
+    },
+  },
+
+  // Hledání v paměti jen přes lokální Ollamu. Bez tohoto nastavení by OpenClaw
+  // použil OpenAI a při chybě by mohl přejít na jinou cloudovou službu.
+  memory: {
+    search: { provider: "ollama", model: "embeddinggemma", fallback: "none" },
+  },
+
+  tools: {
+    profile: "coding",
+    alsoAllow: ["heartbeat_respond"],
+    // Zakázáno: web a vyhledávání, prohlížeč, ovládání telefonu, posílání zpráv
+    // do jiných kanálů, generování médií přes cloud, další agenti a dovednosti,
+    // které si agent píše sám (měnily by jeho chování bez tvého souhlasu).
+    // Na internet smí agent jen přes agent-resers, a to po tvém schválení.
+    deny: [
+      "group:web",
+      "group:ui",
+      "group:nodes",
+      "group:messaging",
+      "image_generate",
+      "music_generate",
+      "video_generate",
+      "sessions_spawn",
+      "sessions_send",
+      "skill_workshop",
+    ],
+    // Soubory smí číst a měnit jen ve složce Mozek.
+    fs: { workspaceOnly: true },
+    // Příkazy jen ze seznamu v exec-approvals.json5. Cokoli jiného čeká na tvé
+    // schválení v aplikaci v iPhonu nebo v ovládacím panelu, a když nikdo
+    // neodpoví, zamítne se.
+    exec: { mode: "ask" },
+    elevated: { enabled: false },
+    // Hlasové zprávy z iPhonu přepíše lokální Whisper v notebooku (na procesoru,
+    // aby nebral grafiku jazykovému modelu; krátká zpráva trvá pár sekund).
+    media: {
+      audio: { enabled: true },
+      models: [
+        {
+          type: "cli",
+          command: "~/.local/bin/agent-prepis",
+          args: ["{{AttachmentPath}}"],
+          capabilities: ["audio"],
+          timeoutSeconds: 600,
+        },
+      ],
+    },
+  },
+
+  // Ovládání prohlížeče vypnuté úplně, nejen zakázané jako nástroj.
+  browser: { enabled: false },
+
+  // Žádné hlasové odpovědi přes cloud. Microsoft je jinak zapnutý i bez klíče.
+  // Odpověď ti iPhone přečte vlastním hlasem v telefonu.
+  tts: { auto: "off", providers: { microsoft: { enabled: false } } },
+
+  // Žádná telemetrie ani denní dotaz na aktualizace. Aktualizuješ ručně.
+  telemetry: { enabled: false },
+  update: { checkOnStart: false },
+}

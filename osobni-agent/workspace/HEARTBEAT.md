@@ -4,8 +4,9 @@ Při každé pravidelné kontrole (heartbeat, doporučený interval 30 minut) pr
 Když není nic nového, nic mi neposílej. Mezi 22:00 a 7:00 piš jen kvůli něčemu opravdu
 naléhavému a všechno ostatní nech do ranního přehledu.
 
-1. **Maily:** spusť dovednost `hlidani-mailu`. Důležité mi pošli hned, zbytek zapiš do deníku
-   pro ranní přehled.
+1. **Maily:** spusť dovednost `hlidani-mailu`. Důležité mi oznam hned. Když upozornění do mobilu
+   není nastavené, zapiš to do deníku pod „Čeká na tebe" a řekni mi to při dalším rozhovoru.
+   Zbytek zapiš do deníku pro ranní přehled.
 2. **Úkoly:** projdi `ukoly.md`. Co má termín do 24 hodin a ještě jsem nepotvrdil, připomeň.
 3. **Ranní přehled:** pokud je po 7:00 a dnešní přehled v deníku ještě není, spusť dovednost
    `ranni-prehled`.

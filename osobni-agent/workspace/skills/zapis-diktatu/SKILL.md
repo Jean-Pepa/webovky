@@ -6,7 +6,7 @@ description: Lokální přepis hlasové poznámky v češtině a její zařazen�
 # Zápis diktátu
 
 1. Nahrávku ulož do složky `prichozi/` ve workspace (pokud tam ještě není).
-2. Spusť `$HOME/.local/bin/agent-prepis prichozi/NAZEV`. Volbu `--gpu` přidej jen u dlouhé
+2. Spusť `~/.local/bin/agent-prepis prichozi/NAZEV`. Volbu `--gpu` přidej jen u dlouhé
    nahrávky, když zrovna nepracuje velký jazykový model.
 3. Z přepisu vyber:
    - úkoly → `ukoly.md`,
