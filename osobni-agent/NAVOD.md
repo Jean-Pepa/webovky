@@ -414,6 +414,14 @@ Pak:
    `http://127.0.0.1:1234/v1`. Dělej to, až když ti rychlost Ollamy nestačí.
 5. **Jiné modely:**
    - **Qwen3.6-35B-A3B** (~21 GB) je v některých úlohách chytřejší, ale pomalejší.
+   - **ThinkingCap-Qwen3.6-27B** od české BottleCap AI (Hugging Face `bottlecapai`, licence
+     Apache 2.0) přemýšlí zhruba o polovinu kratčeji než původní Qwen. Je to ale „hustý" model
+     27B, takže ve 4bitové verzi (~16–17 GB) se do 12 GB grafiky nevejde celý a poběží
+     pomaleji než Gemma 4 MoE.
+     - Hodí se jako druhý model na noční a týdenní úlohy, kde na rychlosti nezáleží.
+     - Stáhneš ho na huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF, kde nejdřív
+       musíš přijmout podmínky.
+     - Verze NVFP4 je jen pro grafiky řady RTX 50, pro tvou RTX 4080 ne.
    - Menší model kolem 8 miliard parametrů je rychlý na třídění mailů.
    - Vždy vybírej variantu se štítkem **tools**, jinak agent neumí používat nástroje.
 
