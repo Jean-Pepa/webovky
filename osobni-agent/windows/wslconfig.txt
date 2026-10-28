@@ -1,0 +1,12 @@
+# Ulož jako C:\Users\<tvé jméno>\.wslconfig (bez přípony .txt), pak v PowerShellu: wsl --shutdown
+# Ollama s modelem běží ve Windows, ve WSL běží jen agent a skripty, takže mu stačí málo paměti.
+[wsl2]
+memory=8GB
+processors=8
+swap=8GB
+# WSL uvidí Ollamu ve Windows na adrese 127.0.0.1 a Ollama nemusí být otevřená do sítě.
+networkingMode=mirrored
+
+[experimental]
+# Paměť, kterou WSL nepotřebuje, postupně vrací Windows.
+autoMemoryReclaim=gradual
