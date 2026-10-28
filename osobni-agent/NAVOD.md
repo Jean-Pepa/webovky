@@ -24,6 +24,7 @@ Tvůj notebook: ASUS Zenbook Pro 16X (UX7602BZ), Intel i9-13905H, **RTX 4080 s 1
 
 | Část | Co použijeme | Proč |
 |---|---|---|
+| Mozek: rychlý model (výchozí) | **Gemma 4 E4B** (~5,5 GB) | Celý se vejde na grafiku, na rychlé otázky odpoví hned. Běží na něm i pravidelné kontroly. |
 | Mozek: hlavní model | **Ollama + Gemma 4 26B-A4B** (4bitová verze, ~16 GB) | Nejlepší poměr chytrosti a rychlosti pro 12 GB grafiky. Je to model typu MoE, většina se vejde na grafiku a zbytek do RAM. Dobře zvládá češtinu. |
 | Mozek: hluboký model | **ThinkingCap-Qwen3.6-27B** (BottleCap AI) | Na složité rozbory a noční úlohy. Pomalejší, ale přemýšlí kratčeji než původní Qwen. |
 | Mozek: nejsilnější | **Claude Opus 5.5** (cloud) | Jen přes `agent-resers` a jen po tvém schválení: internet a nejtěžší otázky |
@@ -223,21 +224,32 @@ odpovídání určuje grafika a RAM, ne disk.
    15–30. Příkaz `ollama ps` ukáže, kolik modelu je na grafice a kolik v RAM.
    Když je to pomalé, viz krok 13.
 
-### Krok 4b: Tři úrovně – hlavní, hluboký a nejsilnější
+### Krok 4b: Čtyři úrovně – rychlý, hlavní, hluboký a nejsilnější
 
 | Role | Model | Velikost (4bitově) | Kde běží | Rychlost (odhad) | Na co |
 |---|---|---|---|---|---|
-| **Hlavní** (výchozí) | Gemma 4 26B-A4B (`gemma4:26b`) | ~16–18 GB | grafika + RAM | 15–30 tokenů/s | všechno běžné: otázky, maily, koncepty, plánování, pravidelné kontroly |
+| **Rychlý** (výchozí) | Gemma 4 E4B (`gemma4:e4b`) | ~5,5 GB | celý na grafice | 50–90 tokenů/s | rychlé otázky, třídění mailů, pravidelné kontroly |
+| **Hlavní** | Gemma 4 26B-A4B (`gemma4:26b`) | ~16–18 GB | grafika + RAM | 15–30 tokenů/s | delší práce, koncepty mailů, plánování |
 | **Hluboký** | ThinkingCap-Qwen3.6-27B (BottleCap AI) | ~16–17 GB | grafika + RAM | 5–9 tokenů/s, přemýšlí o ~50 % kratčeji | noční úklid paměti, týdenní plán, složité rozbory |
 | **Nejsilnější** | Claude Opus 5.5 přes `agent-resers` | cloud | jen po tvém schválení | – | internet a nejtěžší otázky |
 
 Rychlosti jsou odhady, změř si je sám (`ollama run <model> --verbose`).
-Název štítku Gemmy ověř na ollama.com/library/gemma4.
+Názvy štítků Gemmy ověř na ollama.com/library/gemma4.
+Pokud tam je i `gemma4:12b`, je to chytřejší rychlá volba (~8 GB, pořád celá na grafice,
+odhadem 35–45 tokenů/s).
 
-1. **Hlavní model** máš stažený z bodu 3. Když jsi použil verzi z Hugging Face, dej jí
+**Proč je výchozí rychlý model.** Je celý na grafice, takže na otázku odpoví hned. Na něm
+běží i pravidelné kontroly. Na delší práci přepneš na hlavní, na složité věci na hluboký.
+Kdybys chtěl mít výchozí hlavní model, stačí v kroku 6 nastavit `ollama/gemma4:26b`.
+
+1. **Rychlý model:**
+   ```powershell
+   ollama pull gemma4:e4b
+   ```
+2. **Hlavní model** máš stažený z bodu 3. Když jsi použil verzi z Hugging Face, dej jí
    kratší jméno, ať sedí na zbytek návodu:
    `ollama cp hf.co/unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M gemma4:26b`.
-2. **ThinkingCap (hluboký):**
+3. **ThinkingCap (hluboký):**
    - Na huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF přijmi podmínky.
    - Repozitář je chráněný, takže do svého účtu Hugging Face (Settings → SSH Keys) přidej
      veřejný klíč Ollamy ze souboru `C:\Users\<jméno>\.ollama\id_ed25519.pub`.
@@ -247,9 +259,14 @@ Název štítku Gemmy ověř na ollama.com/library/gemma4.
    ollama pull hf.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M
    ollama cp hf.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M thinkingcap
    ```
-3. **`OLLAMA_MAX_LOADED_MODELS` nech na 1.** Každý model tak dostane celou grafiku.
-   Přepnutí na jiný model trvá 5–15 sekund, než se načte z disku.
-4. **Na disku** zaberou oba lokální modely dohromady zhruba 35 GB, to se do plánu
+4. **`OLLAMA_MAX_LOADED_MODELS` nech na 1.** Každý model tak dostane celou grafiku.
+   Přepnutí na velký model trvá 5–15 sekund, než se načte z disku. Rychlý model se načte
+   za pár sekund.
+   - Když pracuješ s hlavním nebo hlubokým modelem, pravidelná kontrola na rychlém modelu
+     ho z grafiky vytlačí. Při další otázce se pak velký model chvíli načítá.
+   - Kdyby ti to vadilo, nastav `OLLAMA_MAX_LOADED_MODELS` na `2`. Rychlý model pak zůstane
+     v grafice vedle velkého, ten ale bude o něco pomalejší, protože mu zbude méně místa.
+5. **Na disku** zaberou tři lokální modely dohromady zhruba 40–45 GB, to se do plánu
    z kroku 1 vejde. Nejsilnější úroveň je v cloudu, na disku nic nezabírá.
 
 Jak modely přepínat v OpenClaw nastavíš v kroku 6.
@@ -302,23 +319,24 @@ Jak modely přepínat v OpenClaw nastavíš v kroku 6.
 5. **Heartbeat** (pravidelná kontrola) zapni s intervalem **30 minut**, viz dokumentace
    OpenClaw → Heartbeat. Agent při něm prochází `HEARTBEAT.md`.
 6. **Modely a přepínání** (krok 4b):
-   - **Výchozí model nastav na hlavní.** Pravidelné kontroly pak běží na něm a nemusíš
+   - **Výchozí model nastav na rychlý.** Pravidelné kontroly pak běží na něm a nemusíš
      spoléhat na zvláštní nastavení modelu pro heartbeat, které v některých verzích
      OpenClaw nefungovalo.
      ```bash
-     openclaw models set ollama/gemma4:26b
+     openclaw models set ollama/gemma4:e4b
      ```
    - **Přezdívky modelů** dej do `~/.openclaw/openclaw.json` (tvar podle současné dokumentace,
      ověř na docs.openclaw.ai → Models):
      ```json
      "agents": { "defaults": { "models": {
+       "ollama/gemma4:e4b":   { "alias": "rychly" },
        "ollama/gemma4:26b":   { "alias": "hlavni" },
        "ollama/thinkingcap":  { "alias": "hluboky" }
      } } }
      ```
    - **V chatu pak přepínáš:**
-     - `/model hluboky` platí jen pro danou konverzaci,
-     - `/model default` vrátí hlavní model,
+     - `/model hlavni` nebo `/model hluboky` platí jen pro danou konverzaci,
+     - `/model default` vrátí rychlý model,
      - `/model` ukáže, který model právě běží.
    - **Nejsilnější úroveň (Claude)** se nepřepíná. Agent ji volá dovedností `resers-web`,
      když chceš něco z internetu nebo řekneš „zeptej se Clauda", a vždycky po tvém schválení.
