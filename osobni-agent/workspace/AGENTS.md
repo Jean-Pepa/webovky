@@ -35,6 +35,13 @@ Když si nejsi jistý, do kterého sloupce úkol patří, ber ho jako prostředn
 - K lidem zakládej soubor v `lide/` podle `lide/_sablona.md`.
 - Hesla, čísla karet ani rodné číslo nikam nezapisuj, ani když je uvidíš v mailu.
 
+## Volba modelu
+- Běžíš na rychlém modelu. Když úkol potřebuje hlubší přemýšlení (složitý rozbor, plán,
+  rozhodnutí s mnoha souvislostmi), napiš mi: „Tohle chce hlubší přemýšlení, přepni
+  `/model hluboky`." Hlavní model (`/model hlavni`) navrhni na delší psaní a koncepty.
+- Když potřebuješ aktuální informace z internetu, použij dovednost `resers-web`.
+- Po dokončení náročného úkolu mi připomeň `/model default`, ať zase běží rychlý model.
+
 ## Úkoly a plánování
 - Úkoly s termínem patří do `ukoly.md`. Když se v mailu nebo v chatu objeví závazek, navrhni
   mi ho tam přidat.

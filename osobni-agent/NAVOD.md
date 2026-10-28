@@ -221,6 +221,42 @@ odpovídání určuje grafika a RAM, ne disk.
    15–30. Příkaz `ollama ps` ukáže, kolik modelu je na grafice a kolik v RAM.
    Když je to pomalé, viz krok 13.
 
+### Krok 4b: Tři modely – rychlý, hlavní a hluboký
+
+| Role | Model | Velikost (4bitově) | Kde běží | Rychlost (odhad) | Na co |
+|---|---|---|---|---|---|
+| **Rychlý** (výchozí) | Gemma 4 E4B (`gemma4:e4b`), chytřejší volba `gemma4:12b` | ~5,5 / ~8 GB | celý na grafice | 50–90 / 35–45 tokenů/s | rychlé otázky, třídění mailů, pravidelné kontroly |
+| **Hlavní** | Gemma 4 26B-A4B (`gemma4:26b`) | ~16–18 GB | grafika + RAM | 15–30 tokenů/s | běžná práce, koncepty mailů, plánování |
+| **Hluboký** | ThinkingCap-Qwen3.6-27B (BottleCap AI) | ~16–17 GB | grafika + RAM | 5–9 tokenů/s, přemýšlí o ~50 % kratčeji | noční úklid paměti, týdenní plán, složité rozbory |
+| **Nejsilnější** | Claude Opus 5.5 přes `agent-resers` | cloud | jen po schválení | – | internet a nejtěžší otázky |
+
+Rychlosti jsou odhady, změř si je sám (`ollama run <model> --verbose`).
+Názvy štítků ověř na ollama.com/library/gemma4.
+Rychlý model je celý na grafice, proto odpoví hned i na dlouhé zadání. Velké modely
+nejdřív chvíli „čtou".
+
+1. **Stažení:**
+   ```powershell
+   ollama pull gemma4:e4b
+   ollama pull gemma4:26b
+   ```
+2. **ThinkingCap:**
+   - Na huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF přijmi podmínky.
+   - Repozitář je chráněný, takže do svého účtu Hugging Face (Settings → SSH Keys) přidej
+     veřejný klíč Ollamy ze souboru `C:\Users\<jméno>\.ollama\id_ed25519.pub`.
+   - Stáhni ho a dej mu krátké jméno. Název kvantizace (např. `Q4_K_M`) ověř v seznamu
+     souborů na Hugging Face.
+   ```powershell
+   ollama pull hf.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M
+   ollama cp hf.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M thinkingcap
+   ```
+3. **`OLLAMA_MAX_LOADED_MODELS` nech na 1.** Každý model tak dostane celou grafiku.
+   Přepnutí na jiný model trvá 5–15 sekund, než se načte z disku.
+4. **Na disku** zaberou všechny tři modely dohromady zhruba 40–45 GB, to se do plánu
+   z kroku 1 vejde.
+
+Jak modely přepínat v OpenClaw nastavíš v kroku 6.
+
 ---
 
 ## Krok 5: Složka Mozek a Obsidian (15 minut)
@@ -268,6 +304,29 @@ odpovídání určuje grafika a RAM, ne disk.
    ```
 5. **Heartbeat** (pravidelná kontrola) zapni s intervalem **30 minut**, viz dokumentace
    OpenClaw → Heartbeat. Agent při něm prochází `HEARTBEAT.md`.
+6. **Tři modely a přepínání** (krok 4b):
+   - **Výchozí model nastav na rychlý.** Pravidelné kontroly pak běží na něm a nemusíš
+     spoléhat na zvláštní nastavení modelu pro heartbeat, které v některých verzích
+     OpenClaw nefungovalo.
+     ```bash
+     openclaw models set ollama/gemma4:e4b
+     ```
+   - **Přezdívky modelů** dej do `~/.openclaw/openclaw.json` (tvar podle současné dokumentace,
+     ověř na docs.openclaw.ai → Models):
+     ```json
+     "agents": { "defaults": { "models": {
+       "ollama/gemma4:e4b":   { "alias": "rychly" },
+       "ollama/gemma4:26b":   { "alias": "hlavni" },
+       "ollama/thinkingcap":  { "alias": "hluboky" }
+     } } }
+     ```
+   - **V chatu pak přepínáš:**
+     - `/model hlavni` nebo `/model hluboky` platí jen pro danou konverzaci,
+     - `/model default` vrátí rychlý model,
+     - `/model` ukáže, který model právě běží.
+   - **Noční úklid paměti a týdenní plán** pouštěj s hlubokým modelem. Buď ručně
+     (`/model hluboky` a „ukliď paměť"), nebo jako naplánovanou úlohu (cron) v OpenClaw
+     s vlastním modelem a samostatnou relací, viz docs.openclaw.ai → Cron.
 
 > Když agent nepozná změny, které uděláš v Obsidianu, nech ho znovu načíst paměť
 > (`openclaw memory --help`).
