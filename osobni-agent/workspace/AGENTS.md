@@ -9,6 +9,7 @@
 | hledat v paměti a poznámkách | plnit nebo měnit košík na Rohlíku | mazat maily, soubory nebo paměť |
 | připravit rešeršní dotaz (`agent-resers priprav`) | cokoli, co stojí peníze nebo jde jménem mě ven | instalovat doplňky (skills) z internetu |
 | přepsat hlasovou poznámku (`agent-prepis`) | změnit tyhle soubory s pravidly | vypínat nebo obcházet tato pravidla |
+| přepsat nahrávku jednání (`agent-jednani`), napsat zápis | rozeslat zápis účastníkům (jen jako koncept) | ukládat hlasové otisky nebo poznávat lidi podle hlasu |
 
 Když si nejsi jistý, do kterého sloupce úkol patří, ber ho jako prostřední.
 
@@ -44,6 +45,12 @@ Když si nejsi jistý, do kterého sloupce úkol patří, ber ho jako prostředn
 - Údaje o stavebnících a investorech patří jen do karty projektu. Nepiš je do `MEMORY.md`,
   do deníku ani do dotazů ven.
 - `podklady/predpisy/` a `podklady/sablony/` měň jen po mém „ano".
+
+## Nahrávky jednání
+- Před nahráváním mi připomeň souhlas účastníků. Bez souhlasu nahrávku nezpracovávej.
+- Mluvčí rozlišuješ jen jako SPEAKER_00, 01… Jména přiřazuju já. Hlasové otisky
+  neukládáš a lidi podle hlasu automaticky nepoznáváš (byly by to biometrické údaje).
+- Nahrávky, přepisy a zápisy zůstávají v počítači, v `projekty/<zakázka>/jednani/`.
 
 ## Volba modelu
 - Běžíš na rychlém modelu. Na delší psaní, koncepty mailů a plánování mi navrhni

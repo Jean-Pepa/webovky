@@ -2,7 +2,8 @@
 # Instalace nástrojů osobního agenta ve WSL (Ubuntu).
 # Spouštěj jako běžný uživatel, ne přes sudo:
 #   bash instaluj-nastroje.sh            maily + rešerše
-#   bash instaluj-nastroje.sh --whisper  navíc lokální přepis hlasu
+#   bash instaluj-nastroje.sh --whisper  navíc lokální přepis hlasu (diktát)
+#   bash instaluj-nastroje.sh --jednani  navíc přepis jednání s rozlišením mluvčích (obsahuje --whisper)
 set -euo pipefail
 
 ZDROJ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../nastroje" && pwd)"
@@ -11,10 +12,12 @@ VENV="$HOME/.venv-agent"
 KONFIG="$HOME/.config/agent"
 BIN="$HOME/.local/bin"
 WHISPER=0
+JEDNANI=0
 
 for arg in "$@"; do
   case "$arg" in
     --whisper) WHISPER=1 ;;
+    --jednani) WHISPER=1; JEDNANI=1 ;;
     *) echo "Neznámá volba: $arg" >&2; exit 1 ;;
   esac
 done
@@ -30,7 +33,7 @@ fi
 
 echo "→ Kopíruji skripty do $CIL"
 mkdir -p "$CIL" "$BIN"
-install -m 755 "$ZDROJ/mail.py" "$ZDROJ/resers.py" "$ZDROJ/prepis.py" "$CIL/"
+install -m 755 "$ZDROJ/mail.py" "$ZDROJ/resers.py" "$ZDROJ/prepis.py" "$ZDROJ/jednani.py" "$CIL/"
 
 echo "→ Připravuji Python prostředí $VENV"
 [[ -x "$VENV/bin/python" ]] || python3 -m venv "$VENV"
@@ -38,13 +41,27 @@ echo "→ Připravuji Python prostředí $VENV"
 "$VENV/bin/python" -m pip install --quiet "anthropic>=2.3"
 if [[ $WHISPER -eq 1 ]]; then
   echo "→ Instaluji faster-whisper (přepis hlasu, chvíli to trvá)"
-  "$VENV/bin/python" -m pip install --quiet "faster-whisper>=1.1"
+  # PyAV 19 už nepřijímá volbu, kterou faster-whisper 1.2 používá při čtení nahrávek.
+  "$VENV/bin/python" -m pip install --quiet "faster-whisper>=1.1" "av>=11,<19"
+fi
+if [[ $JEDNANI -eq 1 ]]; then
+  echo "→ Instaluji pyannote.audio (rozlišení mluvčích, stahuje se i PyTorch, několik GB)"
+  # PyTorch 2.10 je poslední s CUDA 12 jako přepis (CTranslate2). Novější má CUDA 13 a jeho
+  # knihovny pro grafiku by se s knihovnami přepisu přepisovaly ve stejné složce.
+  "$VENV/bin/python" -m pip install --quiet "pyannote.audio>=4.0" \
+    "torch>=2.10,<2.11" "torchaudio>=2.10,<2.11" "torchcodec>=0.10,<0.11"
 fi
 
-echo "→ Vytvářím příkazy agent-mail, agent-resers a agent-prepis v $BIN"
-for nazev in mail resers prepis; do
+echo "→ Vytvářím příkazy agent-mail, agent-resers, agent-prepis a agent-jednani v $BIN"
+for nazev in mail resers prepis jednani; do
   cat > "$BIN/agent-$nazev" <<EOF
 #!/usr/bin/env bash
+# Knihovny CUDA z Python prostředí, aby přepis běžel i na grafice.
+for d in "$VENV"/lib/python3*/site-packages/nvidia/cublas/lib "$VENV"/lib/python3*/site-packages/nvidia/cudnn/lib; do
+  [ -d "\$d" ] && LD_LIBRARY_PATH="\$d:\${LD_LIBRARY_PATH:-}"
+done
+export LD_LIBRARY_PATH
+export PYANNOTE_METRICS_ENABLED=0
 exec "$VENV/bin/python" "$CIL/$nazev.py" "\$@"
 EOF
   chmod 755 "$BIN/agent-$nazev"
@@ -68,6 +85,9 @@ fi
 if [[ ! -f "$KONFIG/anthropic.env" ]]; then
   printf '%s\n' "# Klíč z platform.claude.com (API Keys). Není to předplatné Claude Pro." "ANTHROPIC_API_KEY=" > "$KONFIG/anthropic.env"
 fi
+if [[ ! -f "$KONFIG/huggingface.env" ]]; then
+  printf '%s\n' "# Token z huggingface.co/settings/tokens (stačí čtení). Jednou potřeba ke stažení modelu pro rozlišení mluvčích." "HF_TOKEN=" > "$KONFIG/huggingface.env"
+fi
 if [[ ! -f "$KONFIG/citliva-slova.txt" ]]; then
   cat > "$KONFIG/citliva-slova.txt" <<'EOF'
 # Slova, která nesmí odejít v rešeršním dotazu. Jedno na řádek.
@@ -82,6 +102,7 @@ chmod 600 "$KONFIG"/*
 
 echo
 echo "Hotovo. Další krok: vyplň $KONFIG/mail.env a $KONFIG/anthropic.env (NAVOD.md, krok 8)."
+[[ $JEDNANI -eq 1 ]] && echo "Pro přepis jednání vyplň i $KONFIG/huggingface.env (NAVOD.md, krok 16)."
 case ":$PATH:" in
   *":$BIN:"*) ;;
   *) echo "Pozn.: $BIN zatím není v PATH. Zavři a znovu otevři terminál Ubuntu." ;;

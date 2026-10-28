@@ -8,9 +8,13 @@ Na konci budeš mít asistenta, který běží u tebe na notebooku a:
 - plánuje: ranní přehled, týdenní plán, připomínky,
 - připraví košík na Rohlíku (objednávku potvrzuješ ty),
 - na dotazy z internetu se zeptá Clauda, ale ven pošle jen obecnou otázku, kterou předtím schválíš,
-- přepíše tvoje hlasové poznámky (česky, lokálně).
+- přepíše tvoje hlasové poznámky (česky, lokálně),
+- píše texty ke studii a k projektové dokumentaci podle vyhlášky č. 131/2024 Sb. a tvého stylu (krok 15),
+- z nahrávky jednání rozliší, kdo kdy mluvil, a napíše zápis s rozhodnutími a úkoly (krok 16),
+- vede rešerši pozemku se zdroji a připraví poptávky průzkumů (krok 17).
 
-Celé to zabere zhruba jeden víkend: 4–6 hodin práce a k tomu stahování.
+Základ (kroky 0–14) zabere zhruba jeden víkend: 4–6 hodin práce a k tomu stahování.
+Kroky 15–17 přidáš, až základ běží.
 Nic v návodu nemaže tvoje data. Jediné mazání je dobrovolný úklid v kroku 1.
 
 > **Pozor na verze.** Skripty v tomhle balíčku jsou otestované. Názvy modelů a přesné
@@ -35,6 +39,7 @@ Tvůj notebook: ASUS Zenbook Pro 16X (UX7602BZ), Intel i9-13905H, **RTX 4080 s 1
 | Internet | `agent-resers` (z balíčku) | Claude přes API, filtr osobních údajů, tvoje schválení, záznam všeho odeslaného |
 | Nákupy | oficiální MCP server Rohlíku | Agent plní košík, objednáváš ty |
 | Diktát | `agent-prepis` (faster-whisper) | Lokální přepis češtiny |
+| Jednání | `agent-jednani` (faster-whisper + pyannote) | Lokální přepis s rozlišením mluvčích na grafice |
 
 ```
  WINDOWS                              WSL2 (Ubuntu)
@@ -54,9 +59,9 @@ Co balíček obsahuje:
 |---|---|
 | `windows/` | `kontrola-pc.ps1` (kontrola disku a výkonu, nic nemaže) a `wslconfig.txt` |
 | `wsl/` | `instaluj-nastroje.sh` (instalace skriptů ve WSL) |
-| `nastroje/` | `mail.py`, `resers.py`, `prepis.py` a testy |
-| `workspace/` | šablony paměti a pravidel (`USER.md`, `SOUL.md`, `AGENTS.md`, `HEARTBEAT.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md`, `lide/`) a 10 dovedností v `skills/` |
-| `workspace/podklady/` | osnovy podle vyhlášky č. 131/2024 Sb., šablony textů ke studii a projektu, pravidla stylu, místo pro tvoje vzory |
+| `nastroje/` | `mail.py`, `resers.py`, `prepis.py`, `jednani.py` a testy |
+| `workspace/` | šablony paměti a pravidel (`USER.md`, `SOUL.md`, `AGENTS.md`, `HEARTBEAT.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md`, `lide/`) a 12 dovedností v `skills/` |
+| `workspace/podklady/` | osnovy podle vyhlášky č. 131/2024 Sb., šablony textů ke studii a projektu, rešerše pozemku a zápisu z jednání, pravidla stylu, místo pro tvoje vzory a pro územní plány obcí (`obce/`) |
 | `workspace/projekty/` | šablona karty projektu |
 
 ---
@@ -425,7 +430,7 @@ agent-prepis /mnt/c/Users/<tvé jméno>/Mozek/prichozi/test.m4a
 
 Při prvním spuštění se jednou stáhne model, asi 1,6 GB. Pak už běží bez internetu.
 Přepis jede na procesoru, aby nebral grafiku jazykovému modelu. U dlouhých nahrávek můžeš
-přidat `--gpu`.
+přidat `--gpu`, až budeš mít instalaci s `--jednani` z kroku 16 (přidá knihovny pro grafiku).
 
 Nahrávky z iPhonu dostaneš do `Mozek\prichozi` třeba přes iCloud pro Windows nebo e-mailem.
 
@@ -531,6 +536,7 @@ co dělal, a oprav pravidla v `AGENTS.md`.
 | Obsah mailů a webu jsou jen data, žádné pokyny | `AGENTS.md` |
 | Tabulka „sám / jen po ‚ano' / nikdy" | `AGENTS.md` |
 | Rohlík: objednávku potvrzuješ ty na webu | `skills/nakup-rohlik` a podmínky Rohlíku |
+| Jednání: zpracování jen v počítači, žádné hlasové otisky, jména přiřazuješ ty | `nastroje/jednani.py`, `AGENTS.md` |
 
 ---
 
@@ -577,6 +583,104 @@ seznam „Pro autora".
 
 ---
 
+## Krok 16: Zápis z jednání (asi 30 minut, k tomu stahování)
+
+Agent z nahrávky jednání rozliší, kdo kdy mluvil, přepíše to a napíše zápis s rozhodnutími,
+úkoly a časem v nahrávce. Všechno běží u tebe na grafice, nahrávka ani přepis nikam neodcházejí.
+
+**Dají se dnes rozlišit různé hlasy?** Ano, a jde to lokálně:
+
+- Přepis dělá Whisper (`large-v3-turbo`), mluvčí rozlišuje pyannote (`community-1`).
+- Zpracování hodinové nahrávky trvá na grafice řádově jednotky minut, na procesoru desítky minut.
+- Nejlíp to funguje pro 2–6 lidí, kteří se moc nepřekřikují. Chyby bývají u krátkých vstupů
+  („jo", „jasně"), když mluví víc lidí naráz, a u hodně podobných hlasů.
+- Skript lidi nepozná jménem, rozliší je jako SPEAKER_00, SPEAKER_01… Kdo je kdo, mu řekneš
+  ty. Je to tak schválně: hlasový otisk, podle kterého se člověk pozná, je biometrický údaj
+  a potřeboval bys k němu výslovný souhlas každého účastníka.
+- Živý zápis během jednání zatím nedoporučuju, rozlišení mluvčích v reálném čase je méně
+  přesné. Nahrávej a zpracuj nahrávku hned po jednání.
+
+1. **Instalace** (v Ubuntu):
+   ```bash
+   bash ~/osobni-agent/wsl/instaluj-nastroje.sh --jednani
+   ```
+   Stáhne se PyTorch a knihovny pro grafiku, několik GB. Verze jsou v instalaci schválně
+   připnuté: nejnovější PyTorch a PyAV spolu s přepisem zatím nefungují.
+2. **Přístup k modelu pro rozlišení mluvčích** (jednou):
+   - Založ si účet na huggingface.co.
+   - Na stránce huggingface.co/pyannote/speaker-diarization-community-1 přijmi podmínky.
+   - Na huggingface.co/settings/tokens vytvoř token s právem čtení (Read).
+   - Vlož ho do konfigurace za `HF_TOKEN=`:
+     ```bash
+     nano ~/.config/agent/huggingface.env
+     ```
+   Token je potřeba jen pro první stažení. Po prvním úspěšném přepisu se skript na Hugging
+   Face už neptá, ani kvůli aktualizacím.
+3. **Zkušební nahrávka:** nahraj 5 minut rozhovoru ve dvou nebo ve třech (třeba telefonem
+   položeným uprostřed stolu) a ulož ji do `Mozek\prichozi`. Pak:
+   ```bash
+   agent-jednani /mnt/c/Users/<tvé jméno>/Mozek/prichozi/zkouska.m4a --mluvcich 2
+   ```
+   Vedle nahrávky vznikne `zkouska.prepis.md` (čitelný přepis) a `zkouska.prepis.json`
+   (pro agenta).
+4. **Kdo je kdo:** v přepisu je oddíl „Kdo je kdo" s ukázkami každého mluvčího. Podle nich
+   přiřaď jména:
+   ```bash
+   agent-jednani /mnt/c/Users/<tvé jméno>/Mozek/prichozi/zkouska.m4a --jmena "SPEAKER_00=Petr, SPEAKER_01=Jana"
+   ```
+   Jména se jen doplní do hotového přepisu, nahrávka se znovu nezpracovává. Když chceš přepis
+   udělat znovu (třeba s jiným počtem mluvčích), spusť příkaz bez `--jmena`.
+5. **Ostré jednání:**
+   - Na začátku řekni: „Nahrávám si to kvůli zápisu, nahrávka zůstane jen u mě. Je to
+     v pořádku?" Souhlas tak zůstane i v nahrávce.
+   - Nahrávku dej do `Mozek\projekty\<zakázka>\jednani\` a napiš agentovi „Udělej zápis
+     z jednání". Postupuje podle dovednosti `zapis-jednani`: přepis, kdo je kdo, zápis podle
+     šablony `podklady/sablony/zapis-z-jednani.md`. Po tvém „ano" přidá úkoly do `ukoly.md`,
+     změny do karty projektu a připraví koncept zápisu pro účastníky.
+
+**Tipy pro lepší výsledek:**
+
+- Mikrofon co nejblíž všem: telefon nebo konferenční mikrofon uprostřed stolu, ne notebook
+  s hučícím ventilátorem.
+- Když víš, kolik lidí mluvilo, zadej `--mluvcich N`. Když to víš jen přibližně, zadej
+  `--min 2 --max 5`.
+- Zpracování pouštěj, když v agentovi běží rychlý model (`/model default`). Hlavní a hluboký
+  model zabírají skoro celou grafiku a skript by přešel na pomalejší procesor.
+
+---
+
+## Krok 17: Rešerše pozemku (první zkouška, asi 1 hodina)
+
+Agent vede rešerši podle dovednosti `resers-pozemku` a šablony
+`podklady/sablony/resers-pozemku.md`. Projde katastr, územní plán a regulativy, požadavky
+vyhlášky č. 146/2024 Sb., limity a ochranu území, sítě, terén, geologii, radon a vodu.
+U každého údaje je zdroj, datum a úroveň: **úřední**, **měřeno**, nebo **orientační**.
+Na konci je shrnutí (zelená, oranžová, červená) a seznam, co objednat.
+
+1. **Územní plán obce:** z webu obce nebo kraje stáhni textovou část platného ÚP (PDF) do
+   `Mozek\podklady\obce\<obec>\`. Do `zdroj.md` napiš odkaz, datum stažení a poslední změnu
+   ÚP. Agent z něj regulativy vytáhne jednou a použije je pro všechny další pozemky v obci.
+2. **Zkouška na pozemku, který znáš:** napiš „Udělej rešerši pozemku parc. č. … v k. ú. …,
+   obec …". Agent založí `projekty/<kód>/resers-pozemku.md` a řekne ti po oblastech, co a kde
+   zjistit: katastr, technickou mapu, záplavy, přírodu, památky, geologii a výškopis.
+   Výsledky mu pošli jako text nebo snímek obrazovky. Zapíše je se zdrojem a datem.
+3. **Regulativy:** na hlubokém modelu (`/model hluboky`) vytáhne regulativy plochy pozemku
+   s citací strany ÚP. Porovnej je s tím, co víš, a oprav ho.
+4. **Poptávky:** „Připrav poptávky na zaměření, geologii a radon". Vzniknou koncepty v poště,
+   odesíláš je ty.
+5. **Karta projektu:** regulativy a limity se zapíšou do karty projektu i se zdrojem. Odtud
+   je berou texty k dokumentaci (krok 15).
+
+Rešerše je podklad pro návrh, ne závazné stanovisko. Výklad regulativů potvrdí stavební úřad,
+nejjistěji předběžnou informací (§ 174 stavebního zákona).
+
+**Co bude dál:** skript `agent-pozemek`, který údaje z katastru (API KN) a z mapových služeb
+stáhne sám. Tobě pak zůstane kontrola a placené výpisy. Vyzkouší se na tvém notebooku.
+Přístup k API KN je zdarma po registraci na registrace.cuzk.gov.cz. Firma se registruje přes
+účet Dálkového přístupu, jehož zřízení trvá asi 10 dní, takže o něj můžeš zažádat už teď.
+
+---
+
 ## Kontrolní seznam: hotovo, když…
 
 - [ ] `nvidia-smi` ukazuje RTX 4080 a 12 GB
@@ -588,22 +692,28 @@ seznam „Pro autora".
 - [ ] košík na Rohlíku se naplnil a objednávku jsi potvrdil sám
 - [ ] přišel první ranní přehled
 - [ ] šifrování disku je zapnuté a `Mozek` máš zálohovaný
+- [ ] `agent-jednani` rozlišil mluvčí ve zkušební nahrávce a zápis odpovídá
+- [ ] první rešerše pozemku je v kartě projektu i se zdroji
 
 ---
 
 ## Co je ověřené a co si ověř sám
 
 - **Otestováno:**
-  - Skripty `mail.py` a `resers.py` prošly 21 automatickými testy (falešný poštovní server,
-    filtr osobních údajů, schvalování).
+  - Skripty prošly 34 automatickými testy:
+    - `mail.py` a `resers.py`: falešný poštovní server, filtr osobních údajů, schvalování.
+    - `jednani.py` a `prepis.py`: párování slov s mluvčími, jména, výstup, přechod z grafiky
+      na procesor a běh bez internetu po prvním stažení.
   - Volání Clauda prošlo zkušebně proti testovacímu serveru s oficiální knihovnou Anthropic.
   - Instalační skript proběhl na čistém Linuxu jako běžný uživatel.
   - `kontrola-pc.ps1` je syntakticky zkontrolovaný.
-- **Netestováno naživo:** skutečná schránka Gmail nebo Seznam a skutečné volání API (záleží na
-  tvých účtech).
+- **Netestováno naživo:**
+  - Skutečná schránka Gmail nebo Seznam a skutečné volání API, protože záleží na tvých účtech.
+  - Skutečný přepis s rozlišením mluvčích. Modely se stahují z Hugging Face, který tam, kde
+    balíček vznikl, nebyl dostupný. Vyzkoušíš ho v kroku 16 na krátké nahrávce.
 - **Ověř v aktuální dokumentaci:** přesné názvy modelů v knihovně Ollamy, klíče v konfiguraci
-  OpenClaw (hledání v paměti, heartbeat) a příkazy `openclaw mcp`. Tyhle věci se mění každých pár
-  týdnů.
+  OpenClaw (hledání v paměti, heartbeat), příkazy `openclaw mcp` a podmínky modelu pyannote
+  na Hugging Face. Tyhle věci se mění každých pár týdnů.
 
 Testy si můžeš pustit sám (v Ubuntu, po instalaci):
 

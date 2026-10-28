@@ -3,6 +3,12 @@
 Jediné místo, odkud agent bere údaje pro texty. Co tu není, v textech bude jako `[DOPLNIT]`.
 Údaje o stavebníkovi patří jen sem, ne do paměti ani do dotazů ven.
 
+U každého čísla a faktu uveď v závorce zdroj, datum a úroveň (úřední / měřeno / spočteno /
+orientační), např. „zastavěná plocha 142,6 m² (spočteno z modelu, 2026-11-12)".
+
+Složky zakázky: `vstupy/` (podklady, jak přišly), `vstupy-text/` (převedené na text),
+`texty/` (výstupy agenta), `jednani/` (nahrávky, přepisy, zápisy), `resers-pozemku.md`.
+
 ## Základ
 - Název stavby:
 - Fáze: studie / povolení stavby / provádění stavby
@@ -66,3 +72,6 @@ Jediné místo, odkud agent bere údaje pro texty. Co tu není, v textech bude j
 
 ## Termíny
 - Plánovaný začátek a konec realizace:
+
+## Jednání
+- RRRR-MM-DD – téma – odkaz na zápis v `jednani/`

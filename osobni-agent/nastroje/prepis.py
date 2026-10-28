@@ -34,10 +34,12 @@ def main(argv: list[str] | None = None) -> int:
         print("Chyba: chybí faster-whisper. Spusť instalaci s volbou --whisper (NAVOD.md, krok 9).", file=sys.stderr)
         return 2
 
-    if args.gpu:
-        model = WhisperModel(MODEL, device="cuda", compute_type="float16")
-    else:
-        model = WhisperModel(MODEL, device="cpu", compute_type="int8")
+    device, compute = ("cuda", "float16") if args.gpu else ("cpu", "int8")
+    try:
+        # Stažený model se načte bez internetu, na Hugging Face se neptá ani na aktualizace.
+        model = WhisperModel(MODEL, device=device, compute_type=compute, local_files_only=True)
+    except FileNotFoundError:
+        model = WhisperModel(MODEL, device=device, compute_type=compute)  # první spuštění: stáhne ho
     segments, _info = model.transcribe(str(args.soubor), language=args.jazyk, vad_filter=True, beam_size=5)
     print(" ".join(segment.text.strip() for segment in segments).strip())
     return 0
