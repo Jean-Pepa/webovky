@@ -24,7 +24,9 @@ Tvůj notebook: ASUS Zenbook Pro 16X (UX7602BZ), Intel i9-13905H, **RTX 4080 s 1
 
 | Část | Co použijeme | Proč |
 |---|---|---|
-| Mozek (jazykový model) | **Ollama + Gemma 4 26B-A4B** (4bitová verze, ~16 GB) | Nejlepší poměr chytrosti a rychlosti pro 12 GB grafiky. Je to model typu MoE, většina se vejde na grafiku a zbytek do RAM. Dobře zvládá češtinu. |
+| Mozek: hlavní model | **Ollama + Gemma 4 26B-A4B** (4bitová verze, ~16 GB) | Nejlepší poměr chytrosti a rychlosti pro 12 GB grafiky. Je to model typu MoE, většina se vejde na grafiku a zbytek do RAM. Dobře zvládá češtinu. |
+| Mozek: hluboký model | **ThinkingCap-Qwen3.6-27B** (BottleCap AI) | Na složité rozbory a noční úlohy. Pomalejší, ale přemýšlí kratčeji než původní Qwen. |
+| Mozek: nejsilnější | **Claude Opus 5.5** (cloud) | Jen přes `agent-resers` a jen po tvém schválení: internet a nejtěžší otázky |
 | Agent | **OpenClaw** ve WSL2 (Linux uvnitř Windows) | Paměť v souborech, pravidelné kontroly (heartbeat), dovednosti, napojení na Rohlík (MCP) |
 | Paměť a myšlenky | **Obsidian**, složka `Mozek` | Vidíš a opravíš, co si agent pamatuje |
 | Hledání v paměti | lokální model `embeddinggemma` | Hledání podle významu, nic neodchází ven |
@@ -221,26 +223,21 @@ odpovídání určuje grafika a RAM, ne disk.
    15–30. Příkaz `ollama ps` ukáže, kolik modelu je na grafice a kolik v RAM.
    Když je to pomalé, viz krok 13.
 
-### Krok 4b: Tři modely – rychlý, hlavní a hluboký
+### Krok 4b: Tři úrovně – hlavní, hluboký a nejsilnější
 
 | Role | Model | Velikost (4bitově) | Kde běží | Rychlost (odhad) | Na co |
 |---|---|---|---|---|---|
-| **Rychlý** (výchozí) | Gemma 4 E4B (`gemma4:e4b`), chytřejší volba `gemma4:12b` | ~5,5 / ~8 GB | celý na grafice | 50–90 / 35–45 tokenů/s | rychlé otázky, třídění mailů, pravidelné kontroly |
-| **Hlavní** | Gemma 4 26B-A4B (`gemma4:26b`) | ~16–18 GB | grafika + RAM | 15–30 tokenů/s | běžná práce, koncepty mailů, plánování |
+| **Hlavní** (výchozí) | Gemma 4 26B-A4B (`gemma4:26b`) | ~16–18 GB | grafika + RAM | 15–30 tokenů/s | všechno běžné: otázky, maily, koncepty, plánování, pravidelné kontroly |
 | **Hluboký** | ThinkingCap-Qwen3.6-27B (BottleCap AI) | ~16–17 GB | grafika + RAM | 5–9 tokenů/s, přemýšlí o ~50 % kratčeji | noční úklid paměti, týdenní plán, složité rozbory |
-| **Nejsilnější** | Claude Opus 5.5 přes `agent-resers` | cloud | jen po schválení | – | internet a nejtěžší otázky |
+| **Nejsilnější** | Claude Opus 5.5 přes `agent-resers` | cloud | jen po tvém schválení | – | internet a nejtěžší otázky |
 
 Rychlosti jsou odhady, změř si je sám (`ollama run <model> --verbose`).
-Názvy štítků ověř na ollama.com/library/gemma4.
-Rychlý model je celý na grafice, proto odpoví hned i na dlouhé zadání. Velké modely
-nejdřív chvíli „čtou".
+Název štítku Gemmy ověř na ollama.com/library/gemma4.
 
-1. **Stažení:**
-   ```powershell
-   ollama pull gemma4:e4b
-   ollama pull gemma4:26b
-   ```
-2. **ThinkingCap:**
+1. **Hlavní model** máš stažený z bodu 3. Když jsi použil verzi z Hugging Face, dej jí
+   kratší jméno, ať sedí na zbytek návodu:
+   `ollama cp hf.co/unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M gemma4:26b`.
+2. **ThinkingCap (hluboký):**
    - Na huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF přijmi podmínky.
    - Repozitář je chráněný, takže do svého účtu Hugging Face (Settings → SSH Keys) přidej
      veřejný klíč Ollamy ze souboru `C:\Users\<jméno>\.ollama\id_ed25519.pub`.
@@ -252,8 +249,8 @@ nejdřív chvíli „čtou".
    ```
 3. **`OLLAMA_MAX_LOADED_MODELS` nech na 1.** Každý model tak dostane celou grafiku.
    Přepnutí na jiný model trvá 5–15 sekund, než se načte z disku.
-4. **Na disku** zaberou všechny tři modely dohromady zhruba 40–45 GB, to se do plánu
-   z kroku 1 vejde.
+4. **Na disku** zaberou oba lokální modely dohromady zhruba 35 GB, to se do plánu
+   z kroku 1 vejde. Nejsilnější úroveň je v cloudu, na disku nic nezabírá.
 
 Jak modely přepínat v OpenClaw nastavíš v kroku 6.
 
@@ -304,26 +301,27 @@ Jak modely přepínat v OpenClaw nastavíš v kroku 6.
    ```
 5. **Heartbeat** (pravidelná kontrola) zapni s intervalem **30 minut**, viz dokumentace
    OpenClaw → Heartbeat. Agent při něm prochází `HEARTBEAT.md`.
-6. **Tři modely a přepínání** (krok 4b):
-   - **Výchozí model nastav na rychlý.** Pravidelné kontroly pak běží na něm a nemusíš
+6. **Modely a přepínání** (krok 4b):
+   - **Výchozí model nastav na hlavní.** Pravidelné kontroly pak běží na něm a nemusíš
      spoléhat na zvláštní nastavení modelu pro heartbeat, které v některých verzích
      OpenClaw nefungovalo.
      ```bash
-     openclaw models set ollama/gemma4:e4b
+     openclaw models set ollama/gemma4:26b
      ```
    - **Přezdívky modelů** dej do `~/.openclaw/openclaw.json` (tvar podle současné dokumentace,
      ověř na docs.openclaw.ai → Models):
      ```json
      "agents": { "defaults": { "models": {
-       "ollama/gemma4:e4b":   { "alias": "rychly" },
        "ollama/gemma4:26b":   { "alias": "hlavni" },
        "ollama/thinkingcap":  { "alias": "hluboky" }
      } } }
      ```
    - **V chatu pak přepínáš:**
-     - `/model hlavni` nebo `/model hluboky` platí jen pro danou konverzaci,
-     - `/model default` vrátí rychlý model,
+     - `/model hluboky` platí jen pro danou konverzaci,
+     - `/model default` vrátí hlavní model,
      - `/model` ukáže, který model právě běží.
+   - **Nejsilnější úroveň (Claude)** se nepřepíná. Agent ji volá dovedností `resers-web`,
+     když chceš něco z internetu nebo řekneš „zeptej se Clauda", a vždycky po tvém schválení.
    - **Noční úklid paměti a týdenní plán** pouštěj s hlubokým modelem. Buď ručně
      (`/model hluboky` a „ukliď paměť"), nebo jako naplánovanou úlohu (cron) v OpenClaw
      s vlastním modelem a samostatnou relací, viz docs.openclaw.ai → Cron.
@@ -481,7 +479,6 @@ Pak:
      - Stáhneš ho na huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF, kde nejdřív
        musíš přijmout podmínky.
      - Verze NVFP4 je jen pro grafiky řady RTX 50, pro tvou RTX 4080 ne.
-   - Menší model kolem 8 miliard parametrů je rychlý na třídění mailů.
    - Vždy vybírej variantu se štítkem **tools**, jinak agent neumí používat nástroje.
 
 ---
