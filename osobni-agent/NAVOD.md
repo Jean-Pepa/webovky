@@ -175,7 +175,9 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
    (bod 8), měj po ruce klíč pro obnovení, po aktualizaci si o něj notebook může říct.
 3. **Ovladač grafiky:** stáhni **NVIDIA App** z
    [nvidia.com/en-us/software/nvidia-app](https://www.nvidia.com/en-us/software/nvidia-app/)
-   a nainstaluj ovladač **Studio** (stabilnější pro práci, pro AI stačí). Po instalaci
+   a nainstaluj ovladač **Studio** (stabilnější pro práci, pro AI stačí). Typ ovladače zvolíš
+   při prvním spuštění, později v záložce Ovladače vpravo nahoře u tří teček. Přihlašovat se
+   nemusíš. V Nastavení → Ochrana osobních údajů vypni volitelné sdílení dat. Po instalaci
    v PowerShellu:
    ```powershell
    nvidia-smi
