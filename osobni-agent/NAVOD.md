@@ -182,9 +182,11 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
    ```powershell
    nvidia-smi
    ```
-   Musí ukázat RTX 4080 Laptop GPU, zhruba 12 GB paměti a vpravo nahoře **CUDA Version 12.8
-   nebo vyšší**. Starší ovladač (třeba řady 566) je pro knihovny AI z kroků 9 a 16 zbytečně
-   starý.
+   Musí ukázat RTX 4080 Laptop GPU, zhruba 12 GB paměti (12282 MiB) a nahoře **CUDA Version
+   12.8 nebo vyšší**. Starší ovladač (třeba řady 566) je pro knihovny AI z kroků 9 a 16
+   zbytečně starý. Novější výpis má jiné názvy: verzi ovladače ukazuje jako **KMD Version**
+   a verzi CUDA jako **CUDA UMD Version**. Údaj `Disp.A Off` znamená, že displej kreslí
+   integrovaná grafika, tedy že funguje režim MSHybrid.
 4. **MyASUS → Přizpůsobení** (ve starší verzi Nastavení zařízení):
    - **Nabíjení pro zdraví baterie:** Maximální životnost (60 %), když je notebook skoro pořád
      v zásuvce. Když tahle volba chybí, zvol Vyvážený režim (80 %). Před cestou přepni na Plnou
@@ -216,7 +218,9 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
      **Při zavření víka (v zásuvce): Nedělat nic**. Na baterii nech **Spánek**, ať se notebook
      v batohu nepřehřívá.
    Při noční práci nech víko otevřené nebo notebook postav na stojan, ať se dobře chladí.
-6. **Programy po spuštění:** Nastavení → Aplikace → Po spuštění. Vypni, co nepotřebuješ.
+6. **Programy po spuštění:** Nastavení → Aplikace → Po spuštění. Vypni, co nepotřebuješ,
+   hlavně programy, které drží grafiku RTX vzhůru i bez práce (třeba Epic Games Launcher).
+   Které to jsou, ukáže dolní tabulka výpisu `nvidia-smi`.
 7. **Grafika:** Nastavení → Systém → Obrazovka → Grafika → **Plánování GPU s hardwarovou
    akcelerací: zapnuto** (bývá výchozí). Ve stejném místě nastav D5, Lumion, Revit, Archicad
    a Rhino na **Vysoký výkon**, ať v režimu MSHybrid vždycky běží na RTX.
