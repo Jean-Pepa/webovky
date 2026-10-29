@@ -153,14 +153,18 @@ odpovídání určuje grafika a RAM, ne disk.
 3. **MyASUS → Aktualizace systému:** nainstaluj BIOS a ovladače ASUS. Pak v **MyASUS →
    Nastavení zařízení**:
    - **Profil ventilátoru:** Výkon (Performance), když jsi v zásuvce.
-   - **Nabíjení pro zdraví baterie:** Vyvážený režim (80 %). Notebook bude často v zásuvce
-     a baterie tak vydrží déle.
+   - **Nabíjení pro zdraví baterie:** Maximální životnost (60 %), když je notebook skoro pořád
+     v zásuvce. Před cestou přepni na Plnou kapacitu. Baterie trpí hlavně plným nabitím a teplem.
+   - **Ochrana OLED:** zapni posun pixelů a automatické skrývání hlavního panelu. Statický
+     obraz zapnutý celé hodiny by mohl displej trvale poznamenat.
    - **Režim grafiky (MUX):** nech výchozí. AI výpočty grafika dělá i tak a v klidu se uspí.
 4. **Napájení Windows:** Nastavení → Systém → Napájení a baterie → **Režim napájení: Nejlepší výkon**.
    Když má agent hlídat i v noci:
    - **Spánek při napájení ze sítě: Nikdy**,
+   - **Vypnout obrazovku po: 5 minutách** (chrání OLED, agent běží dál),
    - Ovládací panely → Možnosti napájení → Nastavit chování tlačítek napájení →
-     **Při zavření víka (v zásuvce): Nedělat nic**.
+     **Při zavření víka (v zásuvce): Nedělat nic**. Na baterii nech **Spánek**, ať se notebook
+     v batohu nepřehřívá.
    Při noční práci nech víko otevřené nebo notebook postav na stojan, ať se dobře chladí.
 5. **Programy po spuštění:** Nastavení → Aplikace → Po spuštění. Vypni, co nepotřebuješ.
 6. **Grafika:** Nastavení → Systém → Obrazovka → Grafika → **Plánování GPU s hardwarovou
@@ -671,6 +675,17 @@ agenta. Telegram na osobní data nepoužívej, zprávy v něm nejsou šifrované
   `Mozek` na externí disk.
 - **Měsíčně:** aktualizuj OpenClaw podle oficiálního návodu. Windows, ovladač NVIDIA a Ollama se
   aktualizují samy nebo přes své aplikace.
+
+**Na cestách a po vypnutí:**
+
+- Když je notebook vypnutý nebo uspaný, agent nepracuje. Nic se tím neztratí: maily
+  i úkoly zpracuje po zapnutí a zprávy z iPhonu počkají ve frontě aplikace (nejvýš 48 hodin).
+- Po zapnutí se agent spustí sám (krok 6b). Ollama ve Windows ale naběhne až po přihlášení,
+  takže po restartu kvůli aktualizacím se jednou přihlas.
+- Zapnutý notebook s internetem funguje i mimo domov, iPhone se k němu připojí přes Tailscale.
+- Do batohu ho dávej jen vypnutý nebo uspaný. Na cestě je na něm celý tvůj Mozek, takže
+  šifrování disku a záloha jsou nutnost.
+- Jednou za rok nech vyčistit ventilátory od prachu.
 
 **Nikdy:**
 
