@@ -190,9 +190,12 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
    - **Profil ventilátoru:** Výkon (Performance), když jsi v zásuvce. U Zenbooku Pro 16X ho
      najdeš i v aplikaci **ProArt Creator Hub**. Plnou rychlost nepotřebuješ. Když tě v noci
      ruší hluk, dej Standardní, agent bude jen o něco pomalejší.
-   - **Režim GPU:** nech Standardní. Diskrétní GPU AI nezrychlí a notebook by i v klidu víc
-     topil. Režim jen s integrovanou grafikou (Eco), pokud ho tam najdeš, nezapínej, agent by
-     přišel o grafiku RTX.
+   - **Přepínač MUX: MSHybrid.** Diskrétní GPU agenta nezrychlí, výpočty AI jdou na grafiku
+     RTX v obou režimech. V MSHybrid navíc běží plocha Windows na integrované grafice, takže
+     modelům zůstane víc z 12 GB paměti RTX. Grafika se v klidu uspí, takže notebook méně
+     topí a baterie déle vydrží. Přepnutí chce restart. Na náročnou práci v D5 nebo Lumionu
+     můžeš dočasně přepnout na Diskrétní GPU. Režim jen s integrovanou grafikou (Eco), pokud
+     ho tam najdeš, nezapínej, agent by přišel o grafiku RTX.
    - **ASUS OLED Care** (v části se zvukem a obrazem): zapni posun pixelů a automatické
      skrývání hlavního panelu. Statický obraz zapnutý celé hodiny by mohl displej trvale
      poznamenat. Nejvíc ho ale chrání vypnutí obrazovky po 5 minutách (bod 5).
@@ -213,7 +216,8 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
    Při noční práci nech víko otevřené nebo notebook postav na stojan, ať se dobře chladí.
 6. **Programy po spuštění:** Nastavení → Aplikace → Po spuštění. Vypni, co nepotřebuješ.
 7. **Grafika:** Nastavení → Systém → Obrazovka → Grafika → **Plánování GPU s hardwarovou
-   akcelerací: zapnuto** (bývá výchozí).
+   akcelerací: zapnuto** (bývá výchozí). Ve stejném místě nastav D5, Lumion, Revit, Archicad
+   a Rhino na **Vysoký výkon**, ať v režimu MSHybrid vždycky běží na RTX.
 8. **Šifrování disku:** agent bude znát celý tvůj život, takže tohle je povinné.
    - **Windows 11 Pro:** Start → napiš „BitLocker" → **Spravovat nástroj BitLocker**. U disku C:
      uvidíš, jestli je zapnutý. Když není, klikni na **Zapnout nástroj BitLocker** a zvol
