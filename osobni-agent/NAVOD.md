@@ -332,7 +332,7 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
 
 ### Krok 4b: Čtyři úrovně – rychlý, hlavní, hluboký a nejsilnější
 
-| Role | Model | Velikost (4bitově) | Kde běží | Rychlost (odhad) | Na co |
+| Role | Model | Velikost (4bitově) | Kde běží | Rychlost | Na co |
 |---|---|---|---|---|---|
 | **Rychlý** (výchozí) | Gemma 4 E4B (`gemma4:e4b`) | 6,6 GB | celý na grafice | 74 tokenů/s, čte ~4 000 tokenů/s (změřeno) | rychlé otázky, třídění mailů, pravidelné kontroly |
 | **Hlavní** | Gemma 4 26B-A4B (`gemma4:26b`) | 18 GB | 77 % grafika, zbytek RAM | 32 tokenů/s, čte ~700 tokenů/s (změřeno) | delší práce, koncepty mailů, plánování |
