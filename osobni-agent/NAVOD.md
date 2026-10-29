@@ -247,7 +247,7 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
    wsl --install
    ```
    Restartuj. Po startu se otevře Ubuntu: zvol uživatelské jméno (malá písmena, bez diakritiky)
-   a heslo.
+   a heslo. Když se Ubuntu samo neotevře, spusť `wsl --install` jako správce ještě jednou.
 2. Nastav WSL tak, aby vidělo Ollamu ve Windows a nebralo zbytečně paměť (v běžném PowerShellu):
    ```powershell
    Copy-Item $env:USERPROFILE\osobni-agent\windows\wslconfig.txt $env:USERPROFILE\.wslconfig
@@ -258,6 +258,13 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
    sudo apt update && sudo apt upgrade -y
    sudo apt install -y python3-venv python3-pip git curl
    ```
+4. **Kontrola** (v Ubuntu):
+   ```bash
+   wslinfo --networking-mode
+   ```
+   Musí vypsat `mirrored`. Jinak WSL nenašlo soubor `.wslconfig` z bodu 2 a agent by pak
+   neviděl Ollamu. Zkontroluj, že se soubor jmenuje přesně `.wslconfig` (bez `.txt`) a leží
+   v `C:\Users\<tvé jméno>`.
 
 ---
 
