@@ -68,6 +68,28 @@ Co balíček obsahuje:
 
 ---
 
+## Co stáhnout a odkud
+
+Stahuj jen z těchto adres. Ve vyhledávači bývají nahoře reklamy a podvodné kopie, hlavně
+u OpenClaw, Ollamy a ovladačů grafiky.
+
+| Krok | Co | Odkud |
+|---|---|---|
+| 0 | balíček `osobni-agent` | [ZIP z pracovní větve](https://github.com/jean-pepa/webovky/archive/refs/heads/claude/busy-gauss-t83y4w.zip) |
+| 2 | MyASUS | v notebooku od výroby (Start → MyASUS), jinak [Microsoft Store](https://apps.microsoft.com/detail/9n7r5s6b0zzh) |
+| 2 | ProArt Creator Hub (profil ventilátoru) | v notebooku od výroby, jinak [Microsoft Store](https://apps.microsoft.com/detail/9nm0hh6wdn7q) |
+| 2 | NVIDIA App a ovladač Studio | [nvidia.com/en-us/software/nvidia-app](https://www.nvidia.com/en-us/software/nvidia-app/) |
+| 3 | WSL a Ubuntu | nic nestahuješ, stačí příkaz `wsl --install` |
+| 4 | Ollama | [ollama.com/download/windows](https://ollama.com/download/windows) |
+| 4 | modely Gemma 4 | příkazem `ollama pull`, přehled na [ollama.com/library/gemma4](https://ollama.com/library/gemma4) |
+| 4b | účet Hugging Face a model ThinkingCap | [huggingface.co/join](https://huggingface.co/join), [stránka modelu](https://huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF) |
+| 5 | Obsidian | [obsidian.md/download](https://obsidian.md/download) |
+| 6 | OpenClaw | příkazem v Ubuntu (krok 6), návod na [docs.openclaw.ai/install](https://docs.openclaw.ai/install) |
+| 12 | Tailscale do iPhonu | [App Store](https://apps.apple.com/app/tailscale/id1470499037) |
+| 12 | OpenClaw do iPhonu | [App Store](https://apps.apple.com/app/openclaw-ai-that-does-things/id6780396132) |
+
+---
+
 ## Krok 0: Záloha a kontrola (15 minut)
 
 1. **Zálohuj, na čem ti záleží** (projekty, fotky) na externí disk. Úklid v kroku 1 je bezpečný, ale záloha se vyplatí vždycky.
@@ -146,25 +168,39 @@ odpovídání určuje grafika a RAM, ne disk.
 Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespustí.
 
 1. **Windows Update:** nainstaluj všechno a restartuj.
-2. **MyASUS → Aktualizace systému:** nainstaluj BIOS a ovladače ASUS. Když ti nabídne i ovladač
-   NVIDIA, přeskoč ho, novější nainstaluješ v dalším bodě. Když už máš zapnutý BitLocker
-   (bod 8), měj před aktualizací BIOSu po ruce klíč pro obnovení. Po aktualizaci si o něj
-   notebook může říct.
-3. **Ovladač grafiky:** stáhni **NVIDIA App** z nvidia.com a nainstaluj ovladač **Studio**
-   (stabilnější pro práci, pro AI stačí). Po instalaci v PowerShellu:
+2. **MyASUS → Aktualizace systému:** nejdřív aktualizuj samotnou aplikaci MyASUS (Microsoft
+   Store → Knihovna → Získat aktualizace). Pak nainstaluj BIOS a ovladače ASUS. Když ti nabídne
+   i ovladač NVIDIA, přeskoč ho, novější nainstaluješ v dalším bodě. Během aktualizace BIOSu
+   nech nabíječku zapojenou a notebook nezavírej ani nevypínej. Když už máš zapnutý BitLocker
+   (bod 8), měj po ruce klíč pro obnovení, po aktualizaci si o něj notebook může říct.
+3. **Ovladač grafiky:** stáhni **NVIDIA App** z
+   [nvidia.com/en-us/software/nvidia-app](https://www.nvidia.com/en-us/software/nvidia-app/)
+   a nainstaluj ovladač **Studio** (stabilnější pro práci, pro AI stačí). Po instalaci
+   v PowerShellu:
    ```powershell
    nvidia-smi
    ```
    Musí ukázat RTX 4080 Laptop GPU, zhruba 12 GB paměti a vpravo nahoře **CUDA Version 12.8
    nebo vyšší**. Starší ovladač (třeba řady 566) je pro knihovny AI z kroků 9 a 16 zbytečně
    starý.
-4. **MyASUS → Nastavení zařízení:**
-   - **Profil ventilátoru:** Výkon (Performance), když jsi v zásuvce.
+4. **MyASUS → Přizpůsobení** (ve starší verzi Nastavení zařízení):
    - **Nabíjení pro zdraví baterie:** Maximální životnost (60 %), když je notebook skoro pořád
-     v zásuvce. Před cestou přepni na Plnou kapacitu. Baterie trpí hlavně plným nabitím a teplem.
-   - **Ochrana OLED:** zapni posun pixelů a automatické skrývání hlavního panelu. Statický
-     obraz zapnutý celé hodiny by mohl displej trvale poznamenat.
-   - **Režim grafiky (MUX):** nech výchozí. AI výpočty grafika dělá i tak a v klidu se uspí.
+     v zásuvce. Když tahle volba chybí, zvol Vyvážený režim (80 %). Před cestou přepni na Plnou
+     kapacitu. Baterie trpí hlavně plným nabitím a teplem.
+   - **Profil ventilátoru:** Výkon (Performance), když jsi v zásuvce. U Zenbooku Pro 16X ho
+     najdeš i v aplikaci **ProArt Creator Hub**. Plnou rychlost nepotřebuješ. Když tě v noci
+     ruší hluk, dej Standardní, agent bude jen o něco pomalejší.
+   - **Režim GPU:** nech Standardní. Diskrétní GPU AI nezrychlí a notebook by i v klidu víc
+     topil. Režim jen s integrovanou grafikou (Eco), pokud ho tam najdeš, nezapínej, agent by
+     přišel o grafiku RTX.
+   - **ASUS OLED Care** (v části se zvukem a obrazem): zapni posun pixelů a automatické
+     skrývání hlavního panelu. Statický obraz zapnutý celé hodiny by mohl displej trvale
+     poznamenat. Nejvíc ho ale chrání vypnutí obrazovky po 5 minutách (bod 5).
+   - **Mikrofon s potlačením šumu:** když budeš nahrávat jednání přímo do notebooku, zvol režim
+     pro více mluvčích. Režim pro jednoho mluvčího ztlumí lidi, kteří nesedí před notebookem.
+   - Propojení s telefonem (Link to MyASUS, GlideX) nepotřebuješ, iPhone připojíš v kroku 12
+     přes Tailscale. Volitelně si pusť **Diagnostiku systému** (rychlá kontrola baterie
+     a disku).
 5. **Napájení Windows:** Nastavení → Systém → Napájení a baterie → **Režim napájení: Nejlepší výkon**.
    Kontrola z kroku 0 pak dál ukazuje schéma Rovnováha. To je v pořádku, režim napájení je
    samostatné nastavení.
@@ -217,7 +253,8 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
 
 ## Krok 4: Ollama a model (30–60 minut, většinou stahování)
 
-1. Stáhni **Ollama pro Windows** z ollama.com a nainstaluj.
+1. Stáhni **Ollama pro Windows** z
+   [ollama.com/download/windows](https://ollama.com/download/windows) a nainstaluj.
 2. **Nastav výkon** (v PowerShellu, jednou):
    ```powershell
    setx OLLAMA_FLASH_ATTENTION 1
@@ -313,7 +350,8 @@ Jak modely přepínat v OpenClaw nastavíš v kroku 6.
    `AGENTS.md`, `HEARTBEAT.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md` a složky `ja`, `lide`,
    `skills`, `podklady` a `projekty`.
    Vytvoř v ní ještě prázdné složky `memory` (deník), `koncepty` a `prichozi`.
-3. Nainstaluj **Obsidian** (obsidian.md) → „Otevřít složku jako trezor" → `Mozek`.
+3. Nainstaluj **Obsidian** ([obsidian.md/download](https://obsidian.md/download)) → „Otevřít
+   složku jako trezor" → `Mozek`.
    Obsidian Sync ani jinou synchronizaci do cloudu nezapínej.
 4. Volitelně přidej plugin **Smart Connections**, ať můžeš i ty hledat v poznámkách podle
    významu. V jeho nastavení zvol lokální model, ne cloud.
@@ -322,8 +360,12 @@ Jak modely přepínat v OpenClaw nastavíš v kroku 6.
 
 ## Krok 6: OpenClaw (30 minut)
 
-1. V Ubuntu nainstaluj OpenClaw **podle oficiálního návodu** na docs.openclaw.ai (Install → Linux
-   a WSL2). Použij jen tenhle zdroj: existují podvodné kopie s podobnými názvy. NVIDIA má k tomu
+1. V Ubuntu nainstaluj OpenClaw příkazem z **oficiální dokumentace**
+   ([docs.openclaw.ai/install](https://docs.openclaw.ai/install), část Windows → WSL2):
+   ```bash
+   curl -fsSL https://openclaw.ai/install.sh | bash
+   ```
+   Použij jen tenhle zdroj: existují podvodné kopie s podobnými názvy. NVIDIA má k tomu
    i průvodce pro notebooky s RTX: build.nvidia.com/rtx/openclaw.
 2. Spusť průvodce nastavením:
    ```bash
@@ -629,8 +671,11 @@ Když spí nebo je vypnutý, agent neodpoví a pravidelné kontroly počkají.
    ```
    Nikdy nepoužívej režim `funnel`. Ten by bránu otevřel do veřejného internetu.
 3. **V iPhonu:**
-   - Z App Storu nainstaluj **Tailscale** a přihlas se stejným účtem.
-   - Pak nainstaluj aplikaci **OpenClaw** a naskenuj QR kód z `openclaw qr`.
+   - Z App Storu nainstaluj **Tailscale**
+     ([odkaz](https://apps.apple.com/app/tailscale/id1470499037)) a přihlas se stejným účtem.
+   - Pak nainstaluj aplikaci **OpenClaw**
+     ([odkaz](https://apps.apple.com/app/openclaw-ai-that-does-things/id6780396132)) a naskenuj
+     QR kód z `openclaw qr`.
    - V notebooku spárování schval: `openclaw devices list`, pak
      `openclaw devices approve <requestId>`.
 4. **Oprávnění aplikace:** povol mikrofon a oznámení. Kameru, polohu, Zdraví a fotky
