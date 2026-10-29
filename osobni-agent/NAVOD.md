@@ -373,6 +373,13 @@ v mailu. Proto ho omezíme i technicky. Výchozí instalace OpenClaw dává agen
 Konfiguraci a seznam příkazů jsem ověřil přímo v OpenClaw 2026.10.8 (`openclaw config
 validate`, `openclaw security audit`).
 
+Nejdřív zkopíruj balíček do Ubuntu (stačí jednou):
+```bash
+cp -r /mnt/c/Users/<tvé jméno>/osobni-agent ~/osobni-agent
+```
+Když si později stáhneš novou verzi balíčku, starou kopii nejdřív smaž (`rm -rf ~/osobni-agent`)
+a zkopíruj ji znovu.
+
 1. **Systemd ve WSL.** Spusť `cat /etc/wsl.conf`. Když tam není `systemd=true`, zapni ho:
    ```bash
    printf '[boot]\nsystemd=true\n' | sudo tee -a /etc/wsl.conf
@@ -439,9 +446,8 @@ V ovládacím panelu napiš:
 
 ## Krok 8: Maily a internet (45 minut)
 
-1. **Nainstaluj nástroje** (v Ubuntu):
+1. **Nainstaluj nástroje** (v Ubuntu, balíček tam máš z kroku 6b):
    ```bash
-   cp -r /mnt/c/Users/<tvé jméno>/osobni-agent ~/osobni-agent
    bash ~/osobni-agent/wsl/instaluj-nastroje.sh --whisper
    ```
    Bez `--whisper` se nenainstaluje diktování. Pak zavři a znovu otevři Ubuntu.
