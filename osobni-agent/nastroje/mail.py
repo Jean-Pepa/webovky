@@ -8,19 +8,24 @@ Přihlašovací údaje čte z ~/.config/agent/mail.env (KLÍČ=hodnota, práva 6
     IMAP_PORT=993
     IMAP_USER=jmeno@gmail.com
     IMAP_PASSWORD=heslo-pro-aplikace
-    # volitelné, jinak se složka konceptů najde sama:
+    # volitelné, jinak se složky konceptů a odeslaných najdou samy:
     DRAFTS_FOLDER=
+    SENT_FOLDER=
 
 Příkazy:
     agent-mail nove [--max N] [--dni D]   nové zprávy od minulé kontroly (JSON)
     agent-mail precti UID                 celý text jedné zprávy (JSON)
     agent-mail koncept --komu ADRESA --predmet TEXT [--odpoved-na UID] < text
                                           uloží koncept do složky Koncepty
+    agent-mail odeslane [--max N] [--dni D]
+                                          tvoje odeslané zprávy bez citací, aby se agent
+                                          naučil, jak píšeš (JSON, jen čtení)
 """
 
 from __future__ import annotations
 
 import argparse
+import base64
 import email
 import imaplib
 import json
@@ -43,6 +48,13 @@ STATE_PATH = STATE_DIR / "mail-stav.json"
 # IMAP vyžaduje anglické zkratky měsíců bez ohledu na jazyk systému.
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 DRAFT_NAMES = ["Drafts", "Koncepty", "INBOX.Drafts", "INBOX/Drafts", "Concepts", "Rozepsané"]
+SENT_NAMES = ["Sent", "Odeslané", "Odeslaná pošta", "Sent Items", "Sent Mail", "INBOX.Sent", "INBOX/Sent"]
+# Začátek citované zprávy v odpovědi (Gmail, Seznam, Outlook, Apple Mail).
+REPLY_HEADER = re.compile(r"^\s*(Dne|On)\b.{0,300}\b(napsal|napsala|napsal\(a\)|wrote)\s*:\s*$", re.I | re.S)
+REPLY_SEPARATOR = re.compile(r"^\s*-{2,}\s*(Původní zpráva|Původní e-mail|Přeposlaná zpráva|Original Message|"
+                             r"Forwarded message)\s*-{2,}", re.I)
+HEADER_START = re.compile(r"^\s*(Od|From)\s*:\s*\S", re.I)
+HEADER_NEXT = re.compile(r"^\s*(Odesláno|Sent|Datum|Date|Komu|To)\s*:", re.I)
 LIST_LINE = re.compile(rb'^\((?P<flags>[^)]*)\) (?P<delim>"(?:[^"\\]|\\.)*"|NIL) (?P<name>.+)$')
 
 
@@ -248,8 +260,46 @@ def _unquote(name: bytes) -> str:
     return text
 
 
-def find_drafts_folder(list_lines) -> str | None:
-    """Najde složku konceptů podle příznaku \\Drafts, jinak podle obvyklých názvů."""
+def imap_utf7_decode(name: str) -> str:
+    """Název složky z kódování IMAP (modified UTF-7, RFC 3501) na běžný text."""
+    def decode(match):
+        chunk = match.group(1)
+        if not chunk:
+            return "&"
+        chunk = chunk.replace(",", "/")
+        chunk += "=" * (-len(chunk) % 4)
+        return base64.b64decode(chunk).decode("utf-16-be")
+    try:
+        return re.sub(r"&([A-Za-z0-9+,]*)-", decode, name)
+    except (ValueError, UnicodeDecodeError):
+        return name
+
+
+def imap_utf7_encode(name: str) -> str:
+    """Běžný text na název složky v kódování IMAP (pro SENT_FOLDER s diakritikou)."""
+    out, pending = [], []
+
+    def flush():
+        if pending:
+            data = base64.b64encode("".join(pending).encode("utf-16-be")).decode().rstrip("=")
+            out.append("&" + data.replace("/", ",") + "-")
+            pending.clear()
+
+    for char in name:
+        if 0x20 <= ord(char) <= 0x7E:
+            flush()
+            out.append("&-" if char == "&" else char)
+        else:
+            pending.append(char)
+    flush()
+    return "".join(out)
+
+
+def _find_folder(list_lines, flag: bytes, candidates: list[str], suffixes: tuple[str, ...]) -> str | None:
+    """Najde složku podle příznaku (např. \\Drafts), jinak podle obvyklých názvů.
+
+    Vrací název tak, jak ho poslal server, aby šel rovnou použít v SELECT nebo APPEND.
+    """
     names = []
     for line in list_lines or []:
         if not isinstance(line, bytes):
@@ -258,17 +308,43 @@ def find_drafts_folder(list_lines) -> str | None:
         if not match:
             continue
         name = _unquote(match.group("name"))
-        if b"\\drafts" in match.group("flags").lower():
+        if flag in match.group("flags").lower():
             return name
         names.append(name)
-    lowered = {n.lower(): n for n in names}
-    for candidate in DRAFT_NAMES:
-        if candidate.lower() in lowered:
-            return lowered[candidate.lower()]
-    for name in names:
-        if name.lower().endswith(("/drafts", "/koncepty", ".drafts")):
+    readable = {imap_utf7_decode(n).lower(): n for n in names}
+    for candidate in candidates:
+        if candidate.lower() in readable:
+            return readable[candidate.lower()]
+    for text, name in readable.items():
+        if text.endswith(suffixes):
             return name
     return None
+
+
+def find_drafts_folder(list_lines) -> str | None:
+    return _find_folder(list_lines, b"\\drafts", DRAFT_NAMES, ("/drafts", "/koncepty", ".drafts"))
+
+
+def find_sent_folder(list_lines) -> str | None:
+    return _find_folder(list_lines, b"\\sent", SENT_NAMES,
+                        ("/sent", "/sent mail", "/sent items", "/odeslané", "/odeslaná pošta", ".sent"))
+
+
+def own_text(text: str) -> str:
+    """Jen to, co napsal sám odesílatel: bez citované zprávy, na kterou odpovídá."""
+    lines = text.replace("\r\n", "\n").split("\n")
+    kept = []
+    for i, line in enumerate(lines):
+        two = line + " " + (lines[i + 1] if i + 1 < len(lines) else "")
+        if REPLY_SEPARATOR.match(line) or REPLY_HEADER.match(line) or REPLY_HEADER.match(two.strip()):
+            break
+        if HEADER_START.match(line) and any(HEADER_NEXT.match(nxt) for nxt in lines[i + 1:i + 4]):
+            break
+        if line.lstrip().startswith(">"):
+            continue
+        kept.append(line.rstrip())
+    result = "\n".join(kept).strip()
+    return re.sub(r"\n{3,}", "\n\n", result)
 
 
 def quote_mailbox(name: str) -> str:
@@ -323,6 +399,42 @@ def cmd_koncept(cfg: dict[str, str], to: str, subject: str, text: str, reply_uid
             pass
 
 
+def cmd_odeslane(cfg: dict[str, str], max_count: int, days: int, max_chars: int) -> dict:
+    imap = connect(cfg)
+    try:
+        configured = cfg.get("SENT_FOLDER", "")
+        folder = imap_utf7_encode(configured) if configured else find_sent_folder(imap.list()[1])
+        if not folder:
+            raise MailError("Složku odeslaných jsem nenašel. Doplň SENT_FOLDER do mail.env.")
+        typ, _ = imap.select(quote_mailbox(folder), readonly=True)
+        if typ != "OK":
+            raise MailError(f"Složku {imap_utf7_decode(folder)} se nepodařilo otevřít.")
+        typ, data = imap.uid("SEARCH", None, f"SINCE {imap_date(days)}")
+        found = sorted(int(x) for x in (data[0].split() if typ == "OK" and data and data[0] else []))
+        messages = []
+        for uid in found[-max_count:] if max_count > 0 else []:
+            raw = _fetch_raw(imap, uid)
+            if not raw:
+                continue
+            item = summarize(uid, raw, max_chars=10**6)
+            text = own_text(item["text"])
+            if not text:
+                continue
+            messages.append({
+                "uid": uid,
+                "komu": item["komu"],
+                "predmet": item["predmet"],
+                "datum": item["datum"],
+                "text": text[:max_chars] + ("\n[…zkráceno]" if len(text) > max_chars else ""),
+            })
+        return {"slozka": imap_utf7_decode(folder), "zpravy": messages, "pocet_v_obdobi": len(found)}
+    finally:
+        try:
+            imap.logout()
+        except (imaplib.IMAP4.error, OSError):
+            pass
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="agent-mail", description="Hlídání e-mailu: jen čtení a koncepty.")
     sub = parser.add_subparsers(dest="prikaz", required=True)
@@ -337,6 +449,10 @@ def main(argv: list[str] | None = None) -> int:
     p_draft.add_argument("--komu", required=True)
     p_draft.add_argument("--predmet", required=True)
     p_draft.add_argument("--odpoved-na", type=int, dest="odpoved_na", help="UID zprávy, na kterou odpovídáš")
+    p_sent = sub.add_parser("odeslane", help="tvoje odeslané zprávy bez citací (jen čtení)")
+    p_sent.add_argument("--max", type=int, default=50, help="nejvýš kolik zpráv (nejnovější)")
+    p_sent.add_argument("--dni", type=int, default=365, help="za kolik posledních dní")
+    p_sent.add_argument("--znaku", type=int, default=3000, help="maximální délka textu jedné zprávy")
     args = parser.parse_args(argv)
 
     try:
@@ -345,6 +461,8 @@ def main(argv: list[str] | None = None) -> int:
             result = cmd_nove(cfg, args.max, args.dni, args.znaku)
         elif args.prikaz == "precti":
             result = cmd_precti(cfg, args.uid, args.znaku)
+        elif args.prikaz == "odeslane":
+            result = cmd_odeslane(cfg, args.max, args.dni, args.znaku)
         else:
             result = cmd_koncept(cfg, args.komu, args.predmet, sys.stdin.read(), args.odpoved_na)
     except MailError as exc:

@@ -14,8 +14,8 @@
   agents: {
     main: {
       allowlist: [
-        // Maily: jen číst.
-        { pattern: "~/.local/bin/agent-mail", argPattern: "^(nove|precti)( .*)?$" },
+        // Maily: jen číst (nové, jednu zprávu, odeslané kvůli tvému stylu).
+        { pattern: "~/.local/bin/agent-mail", argPattern: "^(nove|precti|odeslane)( .*)?$" },
         // Rešerše: jen připravit dotaz a prohlížet záznam odeslaného.
         { pattern: "~/.local/bin/agent-resers", argPattern: "^(priprav|log)( .*)?$" },
         // Přepis diktátu a jednání (běží lokálně).

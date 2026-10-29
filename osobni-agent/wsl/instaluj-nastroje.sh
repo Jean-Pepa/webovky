@@ -78,8 +78,9 @@ IMAP_HOST=
 IMAP_PORT=993
 IMAP_USER=
 IMAP_PASSWORD=
-# Volitelné: název složky konceptů, když ji skript nenajde sám
+# Volitelné: názvy složek konceptů a odeslaných, když je skript nenajde sám
 DRAFTS_FOLDER=
+SENT_FOLDER=
 EOF
 fi
 if [[ ! -f "$KONFIG/anthropic.env" ]]; then

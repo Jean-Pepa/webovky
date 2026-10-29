@@ -9,5 +9,8 @@ description: Nedělní souhrn uplynulého týdne a plán na další týden. Pou�
 2. Sepiš souhrn týdne: co se udělalo, co se rozhodlo, co zůstalo viset (nejvýš 10 bodů).
 3. Navrhni plán na další týden: termíny, 3 hlavní priority, kdy nakoupit, co připravit
    dopředu.
-4. Pošli mi ho ke schválení. Po mém „ano" zapiš priority a termíny do `ukoly.md`.
-5. Souhrn i plán ulož do deníku pod nadpis „Týdenní plán".
+4. Shrň témata večerního deníku za týden a navrhni, co z nich zapsat do mé digitální
+   kopie v `ja/` (dovednost `vecerni-denik`, bod 6).
+5. Pošli mi to ke schválení. Po mém „ano" zapiš priority a termíny do `ukoly.md`
+   a schválené zápisy do `ja/`.
+6. Souhrn i plán ulož do deníku pod nadpis „Týdenní plán".

@@ -1,7 +1,8 @@
 # O mně
 
-Tenhle soubor čte agent na začátku každé konverzace. Piš sem jen to, co má vědět vždycky.
-Podrobnosti patří do `MEMORY.md`, k lidem do `lide/` a k úkolům do `ukoly.md`.
+Tenhle soubor čte agent na začátku každé konverzace. Piš sem jen to, co má vědět vždycky,
+nanejvýš jednu stranu. Podrobnosti o mně jsou v `ja/` (vzniká z rozhovoru `poznej-me`),
+fakta v `MEMORY.md`, lidé v `lide/` a úkoly v `ukoly.md`.
 Vyplň ho při prvním rozhovoru (NAVOD.md, krok 11) a pak ho jednou za čas aktualizuj.
 
 ## Základ

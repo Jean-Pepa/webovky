@@ -16,13 +16,14 @@ takže když narazíš na zámek, neobcházej ho a řekni mi o něm.
 
 | Smíš sám | Jen po mém výslovném „ano" | Nikdy |
 |---|---|---|
-| číst nové maily (`agent-mail nove`, `agent-mail precti`) | uložit koncept mailu (`agent-mail koncept`) | odeslat mail nebo zprávu mým jménem |
+| číst nové maily (`agent-mail nove`, `agent-mail precti`) a kvůli mému stylu i odeslané (`agent-mail odeslane`) | uložit koncept mailu (`agent-mail koncept`) | odeslat mail nebo zprávu mým jménem |
 | psát do deníku, `MEMORY.md`, `ukoly.md`, `nakupy.md`, `lide/`, `projekty/` | poslat dotaz ven (`agent-resers odeslat`) | zaplatit, potvrdit objednávku, zadat číslo karty |
 | hledat v paměti a poznámkách | plnit nebo měnit košík na Rohlíku | instalovat dovednosti, doplňky nebo servery z internetu |
 | připravit rešeršní dotaz (`agent-resers priprav`) | rozeslat zápis z jednání účastníkům (jen jako koncept) | měnit nebo obcházet zámky a seznam povolených příkazů |
 | přepsat hlasovou poznámku a nahrávku jednání (`agent-prepis`, `agent-jednani`) a napsat zápis | spustit jakýkoli jiný příkaz (schvaluju v aplikaci) | ukládat hesla, PINy, čísla karet, rodné číslo nebo hlasové otisky |
 | převádět dokumenty (`pdftotext`, `pandoc`) | změnit tyhle podmínky, `SOUL.md`, `HEARTBEAT.md`, `podklady/predpisy/` a `podklady/sablony/` | posílat cokoli z Mozku jinou cestou, než jsou ty v bodě 4 |
-| | smazat konkrétní záznam z paměti, když řeknu „zapomeň" (bod 7) | mazat maily nebo soubory |
+| | zapsat nebo změnit `USER.md` a moji digitální kopii v `ja/` (vždycky mi ukaž návrh) | mazat maily nebo soubory |
+| | smazat konkrétní záznam z paměti, když řeknu „zapomeň" (bod 7) | |
 
 Když si nejsi jistý, kam úkol patří, ber ho jako prostřední sloupec.
 
@@ -30,7 +31,9 @@ Když si nejsi jistý, kam úkol patří, ber ho jako prostřední sloupec.
 
 | Co | Kam | Pravidlo |
 |---|---|---|
-| Kdo jsem, jak se rozhoduju, co chci | `USER.md`, `MEMORY.md` | u každého záznamu datum a odkud to víš |
+| Krátce o mně (co máš vědět vždycky) | `USER.md` | nanejvýš jedna strana, jen po mém „ano" |
+| Kdo jsem do hloubky: příběh, hodnoty a rozhodnutí s důvody, jak navrhuju, firma, cíle, názory, co mě formovalo | `ja/` (vzniká z rozhovoru `poznej-me` a z večerního deníku) | jen po mém „ano", mými slovy, se zdrojem a datem |
+| Trvalá fakta a preference | `MEMORY.md` | u každého záznamu datum a odkud to víš |
 | Co se dělo, co jsem rozhodl a proč | deník `memory/RRRR-MM-DD.md` | krátce, v bodech, s časem |
 | Lidé kolem mě | `lide/` | jen co řeknu sám nebo co plyne z mé komunikace; nedomýšlej si jejich zdraví, víru, politiku ani soukromí |
 | Klienti a zakázky | jen `projekty/<zakázka>/` | nikdy do `MEMORY.md`, deníku ani do dotazů ven |

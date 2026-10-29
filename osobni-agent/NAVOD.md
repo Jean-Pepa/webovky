@@ -62,7 +62,7 @@ Co balíček obsahuje:
 | `wsl/` | `instaluj-nastroje.sh` (instalace skriptů ve WSL) |
 | `zamky/` | zamčená konfigurace OpenClaw, seznam povolených příkazů a kontrolní skript (krok 6b) |
 | `nastroje/` | `mail.py`, `resers.py`, `prepis.py`, `jednani.py` a testy |
-| `workspace/` | šablony paměti a pravidel (`USER.md`, `SOUL.md`, `AGENTS.md`, `HEARTBEAT.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md`, `lide/`) a 12 dovedností v `skills/` |
+| `workspace/` | šablony paměti a pravidel (`USER.md`, `SOUL.md`, `AGENTS.md`, `HEARTBEAT.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md`, `lide/`), tvoje digitální kopie v `ja/` s otázkami k rozhovoru a 14 dovedností v `skills/` |
 | `workspace/podklady/` | osnovy podle vyhlášky č. 131/2024 Sb., šablony textů ke studii a projektu, rešerše pozemku a zápisu z jednání, pravidla stylu, místo pro tvoje vzory a pro územní plány obcí (`obce/`) |
 | `workspace/projekty/` | šablona karty projektu |
 
@@ -529,21 +529,53 @@ Na rohlik.cz zkontroluj košík. Objednávku a platbu potvrzuješ vždycky ty, a
 
 ---
 
-## Krok 11: Rozhovor „kdo jsem" (1 hodina, nejdůležitější krok)
+## Krok 11: Tvoje digitální kopie (první měsíc, nejdůležitější krok)
 
-Agent tě pozná tak, že mu o sobě povíš. Napiš mu (nebo nadiktuj):
+Agent tě pozná tak, že mu o sobě povíš, nejlíp hlasem. Mluvení je zhruba třikrát rychlejší
+než psaní a víc odpovídá tomu, jak opravdu přemýšlíš. Nejpohodlnější je mluvit z iPhonu,
+takže klidně udělej nejdřív krok 12.
 
-> Udělej se mnou úvodní rozhovor, abys mě poznal. Ptej se postupně, vždycky na jednu nebo dvě
-> věci: práce a projekty, blízcí lidé (jen co sám řeknu), domácnost a nákupy, jak se
-> rozhoduju, co mě štve a jaké mám cíle. Po každém tématu navrhni, co zapíšeš do USER.md,
-> MEMORY.md nebo lide/, a zapiš to až po mém souhlasu.
+Co v Mozku postupně vznikne:
 
-Pak:
+| Kde | Co tam je |
+|---|---|
+| `USER.md` | krátké shrnutí, které agent čte pokaždé |
+| `ja/` | tvůj příběh, hodnoty a rozhodnutí s důvody, jak navrhuješ, firma, běžný den, jak píšeš, cíle, názory a co tě formovalo |
+| `lide/` | lidé kolem tebe |
+| `MEMORY.md` a deník | fakta, preference a co se kdy dělo |
 
-- **Každý týden** se ho zeptej „co je nového, co bys měl vědět".
-- **Každý týden** si na 10 minut přečti `MEMORY.md` v Obsidianu a oprav nesmysly.
-- Když udělá chybu, řekni mu to a nech ho opravu zapsat. Tak se z něj během týdnů stává
-  opravdu tvůj asistent.
+1. **Rozhovor po tématech** (první dva týdny, 11 sezení po 30–40 minutách). Napiš agentovi
+   „Poznej mě, začni rozhovor".
+   - Ptá se po jedné otázce a doptává se na důvody a příklady.
+   - Po každém tématu ti ukáže, co zapíše, a zapíše to až po tvém „ano".
+   - Kde jste skončili, je v `ja/rozhovor.md`.
+2. **Začít můžeš hned, ještě před instalací.**
+   - Otázky jsou v `workspace/ja/otazky.md`. Odpovědi nahrávej do Diktafonu v iPhonu a na
+     začátku nahrávky řekni číslo tématu.
+   - Až agent poběží, pošli nahrávky do aplikace OpenClaw (+ → Soubor). Agent je přepíše
+     v notebooku a zpracuje.
+   - Do té doby nahrávky nech jen v telefonu: pro Diktafon vypni iCloud, nebo zapni
+     Rozšířenou ochranu dat.
+3. **Jak píšeš** (téma 7): agent projde tvoje odeslané maily (`agent-mail odeslane`, jen
+   čte) a do `ja/komunikace.md` zapíše rozbor stylu. Celé maily neukládá. Podle toho pak
+   píše koncepty tvým tónem.
+4. **Pět projektů, na které jsi nejvíc hrdý:** ke každému pár vět o tom, proč je navržený
+   právě takhle. Patří do `ja/navrhovani.md` a do karet projektů. Z toho později vznikne
+   tvoje design DNA.
+5. **Večerní deník** (natrvalo, 5 minut denně):
+   - V iPhonu si v Připomínkách nastav opakovanou připomínku na 21:00 „Večerní deník".
+   - Pošli agentovi hlasovou zprávu: co se stalo, co jsi rozhodl a proč, co tě potěšilo
+     a co štvalo.
+   - Dovednost `vecerni-denik` to zapíše do deníku a rozhodnutí s důvody i další změny ti
+     navrhne do `ja/`. Jednou týdně s plánem shrne, co se o tobě dozvěděl.
+6. **Týdně 10 minut:** v Obsidianu projdi `MEMORY.md` a `ja/` a oprav, co nesedí. Hlavně
+   z oprav se agent naučí být jako ty.
+
+**Pozor:**
+- Rozhovor dělej jen s lokálním agentem. V cloudovém chatu by tvoje odpovědi odešly ven.
+- Zdraví, rodinu a peníze tam dej jen v rozsahu, který sám chceš. Hesla a čísla karet nikdy.
+- `USER.md` a `ja/` smí agent podle svých podmínek měnit jen po tvém „ano". Je to pravidlo,
+  ne technický zámek, proto si změny jednou týdně projdi.
 
 ---
 
@@ -819,6 +851,7 @@ Přístup k API KN je zdarma po registraci na registrace.cuzk.gov.cz. Firma se r
 - [ ] `zkontroluj-zamceni.sh` neukazuje žádné POZOR a zkušební mail s podvrženým pokynem agent
       odmítl
 - [ ] iPhone je spárovaný přes Tailscale a hlasová zpráva se přepsala v notebooku
+- [ ] rozhovor „kdo jsem" má hotových aspoň pět témat a `ja/` se plní
 - [ ] `agent-jednani` rozlišil mluvčí ve zkušební nahrávce a zápis odpovídá
 - [ ] první rešerše pozemku je v kartě projektu i se zdroji
 
@@ -827,8 +860,9 @@ Přístup k API KN je zdarma po registraci na registrace.cuzk.gov.cz. Firma se r
 ## Co je ověřené a co si ověř sám
 
 - **Otestováno:**
-  - Skripty prošly 34 automatickými testy:
-    - `mail.py` a `resers.py`: falešný poštovní server, filtr osobních údajů, schvalování.
+  - Skripty prošly 38 automatickými testy:
+    - `mail.py` a `resers.py`: falešný poštovní server, odeslané maily bez citací, složky
+      s diakritikou, filtr osobních údajů, schvalování.
     - `jednani.py` a `prepis.py`: párování slov s mluvčími, jména, výstup, přechod z grafiky
       na procesor a běh bez internetu po prvním stažení.
   - Volání Clauda prošlo zkušebně proti testovacímu serveru s oficiální knihovnou Anthropic.

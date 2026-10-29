@@ -24,8 +24,14 @@
 
   // Hledání v paměti jen přes lokální Ollamu. Bez tohoto nastavení by OpenClaw
   // použil OpenAI a při chybě by mohl přejít na jinou cloudovou službu.
+  // Kromě deníku a MEMORY.md prohledává i tvoji digitální kopii (ja/) a lidi (lide/).
   memory: {
-    search: { provider: "ollama", model: "embeddinggemma", fallback: "none" },
+    search: {
+      provider: "ollama",
+      model: "embeddinggemma",
+      fallback: "none",
+      extraPaths: ["ja", "lide"],
+    },
   },
 
   tools: {

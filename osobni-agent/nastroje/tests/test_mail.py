@@ -44,6 +44,7 @@ class FakeIMAP:
                                          b'(\\HasNoChildren \\Drafts) "/" "[Gmail]/Koncepty"']
         self.appended = []
         self.readonly = None
+        self.selected = None
 
     def status(self, mailbox, items):
         nxt = max(self.messages) + 1 if self.messages else 1
@@ -51,6 +52,7 @@ class FakeIMAP:
 
     def select(self, mailbox, readonly=False):
         self.readonly = readonly
+        self.selected = mailbox
         return "OK", [b"1"]
 
     def uid(self, command, *args):
@@ -168,6 +170,50 @@ class MailTests(unittest.TestCase):
         cfg = self.mail.load_config(path)
         self.assertEqual(cfg["IMAP_USER"], "ja@seznam.cz")
         self.assertEqual(cfg["IMAP_PASSWORD"], "ab #cd")
+
+    def test_folder_names_with_diacritics(self):
+        self.assertEqual(self.mail.imap_utf7_encode("Odeslané"), "Odeslan&AOk-")
+        self.assertEqual(self.mail.imap_utf7_encode("Odeslaná pošta"), "Odeslan&AOE- po&AWE-ta")
+        self.assertEqual(self.mail.imap_utf7_decode("[Gmail]/Odeslan&AOE- po&AWE-ta"), "[Gmail]/Odeslaná pošta")
+        self.assertEqual(self.mail.imap_utf7_decode("Tom &- Jerry"), "Tom & Jerry")
+        for text in ["Rozepsané", "Přijaté/Účty", "Sent"]:
+            self.assertEqual(self.mail.imap_utf7_decode(self.mail.imap_utf7_encode(text)), text)
+
+    def test_find_sent_folder(self):
+        flagged = [b'(\\HasNoChildren) "/" "INBOX"', b'(\\HasNoChildren \\Sent) "/" "[Gmail]/Odeslan&AOE- po&AWE-ta"']
+        self.assertEqual(self.mail.find_sent_folder(flagged), "[Gmail]/Odeslan&AOE- po&AWE-ta")
+        by_name = [b'(\\HasNoChildren) "/" "INBOX"', b'(\\HasNoChildren) "/" "Odeslan&AOk-"']
+        self.assertEqual(self.mail.find_sent_folder(by_name), "Odeslan&AOk-")
+        self.assertEqual(self.mail.find_sent_folder([b'(\\HasNoChildren) "." "INBOX.Sent"']), "INBOX.Sent")
+        self.assertIsNone(self.mail.find_sent_folder([b'(\\HasNoChildren) "/" "INBOX"']))
+        # Koncepty s diakritikou se teď najdou i bez příznaku \\Drafts.
+        self.assertEqual(self.mail.find_drafts_folder([b'(\\HasNoChildren) "/" "Rozepsan&AOk-"']), "Rozepsan&AOk-")
+
+    def test_own_text_strips_quotes(self):
+        gmail = ("Dobrý den, pane Nováku,\n\nposílám upravenou studii.\n\nS pozdravem\nPetr\n\n"
+                 "Dne po 27. 10. 2026 v 10:00 Jan Novák <jan@example.cz>\nnapsal(a):\n> Můžete poslat studii?\n")
+        self.assertEqual(self.mail.own_text(gmail), "Dobrý den, pane Nováku,\n\nposílám upravenou studii.\n\nS pozdravem\nPetr")
+        outlook = "Díky, beru.\n\nOd: Jan Novák <jan@example.cz>\nOdesláno: pondělí 27. října 2026\nKomu: ja\n\nStarý text"
+        self.assertEqual(self.mail.own_text(outlook), "Díky, beru.")
+        separator = "Ahoj,\nviz níže.\n\n-------- Původní zpráva --------\nPředmět: x"
+        self.assertEqual(self.mail.own_text(separator), "Ahoj,\nviz níže.")
+        english = "Sounds good.\n\nOn Tue, 27 Oct 2026 at 10:00, Jan <jan@example.cz> wrote:\n> hi"
+        self.assertEqual(self.mail.own_text(english), "Sounds good.")
+        self.assertEqual(self.mail.own_text("Od: zítřka beru dovolenou.\nPetr"), "Od: zítřka beru dovolenou.\nPetr")
+
+    def test_odeslane_reads_sent_folder_read_only(self):
+        reply = make_raw(subject="Re: Studie", body="Posílám studii.\n\nDne 27. 10. 2026 Jan napsal(a):\n> Pošlete studii?")
+        quoted_only = make_raw(subject="Fwd", body="> jen citace")
+        fake = FakeIMAP({5: reply, 6: quoted_only}, list_lines=[
+            b'(\\HasNoChildren) "/" "INBOX"', b'(\\HasNoChildren \\Sent) "/" "Odeslan&AOk-"'])
+        with mock.patch.object(self.mail, "connect", return_value=fake):
+            res = self.mail.cmd_odeslane(self.cfg, 10, 365, 3000)
+        self.assertTrue(fake.readonly)
+        self.assertEqual(fake.selected, '"Odeslan&AOk-"')
+        self.assertEqual(res["slozka"], "Odeslané")
+        self.assertEqual([m["text"] for m in res["zpravy"]], ["Posílám studii."])
+        self.assertEqual(res["pocet_v_obdobi"], 2)
+        self.assertEqual(fake.appended, [])
 
     def test_imap_date_format(self):
         self.assertEqual(self.mail.imap_date(0, now=1793174400), "28-Oct-2026")
