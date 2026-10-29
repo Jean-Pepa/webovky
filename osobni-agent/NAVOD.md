@@ -248,6 +248,7 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
    ```
    Restartuj. Po startu se otevře Ubuntu: zvol uživatelské jméno (malá písmena, bez diakritiky)
    a heslo. Když se Ubuntu samo neotevře, spusť `wsl --install` jako správce ještě jednou.
+   Na otázku „Would you like to opt-in to platform metrics collection" odpověz `n`.
 2. Nastav WSL tak, aby vidělo Ollamu ve Windows a nebralo zbytečně paměť (v běžném PowerShellu):
    ```powershell
    Copy-Item $env:USERPROFILE\osobni-agent\windows\wslconfig.txt $env:USERPROFILE\.wslconfig
@@ -257,6 +258,12 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
    ```bash
    sudo apt update && sudo apt upgrade -y
    sudo apt install -y python3-venv python3-pip git curl
+   ```
+   Pak vypni měsíční systémový report pro Canonical (Ubuntu Insights). Platí i tehdy, když
+   jsi u otázky z bodu 1 omylem odpověděl `y`. Na starším Ubuntu příkaz neexistuje, to nevadí.
+   ```bash
+   ubuntu-insights consent --state=false
+   ubuntu-insights consent linux wsl_setup ubuntu_release_upgrader --state=false
    ```
 4. **Kontrola** (v Ubuntu):
    ```bash

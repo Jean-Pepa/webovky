@@ -150,6 +150,17 @@ if [[ "$(systemctl --user is-enabled openclaw-gateway.service 2>/dev/null)" == "
 else
   pozor "brána OpenClaw není nainstalovaná jako služba (openclaw gateway install)"
 fi
+# Ubuntu 26.04 se při instalaci ptá, jestli smí posílat měsíční systémový report (Ubuntu Insights).
+if command -v ubuntu-insights >/dev/null; then
+  souhlas=$( { ubuntu-insights consent; ubuntu-insights consent linux wsl_setup ubuntu_release_upgrader; } 2>&1 || true)
+  if grep -qi 'true' <<<"$souhlas"; then
+    pozor "Ubuntu posílá jednou za měsíc systémový report Canonicalu, vypni ho (krok 3)"
+  elif grep -qi 'false' <<<"$souhlas"; then
+    ok "Ubuntu neposílá systémové reporty (Ubuntu Insights)"
+  else
+    nevim "stav Ubuntu Insights (neznámý výpis příkazu ubuntu-insights consent)"
+  fi
+fi
 
 if command -v ss >/dev/null; then
   verejne=$(ss -ltnH 2>/dev/null | awk '{print $4}' | grep -E ':18789$' \
