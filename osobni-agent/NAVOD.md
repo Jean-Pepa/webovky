@@ -278,7 +278,15 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
 ## Krok 4: Ollama a model (30–60 minut, většinou stahování)
 
 1. Stáhni **Ollama pro Windows** z
-   [ollama.com/download/windows](https://ollama.com/download/windows) a nainstaluj.
+   [ollama.com/download/windows](https://ollama.com/download/windows) a nainstaluj. Stejně
+   dobře poslouží příkaz z té stránky `irm https://ollama.com/install.ps1 | iex`. Do Ubuntu
+   Ollamu neinstaluj.
+   - **V okně Ollamy na nic neklikej, hlavně ne na OpenClaw v nabídce Apps.** Nainstaloval by
+     OpenClaw přímo do Windows, bez zámků z kroku 6b, a obsadil by port 18789, který potřebuje
+     agent v Ubuntu.
+   - **Nastavení Ollamy** (ikona vlevo nahoře → Settings): cloud vypni, délku kontextu dej
+     na 32k (stejně jako níž a jako výchozí strop OpenClaw) a volbu, která Ollamu zpřístupní
+     v síti, nech vypnutou. Přihlašovat se nemusíš.
 2. **Nastav výkon** (v PowerShellu, jednou):
    ```powershell
    setx OLLAMA_FLASH_ATTENTION 1
