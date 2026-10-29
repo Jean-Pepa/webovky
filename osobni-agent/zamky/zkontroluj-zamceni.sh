@@ -178,6 +178,17 @@ else
   nevim "zámek pravidel (nenašel jsem AGENTS.md ve složce agenta)"
 fi
 
+if [[ -n "$workspace" ]]; then
+  cloud='onedrive|dropbox|icloud|google ?drive'
+  shopt -s nocasematch
+  if [[ "$workspace" =~ $cloud ]]; then
+    pozor "složka agenta je ve složce, která se nahrává do cloudu ($workspace), přesuň ji do C:\\Users\\<jméno>\\Mozek (krok 5)"
+  else
+    ok "složka agenta se nenahrává do OneDrivu ani jiného cloudu"
+  fi
+  shopt -u nocasematch
+fi
+
 if [[ "$(openclaw config get gateway.tailscale.mode --json 2>/dev/null | tr -d '"')" == "serve" ]]; then
   if command -v tailscale >/dev/null && tailscale status >/dev/null 2>&1; then
     ok "Tailscale běží"

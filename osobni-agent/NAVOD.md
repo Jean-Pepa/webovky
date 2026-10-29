@@ -79,8 +79,8 @@ Co balíček obsahuje:
    cd $env:USERPROFILE\osobni-agent\windows
    powershell -ExecutionPolicy Bypass -File .\kontrola-pc.ps1
    ```
-   Skript jen čte. Vypíše volné místo, největší složky a programy, ovladač grafiky a stav WSL.
-   Výsledek uloží na Plochu do `kontrola-pc.txt`.
+   Skript jen čte. Vypíše volné místo, největší složky a programy, ovladač grafiky, které
+   složky se zálohují na OneDrive, a stav WSL. Výsledek uloží na Plochu do `kontrola-pc.txt`.
 
 ---
 
@@ -143,22 +143,31 @@ odpovídání určuje grafika a RAM, ne disk.
 
 ## Krok 2: Aktualizace a nastavení výkonu (30–45 minut)
 
+Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespustí.
+
 1. **Windows Update:** nainstaluj všechno a restartuj.
-2. **Ovladač grafiky:** stáhni **NVIDIA App** z nvidia.com a nainstaluj ovladač **Studio**
+2. **MyASUS → Aktualizace systému:** nainstaluj BIOS a ovladače ASUS. Když ti nabídne i ovladač
+   NVIDIA, přeskoč ho, novější nainstaluješ v dalším bodě. Když už máš zapnutý BitLocker
+   (bod 8), měj před aktualizací BIOSu po ruce klíč pro obnovení. Po aktualizaci si o něj
+   notebook může říct.
+3. **Ovladač grafiky:** stáhni **NVIDIA App** z nvidia.com a nainstaluj ovladač **Studio**
    (stabilnější pro práci, pro AI stačí). Po instalaci v PowerShellu:
    ```powershell
    nvidia-smi
    ```
-   Musí ukázat RTX 4080 Laptop GPU a zhruba 12 GB paměti.
-3. **MyASUS → Aktualizace systému:** nainstaluj BIOS a ovladače ASUS. Pak v **MyASUS →
-   Nastavení zařízení**:
+   Musí ukázat RTX 4080 Laptop GPU, zhruba 12 GB paměti a vpravo nahoře **CUDA Version 12.8
+   nebo vyšší**. Starší ovladač (třeba řady 566) je pro knihovny AI z kroků 9 a 16 zbytečně
+   starý.
+4. **MyASUS → Nastavení zařízení:**
    - **Profil ventilátoru:** Výkon (Performance), když jsi v zásuvce.
    - **Nabíjení pro zdraví baterie:** Maximální životnost (60 %), když je notebook skoro pořád
      v zásuvce. Před cestou přepni na Plnou kapacitu. Baterie trpí hlavně plným nabitím a teplem.
    - **Ochrana OLED:** zapni posun pixelů a automatické skrývání hlavního panelu. Statický
      obraz zapnutý celé hodiny by mohl displej trvale poznamenat.
    - **Režim grafiky (MUX):** nech výchozí. AI výpočty grafika dělá i tak a v klidu se uspí.
-4. **Napájení Windows:** Nastavení → Systém → Napájení a baterie → **Režim napájení: Nejlepší výkon**.
+5. **Napájení Windows:** Nastavení → Systém → Napájení a baterie → **Režim napájení: Nejlepší výkon**.
+   Kontrola z kroku 0 pak dál ukazuje schéma Rovnováha. To je v pořádku, režim napájení je
+   samostatné nastavení.
    Když má agent hlídat i v noci:
    - **Spánek při napájení ze sítě: Nikdy**,
    - **Vypnout obrazovku po: 5 minutách** (chrání OLED, agent běží dál),
@@ -166,12 +175,21 @@ odpovídání určuje grafika a RAM, ne disk.
      **Při zavření víka (v zásuvce): Nedělat nic**. Na baterii nech **Spánek**, ať se notebook
      v batohu nepřehřívá.
    Při noční práci nech víko otevřené nebo notebook postav na stojan, ať se dobře chladí.
-5. **Programy po spuštění:** Nastavení → Aplikace → Po spuštění. Vypni, co nepotřebuješ.
-6. **Grafika:** Nastavení → Systém → Obrazovka → Grafika → **Plánování GPU s hardwarovou
+6. **Programy po spuštění:** Nastavení → Aplikace → Po spuštění. Vypni, co nepotřebuješ.
+7. **Grafika:** Nastavení → Systém → Obrazovka → Grafika → **Plánování GPU s hardwarovou
    akcelerací: zapnuto** (bývá výchozí).
-7. **Šifrování disku:** Nastavení → Ochrana osobních údajů a zabezpečení → Šifrování zařízení
-   (nebo BitLocker): **zapnuto**. Agent bude znát celý tvůj život, takže tohle je povinné.
-   Klíč pro obnovení měj uložený v účtu Microsoft.
+8. **Šifrování disku:** agent bude znát celý tvůj život, takže tohle je povinné.
+   - **Windows 11 Pro:** Start → napiš „BitLocker" → **Spravovat nástroj BitLocker**. U disku C:
+     uvidíš, jestli je zapnutý. Když není, klikni na **Zapnout nástroj BitLocker** a zvol
+     **Zašifrovat celou jednotku** a **Nový režim šifrování**. Nech zaškrtnutou kontrolu
+     systému a restartuj. Šifruje se na pozadí a můžeš při tom pracovat.
+   - **Windows 11 Home:** Nastavení → Ochrana osobních údajů a zabezpečení → **Šifrování
+     zařízení**: zapnuto.
+   - **Klíč pro obnovení:** ulož si ho do účtu Microsoft (z telefonu ho pak najdeš na
+     account.microsoft.com/devices/recoverykey) a navíc vytištěný doma. Bez klíče se po
+     poruše nebo opravě notebooku k datům nedostaneš ani ty. Kdo má klíč a zároveň tvůj
+     disk, data přečte, a klíč z účtu Microsoft má i Microsoft. Kdyby ti to vadilo, nech si
+     ho jen vytištěný a na USB disku doma a z účtu ho smaž.
 
 ---
 
@@ -288,12 +306,15 @@ Jak modely přepínat v OpenClaw nastavíš v kroku 6.
 
 ## Krok 5: Složka Mozek a Obsidian (15 minut)
 
-1. Vytvoř složku `C:\Users\<tvé jméno>\Mozek`.
+1. Vytvoř složku `C:\Users\<tvé jméno>\Mozek`. Nedávej ji na Plochu, do Dokumentů ani do
+   OneDrivu, protože obsah složek, které OneDrive zálohuje, se nahrává do cloudu Microsoftu.
+   Které to u tebe jsou, ukáže kontrola z kroku 0 (oddíl OneDrive).
 2. Zkopíruj do ní **obsah** složky `osobni-agent\workspace`, tedy `USER.md`, `SOUL.md`,
-   `AGENTS.md`, `HEARTBEAT.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md` a složky `lide`, `skills`,
-   `podklady` a `projekty`.
+   `AGENTS.md`, `HEARTBEAT.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md` a složky `ja`, `lide`,
+   `skills`, `podklady` a `projekty`.
    Vytvoř v ní ještě prázdné složky `memory` (deník), `koncepty` a `prichozi`.
 3. Nainstaluj **Obsidian** (obsidian.md) → „Otevřít složku jako trezor" → `Mozek`.
+   Obsidian Sync ani jinou synchronizaci do cloudu nezapínej.
 4. Volitelně přidej plugin **Smart Connections**, ať můžeš i ty hledat v poznámkách podle
    významu. V jeho nastavení zvol lokální model, ne cloud.
 
@@ -854,7 +875,7 @@ Přístup k API KN je zdarma po registraci na registrace.cuzk.gov.cz. Firma se r
 
 ## Kontrolní seznam: hotovo, když…
 
-- [ ] `nvidia-smi` ukazuje RTX 4080 a 12 GB
+- [ ] `nvidia-smi` ukazuje RTX 4080, 12 GB a CUDA 12.8 nebo vyšší
 - [ ] `ollama run … --verbose` dává aspoň 12 tokenů/s
 - [ ] `openclaw gateway status` běží jen na localhostu
 - [ ] `openclaw memory status --deep` ukazuje lokální embeddingy
@@ -862,7 +883,8 @@ Přístup k API KN je zdarma po registraci na registrace.cuzk.gov.cz. Firma se r
 - [ ] `agent-resers` ti před odesláním ukáže dotaz a vrátí odpověď se zdroji
 - [ ] košík na Rohlíku se naplnil a objednávku jsi potvrdil sám
 - [ ] první ranní přehled je v deníku a agent ti ho řekl v aplikaci
-- [ ] šifrování disku je zapnuté a `Mozek` máš zálohovaný
+- [ ] BitLocker je zapnutý, klíč pro obnovení máš uložený a `Mozek` máš zálohovaný
+- [ ] `Mozek` je mimo OneDrive a jiné složky, které se nahrávají do cloudu
 - [ ] `zkontroluj-zamceni.sh` neukazuje žádné POZOR a zkušební mail s podvrženým pokynem agent
       odmítl
 - [ ] iPhone je spárovaný přes Tailscale a hlasová zpráva se přepsala v notebooku
@@ -885,7 +907,8 @@ Přístup k API KN je zdarma po registraci na registrace.cuzk.gov.cz. Firma se r
   - Zamčená konfigurace a seznam povolených příkazů prošly kontrolou přímo v OpenClaw
     2026.10.8 (`config validate`, `approvals get`, `security audit`). Kontrolní skript
     proběhl v testovacím prostředí.
-  - `kontrola-pc.ps1` je syntakticky zkontrolovaný.
+  - `kontrola-pc.ps1` proběhl na tvém notebooku. Kontrolu WSL a OneDrivu jsem pak
+    vyzkoušel v PowerShellu s napodobeným WSL.
 - **Netestováno naživo:**
   - Skutečná schránka Gmail nebo Seznam a skutečné volání API, protože záleží na tvých účtech.
   - Skutečný přepis s rozlišením mluvčích. Modely se stahují z Hugging Face, který tam, kde

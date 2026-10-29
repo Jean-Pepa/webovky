@@ -72,6 +72,18 @@ foreach ($name in $folders) {
     }
 }
 
+Head 'OneDrive'
+$known = [ordered]@{ 'Plocha' = 'Desktop'; 'Dokumenty' = 'MyDocuments'; 'Obrázky' = 'MyPictures' }
+foreach ($name in $known.Keys) {
+    $path = [Environment]::GetFolderPath($known[$name])
+    if ($path -match '\\OneDrive') {
+        Say "${name}: zálohuje se na OneDrive"
+    } else {
+        Say "${name}: jen v notebooku"
+    }
+}
+Say 'Mozek ani nic z agenta nedávej do složek, které se zálohují na OneDrive (krok 5 návodu).'
+
 Head 'Největší nainstalované programy'
 $keys = @(
     'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
@@ -88,8 +100,14 @@ foreach ($app in $apps) {
 Say 'Pozn.: velikost uvádí instalátor programu, u některých chybí nebo nesedí.'
 
 Head 'WSL'
-$env:WSL_UTF8 = '1'
-if (Get-Command wsl.exe -ErrorAction SilentlyContinue) {
+# Windows má vestavěný zástupný wsl.exe. Bez nainstalovaného WSL by místo výpisu nabídl instalaci,
+# proto ho voláme jen tehdy, když je WSL opravdu nainstalované.
+$wslInstalled = (Test-Path -LiteralPath (Join-Path $env:ProgramFiles 'WSL\wsl.exe')) -or
+    (Get-Service -Name WSLService -ErrorAction SilentlyContinue)
+if ($wslInstalled) {
+    $env:WSL_UTF8 = '1'
+    $oldEncoding = [Console]::OutputEncoding
+    try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
     foreach ($line in (& wsl.exe --status 2>&1)) {
         if ("$line".Trim()) {
             Say "$line"
@@ -100,6 +118,7 @@ if (Get-Command wsl.exe -ErrorAction SilentlyContinue) {
             Say "$line"
         }
     }
+    try { [Console]::OutputEncoding = $oldEncoding } catch { }
 } else {
     Say 'WSL zatím není nainstalované (krok 3 návodu).'
 }
