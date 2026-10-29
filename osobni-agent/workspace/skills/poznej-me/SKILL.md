@@ -38,8 +38,8 @@ tak, jak se rozhoduju. Nejcennější je vždycky „proč", ne jen „co".
      mém „ano".
    - Drž se mých formulací. Kde shrnuješ, napiš „(shrnutí)". Ke každému zápisu dej zdroj
      a datum, např. „(rozhovor 3, 2026-11-05)".
-   - Do `USER.md` dávej jen to, co máš vědět vždycky, nanejvýš jednu stranu. Podrobnosti
-     patří do `ja/`.
+   - Do `USER.md` dávej jen to, co máš vědět vždycky, nanejvýš 4 000 znaků (víc OpenClaw
+     nenačte). Podrobnosti patří do `ja/`.
 6. **Citlivé věci** (zdraví, peníze, rodina, víra, politika) zapisuj, jen když výslovně řeknu,
    že je zapsat máš. Hesla, čísla karet a rodné číslo nikdy.
 7. **Rozpory:** když řeknu něco jiného než dřív, upozorni mě a zeptej se, co platí. Starý

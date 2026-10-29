@@ -185,6 +185,19 @@ if [[ -n "$workspace" && -f "$workspace/AGENTS.md" ]]; then
       ok "$soubor zamčený proti přepsání"
     fi
   done
+  # OpenClaw z každého souboru načte jen omezený počet znaků, zbytek agent nevidí.
+  dlouhe=0
+  for limit in "USER.md 4000" "AGENTS.md 20000" "MEMORY.md 20000"; do
+    soubor=${limit% *}
+    max=${limit#* }
+    [[ -f "$workspace/$soubor" ]] || continue
+    znaku=$(python3 -c 'import sys; print(len(open(sys.argv[1], encoding="utf-8").read()))' "$workspace/$soubor" 2>/dev/null || echo 0)
+    if (( znaku > max )); then
+      pozor "$soubor má $znaku znaků, OpenClaw načte jen $max a zbytek agent neuvidí (zkrať ho)"
+      dlouhe=1
+    fi
+  done
+  (( dlouhe )) || ok "USER.md, AGENTS.md a MEMORY.md se vejdou do toho, co OpenClaw načte"
 else
   nevim "zámek pravidel (nenašel jsem AGENTS.md ve složce agenta)"
 fi

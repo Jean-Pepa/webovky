@@ -334,12 +334,14 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
 
 | Role | Model | Velikost (4bitově) | Kde běží | Rychlost (odhad) | Na co |
 |---|---|---|---|---|---|
-| **Rychlý** (výchozí) | Gemma 4 E4B (`gemma4:e4b`) | ~5,5 GB | celý na grafice | 50–90 tokenů/s | rychlé otázky, třídění mailů, pravidelné kontroly |
-| **Hlavní** | Gemma 4 26B-A4B (`gemma4:26b`) | ~16–18 GB | grafika + RAM | 15–30 tokenů/s | delší práce, koncepty mailů, plánování |
+| **Rychlý** (výchozí) | Gemma 4 E4B (`gemma4:e4b`) | 6,6 GB | celý na grafice | 74 tokenů/s, čte ~4 000 tokenů/s (změřeno) | rychlé otázky, třídění mailů, pravidelné kontroly |
+| **Hlavní** | Gemma 4 26B-A4B (`gemma4:26b`) | 18 GB | 77 % grafika, zbytek RAM | 32 tokenů/s, čte ~700 tokenů/s (změřeno) | delší práce, koncepty mailů, plánování |
 | **Hluboký** | ThinkingCap-Qwen3.6-27B (BottleCap AI) | ~16–17 GB | grafika + RAM | 5–9 tokenů/s, přemýšlí o ~50 % kratčeji | noční úklid paměti, týdenní plán, složité rozbory |
 | **Nejsilnější** | Claude Opus 5.5 přes `agent-resers` | cloud | jen po tvém schválení | – | internet a nejtěžší otázky |
 
-Rychlosti jsou odhady, změř si je sám (`ollama run <model> --verbose`).
+Rychlosti rychlého a hlavního modelu jsou změřené na tomhle notebooku v zásuvce (RTX 4080
+Laptop, ovladač 617, bez přemýšlení). U hlubokého modelu jde o odhad, změř si ho sám
+(`ollama run <model> --verbose`).
 Názvy štítků Gemmy ověř na ollama.com/library/gemma4.
 Pokud tam je i `gemma4:12b`, je to chytřejší rychlá volba (~8 GB, pořád celá na grafice,
 odhadem 35–45 tokenů/s).
