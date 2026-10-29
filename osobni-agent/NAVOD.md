@@ -322,6 +322,12 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
    Zeptej se česky, třeba „Vysvětli třemi větami, proč dělat zálohy". Na konci uvidíš
    `eval rate`, tedy tokeny za sekundu. **Cíl je aspoň 12–15 tokenů/s**, orientačně čekej
    15–30. Příkaz `ollama ps` ukáže, kolik modelu je na grafice a kolik v RAM.
+   - **Měř v zásuvce.** Na baterii notebook grafiku přiškrtí (v `nvidia-smi` je pak limit
+     kolem 40 W) a čísla vyjdou zkreslená.
+   - `prompt eval rate` je rychlost čtení otázky a má být ve stovkách tokenů/s.
+   - Modely Gemma 4 před odpovědí „přemýšlejí" (šedý text). Rychlost bez přemýšlení změříš
+     s `--think=false`.
+
    Když je to pomalé, viz krok 13.
 
 ### Krok 4b: Čtyři úrovně – rychlý, hlavní, hluboký a nejsilnější
