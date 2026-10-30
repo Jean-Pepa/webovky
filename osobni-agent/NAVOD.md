@@ -1291,7 +1291,7 @@ událost dvakrát nezapíše. Datum a čas počítá skript, ne model, takže �
 ## Co je ověřené a co si ověř sám
 
 - **Otestováno:**
-  - Skripty prošly 90 automatickými testy:
+  - Skripty prošly 91 automatickými testy:
     - `mail.py` a `resers.py`: falešný poštovní server, odeslané maily bez citací, složky
       s diakritikou, filtr osobních údajů, schvalování.
     - `jednani.py` a `prepis.py`: párování slov s mluvčími, jména, výstup, přechod z grafiky
@@ -1328,6 +1328,9 @@ událost dvakrát nezapíše. Datum a čas počítá skript, ne model, takže �
   - Zámky nových nástrojů a pravidlo „jen modely z Ollamy" prošly v OpenClaw 2026.10.9 po
     stejném nastavení jako v kroku 6. Ve skutečném běhu agentovi nezůstal žádný zakázaný nástroj.
     Přepnutí na model v cloudu OpenClaw bez pravidla provedl, s pravidlem odmítl.
+  - Nástroje dostává model rovnou (`tools.toolSearch: false`), bez pomocníka na hledání
+    nástrojů, u kterého lokální model posílal chybné údaje. V OpenClaw 2026.10.9 má agent
+    13 nástrojů a celé zadání vyšlo o 1 062 znaků kratší než s hledáním nástrojů.
   - `kontrola-pc.ps1` proběhl na tvém notebooku. Kontrolu WSL a OneDrivu jsem pak
     vyzkoušel v PowerShellu s napodobeným WSL.
 - **Netestováno naživo:**

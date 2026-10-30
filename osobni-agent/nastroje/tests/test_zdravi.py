@@ -292,7 +292,7 @@ class CommandTests(unittest.TestCase):
         code, out, _ = self.run_cli("noc", "--den", "2026-11-08")
         self.assertEqual(code, 0)
         lines = out.splitlines()
-        self.assertEqual(lines[0], "Noc 7. → 8. 11. 2026 (probuzení neděle)")
+        self.assertEqual(lines[0], "Noc na neděli 8. 11. 2026 (7. → 8. 11.)")
         self.assertRegex(lines[1], r"^Spánek \d+ h \d\d min \(normál \d+ h \d\d min\): ")
         self.assertRegex(lines[2], r"^Začátek spánku \d+:\d\d, konec spánku \d+:\d\d, efektivita spánku \d+ %$")
         self.assertTrue(any(l.startswith("HRV (RMSSD) ") for l in lines))
@@ -302,6 +302,25 @@ class CommandTests(unittest.TestCase):
         code, _, err = self.run_cli("noc", "--den", "2025-01-01")
         self.assertEqual(code, 1)
         self.assertIn("nemám data z náramku", err)
+
+    def test_nights_overview_finds_longest(self):
+        build(self.root)
+        code, out, _ = self.run_cli("noci", "--dni", "14", "--do", END.isoformat())
+        self.assertEqual(code, 0)
+        lines = out.splitlines()
+        self.assertEqual(lines[0], "Spánek za posledních 14 nocí do 15. 11. 2026 (podle dne probuzení):")
+        self.assertRegex(lines[1], r"^ne 15\. 11\.: \d+ h \d\d min, \d+:\d\d–\d+:\d\d$")
+        # nejdelší a průměr spočítané ze stejných souborů, ne odhadnuté
+        data = zdravi.Data(self.root)
+        nights = [(END - timedelta(days=i), data.value(END - timedelta(days=i), "spanek_min")) for i in range(14)]
+        best = max(nights, key=lambda n: n[1])
+        self.assertIn(f"Nejdéle: noc na {zdravi.WEEKDAYS_ON[best[0].weekday()]} {best[0].day}. {best[0].month}. "
+                      f"({zdravi.duration(best[1])})", out)
+        self.assertIn(f"Průměr: {zdravi.duration(sum(v for _, v in nights) / 14)} z 14 nocí", out)
+        self.assertLess(len(out), 900)
+        code, _, err = self.run_cli("noci", "--do", "2025-01-01")
+        self.assertEqual(code, 1)
+        self.assertIn("nemám data o spánku", err)
 
     def test_past_days_in_czech(self):
         today = date(2026, 10, 30)  # pátek

@@ -100,7 +100,24 @@
       "presence",
       "code_execution",
       "heartbeat_respond",
+      // Úlohy spouštěné událostí (obdoba plánování úloh) a nástroje, které agent
+      // nepotřebuje: cíle, prohlížení jiných rozhovorů, strukturované otázky.
+      // Méně nástrojů = kratší zadání a lokální model se v nich neplete.
+      "intent",
+      "ask_user",
+      "create_goal",
+      "get_goal",
+      "update_goal",
+      "progress_card",
+      "conversations_list",
+      "sessions_list",
+      "sessions_history",
+      "sessions_search",
+      "session_status",
     ],
+    // Nástroje dostane model rovnou, ne přes hledání nástrojů. Lokální model při
+    // hledání nástrojů posílal chybné údaje a OpenClaw odpověď zastavil.
+    toolSearch: false,
     // Soubory smí číst a měnit jen ve složce Mozek.
     fs: { workspaceOnly: true },
     // Příkazy jen ze seznamu v exec-approvals.json5. Cokoli jiného čeká na tvé

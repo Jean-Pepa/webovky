@@ -15,6 +15,8 @@ Příkazy:
     agent-zdravi noc [--den DEN]              jedna noc krátce, na rychlou otázku; DEN je dnes,
                                               vcera, pred tydnem, pred 3 dny, v noci na sobotu,
                                               23.10. nebo RRRR-MM-DD (noc podle dne probuzení)
+    agent-zdravi noci [--dni N] [--do D]      posledních N nocí (výchozí 14) po řádcích
+                                              a nejdelší, nejkratší a průměr
     agent-zdravi tyden [--do RRRR-MM-DD]      týdenní rozbor a souvislosti s deníkem
                                               → zdravi/tyden-RRRR-Www.md
     agent-zdravi pokus --nazev TEXT --od D --do D [--srovnani-od D --srovnani-do D]
@@ -705,6 +707,7 @@ def quality_lines(data: Data, days: list[date]) -> list[str]:
 
 
 WEEKDAYS = ("pondělí", "úterý", "středa", "čtvrtek", "pátek", "sobota", "neděle")
+WEEKDAYS_ON = ("pondělí", "úterý", "středu", "čtvrtek", "pátek", "sobotu", "neděli")  # „noc na sobotu“
 WEEKDAY_FORMS = {"pondeli": 0, "utery": 1, "streda": 2, "stredu": 2, "ctvrtek": 3, "patek": 4,
                  "sobota": 5, "sobotu": 5, "nedele": 6, "nedeli": 6}
 COUNT_WORDS = {"jednim": 1, "dvema": 2, "tremi": 3, "ctyrmi": 4, "peti": 5, "sesti": 6, "sedmi": 7,
@@ -746,7 +749,7 @@ def report_night(data: Data, d: date) -> str:
     """Jedna noc v pár řádcích, na rychlou otázku. Nic neukládá."""
     day = data.days.get(d)
     if day is None:
-        raise HealthError(f"Za noc na {WEEKDAYS[d.weekday()]} {date_cz(d)} nemám data z náramku "
+        raise HealthError(f"Za noc na {WEEKDAYS_ON[d.weekday()]} {date_cz(d)} nemám data z náramku "
                           f"(zdravi/data/{d.isoformat()}.json).")
     y = d - timedelta(days=1)
 
@@ -758,7 +761,7 @@ def report_night(data: Data, d: date) -> str:
             text += f" (normál {show(key, n.center)})"
         return text + f": {assess(key, z, n)}"
 
-    lines = [f"Noc {y.day}. → {d.day}. {d.month}. {d.year} (probuzení {WEEKDAYS[d.weekday()]})"]
+    lines = [f"Noc na {WEEKDAYS_ON[d.weekday()]} {date_cz(d)} ({y.day}. → {d.day}. {d.month}.)"]
     if data.value(d, "spanek_min") is None:
         lines.append("Spánek: za tuhle noc data chybí.")
     else:
@@ -772,6 +775,39 @@ def report_night(data: Data, d: date) -> str:
     lines += [part(k) for k in ("ln_hrv", "tep_klidovy") if data.value(d, k) is not None]
     lines.append(f"Zdroj: zdravi/data/{d.isoformat()}.json")
     return "\n".join(lines) + "\n"
+
+
+def report_nights(data: Data, end: date, days: int) -> str:
+    """Posledních N nocí po řádcích. Nejdelší, nejkratší a průměr počítá skript, ne model."""
+    nights, lines = [], []
+    for i in range(days):
+        d = end - timedelta(days=i)
+        day, v = data.days.get(d), data.value(d, "spanek_min")
+        if day is None or v is None:
+            continue
+        s, e = data.value(d, "zacatek"), data.value(d, "konec")
+        line = f"{WEEKDAYS[d.weekday()][:2]} {d.day}. {d.month}.: {duration(v)}"
+        if s is not None and e is not None:
+            line += f", {clock_text(s)}–{clock_text(e)}"
+        if day.night_ok:
+            nights.append((d, v))
+        else:
+            line += " (neúplná noc, do přehledu se nepočítá)"
+        lines.append(line)
+    if not nights:
+        raise HealthError(f"Za posledních {days} nocí do {date_cz(end)} nemám data o spánku (zdravi/data/).")
+    longest, shortest = max(nights, key=lambda n: n[1]), min(nights, key=lambda n: n[1])
+
+    def night(n: tuple[date, float]) -> str:
+        return f"noc na {WEEKDAYS_ON[n[0].weekday()]} {n[0].day}. {n[0].month}. ({duration(n[1])})"
+
+    return "\n".join([
+        f"Spánek za posledních {days} nocí do {date_cz(end)} (podle dne probuzení):", *lines,
+        f"Nejdéle: {night(longest)}",
+        f"Nejkratší: {night(shortest)}",
+        f"Průměr: {duration(mean([v for _, v in nights]))} z {len(nights)} nocí",
+        "Zdroj: zdravi/data/",
+    ]) + "\n"
 
 
 def report_day(data: Data, d: date) -> str:
@@ -1031,6 +1067,9 @@ def main(argv: list[str] | None = None) -> int:
     p_day.add_argument("--datum", type=date.fromisoformat, default=date.today())
     p_night = sub.add_parser("noc", help="jedna noc krátce, např. --den \"před týdnem\"")
     p_night.add_argument("--den", default="dnes")
+    p_nights = sub.add_parser("noci", help="posledních N nocí a nejdelší, nejkratší a průměr")
+    p_nights.add_argument("--dni", type=int, default=14)
+    p_nights.add_argument("--do", dest="end", type=date.fromisoformat, default=date.today())
     p_week = sub.add_parser("tyden", help="týdenní rozbor a souvislosti s deníkem")
     p_week.add_argument("--do", dest="end", type=date.fromisoformat, default=date.today())
     p_exp = sub.add_parser("pokus", help="vyhodnocení pokusu")
@@ -1047,6 +1086,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.cmd == "noc":
             print(report_night(data, past_day(args.den, date.today())), end="")
+            return 0
+        if args.cmd == "noci":
+            print(report_nights(data, args.end, max(1, min(args.dni, 90))), end="")
             return 0
         if args.cmd == "den":
             text = report_day(data, args.datum)
