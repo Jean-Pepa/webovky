@@ -58,7 +58,7 @@ Co balíček obsahuje:
 
 | Složka | Obsah |
 |---|---|
-| `windows/` | `kontrola-pc.ps1` (kontrola disku a výkonu, nic nemaže), `wslconfig.txt` a `uklid-plochy.ps1` (roztřídí plochu do složek, jde vrátit) |
+| `windows/` | `kontrola-pc.ps1` (kontrola disku a výkonu, nic nemaže), `wslconfig.txt`, `uklid-plochy.ps1` (roztřídí plochu do složek, jde vrátit) a `mapa-pocitace.ps1` (přehled projektů a práce pro digitální kopii, jen názvy a data) |
 | `wsl/` | `instaluj-nastroje.sh` (instalace skriptů ve WSL) a `zaloha-mozku.sh` (noční záloha Mozku) |
 | `zamky/` | zamčená konfigurace OpenClaw, seznam povolených příkazů a kontrolní skript (krok 6b) |
 | `nastroje/` | `mail.py`, `resers.py`, `prepis.py`, `jednani.py` a testy |
