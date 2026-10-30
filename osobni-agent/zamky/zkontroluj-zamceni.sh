@@ -164,6 +164,18 @@ if command -v ubuntu-insights >/dev/null; then
   fi
 fi
 
+if [[ "$(systemctl --user is-enabled zaloha-mozku.timer 2>/dev/null)" == "enabled" ]]; then
+  zalohy=$(sed -n 's/^ZALOHY=//p' "$HOME/.config/agent/zaloha.env" 2>/dev/null || true)
+  posledni=$(ls -1t "$zalohy"/mozek-*.tar.gz 2>/dev/null | head -1 || true)
+  if [[ -n "$posledni" ]] && (( $(date +%s) - $(stat -c %Y "$posledni") < 2 * 86400 )); then
+    ok "noční záloha Mozku běží (poslední $(basename "$posledni"))"
+  else
+    pozor "za poslední 2 dny nevznikla žádná záloha Mozku (systemctl --user status zaloha-mozku.service)"
+  fi
+else
+  pozor "chybí noční záloha Mozku (bash ~/osobni-agent/wsl/zaloha-mozku.sh --instaluj)"
+fi
+
 if command -v ss >/dev/null; then
   verejne=$(ss -ltnH 2>/dev/null | awk '{print $4}' | grep -E ':18789$' \
     | grep -vE '^(127\.0\.0\.1|\[::1\]|100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.[0-9]+\.[0-9]+|\[fd7a:115c:a1e0:[0-9a-f:]*\]):' || true)
@@ -236,6 +248,6 @@ echo
 if [[ $POCET -eq 0 ]]; then
   echo "Hotovo: žádný nález POZOR."
 else
-  echo "Hotovo: $POCET× POZOR. Oprav je podle NAVOD.md (kroky 6b a 12)."
+  echo "Hotovo: $POCET× POZOR. Oprav je podle NAVOD.md (kroky 5, 6b a 12)."
 fi
 [[ $POCET -eq 0 ]]

@@ -59,7 +59,7 @@ Co balíček obsahuje:
 | Složka | Obsah |
 |---|---|
 | `windows/` | `kontrola-pc.ps1` (kontrola disku a výkonu, nic nemaže) a `wslconfig.txt` |
-| `wsl/` | `instaluj-nastroje.sh` (instalace skriptů ve WSL) |
+| `wsl/` | `instaluj-nastroje.sh` (instalace skriptů ve WSL) a `zaloha-mozku.sh` (noční záloha Mozku) |
 | `zamky/` | zamčená konfigurace OpenClaw, seznam povolených příkazů a kontrolní skript (krok 6b) |
 | `nastroje/` | `mail.py`, `resers.py`, `prepis.py`, `jednani.py` a testy |
 | `workspace/` | šablony paměti a pravidel (`USER.md`, `SOUL.md`, `AGENTS.md`, `HEARTBEAT.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md`, `lide/`), tvoje digitální kopie v `ja/` s otázkami k rozhovoru a 14 dovedností v `skills/` |
@@ -413,7 +413,16 @@ je i rychlejší.
      dej Ctrl+P → „Reload app without saving".
    - Mozek je teď uvnitř Ubuntu. Kdybys Ubuntu odinstaloval (`wsl --unregister`), smazal bys
      i Mozek. Proto ho pravidelně zálohuj (krok 14).
-4. Volitelně přidej plugin **Smart Connections**, ať můžeš i ty hledat v poznámkách podle
+4. **Noční záloha** (v Ubuntu). Každou noc ve 2:30 zabalí Mozek do jednoho souboru ve složce
+   `C:\Users\<tvé jméno>\ZalohyMozku` a nechá posledních 14 záloh. Když je notebook ve 2:30
+   vypnutý, záloha proběhne po zapnutí:
+   ```bash
+   bash ~/osobni-agent/wsl/zaloha-mozku.sh --instaluj
+   systemctl --user start zaloha-mozku.service
+   ```
+   Druhý příkaz udělá první zálohu hned. Zálohy jsou mimo Mozek, takže je agent nevidí
+   a nemůže je smazat. Na disku C: je šifruje BitLocker.
+5. Volitelně přidej plugin **Smart Connections**, ať můžeš i ty hledat v poznámkách podle
    významu. V jeho nastavení zvol lokální model, ne cloud.
 
 ---
@@ -804,12 +813,16 @@ agenta. Telegram na osobní data nepoužívej, zprávy v něm nejsou šifrované
 
 **Pravidelně:**
 
-- **Týdně:** přečti `MEMORY.md`, projdi `agent-resers log` (co odešlo ven) a zálohuj Mozek
-  na externí disk. V Ubuntu stačí jeden příkaz (`e` nahraď písmenem disku):
+- **Každou noc** se Mozek zálohuje sám do `C:\Users\<tvé jméno>\ZalohyMozku` (krok 5).
+  To chrání před chybou, smazáním nebo přeinstalováním Ubuntu, ne před krádeží nebo poruchou
+  notebooku.
+- **Týdně:** přečti `MEMORY.md`, projdi `agent-resers log` (co odešlo ven) a nejnovější soubor
+  ze `ZalohyMozku` zkopíruj na externí disk zašifrovaný přes BitLocker To Go.
+- **Obnova ze zálohy** (v Ubuntu, název souboru doplň podle data):
   ```bash
-  tar -czf /mnt/e/mozek-$(date +%F).tar.gz -C ~ Mozek
+  mkdir -p ~/obnova && tar -xzf /mnt/c/Users/<tvé jméno>/ZalohyMozku/mozek-RRRR-MM-DD_HHMM.tar.gz -C ~/obnova
   ```
-  Záloha je jeden soubor a otevřeš ho i ve Windows. Disk zašifruj přes BitLocker To Go.
+  Ve složce `~/obnova/Mozek` pak najdeš Mozek z toho dne a zkopíruješ si, co potřebuješ.
 - **Měsíčně:** aktualizuj OpenClaw podle oficiálního návodu. Windows, ovladač NVIDIA a Ollama se
   aktualizují samy nebo přes své aplikace.
 
