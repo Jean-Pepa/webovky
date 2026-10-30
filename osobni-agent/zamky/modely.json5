@@ -3,8 +3,9 @@
 // Výchozí je hlavní model, protože rychlý při zkoušce tvrdil, že zapsal soubor, a nástroj
 // vůbec nespustil. Rychlý model nepřemýšlí, aby odpovídal hned. Hlavnímu nech výchozí
 // přemýšlení, v chatu ho změníš příkazem /think.
-// Až stáhneš hluboký model (krok 4b), přidej:
-//   "ollama/thinkingcap": { alias: "hluboky" },
+// Hluboký model přidáš, až ho stáhneš (krok 4b), jedním příkazem v Ubuntu:
+//   openclaw models aliases add hluboky ollama/thinkingcap:latest
+// Celý název i s :latest je nutný, jinak OpenClaw přezdívku k modelu nepřiřadí.
 {
   agents: {
     defaults: {

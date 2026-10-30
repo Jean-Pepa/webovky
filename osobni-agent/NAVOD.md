@@ -82,7 +82,7 @@ u OpenClaw, Ollamy a ovladačů grafiky.
 | 3 | WSL a Ubuntu | nic nestahuješ, stačí příkaz `wsl --install` |
 | 4 | Ollama | [ollama.com/download/windows](https://ollama.com/download/windows) |
 | 4 | modely Gemma 4 | příkazem `ollama pull`, přehled na [ollama.com/library/gemma4](https://ollama.com/library/gemma4) |
-| 4b | účet Hugging Face a model ThinkingCap | [huggingface.co/join](https://huggingface.co/join), [stránka modelu](https://huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF) |
+| 4b | model ThinkingCap, účet Hugging Face jen když je model chráněný | [stránka modelu](https://huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF), [huggingface.co/join](https://huggingface.co/join) |
 | 5 | Obsidian | [obsidian.md/download](https://obsidian.md/download) |
 | 6 | OpenClaw | příkazem v Ubuntu (krok 6), návod na [docs.openclaw.ai/install](https://docs.openclaw.ai/install) |
 | 12 | Tailscale do iPhonu | [App Store](https://apps.apple.com/app/tailscale/id1470499037) |
@@ -112,7 +112,8 @@ u OpenClaw, Ollamy a ovladačů grafiky.
 
 | Co zabere místo | Kolik |
 |---|---|
-| Hlavní model (Gemma 4 26B, 4bitově) | ~16–17 GB |
+| Hlavní model (Gemma 4 26B, 4bitově) | 18 GB |
+| Hluboký model (ThinkingCap 27B, 4bitově) | 15,7 GB |
 | Embedding model a případně další menší model | 1–10 GB |
 | WSL2 + Ubuntu + OpenClaw + Python prostředí | ~8 GB |
 | Whisper pro diktát (model a knihovny) | ~3 GB |
@@ -338,7 +339,7 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
 |---|---|---|---|---|---|
 | **Rychlý** | Gemma 4 E4B (`gemma4:e4b`) | 6,6 GB | celý na grafice | 74 tokenů/s, čte ~4 000 tokenů/s (změřeno) | krátké otázky bez práce se soubory |
 | **Hlavní** (výchozí) | Gemma 4 26B-A4B (`gemma4:26b`) | 18 GB | 77 % grafika, zbytek RAM | 32 tokenů/s, čte ~700 tokenů/s (změřeno) | všechno s nástroji: deník, maily, plánování, pravidelné kontroly |
-| **Hluboký** | ThinkingCap-Qwen3.6-27B (BottleCap AI) | ~16–17 GB | grafika + RAM | 5–9 tokenů/s, přemýšlí o ~50 % kratčeji | noční úklid paměti, týdenní plán, složité rozbory |
+| **Hluboký** | ThinkingCap-Qwen3.6-27B (BottleCap AI) | 15,7 GB | grafika + RAM | 5–9 tokenů/s, přemýšlí o ~50 % kratčeji | noční úklid paměti, týdenní plán, složité rozbory |
 | **Nejsilnější** | Claude Opus 5.5 přes `agent-resers` | cloud | jen po tvém schválení | – | internet a nejtěžší otázky |
 
 Rychlosti rychlého a hlavního modelu jsou změřené na tomhle notebooku v zásuvce (RTX 4080
@@ -364,16 +365,20 @@ a i tak odpovídá za pár sekund. Na něm běží i pravidelné kontroly.
 2. **Hlavní model** máš stažený z bodu 3. Když jsi použil verzi z Hugging Face, dej jí
    kratší jméno, ať sedí na zbytek návodu:
    `ollama cp hf.co/unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M gemma4:26b`.
-3. **ThinkingCap (hluboký):**
-   - Na huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF přijmi podmínky.
-   - Repozitář je chráněný, takže do svého účtu Hugging Face (Settings → SSH Keys) přidej
-     veřejný klíč Ollamy ze souboru `C:\Users\<jméno>\.ollama\id_ed25519.pub`.
-   - Stáhni ho a dej mu krátké jméno. Název kvantizace (např. `Q4_K_M`) ověř v seznamu
-     souborů na Hugging Face.
+3. **ThinkingCap (hluboký):** stáhni ho (15,7 GB), dej mu krátké jméno a zkontroluj ho.
    ```powershell
    ollama pull hf.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M
    ollama cp hf.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M thinkingcap
+   ollama show thinkingcap
    ```
+   - V části Capabilities musí být `tools`. Bez toho by s ním agent neuměl pracovat se
+     soubory a hodil by se jen na povídání.
+   - Když stahování skončí chybou 401 nebo 403, je model chráněný. Na
+     huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF přijmi podmínky a do svého účtu
+     Hugging Face (Settings → SSH Keys) přidej veřejný klíč Ollamy ze souboru
+     `C:\Users\<jméno>\.ollama\id_ed25519.pub`. Pak stahování zopakuj.
+   - Rychlost změř v zásuvce: `ollama run thinkingcap --verbose`.
+   - Přezdívku `hluboky` mu dáš v OpenClaw v kroku 6.
 4. **`OLLAMA_MAX_LOADED_MODELS` nech na 2.** Agent při každé zprávě hledá v paměti přes
    `embeddinggemma` (621 MB). S hodnotou 1 by ten malý model pokaždé vytlačil jazykový model
    z grafiky a ten by se musel znovu načítat.
@@ -487,8 +492,13 @@ proto bránu (gateway) poprvé spustíme až v kroku 6b, už se zámky.
    - **Noční úklid paměti a týdenní plán** pouštěj s hlubokým modelem. Buď ručně
      (`/model hluboky` a „ukliď paměť"), nebo jako naplánovanou úlohu (cron) v OpenClaw
      s vlastním modelem a samostatnou relací, viz docs.openclaw.ai → Cron.
-   - **Hluboký model** přidáš do přezdívek, až ho stáhneš (krok 4b), podle poznámky
-     v `zamky/modely.json5`.
+   - **Hluboký model** přidáš do přezdívek, až ho stáhneš (krok 4b). V Ubuntu:
+     ```bash
+     openclaw models aliases add hluboky ollama/thinkingcap:latest
+     openclaw models list --provider ollama --refresh
+     ```
+     U `ollama/thinkingcap:latest` musí být štítek `alias:hluboky`. Celý název i s `:latest`
+     je nutný, jinak OpenClaw přezdívku k modelu nepřiřadí.
 
 > Když agent nepozná změny, které uděláš v Obsidianu, nech ho znovu načíst paměť
 > (`openclaw memory --help`).
@@ -822,11 +832,10 @@ agenta. Telegram na osobní data nepoužívej, zprávy v něm nejsou šifrované
    - **Qwen3.6-35B-A3B** (~21 GB) je v některých úlohách chytřejší, ale pomalejší.
    - **ThinkingCap-Qwen3.6-27B** od české BottleCap AI (Hugging Face `bottlecapai`, licence
      Apache 2.0) přemýšlí zhruba o polovinu kratčeji než původní Qwen. Je to ale „hustý" model
-     27B, takže ve 4bitové verzi (~16–17 GB) se do 12 GB grafiky nevejde celý a poběží
+     27B, takže ve 4bitové verzi (15,7 GB) se do 12 GB grafiky nevejde celý a poběží
      pomaleji než Gemma 4 MoE.
      - Hodí se jako druhý model na noční a týdenní úlohy, kde na rychlosti nezáleží.
-     - Stáhneš ho na huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF, kde nejdřív
-       musíš přijmout podmínky.
+     - Stažení je v kroku 4b, přezdívka `hluboky` v kroku 6.
      - Verze NVFP4 je jen pro grafiky řady RTX 50, pro tvou RTX 4080 ne.
    - Vždy vybírej variantu se štítkem **tools**, jinak agent neumí používat nástroje.
 
