@@ -48,6 +48,22 @@ Ukázka:
 }
 ```
 
+**Odkud data jsou.** Soubory zapisuje `agent-fitbit` z Google Health API (jen čtení):
+
+| Pole | Typ dat v Google Health API |
+|---|---|
+| `spanek` | `sleep`, hlavní spánek dne (`mainSleep`), fáze ze `stagesSummary` |
+| `hrv_rmssd_ms` | `daily-heart-rate-variability`, průměr RMSSD |
+| `tep_klidovy` | `daily-resting-heart-rate` |
+| `spo2_prumer_pct` | `daily-oxygen-saturation`, průměr ve spánku |
+| `dech_za_min` | `daily-respiratory-rate`, hlavní spánek |
+| `teplota_odchylka_c` | `daily-sleep-temperature-derivations`, noc minus tvůj 30denní medián |
+| `kroky` | `steps`, denní součet |
+| `aktivni_min` | `active-zone-minutes`, denní součet |
+
+Dobu nošení náramku (`noseni_h`) ani skóre Googlu API nedává, proto v datech nejsou. Denní
+součty kroků podle Googlu už vynechávají chvíle, kdy náramek nebyl na ruce.
+
 ## 3. Kvalita dat
 
 - **Nevěrohodná hodnota se vyřadí** a zapíše do části „Kvalita dat". Příklady: klidový tep

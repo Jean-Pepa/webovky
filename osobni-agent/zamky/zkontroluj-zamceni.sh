@@ -292,6 +292,28 @@ if [[ -n "$workspace" ]]; then
   shopt -u nocasematch
 fi
 
+# Náramek (jen když je napojený): přihlášení čitelné jen pro tebe, časovač a čerstvá data.
+if [[ -f "$HOME/.config/agent/google-health-token.json" ]]; then
+  for soubor in "$HOME/.config/agent/google-health-token.json" "$HOME/.config/agent/google-health-client.json"; do
+    if [[ -f "$soubor" && "$(stat -c %a "$soubor")" != "600" ]]; then
+      pozor "$(basename "$soubor") smí číst jen ty: chmod 600 $soubor"
+    fi
+  done
+  if [[ "$(systemctl --user is-enabled agent-fitbit.timer 2>/dev/null)" == "enabled" ]]; then
+    ok "stahování z náramku běží každou hodinu"
+  else
+    pozor "stahování z náramku není zapnuté (agent-fitbit casovac)"
+  fi
+  posledni=$(ls -1 "${workspace:-$HOME/Mozek}/zdravi/data/"*.json 2>/dev/null | tail -1)
+  if [[ -z "$posledni" ]]; then
+    pozor "z náramku zatím nepřišla žádná data (agent-fitbit stahni)"
+  elif (( $(date +%s) - $(stat -c %Y "$posledni") > 172800 )); then
+    pozor "data z náramku jsou starší než 2 dny, co se děje, ukáže: agent-fitbit stahni"
+  else
+    ok "data z náramku jsou čerstvá (poslední den $(basename "$posledni" .json))"
+  fi
+fi
+
 if [[ "$(openclaw config get gateway.tailscale.mode --json 2>/dev/null | tr -d '"')" == "serve" ]]; then
   if command -v tailscale >/dev/null && tailscale status >/dev/null 2>&1; then
     ok "Tailscale běží"

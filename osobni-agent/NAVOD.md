@@ -1064,7 +1064,7 @@ stáhne sám. Tobě pak zůstane kontrola a placené výpisy. Vyzkouší se na t
 Přístup k API KN je zdarma po registraci na registrace.cuzk.gov.cz. Firma se registruje přes
 účet Dálkového přístupu, jehož zřízení trvá asi 10 dní, takže o něj můžeš zažádat už teď.
 
-## Krok 18: Zdraví z náramku Fitbit Air (asi 15 minut, stahování dat doplníme)
+## Krok 18: Zdraví z náramku Fitbit Air (asi 45 minut)
 
 Agent vyhodnocuje spánek, zotavení a aktivitu podle pevných pravidel v
 `skills/zdravi/METODIKA.md`, i se zdroji. Všechna čísla počítá skript `agent-zdravi`, ne
@@ -1122,10 +1122,62 @@ Co čekat:
    mkdir -p ~/Mozek/zdravi && echo "cil_spanku_h: 7.5" > ~/Mozek/zdravi/nastaveni.md
    ```
 
-**Co bude dál:** skript, který data každé ráno stáhne z Google Health API do `zdravi/data/`.
-Potřebuje tvůj projekt v Google Cloud se zapnutým Google Health API a přihlášení přes Google.
-Aplikace musí být ve stavu „In production", jinak by přihlášení vypršelo za 7 dní. Do té doby
-je složka `zdravi/data/` prázdná a agent odpoví, že data z náramku nemá.
+### Napojení náramku přes Google Health (asi 30 minut)
+
+Data stahuje skript `agent-fitbit` každou hodinu od 5:15 do 23:15 a hned z nich spočítá
+souhrn dne. Od Googlu jen čte spánek, aktivitu a zdravotní ukazatele, nic neodesílá. Agent ho
+spouštět nesmí a k přihlášení se nedostane (je v `~/.config/agent/`). Ukazatele a postup
+výpočtu z nich jsou ve `skills/zdravi/METODIKA.md`.
+
+1. **Projekt v Google Cloud.** Na [console.cloud.google.com](https://console.cloud.google.com)
+   se přihlas stejným účtem Google, jaký máš v aplikaci Google Health. Nahoře otevři výběr
+   projektu → **Nový projekt**, název třeba `Mozek` → **Vytvořit**.
+2. **Zapni Google Health API:** na stránce
+   [console.cloud.google.com/apis/library/health.googleapis.com](https://console.cloud.google.com/apis/library/health.googleapis.com)
+   klikni na **Povolit** (Enable).
+3. **Přihlašovací obrazovka:** v nabídce otevři **Google Auth Platform** (dřív „OAuth consent
+   screen") → **Začínáme** (Get started).
+   - Název aplikace `Mozek`, e-mail podpory je tvůj Gmail.
+   - Cílová skupina (Audience): **Externí** (External).
+   - Kontaktní e-mail je opět tvůj → **Vytvořit**.
+4. **Oprávnění:** **Data Access** → **Add or remove scopes**. Do filtru napiš `googlehealth`
+   a zaškrtni tři položky končící `.readonly`:
+   - `googlehealth.sleep.readonly`,
+   - `googlehealth.activity_and_fitness.readonly`,
+   - `googlehealth.health_metrics_and_measurements.readonly`.
+
+   Pak **Update** a **Save**.
+5. **Zveřejnění pro tebe:** **Audience** → **Test users** → **Add users** → tvůj Gmail. Pak
+   **Publish app** a potvrď (stav **In production**). Bez toho by přihlášení vypršelo každých
+   7 dní. Ověření Googlem nepotřebuješ, aplikaci používáš jen ty (limit je 100 uživatelů).
+6. **Klient:** **Clients** → **Create client** → typ **Desktop app**, název `agent` →
+   **Create** → **Download JSON**.
+7. **V Ubuntu** soubor zkopíruj a přihlas se (jméno složky ve Windows uprav):
+   ```bash
+   cp /mnt/c/Users/<tvé jméno>/Downloads/client_secret_*.json ~/.config/agent/google-health-client.json
+   chmod 600 ~/.config/agent/google-health-client.json
+   agent-fitbit prihlasit
+   ```
+   - Otevře se prohlížeč. Vyber účet. Google nejspíš ukáže, že aplikace není ověřená:
+     dej **Rozšířené** (Advanced) → **Přejít do aplikace Mozek**.
+   - Povol všechna data a potvrď. V prohlížeči se objeví „Hotovo, přihlášení se uložilo".
+   - Když se prohlížeč neotevře, zkopíruj adresu, kterou příkaz vypsal, do prohlížeče
+     ve Windows.
+8. **Historie a časovač:**
+   ```bash
+   agent-fitbit stahni --dni 60
+   agent-zdravi kontrola
+   agent-fitbit casovac
+   ```
+   - První příkaz stáhne posledních 60 dní, takže tvůj normál bude hned hotový. Google
+     dovolí nejvýš 90 dní.
+   - `kontrola` ukáže, kolik dní dat máš a jestli je normál hotový.
+9. **Kontrola:** `bash ~/osobni-agent/zamky/zkontroluj-zamceni.sh` musí ukázat „stahování
+   z náramku běží každou hodinu" a „data z náramku jsou čerstvá".
+
+Když Google odpoví chybou, `agent-fitbit stahni` napíše česky, co udělat. Příkaz
+`agent-fitbit struktura` ukáže jen podobu odpovědí Googlu, bez hodnot. Můžeš ho poslat, když
+bude potřeba něco doladit.
 
 ---
 
@@ -1156,7 +1208,7 @@ je složka `zdravi/data/` prázdná a agent odpoví, že data z náramku nemá.
 ## Co je ověřené a co si ověř sám
 
 - **Otestováno:**
-  - Skripty prošly 60 automatickými testy:
+  - Skripty prošly 70 automatickými testy:
     - `mail.py` a `resers.py`: falešný poštovní server, odeslané maily bez citací, složky
       s diakritikou, filtr osobních údajů, schvalování.
     - `jednani.py` a `prepis.py`: párování slov s mluvčími, jména, výstup, přechod z grafiky
@@ -1164,6 +1216,10 @@ je složka `zdravi/data/` prázdná a agent odpoví, že data z náramku nemá.
     - `zdravi.py`: na vymyšlených datech za 70 dní našel zadaný vliv alkoholu na hluboký
       spánek, HRV a tep. U kávy bez vlivu žádnou průkaznou souvislost nehlásil. Testy
       ověřují i normál, vyřazení chybných hodnot, dny nemoci, upozornění a pokusy.
+    - `fitbit.py`: přihlášení přes prohlížeč, obnovení přihlášení, převod spánku, HRV, tepu,
+      SpO2, dechu, teploty, kroků a aktivních minut, sloučení se starými daty a srozumitelné
+      chyby. Proti falešnému serveru postavenému podle oficiálního popisu Google Health API
+      (discovery dokument v4 z 28. 10. 2026). Se skutečným účtem Google to vyzkoušíš v kroku 18.
   - Volání Clauda prošlo zkušebně proti testovacímu serveru s oficiální knihovnou Anthropic.
   - Instalační skript proběhl na čistém Linuxu jako běžný uživatel.
   - Nastavení jedním příkazem (`onboard`), zamčená konfigurace, seznam povolených příkazů

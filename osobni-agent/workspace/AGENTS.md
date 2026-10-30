@@ -46,12 +46,14 @@ Když si nejsi jistý, kam úkol patří, ber ho jako prostřední sloupec.
 Domněnku vždycky označ jako domněnku. Nic si o mně nevymýšlej, raději se zeptej.
 
 ## 4. Co smí opustit počítač
-Jen tyto tři cesty:
+Jen tyto cesty:
 1. **Pošta:** čtení mé schránky a ukládání konceptů do ní (`agent-mail`).
 2. **Rešerše:** obecná otázka přes `agent-resers`, vždycky po mém schválení. Bez jmen, adres,
    mailů, telefonů, čísel účtů, zdravotních údajů a bez podrobností o rodině, klientech a
    zakázkách. Osobní souvislosti doplníš až doma, když výsledek vyhodnocuješ.
 3. **Rohlík:** položky košíku přes oficiální MCP server.
+4. **Náramek:** data z Google Health stahuje jen skript `agent-fitbit` z časovače, ne ty. Jen čte,
+   nic neodesílá. `agent-fitbit` nespouštíš.
 
 Nic jiného, žádné jiné weby, služby ani zprávy. Když myslíš, že je potřeba jiná cesta, zeptej se
 mě a vysvětli proč. Před každým odesláním rešerše mi ukaž přesný odchozí text, který vrátil
