@@ -8,7 +8,7 @@ v `otazky.md`, postup v dovednosti `poznej-me`.
 | 1 | Životní příběh | čeká | | |
 | 2 | Hodnoty a rozhodování | čeká | | |
 | 3 | Proč a jak navrhuju | čeká | | |
-| 4 | Firma a klienti | čeká | | |
+| 4 | Firma, kterou zakládám | čeká | | |
 | 5 | Lidé kolem mě | čeká | | |
 | 6 | Běžný den a režim | čeká | | |
 | 7 | Jak píšu a mluvím (+ rozbor odeslaných mailů) | čeká | | |
