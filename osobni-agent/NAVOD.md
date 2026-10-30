@@ -312,7 +312,7 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
    štítkem **tools** a zkopíruj její příkaz `ollama pull …`. Když ji tam nenajdeš, použij verzi
    z Hugging Face (název ověř na huggingface.co):
    ```powershell
-   ollama pull hf.co/unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M
+   ollama pull huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M
    ```
    Model pro hledání v paměti:
    ```powershell
@@ -364,19 +364,23 @@ a i tak odpovídá za pár sekund. Na něm běží i pravidelné kontroly.
    ```
 2. **Hlavní model** máš stažený z bodu 3. Když jsi použil verzi z Hugging Face, dej jí
    kratší jméno, ať sedí na zbytek návodu:
-   `ollama cp hf.co/unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M gemma4:26b`.
+   `ollama cp huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M gemma4:26b`.
 3. **ThinkingCap (hluboký):** stáhni ho (15,7 GB), dej mu krátké jméno a zkontroluj ho.
    ```powershell
-   ollama pull hf.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M
-   ollama cp hf.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M thinkingcap
+   ollama pull huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M
+   ollama cp huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M thinkingcap
    ollama show thinkingcap
    ```
+   - Piš celou adresu `huggingface.co/`. Se zkratkou `hf.co/` může Ollama skončit chybou
+     `realm host "huggingface.co" does not match original host "hf.co"`. Volbu `--insecure`,
+     kterou radí některá fóra, nepoužívej, vypíná kontrolu zabezpečeného spojení.
    - V části Capabilities musí být `tools`. Bez toho by s ním agent neuměl pracovat se
      soubory a hodil by se jen na povídání.
    - Když stahování skončí chybou 401 nebo 403, je model chráněný. Na
      huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF přijmi podmínky a do svého účtu
-     Hugging Face (Settings → SSH Keys) přidej veřejný klíč Ollamy ze souboru
-     `C:\Users\<jméno>\.ollama\id_ed25519.pub`. Pak stahování zopakuj.
+     Hugging Face (huggingface.co/settings/keys → Add SSH key) vlož veřejný klíč Ollamy.
+     Vypíšeš ho příkazem `Get-Content $env:USERPROFILE\.ollama\id_ed25519.pub`, je to jeden
+     řádek začínající `ssh-ed25519`. Pak stahování zopakuj.
    - Rychlost změř v zásuvce: `ollama run thinkingcap --verbose`.
    - Přezdívku `hluboky` mu dáš v OpenClaw v kroku 6.
 4. **`OLLAMA_MAX_LOADED_MODELS` nech na 2.** Agent při každé zprávě hledá v paměti přes
