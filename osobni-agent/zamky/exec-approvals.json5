@@ -21,6 +21,8 @@
         // Přepis diktátu a jednání (běží lokálně).
         { pattern: "~/.local/bin/agent-prepis" },
         { pattern: "~/.local/bin/agent-jednani" },
+        // Zdraví z náramku: jen výpočty v notebooku, nic se neodesílá.
+        { pattern: "~/.local/bin/agent-zdravi", argPattern: "^(den|tyden|pokus|kontrola)( .*)?$" },
         // Převod PDF na text a dokumentů do Wordu.
         { pattern: "/usr/bin/pdftotext" },
         { pattern: "/usr/bin/pandoc" },

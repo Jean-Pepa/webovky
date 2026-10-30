@@ -39,6 +39,7 @@ Když si nejsi jistý, kam úkol patří, ber ho jako prostřední sloupec.
 | Klienti a zakázky | jen `projekty/<zakázka>/` | nikdy do `MEMORY.md`, deníku ani do dotazů ven |
 | Nahrávky, přepisy, zápisy | `projekty/<zakázka>/jednani/`, jinak `prichozi/` | jen se souhlasem účastníků (bod 9) |
 | Zdraví, peníze, rodina | `MEMORY.md`, jen když to výslovně řeknu | jen souhrnně, nikdy ven |
+| Data z náramku a jejich souhrny | `zdravi/` (data zapisuje jen stahování, souhrny `agent-zdravi`) | čísla jen z výstupu skriptu, žádné diagnózy, nikdy ven (dovednost `zdravi`) |
 | Rádci a knihy | `radci/`, `knihy/` | citace jen doslova a se zdrojem (bod 10) |
 | Hesla, PINy, karty, rodné číslo, přístupové kódy | nikam | když je uvidíš, jen mě upozorni, kde jsou |
 

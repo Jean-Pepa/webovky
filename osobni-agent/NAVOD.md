@@ -1040,6 +1040,69 @@ stáhne sám. Tobě pak zůstane kontrola a placené výpisy. Vyzkouší se na t
 Přístup k API KN je zdarma po registraci na registrace.cuzk.gov.cz. Firma se registruje přes
 účet Dálkového přístupu, jehož zřízení trvá asi 10 dní, takže o něj můžeš zažádat už teď.
 
+## Krok 18: Zdraví z náramku Fitbit Air (asi 15 minut, stahování dat doplníme)
+
+Agent vyhodnocuje spánek, zotavení a aktivitu podle pevných pravidel v
+`skills/zdravi/METODIKA.md`, i se zdroji. Všechna čísla počítá skript `agent-zdravi`, ne
+jazykový model, takže si žádné číslo nevymyslí. Srovnává tě hlavně s tvým vlastním normálem
+za posledních 28 dní a propojuje data s tím, co řekneš do večerního deníku.
+
+Co uvidíš:
+- **Ráno:** souhrn `zdravi/RRRR-MM-DD.md` a v ranním přehledu 3 řádky. Spánek proti normálu,
+  stav zotavení a případná upozornění.
+- **Večer:** večerní deník zapíše štítky: sport, alkohol, káva po 14, jídlo po 21, práce po 22,
+  stres 1–5 a nemoc. Když něco chybí, zeptá se jednou otázkou.
+- **V neděli:** týdenní rozbor. Spánkový dluh, pravidelnost, HRV, aktivita proti doporučení WHO
+  a souvislosti s deníkem. U souvislostí je počet dní a statistická kontrola, aby náhoda
+  nevypadala jako výsledek.
+- **Pokusy:** třeba „14 dní bez kávy po 14:00". Agent je vyhodnotí stejně přísně.
+
+Co čekat:
+- Normál se učí 14 dní, do té doby uvidíš u srovnání „nevím".
+- Souvislost s deníkem potřebuje aspoň 5 večerů se štítkem a 5 bez něj.
+- Agent nestanovuje diagnózy. Při výrazných odchylkách doporučí lékaře.
+
+1. **Nová verze balíčku a nástrojů** (v Ubuntu):
+   ```bash
+   rm -rf /tmp/oa && mkdir -p /tmp/oa && curl -fsSL https://codeload.github.com/jean-pepa/webovky/tar.gz/refs/heads/claude/busy-gauss-t83y4w | tar -xz -C /tmp/oa && rm -rf ~/osobni-agent && cp -r /tmp/oa/*/osobni-agent ~/osobni-agent
+   bash ~/osobni-agent/wsl/instaluj-nastroje.sh
+   ```
+2. **Nová pravidla a dovednosti do Mozku.** Jsou zamčená, takže je odemkni, nahraj a zase
+   zamkni:
+   ```bash
+   sudo chattr -i ~/Mozek/AGENTS.md
+   sudo chattr -R -i ~/Mozek/skills
+   cp ~/osobni-agent/workspace/AGENTS.md ~/Mozek/AGENTS.md
+   cp -r ~/osobni-agent/workspace/skills/. ~/Mozek/skills/
+   sudo chattr +i ~/Mozek/AGENTS.md
+   sudo chattr -R +i ~/Mozek/skills
+   ```
+   Když jsi v `AGENTS.md` nebo v dovednostech něco měnil sám, změny si nejdřív zazálohuj.
+   Příkaz `cp` je přepíše.
+3. **Povol agentovi nový příkaz.** Počítá jen v notebooku a nic neodesílá:
+   ```bash
+   openclaw approvals set --file ~/osobni-agent/zamky/exec-approvals.json5
+   openclaw gateway restart
+   openclaw skills list | grep zdravi
+   ```
+   U `zdravi` musí být `ready`.
+4. **Kontrola:**
+   ```bash
+   agent-zdravi kontrola
+   bash ~/osobni-agent/zamky/zkontroluj-zamceni.sh
+   ```
+   První příkaz zatím napíše, že data z náramku nejsou. Druhý nesmí ukázat žádné POZOR.
+5. **Cíl spánku** (volitelné). Výchozí je 7 hodin podle doporučení AASM a SRS.
+   Jiný cíl nastavíš takhle:
+   ```bash
+   mkdir -p ~/Mozek/zdravi && echo "cil_spanku_h: 7.5" > ~/Mozek/zdravi/nastaveni.md
+   ```
+
+**Co bude dál:** skript, který data každé ráno stáhne z Google Health API do `zdravi/data/`.
+Potřebuje tvůj projekt v Google Cloud se zapnutým Google Health API a přihlášení přes Google.
+Aplikace musí být ve stavu „In production", jinak by přihlášení vypršelo za 7 dní. Do té doby
+je složka `zdravi/data/` prázdná a agent odpoví, že data z náramku nemá.
+
 ---
 
 ## Kontrolní seznam: hotovo, když…
@@ -1060,17 +1123,21 @@ Přístup k API KN je zdarma po registraci na registrace.cuzk.gov.cz. Firma se r
 - [ ] rozhovor „kdo jsem" má hotových aspoň pět témat a `ja/` se plní
 - [ ] `agent-jednani` rozlišil mluvčí ve zkušební nahrávce a zápis odpovídá
 - [ ] první rešerše pozemku je v kartě projektu i se zdroji
+- [ ] `openclaw skills list` ukazuje `zdravi` jako `ready` a `agent-zdravi kontrola` odpoví
 
 ---
 
 ## Co je ověřené a co si ověř sám
 
 - **Otestováno:**
-  - Skripty prošly 38 automatickými testy:
+  - Skripty prošly 60 automatickými testy:
     - `mail.py` a `resers.py`: falešný poštovní server, odeslané maily bez citací, složky
       s diakritikou, filtr osobních údajů, schvalování.
     - `jednani.py` a `prepis.py`: párování slov s mluvčími, jména, výstup, přechod z grafiky
       na procesor a běh bez internetu po prvním stažení.
+    - `zdravi.py`: na vymyšlených datech za 70 dní našel zadaný vliv alkoholu na hluboký
+      spánek, HRV a tep. U kávy bez vlivu žádnou průkaznou souvislost nehlásil. Testy
+      ověřují i normál, vyřazení chybných hodnot, dny nemoci, upozornění a pokusy.
   - Volání Clauda prošlo zkušebně proti testovacímu serveru s oficiální knihovnou Anthropic.
   - Instalační skript proběhl na čistém Linuxu jako běžný uživatel.
   - Nastavení jedním příkazem (`onboard`), zamčená konfigurace, seznam povolených příkazů
