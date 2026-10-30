@@ -1,6 +1,6 @@
 ---
 name: zdravi
-description: Spánek, zotavení a aktivita z náramku Fitbit Air a souvislosti s deníkem. Použij, když se ptám na spánek, únavu, tep, kroky nebo pokus, a při ranním přehledu a týdenním plánu.
+description: Vyhodnocení dat z náramku Fitbit Air (spánek, HRV, klidový tep, dech, SpO2, kroky) a jejich souvislostí s večerním deníkem. Použij, když se ptám na spánek, únavu, zotavení, tep, kroky nebo na pokus, při ranním přehledu a v nedělním týdenním plánu.
 ---
 
 # Zdraví z náramku
@@ -8,8 +8,6 @@ description: Spánek, zotavení a aktivita z náramku Fitbit Air a souvislosti s
 Přesná pravidla a zdroje jsou v `skills/zdravi/METODIKA.md`. Drž se jich.
 
 1. **Čísla jen ze skriptu.** Sám nepočítej nic, ani průměr, rozdíl nebo procento. Spusť:
-   - na otázku k jedné noci („jak jsem spal před týdnem", „v noci na sobotu") jen
-     `agent-zdravi noc --den "…"` s dnem slovy, jak padl, a nic dalšího nečti,
    - ráno `agent-zdravi den` (když už je hotový `zdravi/RRRR-MM-DD.md`, stačí ho přečíst),
    - v neděli `agent-zdravi tyden`,
    - na pokus `agent-zdravi pokus --nazev "…" --od RRRR-MM-DD --do RRRR-MM-DD --hlavni spanek_min`,

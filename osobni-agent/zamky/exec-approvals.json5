@@ -22,7 +22,7 @@
         { pattern: "~/.local/bin/agent-prepis" },
         { pattern: "~/.local/bin/agent-jednani" },
         // Zdraví z náramku: jen výpočty v notebooku, nic se neodesílá.
-        { pattern: "~/.local/bin/agent-zdravi", argPattern: "^(den|noc|tyden|pokus|kontrola)( .*)?$" },
+        { pattern: "~/.local/bin/agent-zdravi", argPattern: "^(den|tyden|pokus|kontrola)( .*)?$" },
         // Kalendář: číst, navrhnout, zapsat a smazat hned. Google mu s tímhle přihlášením dovolí
         // měnit jen jeho vlastní kalendář Mozek. Přihlášení (prihlasit) spouštíš ty.
         { pattern: "~/.local/bin/agent-kalendar", argPattern: "^(udalosti|navrh|zapis|smaz)( .*)?$" },

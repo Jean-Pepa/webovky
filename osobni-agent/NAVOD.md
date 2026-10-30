@@ -839,15 +839,6 @@ nepoužívej, zprávy v něm nejsou šifrované end-to-end.
      kterou zkoušíš) a pak otázka. Psaní (`eval rate`) by mělo zůstat aspoň na 15–20 tokenech/s.
    - Plné okno 64k model čte zhruba minutu a půl (čte ~700 tokenů/s), 128k tři minuty.
      Proto víc než 128k na tomhle notebooku nedává smysl.
-   - Při 32k bylo na grafice 77 % modelu, při 64k 76 % (změřeno na tvém notebooku).
-2b. **Šetření tokenů.** S každou zprávou jde do modelu pevné zadání: pravidla, dovednosti
-   a popis nástrojů. Kolik zabírá, ukáže v chatu `/context list`.
-   - Agent vidí jen našich 16 dovedností. Dovednosti přibalené k OpenClaw jsou vypnuté
-     v `zamky/openclaw-zamceni.json5`, ušetří přes 1 500 tokenů na každou zprávu. Novou
-     dovednost připiš i do seznamu `skills` v tom souboru.
-   - Na otázku k jedné noci („jak jsem spal před týdnem") agent spustí jen
-     `agent-zdravi noc --den "před týdnem"`. Dostane 5 řádků místo celého rozboru.
-   - Nové téma začni v chatu příkazem `/new`. Starý rozhovor pak model nečte znovu.
 3. **Grafika je jen jedna:** při práci v Revitu, Twinmotionu nebo Enscape si model s nimi
    konkuruje. Ollama sama uvolní grafiku po 30 minutách klidu. Hned ji uvolníš tak, že Ollamu
    ukončíš ikonou u hodin.
@@ -1288,7 +1279,7 @@ událost dvakrát nezapíše. Datum a čas počítá skript, ne model, takže �
 ## Co je ověřené a co si ověř sám
 
 - **Otestováno:**
-  - Skripty prošly 90 automatickými testy:
+  - Skripty prošly 88 automatickými testy:
     - `mail.py` a `resers.py`: falešný poštovní server, odeslané maily bez citací, složky
       s diakritikou, filtr osobních údajů, schvalování.
     - `jednani.py` a `prepis.py`: párování slov s mluvčími, jména, výstup, přechod z grafiky
@@ -1319,9 +1310,6 @@ událost dvakrát nezapíše. Datum a čas počítá skript, ne model, takže �
   - Okno hlavního modelu (`nastav-modely.sh`) prošlo v OpenClaw 2026.10.9 s napodobenou
     Ollamou po stejném nastavení jako v kroku 6. OpenClaw pak hlavnímu modelu posílá okno
     65 536 tokenů a hlubokému dál 32 768. Druhé spuštění skriptu nic nezmění.
-  - Zámek dovedností prošel v OpenClaw 2026.10.9 po stejném nastavení jako v kroku 6: agent
-    vidí jen našich 16 dovedností a zadání je kratší o 6 565 znaků. Kontrolní skript pozná,
-    když zámek chybí nebo nová dovednost není v seznamu.
   - `kontrola-pc.ps1` proběhl na tvém notebooku. Kontrolu WSL a OneDrivu jsem pak
     vyzkoušel v PowerShellu s napodobeným WSL.
 - **Netestováno naživo:**

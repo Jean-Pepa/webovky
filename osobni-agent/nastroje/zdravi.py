@@ -12,9 +12,6 @@ Vstupy v Mozku (~/Mozek, jinou složku nastavíš proměnnou AGENT_MOZEK):
 Příkazy:
     agent-zdravi den [--datum RRRR-MM-DD]     ranní souhrn: noc, zotavení, včerejší aktivita
                                               → zdravi/RRRR-MM-DD.md
-    agent-zdravi noc [--den DEN]              jedna noc krátce, na rychlou otázku; DEN je dnes,
-                                              vcera, pred tydnem, pred 3 dny, v noci na sobotu,
-                                              23.10. nebo RRRR-MM-DD (noc podle dne probuzení)
     agent-zdravi tyden [--do RRRR-MM-DD]      týdenní rozbor a souvislosti s deníkem
                                               → zdravi/tyden-RRRR-Www.md
     agent-zdravi pokus --nazev TEXT --od D --do D [--srovnani-od D --srovnani-do D]
@@ -704,76 +701,6 @@ def quality_lines(data: Data, days: list[date]) -> list[str]:
     return lines or ["- Bez problémů."]
 
 
-WEEKDAYS = ("pondělí", "úterý", "středa", "čtvrtek", "pátek", "sobota", "neděle")
-WEEKDAY_FORMS = {"pondeli": 0, "utery": 1, "streda": 2, "stredu": 2, "ctvrtek": 3, "patek": 4,
-                 "sobota": 5, "sobotu": 5, "nedele": 6, "nedeli": 6}
-COUNT_WORDS = {"jednim": 1, "dvema": 2, "tremi": 3, "ctyrmi": 4, "peti": 5, "sesti": 6, "sedmi": 7,
-               "osmi": 8, "deviti": 9, "deseti": 10, "ctrnacti": 14}
-
-
-def past_day(text: str, today: date) -> date:
-    """Den probuzení z češtiny: „včera“, „před týdnem“, „v noci na sobotu“, „23.10.“.
-    Den v týdnu znamená poslední takový den před dneškem."""
-    t = unicodedata.normalize("NFKD", " ".join(text.lower().split()))
-    t = "".join(c for c in t if not unicodedata.combining(c))
-    t = re.sub(r"^(?:dnes v |dnes |dnesni |tuhle |v )?noci?(?: na)? ?", "", t)
-    t = re.sub(r"^(?:v|ve|na|minuly|minulou|minulej|posledni) ", "", t)
-    if t in ("", "dnes", "dneska"):
-        return today
-    if t == "vcera":
-        return today - timedelta(days=1)
-    if t == "predevcirem":
-        return today - timedelta(days=2)
-    if t in WEEKDAY_FORMS:
-        return today - timedelta(days=(today.weekday() - WEEKDAY_FORMS[t]) % 7 or 7)
-    if m := re.fullmatch(r"pred (?:(\w+) )?(dnem|dny|dni|tydnem|tydny)", t):
-        count = 1 if not m[1] else int(m[1]) if m[1].isdigit() else COUNT_WORDS.get(m[1])
-        if count:
-            return today - timedelta(days=count * (7 if m[2].startswith("tyd") else 1))
-    try:
-        if m := re.fullmatch(r"(\d{4})-(\d{1,2})-(\d{1,2})", t):
-            return date(int(m[1]), int(m[2]), int(m[3]))
-        if m := re.fullmatch(r"(\d{1,2})\. ?(\d{1,2})\.?(?: ?(\d{4}))?", t):
-            d = date(int(m[3]) if m[3] else today.year, int(m[2]), int(m[1]))
-            return d if m[3] or d <= today else date(today.year - 1, d.month, d.day)
-    except ValueError:
-        raise HealthError(f"Datum „{text}“ neexistuje.") from None
-    raise HealthError(f"Nerozumím dni „{text}“. Použij dnes, vcera, pred tydnem, pred 3 dny, "
-                      "v noci na sobotu, 23.10. nebo RRRR-MM-DD.")
-
-
-def report_night(data: Data, d: date) -> str:
-    """Jedna noc v pár řádcích, na rychlou otázku. Nic neukládá."""
-    day = data.days.get(d)
-    if day is None:
-        raise HealthError(f"Za noc na {WEEKDAYS[d.weekday()]} {date_cz(d)} nemám data z náramku "
-                          f"(zdravi/data/{d.isoformat()}.json).")
-    y = d - timedelta(days=1)
-
-    def part(key: str) -> str:
-        v, n = data.value(d, key), data.normal(key, d)
-        z = (v - n.center) / n.spread if v is not None and n.ready else None
-        text = f"{METRICS[key].label} {show(key, v)}"
-        if n.ready:
-            text += f" (normál {show(key, n.center)})"
-        return text + f": {assess(key, z, n)}"
-
-    lines = [f"Noc {y.day}. → {d.day}. {d.month}. {d.year} (probuzení {WEEKDAYS[d.weekday()]})"]
-    if data.value(d, "spanek_min") is None:
-        lines.append("Spánek: za tuhle noc data chybí.")
-    else:
-        lines.append(part("spanek_min"))
-        times = ", ".join(f"{METRICS[k].label.lower()} {show(k, data.value(d, k))}"
-                          for k in ("zacatek", "konec", "efektivita_pct") if data.value(d, k) is not None)
-        if times:
-            lines.append(times[0].upper() + times[1:])
-        if not day.night_ok:
-            lines.append("Pozor: noc je neúplná nebo kratší než 3 h, do normálu se nepočítá.")
-    lines += [part(k) for k in ("ln_hrv", "tep_klidovy") if data.value(d, k) is not None]
-    lines.append(f"Zdroj: zdravi/data/{d.isoformat()}.json")
-    return "\n".join(lines) + "\n"
-
-
 def report_day(data: Data, d: date) -> str:
     if d not in data.days and d - timedelta(days=1) not in data.days:
         raise HealthError(f"Za {date_cz(d)} ani za předchozí den nemám data z náramku "
@@ -1029,8 +956,6 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="cmd", required=True)
     p_day = sub.add_parser("den", help="ranní souhrn: noc, zotavení, včerejší aktivita")
     p_day.add_argument("--datum", type=date.fromisoformat, default=date.today())
-    p_night = sub.add_parser("noc", help="jedna noc krátce, např. --den \"před týdnem\"")
-    p_night.add_argument("--den", default="dnes")
     p_week = sub.add_parser("tyden", help="týdenní rozbor a souvislosti s deníkem")
     p_week.add_argument("--do", dest="end", type=date.fromisoformat, default=date.today())
     p_exp = sub.add_parser("pokus", help="vyhodnocení pokusu")
@@ -1045,9 +970,6 @@ def main(argv: list[str] | None = None) -> int:
 
     data = Data(args.mozek)
     try:
-        if args.cmd == "noc":
-            print(report_night(data, past_day(args.den, date.today())), end="")
-            return 0
         if args.cmd == "den":
             text = report_day(data, args.datum)
             path = data.folder / f"{args.datum.isoformat()}.md"

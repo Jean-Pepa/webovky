@@ -1,6 +1,6 @@
 ---
 name: poznej-me
-description: Rozhovor „kdo jsem" po tématech, ze kterého vzniká moje digitální kopie v ja/. Použij, když řeknu „poznej mě", „pokračuj v rozhovoru" nebo pošlu nahrávky odpovědí.
+description: Rozhovor „kdo jsem" po jedenácti tématech, ze kterého vzniká moje digitální kopie ve složce ja/ (příběh, hodnoty a rozhodování, jak navrhuju, firma, lidé, běžný den, jak píšu, cíle, co mě baví, názory, co mě formovalo). Použij, když řeknu „poznej mě", „pokračuj v rozhovoru", „rozhovor kdo jsem" nebo pošlu nahrávky odpovědí na otázky.
 ---
 
 # Rozhovor „kdo jsem"

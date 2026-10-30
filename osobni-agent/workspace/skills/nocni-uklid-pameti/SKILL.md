@@ -1,6 +1,6 @@
 ---
 name: nocni-uklid-pameti
-description: Noční úklid paměti: deník, MEMORY.md, lidé a nedotažené věci. Spouští se ve 3:00 nebo na pokyn „ukliď paměť".
+description: Noční konsolidace paměti – projde deník, propojí souvislosti, aktualizuje MEMORY.md a soubory lidí a najde nedotažené věci. Spouští se každou noc ve 3:00 naplánovanou úlohou nebo na pokyn „ukliď paměť".
 ---
 
 # Noční úklid paměti

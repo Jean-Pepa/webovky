@@ -1,6 +1,6 @@
 ---
 name: resers-pozemku
-description: Rešerše pozemku před návrhem (katastr, územní plán, limity, sítě, terén, geologie, voda, památky) se zdroji. Použij, když řeknu „udělej rešerši pozemku" nebo zadám číslo parcely.
+description: Rešerše pozemku před návrhem – katastr, územní plán a regulativy, požadavky vyhlášky č. 146/2024 Sb., limity a ochrana území, sítě a přístup, terén, geologie, radon, voda, zemědělská půda, les, příroda, památky a archeologie. U každého údaje zdroj, datum a úroveň spolehlivosti, na konci doporučené průzkumy a poptávky. Použij, když uživatel řekne „udělej rešerši pozemku" nebo zadá číslo parcely.
 ---
 
 # Rešerše pozemku
