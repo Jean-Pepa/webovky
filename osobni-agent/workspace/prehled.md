@@ -15,7 +15,7 @@ Zatím prázdný. Každou noc ve 3:00 ho celý přepíše noční úklid (dovedn
 
 ## Zdraví
 
-Tabulka všech dní a souhrn: `zdravi/prehled.md` (obnovuje se po každém stažení dat).
+Tabulka všech dní a souhrn: `zdravi/prehled.md` (obnovuje ho noční úklid).
 
 ## Kde co je
 

@@ -11,9 +11,10 @@ Přesná pravidla a zdroje jsou v `skills/zdravi/METODIKA.md`. Drž se jich.
    - na jakoukoli otázku k historii („kdy jsem spal nejdéle", „jak jsem spal před týdnem",
      „jak spím poslední dobu", „srovnej tenhle a minulý týden") přečti `zdravi/prehled.md`.
      Jsou v něm všechny dny v jedné tabulce a souhrn: u každého ukazatele nejvíc a nejméně
-     i s dnem a průměry celkem, za posledních 7 dní a předchozích 7 dní. Obnovuje se po
-     každém stažení dat. Když chybí, spusť `agent-zdravi data`, vypíše totéž. Projdi tabulku,
-     srovnej a odpověz. Na „nejvíc", „nejméně" a průměry ber čísla ze souhrnu,
+     i s dnem a průměry celkem, za posledních 7 dní a předchozích 7 dní. Obnovuje ho noční
+     úklid. Když chybí nebo se otázka týká i poslední noci, spusť `agent-zdravi data`, vypíše
+     totéž čerstvě. Projdi tabulku, srovnej a odpověz. Na „nejvíc", „nejméně" a průměry ber
+     čísla ze souhrnu,
    - ráno `agent-zdravi den` (když už je hotový `zdravi/RRRR-MM-DD.md`, stačí ho přečíst),
    - v neděli `agent-zdravi tyden`,
    - na pokus `agent-zdravi pokus --nazev "…" --od RRRR-MM-DD --do RRRR-MM-DD --hlavni spanek_min`,

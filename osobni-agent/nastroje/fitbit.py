@@ -354,7 +354,6 @@ Description=Stažení dat z náramku (Google Health)
 Type=oneshot
 ExecStart=%h/.local/bin/agent-fitbit stahni
 ExecStartPost=-%h/.local/bin/agent-zdravi den
-ExecStartPost=-%h/.local/bin/agent-zdravi data --ulozit
 """
 TIMER = """[Unit]
 Description=Stažení dat z náramku každou hodinu od 5:15 do 23:15

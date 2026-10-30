@@ -852,7 +852,9 @@ nepoužívej, zprávy v něm nejsou šifrované end-to-end.
      řešíš, kalendář na týden, rozhodnutí, lidé, projekty, zdraví a kde co je. Na jakoukoli
      otázku se agent podívá nejdřív sem a pak jen do souboru, na který mapa odkazuje.
    - Zdraví má vlastní `zdravi/prehled.md`: všechny dny v jedné tabulce a souhrn spočítaný
-     skriptem (za 70 dní asi 1 800 tokenů). Obnovuje se po každém stažení dat z náramku.
+     skriptem (za 70 dní asi 1 800 tokenů). Obnovuje ho noční úklid spolu s mapou. Data
+     z poslední noci se do Googlu dostanou až po synchronizaci telefonu, na ně se agent
+     zeptá skriptu napřímo (`agent-zdravi data`).
    - Nové téma začni v chatu příkazem `/new`. Starý rozhovor pak model nečte znovu.
 3. **Grafika je jen jedna:** při práci v Revitu, Twinmotionu nebo Enscape si model s nimi
    konkuruje. Ollama sama uvolní grafiku po 30 minutách klidu. Hned ji uvolníš tak, že Ollamu

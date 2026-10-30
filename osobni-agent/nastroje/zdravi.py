@@ -22,7 +22,7 @@ Příkazy:
                                               ukazatele nejvíc, nejméně a průměry (celkem,
                                               posledních 7 dní, předchozích 7 dní);
                                               s --ulozit → zdravi/prehled.md (spouští ho
-                                              stahování dat po každém stažení)
+                                              noční úklid)
     agent-zdravi tyden [--do RRRR-MM-DD]      týdenní rozbor a souvislosti s deníkem
                                               → zdravi/tyden-RRRR-Www.md
     agent-zdravi pokus --nazev TEXT --od D --do D [--srovnani-od D --srovnani-do D]
@@ -1197,7 +1197,7 @@ def main(argv: list[str] | None = None) -> int:
                 return 0
             path = data.folder / "prehled.md"
             write(path, f"# Zdraví: všechny dny\n\nAktualizováno {datetime.now():%Y-%m-%d %H:%M} skriptem "
-                        f"agent-zdravi po stažení dat z náramku.\n\n{text}")
+                        f"agent-zdravi při nočním úklidu.\n\n{text}")
             print(f"Uloženo: {path}")
             print(week_line(data, args.end))
             return 0
