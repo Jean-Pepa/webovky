@@ -1,6 +1,6 @@
 ---
 name: uceni-ze-vzoru
-description: Naučí se styl psaní uživatele z jeho starších textů (studie, průvodní listy, souhrnné technické zprávy, technické zprávy) a navrhne doplnění pravidel stylu a ustálených formulací. Použij, když uživatel řekne „nauč se můj styl" nebo přidá nové vzory.
+description: Naučí se můj styl psaní ze starších textů a navrhne pravidla stylu. Použij, když řeknu „nauč se můj styl" nebo přidám nové vzory.
 ---
 
 # Učení ze vzorů

@@ -287,6 +287,38 @@ class CommandTests(unittest.TestCase):
             code = zdravi.main(["--mozek", str(self.root), *args])
         return code, out.getvalue(), err.getvalue()
 
+    def test_night_lookup_is_short_and_targeted(self):
+        build(self.root)
+        code, out, _ = self.run_cli("noc", "--den", "2026-11-08")
+        self.assertEqual(code, 0)
+        lines = out.splitlines()
+        self.assertEqual(lines[0], "Noc 7. → 8. 11. 2026 (probuzení neděle)")
+        self.assertRegex(lines[1], r"^Spánek \d+ h \d\d min \(normál \d+ h \d\d min\): ")
+        self.assertRegex(lines[2], r"^Začátek spánku \d+:\d\d, konec spánku \d+:\d\d, efektivita spánku \d+ %$")
+        self.assertTrue(any(l.startswith("HRV (RMSSD) ") for l in lines))
+        self.assertEqual(lines[-1], "Zdroj: zdravi/data/2026-11-08.json")
+        self.assertLess(len(out), 600)  # krátké, ať agent šetří tokeny
+        self.assertFalse((self.root / "zdravi" / "2026-11-08.md").exists())  # nic neukládá
+        code, _, err = self.run_cli("noc", "--den", "2025-01-01")
+        self.assertEqual(code, 1)
+        self.assertIn("nemám data z náramku", err)
+
+    def test_past_days_in_czech(self):
+        today = date(2026, 10, 30)  # pátek
+        cases = {
+            "dnes": "2026-10-30", "v noci": "2026-10-30", "dnes v noci": "2026-10-30", "včera": "2026-10-29",
+            "předevčírem": "2026-10-28", "před týdnem": "2026-10-23", "před 3 dny": "2026-10-27",
+            "před třemi dny": "2026-10-27", "před dvěma týdny": "2026-10-16", "v noci na sobotu": "2026-10-24",
+            "minulý pátek": "2026-10-23", "ve středu": "2026-10-28", "v pondělí": "2026-10-26",
+            "23.10.": "2026-10-23", "31. 12.": "2025-12-31", "2026-10-01": "2026-10-01",
+        }
+        for text, expected in cases.items():
+            with self.subTest(text=text):
+                self.assertEqual(zdravi.past_day(text, today).isoformat(), expected)
+        for bad in ("brzy", "31.2.", "před pár dny"):
+            with self.subTest(bad=bad), self.assertRaises(zdravi.HealthError):
+                zdravi.past_day(bad, today)
+
     def test_day_report(self):
         build(self.root)
         code, out, _ = self.run_cli("den", "--datum", END.isoformat())

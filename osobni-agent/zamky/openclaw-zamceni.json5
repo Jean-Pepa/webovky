@@ -26,8 +26,20 @@
         isolatedSession: true,
         activeHours: { start: "06:00", end: "23:00", timezone: "Europe/Prague" },
       },
+      // Agent vidí jen naše dovednosti ze složky Mozek/skills. Dovednosti přibalené
+      // k OpenClaw (notion, meme-maker, správa brány…) by s každou zprávou zabraly přes
+      // 1 500 tokenů a nepotřebujeme je. Novou dovednost připiš sem i do Mozek/skills.
+      skills: [
+        "hlidani-mailu", "kalendar", "nakup-rohlik", "nocni-uklid-pameti", "poznej-me",
+        "ranni-prehled", "resers-pozemku", "resers-web", "texty-dokumentace", "texty-studie",
+        "tydenni-plan", "uceni-ze-vzoru", "vecerni-denik", "zapis-diktatu", "zapis-jednani",
+        "zdravi",
+      ],
     },
   },
+
+  // Přibalené dovednosti OpenClaw se ani nenačtou.
+  skills: { allowBundled: [] },
 
   // Hledání v paměti jen přes lokální Ollamu. Bez tohoto nastavení by OpenClaw
   // použil OpenAI a při chybě by mohl přejít na jinou cloudovou službu.
