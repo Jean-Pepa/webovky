@@ -17,6 +17,9 @@ Příkazy:
                                               23.10. nebo RRRR-MM-DD (noc podle dne probuzení)
     agent-zdravi noci [--dni N] [--do D]      posledních N nocí (výchozí 14) po řádcích
                                               a nejdelší, nejkratší a průměr
+    agent-zdravi data [--dni N] [--do D]      všechny dny v jedné tabulce a souhrn: u každého
+                                              ukazatele nejvíc, nejméně a průměry (celkem,
+                                              posledních 7 dní, předchozích 7 dní)
     agent-zdravi tyden [--do RRRR-MM-DD]      týdenní rozbor a souvislosti s deníkem
                                               → zdravi/tyden-RRRR-Www.md
     agent-zdravi pokus --nazev TEXT --od D --do D [--srovnani-od D --srovnani-do D]
@@ -810,6 +813,82 @@ def report_nights(data: Data, end: date, days: int) -> str:
     ]) + "\n"
 
 
+# Sloupce tabulky všech dní: klíč, záhlaví, slova pro nejvyšší a nejnižší hodnotu.
+TABLE = [
+    ("spanek_min", "spánek", "nejdéle", "nejkratší"),
+    ("zacatek", "usnul", "nejpozději", "nejdříve"),
+    ("konec", "vstal", "nejpozději", "nejdříve"),
+    ("efektivita_pct", "efektivita", "nejvyšší", "nejnižší"),
+    ("hluboky_min", "hluboký", "nejvíc", "nejméně"),
+    ("rem_min", "REM", "nejvíc", "nejméně"),
+    ("ln_hrv", "HRV", "nejvyšší", "nejnižší"),
+    ("tep_klidovy", "tep", "nejvyšší", "nejnižší"),
+    ("kroky", "kroky", "nejvíc", "nejméně"),
+    ("aktivni_min", "aktivní min", "nejvíc", "nejméně"),
+]
+
+
+def cell(key: str, v: float | None) -> str:
+    """Hodnota do tabulky, co nejkratší."""
+    if v is None:
+        return "–"
+    kind = METRICS[key].kind
+    if kind == "min":
+        m = int(round(v))
+        return f"{m // 60}:{m % 60:02d}"
+    if kind == "clock":
+        return clock_text(v)
+    if kind == "hrv":
+        return f"{cz(math.exp(v))} ms"
+    return cz(v, METRICS[key].decimals) + (" %" if key == "efektivita_pct" else "")
+
+
+def report_data(data: Data, end: date, days: int | None = None) -> str:
+    """Všechny dny z náramku v jedné tabulce a souhrn. Agent z ní odpoví na jakoukoli otázku
+    k historii. Nejvyšší, nejnižší a průměry počítá skript, ne model."""
+    dates = sorted((d for d in data.days if d <= end), reverse=True)
+    if days:
+        dates = [d for d in dates if d > end - timedelta(days=days)]
+    if not dates:
+        raise HealthError(f"Do {date_cz(end)} nemám žádná data z náramku (zdravi/data/).")
+
+    def short(d: date) -> str:
+        return f"{WEEKDAYS[d.weekday()][:2]} {d.day}. {d.month}."
+
+    def usable(d: date, key: str) -> float | None:
+        day = data.days[d]
+        if key in NIGHT and not day.night_ok:
+            return None
+        if key in ACTIVITY and not day.activity_ok:
+            return None
+        return day.values.get(key)
+
+    first, last = dates[-1], dates[0]
+    out = [f"Data z náramku: {len(dates)} dní ({date_cz(first)} až {date_cz(last)}). Řádek = den probuzení, "
+           "spánek je noc před ním, kroky a aktivní minuty jsou za ten den. * = neúplná noc.",
+           " | ".join(["den"] + [t[1] for t in TABLE])]
+    for d in dates:
+        mark = "" if data.days[d].night_ok else " *"
+        out.append(" | ".join([short(d) + mark] + [cell(k, data.value(d, k)) for k, *_ in TABLE]))
+    out += ["", "Souhrn (spočítal skript, neúplné noci a dny s krátkým nošením nepočítá):"]
+    for key, label, high, low in TABLE:
+        vals = [(d, v) for d in dates if (v := usable(d, key)) is not None]
+        if not vals:
+            continue
+        top, bottom = max(vals, key=lambda x: x[1]), min(vals, key=lambda x: x[1])
+        line = (f"- {METRICS[key].label}: {high} {cell(key, top[1])} ({short(top[0])}), "
+                f"{low} {cell(key, bottom[1])} ({short(bottom[0])}), průměr {cell(key, mean([v for _, v in vals]))}")
+        week = [v for d, v in vals if d > end - timedelta(days=7)]
+        before = [v for d, v in vals if end - timedelta(days=14) < d <= end - timedelta(days=7)]
+        if week:
+            line += f", posledních 7 dní {cell(key, mean(week))}"
+        if before:
+            line += f", předchozích 7 dní {cell(key, mean(before))}"
+        out.append(line)
+    out.append("Zdroj: zdravi/data/")
+    return "\n".join(out) + "\n"
+
+
 def report_day(data: Data, d: date) -> str:
     if d not in data.days and d - timedelta(days=1) not in data.days:
         raise HealthError(f"Za {date_cz(d)} ani za předchozí den nemám data z náramku "
@@ -1070,6 +1149,9 @@ def main(argv: list[str] | None = None) -> int:
     p_nights = sub.add_parser("noci", help="posledních N nocí a nejdelší, nejkratší a průměr")
     p_nights.add_argument("--dni", type=int, default=14)
     p_nights.add_argument("--do", dest="end", type=date.fromisoformat, default=date.today())
+    p_data = sub.add_parser("data", help="všechny dny v jedné tabulce a souhrn")
+    p_data.add_argument("--dni", type=int)
+    p_data.add_argument("--do", dest="end", type=date.fromisoformat, default=date.today())
     p_week = sub.add_parser("tyden", help="týdenní rozbor a souvislosti s deníkem")
     p_week.add_argument("--do", dest="end", type=date.fromisoformat, default=date.today())
     p_exp = sub.add_parser("pokus", help="vyhodnocení pokusu")
@@ -1086,6 +1168,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.cmd == "noc":
             print(report_night(data, past_day(args.den, date.today())), end="")
+            return 0
+        if args.cmd == "data":
+            print(report_data(data, args.end, args.dni), end="")
             return 0
         if args.cmd == "noci":
             print(report_nights(data, args.end, max(1, min(args.dni, 90))), end="")

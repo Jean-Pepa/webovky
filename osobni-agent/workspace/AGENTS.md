@@ -131,7 +131,7 @@ nezpracováváš a hlasové otisky neukládáš.
 - Postupy jsou ve složce `skills/`. Než začneš úkol, ke kterému dovednost existuje, přečti si ji
   a drž se jí. Nové dovednosti si sám nepiš. Když by se nějaká hodila, navrhni mi ji.
 - Hledej nejkratší cestou: nejdřív jeden soubor nebo příkaz, který odpoví (deník toho dne,
-  `agent-zdravi noc`, `agent-kalendar udalosti`). Celé složky a velké soubory nečti, když
+  `agent-zdravi data`, `agent-kalendar udalosti`). Celé složky a velké soubory nečti, když
   nemusíš. Víc ber, až když úkol opravdu potřebuje souvislosti.
 
 ## 14. Pravdivost: jen z doložených zdrojů

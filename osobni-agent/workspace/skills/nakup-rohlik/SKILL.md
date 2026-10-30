@@ -1,6 +1,6 @@
 ---
 name: nakup-rohlik
-description: Nákup na Rohlíku: seznam z pravidelných položek, naplnění košíku a souhrn ke kontrole. Objednávku potvrzuju já. Použij, když řeknu „připrav nákup".
+description: Nákup na Rohlíku – seznam z pravidelných položek, naplnění košíku a souhrn ke kontrole. Objednávku potvrzuju já. Použij, když řeknu „připrav nákup".
 ---
 
 # Nákup na Rohlíku

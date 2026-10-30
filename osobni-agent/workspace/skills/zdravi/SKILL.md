@@ -1,6 +1,6 @@
 ---
 name: zdravi
-description: Spánek, zotavení a aktivita z náramku Fitbit Air a souvislosti s deníkem. Na otázku k jedné noci („jak jsem spal před týdnem") spusť rovnou agent-zdravi noc --den "před týdnem", na víc nocí („kdy jsem spal nejdéle", průměr) agent-zdravi noci --dni 14. Použij, když se ptám na spánek, únavu, tep, kroky nebo pokus, a při ranním přehledu a týdenním plánu.
+description: Spánek, zotavení a aktivita z náramku Fitbit Air a souvislosti s deníkem. Na jakoukoli otázku k historii („kdy jsem spal nejdéle", „jak spím poslední dobu") spusť rovnou agent-zdravi data – všechny dny a souhrn, pak odpověz po srovnání. Použij, když se ptám na spánek, únavu, tep, kroky nebo pokus, a při ranním přehledu a týdenním plánu.
 ---
 
 # Zdraví z náramku
@@ -8,10 +8,11 @@ description: Spánek, zotavení a aktivita z náramku Fitbit Air a souvislosti s
 Přesná pravidla a zdroje jsou v `skills/zdravi/METODIKA.md`. Drž se jich.
 
 1. **Čísla jen ze skriptu.** Sám nepočítej nic, ani průměr, rozdíl nebo procento. Spusť:
-   - na otázku k jedné noci („jak jsem spal před týdnem", „v noci na sobotu") jen
-     `agent-zdravi noc --den "…"` s dnem slovy, jak padl, a nic dalšího nečti,
-   - na otázku přes víc nocí („kdy jsem spal nejdéle", „kolik spím průměrně") jen
-     `agent-zdravi noci --dni 14` (nebo jiný počet dní) a odpověz z jeho výpisu,
+   - na jakoukoli otázku k historii („kdy jsem spal nejdéle", „jak jsem spal před týdnem",
+     „jak spím poslední dobu", „srovnej tenhle a minulý týden") jen `agent-zdravi data`.
+     Vypíše všechny dny v jedné tabulce a souhrn: u každého ukazatele nejvíc a nejméně i s dnem
+     a průměry celkem, za posledních 7 dní a předchozích 7 dní. Projdi tabulku, srovnej
+     a odpověz. Na „nejvíc", „nejméně" a průměry ber čísla ze souhrnu. Nic dalšího nečti,
    - ráno `agent-zdravi den` (když už je hotový `zdravi/RRRR-MM-DD.md`, stačí ho přečíst),
    - v neděli `agent-zdravi tyden`,
    - na pokus `agent-zdravi pokus --nazev "…" --od RRRR-MM-DD --do RRRR-MM-DD --hlavni spanek_min`,

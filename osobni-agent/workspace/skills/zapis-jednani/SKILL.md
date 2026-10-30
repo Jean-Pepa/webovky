@@ -1,6 +1,6 @@
 ---
 name: zapis-jednani
-description: Zápis z jednání z nahrávky: přepis, kdo je kdo, rozhodnutí a úkoly. Použij, když pošlu nahrávku jednání nebo řeknu „udělej zápis z jednání".
+description: Zápis z jednání z nahrávky – přepis, kdo je kdo, rozhodnutí a úkoly. Použij, když pošlu nahrávku jednání nebo řeknu „udělej zápis z jednání".
 ---
 
 # Zápis z jednání

@@ -1,6 +1,6 @@
 ---
 name: texty-dokumentace
-description: Koncepty textů projektové dokumentace podle vyhlášky č. 131/2024 Sb.: průvodní list, souhrnná technická zpráva a technická zpráva D.1.1.1. Použij, když chci napsat některý z nich.
+description: Koncepty textů projektové dokumentace podle vyhlášky č. 131/2024 Sb. – průvodní list, souhrnná technická zpráva a technická zpráva D.1.1.1. Použij, když chci napsat některý z nich.
 ---
 
 # Texty projektové dokumentace

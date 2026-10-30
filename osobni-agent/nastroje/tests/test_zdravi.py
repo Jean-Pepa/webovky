@@ -303,6 +303,28 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("nemám data z náramku", err)
 
+    def test_all_data_table_and_summary(self):
+        build(self.root)
+        code, out, _ = self.run_cli("data", "--do", END.isoformat())
+        self.assertEqual(code, 0)
+        lines = out.splitlines()
+        self.assertTrue(lines[0].startswith("Data z náramku: 70 dní (7. 9. 2026 až 15. 11. 2026)."))
+        self.assertEqual(lines[1], "den | spánek | usnul | vstal | efektivita | hluboký | REM | HRV | tep | kroky | "
+                                   "aktivní min")
+        self.assertEqual(len([l for l in lines if " | " in l]), 71)  # záhlaví a všech 70 dní
+        # nejdelší spánek a průměr kroků spočítané nezávisle ze stejných souborů
+        data = zdravi.Data(self.root)
+        sleep = [(d, data.value(d, "spanek_min")) for d in data.days]
+        best = max(sleep, key=lambda x: x[1])
+        self.assertIn(f"- Spánek: nejdéle {zdravi.cell('spanek_min', best[1])} "
+                      f"({zdravi.WEEKDAYS[best[0].weekday()][:2]} {best[0].day}. {best[0].month}.)", out)
+        steps = [data.value(d, "kroky") for d in data.days]
+        self.assertIn(f"průměr {zdravi.cell('kroky', sum(steps) / len(steps))}, posledních 7 dní", out)
+        self.assertLess(len(out), 9000)
+        code, _, err = self.run_cli("data", "--do", "2025-01-01")
+        self.assertEqual(code, 1)
+        self.assertIn("nemám žádná data", err)
+
     def test_nights_overview_finds_longest(self):
         build(self.root)
         code, out, _ = self.run_cli("noci", "--dni", "14", "--do", END.isoformat())

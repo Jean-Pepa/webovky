@@ -1,6 +1,6 @@
 ---
 name: vecerni-denik
-description: Večerní deník z hlasové zprávy nebo textu: co se stalo, rozhodnutí, úkoly a štítky. Použij, když řeknu „deník" nebo večer pošlu hlasovou zprávu o dni.
+description: Večerní deník z hlasové zprávy nebo textu – co se stalo, rozhodnutí, úkoly a štítky. Použij, když řeknu „deník" nebo večer pošlu hlasovou zprávu o dni.
 ---
 
 # Večerní deník

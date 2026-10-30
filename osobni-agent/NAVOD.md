@@ -848,8 +848,9 @@ nepoužívej, zprávy v něm nejsou šifrované end-to-end.
    - Agent vidí jen našich 16 dovedností. Dovednosti přibalené k OpenClaw jsou vypnuté
      v `zamky/openclaw-zamceni.json5`, ušetří přes 1 500 tokenů na každou zprávu. Novou
      dovednost připiš i do seznamu `skills` v tom souboru.
-   - Na otázku k jedné noci („jak jsem spal před týdnem") agent spustí jen
-     `agent-zdravi noc --den "před týdnem"`. Dostane 5 řádků místo celého rozboru.
+   - Na otázky k historii („kdy jsem spal nejdéle", „jak spím poslední dobu") agent spustí
+     jen `agent-zdravi data`. Dostane všechny dny v jedné tabulce a souhrn spočítaný skriptem
+     (za 70 dní asi 1 800 tokenů) a odpoví po srovnání.
    - Nové téma začni v chatu příkazem `/new`. Starý rozhovor pak model nečte znovu.
 3. **Grafika je jen jedna:** při práci v Revitu, Twinmotionu nebo Enscape si model s nimi
    konkuruje. Ollama sama uvolní grafiku po 30 minutách klidu. Hned ji uvolníš tak, že Ollamu
@@ -1291,7 +1292,7 @@ událost dvakrát nezapíše. Datum a čas počítá skript, ne model, takže �
 ## Co je ověřené a co si ověř sám
 
 - **Otestováno:**
-  - Skripty prošly 91 automatickými testy:
+  - Skripty prošly 92 automatickými testy:
     - `mail.py` a `resers.py`: falešný poštovní server, odeslané maily bez citací, složky
       s diakritikou, filtr osobních údajů, schvalování.
     - `jednani.py` a `prepis.py`: párování slov s mluvčími, jména, výstup, přechod z grafiky

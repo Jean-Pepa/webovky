@@ -1,6 +1,6 @@
 ---
 name: texty-studie
-description: Texty k architektonické studii: popis konceptu, bilance ploch, anotace. Použij, když chci napsat nebo upravit texty ke studii.
+description: Texty k architektonické studii – popis konceptu, bilance ploch, anotace. Použij, když chci napsat nebo upravit texty ke studii.
 ---
 
 # Texty ke studii
