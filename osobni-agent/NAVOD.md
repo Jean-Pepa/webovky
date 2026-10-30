@@ -113,7 +113,7 @@ u OpenClaw, Ollamy a ovladačů grafiky.
 | Co zabere místo | Kolik |
 |---|---|
 | Hlavní model (Gemma 4 26B, 4bitově) | 18 GB |
-| Hluboký model (ThinkingCap 27B, 4bitově) | 15,7 GB |
+| Hluboký model (ThinkingCap 27B, 4bitově, i s částí pro obrázky) | 17 GB |
 | Embedding model a případně další menší model | 1–10 GB |
 | WSL2 + Ubuntu + OpenClaw + Python prostředí | ~8 GB |
 | Whisper pro diktát (model a knihovny) | ~3 GB |
@@ -339,7 +339,7 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
 |---|---|---|---|---|---|
 | **Rychlý** | Gemma 4 E4B (`gemma4:e4b`) | 6,6 GB | celý na grafice | 74 tokenů/s, čte ~4 000 tokenů/s (změřeno) | krátké otázky bez práce se soubory |
 | **Hlavní** (výchozí) | Gemma 4 26B-A4B (`gemma4:26b`) | 18 GB | 77 % grafika, zbytek RAM | 32 tokenů/s, čte ~700 tokenů/s (změřeno) | všechno s nástroji: deník, maily, plánování, pravidelné kontroly |
-| **Hluboký** | ThinkingCap-Qwen3.6-27B (BottleCap AI) | 15,7 GB | grafika + RAM | 5–9 tokenů/s, přemýšlí o ~50 % kratčeji | noční úklid paměti, týdenní plán, složité rozbory |
+| **Hluboký** | ThinkingCap-Qwen3.6-27B (BottleCap AI) | 16 GB + 0,9 GB na obrázky | grafika + RAM | 5–9 tokenů/s, přemýšlí o ~50 % kratčeji | noční úklid paměti, týdenní plán, složité rozbory |
 | **Nejsilnější** | Claude Opus 5.5 přes `agent-resers` | cloud | jen po tvém schválení | – | internet a nejtěžší otázky |
 
 Rychlosti rychlého a hlavního modelu jsou změřené na tomhle notebooku v zásuvce (RTX 4080
@@ -365,7 +365,7 @@ a i tak odpovídá za pár sekund. Na něm běží i pravidelné kontroly.
 2. **Hlavní model** máš stažený z bodu 3. Když jsi použil verzi z Hugging Face, dej jí
    kratší jméno, ať sedí na zbytek návodu:
    `ollama cp huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M gemma4:26b`.
-3. **ThinkingCap (hluboký):** stáhni ho (15,7 GB), dej mu krátké jméno a zkontroluj ho.
+3. **ThinkingCap (hluboký):** stáhni ho (asi 17 GB), dej mu krátké jméno a zkontroluj ho.
    ```powershell
    ollama pull huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M
    ollama cp huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M thinkingcap
@@ -375,7 +375,8 @@ a i tak odpovídá za pár sekund. Na něm běží i pravidelné kontroly.
      `realm host "huggingface.co" does not match original host "hf.co"`. Volbu `--insecure`,
      kterou radí některá fóra, nepoužívej, vypíná kontrolu zabezpečeného spojení.
    - V části Capabilities musí být `tools`. Bez toho by s ním agent neuměl pracovat se
-     soubory a hodil by se jen na povídání.
+     soubory a hodil by se jen na povídání. Na tvém notebooku ukázal `tools`, `thinking`,
+     `completion` a `vision`, takže umí nástroje, přemýšlení i čtení obrázků.
    - Když stahování skončí chybou 401 nebo 403, je model chráněný. Na
      huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF přijmi podmínky a do svého účtu
      Hugging Face (huggingface.co/settings/keys → Add SSH key) vlož veřejný klíč Ollamy.
@@ -849,7 +850,7 @@ nepoužívej, zprávy v něm nejsou šifrované end-to-end.
    - **Qwen3.6-35B-A3B** (~21 GB) je v některých úlohách chytřejší, ale pomalejší.
    - **ThinkingCap-Qwen3.6-27B** od české BottleCap AI (Hugging Face `bottlecapai`, licence
      Apache 2.0) přemýšlí zhruba o polovinu kratčeji než původní Qwen. Je to ale „hustý" model
-     27B, takže ve 4bitové verzi (15,7 GB) se do 12 GB grafiky nevejde celý a poběží
+     27B, takže ve 4bitové verzi (16 GB) se do 12 GB grafiky nevejde celý a poběží
      pomaleji než Gemma 4 MoE.
      - Hodí se jako druhý model na noční a týdenní úlohy, kde na rychlosti nezáleží.
      - Stažení je v kroku 4b, přezdívka `hluboky` v kroku 6.
