@@ -293,7 +293,7 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
    setx OLLAMA_KV_CACHE_TYPE q8_0
    setx OLLAMA_CONTEXT_LENGTH 32768
    setx OLLAMA_KEEP_ALIVE 30m
-   setx OLLAMA_MAX_LOADED_MODELS 1
+   setx OLLAMA_MAX_LOADED_MODELS 2
    setx OLLAMA_NO_CLOUD 1
    ```
    Pak Ollamu ukonči (ikona u hodin → Quit) a spusť znovu.
@@ -304,7 +304,7 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
    | `KV_CACHE_TYPE q8_0` | pracovní paměť modelu zabere polovinu místa, víc se vejde na grafiku |
    | `CONTEXT_LENGTH 32768` | kolik textu model „drží v hlavě" najednou (dlouhodobá paměť je v souborech) |
    | `KEEP_ALIVE 30m` | model zůstane načtený a odpovídá hned, po 30 minutách klidu uvolní grafiku třeba pro Revit |
-   | `MAX_LOADED_MODELS 1` | dva velké modely se do 12 GB nevejdou |
+   | `MAX_LOADED_MODELS 2` | vedle jazykového modelu zůstane načtený i malý model pro hledání v paměti, takže se při každé zprávě nemusí střídat |
    | `NO_CLOUD 1` | Ollama nepoužije cloudové modely ani služby, všechno zůstane v notebooku |
 
 3. **Stáhni modely.** Na stránce `ollama.com/library/gemma4` vyber variantu **26B (A4B)** se
@@ -369,13 +369,14 @@ Kdybys chtěl mít výchozí hlavní model, stačí v kroku 6 nastavit `ollama/g
    ollama pull hf.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M
    ollama cp hf.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M thinkingcap
    ```
-4. **`OLLAMA_MAX_LOADED_MODELS` nech na 1.** Každý model tak dostane celou grafiku.
-   Přepnutí na velký model trvá 5–15 sekund, než se načte z disku. Rychlý model se načte
-   za pár sekund.
-   - Když pracuješ s hlavním nebo hlubokým modelem, pravidelná kontrola na rychlém modelu
-     ho z grafiky vytlačí. Při další otázce se pak velký model chvíli načítá.
-   - Kdyby ti to vadilo, nastav `OLLAMA_MAX_LOADED_MODELS` na `2`. Rychlý model pak zůstane
-     v grafice vedle velkého, ten ale bude o něco pomalejší, protože mu zbude méně místa.
+4. **`OLLAMA_MAX_LOADED_MODELS` nech na 2.** Agent při každé zprávě hledá v paměti přes
+   `embeddinggemma` (621 MB). S hodnotou 1 by ten malý model pokaždé vytlačil jazykový model
+   z grafiky a ten by se musel znovu načítat.
+   - Dva velké modely se do 12 GB nevejdou. Když přepneš na hlavní nebo hluboký model,
+     Ollama rychlý model z grafiky uvolní. Přepnutí trvá 5–15 sekund, než se velký model
+     načte z disku. Rychlý model se načte za pár sekund.
+   - Pravidelná kontrola na rychlém modelu vytlačí velký model z grafiky. Při další otázce
+     se pak velký model chvíli načítá.
 5. **Na disku** zaberou tři lokální modely dohromady zhruba 40–45 GB, to se do plánu
    z kroku 1 vejde. Nejsilnější úroveň je v cloudu, na disku nic nezabírá.
 
