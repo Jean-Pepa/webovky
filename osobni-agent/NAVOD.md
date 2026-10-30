@@ -46,8 +46,8 @@ Tvůj notebook: ASUS Zenbook Pro 16X (UX7602BZ), Intel i9-13905H, **RTX 4080 s 1
  WINDOWS                              WSL2 (Ubuntu)
  +-----------------------------+      +----------------------------------+
  | Ollama + Gemma 4 (RTX 4080) | <--> | OpenClaw (agent, heartbeat)      |
- |   http://127.0.0.1:11434    |      |   workspace = /mnt/c/.../Mozek   |
- | Obsidian: C:\Users\...\Mozek| <--> | agent-mail, agent-resers, ...    |
+ |   http://127.0.0.1:11434    |      |   workspace = ~/Mozek            |
+ | Obsidian: ~/Mozek přes WSL  | <--> | agent-mail, agent-resers, ...    |
  +-----------------------------+      +----------------+-----------------+
                                                        |
                               jen tyhle tři cesty ven  v
@@ -386,16 +386,33 @@ Jak modely přepínat v OpenClaw nastavíš v kroku 6.
 
 ## Krok 5: Složka Mozek a Obsidian (15 minut)
 
-1. Vytvoř složku `C:\Users\<tvé jméno>\Mozek`. Nedávej ji na Plochu, do Dokumentů ani do
-   OneDrivu, protože obsah složek, které OneDrive zálohuje, se nahrává do cloudu Microsoftu.
-   Které to u tebe jsou, ukáže kontrola z kroku 0 (oddíl OneDrive).
-2. Zkopíruj do ní **obsah** složky `osobni-agent\workspace`, tedy `USER.md`, `SOUL.md`,
-   `AGENTS.md`, `HEARTBEAT.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md` a složky `ja`, `lide`,
-   `skills`, `podklady` a `projekty`.
-   Vytvoř v ní ještě prázdné složky `memory` (deník), `koncepty` a `prichozi`.
-3. Nainstaluj **Obsidian** ([obsidian.md/download](https://obsidian.md/download)) → „Otevřít
-   složku jako trezor" → `Mozek`.
-   Obsidian Sync ani jinou synchronizaci do cloudu nezapínej.
+Mozek bude na disku Ubuntu, ne ve Windows. Na disku Windows (`/mnt/c`) OpenClaw nové soubory
+napoprvé nezapíše, protože tam nefunguje jeden způsob přejmenování, který při zápisu používá
+(`renameat2` s volbou `RENAME_NOREPLACE`, ověřeno ve WSL 3.0). Na disku Ubuntu funguje a zápis
+je i rychlejší.
+
+1. **Balíček do Ubuntu** (v Ubuntu, stačí jednou). Místo `<tvé jméno>` dej název své složky
+   ve Windows:
+   ```bash
+   cp -r /mnt/c/Users/<tvé jméno>/osobni-agent ~/osobni-agent
+   ```
+2. **Mozek** (v Ubuntu):
+   ```bash
+   mkdir -p ~/Mozek
+   cp -r ~/osobni-agent/workspace/. ~/Mozek/
+   mkdir -p ~/Mozek/memory ~/Mozek/koncepty ~/Mozek/prichozi
+   ls ~/Mozek
+   ```
+   Výpis musí ukázat `AGENTS.md`, `USER.md`, `ja`, `lide`, `skills`, `podklady`, `projekty`,
+   `memory`, `koncepty` a `prichozi`.
+3. **Obsidian** ([obsidian.md/download](https://obsidian.md/download)) → „Otevřít složku jako
+   trezor" → do cesty vlož `\\wsl.localhost\Ubuntu\home\<jméno v Ubuntu>\Mozek`.
+   - Obsidian Sync ani jinou synchronizaci do cloudu nezapínej.
+   - V Průzkumníku najdeš Mozek vlevo pod **Linux → Ubuntu → home → <jméno> → Mozek**.
+   - Soubory, které agent zapíše, se v Obsidianu nemusí objevit hned. Když nějaký nevidíš,
+     dej Ctrl+P → „Reload app without saving".
+   - Mozek je teď uvnitř Ubuntu. Kdybys Ubuntu odinstaloval (`wsl --unregister`), smazal bys
+     i Mozek. Proto ho pravidelně zálohuj (krok 14).
 4. Volitelně přidej plugin **Smart Connections**, ať můžeš i ty hledat v poznámkách podle
    významu. V jeho nastavení zvol lokální model, ne cloud.
 
@@ -419,13 +436,12 @@ proto bránu (gateway) poprvé spustíme až v kroku 6b, už se zámky.
    ```
    Zeptá se na heslo do Ubuntu, protože instaluje Node.js. Pak Ubuntu zavři, znovu ho otevři
    a ověř instalaci příkazem `openclaw --version`.
-3. **Nastavení jedním příkazem**, bez průvodce (ověřené v OpenClaw 2026.10.9). Místo `krist`
-   dej název své složky ve Windows:
+3. **Nastavení jedním příkazem**, bez průvodce (ověřené v OpenClaw 2026.10.9):
    ```bash
    openclaw onboard --non-interactive --accept-risk \
      --mode local --auth-choice ollama \
      --custom-base-url http://127.0.0.1:11434 --custom-model-id gemma4:e4b \
-     --workspace /mnt/c/Users/krist/Mozek \
+     --workspace "$HOME/Mozek" \
      --gateway-bind loopback --tailscale off \
      --skip-daemon --skip-health --skip-bootstrap \
      --skip-channels --skip-skills --skip-hooks --skip-search --skip-ui
@@ -484,12 +500,11 @@ v mailu. Proto ho omezíme i technicky. Výchozí instalace OpenClaw dává agen
 Konfiguraci a seznam příkazů jsem ověřil přímo v OpenClaw 2026.10.9 (`openclaw config
 validate`, `openclaw security audit`).
 
-Nejdřív zkopíruj balíček do Ubuntu (stačí jednou):
+Balíček máš v Ubuntu z kroku 5. Novou verzi balíčku si později stáhneš jedním příkazem.
+Nahradí jen `~/osobni-agent`, Mozek ani tvoje nastavení se nezmění:
 ```bash
-cp -r /mnt/c/Users/<tvé jméno>/osobni-agent ~/osobni-agent
+rm -rf /tmp/oa && mkdir -p /tmp/oa && curl -fsSL https://codeload.github.com/jean-pepa/webovky/tar.gz/refs/heads/claude/busy-gauss-t83y4w | tar -xz -C /tmp/oa && rm -rf ~/osobni-agent && cp -r /tmp/oa/*/osobni-agent ~/osobni-agent
 ```
-Když si později stáhneš novou verzi balíčku, starou kopii nejdřív smaž (`rm -rf ~/osobni-agent`)
-a zkopíruj ji znovu.
 
 1. **Systemd ve WSL.** Spusť `ps -p 1 -o comm=`. Musí vypsat `systemd`. Když ne, zapni ho:
    ```bash
@@ -522,12 +537,13 @@ a zkopíruj ji znovu.
    start po přihlášení: místo `/sc onstart` napiš `/sc onlogon` a na konec přidej `/it`.
 4. **Ollama bez cloudu:** `OLLAMA_NO_CLOUD=1` jsi nastavil v kroku 4 a v Ollamě jsi vypnul
    cloud. Kontrolní skript v bodě 6 to ověří.
-5. **Pravidla jen pro čtení** (PowerShell). Agent je pak nepřepíše, ani kdyby se o to pokusil:
-   ```powershell
-   foreach ($f in "AGENTS.md","SOUL.md","HEARTBEAT.md") { Set-ItemProperty "$env:USERPROFILE\Mozek\$f" -Name IsReadOnly -Value $true }
+5. **Pravidla neměnná** (v Ubuntu). Agent je pak nepřepíše ani nenahradí jiným souborem, ani
+   kdyby se o to pokusil. Příznak „neměnný" smí zrušit jen správce s heslem:
+   ```bash
+   sudo chattr +i ~/Mozek/AGENTS.md ~/Mozek/SOUL.md ~/Mozek/HEARTBEAT.md
    ```
-   Když je budeš chtít upravit, spusť stejný příkaz s `$false`, uprav je v Obsidianu a pak
-   je zase zamkni.
+   Když je budeš chtít upravit, spusť stejný příkaz s `-i` místo `+i`, uprav je v Obsidianu
+   a pak je zase zamkni.
 6. **Kontrola** (v Ubuntu):
    ```bash
    bash ~/osobni-agent/zamky/zkontroluj-zamceni.sh
@@ -617,14 +633,15 @@ V ovládacím panelu napiš:
 Když jsi instaloval s `--whisper`, vyzkoušej přepis nahrávky:
 
 ```bash
-agent-prepis /mnt/c/Users/<tvé jméno>/Mozek/prichozi/test.m4a
+agent-prepis ~/Mozek/prichozi/test.m4a
 ```
 
 Při prvním spuštění se jednou stáhne model, asi 1,6 GB. Pak už běží bez internetu.
 Přepis jede na procesoru, aby nebral grafiku jazykovému modelu. U dlouhých nahrávek můžeš
 přidat `--gpu`, až budeš mít instalaci s `--jednani` z kroku 16 (přidá knihovny pro grafiku).
 
-Nahrávky z iPhonu dostaneš do `Mozek\prichozi` třeba přes iCloud pro Windows nebo e-mailem.
+Nahrávky z iPhonu pošli agentovi přes aplikaci OpenClaw (krok 12), nebo je v Průzkumníku
+přetáhni do **Linux → Ubuntu → home → <jméno> → Mozek → prichozi**.
 
 ---
 
@@ -787,8 +804,12 @@ agenta. Telegram na osobní data nepoužívej, zprávy v něm nejsou šifrované
 
 **Pravidelně:**
 
-- **Týdně:** přečti `MEMORY.md`, projdi `agent-resers log` (co odešlo ven) a zálohuj složku
-  `Mozek` na externí disk.
+- **Týdně:** přečti `MEMORY.md`, projdi `agent-resers log` (co odešlo ven) a zálohuj Mozek
+  na externí disk. V Ubuntu stačí jeden příkaz (`e` nahraď písmenem disku):
+  ```bash
+  tar -czf /mnt/e/mozek-$(date +%F).tar.gz -C ~ Mozek
+  ```
+  Záloha je jeden soubor a otevřeš ho i ve Windows. Disk zašifruj přes BitLocker To Go.
 - **Měsíčně:** aktualizuj OpenClaw podle oficiálního návodu. Windows, ovladač NVIDIA a Ollama se
   aktualizují samy nebo přes své aplikace.
 
@@ -904,23 +925,23 @@ Agent z nahrávky jednání rozliší, kdo kdy mluvil, přepíše to a napíše 
    Token je potřeba jen pro první stažení. Po prvním úspěšném přepisu se skript na Hugging
    Face už neptá, ani kvůli aktualizacím.
 3. **Zkušební nahrávka:** nahraj 5 minut rozhovoru ve dvou nebo ve třech (třeba telefonem
-   položeným uprostřed stolu) a ulož ji do `Mozek\prichozi`. Pak:
+   položeným uprostřed stolu) a ulož ji do `Mozek/prichozi`. Pak:
    ```bash
-   agent-jednani /mnt/c/Users/<tvé jméno>/Mozek/prichozi/zkouska.m4a --mluvcich 2
+   agent-jednani ~/Mozek/prichozi/zkouska.m4a --mluvcich 2
    ```
    Vedle nahrávky vznikne `zkouska.prepis.md` (čitelný přepis) a `zkouska.prepis.json`
    (pro agenta).
 4. **Kdo je kdo:** v přepisu je oddíl „Kdo je kdo" s ukázkami každého mluvčího. Podle nich
    přiřaď jména:
    ```bash
-   agent-jednani /mnt/c/Users/<tvé jméno>/Mozek/prichozi/zkouska.m4a --jmena "SPEAKER_00=Petr, SPEAKER_01=Jana"
+   agent-jednani ~/Mozek/prichozi/zkouska.m4a --jmena "SPEAKER_00=Petr, SPEAKER_01=Jana"
    ```
    Jména se jen doplní do hotového přepisu, nahrávka se znovu nezpracovává. Když chceš přepis
    udělat znovu (třeba s jiným počtem mluvčích), spusť příkaz bez `--jmena`.
 5. **Ostré jednání:**
    - Na začátku řekni: „Nahrávám si to kvůli zápisu, nahrávka zůstane jen u mě. Je to
      v pořádku?" Souhlas tak zůstane i v nahrávce.
-   - Nahrávku dej do `Mozek\projekty\<zakázka>\jednani\` a napiš agentovi „Udělej zápis
+   - Nahrávku dej do `Mozek/projekty/<zakázka>/jednani/` a napiš agentovi „Udělej zápis
      z jednání". Postupuje podle dovednosti `zapis-jednani`: přepis, kdo je kdo, zápis podle
      šablony `podklady/sablony/zapis-z-jednani.md`. Po tvém „ano" přidá úkoly do `ukoly.md`,
      změny do karty projektu a připraví koncept zápisu pro účastníky.
@@ -945,7 +966,7 @@ U každého údaje je zdroj, datum a úroveň: **úřední**, **měřeno**, nebo
 Na konci je shrnutí (zelená, oranžová, červená) a seznam, co objednat.
 
 1. **Územní plán obce:** z webu obce nebo kraje stáhni textovou část platného ÚP (PDF) do
-   `Mozek\podklady\obce\<obec>\`. Do `zdroj.md` napiš odkaz, datum stažení a poslední změnu
+   `Mozek/podklady/obce/<obec>/`. Do `zdroj.md` napiš odkaz, datum stažení a poslední změnu
    ÚP. Agent z něj regulativy vytáhne jednou a použije je pro všechny další pozemky v obci.
 2. **Zkouška na pozemku, který znáš:** napiš „Udělej rešerši pozemku parc. č. … v k. ú. …,
    obec …". Agent založí `projekty/<kód>/resers-pozemku.md` a řekne ti po oblastech, co a kde
@@ -979,7 +1000,7 @@ Přístup k API KN je zdarma po registraci na registrace.cuzk.gov.cz. Firma se r
 - [ ] košík na Rohlíku se naplnil a objednávku jsi potvrdil sám
 - [ ] první ranní přehled je v deníku a agent ti ho řekl v aplikaci
 - [ ] BitLocker je zapnutý, klíč pro obnovení máš uložený a `Mozek` máš zálohovaný
-- [ ] `Mozek` je mimo OneDrive a jiné složky, které se nahrávají do cloudu
+- [ ] `Mozek` je na disku Ubuntu (`~/Mozek`) a agent do něj zapisuje nové soubory napoprvé
 - [ ] `zkontroluj-zamceni.sh` neukazuje žádné POZOR a zkušební mail s podvrženým pokynem agent
       odmítl
 - [ ] iPhone je spárovaný přes Tailscale a hlasová zpráva se přepsala v notebooku

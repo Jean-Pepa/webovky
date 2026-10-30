@@ -181,10 +181,19 @@ if [[ -n "$workspace" && -f "$workspace/AGENTS.md" ]]; then
   for soubor in AGENTS.md SOUL.md HEARTBEAT.md; do
     if [[ ! -f "$workspace/$soubor" ]]; then
       pozor "$soubor chybí ve složce $workspace"
-    elif [[ -w "$workspace/$soubor" ]]; then
-      pozor "$soubor jde přepsat, zamkni ho (krok 6b)"
+    elif [[ "$workspace" == /mnt/* ]]; then
+      # Na disku Windows chrání soubor atribut „jen pro čtení".
+      if [[ -w "$workspace/$soubor" ]]; then
+        pozor "$soubor jde přepsat, zamkni ho (krok 6b)"
+      else
+        ok "$soubor zamčený proti přepsání"
+      fi
+    # Na disku Ubuntu nestačí odebrat právo zápisu, soubor jde pořád nahradit jiným.
+    # Chrání ho až příznak „neměnný" (chattr +i), který smí zrušit jen správce.
+    elif lsattr -d "$workspace/$soubor" 2>/dev/null | awk '{print $1}' | grep -q i; then
+      ok "$soubor zamčený proti přepsání (neměnný)"
     else
-      ok "$soubor zamčený proti přepsání"
+      pozor "$soubor jde přepsat, zamkni ho: sudo chattr +i $workspace/$soubor"
     fi
   done
   # OpenClaw z každého souboru načte jen omezený počet znaků, zbytek agent nevidí.
