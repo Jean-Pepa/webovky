@@ -555,6 +555,9 @@ V ovládacím panelu napiš:
    Musí vyjmenovat, co smí sám, co jen s tvým „ano" a co nikdy.
 2. „Zapiš si do deníku, že jsme dnes agenta rozjeli."
    V Obsidianu se objeví soubor `memory/RRRR-MM-DD.md`.
+   - Rychlý model občas napíše, že něco udělal, i když nástroj vůbec nespustil. Proto
+     každý zápis ověř v Obsidianu.
+   - Když soubor chybí, přepni na hlavní model (`/model hlavni`) a úkol zopakuj.
 
 ---
 
