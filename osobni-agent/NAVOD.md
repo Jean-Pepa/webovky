@@ -28,8 +28,8 @@ Tvůj notebook: ASUS Zenbook Pro 16X (UX7602BZ), Intel i9-13905H, **RTX 4080 s 1
 
 | Část | Co použijeme | Proč |
 |---|---|---|
-| Mozek: rychlý model (výchozí) | **Gemma 4 E4B** (~5,5 GB) | Celý se vejde na grafiku, na rychlé otázky odpoví hned. Běží na něm i pravidelné kontroly. |
-| Mozek: hlavní model | **Ollama + Gemma 4 26B-A4B** (4bitová verze, ~16 GB) | Nejlepší poměr chytrosti a rychlosti pro 12 GB grafiky. Je to model typu MoE, většina se vejde na grafiku a zbytek do RAM. Dobře zvládá češtinu. |
+| Mozek: rychlý model | **Gemma 4 E4B** (~6,6 GB) | Celý se vejde na grafiku a odpoví hned. Jen na krátké otázky, nástroje nepoužívá spolehlivě. |
+| Mozek: hlavní model (výchozí) | **Ollama + Gemma 4 26B-A4B** (4bitová verze, ~18 GB) | Nejlepší poměr chytrosti a rychlosti pro 12 GB grafiky. Je to model typu MoE, většina se vejde na grafiku a zbytek do RAM. Dobře zvládá češtinu. |
 | Mozek: hluboký model | **ThinkingCap-Qwen3.6-27B** (BottleCap AI) | Na složité rozbory a noční úlohy. Pomalejší, ale přemýšlí kratčeji než původní Qwen. |
 | Mozek: nejsilnější | **Claude Opus 5.5** (cloud) | Jen přes `agent-resers` a jen po tvém schválení: internet a nejtěžší otázky |
 | Agent | **OpenClaw** ve WSL2 (Linux uvnitř Windows) | Paměť v souborech, pravidelné kontroly (heartbeat), dovednosti, napojení na Rohlík (MCP) |
@@ -336,8 +336,8 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
 
 | Role | Model | Velikost (4bitově) | Kde běží | Rychlost | Na co |
 |---|---|---|---|---|---|
-| **Rychlý** (výchozí) | Gemma 4 E4B (`gemma4:e4b`) | 6,6 GB | celý na grafice | 74 tokenů/s, čte ~4 000 tokenů/s (změřeno) | rychlé otázky, třídění mailů, pravidelné kontroly |
-| **Hlavní** | Gemma 4 26B-A4B (`gemma4:26b`) | 18 GB | 77 % grafika, zbytek RAM | 32 tokenů/s, čte ~700 tokenů/s (změřeno) | delší práce, koncepty mailů, plánování |
+| **Rychlý** | Gemma 4 E4B (`gemma4:e4b`) | 6,6 GB | celý na grafice | 74 tokenů/s, čte ~4 000 tokenů/s (změřeno) | krátké otázky bez práce se soubory |
+| **Hlavní** (výchozí) | Gemma 4 26B-A4B (`gemma4:26b`) | 18 GB | 77 % grafika, zbytek RAM | 32 tokenů/s, čte ~700 tokenů/s (změřeno) | všechno s nástroji: deník, maily, plánování, pravidelné kontroly |
 | **Hluboký** | ThinkingCap-Qwen3.6-27B (BottleCap AI) | ~16–17 GB | grafika + RAM | 5–9 tokenů/s, přemýšlí o ~50 % kratčeji | noční úklid paměti, týdenní plán, složité rozbory |
 | **Nejsilnější** | Claude Opus 5.5 přes `agent-resers` | cloud | jen po tvém schválení | – | internet a nejtěžší otázky |
 
@@ -348,9 +348,14 @@ Názvy štítků Gemmy ověř na ollama.com/library/gemma4.
 Pokud tam je i `gemma4:12b`, je to chytřejší rychlá volba (~8 GB, pořád celá na grafice,
 odhadem 35–45 tokenů/s).
 
-**Proč je výchozí rychlý model.** Je celý na grafice, takže na otázku odpoví hned. Na něm
-běží i pravidelné kontroly. Na delší práci přepneš na hlavní, na složité věci na hluboký.
-Kdybys chtěl mít výchozí hlavní model, stačí v kroku 6 nastavit `ollama/gemma4:26b`.
+**Proč je výchozí hlavní model.** Rychlý model při zkoušce na tomhle notebooku odpověděl
+„zapsáno", ale nástroj na zápis vůbec nespustil. Hlavní model nástroje používá spolehlivě
+a i tak odpovídá za pár sekund. Na něm běží i pravidelné kontroly.
+- Cena: načtený hlavní model zabírá zhruba 11 z 12 GB grafiky. Před renderem v D5, Lumionu
+  nebo Revitu proto Ollamu ukonči (ikona u hodin → Quit) a po renderu ji zase spusť
+  (krok 14).
+- Rychlý model přepneš příkazem `/model rychly`, hodí se na krátké otázky bez práce
+  se soubory.
 
 1. **Rychlý model:**
    ```powershell
@@ -449,14 +454,14 @@ proto bránu (gateway) poprvé spustíme až v kroku 6b, už se zámky.
    ```bash
    openclaw onboard --non-interactive --accept-risk \
      --mode local --auth-choice ollama \
-     --custom-base-url http://127.0.0.1:11434 --custom-model-id gemma4:e4b \
+     --custom-base-url http://127.0.0.1:11434 --custom-model-id gemma4:26b \
      --workspace "$HOME/Mozek" \
      --gateway-bind loopback --tailscale off \
      --skip-daemon --skip-health --skip-bootstrap \
      --skip-channels --skip-skills --skip-hooks --skip-search --skip-ui
    ```
    Co to nastaví:
-   - modely z Ollamy ve Windows, výchozí je rychlý `gemma4:e4b`,
+   - modely z Ollamy ve Windows, výchozí je hlavní `gemma4:26b`,
    - pracovní složku `Mozek`. Naplnili jsme ji v kroku 5, takže do ní OpenClaw nic nepřidá
      (`--skip-bootstrap`),
    - bránu jen v notebooku (loopback) s tokenem a bez Tailscale,
@@ -474,7 +479,7 @@ proto bránu (gateway) poprvé spustíme až v kroku 6b, už se zámky.
      nepřemýšlí, aby odpovídal hned.
 5. **V chatu pak přepínáš:**
    - `/model hlavni` (nebo `/model hluboky`, až ho stáhneš) platí jen pro danou konverzaci,
-   - `/model default` vrátí rychlý model,
+   - `/model default` vrátí hlavní model,
    - `/model` ukáže, který model právě běží,
    - `/think` zapne nebo vypne přemýšlení modelu.
    - **Nejsilnější úroveň (Claude)** se nepřepíná. Agent ji volá dovedností `resers-web`,
@@ -550,9 +555,11 @@ rm -rf /tmp/oa && mkdir -p /tmp/oa && curl -fsSL https://codeload.github.com/jea
    kdyby se o to pokusil. Příznak „neměnný" smí zrušit jen správce s heslem:
    ```bash
    sudo chattr +i ~/Mozek/AGENTS.md ~/Mozek/SOUL.md ~/Mozek/HEARTBEAT.md
+   sudo chattr -R +i ~/Mozek/skills
    ```
-   Když je budeš chtít upravit, spusť stejný příkaz s `-i` místo `+i`, uprav je v Obsidianu
-   a pak je zase zamkni.
+   Druhý řádek zamkne i dovednosti, aby si agent nemohl sám přepsat postupy, podle kterých
+   pracuje. Když je budeš chtít upravit, spusť stejné příkazy s `-i` místo `+i`, uprav je
+   v Obsidianu a pak je zase zamkni.
 6. **Kontrola** (v Ubuntu):
    ```bash
    bash ~/osobni-agent/zamky/zkontroluj-zamceni.sh
@@ -826,6 +833,10 @@ agenta. Telegram na osobní data nepoužívej, zprávy v něm nejsou šifrované
 - **Měsíčně:** aktualizuj OpenClaw podle oficiálního návodu. Windows, ovladač NVIDIA a Ollama se
   aktualizují samy nebo přes své aplikace.
 
+**Když renderuješ:** hlavní model zabírá skoro celou grafiku. Před renderem v D5, Lumionu
+nebo Revitu Ollamu ukonči (ikona u hodin → Quit) a po renderu ji spusť (Start → Ollama).
+Agent mezitím neodpovídá a pravidelné kontroly počkají.
+
 **Na cestách a po vypnutí:**
 
 - Když je notebook vypnutý nebo uspaný, agent nepracuje. Nic se tím neztratí: maily
@@ -965,8 +976,8 @@ Agent z nahrávky jednání rozliší, kdo kdy mluvil, přepíše to a napíše 
   s hučícím ventilátorem.
 - Když víš, kolik lidí mluvilo, zadej `--mluvcich N`. Když to víš jen přibližně, zadej
   `--min 2 --max 5`.
-- Zpracování pouštěj, když v agentovi běží rychlý model (`/model default`). Hlavní a hluboký
-  model zabírají skoro celou grafiku a skript by přešel na pomalejší procesor.
+- Před zpracováním uvolni grafiku, jinak skript přejde na pomalejší procesor. V PowerShellu
+  spusť `ollama stop gemma4:26b`. Agent si model při další zprávě zase načte.
 
 ---
 

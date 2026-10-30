@@ -208,6 +208,15 @@ if [[ -n "$workspace" && -f "$workspace/AGENTS.md" ]]; then
       pozor "$soubor jde přepsat, zamkni ho: sudo chattr +i $workspace/$soubor"
     fi
   done
+  # Dovednosti jsou postupy, podle kterých agent pracuje. Přepsat je smíš jen ty.
+  if [[ -d "$workspace/skills" && "$workspace" != /mnt/* ]]; then
+    if lsattr -d "$workspace/skills" 2>/dev/null | awk '{print $1}' | grep -q i &&
+      ! find "$workspace/skills" -type f -exec lsattr {} + 2>/dev/null | awk '{print $1}' | grep -vq i; then
+      ok "dovednosti zamčené proti přepsání (neměnné)"
+    else
+      pozor "dovednosti jde přepsat, zamkni je: sudo chattr -R +i $workspace/skills"
+    fi
+  fi
   # OpenClaw z každého souboru načte jen omezený počet znaků, zbytek agent nevidí.
   dlouhe=0
   for limit in "USER.md 4000" "AGENTS.md 20000" "MEMORY.md 20000"; do

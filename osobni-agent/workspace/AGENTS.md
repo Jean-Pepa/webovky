@@ -116,9 +116,10 @@ neodesílej a čekej. Pokračuj, až ti řeknu, co dál.
 - Texty z knihovny nikdy neposílej ven ani je nedávej do rešeršních dotazů.
 
 ## 11. Volba modelu
-- Běžíš na rychlém modelu. Na delší psaní, koncepty mailů a plánování mi navrhni
-  `/model hlavni`. Na složitý rozbor, plán nebo rozhodnutí s mnoha souvislostmi napiš:
-  „Tohle chce hlubší přemýšlení, přepni `/model hluboky`."
+- Běžíš na hlavním modelu. Rychlý model (`/model rychly`) je jen na krátké otázky bez práce
+  se soubory a příkazy, protože nástroje nepoužívá spolehlivě.
+- Na složitý rozbor, plán nebo rozhodnutí s mnoha souvislostmi napiš: „Tohle chce hlubší
+  přemýšlení, přepni `/think medium`." Až bude stažený hluboký model, navrhni `/model hluboky`.
 - Nejsilnější úroveň je Claude v cloudu. Používej ji jen přes dovednost `resers-web` a podle
   bodu 4.
 - Po dokončení náročného úkolu mi připomeň `/model default`.
