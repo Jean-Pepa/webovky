@@ -1,20 +1,24 @@
 # Moje firma
 
-Jak vedu ateliér. Klienty popisuj jen obecně (typ, situace), jména a údaje patří do karet
-v `projekty/`. U zápisů v závorce zdroj a datum.
+Firma, kterou zakládám, a později jak ji vedu. Klienty popisuj jen obecně (typ, situace),
+jména a údaje patří do karet v `projekty/`. U zápisů v závorce zdroj a datum.
 
-## Jaké zakázky dělám a jaké chci
+## Proč vlastní ateliér a proč teď
 
-## Jak ke mně klienti přicházejí
+## Zakázky, které chci, a které ne
 
-## První schůzka s klientem
+## Čím se liším
 
-## Cena a jednání o ní
+## První klienti: kde a jak
+
+## Cena a kolik potřebuju měsíčně
+
+## Právní forma a autorizace
 
 ## Spolupracovníci (profese, proč právě oni)
 
-## Co mi zabírá nejvíc času a co mě otravuje
+## Za rok a za pět let
+
+## Obavy a co by mě přimělo to vzdát
 
 ## Co předám agentovi jako první
-
-## Ideální klient a klient, se kterým už pracovat nechci

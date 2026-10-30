@@ -13,7 +13,7 @@ tak, jak se rozhoduju. Nejcennější je vždycky „proč", ne jen „co".
 | 1 Životní příběh | `ja/pribeh.md` |
 | 2 Hodnoty a rozhodování | `ja/hodnoty-a-rozhodovani.md` |
 | 3 Proč a jak navrhuju | `ja/navrhovani.md` |
-| 4 Firma a klienti | `ja/firma.md` (klienty jen obecně) |
+| 4 Firma, kterou zakládám | `ja/firma.md` (klienty jen obecně) |
 | 5 Lidé kolem mě | `lide/` podle `lide/_sablona.md`, souhrn domácnosti do `USER.md` |
 | 6 Běžný den a režim, 9 Co mě baví a co mi bere energii | `ja/zivot.md` |
 | 7 Jak píšu a mluvím | `ja/komunikace.md` |

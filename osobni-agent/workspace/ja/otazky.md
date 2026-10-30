@@ -43,15 +43,17 @@ Na nic nemusíš odpovídat. Co nechceš říct, přeskoč.
 9. Jak klientovi vysvětluješ kompromis mezi rozpočtem, regulativy a jeho přáním?
 10. Co by lidé měli o tvé architektuře říkat?
 
-## 4. Firma a klienti → `ja/firma.md`
-1. Jaké zakázky děláš nejčastěji a jaké bys chtěl dělat víc?
-2. Jak k tobě klienti přicházejí?
-3. Jak vypadá první schůzka s klientem?
-4. Jak stanovuješ cenu a jak o ní jednáš?
-5. S kým spolupracuješ (statik, TZB, PBŘ, rozpočtář, geodet) a proč právě s nimi?
-6. Co ti na chodu firmy zabírá nejvíc času a co tě nejvíc otravuje?
-7. Kterou práci bys agentovi předal jako první?
-8. Jaký klient je pro tebe ideální a s jakým už pracovat nechceš? (bez jmen)
+## 4. Firma, kterou zakládám → `ja/firma.md`
+1. Proč chceš založit vlastní ateliér a proč právě teď?
+2. Jaké zakázky chceš dělat, pro koho, a co dělat nechceš?
+3. Čím se budeš lišit od ostatních ateliérů?
+4. Kde a jak najdeš první klienty?
+5. Jak chceš stanovovat cenu? Kolik potřebuješ měsíčně, abys vyžil?
+6. Jakou právní formu zvažuješ a proč? Jak to máš s autorizací ČKA?
+7. S kým budeš spolupracovat (statik, TZB, PBŘ, rozpočtář, geodet) a proč právě s nimi?
+8. Jak má firma vypadat za rok a za pět let?
+9. Čeho se při zakládání nejvíc bojíš a co by tě přimělo to vzdát?
+10. Kterou práci bys agentovi předal jako první?
 
 ## 5. Lidé kolem mě → `lide/`, `USER.md`
 1. Kdo jsou nejbližší lidé v tvém životě? (jen co chceš říct)
