@@ -742,24 +742,33 @@ Když spí nebo je vypnutý, agent neodpoví a pravidelné kontroly počkají.
    ```bash
    curl -fsSL https://tailscale.com/install.sh | sh
    sudo tailscale up
+   sudo tailscale set --operator=$USER
    ```
-   - Otevři odkaz, který vypíše, a přihlas se. Účet zabezpeč dvoufázovým ověřením.
-   - V administraci Tailscale (login.tailscale.com → DNS) zapni **MagicDNS** a **HTTPS
-     Certificates**.
+   - Otevři odkaz, který vypíše `tailscale up`, a přihlas se. Účet zabezpeč dvoufázovým
+     ověřením.
+   - Třetí příkaz dovolí OpenClaw spravovat Tailscale bez hesla správce (podle dokumentace
+     OpenClaw).
+   - V administraci Tailscale ([login.tailscale.com/admin/dns](https://login.tailscale.com/admin/dns))
+     zapni **MagicDNS** a **HTTPS Certificates**.
 2. **Brána do Tailscale a kód pro spárování:**
    ```bash
    openclaw config set gateway.tailscale.mode serve
    openclaw gateway restart
-   openclaw qr
+   openclaw gateway status
+   openclaw qr --limited
    ```
-   Nikdy nepoužívej režim `funnel`. Ten by bránu otevřel do veřejného internetu.
+   - `gateway status` musí ukázat adresu `https://…ts.net`. Brána dál poslouchá jen
+     v notebooku a Tailscale k ní pustí jen tvoje zařízení.
+   - `--limited` dá telefonu přístup k chatu, hlasu a schvalování, ale ne ke změnám nastavení
+     agenta. Když telefon ztratíš, nastavení přes něj nikdo nezmění.
+   - Nikdy nepoužívej režim `funnel`. Ten by bránu otevřel do veřejného internetu.
 3. **V iPhonu:**
    - Z App Storu nainstaluj **Tailscale**
      ([odkaz](https://apps.apple.com/app/tailscale/id1470499037)) a přihlas se stejným účtem.
    - Pak nainstaluj aplikaci **OpenClaw**
      ([odkaz](https://apps.apple.com/app/openclaw-ai-that-does-things/id6780396132)) a naskenuj
-     QR kód z `openclaw qr`.
-   - V notebooku spárování schval: `openclaw devices list`, pak
+     QR kód z `openclaw qr --limited`. Oficiální aplikace se připojí sama.
+   - Kdyby čekala na schválení, schval ji v notebooku: `openclaw devices list`, pak
      `openclaw devices approve <requestId>`.
 4. **Oprávnění aplikace:** povol mikrofon a oznámení. Kameru, polohu, Zdraví a fotky
    nepovoluj.
