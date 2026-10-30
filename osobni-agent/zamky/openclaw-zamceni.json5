@@ -16,9 +16,10 @@
 
   agents: {
     defaults: {
-      // Pravidelná kontrola běží uvnitř notebooku a výsledky zapisuje do deníku.
-      // Nic nikam neposílá. Upozornění do mobilu jsou volitelná (NAVOD.md, krok 12).
-      heartbeat: { every: "30m", target: "none" },
+      // Pravidelná kontrola co 30 minut je vypnutá. OpenClaw 2026.10 už nečte HEARTBEAT.md
+      // a bez pošty by jen 48× denně zbytečně načítal model. Sám od sebe běží jen noční
+      // úklid paměti jako naplánovaná úloha (krok 6b). Ranní přehled si vyžádáš zprávou.
+      heartbeat: { every: "0m", target: "none" },
     },
   },
 
@@ -44,10 +45,12 @@
 
   tools: {
     profile: "coding",
-    alsoAllow: ["heartbeat_respond"],
+    alsoAllow: [],
     // Zakázáno: web a vyhledávání, prohlížeč, ovládání telefonu, posílání zpráv
     // do jiných kanálů, generování médií přes cloud, další agenti a dovednosti,
     // které si agent píše sám (měnily by jeho chování bez tvého souhlasu).
+    // Agent si také sám nenaplánuje úlohy (cron) a nespustí aktualizaci OpenClaw
+    // (gateway). Naplánované úlohy zakládáš jen ty příkazem openclaw automations.
     // Na internet smí agent jen přes agent-resers, a to po tvém schválení.
     deny: [
       "group:web",
@@ -60,6 +63,8 @@
       "sessions_spawn",
       "sessions_send",
       "skill_workshop",
+      "cron",
+      "gateway",
     ],
     // Soubory smí číst a měnit jen ve složce Mozek.
     fs: { workspaceOnly: true },

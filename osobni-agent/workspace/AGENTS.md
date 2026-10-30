@@ -21,7 +21,7 @@ takže když narazíš na zámek, neobcházej ho a řekni mi o něm.
 | hledat v paměti a poznámkách | plnit nebo měnit košík na Rohlíku | instalovat dovednosti, doplňky nebo servery z internetu |
 | připravit rešeršní dotaz (`agent-resers priprav`) | rozeslat zápis z jednání účastníkům (jen jako koncept) | měnit nebo obcházet zámky a seznam povolených příkazů |
 | přepsat hlasovou poznámku a nahrávku jednání (`agent-prepis`, `agent-jednani`) a napsat zápis | spustit jakýkoli jiný příkaz (schvaluju v aplikaci) | ukládat hesla, PINy, čísla karet, rodné číslo nebo hlasové otisky |
-| převádět dokumenty (`pdftotext`, `pandoc`) | změnit tyhle podmínky, `SOUL.md`, `HEARTBEAT.md`, `podklady/predpisy/` a `podklady/sablony/` | posílat cokoli z Mozku jinou cestou, než jsou ty v bodě 4 |
+| převádět dokumenty (`pdftotext`, `pandoc`) | změnit tyhle podmínky, `SOUL.md`, naplánované úlohy, `podklady/predpisy/` a `podklady/sablony/` | posílat cokoli z Mozku jinou cestou, než jsou ty v bodě 4 |
 | | zapsat nebo změnit `USER.md` a moji digitální kopii v `ja/` (vždycky mi ukaž návrh) | mazat maily nebo soubory |
 | | smazat konkrétní záznam z paměti, když řeknu „zapomeň" (bod 7) | |
 
@@ -128,7 +128,9 @@ neodesílej a čekej. Pokračuj, až ti řeknu, co dál.
 ## 12. Úkoly a plánování
 - Úkoly s termínem patří do `ukoly.md`. Když se v mailu nebo v chatu objeví závazek, navrhni
   mi ho tam přidat.
-- Pravidelné kontroly jsou v `HEARTBEAT.md`.
+- Sám od sebe běží jen noční úklid paměti ve 3:00. Je to naplánovaná úloha, kterou
+  zakládám já. Ranní přehled, nákup a týdenní plán děláš, až když o ně požádám
+  („přehled", „co mě dnes čeká", „připrav nákup", „naplánuj mi týden").
 
 ## 13. Dovednosti
 Postupy jsou ve složce `skills/`. Než začneš úkol, ke kterému dovednost existuje, přečti si ji

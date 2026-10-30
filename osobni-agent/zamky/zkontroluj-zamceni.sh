@@ -40,6 +40,14 @@ case "$(openclaw config get gateway.tailscale.mode --json 2>/dev/null | tr -d '"
 esac
 je "zakázaný web, prohlížeč, telefon, zprávy a samoučení" tools.deny \
   'all(x in v for x in ["group:web", "group:ui", "group:nodes", "group:messaging", "skill_workshop"])'
+je "agent si sám neplánuje úlohy ani neaktualizuje OpenClaw" tools.deny \
+  'all(x in v for x in ["cron", "gateway"])'
+kontrola=$(openclaw config get agents.defaults.heartbeat.every --json 2>/dev/null | tr -d '"' || true)
+case "$kontrola" in
+  0m|0) ok "pravidelná kontrola vypnutá, běží jen naplánované úlohy (openclaw automations list)" ;;
+  "") ok "pravidelná kontrola každých 30 minut (výchozí nastavení OpenClaw)" ;;
+  *) ok "pravidelná kontrola každých $kontrola" ;;
+esac
 je "soubory jen ve složce Mozek" tools.fs.workspaceOnly 'v is True'
 je "příkazy jen ze seznamu, ostatní ke schválení" tools.exec.mode 'v in ("ask", "allowlist", "deny")'
 je "zvýšená oprávnění vypnutá" tools.elevated.enabled 'v is False'
@@ -190,7 +198,11 @@ fi
 
 workspace=$(openclaw config get agents.defaults.workspace --json 2>/dev/null | tr -d '"' || true)
 if [[ -n "$workspace" && -f "$workspace/AGENTS.md" ]]; then
-  for soubor in AGENTS.md SOUL.md HEARTBEAT.md; do
+  # HEARTBEAT.md OpenClaw od verze 2026.10 nečte, pokyny kontroly jsou v jeho databázi.
+  if [[ -f "$workspace/HEARTBEAT.md" ]]; then
+    pozor "HEARTBEAT.md už OpenClaw nečte, smaž ho: sudo chattr -i $workspace/HEARTBEAT.md && rm $workspace/HEARTBEAT.md"
+  fi
+  for soubor in AGENTS.md SOUL.md; do
     if [[ ! -f "$workspace/$soubor" ]]; then
       pozor "$soubor chybí ve složce $workspace"
     elif [[ "$workspace" == /mnt/* ]]; then
