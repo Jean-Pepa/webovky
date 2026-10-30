@@ -35,6 +35,9 @@
         "tydenni-plan", "uceni-ze-vzoru", "vecerni-denik", "zapis-diktatu", "zapis-jednani",
         "zdravi",
       ],
+      // Přepnout se dá jen na modely v notebooku. Bez tohoto pravidla by šlo přepnout
+      // rozhovor i na model v cloudu a celý jeho obsah by odešel ven.
+      modelPolicy: { allow: ["ollama/*"] },
     },
   },
 
@@ -83,6 +86,20 @@
       "skill_workshop",
       "cron",
       "gateway",
+      // Nové nástroje OpenClaw 2026.10: zprávy do jiných konverzací a kanálů, správa
+      // a mazání rozhovorů, další agenti, doplňky, žádosti o hesla, přehled lidí
+      // a zařízení, spouštění kódu v cloudu xAI a přepis vlastních pokynů kontroly.
+      "conversations_send",
+      "conversations_turn",
+      "sessions",
+      "subagents",
+      "agents_wait",
+      "plugins",
+      "openclaw",
+      "secrets",
+      "presence",
+      "code_execution",
+      "heartbeat_respond",
     ],
     // Soubory smí číst a měnit jen ve složce Mozek.
     fs: { workspaceOnly: true },

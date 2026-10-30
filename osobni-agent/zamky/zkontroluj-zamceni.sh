@@ -44,6 +44,9 @@ je "zakázaný web, prohlížeč, telefon, zprávy a samoučení" tools.deny \
   'all(x in v for x in ["group:web", "group:ui", "group:nodes", "group:messaging", "skill_workshop"])'
 je "agent si sám neplánuje úlohy ani neaktualizuje OpenClaw" tools.deny \
   'all(x in v for x in ["cron", "gateway"])'
+je "agent nepošle zprávu do jiné konverzace, nespustí další agenty, nemění doplňky ani pokyny kontroly" tools.deny \
+  'all(x in v for x in ["conversations_send", "conversations_turn", "sessions", "sessions_send", "sessions_spawn", "subagents", "plugins", "secrets", "code_execution", "heartbeat_respond"])'
+je "přepnout jde jen na modely v notebooku (Ollama)" agents.defaults.modelPolicy.allow 'v == ["ollama/*"]'
 kontrola=$(openclaw config get agents.defaults.heartbeat.every --json 2>/dev/null | tr -d '"' || true)
 case "$kontrola" in
   0m|0) ok "pravidelná kontrola vypnutá, běží jen naplánované úlohy (openclaw automations list)" ;;

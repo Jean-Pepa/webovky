@@ -474,6 +474,9 @@ proto bránu (gateway) poprvé spustíme až v kroku 6b, už se zámky.
      a nové závazky v deníku a zapisuje je do deníku pod „Čeká na tebe". Ranní přehled si
      vyžádáš zprávou,
    - zakáže agentovi plánovat si úlohy a spouštět aktualizaci OpenClaw,
+   - zakáže nové nástroje OpenClaw 2026.10, kterými by agent poslal zprávu do jiné konverzace,
+     mazal rozhovory, spouštěl další agenty, měnil doplňky, chtěl hesla nebo si přepsal
+     pokyny pravidelné kontroly, a dovolí přepnout jen na modely v notebooku,
    - vypne noční „snění" (dreaming), kterým by OpenClaw každou noc sám přepisoval
      `MEMORY.md`. Úklid paměti spouštíš ty,
    - přezdívky modelů `hlavni` a `hluboky` ze souboru `zamky/modely.json5` a hlavnímu modelu
@@ -1322,6 +1325,9 @@ událost dvakrát nezapíše. Datum a čas počítá skript, ne model, takže �
   - Zámek dovedností prošel v OpenClaw 2026.10.9 po stejném nastavení jako v kroku 6: agent
     vidí jen našich 16 dovedností a zadání je kratší o 6 565 znaků. Kontrolní skript pozná,
     když zámek chybí nebo nová dovednost není v seznamu.
+  - Zámky nových nástrojů a pravidlo „jen modely z Ollamy" prošly v OpenClaw 2026.10.9 po
+    stejném nastavení jako v kroku 6. Ve skutečném běhu agentovi nezůstal žádný zakázaný nástroj.
+    Přepnutí na model v cloudu OpenClaw bez pravidla provedl, s pravidlem odmítl.
   - `kontrola-pc.ps1` proběhl na tvém notebooku. Kontrolu WSL a OneDrivu jsem pak
     vyzkoušel v PowerShellu s napodobeným WSL.
 - **Netestováno naživo:**

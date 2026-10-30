@@ -1,6 +1,6 @@
 ---
 name: zdravi
-description: Spánek, zotavení a aktivita z náramku Fitbit Air a souvislosti s deníkem. Použij, když se ptám na spánek, únavu, tep, kroky nebo pokus, a při ranním přehledu a týdenním plánu.
+description: Spánek, zotavení a aktivita z náramku Fitbit Air a souvislosti s deníkem. Na otázku k jedné noci („jak jsem spal před týdnem") spusť rovnou agent-zdravi noc --den "před týdnem". Použij, když se ptám na spánek, únavu, tep, kroky nebo pokus, a při ranním přehledu a týdenním plánu.
 ---
 
 # Zdraví z náramku
