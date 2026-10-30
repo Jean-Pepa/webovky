@@ -304,13 +304,17 @@ if [[ -f "$HOME/.config/agent/google-health-token.json" ]]; then
   else
     pozor "stahování z náramku není zapnuté (agent-fitbit casovac)"
   fi
+  # Rozhoduje datum posledního dne s daty, ne kdy se soubor naposledy stáhl.
   posledni=$(ls -1 "${workspace:-$HOME/Mozek}/zdravi/data/"*.json 2>/dev/null | tail -1)
+  den=$(basename "${posledni:-x}" .json)
   if [[ -z "$posledni" ]]; then
     pozor "z náramku zatím nepřišla žádná data (agent-fitbit stahni)"
-  elif (( $(date +%s) - $(stat -c %Y "$posledni") > 172800 )); then
-    pozor "data z náramku jsou starší než 2 dny, co se děje, ukáže: agent-fitbit stahni"
+  elif ! stari=$(( ($(date +%s) - $(date -d "$den" +%s)) / 86400 )) 2>/dev/null; then
+    nevim "datum posledních dat z náramku ($den)"
+  elif (( stari > 2 )); then
+    pozor "poslední data z náramku jsou z $den ($stari dní zpátky). Nosíš náramek a synchronizuje se aplikace Google Health?"
   else
-    ok "data z náramku jsou čerstvá (poslední den $(basename "$posledni" .json))"
+    ok "data z náramku jsou čerstvá (poslední den $den)"
   fi
 fi
 

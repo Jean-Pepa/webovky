@@ -6,8 +6,9 @@ Pravidelná kontrola (každých 30 minut od 6:00 do 23:00). Nikomu nic neposíle
    v `ukoly.md`, zapiš pod „Čeká na tebe" návrh „Přidat do úkolů: …". Do `ukoly.md` ho sám
    nepřidávej.
 3. Maily: jen když je pošta nastavená, spusť dovednost `hlidani-mailu`.
-4. Zdraví: jen když existuje složka `zdravi/data/` a dnešní souhrn `zdravi/RRRR-MM-DD.md`
-   ještě není, spusť `agent-zdravi den`. Upozornění ze souhrnu zapiš pod „Čeká na tebe".
+4. Zdraví: jen když existují dnešní data `zdravi/data/RRRR-MM-DD.json` a dnešní souhrn
+   `zdravi/RRRR-MM-DD.md` ještě není, spusť `agent-zdravi den`. Upozornění ze souhrnu zapiš
+   pod „Čeká na tebe".
 
 Když není nic nového, nic nezapisuj a odpověz jen NO_REPLY.
 Nic neposílej, nekupuj, neplánuj a nespouštěj nic, co tu není.
