@@ -339,12 +339,12 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
 |---|---|---|---|---|---|
 | **Rychlý** | Gemma 4 E4B (`gemma4:e4b`) | 6,6 GB | celý na grafice | 74 tokenů/s, čte ~4 000 tokenů/s (změřeno) | krátké otázky bez práce se soubory |
 | **Hlavní** (výchozí) | Gemma 4 26B-A4B (`gemma4:26b`) | 18 GB | 77 % grafika, zbytek RAM | 32 tokenů/s, čte ~700 tokenů/s (změřeno) | všechno s nástroji: deník, maily, plánování, pravidelné kontroly |
-| **Hluboký** | ThinkingCap-Qwen3.6-27B (BottleCap AI) | 16 GB + 0,9 GB na obrázky | grafika + RAM | 5–9 tokenů/s, přemýšlí o ~50 % kratčeji | noční úklid paměti, týdenní plán, složité rozbory |
+| **Hluboký** | ThinkingCap-Qwen3.6-27B (BottleCap AI) | 16 GB + 0,9 GB na obrázky | grafika + RAM | 4,2 tokenu/s, načtení 22 s (změřeno) | noční úklid paměti, týdenní plán, složité rozbory; na běžný chat je pomalý |
 | **Nejsilnější** | Claude Opus 5.5 přes `agent-resers` | cloud | jen po tvém schválení | – | internet a nejtěžší otázky |
 
-Rychlosti rychlého a hlavního modelu jsou změřené na tomhle notebooku v zásuvce (RTX 4080
-Laptop, ovladač 617, bez přemýšlení). U hlubokého modelu jde o odhad, změř si ho sám
-(`ollama run <model> --verbose`).
+Rychlosti všech tří modelů jsou změřené na tomhle notebooku v zásuvce (RTX 4080 Laptop,
+ovladač 617, `ollama run <model> --verbose`). Hluboký model při zkoušce přemýšlel anglicky
+a odpověděl česky, s jednou drobnou chybou v češtině.
 Názvy štítků Gemmy ověř na ollama.com/library/gemma4.
 Pokud tam je i `gemma4:12b`, je to chytřejší rychlá volba (~8 GB, pořád celá na grafice,
 odhadem 35–45 tokenů/s).
@@ -497,8 +497,10 @@ proto bránu (gateway) poprvé spustíme až v kroku 6b, už se zámky.
    - **Nejsilnější úroveň (Claude)** se nepřepíná. Agent ji volá dovedností `resers-web`,
      když chceš něco z internetu nebo řekneš „zeptej se Clauda", a vždycky po tvém schválení.
    - **Noční úklid paměti** běží každou noc ve 3:00 jako naplánovaná úloha (krok 6b).
-     Až ověříš hluboký model, přepni ji na něj:
-     `openclaw automations edit <id> --model hluboky` (id ukáže `openclaw automations list`).
+     Až ověříš hluboký model, přepni ji na něj a dej mu na úklid až 2 hodiny (výchozí limit
+     je hodina a hluboký model je pomalý):
+     `openclaw automations edit <id> --model hluboky --timeout-seconds 7200`.
+     Místo `<id>` vlož dlouhé ID z prvního sloupce výpisu `openclaw automations list`.
    - **Týdenní plán** si vyžádej zprávou „naplánuj mi týden", nejlépe po `/model hluboky`.
    - **Hluboký model** přidáš do přezdívek, až ho stáhneš (krok 4b). V Ubuntu:
      ```bash
@@ -583,6 +585,8 @@ rm -rf /tmp/oa && mkdir -p /tmp/oa && curl -fsSL https://codeload.github.com/jea
    openclaw automations add --name "Noční úklid paměti" --cron "0 3 * * *" --tz Europe/Prague --session isolated --message "Spusť dovednost nocni-uklid-pameti." --model hlavni --no-deliver
    openclaw automations list
    ```
+   Příkaz `automations add` spusť jen jednou, každé spuštění založí další úlohu. Úlohu navíc
+   smažeš příkazem `openclaw automations rm <id>`.
    Pravidelná kontrola co 30 minut je vypnutá (bod 2). OpenClaw 2026.10 už soubor
    `HEARTBEAT.md` nečte, proto se úlohy zakládají tímhle příkazem. Agent si sám úlohy
    plánovat nesmí. Ranní přehled si vyžádáš zprávou „přehled" nebo „co mě dnes čeká".
@@ -1160,7 +1164,7 @@ je složka `zdravi/data/` prázdná a agent odpoví, že data z náramku nemá.
     `approvals set`, `security audit`). Kontrolní skript proběhl v testovacím prostředí.
   - Naplánovaná úloha pro noční úklid, vypnutí pravidelné kontroly a zákaz plánování pro
     agenta prošly nanečisto v OpenClaw 2026.10.9 se spuštěnou bránou (`automations add`,
-    `automations list`, `automations edit --model hluboky`).
+    `automations list`, `automations edit --model hluboky --timeout-seconds 7200`).
   - `kontrola-pc.ps1` proběhl na tvém notebooku. Kontrolu WSL a OneDrivu jsem pak
     vyzkoušel v PowerShellu s napodobeným WSL.
 - **Netestováno naživo:**
