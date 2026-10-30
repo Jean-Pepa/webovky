@@ -1175,6 +1175,15 @@ výpočtu z nich jsou ve `skills/zdravi/METODIKA.md`.
 9. **Kontrola:** `bash ~/osobni-agent/zamky/zkontroluj-zamceni.sh` musí ukázat „stahování
    z náramku běží každou hodinu" a „data z náramku jsou čerstvá".
 
+**Synchronizace z iPhonu.** Náramek posílá data jen přes aplikaci Google Health v iPhonu
+a ta je nahrává do Googlu. Stahování v notebooku vidí jen to, co už aplikace nahrála. Když
+telefon několik dní nesynchronizuje, `agent-fitbit` po další synchronizaci stáhne celou mezeru
+sám, nejvýš 30 dní zpátky. Aby aplikace synchronizovala na pozadí:
+- v iPhonu zapni Nastavení → Obecné → Aktualizace na pozadí, celkově i u Google Health,
+- aplikaci nezavírej přejetím prstem v přepínači aplikací, pak iPhone na pozadí nepustí,
+- v úsporném režimu baterie iPhone synchronizaci na pozadí omezuje,
+- nech zapnutý Bluetooth a aplikaci jednou za pár dní otevři.
+
 Když Google odpoví chybou, `agent-fitbit stahni` napíše česky, co udělat. Příkaz
 `agent-fitbit struktura` ukáže jen podobu odpovědí Googlu, bez hodnot. Můžeš ho poslat, když
 bude potřeba něco doladit.
@@ -1208,7 +1217,7 @@ bude potřeba něco doladit.
 ## Co je ověřené a co si ověř sám
 
 - **Otestováno:**
-  - Skripty prošly 71 automatickými testy:
+  - Skripty prošly 72 automatickými testy:
     - `mail.py` a `resers.py`: falešný poštovní server, odeslané maily bez citací, složky
       s diakritikou, filtr osobních údajů, schvalování.
     - `jednani.py` a `prepis.py`: párování slov s mluvčími, jména, výstup, přechod z grafiky

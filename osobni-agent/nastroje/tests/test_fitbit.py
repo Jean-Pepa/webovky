@@ -283,6 +283,20 @@ class FitbitTests(unittest.TestCase):
             self.assertEqual(fitbit.main(["stahni"]), 1)
         self.assertIn("google-health-client.json", err.getvalue())
 
+    def test_default_days_cover_sync_gap(self):
+        self.assertEqual(fitbit.default_days(self.root, TODAY), 30)
+        folder = self.root / "zdravi/data"
+        folder.mkdir(parents=True)
+        (folder / "2026-10-12.json").write_text("{}")
+        self.assertEqual(fitbit.default_days(self.root, TODAY), 20)
+        (folder / "2026-10-30.json").write_text("{}")
+        self.assertEqual(fitbit.default_days(self.root, TODAY), 3)
+        (folder / "2026-01-01.json").unlink(missing_ok=True)
+        (folder / "2026-10-30.json").unlink()
+        (folder / "2026-10-12.json").unlink()
+        (folder / "2025-01-01.json").write_text("{}")
+        self.assertEqual(fitbit.default_days(self.root, TODAY), 30)
+
     def test_shape_has_no_values(self):
         text = fitbit.shape({"dataPoints": [{"dailyRestingHeartRate": {"beatsPerMinute": "54"}}],
                              "nextPageToken": "x"})

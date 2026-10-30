@@ -6,7 +6,7 @@ Spouští ho časovač v systemd, ne agent. Od Googlu čte jen spánek, aktivitu
 ukazatele, nic neodesílá a nic neukládá po minutách.
 
     agent-fitbit prihlasit [--port N]   jednorázové přihlášení přes prohlížeč ve Windows
-    agent-fitbit stahni [--dni N]       stáhne posledních N dní (výchozí 3) do zdravi/data/
+    agent-fitbit stahni [--dni N]       stáhne chybějící dny do zdravi/data/ (aspoň 3, nejvýš 30)
     agent-fitbit struktura              ukáže jen strukturu odpovědí Googlu, bez hodnot
     agent-fitbit casovac                stahování každou hodinu od 5:15 do 23:15 (systemd)
 
@@ -513,6 +513,18 @@ def shape(value, depth: int = 0) -> str:
 
 # ---------- příkazy ----------
 
+def default_days(mozek: Path, today: date) -> int:
+    """Kolik dní stáhnout: aspoň 3. Když telefon několik dní nesynchronizoval, i celou mezeru
+    od posledního dne s daty, nejvýš 30 dní."""
+    for path in sorted((mozek / "zdravi" / "data").glob("*.json"), reverse=True):
+        try:
+            last = date.fromisoformat(path.stem)
+        except ValueError:
+            continue
+        return min(30, max(3, (today - last).days + 2))
+    return 30
+
+
 def cmd_download(days_back: int, mozek: Path) -> int:
     session = Session()
     end = date.today()
@@ -584,8 +596,8 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="cmd", required=True)
     p_login = sub.add_parser("prihlasit", help="jednorázové přihlášení přes prohlížeč")
     p_login.add_argument("--port", type=int, default=0, help="pevný port zpětné adresy (jen pro klienta typu Web)")
-    p_get = sub.add_parser("stahni", help="stáhne posledních N dní")
-    p_get.add_argument("--dni", type=int, default=3)
+    p_get = sub.add_parser("stahni", help="stáhne chybějící dny (nebo posledních N dní)")
+    p_get.add_argument("--dni", type=int, default=None)
     sub.add_parser("struktura", help="struktura odpovědí bez hodnot")
     sub.add_parser("casovac", help="stahování každou hodinu (systemd)")
     args = parser.parse_args(argv)
@@ -594,7 +606,8 @@ def main(argv: list[str] | None = None) -> int:
             login(args.port)
             return 0
         if args.cmd == "stahni":
-            return cmd_download(min(args.dni, 90), args.mozek)
+            days = args.dni if args.dni else default_days(args.mozek, date.today())
+            return cmd_download(min(days, 90), args.mozek)
         if args.cmd == "struktura":
             return cmd_structure()
         return cmd_timer()
