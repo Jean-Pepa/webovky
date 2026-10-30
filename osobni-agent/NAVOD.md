@@ -1242,18 +1242,16 @@ a po něm je událost v kalendáři. Datum a čas počítá skript, ne model, ta
    agent-kalendar navrh --nazev "Zkouška kalendáře" --den zitra --cas 12:00
    ```
    První příkaz vypíše tvoje události na týden. Druhý jen ukáže návrh a nic nezapíše.
-6. **iPhone:** Nastavení → Aplikace → Kalendář → Kalendářové účty → **Přidat účet** → Google.
-   Přihlas se a nech zapnuté **Kalendáře**. Když tam účet Google už máš kvůli poště, jen u něj
-   zapni Kalendáře.
-   - Kalendář Mozek vznikne při prvním zápisu (bod 7). Pak v aplikaci Kalendář dole klepni na
-     **Kalendáře** a zaškrtni **Mozek**.
-   - Když tam Mozek ani po pár minutách není, otevři
-     [calendar.google.com/calendar/syncselect](https://calendar.google.com/calendar/syncselect),
-     zaškrtni **Mozek** a ulož.
-   - **Výchozí kalendář** (Nastavení → Aplikace → Kalendář) dej na kalendář Google. Události,
-     které zapíšeš v iPhonu, pak uvidí i agent. Kalendáře v iCloudu nevidí.
-   - Agent nastaví upozornění hodinu předem. Kdyby ti v iPhonu nechodilo, nainstaluj si
-     aplikaci Google Kalendář a povol jí oznámení.
+6. **iPhone:** z App Store si nainstaluj aplikaci **Google Kalendář**, přihlas se stejným účtem
+   Google a povol jí oznámení. Přes ně ti chodí připomenutí, která agent nastaví (výchozí
+   hodinu předem).
+   - Kalendář Mozek vznikne při prvním zápisu (bod 7). V aplikaci ho najdeš v nabídce ☰ pod
+     svým účtem. Když události od agenta nevidíš, zaškrtni tam Mozek.
+   - Sám zapisuj do svého hlavního kalendáře, v aplikaci je výchozí (nese jméno tvého účtu).
+     Ten agent čte. Jiné kalendáře, které si případně založíš, nevidí.
+   - Kdybys chtěl události vidět i v Kalendáři od Applu: Nastavení → Aplikace → Kalendář →
+     Kalendářové účty → **Přidat účet** → Google a zapni Kalendáře. Když tam Mozek chybí,
+     zaškrtni ho na [calendar.google.com/calendar/syncselect](https://calendar.google.com/calendar/syncselect).
 7. **Zkouška v aplikaci:** napiš agentovi „Zítra v 18 je oslava u Petra, naplánuj mi to do
    kalendáře". Ukáže návrh, aplikace se zeptá na schválení a po něm agent napíše „Zapsáno".
    Za chvíli máš událost v iPhonu. Zkušební událost pak smaž větou „smaž tu oslavu
