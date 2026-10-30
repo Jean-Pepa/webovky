@@ -1217,7 +1217,7 @@ bude potřeba něco doladit.
 ## Co je ověřené a co si ověř sám
 
 - **Otestováno:**
-  - Skripty prošly 72 automatickými testy:
+  - Skripty prošly 73 automatickými testy:
     - `mail.py` a `resers.py`: falešný poštovní server, odeslané maily bez citací, složky
       s diakritikou, filtr osobních údajů, schvalování.
     - `jednani.py` a `prepis.py`: párování slov s mluvčími, jména, výstup, přechod z grafiky

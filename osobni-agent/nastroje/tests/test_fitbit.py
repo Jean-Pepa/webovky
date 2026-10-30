@@ -297,6 +297,12 @@ class FitbitTests(unittest.TestCase):
         (folder / "2025-01-01.json").write_text("{}")
         self.assertEqual(fitbit.default_days(self.root, TODAY), 30)
 
+    def test_czech_counts(self):
+        self.assertEqual(fitbit.count(1, "den", "dny", "dní"), "1 den")
+        self.assertEqual(fitbit.count(2, "den", "dny", "dní"), "2 dny")
+        self.assertEqual(fitbit.count(0, "noc", "noci", "nocí"), "0 nocí")
+        self.assertEqual(fitbit.count(35, "den", "dny", "dní"), "35 dní")
+
     def test_shape_has_no_values(self):
         text = fitbit.shape({"dataPoints": [{"dailyRestingHeartRate": {"beatsPerMinute": "54"}}],
                              "nextPageToken": "x"})

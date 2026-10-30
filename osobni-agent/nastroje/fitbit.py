@@ -513,6 +513,11 @@ def shape(value, depth: int = 0) -> str:
 
 # ---------- příkazy ----------
 
+def count(n: int, one: str, few: str, many: str) -> str:
+    """České skloňování počtu: 1 den, 2 dny, 5 dní."""
+    return f"{n} {one if n == 1 else few if 2 <= n <= 4 else many}"
+
+
 def default_days(mozek: Path, today: date) -> int:
     """Kolik dní stáhnout: aspoň 3. Když telefon několik dní nesynchronizoval, i celou mezeru
     od posledního dne s daty, nejvýš 30 dní."""
@@ -533,8 +538,8 @@ def cmd_download(days_back: int, mozek: Path) -> int:
     days = fetch(session, start, end, problems)
     written = save_days(days, mozek)
     nights = sum(1 for v in days.values() if "spanek" in v)
-    print(f"Staženo {start.isoformat()} až {end.isoformat()}: {len(written)} dní s daty, z toho {nights} nocí. "
-          f"Uloženo do {mozek / 'zdravi' / 'data'}.")
+    print(f"Staženo {start.isoformat()} až {end.isoformat()}: {count(len(written), 'den', 'dny', 'dní')} s daty, "
+          f"z toho {count(nights, 'noc', 'noci', 'nocí')}. Uloženo do {mozek / 'zdravi' / 'data'}.")
     for problem in problems:
         print(f"Nestaženo {problem}", file=sys.stderr)
     return 1 if problems and not written else 0
