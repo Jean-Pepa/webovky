@@ -1,5 +1,5 @@
 // Zamčené nastavení OpenClaw pro osobního agenta na notebooku (Ubuntu ve WSL).
-// Ověřeno proti OpenClaw 2026.10.8 (`openclaw config validate`).
+// Ověřeno proti OpenClaw 2026.10.9 (`openclaw config validate`).
 //
 // Použití po `openclaw onboard` (NAVOD.md, krok 6b):
 //   openclaw config patch --file ~/osobni-agent/zamky/openclaw-zamceni.json5 --dry-run
@@ -31,6 +31,14 @@
       model: "embeddinggemma",
       fallback: "none",
       extraPaths: ["ja", "lide"],
+    },
+  },
+
+  // Noční „snění" (dreaming) vypnuté. Jinak by OpenClaw každou noc sám přepisoval
+  // MEMORY.md malým modelem, bez tvé kontroly. Úklid paměti spouštíš ty (krok 6).
+  plugins: {
+    entries: {
+      "memory-core": { config: { dreaming: { enabled: false } } },
     },
   },
 

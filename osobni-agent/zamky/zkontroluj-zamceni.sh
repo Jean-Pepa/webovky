@@ -45,6 +45,8 @@ je "příkazy jen ze seznamu, ostatní ke schválení" tools.exec.mode 'v in ("a
 je "zvýšená oprávnění vypnutá" tools.elevated.enabled 'v is False'
 je "hledání v paměti lokálně, bez záložní cloudové služby" memory.search \
   'v.get("provider") in ("ollama", "local") and v.get("fallback") == "none"'
+je "paměť si v noci sama nepřepisuje (dreaming vypnuté)" \
+  plugins.entries.memory-core.config.dreaming.enabled 'v is False'
 je "hlasové odpovědi bez cloudu" tts \
   'v.get("auto") == "off" and v.get("providers", {}).get("microsoft", {}).get("enabled") is False'
 je "ovládání prohlížeče vypnuté" browser.enabled 'v is False'
