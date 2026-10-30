@@ -1,6 +1,6 @@
 ---
 name: resers-web
-description: Vyhledání aktuálních informací na internetu přes Clauda tak, aby ven odešla jen obecná otázka bez osobních údajů. Použij, když uživatel chce něco zjistit z webu (ceny, recenze, předpisy, postupy) nebo řekne „zeptej se Clauda".
+description: Hledání aktuálních informací na webu přes Clauda, ven jde jen obecná otázka. Použij, když chci něco zjistit z internetu nebo řeknu „zeptej se Clauda".
 ---
 
 # Rešerše na webu (přes Clauda)

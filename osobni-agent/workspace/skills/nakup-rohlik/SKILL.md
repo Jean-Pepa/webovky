@@ -1,6 +1,6 @@
 ---
 name: nakup-rohlik
-description: Příprava nákupu na Rohlíku. Sestaví seznam z pravidelných položek a poznámek, naplní košík přes oficiální MCP server Rohlíku a pošle souhrn ke kontrole. Objednávku vždy potvrzuje uživatel na webu Rohlíku.
+description: Nákup na Rohlíku: seznam z pravidelných položek, naplnění košíku a souhrn ke kontrole. Objednávku potvrzuju já. Použij, když řeknu „připrav nákup".
 ---
 
 # Nákup na Rohlíku

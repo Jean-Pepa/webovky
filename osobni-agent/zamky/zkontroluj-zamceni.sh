@@ -242,6 +242,33 @@ else
 fi
 
 workspace=$(openclaw config get agents.defaults.workspace --json 2>/dev/null | tr -d '"' || true)
+
+# Dovednosti: jen naše ze složky Mozek/skills, přibalené k OpenClaw vypnuté (šetří tokeny).
+# Nenastavená hodnota vrací chybu, pak se bere jako „bez omezení".
+if command -v openclaw >/dev/null; then
+  povolene=$(openclaw config get agents.defaults.skills --json 2>/dev/null) || povolene=null
+  pribalene=$(openclaw config get skills.allowBundled --json 2>/dev/null) || pribalene=null
+  vypis "$(POVOLENE="$povolene" PRIBALENE="$pribalene" \
+    SLOZKA="${workspace:-$HOME/Mozek}/skills" python3 -c 'import json, os
+def load(name):
+    try:
+        return json.loads(os.environ.get(name) or "null")
+    except ValueError:
+        return None
+allowed, bundled, folder = load("POVOLENE"), load("PRIBALENE"), os.environ["SLOZKA"]
+ours = sorted(d for d in os.listdir(folder) if os.path.isfile(os.path.join(folder, d, "SKILL.md"))) if os.path.isdir(folder) else []
+if bundled != []:
+    print("POZOR   přibalené dovednosti OpenClaw jsou zapnuté, nahraj znovu zamky/openclaw-zamceni.json5")
+if not isinstance(allowed, list):
+    print("POZOR   agent vidí všechny dovednosti, nahraj znovu zamky/openclaw-zamceni.json5")
+else:
+    missing = [d for d in ours if d not in allowed]
+    if missing:
+        print("POZOR   agent nevidí dovednosti " + ", ".join(missing) + ", připiš je do zamky/openclaw-zamceni.json5 a nahraj ho")
+    elif bundled == []:
+        print(f"OK      agent vidí jen naše dovednosti ({len(ours)})")')"
+fi
+
 if [[ -n "$workspace" && -f "$workspace/AGENTS.md" ]]; then
   # HEARTBEAT.md OpenClaw od verze 2026.10 nečte, pokyny kontroly jsou v jeho databázi.
   if [[ -f "$workspace/HEARTBEAT.md" ]]; then
