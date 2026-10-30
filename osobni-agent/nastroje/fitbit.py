@@ -15,35 +15,27 @@ Soubory v ~/.config/agent/ (práva 600, agent do nich nevidí):
     google-health-token.json    uložené přihlášení
 """
 
+
 from __future__ import annotations
 
 import argparse
-import base64
-import hashlib
-import http.server
 import json
 import os
-import secrets
-import shutil
 import subprocess
 import sys
-import time
-import urllib.error
-import urllib.parse
-import urllib.request
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-CONFIG_DIR = Path(os.environ.get("AGENT_CONFIG_DIR", Path.home() / ".config/agent"))
+import google_ucet as google
+
 MOZEK = Path(os.environ.get("AGENT_MOZEK", Path.home() / "Mozek"))
-AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-TOKEN_URL = "https://oauth2.googleapis.com/token"
 API_URL = "https://health.googleapis.com/v4/"
 SCOPES = [
     "https://www.googleapis.com/auth/googlehealth.sleep.readonly",
     "https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly",
     "https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly",
 ]
+LOGIN = "agent-fitbit prihlasit"
 # Denní ukazatele: typ dat v API → (pole v odpovědi, hodnota, pole v souboru dne).
 DAILY = {
     "daily-heart-rate-variability": ("dailyHeartRateVariability", "averageHeartRateVariabilityMilliseconds",
@@ -55,230 +47,23 @@ DAILY = {
 TEMPERATURE = "daily-sleep-temperature-derivations"
 MAX_PAGES = 50
 
-
-class FitbitError(Exception):
-    """Chyba, kterou umíme uživateli srozumitelně vysvětlit."""
-
-
-class DataTypeError(FitbitError):
-    """Jeden druh dat se nepodařilo stáhnout. Ostatní se stáhnou dál."""
-
-
-class ApiError(Exception):
-    def __init__(self, code: int, detail: str):
-        super().__init__(f"HTTP {code}: {detail}")
-        self.code = code
-        self.detail = detail
-
-
-def client_file() -> Path:
-    return CONFIG_DIR / "google-health-client.json"
+FitbitError = google.GoogleError
+DataTypeError = google.RequestError  # jeden druh dat nejde stáhnout, ostatní se stáhnou dál
 
 
 def token_file() -> Path:
-    return CONFIG_DIR / "google-health-token.json"
+    return google.CONFIG_DIR / "google-health-token.json"
 
 
-def write_private(path: Path, data: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(f".{path.name}.part")
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    with os.fdopen(fd, "w", encoding="utf-8") as f:
-        json.dump(data, f)
-    os.replace(tmp, path)
+def login(port: int = 0, opener=google.open_browser, timeout: float = 300) -> dict:
+    return google.login(token_file(), SCOPES, LOGIN, port=port, opener=opener, timeout=timeout)
 
 
-def load_client() -> dict:
-    path = client_file()
-    if not path.exists():
-        raise FitbitError(f"Chybí {path}. Stáhni ho v Google Cloud (Clients → Download JSON) a zkopíruj "
-                          "sem (NAVOD.md, krok 18).")
-    try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
-    except ValueError as exc:
-        raise FitbitError(f"{path} není platný JSON: {exc}") from None
-    client = raw.get("installed") or raw.get("web") or raw
-    if not client.get("client_id") or not client.get("client_secret"):
-        raise FitbitError(f"V {path} chybí client_id nebo client_secret.")
-    return client
-
-
-def http_json(method: str, url: str, *, token: str | None = None, data: dict | None = None,
-              form: dict | None = None) -> dict:
-    headers = {"Accept": "application/json"}
-    body = None
-    if form is not None:
-        body = urllib.parse.urlencode(form).encode()
-        headers["Content-Type"] = "application/x-www-form-urlencoded"
-    elif data is not None:
-        body = json.dumps(data).encode()
-        headers["Content-Type"] = "application/json"
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-    request = urllib.request.Request(url, data=body, headers=headers, method=method)
-    try:
-        with urllib.request.urlopen(request, timeout=60) as response:
-            return json.loads(response.read().decode("utf-8") or "{}")
-    except urllib.error.HTTPError as exc:
-        raise ApiError(exc.code, exc.read().decode("utf-8", errors="replace")[:300]) from None
-    except urllib.error.URLError as exc:
-        raise FitbitError(f"Google není dostupný ({exc.reason}). Zkontroluj připojení k internetu.") from None
-
-
-# ---------- přihlášení ----------
-
-class _Callback(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        if "code" not in query and "error" not in query:
-            self.send_response(404)
-            self.end_headers()
-            return
-        self.server.result = {k: v[0] for k, v in query.items()}
-        ok = "code" in query
-        text = ("Hotovo, přihlášení se uložilo. Okno můžeš zavřít." if ok
-                else "Přihlášení se nepovedlo. Vrať se do Ubuntu a podívej se na chybu.")
-        page = f"<!doctype html><meta charset='utf-8'><p style='font:20px sans-serif'>{text}</p>".encode()
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", str(len(page)))
-        self.end_headers()
-        self.wfile.write(page)
-
-    def log_message(self, *args):
-        pass
-
-
-def open_browser(url: str) -> None:
-    """Otevře adresu v prohlížeči ve Windows (WSL). Když to nejde, adresa je vypsaná v terminálu."""
-    for command in (["powershell.exe", "-NoProfile", "-Command", f"Start-Process '{url}'"], ["xdg-open", url]):
-        if shutil.which(command[0]):
-            subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
-            return
-
-
-def login(port: int = 0, opener=open_browser, timeout: float = 300) -> dict:
-    client = load_client()
-    verifier = secrets.token_urlsafe(64)
-    challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
-    state = secrets.token_urlsafe(16)
-    server = http.server.HTTPServer(("127.0.0.1", port), _Callback)
-    server.timeout = 1
-    server.result = None
-    redirect = f"http://127.0.0.1:{server.server_port}"
-    url = AUTH_URL + "?" + urllib.parse.urlencode({
-        "client_id": client["client_id"],
-        "redirect_uri": redirect,
-        "response_type": "code",
-        "scope": " ".join(SCOPES),
-        "access_type": "offline",
-        "prompt": "consent",
-        "code_challenge": challenge,
-        "code_challenge_method": "S256",
-        "state": state,
-    })
-    print("Otevírám přihlášení ke Googlu v prohlížeči. Kdyby se neotevřelo, zkopíruj tuhle adresu do "
-          "prohlížeče ve Windows:\n")
-    print(url + "\n", flush=True)
-    opener(url)
-    deadline = time.monotonic() + timeout
-    try:
-        while server.result is None and time.monotonic() < deadline:
-            server.handle_request()
-    finally:
-        server.server_close()
-    result = server.result
-    if result is None:
-        raise FitbitError("Přihlášení nedoběhlo do 5 minut. Spusť agent-fitbit prihlasit znovu.")
-    if result.get("state") != state:
-        raise FitbitError("Odpověď z prohlížeče nesedí na tohle přihlášení. Spusť agent-fitbit prihlasit znovu.")
-    if "error" in result:
-        raise FitbitError(f"Google přihlášení odmítl: {result['error']}. Spusť agent-fitbit prihlasit znovu "
-                          "a na konci povol přístup.")
-    try:
-        tokens = http_json("POST", TOKEN_URL, form={
-            "grant_type": "authorization_code",
-            "code": result["code"],
-            "client_id": client["client_id"],
-            "client_secret": client["client_secret"],
-            "redirect_uri": redirect,
-            "code_verifier": verifier,
-        })
-    except ApiError as exc:
-        raise FitbitError(f"Google nevydal přihlášení ({exc}).") from None
-    if not tokens.get("refresh_token"):
-        raise FitbitError("Google nevrátil trvalé přihlášení (refresh token). Spusť agent-fitbit prihlasit znovu.")
-    granted = set((tokens.get("scope") or "").split())
-    missing = [s.rsplit(".", 2)[-2] for s in SCOPES if granted and s not in granted]
-    saved = {
-        "refresh_token": tokens["refresh_token"],
-        "access_token": tokens.get("access_token"),
-        "expires_at": time.time() + int(tokens.get("expires_in", 0)),
-        "scope": tokens.get("scope", ""),
-    }
-    write_private(token_file(), saved)
-    print(f"Hotovo. Přihlášení je uložené v {token_file()}.")
-    if missing:
-        print("Pozor: nepovolil jsi přístup k části dat: " + ", ".join(missing) +
-              ". Ta se stahovat nebudou. Pro všechna data spusť přihlášení znovu a povol vše.")
-    return saved
-
-
-class Session:
+class Session(google.Session):
     """Volání Google Health API s automatickou obnovou přihlášení."""
 
     def __init__(self):
-        self.client = load_client()
-        path = token_file()
-        if not path.exists():
-            raise FitbitError("Ještě nejsi přihlášený. Spusť: agent-fitbit prihlasit")
-        try:
-            self.token = json.loads(path.read_text(encoding="utf-8"))
-        except ValueError:
-            raise FitbitError(f"{path} je poškozený. Spusť: agent-fitbit prihlasit") from None
-
-    def access_token(self) -> str:
-        if self.token.get("access_token") and self.token.get("expires_at", 0) > time.time() + 60:
-            return self.token["access_token"]
-        try:
-            fresh = http_json("POST", TOKEN_URL, form={
-                "grant_type": "refresh_token",
-                "refresh_token": self.token["refresh_token"],
-                "client_id": self.client["client_id"],
-                "client_secret": self.client["client_secret"],
-            })
-        except ApiError as exc:
-            if exc.code in (400, 401):
-                raise FitbitError("Přihlášení ke Googlu vypršelo nebo bylo zrušené. Spusť: agent-fitbit prihlasit. "
-                                  "Když se to opakuje každý týden, přepni aplikaci v Google Cloud do stavu "
-                                  "In production (NAVOD.md, krok 18).") from None
-            raise
-        self.token["access_token"] = fresh["access_token"]
-        self.token["expires_at"] = time.time() + int(fresh.get("expires_in", 3600))
-        if fresh.get("refresh_token"):
-            self.token["refresh_token"] = fresh["refresh_token"]
-        write_private(token_file(), self.token)
-        return self.token["access_token"]
-
-    def call(self, method: str, path: str, *, query: dict | None = None, data: dict | None = None) -> dict:
-        url = API_URL + path + ("?" + urllib.parse.urlencode(query) if query else "")
-        for attempt in (1, 2):
-            try:
-                return http_json(method, url, token=self.access_token(), data=data)
-            except ApiError as exc:
-                if exc.code == 401 and attempt == 1:
-                    self.token["expires_at"] = 0
-                    continue
-                if exc.code == 403:
-                    raise FitbitError("Google odmítl přístup (403). Zkontroluj, že je v projektu zapnuté Google "
-                                      "Health API a že jsi při přihlášení povolil všechna data. Pak spusť "
-                                      f"agent-fitbit prihlasit. Podrobnosti: {exc.detail[:150]}") from None
-                if exc.code == 429:
-                    raise FitbitError("Google hlásí moc dotazů najednou. Stáhne se to při dalším spuštění.") from None
-                if exc.code in (400, 404):
-                    raise DataTypeError(f"HTTP {exc.code}: {exc.detail[:150]}") from None
-                raise FitbitError(f"Google vrátil chybu: {exc}") from None
-        raise FitbitError("Google přihlášení opakovaně odmítl. Spusť: agent-fitbit prihlasit")
+        super().__init__(token_file(), API_URL, "Google Health API", LOGIN)
 
 
 # ---------- dotazy ----------

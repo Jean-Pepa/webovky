@@ -111,12 +111,14 @@ fi
 echo "== Povolené příkazy"
 if schvaleni=$(openclaw approvals get --json 2>/dev/null); then
   vypis "$(SCHVALENI="$schvaleni" python3 - <<'PY'
-import json, os
+import json, os, re
 d = json.loads(os.environ["SCHVALENI"])
 f = d.get("file", {})
 defaults = f.get("defaults", {})
 def line(ok, text):
     print(("OK      " if ok else "POZOR   ") + text)
+# Tyhle příkazy musí vždycky čekat na tvé schválení.
+approve = {"agent-mail": ["koncept"], "agent-resers": ["odeslat"], "agent-kalendar": ["zapis", "smaz"]}
 line(defaults.get("security") == "allowlist", f"jen seznam povolených příkazů (security = {defaults.get('security')})")
 line(defaults.get("ask") in ("on-miss", "always"), f"ostatní příkazy čekají na schválení (ask = {defaults.get('ask')})")
 line(defaults.get("askFallback", "deny") == "deny", f"bez odpovědi se příkaz zamítne (askFallback = {defaults.get('askFallback', 'deny')})")
@@ -125,8 +127,16 @@ for agent, cfg in (f.get("agents") or {}).items():
     for entry in cfg.get("allowlist", []):
         pattern = entry.get("pattern", "")
         name = pattern.rsplit("/", 1)[-1]
-        if name in ("agent-resers", "agent-mail") and not entry.get("argPattern"):
-            line(False, f"{pattern} je povolený se všemi argumenty, odeslání by nešlo schvalovat")
+        if name in approve and not entry.get("argPattern"):
+            line(False, f"{pattern} je povolený se všemi argumenty, odeslání ani zápis by nešly schvalovat")
+        elif name in approve:
+            for sub in approve[name]:
+                try:
+                    allowed = re.search(entry["argPattern"], f"{sub} --x") is not None
+                except re.error:
+                    allowed = True
+                if allowed:
+                    line(False, f"{name} {sub} se spustí bez tvého schválení, uprav argPattern")
         if name in risky or pattern in ("*", "**"):
             line(False, f"{pattern} umí spustit cokoli nebo poslat data ven, z povolených ho vyřaď")
 PY
@@ -316,6 +326,27 @@ if [[ -f "$HOME/.config/agent/google-health-token.json" ]]; then
   else
     ok "data z náramku jsou čerstvá (poslední den $den)"
   fi
+fi
+
+# Kalendář (jen když je napojený): přihlášení čitelné jen pro tebe a žádná práva navíc.
+kalendar="$HOME/.config/agent/google-calendar-token.json"
+if [[ -f "$kalendar" ]]; then
+  if [[ "$(stat -c %a "$kalendar")" != "600" ]]; then
+    pozor "google-calendar-token.json smí číst jen ty: chmod 600 $kalendar"
+  fi
+  vypis "$(SOUBOR="$kalendar" python3 -c 'import json, os
+try:
+    scopes = set((json.load(open(os.environ["SOUBOR"])).get("scope") or "").split())
+except (OSError, ValueError):
+    scopes = None
+allowed = {"https://www.googleapis.com/auth/calendar.events.readonly",
+           "https://www.googleapis.com/auth/calendar.app.created"}
+if scopes is None:
+    print("POZOR   google-calendar-token.json je poškozený, spusť: agent-kalendar prihlasit")
+elif scopes - allowed:
+    print("POZOR   přihlášení ke kalendáři má víc práv, než potřebuje: " + ", ".join(sorted(scopes - allowed)))
+else:
+    print("OK      kalendář: čte tvůj kalendář a zapisuje jen do kalendáře Mozek")')"
 fi
 
 if [[ "$(openclaw config get gateway.tailscale.mode --json 2>/dev/null | tr -d '"')" == "serve" ]]; then

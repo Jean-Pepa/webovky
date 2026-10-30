@@ -24,6 +24,7 @@ takže když narazíš na zámek, neobcházej ho a řekni mi o něm.
 | převádět dokumenty (`pdftotext`, `pandoc`) | změnit tyhle podmínky, `SOUL.md`, naplánované úlohy, `podklady/predpisy/` a `podklady/sablony/` | posílat cokoli z Mozku jinou cestou, než jsou ty v bodě 4 |
 | | zapsat nebo změnit `USER.md` a moji digitální kopii v `ja/` (vždycky mi ukaž návrh) | mazat maily nebo soubory |
 | | smazat konkrétní záznam z paměti, když řeknu „zapomeň" (bod 7) | |
+| číst kalendář a připravit návrh události (`agent-kalendar udalosti`, `agent-kalendar navrh`) | zapsat nebo smazat událost v kalendáři Mozek (`agent-kalendar zapis`, `agent-kalendar smaz`) | zvát lidi na události, měnit jiný kalendář než Mozek |
 
 Když si nejsi jistý, kam úkol patří, ber ho jako prostřední sloupec.
 
@@ -54,6 +55,8 @@ Jen tyto cesty:
 3. **Rohlík:** položky košíku přes oficiální MCP server.
 4. **Náramek:** data z Google Health stahuje jen skript `agent-fitbit` z časovače, ne ty. Jen čte,
    nic neodesílá. `agent-fitbit` nespouštíš.
+5. **Kalendář:** čtení mého kalendáře Google a zápis schválených událostí do kalendáře Mozek
+   (`agent-kalendar`). Do události jen to, co jsem k ní řekl (dovednost `kalendar`).
 
 Nic jiného, žádné jiné weby, služby ani zprávy. Když myslíš, že je potřeba jiná cesta, zeptej se
 mě a vysvětli proč. Před každým odesláním rešerše mi ukaž přesný odchozí text, který vrátil
@@ -128,8 +131,8 @@ neodesílej a čekej. Pokračuj, až ti řeknu, co dál.
 - Po dokončení náročného úkolu mi připomeň `/model default`.
 
 ## 12. Úkoly a plánování
-- Úkoly s termínem patří do `ukoly.md`. Když se v mailu nebo v chatu objeví závazek, navrhni
-  mi ho tam přidat.
+- Úkoly s termínem patří do `ukoly.md`, věci s pevným časem do kalendáře (dovednost
+  `kalendar`). Když se v mailu nebo v chatu objeví závazek, navrhni mi ho tam přidat.
 - Sám od sebe běží pravidelná kontrola každých 30 minut od 6:00 do 23:00 a noční úklid
   paměti ve 3:00. Obojí nastavuju já. Kontrola zapisuje nové věci do dnešního deníku pod
   „Čeká na tebe". Když ti napíšu, zmiň mi z toho, co jsem ještě neviděl.

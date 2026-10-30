@@ -27,6 +27,7 @@ def load(name, file):
     return module
 
 
+google = load("google_ucet", "google_ucet.py")
 fitbit = load("fitbit", "fitbit.py")
 zdravi = load("zdravi", "zdravi.py")
 TODAY = date(2026, 10, 30)
@@ -145,9 +146,9 @@ class FitbitTests(unittest.TestCase):
         cls.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), FakeGoogle)
         threading.Thread(target=cls.server.serve_forever, daemon=True).start()
         base = f"http://127.0.0.1:{cls.server.server_port}"
-        fitbit.TOKEN_URL = base + "/token"
+        google.TOKEN_URL = base + "/token"
         fitbit.API_URL = base + "/v4/"
-        fitbit.AUTH_URL = base + "/auth"
+        google.AUTH_URL = base + "/auth"
 
     @classmethod
     def tearDownClass(cls):
@@ -157,9 +158,9 @@ class FitbitTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        fitbit.CONFIG_DIR = self.root / "config"
-        fitbit.CONFIG_DIR.mkdir()
-        (fitbit.CONFIG_DIR / "google-health-client.json").write_text(
+        google.CONFIG_DIR = self.root / "config"
+        google.CONFIG_DIR.mkdir()
+        (google.CONFIG_DIR / "google-health-client.json").write_text(
             json.dumps({"installed": {"client_id": "cid", "client_secret": "sec"}}), encoding="utf-8")
         FakeGoogle.calls = []
         FakeGoogle.first_api_401 = False
@@ -170,7 +171,7 @@ class FitbitTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def save_token(self, expires_at=0):
-        fitbit.write_private(fitbit.token_file(), {"refresh_token": "r1", "access_token": "old",
+        google.write_private(fitbit.token_file(), {"refresh_token": "r1", "access_token": "old",
                                                    "expires_at": expires_at})
 
     def test_login_with_browser_callback(self):
@@ -277,7 +278,7 @@ class FitbitTests(unittest.TestCase):
     def test_missing_login_and_client(self):
         with self.assertRaisesRegex(fitbit.FitbitError, "prihlasit"):
             fitbit.Session()
-        (fitbit.CONFIG_DIR / "google-health-client.json").unlink()
+        (google.CONFIG_DIR / "google-health-client.json").unlink()
         err = io.StringIO()
         with redirect_stderr(err):
             self.assertEqual(fitbit.main(["stahni"]), 1)

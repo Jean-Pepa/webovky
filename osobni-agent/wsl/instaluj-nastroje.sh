@@ -34,7 +34,8 @@ fi
 echo "→ Kopíruji skripty do $CIL"
 mkdir -p "$CIL" "$BIN"
 install -m 755 "$ZDROJ/mail.py" "$ZDROJ/resers.py" "$ZDROJ/prepis.py" "$ZDROJ/jednani.py" \
-  "$ZDROJ/zdravi.py" "$ZDROJ/fitbit.py" "$CIL/"
+  "$ZDROJ/zdravi.py" "$ZDROJ/fitbit.py" "$ZDROJ/kalendar.py" "$CIL/"
+install -m 644 "$ZDROJ/google_ucet.py" "$CIL/"
 
 echo "→ Připravuji Python prostředí $VENV"
 [[ -x "$VENV/bin/python" ]] || python3 -m venv "$VENV"
@@ -53,8 +54,8 @@ if [[ $JEDNANI -eq 1 ]]; then
     "torch>=2.10,<2.11" "torchaudio>=2.10,<2.11" "torchcodec>=0.10,<0.11"
 fi
 
-echo "→ Vytvářím příkazy agent-mail, agent-resers, agent-prepis, agent-jednani, agent-zdravi a agent-fitbit v $BIN"
-for nazev in mail resers prepis jednani zdravi fitbit; do
+echo "→ Vytvářím příkazy agent-mail, agent-resers, agent-prepis, agent-jednani, agent-zdravi, agent-fitbit a agent-kalendar v $BIN"
+for nazev in mail resers prepis jednani zdravi fitbit kalendar; do
   cat > "$BIN/agent-$nazev" <<EOF
 #!/usr/bin/env bash
 # Knihovny CUDA z Python prostředí, aby přepis běžel i na grafice.

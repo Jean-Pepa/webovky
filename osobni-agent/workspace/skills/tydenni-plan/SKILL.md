@@ -6,6 +6,7 @@ description: Nedělní souhrn uplynulého týdne a plán na další týden. Pou�
 # Týdenní plán
 
 1. Přečti deník za posledních 7 dní, `ukoly.md` a `MEMORY.md` (cíle, opakující se věci).
+   Když je připojený kalendář, přidej `agent-kalendar udalosti --den pondeli --dni 7`.
 2. Sepiš souhrn týdne: co se udělalo, co se rozhodlo, co zůstalo viset (nejvýš 10 bodů).
 3. Navrhni plán na další týden: termíny, 3 hlavní priority, kdy nakoupit, co připravit
    dopředu.

@@ -1190,6 +1190,79 @@ bude potřeba něco doladit.
 
 ---
 
+## Krok 19: Kalendář Google (asi 20 minut)
+
+Agent čte tvůj kalendář Google. Události, které mu nadiktuješ, zapisuje do vlastního kalendáře
+**Mozek**, který se ti v iPhonu ukáže vedle ostatních. Do jiných kalendářů zapisovat nemůže,
+Google mu to s tímhle přihlášením nedovolí. Nikoho nezve. Každý zápis i smazání potvrzuješ
+v aplikaci.
+
+Jak to vypadá: napíšeš „Zítra v 18 je oslava u Petra, naplánuj mi to do kalendáře". Agent
+odpoví návrhem „Oslava u Petra — sobota 31. 10. 2026, 18:00–19:00, připomenutí v 17:00
+(kalendář Mozek)" a upozorní tě, když v tu dobu už něco máš. Aplikace se zeptá na schválení
+a po něm je událost v kalendáři. Datum a čas počítá skript, ne model, takže „v sobotu",
+„příští úterý" nebo „za 3 dny" vyjde vždycky správně.
+
+1. **Zapni Google Calendar API** ve stejném projektu jako u náramku. Na stránce
+   [console.cloud.google.com/apis/library/calendar-json.googleapis.com](https://console.cloud.google.com/apis/library/calendar-json.googleapis.com)
+   zkontroluj nahoře, že je vybraný projekt `Mozek`, a klikni na **Povolit** (Enable).
+2. **Oprávnění:** **Google Auth Platform** → **Data Access** → **Add or remove scopes**. Do
+   filtru napiš `calendar` a zaškrtni dvě položky:
+   - `.../auth/calendar.events.readonly` (čtení událostí),
+   - `.../auth/calendar.app.created` (zápis jen do kalendáře, který si aplikace sama založí).
+
+   Pak **Update** a **Save**. Klient a zveřejnění z kroku 18 platí dál, nic nového nestahuješ.
+3. **Nová verze balíčku, pravidla a povolené příkazy** (v Ubuntu):
+   ```bash
+   rm -rf /tmp/oa && mkdir -p /tmp/oa && curl -fsSL https://codeload.github.com/jean-pepa/webovky/tar.gz/refs/heads/claude/busy-gauss-t83y4w | tar -xz -C /tmp/oa && rm -rf ~/osobni-agent && cp -r /tmp/oa/*/osobni-agent ~/osobni-agent
+   bash ~/osobni-agent/wsl/instaluj-nastroje.sh
+   sudo chattr -i ~/Mozek/AGENTS.md
+   sudo chattr -R -i ~/Mozek/skills
+   cp ~/osobni-agent/workspace/AGENTS.md ~/Mozek/AGENTS.md
+   cp -r ~/osobni-agent/workspace/skills/. ~/Mozek/skills/
+   sudo chattr +i ~/Mozek/AGENTS.md
+   sudo chattr -R +i ~/Mozek/skills
+   openclaw approvals set --file ~/osobni-agent/zamky/exec-approvals.json5
+   bash ~/osobni-agent/zamky/nastav-kontrolu.sh
+   openclaw gateway restart
+   openclaw skills list | grep kalendar
+   ```
+   U `kalendar` musí být `ready`. Pravidelná kontrola teď u akce s časem z deníku navrhne
+   „Zapsat do kalendáře: …", proto se znovu nahrávají její pokyny.
+4. **Přihlášení ke kalendáři:**
+   ```bash
+   agent-kalendar prihlasit
+   ```
+   - Vyber stejný účet Google, zase **Rozšířené** (Advanced) → **Přejít do aplikace Mozek**.
+   - Zaškrtni obě oprávnění ke kalendáři a potvrď. Objeví se „Hotovo, přihlášení se uložilo".
+   - Je to samostatné přihlášení, náramek běží dál beze změny.
+5. **Zkouška v Ubuntu:**
+   ```bash
+   agent-kalendar udalosti --dni 7
+   agent-kalendar navrh --nazev "Zkouška kalendáře" --den zitra --cas 12:00
+   ```
+   První příkaz vypíše tvoje události na týden. Druhý jen ukáže návrh a nic nezapíše.
+6. **iPhone:** Nastavení → Aplikace → Kalendář → Kalendářové účty → **Přidat účet** → Google.
+   Přihlas se a nech zapnuté **Kalendáře**. Když tam účet Google už máš kvůli poště, jen u něj
+   zapni Kalendáře.
+   - Kalendář Mozek vznikne při prvním zápisu (bod 7). Pak v aplikaci Kalendář dole klepni na
+     **Kalendáře** a zaškrtni **Mozek**.
+   - Když tam Mozek ani po pár minutách není, otevři
+     [calendar.google.com/calendar/syncselect](https://calendar.google.com/calendar/syncselect),
+     zaškrtni **Mozek** a ulož.
+   - **Výchozí kalendář** (Nastavení → Aplikace → Kalendář) dej na kalendář Google. Události,
+     které zapíšeš v iPhonu, pak uvidí i agent. Kalendáře v iCloudu nevidí.
+   - Agent nastaví upozornění hodinu předem. Kdyby ti v iPhonu nechodilo, nainstaluj si
+     aplikaci Google Kalendář a povol jí oznámení.
+7. **Zkouška v aplikaci:** napiš agentovi „Zítra v 18 je oslava u Petra, naplánuj mi to do
+   kalendáře". Ukáže návrh, aplikace se zeptá na schválení a po něm agent napíše „Zapsáno".
+   Za chvíli máš událost v iPhonu. Zkušební událost pak smaž větou „smaž tu oslavu
+   z kalendáře" a smazání zase schval.
+8. **Kontrola:** `bash ~/osobni-agent/zamky/zkontroluj-zamceni.sh` musí ukázat „kalendář: čte
+   tvůj kalendář a zapisuje jen do kalendáře Mozek" a žádné POZOR.
+
+---
+
 ## Kontrolní seznam: hotovo, když…
 
 - [ ] `nvidia-smi` ukazuje RTX 4080, 12 GB a CUDA 12.8 nebo vyšší
@@ -1211,13 +1284,14 @@ bude potřeba něco doladit.
 - [ ] `agent-jednani` rozlišil mluvčí ve zkušební nahrávce a zápis odpovídá
 - [ ] první rešerše pozemku je v kartě projektu i se zdroji
 - [ ] `openclaw skills list` ukazuje `zdravi` jako `ready` a `agent-zdravi kontrola` odpoví
+- [ ] po větě „naplánuj mi to do kalendáře" a schválení máš událost v iPhonu v kalendáři Mozek
 
 ---
 
 ## Co je ověřené a co si ověř sám
 
 - **Otestováno:**
-  - Skripty prošly 73 automatickými testy:
+  - Skripty prošly 87 automatickými testy:
     - `mail.py` a `resers.py`: falešný poštovní server, odeslané maily bez citací, složky
       s diakritikou, filtr osobních údajů, schvalování.
     - `jednani.py` a `prepis.py`: párování slov s mluvčími, jména, výstup, přechod z grafiky
@@ -1230,6 +1304,12 @@ bude potřeba něco doladit.
       po chybě jednoho druhu dat a srozumitelné
       chyby. Proti falešnému serveru postavenému podle oficiálního popisu Google Health API
       (discovery dokument v4 z 28. 10. 2026). Se skutečným účtem Google to vyzkoušíš v kroku 18.
+    - `kalendar.py`: výpočet dne a času v pražském čase („v neděli", „příští úterý",
+      „za 3 dny", přes půlnoc, celý den), kolize, čtení z hlavního kalendáře i z Mozku,
+      založení kalendáře Mozek jen jednou i po novém přihlášení, zápis bez pozvánek, mazání
+      jen v Mozku a srozumitelné chyby. Proti falešnému serveru podle oficiálního popisu
+      Google Calendar API v3 (discovery dokument z 30. 10. 2026). Testy jsem ověřil i tak, že
+      jsem skript schválně pokazil a testy musely selhat.
   - Volání Clauda prošlo zkušebně proti testovacímu serveru s oficiální knihovnou Anthropic.
   - Instalační skript proběhl na čistém Linuxu jako běžný uživatel.
   - Nastavení jedním příkazem (`onboard`), zamčená konfigurace, seznam povolených příkazů
@@ -1247,6 +1327,7 @@ bude potřeba něco doladit.
     balíček vznikl, nebyl dostupný. Vyzkoušíš ho v kroku 16 na krátké nahrávce.
   - Tailscale ve WSL, aplikace v iPhonu a automatický start WSL. Vyzkoušíš je v krocích 6b
     a 12.
+  - Skutečný kalendář Google a jeho zobrazení v iPhonu. Vyzkoušíš je v kroku 19.
 - **Ověř v aktuální dokumentaci:** přesné názvy modelů v knihovně Ollamy, příkazy
   `openclaw mcp` a podmínky modelu pyannote na Hugging Face. Po aktualizaci OpenClaw vždycky
   spusť `zkontroluj-zamceni.sh`, klíče konfigurace se mezi verzemi mění.

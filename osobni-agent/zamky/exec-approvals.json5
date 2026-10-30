@@ -6,8 +6,9 @@
 //
 // Cokoli, co tu není, OpenClaw nespustí, dokud to neschválíš v aplikaci v iPhonu
 // (Approvals) nebo v ovládacím panelu. Když nikdo neodpoví, příkaz se zamítne.
-// Hlavně: odeslání dotazu ven (agent-resers odeslat) a uložení konceptu mailu
-// (agent-mail koncept) tu schválně nejsou, takže je vždycky potvrzuješ ty.
+// Hlavně: odeslání dotazu ven (agent-resers odeslat), uložení konceptu mailu
+// (agent-mail koncept) a zápis nebo smazání události v kalendáři (agent-kalendar zapis,
+// agent-kalendar smaz) tu schválně nejsou, takže je vždycky potvrzuješ ty.
 {
   version: 1,
   defaults: { security: "allowlist", ask: "on-miss", askFallback: "deny" },
@@ -23,6 +24,8 @@
         { pattern: "~/.local/bin/agent-jednani" },
         // Zdraví z náramku: jen výpočty v notebooku, nic se neodesílá.
         { pattern: "~/.local/bin/agent-zdravi", argPattern: "^(den|tyden|pokus|kontrola)( .*)?$" },
+        // Kalendář: jen číst a připravit návrh. Zápis a smazání schvaluješ v aplikaci.
+        { pattern: "~/.local/bin/agent-kalendar", argPattern: "^(udalosti|navrh)( .*)?$" },
         // Převod PDF na text a dokumentů do Wordu.
         { pattern: "/usr/bin/pdftotext" },
         { pattern: "/usr/bin/pandoc" },
