@@ -1194,13 +1194,13 @@ bude potřeba něco doladit.
 
 Agent čte tvůj kalendář Google. Události, které mu nadiktuješ, zapisuje do vlastního kalendáře
 **Mozek**, který se ti v iPhonu ukáže vedle ostatních. Do jiných kalendářů zapisovat nemůže,
-Google mu to s tímhle přihlášením nedovolí. Nikoho nezve. Každý zápis i smazání potvrzuješ
-v aplikaci.
+Google mu to s tímhle přihlášením nedovolí. Nikoho nezve. Zapisuje a maže hned, bez
+schvalování, ale jen když ho o to v chatu požádáš. Termín z mailu nebo dokumentu ti jen navrhne.
 
 Jak to vypadá: napíšeš „Zítra v 18 je oslava u Petra, naplánuj mi to do kalendáře". Agent
-odpoví návrhem „Oslava u Petra — sobota 31. 10. 2026, 18:00–19:00, připomenutí v 17:00
-(kalendář Mozek)" a upozorní tě, když v tu dobu už něco máš. Aplikace se zeptá na schválení
-a po něm je událost v kalendáři. Datum a čas počítá skript, ne model, takže „v sobotu",
+událost hned zapíše a odpoví „Zapsáno: Oslava u Petra — sobota 31. 10. 2026, 18:00–19:00,
+připomenutí v 17:00 (kalendář Mozek)". Když v tu dobu už něco máš, upozorní tě. Stejnou
+událost dvakrát nezapíše. Datum a čas počítá skript, ne model, takže „v sobotu",
 „příští úterý" nebo „za 3 dny" vyjde vždycky správně.
 
 1. **Zapni Google Calendar API** ve stejném projektu jako u náramku. Na stránce
@@ -1253,9 +1253,8 @@ a po něm je událost v kalendáři. Datum a čas počítá skript, ne model, ta
      Kalendářové účty → **Přidat účet** → Google a zapni Kalendáře. Když tam Mozek chybí,
      zaškrtni ho na [calendar.google.com/calendar/syncselect](https://calendar.google.com/calendar/syncselect).
 7. **Zkouška v aplikaci:** napiš agentovi „Zítra v 18 je oslava u Petra, naplánuj mi to do
-   kalendáře". Ukáže návrh, aplikace se zeptá na schválení a po něm agent napíše „Zapsáno".
-   Za chvíli máš událost v iPhonu. Zkušební událost pak smaž větou „smaž tu oslavu
-   z kalendáře" a smazání zase schval.
+   kalendáře". Agent ji hned zapíše a napíše „Zapsáno". Za chvíli máš událost v iPhonu.
+   Zkušební událost pak smaž větou „smaž tu oslavu z kalendáře".
 8. **Kontrola:** `bash ~/osobni-agent/zamky/zkontroluj-zamceni.sh` musí ukázat „kalendář: čte
    tvůj kalendář a zapisuje jen do kalendáře Mozek" a žádné POZOR.
 
@@ -1282,14 +1281,14 @@ a po něm je událost v kalendáři. Datum a čas počítá skript, ne model, ta
 - [ ] `agent-jednani` rozlišil mluvčí ve zkušební nahrávce a zápis odpovídá
 - [ ] první rešerše pozemku je v kartě projektu i se zdroji
 - [ ] `openclaw skills list` ukazuje `zdravi` jako `ready` a `agent-zdravi kontrola` odpoví
-- [ ] po větě „naplánuj mi to do kalendáře" a schválení máš událost v iPhonu v kalendáři Mozek
+- [ ] po větě „naplánuj mi to do kalendáře" máš událost v iPhonu v kalendáři Mozek
 
 ---
 
 ## Co je ověřené a co si ověř sám
 
 - **Otestováno:**
-  - Skripty prošly 87 automatickými testy:
+  - Skripty prošly 88 automatickými testy:
     - `mail.py` a `resers.py`: falešný poštovní server, odeslané maily bez citací, složky
       s diakritikou, filtr osobních údajů, schvalování.
     - `jednani.py` a `prepis.py`: párování slov s mluvčími, jména, výstup, přechod z grafiky
@@ -1304,8 +1303,8 @@ a po něm je událost v kalendáři. Datum a čas počítá skript, ne model, ta
       (discovery dokument v4 z 28. 10. 2026). Se skutečným účtem Google to vyzkoušíš v kroku 18.
     - `kalendar.py`: výpočet dne a času v pražském čase („v neděli", „příští úterý",
       „za 3 dny", přes půlnoc, celý den), kolize, čtení z hlavního kalendáře i z Mozku,
-      založení kalendáře Mozek jen jednou i po novém přihlášení, zápis bez pozvánek, mazání
-      jen v Mozku a srozumitelné chyby. Proti falešnému serveru podle oficiálního popisu
+      založení kalendáře Mozek jen jednou i po novém přihlášení, zápis bez pozvánek a bez
+      dvojího zápisu, mazání jen v Mozku a srozumitelné chyby. Proti falešnému serveru podle oficiálního popisu
       Google Calendar API v3 (discovery dokument z 30. 10. 2026). Testy jsem ověřil i tak, že
       jsem skript schválně pokazil a testy musely selhat.
   - Volání Clauda prošlo zkušebně proti testovacímu serveru s oficiální knihovnou Anthropic.

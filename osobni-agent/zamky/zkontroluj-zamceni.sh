@@ -118,7 +118,7 @@ defaults = f.get("defaults", {})
 def line(ok, text):
     print(("OK      " if ok else "POZOR   ") + text)
 # Tyhle příkazy musí vždycky čekat na tvé schválení.
-approve = {"agent-mail": ["koncept"], "agent-resers": ["odeslat"], "agent-kalendar": ["zapis", "smaz"]}
+approve = {"agent-mail": ["koncept"], "agent-resers": ["odeslat"], "agent-kalendar": ["prihlasit"]}
 line(defaults.get("security") == "allowlist", f"jen seznam povolených příkazů (security = {defaults.get('security')})")
 line(defaults.get("ask") in ("on-miss", "always"), f"ostatní příkazy čekají na schválení (ask = {defaults.get('ask')})")
 line(defaults.get("askFallback", "deny") == "deny", f"bez odpovědi se příkaz zamítne (askFallback = {defaults.get('askFallback', 'deny')})")

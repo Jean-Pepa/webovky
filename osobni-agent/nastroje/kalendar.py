@@ -11,7 +11,8 @@ nedovolí. Nikoho nezve a nikomu nic neposílá.
                          [--celodenni] [--misto TEXT] [--poznamka TEXT] [--pripomenout MINUT]
                                                    ukáže, co by se zapsalo, kolize a přesný příkaz
                                                    k zápisu; nic nemění
-    agent-kalendar zapis (stejné volby jako navrh) zapíše událost do kalendáře Mozek
+    agent-kalendar zapis (stejné volby jako navrh) zapíše událost do kalendáře Mozek a ohlásí
+                                                   kolize; stejnou událost podruhé nezapíše
     agent-kalendar smaz ID                         smaže událost z kalendáře Mozek
 
 DEN je dnes, zitra, pozitri, den v týdnu (sobota = nejbližší příští, pristi sobota = sobota
@@ -243,7 +244,7 @@ def mozek_calendar(session: Session) -> tuple[str, bool]:
         return session.token["kalendar_mozek"], False
     created = session.call("POST", "calendars", data={
         "summary": "Mozek", "timeZone": ZONE,
-        "description": "Události, které zapsal osobní agent po tvém schválení."})
+        "description": "Události, které zapsal osobní agent na tvůj pokyn."})
     session.token["kalendar_mozek"] = created["id"]
     session.save()
     return created["id"], True
@@ -279,7 +280,7 @@ def event_json(item: dict, label: str) -> dict:
             out["den"] = short_day(d0)
             out["cas"] = "celý den" if d1 <= d0 else f"celý den, do {short_day(d1)}"
         else:
-            s, e = datetime.fromisoformat(first), datetime.fromisoformat(last)
+            s, e = moment_of(first), moment_of(last)
             out["den"] = short_day(s.date())
             out["cas"] = (f"{s:%H:%M}–{e:%H:%M}" if e.date() == s.date()
                           else f"{s:%H:%M}–{short_day(e.date())} {e:%H:%M}")
@@ -319,15 +320,46 @@ def list_events(session: Session, first_day: date, days: int) -> list[dict]:
     return sorted(events, key=lambda e: e["zacatek"])
 
 
-def conflicts(session: Session, event: Event) -> list[str]:
+def moment_of(text: str) -> datetime:
+    moment = datetime.fromisoformat(text)
+    return aware(moment) if moment.tzinfo is None else moment
+
+
+def nearby(session: Session, event: Event) -> list[dict]:
+    """Události ve dnech, kdy je nová událost."""
+    days = (event.end.date() - event.start.date()).days + (0 if event.all_day else 1)
+    return list_events(session, event.start.date(), max(days, 1))
+
+
+def duplicate(events: list[dict], event: Event) -> dict | None:
+    """Stejná událost, která už v kalendáři Mozek je (třeba když se příkaz spustí podruhé)."""
+    title = event.body["summary"].casefold()
+    for other in events:
+        if other["kalendar"] != "Mozek" or other["nazev"].casefold() != title:
+            continue
+        if event.all_day:
+            if other["celodenni"] and other["zacatek"] == event.start.date().isoformat():
+                return other
+            continue
+        try:
+            if not other["celodenni"] and moment_of(other["zacatek"]) == aware(event.start):
+                return other
+        except ValueError:
+            continue
+    return None
+
+
+def conflicts(events: list[dict], event: Event) -> list[str]:
     """Události s časem, které se s novou překrývají."""
+    if event.all_day:
+        return []
     start, end = aware(event.start), aware(event.end)
     clash = []
-    for other in list_events(session, event.start.date(), (event.end.date() - event.start.date()).days + 1):
+    for other in events:
         if other["celodenni"]:
             continue
         try:
-            s, e = datetime.fromisoformat(other["zacatek"]), datetime.fromisoformat(other["konec"])
+            s, e = moment_of(other["zacatek"]), moment_of(other["konec"])
         except ValueError:
             continue
         if s < end and e > start:
@@ -353,24 +385,36 @@ def add_event_options(parser: argparse.ArgumentParser) -> None:
 def cmd_proposal(args) -> None:
     event = build_event(args, now())
     print(f"Návrh: {event.line}")
-    if not event.all_day:
-        try:
-            clash = conflicts(Session(), event)
-        except (KalendarError, OSError) as exc:
-            print(f"Kolize jsem nezkontroloval: {exc}")
-        else:
-            if clash:
-                print("Pozor, v tu dobu už máš: " + "; ".join(clash))
+    try:
+        events = nearby(Session(), event)
+    except (KalendarError, OSError) as exc:
+        print(f"Kolize jsem nezkontroloval: {exc}")
+    else:
+        same = duplicate(events, event)
+        if same:
+            print(f"Pozor, tahle událost už v kalendáři Mozek je (ID {same['id']}).")
+        clash = conflicts([e for e in events if e is not same], event)
+        if clash:
+            print("Pozor, v tu dobu už máš: " + "; ".join(clash))
     print(f"Zapsat: {event.command}")
     print("Nic se zatím nezapsalo.")
 
 
 def cmd_write(args) -> None:
     event = build_event(args, now())
-    created, note = insert_event(Session(), event.body)
+    session = Session()
+    events = nearby(session, event)
+    same = duplicate(events, event)
+    if same:
+        print(f"Už zapsáno, podruhé nezapisuji: {event.line}\nID: {same['id']}")
+        return
+    created, note = insert_event(session, event.body)
     if note:
         print(note)
     print(f"Zapsáno: {event.line}\nID: {created.get('id')}")
+    clash = conflicts(events, event)
+    if clash:
+        print("Pozor, v tu dobu už máš: " + "; ".join(clash))
 
 
 def cmd_delete(event_id: str) -> None:

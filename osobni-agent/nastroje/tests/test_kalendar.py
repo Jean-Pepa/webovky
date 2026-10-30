@@ -107,6 +107,9 @@ class FakeCalendar(http.server.BaseHTTPRequestHandler):
         if items is None:
             return self.not_found()
         item = dict(data, id=f"ev{len(items) + 1}", status="confirmed")
+        for key in ("start", "end"):  # Google vrací čas i s posunem pásma
+            if "dateTime" in item[key]:
+                item[key] = dict(item[key], dateTime=item[key]["dateTime"] + "+01:00")
         items.append(item)
         return self.reply(200, item)
 
@@ -304,7 +307,7 @@ class KalendarTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("Založil jsem kalendář Mozek", out)
         self.assertIn("Zapsáno: Oslava u Petra — sobota 31. 10. 2026, 18:00–21:00, připomenutí v 17:00 "
-                      "(kalendář Mozek)\nID: ev1", out)
+                      "(kalendář Mozek)\nID: ev1\nPozor, v tu dobu už máš: Porada (17:30–18:30)", out)
         code, out, _ = self.run_cmd("zapis", "--nazev", "Večeře", "--den", "pondělí", "--cas", "19")
         self.assertEqual(code, 0)
         self.assertNotIn("Založil", out)
@@ -320,6 +323,26 @@ class KalendarTests(unittest.TestCase):
         saved = json.loads(kalendar.token_file().read_text(encoding="utf-8"))
         self.assertEqual(saved["kalendar_mozek"], MOZEK)
         self.assertEqual(stat.S_IMODE(os.stat(kalendar.token_file()).st_mode), 0o600)
+
+    def test_same_event_is_not_written_twice(self):
+        self.save_token()
+        FakeCalendar.calendars[MOZEK] = []
+        argv = ("--nazev", "Oslava u Petra", "--den", "zitra", "--cas", "18")
+        self.assertEqual(self.run_cmd("zapis", *argv)[0], 0)
+        code, out, _ = self.run_cmd("zapis", "--nazev", "oslava u  Petra", "--den", "sobota", "--cas", "18:00")
+        self.assertEqual(code, 0)
+        self.assertIn("Už zapsáno, podruhé nezapisuji: oslava u Petra — sobota 31. 10. 2026, 18:00–19:00", out)
+        self.assertIn("ID: ev1", out)
+        self.assertEqual(len(FakeCalendar.calendars[MOZEK]), 1)
+        _, out, _ = self.run_cmd("navrh", *argv)
+        self.assertIn("Pozor, tahle událost už v kalendáři Mozek je (ID ev1).", out)
+        self.assertIn("Pozor, v tu dobu už máš: Porada (17:30–18:30)", out)
+        self.assertNotIn("Oslava u Petra (", out)  # sama se sebou se nekryje
+        # jiný čas nebo celý den je jiná událost
+        self.assertIn("Zapsáno:", self.run_cmd("zapis", *argv[:4], "--cas", "20")[1])
+        self.assertIn("Zapsáno:", self.run_cmd("zapis", *argv[:4], "--celodenni")[1])
+        self.assertIn("Už zapsáno", self.run_cmd("zapis", *argv[:4], "--celodenni")[1])
+        self.assertEqual(len(FakeCalendar.calendars[MOZEK]), 3)
 
     def test_write_recreates_deleted_mozek(self):
         self.save_token(mozek="smazany@group.calendar.google.com")
