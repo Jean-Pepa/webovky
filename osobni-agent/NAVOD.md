@@ -848,9 +848,11 @@ nepoužívej, zprávy v něm nejsou šifrované end-to-end.
    - Agent vidí jen našich 16 dovedností. Dovednosti přibalené k OpenClaw jsou vypnuté
      v `zamky/openclaw-zamceni.json5`, ušetří přes 1 500 tokenů na každou zprávu. Novou
      dovednost připiš i do seznamu `skills` v tom souboru.
-   - Na otázky k historii („kdy jsem spal nejdéle", „jak spím poslední dobu") agent spustí
-     jen `agent-zdravi data`. Dostane všechny dny v jedné tabulce a souhrn spočítaný skriptem
-     (za 70 dní asi 1 800 tokenů) a odpoví po srovnání.
+   - **Přehledy.** Noční úklid ve 3:00 každou noc přepíše `prehled.md`, mapu Mozku. Je v ní, co
+     řešíš, kalendář na týden, rozhodnutí, lidé, projekty, zdraví a kde co je. Na jakoukoli
+     otázku se agent podívá nejdřív sem a pak jen do souboru, na který mapa odkazuje.
+   - Zdraví má vlastní `zdravi/prehled.md`: všechny dny v jedné tabulce a souhrn spočítaný
+     skriptem (za 70 dní asi 1 800 tokenů). Obnovuje se po každém stažení dat z náramku.
    - Nové téma začni v chatu příkazem `/new`. Starý rozhovor pak model nečte znovu.
 3. **Grafika je jen jedna:** při práci v Revitu, Twinmotionu nebo Enscape si model s nimi
    konkuruje. Ollama sama uvolní grafiku po 30 minutách klidu. Hned ji uvolníš tak, že Ollamu

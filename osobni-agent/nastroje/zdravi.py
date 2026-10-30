@@ -17,9 +17,12 @@ Příkazy:
                                               23.10. nebo RRRR-MM-DD (noc podle dne probuzení)
     agent-zdravi noci [--dni N] [--do D]      posledních N nocí (výchozí 14) po řádcích
                                               a nejdelší, nejkratší a průměr
-    agent-zdravi data [--dni N] [--do D]      všechny dny v jedné tabulce a souhrn: u každého
+    agent-zdravi data [--dni N] [--do D] [--ulozit]
+                                              všechny dny v jedné tabulce a souhrn: u každého
                                               ukazatele nejvíc, nejméně a průměry (celkem,
-                                              posledních 7 dní, předchozích 7 dní)
+                                              posledních 7 dní, předchozích 7 dní);
+                                              s --ulozit → zdravi/prehled.md (spouští ho
+                                              stahování dat po každém stažení)
     agent-zdravi tyden [--do RRRR-MM-DD]      týdenní rozbor a souvislosti s deníkem
                                               → zdravi/tyden-RRRR-Www.md
     agent-zdravi pokus --nazev TEXT --od D --do D [--srovnani-od D --srovnani-do D]
@@ -843,6 +846,31 @@ def cell(key: str, v: float | None) -> str:
     return cz(v, METRICS[key].decimals) + (" %" if key == "efektivita_pct" else "")
 
 
+def usable(data: Data, d: date, key: str) -> float | None:
+    """Hodnota do souhrnů: bez neúplných nocí a dnů s krátkým nošením."""
+    day = data.days.get(d)
+    if day is None:
+        return None
+    if key in NIGHT and not day.night_ok:
+        return None
+    if key in ACTIVITY and not day.activity_ok:
+        return None
+    return day.values.get(key)
+
+
+def week_line(data: Data, end: date) -> str:
+    """Jeden řádek: průměr posledních 7 dní a v závorce předchozích 7 dní."""
+    parts = []
+    for key, label in (("spanek_min", "spánek"), ("ln_hrv", "HRV"), ("tep_klidovy", "klidový tep"),
+                       ("kroky", "kroky")):
+        week = [v for i in range(7) if (v := usable(data, end - timedelta(days=i), key)) is not None]
+        before = [v for i in range(7, 14) if (v := usable(data, end - timedelta(days=i), key)) is not None]
+        if week:
+            parts.append(f"{label} {cell(key, mean(week))}" + (f" ({cell(key, mean(before))})" if before else ""))
+    return ("Posledních 7 dní (v závorce předchozích 7): " + ", ".join(parts) + "."
+            if parts else "Za posledních 7 dní nejsou data.")
+
+
 def report_data(data: Data, end: date, days: int | None = None) -> str:
     """Všechny dny z náramku v jedné tabulce a souhrn. Agent z ní odpoví na jakoukoli otázku
     k historii. Nejvyšší, nejnižší a průměry počítá skript, ne model."""
@@ -855,14 +883,6 @@ def report_data(data: Data, end: date, days: int | None = None) -> str:
     def short(d: date) -> str:
         return f"{WEEKDAYS[d.weekday()][:2]} {d.day}. {d.month}."
 
-    def usable(d: date, key: str) -> float | None:
-        day = data.days[d]
-        if key in NIGHT and not day.night_ok:
-            return None
-        if key in ACTIVITY and not day.activity_ok:
-            return None
-        return day.values.get(key)
-
     first, last = dates[-1], dates[0]
     out = [f"Data z náramku: {len(dates)} dní ({date_cz(first)} až {date_cz(last)}). Řádek = den probuzení, "
            "spánek je noc před ním, kroky a aktivní minuty jsou za ten den. * = neúplná noc.",
@@ -872,7 +892,7 @@ def report_data(data: Data, end: date, days: int | None = None) -> str:
         out.append(" | ".join([short(d) + mark] + [cell(k, data.value(d, k)) for k, *_ in TABLE]))
     out += ["", "Souhrn (spočítal skript, neúplné noci a dny s krátkým nošením nepočítá):"]
     for key, label, high, low in TABLE:
-        vals = [(d, v) for d in dates if (v := usable(d, key)) is not None]
+        vals = [(d, v) for d in dates if (v := usable(data, d, key)) is not None]
         if not vals:
             continue
         top, bottom = max(vals, key=lambda x: x[1]), min(vals, key=lambda x: x[1])
@@ -1152,6 +1172,7 @@ def main(argv: list[str] | None = None) -> int:
     p_data = sub.add_parser("data", help="všechny dny v jedné tabulce a souhrn")
     p_data.add_argument("--dni", type=int)
     p_data.add_argument("--do", dest="end", type=date.fromisoformat, default=date.today())
+    p_data.add_argument("--ulozit", action="store_true", help="uložit do zdravi/prehled.md")
     p_week = sub.add_parser("tyden", help="týdenní rozbor a souvislosti s deníkem")
     p_week.add_argument("--do", dest="end", type=date.fromisoformat, default=date.today())
     p_exp = sub.add_parser("pokus", help="vyhodnocení pokusu")
@@ -1170,7 +1191,15 @@ def main(argv: list[str] | None = None) -> int:
             print(report_night(data, past_day(args.den, date.today())), end="")
             return 0
         if args.cmd == "data":
-            print(report_data(data, args.end, args.dni), end="")
+            text = report_data(data, args.end, args.dni)
+            if not args.ulozit:
+                print(text, end="")
+                return 0
+            path = data.folder / "prehled.md"
+            write(path, f"# Zdraví: všechny dny\n\nAktualizováno {datetime.now():%Y-%m-%d %H:%M} skriptem "
+                        f"agent-zdravi po stažení dat z náramku.\n\n{text}")
+            print(f"Uloženo: {path}")
+            print(week_line(data, args.end))
             return 0
         if args.cmd == "noci":
             print(report_nights(data, args.end, max(1, min(args.dni, 90))), end="")

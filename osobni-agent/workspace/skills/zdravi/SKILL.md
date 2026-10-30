@@ -1,6 +1,6 @@
 ---
 name: zdravi
-description: Spánek, zotavení a aktivita z náramku Fitbit Air a souvislosti s deníkem. Na jakoukoli otázku k historii („kdy jsem spal nejdéle", „jak spím poslední dobu") spusť rovnou agent-zdravi data – všechny dny a souhrn, pak odpověz po srovnání. Použij, když se ptám na spánek, únavu, tep, kroky nebo pokus, a při ranním přehledu a týdenním plánu.
+description: Spánek, zotavení a aktivita z náramku Fitbit Air a souvislosti s deníkem. Na jakoukoli otázku k historii („kdy jsem spal nejdéle", „jak spím poslední dobu") přečti zdravi/prehled.md – všechny dny a souhrn – a odpověz po srovnání. Použij, když se ptám na spánek, únavu, tep, kroky nebo pokus, a při ranním přehledu a týdenním plánu.
 ---
 
 # Zdraví z náramku
@@ -9,10 +9,11 @@ Přesná pravidla a zdroje jsou v `skills/zdravi/METODIKA.md`. Drž se jich.
 
 1. **Čísla jen ze skriptu.** Sám nepočítej nic, ani průměr, rozdíl nebo procento. Spusť:
    - na jakoukoli otázku k historii („kdy jsem spal nejdéle", „jak jsem spal před týdnem",
-     „jak spím poslední dobu", „srovnej tenhle a minulý týden") jen `agent-zdravi data`.
-     Vypíše všechny dny v jedné tabulce a souhrn: u každého ukazatele nejvíc a nejméně i s dnem
-     a průměry celkem, za posledních 7 dní a předchozích 7 dní. Projdi tabulku, srovnej
-     a odpověz. Na „nejvíc", „nejméně" a průměry ber čísla ze souhrnu. Nic dalšího nečti,
+     „jak spím poslední dobu", „srovnej tenhle a minulý týden") přečti `zdravi/prehled.md`.
+     Jsou v něm všechny dny v jedné tabulce a souhrn: u každého ukazatele nejvíc a nejméně
+     i s dnem a průměry celkem, za posledních 7 dní a předchozích 7 dní. Obnovuje se po
+     každém stažení dat. Když chybí, spusť `agent-zdravi data`, vypíše totéž. Projdi tabulku,
+     srovnej a odpověz. Na „nejvíc", „nejméně" a průměry ber čísla ze souhrnu,
    - ráno `agent-zdravi den` (když už je hotový `zdravi/RRRR-MM-DD.md`, stačí ho přečíst),
    - v neděli `agent-zdravi tyden`,
    - na pokus `agent-zdravi pokus --nazev "…" --od RRRR-MM-DD --do RRRR-MM-DD --hlavni spanek_min`,

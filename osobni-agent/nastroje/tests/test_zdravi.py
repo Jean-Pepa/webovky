@@ -324,6 +324,14 @@ class CommandTests(unittest.TestCase):
         code, _, err = self.run_cli("data", "--do", "2025-01-01")
         self.assertEqual(code, 1)
         self.assertIn("nemám žádná data", err)
+        code, out2, _ = self.run_cli("data", "--do", END.isoformat(), "--ulozit")
+        self.assertEqual(code, 0)
+        saved = (self.root / "zdravi" / "prehled.md").read_text(encoding="utf-8")
+        self.assertTrue(saved.startswith("# Zdraví: všechny dny\n\nAktualizováno "))
+        self.assertIn(out, saved)  # stejná tabulka jako na obrazovce
+        self.assertIn("Uloženo:", out2)
+        self.assertRegex(out2.splitlines()[-1], r"^Posledních 7 dní \(v závorce předchozích 7\): spánek \d+:\d\d "
+                                                r"\(\d+:\d\d\), HRV \d+ ms \(\d+ ms\), klidový tep \d+ \(\d+\), kroky ")
 
     def test_nights_overview_finds_longest(self):
         build(self.root)

@@ -274,6 +274,17 @@ else:
 fi
 
 if [[ -n "$workspace" && -f "$workspace/AGENTS.md" ]]; then
+  # Mapu Mozku přepisuje každou noc noční úklid. Stará mapa = úklid neběží.
+  if [[ -f "$workspace/prehled.md" ]] && grep -q "^Aktualizováno" "$workspace/prehled.md"; then
+    stari=$(( ($(date +%s) - $(stat -c %Y "$workspace/prehled.md")) / 86400 ))
+    if (( stari > 1 )); then
+      pozor "mapa Mozku (prehled.md) je $stari dní stará, noční úklid asi neběží (openclaw automations list)"
+    else
+      ok "mapa Mozku (prehled.md) je z posledního nočního úklidu"
+    fi
+  else
+    nevim "mapa Mozku (prehled.md) vznikne po prvním nočním úklidu ve 3:00 nebo po zprávě „ukliď paměť\""
+  fi
   # HEARTBEAT.md OpenClaw od verze 2026.10 nečte, pokyny kontroly jsou v jeho databázi.
   if [[ -f "$workspace/HEARTBEAT.md" ]]; then
     pozor "HEARTBEAT.md už OpenClaw nečte, smaž ho: sudo chattr -i $workspace/HEARTBEAT.md && rm $workspace/HEARTBEAT.md"

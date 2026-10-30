@@ -5,7 +5,8 @@ description: Ranní přehled dne na požádání – spánek, co dnes udělat, t
 
 # Ranní přehled
 
-1. Projdi `ukoly.md`: dnešní a zítřejší termíny, úkoly po termínu.
+1. Začni z `prehled.md` (mapa z nočního úklidu). Pak projdi `ukoly.md`: dnešní a zítřejší
+   termíny, úkoly po termínu.
 2. Projdi včerejší a dnešní deník: otevřené věci, sliby, sekce „Čeká na tebe" a „Z nočního
    přemýšlení" a maily „Do přehledu".
 3. **Maily** jen tehdy, když je pošta nastavená: spusť dovednost `hlidani-mailu`. Když

@@ -318,6 +318,7 @@ class FitbitTests(unittest.TestCase):
         timer = (self.root / "units/agent-fitbit.timer").read_text(encoding="utf-8")
         self.assertIn("ExecStart=%h/.local/bin/agent-fitbit stahni", service)
         self.assertIn("ExecStartPost=-%h/.local/bin/agent-zdravi den", service)
+        self.assertIn("ExecStartPost=-%h/.local/bin/agent-zdravi data --ulozit", service)
         self.assertIn("OnCalendar=*-*-* 05..23:15:00", timer)
         self.assertEqual(calls[-1], ["systemctl", "--user", "enable", "--now", "agent-fitbit.timer"])
 
