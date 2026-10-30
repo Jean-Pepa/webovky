@@ -770,19 +770,26 @@ Když spí nebo je vypnutý, agent neodpoví a pravidelné kontroly počkají.
      QR kód z `openclaw qr --limited`. Oficiální aplikace se připojí sama.
    - Kdyby čekala na schválení, schval ji v notebooku: `openclaw devices list`, pak
      `openclaw devices approve <requestId>`.
-4. **Oprávnění aplikace:** povol mikrofon a oznámení. Kameru, polohu, Zdraví a fotky
+4. **Čeština pro mluvení a diktování.** Jazyk rozpoznávání řeči v aplikaci určuje brána,
+   jinak se použije jazyk iPhonu. V Ubuntu:
+   ```bash
+   openclaw config set talk.speechLocale cs-CZ
+   ```
+   Aby ti iPhone odpovědi četl česky, stáhni si v Nastavení → Zpřístupnění → Předčítaný
+   obsah → Hlasy český hlas.
+5. **Oprávnění aplikace:** povol mikrofon a oznámení. Kameru, polohu, Zdraví a fotky
    nepovoluj.
-5. **Jak mluvit:**
+6. **Jak mluvit:**
    - **Hlasová zpráva** (doporučeno): v chatu otevři nabídku mikrofonu a nahraj zprávu.
      Nahrávka jde šifrovaně do notebooku a přepíše ji tam Whisper.
    - **Diktování** (ťuknutí na mikrofon) a **Talk** (živý rozhovor): řeč rozpoznává iPhone
      a čeština přitom může jít přes servery Applu. Na soukromé věci používej hlasovou zprávu.
    - **Odpověď nahlas:** podrž zprávu a zvol Listen. Přečte ji hlas iPhonu, cloudové hlasy
      jsou v kroku 6b vypnuté.
-6. **Schvalování:** když agent chce poslat dotaz ven nebo uložit koncept mailu, objeví se
+7. **Schvalování:** když agent chce poslat dotaz ven nebo uložit koncept mailu, objeví se
    v aplikaci v části **Approvals**. Zkontroluj přesný příkaz a povol ho jen jednou. Trvalé
    povolení u odesílání nepoužívej.
-7. **Stop:** napiš „STOP" a agent přestane. Úplně ho vypneš v notebooku příkazem
+8. **Stop:** napiš „STOP" a agent přestane. Úplně ho vypneš v notebooku příkazem
    `openclaw gateway stop`.
 
 **Co jde přes cizí servery:**
