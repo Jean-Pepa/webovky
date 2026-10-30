@@ -28,7 +28,6 @@ Tvůj notebook: ASUS Zenbook Pro 16X (UX7602BZ), Intel i9-13905H, **RTX 4080 s 1
 
 | Část | Co použijeme | Proč |
 |---|---|---|
-| Mozek: rychlý model | **Gemma 4 E4B** (~6,6 GB) | Celý se vejde na grafiku a odpoví hned. Jen na krátké otázky, nástroje nepoužívá spolehlivě. |
 | Mozek: hlavní model (výchozí) | **Ollama + Gemma 4 26B-A4B** (4bitová verze, ~18 GB) | Nejlepší poměr chytrosti a rychlosti pro 12 GB grafiky. Je to model typu MoE, většina se vejde na grafiku a zbytek do RAM. Dobře zvládá češtinu. |
 | Mozek: hluboký model | **ThinkingCap-Qwen3.6-27B** (BottleCap AI) | Na složité rozbory a noční úlohy. Pomalejší, ale přemýšlí kratčeji než původní Qwen. |
 | Mozek: nejsilnější | **Claude Opus 5.5** (cloud) | Jen přes `agent-resers` a jen po tvém schválení: internet a nejtěžší otázky |
@@ -286,8 +285,8 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
      OpenClaw přímo do Windows, bez zámků z kroku 6b, a obsadil by port 18789, který potřebuje
      agent v Ubuntu.
    - **Nastavení Ollamy** (ikona vlevo nahoře → Settings): cloud vypni, délku kontextu dej
-     na 32k (stejně jako níž a jako výchozí strop OpenClaw) a volbu, která Ollamu zpřístupní
-     v síti, nech vypnutou. Přihlašovat se nemusíš.
+     na 32k (stejně jako níž; platí pro `ollama run`, agentovi velikost okna posílá OpenClaw
+     sám) a volbu, která Ollamu zpřístupní v síti, nech vypnutou. Přihlašovat se nemusíš.
 2. **Nastav výkon** (v PowerShellu, jednou):
    ```powershell
    setx OLLAMA_FLASH_ATTENTION 1
@@ -303,7 +302,7 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
    |---|---|
    | `FLASH_ATTENTION` | rychlejší výpočet a méně paměti |
    | `KV_CACHE_TYPE q8_0` | pracovní paměť modelu zabere polovinu místa, víc se vejde na grafiku |
-   | `CONTEXT_LENGTH 32768` | kolik textu model „drží v hlavě" najednou (dlouhodobá paměť je v souborech) |
+   | `CONTEXT_LENGTH 32768` | kolik textu model „drží v hlavě" najednou při `ollama run`. Agentovi okno nastavuje OpenClaw (krok 6b, hlavní model 64k). Dlouhodobá paměť je v souborech |
    | `KEEP_ALIVE 30m` | model zůstane načtený a odpovídá hned, po 30 minutách klidu uvolní grafiku třeba pro Revit |
    | `MAX_LOADED_MODELS 2` | vedle jazykového modelu zůstane načtený i malý model pro hledání v paměti, takže se při každé zprávě nemusí střídat |
    | `NO_CLOUD 1` | Ollama nepoužije cloudové modely ani služby, všechno zůstane v notebooku |
@@ -333,39 +332,31 @@ Notebook měj celou dobu v zásuvce, aktualizace BIOSu se bez nabíječky nespus
 
    Když je to pomalé, viz krok 13.
 
-### Krok 4b: Čtyři úrovně – rychlý, hlavní, hluboký a nejsilnější
+### Krok 4b: Tři úrovně – hlavní, hluboký a nejsilnější
 
 | Role | Model | Velikost (4bitově) | Kde běží | Rychlost | Na co |
 |---|---|---|---|---|---|
-| **Rychlý** | Gemma 4 E4B (`gemma4:e4b`) | 6,6 GB | celý na grafice | 74 tokenů/s, čte ~4 000 tokenů/s (změřeno) | krátké otázky bez práce se soubory |
 | **Hlavní** (výchozí) | Gemma 4 26B-A4B (`gemma4:26b`) | 18 GB | 77 % grafika, zbytek RAM | 32 tokenů/s, čte ~700 tokenů/s (změřeno) | všechno s nástroji: deník, maily, plánování, pravidelné kontroly |
 | **Hluboký** | ThinkingCap-Qwen3.6-27B (BottleCap AI) | 16 GB + 0,9 GB na obrázky | grafika + RAM | 4,2 tokenu/s, načtení 22 s (změřeno) | noční úklid paměti, týdenní plán, složité rozbory; na běžný chat je pomalý |
 | **Nejsilnější** | Claude Opus 5.5 přes `agent-resers` | cloud | jen po tvém schválení | – | internet a nejtěžší otázky |
 
-Rychlosti všech tří modelů jsou změřené na tomhle notebooku v zásuvce (RTX 4080 Laptop,
-ovladač 617, `ollama run <model> --verbose`). Hluboký model při zkoušce přemýšlel anglicky
+Rychlosti modelů jsou změřené na tomhle notebooku v zásuvce (RTX 4080 Laptop, ovladač 617,
+`ollama run <model> --verbose`, okno 32k). Hluboký model při zkoušce přemýšlel anglicky
 a odpověděl česky, s jednou drobnou chybou v češtině.
 Názvy štítků Gemmy ověř na ollama.com/library/gemma4.
-Pokud tam je i `gemma4:12b`, je to chytřejší rychlá volba (~8 GB, pořád celá na grafice,
-odhadem 35–45 tokenů/s).
 
-**Proč je výchozí hlavní model.** Rychlý model při zkoušce na tomhle notebooku odpověděl
-„zapsáno", ale nástroj na zápis vůbec nespustil. Hlavní model nástroje používá spolehlivě
-a i tak odpovídá za pár sekund. Na něm běží i pravidelné kontroly.
+**Proč nemáme rychlý model.** Malá Gemma 4 E4B při zkoušce na tomhle notebooku odpověděla
+„zapsáno", ale nástroj na zápis vůbec nespustila. Hlavní model nástroje používá spolehlivě
+a i tak odpovídá za pár sekund, takže běží na všechno, i na pravidelné kontroly. Když malou
+Gemmu máš staženou, smaž ji v PowerShellu: `ollama rm gemma4:e4b`.
 - Cena: načtený hlavní model zabírá zhruba 11 z 12 GB grafiky. Před renderem v D5, Lumionu
   nebo Revitu proto Ollamu ukonči (ikona u hodin → Quit) a po renderu ji zase spusť
   (krok 14).
-- Rychlý model přepneš příkazem `/model rychly`, hodí se na krátké otázky bez práce
-  se soubory.
 
-1. **Rychlý model:**
-   ```powershell
-   ollama pull gemma4:e4b
-   ```
-2. **Hlavní model** máš stažený z bodu 3. Když jsi použil verzi z Hugging Face, dej jí
+1. **Hlavní model** máš stažený z bodu 3. Když jsi použil verzi z Hugging Face, dej jí
    kratší jméno, ať sedí na zbytek návodu:
    `ollama cp huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M gemma4:26b`.
-3. **ThinkingCap (hluboký):** stáhni ho (asi 17 GB), dej mu krátké jméno a zkontroluj ho.
+2. **ThinkingCap (hluboký):** stáhni ho (asi 17 GB), dej mu krátké jméno a zkontroluj ho.
    ```powershell
    ollama pull huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M
    ollama cp huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B-GGUF:Q4_K_M thinkingcap
@@ -384,16 +375,13 @@ a i tak odpovídá za pár sekund. Na něm běží i pravidelné kontroly.
      řádek začínající `ssh-ed25519`. Pak stahování zopakuj.
    - Rychlost změř v zásuvce: `ollama run thinkingcap --verbose`.
    - Přezdívku `hluboky` mu dáš v OpenClaw v kroku 6.
-4. **`OLLAMA_MAX_LOADED_MODELS` nech na 2.** Agent při každé zprávě hledá v paměti přes
+3. **`OLLAMA_MAX_LOADED_MODELS` nech na 2.** Agent při každé zprávě hledá v paměti přes
    `embeddinggemma` (621 MB). S hodnotou 1 by ten malý model pokaždé vytlačil jazykový model
-   z grafiky a ten by se musel znovu načítat.
-   - Dva velké modely se do 12 GB nevejdou. Když přepneš na hlavní nebo hluboký model,
-     Ollama rychlý model z grafiky uvolní. Přepnutí trvá 5–15 sekund, než se velký model
-     načte z disku. Rychlý model se načte za pár sekund.
-   - Pravidelná kontrola na rychlém modelu vytlačí velký model z grafiky. Při další otázce
-     se pak velký model chvíli načítá.
-5. **Na disku** zaberou tři lokální modely dohromady zhruba 40–45 GB, to se do plánu
-   z kroku 1 vejde. Nejsilnější úroveň je v cloudu, na disku nic nezabírá.
+   z grafiky a ten by se musel znovu načítat. Hlavní a hluboký model se do 12 GB spolu
+   nevejdou. Když přepneš z jednoho na druhý, Ollama první z grafiky uvolní a druhý se 5–15
+   sekund načítá z disku.
+4. **Na disku** zaberou lokální modely dohromady zhruba 36 GB, to se do plánu z kroku 1
+   vejde. Nejsilnější úroveň je v cloudu, na disku nic nezabírá.
 
 Jak modely přepínat v OpenClaw nastavíš v kroku 6.
 
@@ -488,10 +476,10 @@ proto bránu (gateway) poprvé spustíme až v kroku 6b, už se zámky.
    - zakáže agentovi plánovat si úlohy a spouštět aktualizaci OpenClaw,
    - vypne noční „snění" (dreaming), kterým by OpenClaw každou noc sám přepisoval
      `MEMORY.md`. Úklid paměti spouštíš ty,
-   - přezdívky modelů `rychly` a `hlavni` ze souboru `zamky/modely.json5`. Rychlý model
-     nepřemýšlí, aby odpovídal hned.
+   - přezdívky modelů `hlavni` a `hluboky` ze souboru `zamky/modely.json5` a hlavnímu modelu
+     okno 64k (skript `zamky/nastav-modely.sh`).
 5. **V chatu pak přepínáš:**
-   - `/model hlavni` (nebo `/model hluboky`, až ho stáhneš) platí jen pro danou konverzaci,
+   - `/model hluboky` nebo `/model hlavni` platí jen pro danou konverzaci,
    - `/model default` vrátí hlavní model,
    - `/model` ukáže, který model právě běží,
    - `/think` zapne nebo vypne přemýšlení modelu.
@@ -503,13 +491,9 @@ proto bránu (gateway) poprvé spustíme až v kroku 6b, už se zámky.
      `openclaw automations edit <id> --model hluboky --timeout-seconds 7200`.
      Místo `<id>` vlož dlouhé ID z prvního sloupce výpisu `openclaw automations list`.
    - **Týdenní plán** si vyžádej zprávou „naplánuj mi týden", nejlépe po `/model hluboky`.
-   - **Hluboký model** přidáš do přezdívek, až ho stáhneš (krok 4b). V Ubuntu:
-     ```bash
-     openclaw models aliases add hluboky ollama/thinkingcap:latest
-     openclaw models list --provider ollama --refresh
-     ```
-     U `ollama/thinkingcap:latest` musí být štítek `alias:hluboky`. Celý název i s `:latest`
-     je nutný, jinak OpenClaw přezdívku k modelu nepřiřadí.
+   - **Přezdívky a okno** nastaví skript v kroku 6b. Ve výpisu `openclaw models list
+     --provider ollama` pak musí být u `ollama/thinkingcap:latest` štítek `alias:hluboky`
+     a u `ollama/gemma4:26b` ve sloupci Ctx `66k`.
 
 > Když agent nepozná změny, které uděláš v Obsidianu, nech ho znovu načíst paměť
 > (`openclaw memory --help`).
@@ -551,7 +535,7 @@ rm -rf /tmp/oa && mkdir -p /tmp/oa && curl -fsSL https://codeload.github.com/jea
    openclaw config patch --file ~/osobni-agent/zamky/openclaw-zamceni.json5 --dry-run
    openclaw config patch --file ~/osobni-agent/zamky/openclaw-zamceni.json5
    openclaw approvals set --file ~/osobni-agent/zamky/exec-approvals.json5
-   openclaw config patch --file ~/osobni-agent/zamky/modely.json5
+   bash ~/osobni-agent/zamky/nastav-modely.sh
    openclaw config validate
    ```
    Poslední příkaz musí hlásit platné nastavení. Když budeš chtít agentovi povolit další příkaz
@@ -846,8 +830,15 @@ nepoužívej, zprávy v něm nejsou šifrované end-to-end.
 ## Krok 13: Výkon na maximum (až všechno běží)
 
 1. **Měř:** `ollama run <model> --verbose` → `eval rate`, `ollama ps` → rozdělení mezi grafiku a RAM.
-2. **Kontext:** když je model pomalý nebo nevejde, sniž `OLLAMA_CONTEXT_LENGTH` na `16384`.
-   Když potřebuješ delší rozhovory a rychlost stačí, zkus `65536`.
+2. **Okno hlavního modelu** (kontext) je 64k. Změníš ho skriptem, Ollamu nastavovat nemusíš:
+   `bash ~/osobni-agent/zamky/nastav-modely.sh 131072` (128k) nebo `32768` (zpátky na 32k).
+   Po změně změř:
+   - `ollama ps` po první zprávě agentovi: sloupec PROCESSOR ukáže, kolik modelu je na
+     grafice. Čím víc ho je na procesoru, tím pomaleji píše.
+   - `ollama run gemma4:26b --verbose`, v něm `/set parameter num_ctx 65536` (nebo velikost,
+     kterou zkoušíš) a pak otázka. Psaní (`eval rate`) by mělo zůstat aspoň na 15–20 tokenech/s.
+   - Plné okno 64k model čte zhruba minutu a půl (čte ~700 tokenů/s), 128k tři minuty.
+     Proto víc než 128k na tomhle notebooku nedává smysl.
 3. **Grafika je jen jedna:** při práci v Revitu, Twinmotionu nebo Enscape si model s nimi
    konkuruje. Ollama sama uvolní grafiku po 30 minutách klidu. Hned ji uvolníš tak, že Ollamu
    ukončíš ikonou u hodin.
@@ -1316,6 +1307,9 @@ událost dvakrát nezapíše. Datum a čas počítá skript, ne model, takže �
     (`automations scratch`) a zákaz plánování pro agenta prošly nanečisto v OpenClaw
     2026.10.9 se spuštěnou bránou (`automations add`,
     `automations list`, `automations edit --model hluboky --timeout-seconds 7200`).
+  - Okno hlavního modelu (`nastav-modely.sh`) prošlo v OpenClaw 2026.10.9 s napodobenou
+    Ollamou po stejném nastavení jako v kroku 6. OpenClaw pak hlavnímu modelu posílá okno
+    65 536 tokenů a hlubokému dál 32 768. Druhé spuštění skriptu nic nezmění.
   - `kontrola-pc.ps1` proběhl na tvém notebooku. Kontrolu WSL a OneDrivu jsem pak
     vyzkoušel v PowerShellu s napodobeným WSL.
 - **Netestováno naživo:**

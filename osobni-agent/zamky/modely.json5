@@ -1,18 +1,18 @@
-// Modely agenta: výchozí hlavní model a přezdívky pro přepínání v chatu (/model rychly).
-// Použití (v Ubuntu): openclaw config patch --file ~/osobni-agent/zamky/modely.json5
-// Výchozí je hlavní model, protože rychlý při zkoušce tvrdil, že zapsal soubor, a nástroj
-// vůbec nespustil. Rychlý model nepřemýšlí, aby odpovídal hned. Hlavnímu nech výchozí
-// přemýšlení, v chatu ho změníš příkazem /think.
-// Hluboký model přidáš, až ho stáhneš (krok 4b), jedním příkazem v Ubuntu:
-//   openclaw models aliases add hluboky ollama/thinkingcap:latest
-// Celý název i s :latest je nutný, jinak OpenClaw přezdívku k modelu nepřiřadí.
+// Modely agenta: výchozí hlavní model a přezdívky pro přepínání v chatu (/model hluboky).
+// Použití (v Ubuntu): bash ~/osobni-agent/zamky/nastav-modely.sh
+// Skript nahraje tenhle soubor a hlavnímu modelu nastaví okno (výchozí 64k).
+// Hlavnímu nech výchozí přemýšlení, v chatu ho změníš příkazem /think.
+// Celý název hlubokého modelu i s :latest je nutný, jinak OpenClaw přezdívku nepřiřadí.
+// Rychlý model gemma4:e4b nepoužíváme: při zkoušce tvrdil, že zapsal soubor, a nástroj vůbec
+// nespustil. Hodnota null ho z nastavení odebere.
 {
   agents: {
     defaults: {
       model: { primary: "ollama/gemma4:26b" },
       models: {
-        "ollama/gemma4:e4b": { alias: "rychly", params: { thinking: "off" } },
         "ollama/gemma4:26b": { alias: "hlavni" },
+        "ollama/thinkingcap:latest": { alias: "hluboky" },
+        "ollama/gemma4:e4b": null,
       },
     },
   },
