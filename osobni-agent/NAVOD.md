@@ -1208,7 +1208,7 @@ bude potřeba něco doladit.
 ## Co je ověřené a co si ověř sám
 
 - **Otestováno:**
-  - Skripty prošly 70 automatickými testy:
+  - Skripty prošly 71 automatickými testy:
     - `mail.py` a `resers.py`: falešný poštovní server, odeslané maily bez citací, složky
       s diakritikou, filtr osobních údajů, schvalování.
     - `jednani.py` a `prepis.py`: párování slov s mluvčími, jména, výstup, přechod z grafiky
@@ -1217,7 +1217,8 @@ bude potřeba něco doladit.
       spánek, HRV a tep. U kávy bez vlivu žádnou průkaznou souvislost nehlásil. Testy
       ověřují i normál, vyřazení chybných hodnot, dny nemoci, upozornění a pokusy.
     - `fitbit.py`: přihlášení přes prohlížeč, obnovení přihlášení, převod spánku, HRV, tepu,
-      SpO2, dechu, teploty, kroků a aktivních minut, sloučení se starými daty a srozumitelné
+      SpO2, dechu, teploty, kroků a aktivních minut, sloučení se starými daty, pokračování
+      po chybě jednoho druhu dat a srozumitelné
       chyby. Proti falešnému serveru postavenému podle oficiálního popisu Google Health API
       (discovery dokument v4 z 28. 10. 2026). Se skutečným účtem Google to vyzkoušíš v kroku 18.
   - Volání Clauda prošlo zkušebně proti testovacímu serveru s oficiální knihovnou Anthropic.

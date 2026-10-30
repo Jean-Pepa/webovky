@@ -60,6 +60,10 @@ class FitbitError(Exception):
     """Chyba, kterou umíme uživateli srozumitelně vysvětlit."""
 
 
+class DataTypeError(FitbitError):
+    """Jeden druh dat se nepodařilo stáhnout. Ostatní se stáhnou dál."""
+
+
 class ApiError(Exception):
     def __init__(self, code: int, detail: str):
         super().__init__(f"HTTP {code}: {detail}")
@@ -271,6 +275,8 @@ class Session:
                                       f"agent-fitbit prihlasit. Podrobnosti: {exc.detail[:150]}") from None
                 if exc.code == 429:
                     raise FitbitError("Google hlásí moc dotazů najednou. Stáhne se to při dalším spuštění.") from None
+                if exc.code in (400, 404):
+                    raise DataTypeError(f"HTTP {exc.code}: {exc.detail[:150]}") from None
                 raise FitbitError(f"Google vrátil chybu: {exc}") from None
         raise FitbitError("Google přihlášení opakovaně odmítl. Spusť: agent-fitbit prihlasit")
 
@@ -422,30 +428,47 @@ def zone_minutes_value(point: dict) -> int | None:
     return sum(integer(azm.get(k)) or 0 for k in ("sumInFatBurnHeartZone", "sumInCardioHeartZone", "sumInPeakHeartZone"))
 
 
-def fetch(session: Session, start: date, end: date) -> dict[date, dict]:
-    """Stáhne dny start..end a vrátí je ve formátu zdravi/data (viz skills/zdravi/METODIKA.md)."""
+def fetch(session: Session, start: date, end: date, problems: list[str] | None = None) -> dict[date, dict]:
+    """Stáhne dny start..end a vrátí je ve formátu zdravi/data (viz skills/zdravi/METODIKA.md).
+    Když jeden druh dat nejde stáhnout, zapíše to do problems a pokračuje dalším."""
     days: dict[date, dict] = {}
+    problems = [] if problems is None else problems
 
     def put(day: date, key: str, value) -> None:
         if start <= day <= end and value is not None:
             days.setdefault(day, {})[key] = value
 
-    sleep = sleep_by_day(list_points(session, "sleep", date_filter("sleep.interval.civil_end_time", start, end),
-                                     page_size=25))
-    for day, record in sleep.items():
-        put(day, "spanek", {k: v for k, v in record.items() if v is not None})
-    for data_type, (field, value_key, target) in DAILY.items():
-        points = list_points(session, data_type, date_filter(f"{data_type.replace('-', '_')}.date", start, end))
-        for day, value in daily_values(points, field, value_key).items():
+    def daily(data_type: str) -> list[dict]:
+        return list_points(session, data_type, date_filter(f"{data_type.replace('-', '_')}.date", start, end))
+
+    def sleep() -> None:
+        found = list_points(session, "sleep", date_filter("sleep.interval.civil_end_time", start, end), page_size=25)
+        for day, record in sleep_by_day(found).items():
+            put(day, "spanek", {k: v for k, v in record.items() if v is not None})
+
+    def daily_metric(data_type: str) -> None:
+        field, value_key, target = DAILY[data_type]
+        for day, value in daily_values(daily(data_type), field, value_key).items():
             put(day, target, value)
-    points = list_points(session, TEMPERATURE, date_filter(f"{TEMPERATURE.replace('-', '_')}.date", start, end))
-    for day, value in temperature_by_day(points).items():
-        put(day, "teplota_odchylka_c", value)
-    for day, value in rollup_by_day(daily_rollup(session, "steps", start, end), steps_value).items():
-        put(day, "kroky", value)
-    for day, value in rollup_by_day(daily_rollup(session, "active-zone-minutes", start, end),
-                                    zone_minutes_value).items():
-        put(day, "aktivni_min", value)
+
+    def temperature() -> None:
+        for day, value in temperature_by_day(daily(TEMPERATURE)).items():
+            put(day, "teplota_odchylka_c", value)
+
+    def rollup(data_type: str, target: str, extract) -> None:
+        for day, value in rollup_by_day(daily_rollup(session, data_type, start, end), extract).items():
+            put(day, target, value)
+
+    jobs = [("sleep", sleep)]
+    jobs += [(data_type, lambda data_type=data_type: daily_metric(data_type)) for data_type in DAILY]
+    jobs += [(TEMPERATURE, temperature),
+             ("steps", lambda: rollup("steps", "kroky", steps_value)),
+             ("active-zone-minutes", lambda: rollup("active-zone-minutes", "aktivni_min", zone_minutes_value))]
+    for data_type, job in jobs:
+        try:
+            job()
+        except DataTypeError as exc:
+            problems.append(f"{data_type}: {exc}")
     return days
 
 
@@ -494,12 +517,15 @@ def cmd_download(days_back: int, mozek: Path) -> int:
     session = Session()
     end = date.today()
     start = end - timedelta(days=max(days_back, 1) - 1)
-    days = fetch(session, start, end)
+    problems: list[str] = []
+    days = fetch(session, start, end, problems)
     written = save_days(days, mozek)
     nights = sum(1 for v in days.values() if "spanek" in v)
     print(f"Staženo {start.isoformat()} až {end.isoformat()}: {len(written)} dní s daty, z toho {nights} nocí. "
           f"Uloženo do {mozek / 'zdravi' / 'data'}.")
-    return 0
+    for problem in problems:
+        print(f"Nestaženo {problem}", file=sys.stderr)
+    return 1 if problems and not written else 0
 
 
 def cmd_structure() -> int:

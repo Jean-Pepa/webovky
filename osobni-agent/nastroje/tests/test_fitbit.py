@@ -56,6 +56,7 @@ class FakeGoogle(http.server.BaseHTTPRequestHandler):
     first_api_401 = False
     refresh_fails = False
     api_status = 200
+    missing = None
 
     def log_message(self, *args):
         pass
@@ -112,6 +113,8 @@ class FakeGoogle(http.server.BaseHTTPRequestHandler):
         if not self.api_ok():
             return
         data_type = url.path.split("/dataTypes/")[1].split("/")[0]
+        if data_type == FakeGoogle.missing:
+            return self.reply(404, {"error": "not found"})
         d29, d30 = date(2026, 10, 29), date(2026, 10, 30)
         if data_type == "sleep":
             if query.get("pageToken") != "p2":
@@ -245,6 +248,19 @@ class FitbitTests(unittest.TestCase):
         self.assertEqual(merged["tep_klidovy"], 55)
         self.assertEqual(merged["spanek"], {"spanek_min": 410, "latence_min": 9})
         self.assertEqual(merged["zdroj"], "google-health")
+
+    def test_one_missing_data_type_does_not_stop_the_rest(self):
+        self.save_token(expires_at=10**12)
+        FakeGoogle.missing = "daily-sleep-temperature-derivations"
+        problems = []
+        try:
+            days = fitbit.fetch(fitbit.Session(), date(2026, 10, 28), TODAY, problems)
+        finally:
+            FakeGoogle.missing = None
+        self.assertNotIn("teplota_odchylka_c", days[TODAY])
+        self.assertEqual(days[TODAY]["tep_klidovy"], 54)
+        self.assertEqual(len(problems), 1)
+        self.assertTrue(problems[0].startswith("daily-sleep-temperature-derivations: HTTP 404"))
 
     def test_expired_login_explains_what_to_do(self):
         self.save_token()
