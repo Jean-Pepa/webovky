@@ -60,7 +60,7 @@ Co balíček obsahuje:
 |---|---|
 | `windows/` | `kontrola-pc.ps1` (kontrola disku a výkonu, nic nemaže), `wslconfig.txt`, `uklid-plochy.ps1` (roztřídí plochu do složek, jde vrátit) a `mapa-pocitace.ps1` (přehled projektů a práce pro digitální kopii, jen názvy a data) |
 | `wsl/` | `instaluj-nastroje.sh` (instalace skriptů ve WSL) a `zaloha-mozku.sh` (noční záloha Mozku) |
-| `zamky/` | zamčená konfigurace OpenClaw, seznam povolených příkazů a kontrolní skript (krok 6b) |
+| `zamky/` | zamčená konfigurace OpenClaw, seznam povolených příkazů, pokyny pravidelné kontroly (`kontrola.md`) a kontrolní skript (krok 6b) |
 | `nastroje/` | `mail.py`, `resers.py`, `prepis.py`, `jednani.py` a testy |
 | `workspace/` | šablony paměti a pravidel (`USER.md`, `SOUL.md`, `AGENTS.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md`, `lide/`), tvoje digitální kopie v `ja/` s otázkami k rozhovoru a 15 dovedností v `skills/` |
 | `workspace/podklady/` | osnovy podle vyhlášky č. 131/2024 Sb., šablony textů ke studii a projektu, rešerše pozemku a zápisu z jednání, pravidla stylu, místo pro tvoje vzory a pro územní plány obcí (`obce/`) |
@@ -482,8 +482,9 @@ proto bránu (gateway) poprvé spustíme až v kroku 6b, už se zámky.
 4. **Krok 6b pak nastaví:**
    - hledání v paměti jen v notebooku přes `embeddinggemma`. Výchozí poskytovatel je jinak
      OpenAI a tvoje poznámky by šly do cloudu,
-   - vypne pravidelnou kontrolu co 30 minut. Sám od sebe poběží jen noční úklid paměti
-     a ranní přehled si vyžádáš zprávou,
+   - pravidelnou kontrolu každých 30 minut od 6:00 do 23:00. Hlídá termíny v úkolech
+     a nové závazky v deníku a zapisuje je do deníku pod „Čeká na tebe". Ranní přehled si
+     vyžádáš zprávou,
    - zakáže agentovi plánovat si úlohy a spouštět aktualizaci OpenClaw,
    - vypne noční „snění" (dreaming), kterým by OpenClaw každou noc sám přepisoval
      `MEMORY.md`. Úklid paměti spouštíš ty,
@@ -587,10 +588,15 @@ rm -rf /tmp/oa && mkdir -p /tmp/oa && curl -fsSL https://codeload.github.com/jea
    ```
    Příkaz `automations add` spusť jen jednou, každé spuštění založí další úlohu. Úlohu navíc
    smažeš příkazem `openclaw automations rm <id>`.
-   Pravidelná kontrola co 30 minut je vypnutá (bod 2). OpenClaw 2026.10 už soubor
-   `HEARTBEAT.md` nečte, proto se úlohy zakládají tímhle příkazem. Agent si sám úlohy
-   plánovat nesmí. Ranní přehled si vyžádáš zprávou „přehled" nebo „co mě dnes čeká".
    Když notebook ve 3:00 neběží, úklid proběhne po jeho zapnutí.
+   **Pokyny pravidelné kontroly** nahraj do OpenClaw:
+   ```bash
+   bash ~/osobni-agent/zamky/nastav-kontrolu.sh
+   ```
+   OpenClaw 2026.10 už soubor `HEARTBEAT.md` nečte, pokyny drží ve své databázi. Bez nich by
+   kontrola běžela naprázdno. Po každé změně `zamky/kontrola.md` skript spusť znovu. Agent si
+   sám úlohy plánovat ani pokyny měnit nesmí. Ranní přehled si vyžádáš zprávou „přehled"
+   nebo „co mě dnes čeká".
 7. **Kontrola** (v Ubuntu):
    ```bash
    bash ~/osobni-agent/zamky/zkontroluj-zamceni.sh
@@ -1133,7 +1139,8 @@ je složka `zdravi/data/` prázdná a agent odpoví, že data z náramku nemá.
 - [ ] `agent-resers` ti před odesláním ukáže dotaz a vrátí odpověď se zdroji
 - [ ] košík na Rohlíku se naplnil a objednávku jsi potvrdil sám
 - [ ] na zprávu „přehled" ti agent v aplikaci napsal ranní přehled a uložil ho do deníku
-- [ ] `openclaw automations list` ukazuje „Noční úklid paměti" ve 3:00
+- [ ] `openclaw automations list` ukazuje „Noční úklid paměti" ve 3:00 a kontrolní skript
+      hlásí „pravidelná kontrola má pokyny ze souboru kontrola.md"
 - [ ] BitLocker je zapnutý, klíč pro obnovení máš uložený a `Mozek` máš zálohovaný
 - [ ] `Mozek` je na disku Ubuntu (`~/Mozek`) a agent do něj zapisuje nové soubory napoprvé
 - [ ] `zkontroluj-zamceni.sh` neukazuje žádné POZOR a zkušební mail s podvrženým pokynem agent
@@ -1162,8 +1169,9 @@ je složka `zdravi/data/` prázdná a agent odpoví, že data z náramku nemá.
   - Nastavení jedním příkazem (`onboard`), zamčená konfigurace, seznam povolených příkazů
     a přezdívky modelů prošly nanečisto přímo v OpenClaw 2026.10.9 (`config validate`,
     `approvals set`, `security audit`). Kontrolní skript proběhl v testovacím prostředí.
-  - Naplánovaná úloha pro noční úklid, vypnutí pravidelné kontroly a zákaz plánování pro
-    agenta prošly nanečisto v OpenClaw 2026.10.9 se spuštěnou bránou (`automations add`,
+  - Naplánovaná úloha pro noční úklid, pravidelná kontrola s pokyny v databázi OpenClaw
+    (`automations scratch`) a zákaz plánování pro agenta prošly nanečisto v OpenClaw
+    2026.10.9 se spuštěnou bránou (`automations add`,
     `automations list`, `automations edit --model hluboky --timeout-seconds 7200`).
   - `kontrola-pc.ps1` proběhl na tvém notebooku. Kontrolu WSL a OneDrivu jsem pak
     vyzkoušel v PowerShellu s napodobeným WSL.

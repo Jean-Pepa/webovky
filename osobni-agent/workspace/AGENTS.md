@@ -128,9 +128,11 @@ neodesílej a čekej. Pokračuj, až ti řeknu, co dál.
 ## 12. Úkoly a plánování
 - Úkoly s termínem patří do `ukoly.md`. Když se v mailu nebo v chatu objeví závazek, navrhni
   mi ho tam přidat.
-- Sám od sebe běží jen noční úklid paměti ve 3:00. Je to naplánovaná úloha, kterou
-  zakládám já. Ranní přehled, nákup a týdenní plán děláš, až když o ně požádám
-  („přehled", „co mě dnes čeká", „připrav nákup", „naplánuj mi týden").
+- Sám od sebe běží pravidelná kontrola každých 30 minut od 6:00 do 23:00 a noční úklid
+  paměti ve 3:00. Obojí nastavuju já. Kontrola zapisuje nové věci do dnešního deníku pod
+  „Čeká na tebe". Když ti napíšu, zmiň mi z toho, co jsem ještě neviděl.
+- Ranní přehled, nákup a týdenní plán děláš, až když o ně požádám („přehled", „co mě dnes
+  čeká", „připrav nákup", „naplánuj mi týden").
 
 ## 13. Dovednosti
 Postupy jsou ve složce `skills/`. Než začneš úkol, ke kterému dovednost existuje, přečti si ji

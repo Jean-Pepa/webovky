@@ -8,6 +8,8 @@ POCET=0
 ok()    { printf 'OK      %s\n' "$1"; }
 pozor() { printf 'POZOR   %s\n' "$1"; POCET=$((POCET + 1)); }
 nevim() { printf 'NEVÍM   %s\n' "$1"; }
+# Vypíše řádky z pomocného skriptu v Pythonu a jejich POZOR započítá do souhrnu.
+vypis() { [[ -n "$1" ]] && printf '%s\n' "$1"; POCET=$((POCET + $(grep -c '^POZOR' <<< "$1" || true))); }
 
 if ! command -v openclaw >/dev/null; then
   echo "Chybí příkaz openclaw. Nejdřív nainstaluj OpenClaw (NAVOD.md, krok 6)." >&2
@@ -48,6 +50,36 @@ case "$kontrola" in
   "") ok "pravidelná kontrola každých 30 minut (výchozí nastavení OpenClaw)" ;;
   *) ok "pravidelná kontrola každých $kontrola" ;;
 esac
+# Pokyny kontroly drží OpenClaw ve své databázi. Bez nich by kontrola běžela naprázdno.
+if [[ "$kontrola" != "0m" && "$kontrola" != "0" ]]; then
+  id=""
+  if seznam=$(openclaw automations list --all --json 2>/dev/null); then
+    id=$(SEZNAM="$seznam" python3 -c 'import json, os
+jobs = json.loads(os.environ["SEZNAM"]).get("jobs", [])
+print(next((j["id"] for j in jobs if j.get("declarationKey") == "heartbeat:main"), ""))' 2>/dev/null || true)
+  fi
+  if [[ -n "$id" ]] && pokyny=$(openclaw automations scratch "$id" --json 2>/dev/null); then
+    if zprava=$(POKYNY="$pokyny" SOUBOR="$(dirname "${BASH_SOURCE[0]}")/kontrola.md" python3 -c 'import json, os, sys
+text = ((json.loads(os.environ["POKYNY"]).get("scratch") or {}).get("content") or "").strip()
+try:
+    expected = open(os.environ["SOUBOR"], encoding="utf-8").read().strip()
+except OSError:
+    expected = None
+if not text:
+    print("pravidelná kontrola nemá pokyny, spusť: bash ~/osobni-agent/zamky/nastav-kontrolu.sh")
+    sys.exit(1)
+if expected is not None and text != expected:
+    print("pokyny pravidelné kontroly se liší od zamky/kontrola.md, spusť: bash ~/osobni-agent/zamky/nastav-kontrolu.sh")
+    sys.exit(1)
+print("pravidelná kontrola má pokyny ze souboru kontrola.md")'); then
+      ok "$zprava"
+    else
+      pozor "$zprava"
+    fi
+  else
+    nevim "pokyny pravidelné kontroly (openclaw automations scratch), brána asi neběží"
+  fi
+fi
 je "soubory jen ve složce Mozek" tools.fs.workspaceOnly 'v is True'
 je "příkazy jen ze seznamu, ostatní ke schválení" tools.exec.mode 'v in ("ask", "allowlist", "deny")'
 je "zvýšená oprávnění vypnutá" tools.elevated.enabled 'v is False'
@@ -62,22 +94,23 @@ je "telemetrie vypnutá" telemetry.enabled 'v is False'
 je "bez automatických dotazů na aktualizace" update.checkOnStart 'v is False'
 
 if kanaly=$(openclaw config get channels --json 2>/dev/null); then
-  KANALY="$kanaly" python3 -c "import json, os
+  while read -r kanal; do
+    case "$kanal" in
+      "") ;;
+      signal) ok "kanál signal (šifrovaný end-to-end)" ;;
+      *) pozor "kanál $kanal: zprávy jdou přes servery provozovatele" ;;
+    esac
+  done < <(KANALY="$kanaly" python3 -c "import json, os
 v = json.loads(os.environ['KANALY']) or {}
 for name in v:
-    print(name)" | while read -r kanal; do
-    case "$kanal" in
-      signal) ok "kanál signal (šifrovaný end-to-end)" ;;
-      *) printf 'POZOR   kanál %s: zprávy jdou přes servery provozovatele\n' "$kanal" ;;
-    esac
-  done
+    print(name)")
 else
   ok "žádný další kanál (komunikace jen přes aplikaci)"
 fi
 
 echo "== Povolené příkazy"
 if schvaleni=$(openclaw approvals get --json 2>/dev/null); then
-  SCHVALENI="$schvaleni" python3 - <<'PY'
+  vypis "$(SCHVALENI="$schvaleni" python3 - <<'PY'
 import json, os
 d = json.loads(os.environ["SCHVALENI"])
 f = d.get("file", {})
@@ -97,13 +130,14 @@ for agent, cfg in (f.get("agents") or {}).items():
         if name in risky or pattern in ("*", "**"):
             line(False, f"{pattern} umí spustit cokoli nebo poslat data ven, z povolených ho vyřaď")
 PY
+)"
 else
   nevim "seznam povolených příkazů (openclaw approvals get)"
 fi
 
 echo "== Bezpečnostní audit OpenClaw"
 if audit=$(openclaw security audit --json 2>/dev/null); then
-  AUDIT="$audit" python3 - <<'PY'
+  vypis "$(AUDIT="$audit" python3 - <<'PY'
 import json, os
 d = json.loads(os.environ["AUDIT"])
 expected = {"gateway.trusted_proxies_missing", "gateway.tailscale_serve", "summary.attack_surface"}
@@ -116,6 +150,7 @@ for f in d.get("findings", []):
 if not found:
     print("OK      audit bez kritických a neočekávaných nálezů")
 PY
+)"
 else
   nevim "audit (openclaw security audit)"
 fi
