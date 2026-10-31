@@ -99,7 +99,8 @@ export class Track {
     for (let i = 0; i < n; i++) {
       this.px[i] = pts[i].x;
       this.pz[i] = pts[i].z;
-      this.py[i] = pts[i].y;
+      // křivka výšek může mezi body podkmitnout pod nulu → silnice by vedla pod zemí (tráva přes ni)
+      this.py[i] = Math.max(0, pts[i].y);
       this.sAt[i] = i * this.ds;
     }
     this.hasHeight = def.pts.some((p) => (p[2] ?? 0) !== 0);
@@ -446,8 +447,10 @@ export class Track {
     // zem
     const gTex = TX.ground(th.ground, th.groundDots, th.flowers);
     gTex.repeat.set(60, 60);
+    // zem musí být rozdělená na menší dílky: u dvou obřích trojúhelníků je hloubka
+    // nepřesná a tráva pak těsně před kamerou „prorůstá“ přes silnici (2 cm nad zemí)
     const groundMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(2400, 2400),
+      new THREE.PlaneGeometry(2400, 2400, 60, 60),
       new THREE.MeshLambertMaterial({ map: gTex }),
     );
     groundMesh.rotation.x = -Math.PI / 2;

@@ -178,6 +178,16 @@ export class Hud {
       size = Math.round(Math.max(110, Math.min(180, Math.min(W, H) * 0.17)));
       left = W / 2 - size / 2;
       top = H / 2 - size / 2;
+      // minimapa je uprostřed kříže: prvky HUD v rozích u středu odsunout stranou
+      const away = `calc(var(--u) * 0.9 + ${Math.round(size / 2 + 8)}px)`;
+      this.panels.forEach((p, i) => {
+        const r = rects[i];
+        const right = r.x > 0, bottom = r.y > 0;
+        const q = (sel: string) => p.el.querySelector(sel) as HTMLElement;
+        if (right && bottom) q(".pp-tl").style.left = away;
+        else if (right) q(".pp-bl").style.left = away;
+        else if (bottom) q(".pp-tr").style.right = away;
+      });
     }
     const dpr = Math.min(2, devicePixelRatio);
     this.mini.width = this.mini.height = Math.round(size * dpr);
