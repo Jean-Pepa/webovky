@@ -302,3 +302,22 @@ Přesný prompt:
 ```text
 Use case: ads-marketing. Create a polished landscape social share / Open Graph cover for original Czech cartoon kart-racing game, exact final aspect ratio 1200:630. Input image 1 is the EXISTING LOGO to preserve faithfully, including the exact spelling and accent "TurboKáry": T u r b o K á r y, acute accent above lowercase á, upper-case K. Images 2,3,4 are our original CHARACTER IDENTITY references: orange fox Zrzka with navy shirt/orange scarf, green frog Kvak with coral shirt/green scarf, black-and-white penguin Frak with yellow shirt/cyan scarf. Preserve their species, face style, shirt/scarf colors. Compose an exciting premium 2D cartoon game cover: the logo large and fully visible across the upper center, about 65% of canvas width, with space around the accent and the checkered flag. Below it, three happy racers in separate colorful go-karts taking a sweeping racetrack bend: orange fox driving orange kart in foreground left-center; green frog in green kart on the right; penguin in cyan-blue kart a little behind. All three faces recognizable, hands on steering wheels. Keep heads and wheels inside frame. Setting is a cheerful green meadow track with simple rolling hills and a few soft clouds, the upper backdrop behind logo smoothly becomes deep purple #160f33 for clear legibility. Bold dark-purple #1b1430 clean outlines, chunky simple rounded forms, soft cel-shading, vivid yellow #ffd21f, orange #ff7a1a, red #ff4d6d and cyan #7cf3ff accents. Dynamic but uncluttered, strong hierarchy, charming original browser game. Opaque illustrated image filling entire canvas. No extra text or tagline, no logos beyond provided TurboKáry, no Nintendo characters, mushrooms, shells or question-mark crates, no real brands. Preserve the exact supplied logo wordmark; do not add extra letters, alter á, or cut off flag.
 ```
+
+
+## Nová věc: Křídla
+
+### `items/wings.png`
+
+Vytvořeno vestavěným OpenAI ImageGen. Vlastní stylové reference ze stejné sady: `items/ram.png` a `items/turbo.png`; jejich motivy nebyly převzaty. Dvě bílá křídla s tyrkysovými, žlutými a korálovými konci, tmavě fialový obrys a měkké kreslené stínování. Zdrojový výstup: `exec-9cc3acee-6d44-4e8b-b437-93236b03032c.png`. Mechanický export sharp: ořez prázdných okrajů podle alfa kanálu, Lanczos3 zmenšení na plátno 256×256 s bezpečným okrajem, profil sRGB, zachovaná průhlednost, PNG komprese 9 bez kvantizace. Ověřena čitelnost v 48×48.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept.
+Asset type: one transparent item icon for original cheerful kart racing game TurboKáry, final usage 256x256 and 48x48.
+Reference image 1 (ram.png) and reference image 2 (turbo.png) are STYLE REFERENCES ONLY: match the confident thick dark purple #1b1430 outline, bold simple shapes, clean glossy soft cel shading, vibrant color and isolated silhouette. Do not include horns or lightning.
+Subject: exactly TWO WHITE FEATHERED WINGS with colorful feather tips, a mirrored left wing and right wing opening upward and outward. The wings form a strong compact wide V, each has a chunky rounded root near the lower middle and four or five broad simplified feathers spreading out. Mostly luminous creamy WHITE feathers with gentle pale lilac and blue shadows. At the ends of the broad feathers, small crisp saturated tips alternate cyan #7cf3ff, golden yellow #ffd21f and coral #ff4d6d. This reads immediately as a pair of flying wings even at 48px. Each wing is a separate closed silhouette with a narrow transparent gap between roots, no body or central badge.
+Composition: centered in a SQUARE canvas, fills about 88% of canvas width and 72% height, balanced and energetic, all feathers inside frame with comfortable padding. Flat frontal icon view.
+Background: genuinely transparent, preserve full alpha around and between wings. No opaque background or tile, no ground shadow.
+Constraints: only the two white wings with colored tips; no text, numbers, characters, hearts, halos, stars, logos, brand references, mushrooms, shells or question-mark boxes. Clean polished 2D cartoon game inventory icon.
+```
