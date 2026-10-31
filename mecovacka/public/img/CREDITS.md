@@ -47,3 +47,147 @@ Avoid: real brands, realistic weapons, metallic sharp blades, blood, existing ga
 Cílená úprava obrysu:
 Use case: precise-object-edit. The provided image is the finished transparent Mečovačka logo. Keep its exact layout, shapes, text spelling "Mečovačka", BOTH Czech carons, yellow and cyan letters, dark outlines, cream outer keyline, foam sword and water splash. Change ONLY the cutout quality: remove all detached tiny specks, ragged white fringe, colored noise and semi-transparent background remnants outside the intended continuous cream outer keyline. Make the outer silhouette smooth, crisp and professionally antialiased with clean real alpha. Preserve genuine full transparency outside the artwork and inside intended holes; no replacement background or panel. Do not redesign, move or redraw any letter or motif. Preserve 20:7 wide composition with safe margin.
 ```
+
+
+# Mečovačka — character portraits 0–3
+
+Created 2026-10-31 with OpenAI built-in ImageGen, one separate generation/edit call per character. All four are original derivative game artworks using the project's own earlier TurboKáry portraits as identity/style references. No stock imagery, external logos or third-party character designs were used.
+
+## Deliverables
+
+Final images are staged outside the repository in `tmp/mc-portraits/chars/`. They are frozen for root's publication in the requested group order. No repository files were edited by this portrait task.
+
+| File | Character | Dimensions | Bytes | Transparent pixels |
+|---|---|---:|---:|---:|
+| `0.png` | Zrzka, fox | 512 × 512 | 259655 | 115990 |
+| `1.png` | Kvak, frog | 512 × 512 | 262519 | 117952 |
+| `2.png` | Frak, penguin | 512 × 512 | 246003 | 120188 |
+| `3.png` | Hop, rabbit | 512 × 512 | 250742 | 128745 |
+
+All four are PNG with true alpha transparency and embedded sRGB profile. All four corner alpha values are zero. These are cutouts, not checkerboard backgrounds.
+
+## Reference roles
+
+Identity reference for each ID: `C:\Users\krist\OneDrive\Plocha\CLAUD DATA\webovky-mecovacka-design\turbokary\public\img\chars\{id}.png`. These are the existing original TurboKáry portraits already belonging to the project. Each local reference was visually inspected before generation.
+
+ID 0 used only its own original fox identity reference. IDs 1–3 used their own original portrait as input image 1 and the new high-resolution ID 0 output as input image 2, strictly for matching the new costume, line style and bust composition. Each call set `transparent_background: true`. The game requirements in `mecovacka/AGENTS.md` supplied the character colors and costume brief.
+
+## Generation sources and exact prompts
+
+### 0.png
+
+Generated source: `C:\Users\krist\.codex\generated_images\01a1922e-faf2-7f73-a493-a809c570402c\exec-414d8af7-914d-4217-a805-5094283c9f5f.png`
+
+Exact submitted prompt:
+
+```text
+Use case: identity-preserve. Edit this original orange fox game character into a foam-sword sports competitor for the cheerful Czech game Mecovacka. Input image is the identity and style reference. Preserve exactly the same fox face, big expressive brown eyes, orange fur #f27a24, warm cream muzzle and inner ears #fff6ea, ears, hair tuft, dark nose, and thick clean dark-purple #1b1430 outlines. Keep the same head-and-shoulders crop, front-facing with very slight three-quarter turn, same apparent head size and head position, full ears inside canvas, balanced centered portrait on actual alpha-transparent background.
+Change clothing: REMOVE the neck scarf completely. Add a plain ORANGE sports HEADBAND #ff7a1a across the forehead, and a thick PADDED ORANGE protective training VEST #ff7a1a over a plain navy T-shirt #2b2d42; navy sleeves visible at shoulders. Vest has simple rounded padded panels and warm cream #fff1d6 edging/short central fastening, no symbols or text. The headband is sporty and simple, with only short ties at the back. Expression is cheerful, confident and determined, friendly smile and slightly focused eyebrows, never angry. Polished soft cel shading, simple chunky cartoon shapes matching the existing character. One isolated portrait; target square512x512 RGBA. No scarf, goggles, sword, props, gloves, frame, backdrop, ground shadow, letters, text, emblem, watermark, or real brand. Preserve actual transparency.
+```
+
+### 1.png
+
+Generated source: `C:\Users\krist\.codex\generated_images\01a1922e-faf2-7f73-a493-a809c570402c\exec-02de18e1-4cee-40ee-b0a9-554b92e0f806.png`
+
+Exact submitted prompt:
+
+```text
+Use case: identity-preserve. Create the next matching head-and-shoulders portrait for cheerful foam-sword sports game Mecovacka. Input image1 is the FROG IDENTITY to preserve; input image2 is the NEW COSTUME AND COMPOSITION STYLE reference (fox), not an identity to copy. Preserve the same frog as image1: bright green skin #63d34c, pale yellow-green lower face #daf7a6, large rounded protruding eyes with dark pupils, broad cheerful frog smile, no fur or ears. Match image2's thick clean dark-purple #1b1430 outlines, soft cel shading, simple chunky cartoon shapes, apparent head size, centered bust crop and polished outfit design.
+REMOVE the old neck scarf completely. Give the frog a plain GREEN sports HEADBAND #3ccf4e across its forehead below the eye bulges, with short ties behind the head, and a thick PADDED GREEN protective training VEST #3ccf4e over a plain coral-red T-shirt #ff6b6b with sleeves visible at both shoulders. Vest uses simple rounded padded panels, lemon-yellow #fff36b edging and simple short center fastenings, same construction as image2. Keep both eyes fully visible and unobstructed by headband. Expression cheerful, confident and determined with friendly smile, not angry. Front with slight three-quarter turn, head and shoulders only, entire silhouette within square with clear alpha margins, similar proportions as fox reference. Target512x512 PNG RGBA, actual transparent background. No scarf, goggles, sword, gloves, props, text, logo, frame, badge, backdrop or ground shadow.
+```
+
+### 2.png
+
+Generated source: `C:\Users\krist\.codex\generated_images\01a1922e-faf2-7f73-a493-a809c570402c\exec-85e247a1-3e14-41b6-a96e-c0048b487736.png`
+
+Exact submitted prompt:
+
+```text
+Use case: identity-preserve. Create the next matching head-and-shoulders portrait for cheerful foam-sword sports game Mecovacka. Input image1 is the PENGUIN IDENTITY to preserve; input image2 is the NEW COSTUME AND COMPOSITION STYLE reference (fox), not an identity to copy. Preserve the same penguin as image1: round charcoal-black head #23272e, white face patches #ffffff, tuft of feathers, expressive dark eyes and cheerful orange beak. Match image2's thick clean dark-purple #1b1430 outlines, soft cel shading, simple chunky cartoon shapes, apparent head size, centered bust crop and polished outfit design.
+REMOVE the old neck scarf completely. Give the penguin a plain CYAN-BLUE sports HEADBAND #22b8f0 across the forehead above the eyes with short ties behind the head, and a thick PADDED CYAN-BLUE protective training VEST #22b8f0 over a plain golden-yellow T-shirt #ffb703 with sleeves visible at both shoulders. Vest uses simple rounded padded panels, WHITE #ffffff edging and simple short center fastenings, same construction as image2. Expression cheerful, confident and determined with a friendly open-beak smile and slightly focused brows, not angry. Front with slight three-quarter turn, head and shoulders only, entire silhouette within square with clear alpha margins, similar proportions as fox reference. Target512x512 PNG RGBA, actual transparent background. No scarf, goggles, sword, gloves, props, text, logo, frame, badge, backdrop or ground shadow.
+```
+
+### 3.png
+
+Generated source: `C:\Users\krist\.codex\generated_images\01a1922e-faf2-7f73-a493-a809c570402c\exec-5e457ab8-4969-4cf9-ad49-ea7cb76faab1.png`
+
+Exact submitted prompt:
+
+```text
+Use case: identity-preserve. Create the next matching head-and-shoulders portrait for cheerful foam-sword sports game Mecovacka. Input image1 is the RABBIT IDENTITY to preserve; input image2 is the NEW COSTUME AND COMPOSITION STYLE reference (fox), not an identity to copy. Preserve the same white rabbit as image1: white fur #f4f4f4, soft pink inner ears #ffb3c9, small pink nose, two long upright bunny ears FULLY visible, friendly big brown eyes, small front teeth, same original face. Match image2's thick clean dark-purple #1b1430 outlines, soft cel shading, simple chunky cartoon shapes, apparent face width, centered bust crop and polished outfit design.
+REMOVE the old neck scarf completely. Give the rabbit a plain bright PINK sports HEADBAND #ff5fa8 across the forehead below the ears, with short ties behind the head, and a thick PADDED PINK protective training VEST #ff5fa8 over a plain violet T-shirt #7b61ff with sleeves visible at both shoulders. Vest uses simple rounded padded panels, WHITE #ffffff edging and simple short center fastenings, same construction as image2. Expression cheerful, confident and determined with friendly smile and slightly focused brows, never angry. Front with slight three-quarter turn, head and shoulders only, ears and full silhouette within square with clear alpha margins. Keep portrait head width similar to the fox while accommodating the long rabbit ears. Target512x512 PNG RGBA, actual transparent background. No scarf, goggles, sword, gloves, props, text, logo, frame, badge, backdrop or ground shadow.
+```
+
+## Mechanical export
+
+Bundled Sharp was used for format/export only, with no drawn or synthesized content added: resize to 512 × 512 using `fit: 'contain'` and transparent padding, convert/embed the sRGB profile with `withIccProfile('srgb')`, encode PNG with compression level 9 and adaptive filtering. Alpha was retained. No palette quantization was needed: every final is below 300 kB. Export script is external at `tmp/mc-portraits-a-export.cjs`; diagnostic metadata is `tmp/mc-portraits/a-qa.json`. Original generated files are retained at the source paths listed above.
+
+## Visual QA and freeze
+
+Inspected all four source images and exported finals, including a 256 px per portrait contact sheet on the game's dark purple background (`tmp/mc-portraits/a-preview.png`). Verified recognizable identities, cheerful determined expressions, complete ears and head silhouettes, matching dark outlines and soft cel shading, sports headbands, rounded padded vests, correct sleeve/accent color families, and actual transparent surroundings. Confirmed absence of scarves, goggles, swords, props, text, logos, badges and watermarks. Root additionally reviewed and accepted all four exported portraits visually before publication. The rabbit retains long ears within the canvas; the frog's eye bulges remain clearly unobstructed.
+
+Status: **FROZEN — ready for root to copy into `mecovacka/public/img/chars/0.png` through `3.png`, then commit/push with the full portrait group.**
+
+
+## Portréty Mečovačky 4–7
+
+Vytvořeno vestavěným OpenAI ImageGen, každá postava samostatným voláním v režimu úpravy vlastní dříve vytvořené ilustrace. Identita a původní tvář pochází z odpovídajícího portrétu TurboKáry `turbokary/public/img/chars/<id>.png`. Druhou referencí byla nová Mečovačka Liška Zrzka (`chars/0.png`) pouze pro kompozici a styl sportovní čelenky/vycpané vesty. Žádné externí obrázky, značky ani převzaté postavy.
+
+Export: mechanické zmenšení celého generovaného obrazu na 512×512 pomocí Windows System.Drawing, HighQualityBicubic a SourceCopy, uložen PNG RGBA s potvrzeným sRGB chunkem. Vygenerovaná alfa zachována. Finály jsou připraveny mimo repo v `tmp/mc-portraits/chars/4.png` až `7.png` pro pozdější přesun do `public/img/chars/`.
+
+QA: jednotlivé zdroje a společný kontaktní náhled vedle referenční Zrzky vizuálně zkontrolovány. Shodný výřez, měkké kreslené stínování, tmavá obrysová linka, zachované identity, barvy čelenek/vest/rukávů podle AGENTS.md; dvě oblé středové přezky. Žádné šátky, brýle, meče ani text. Všechny čtyři soubory přesně 512×512, RGBA, sRGB, rohová alfa 0 a přes 99 tisíc plně průhledných pixelů na obrázek.
+
+| Soubor | Postava | Bajtů |
+|---|---|---:|
+| `chars/4.png` | Mour | 341600 |
+| `chars/5.png` | Huňáč | 345436 |
+| `chars/6.png` | Šroubek | 360506 |
+| `chars/7.png` | Kvík | 309618 |
+
+### `chars/4.png` — Mour
+
+Zdrojový generovaný soubor: `exec-b43dac6b-70a4-4a17-9371-e73216deb19f.png`.
+
+Role předloh: 1. původní portrét TurboKáry ID 4 = identita a výřez; 2. nový portrét Mečovačky ID 0 = pouze styl kostýmu a série.
+
+Přesný prompt:
+
+```text
+Use case: identity-preserve. Edit the first reference image into a Mečovačka foam-sword sport character portrait. Image 1 is the original character identity and composition to preserve. Image 2 is ONLY the costume, linework, padding style, and overall head-and-shoulders framing reference; do not copy Image 2's fox face or species. Preserve the original character's recognizable face, fur/head colors, ears, nose, eyes, apparent head size and cheerful identity. Head-and-shoulders front or very slight three-quarter crop, entire ears visible, portrait fills the square similarly to Image 2. Thick clean dark-plum #1b1430 outlines, softly shaded simple cartoon forms, bright polished cel shading. Remove the original neck scarf completely. Add a plain sports headband across the forehead with short tied tails behind the head, and a thick protective padded training vest over the visible T-shirt sleeves, simple rounded quilted panels and TWO small rounded central fastenings, matching reference 2. Cheerful confident determined friendly smile with slightly focused eyebrows, never angry. No glasses, goggles, scarf, sword, weapons, hands, text, letters, logos, scenery, frame or badge. Genuinely transparent background with clean alpha, no checkerboard or white fill. Final intended asset 512x512 PNG. Character: Mour, friendly gray tomcat with pointed ears, tousled gray forelock, white muzzle and cheeks, pink nose, three whiskers on each side. Exact palette: primary fur/head #8d8d9b, secondary facial color #f0f0f0; headband and padded vest #9b4dff; vest edging and two fastenings #2b2b33; visible short T-shirt sleeves #06d6a0. Preserve face details and all species cues from image 1.
+```
+
+### `chars/5.png` — Huňáč
+
+Zdrojový generovaný soubor: `exec-9bc14871-be2f-4afe-83d0-46ff04eea101.png`.
+
+Role předloh: 1. původní portrét TurboKáry ID 5 = identita a výřez; 2. nový portrét Mečovačky ID 0 = pouze styl kostýmu a série.
+
+Přesný prompt:
+
+```text
+Use case: identity-preserve. Edit the first reference image into a Mečovačka foam-sword sport character portrait. Image 1 is the original character identity and composition to preserve. Image 2 is ONLY the costume, linework, padding style, and overall head-and-shoulders framing reference; do not copy Image 2's fox face or species. Preserve the original character's recognizable face, fur/head colors, ears, nose, eyes, apparent head size and cheerful identity. Head-and-shoulders front or very slight three-quarter crop, entire ears visible, portrait fills the square similarly to Image 2. Thick clean dark-plum #1b1430 outlines, softly shaded simple cartoon forms, bright polished cel shading. Remove the original neck scarf completely. Add a plain sports headband across the forehead with short tied tails behind the head, and a thick protective padded training vest over the visible T-shirt sleeves, simple rounded quilted panels and TWO small rounded central fastenings, matching reference 2. Cheerful confident determined friendly smile with slightly focused eyebrows, never angry. No glasses, goggles, scarf, sword, weapons, hands, text, letters, logos, scenery, frame or badge. Genuinely transparent background with clean alpha, no checkerboard or white fill. Final intended asset 512x512 PNG. Character: Huňáč, friendly brown bear with round ears, warm tan muzzle and inner ears, dark rounded nose and small furry forelock. Exact palette: primary fur/head #8a5a2b, secondary facial color #d9a46c; headband and padded vest #2f6bff; vest edging and two fastenings #ffd23f; visible short T-shirt sleeves #ef476f. Preserve face details and all species cues from image 1.
+```
+
+### `chars/6.png` — Šroubek
+
+Zdrojový generovaný soubor: `exec-a5e8f56f-d7d3-45f7-8e2a-e55c9bfa78c4.png`.
+
+Role předloh: 1. původní portrét TurboKáry ID 6 = identita a výřez; 2. nový portrét Mečovačky ID 0 = pouze styl kostýmu a série.
+
+Přesný prompt:
+
+```text
+Use case: identity-preserve. Edit the first reference image into a Mečovačka foam-sword sport character portrait. Image 1 is the original character identity and composition to preserve. Image 2 is ONLY the costume, linework, padding style, and overall head-and-shoulders framing reference; do not copy Image 2's fox face or species. Preserve the original character's recognizable face, fur/head colors, ears, nose, eyes, apparent head size and cheerful identity. Head-and-shoulders front or very slight three-quarter crop, entire ears visible, portrait fills the square similarly to Image 2. Thick clean dark-plum #1b1430 outlines, softly shaded simple cartoon forms, bright polished cel shading. Remove the original neck scarf completely. Add a plain sports headband across the forehead with short tied tails behind the head, and a thick protective padded training vest over the visible T-shirt sleeves, simple rounded quilted panels and TWO small rounded central fastenings, matching reference 2. Cheerful confident determined friendly smile with slightly focused eyebrows, never angry. No glasses, goggles, scarf, sword, weapons, hands, text, letters, logos, scenery, frame or badge. Genuinely transparent background with clean alpha, no checkerboard or white fill. Final intended asset 512x512 PNG. Character: Šroubek, friendly rounded silver robot with a dark face screen, glowing cyan eyes #4fe3ff, circular ear sensors and a cheerful digital smile, retaining the same robot identity. Exact palette: primary fur/head #c3ccd3, secondary facial color #4fe3ff; headband and padded vest #e53935; vest edging and two fastenings #b0bec5; visible short T-shirt sleeves #37474f. Preserve face details and all species cues from image 1. The red cloth sports headband wraps around the upper silver forehead casing, above the dark face screen, never obscuring the cyan eyes. Preserve the rounded silver robot shell, side circular ear sensors and cyan digital smile.
+```
+
+### `chars/7.png` — Kvík
+
+Zdrojový generovaný soubor: `exec-d026c739-359a-4b39-ab2d-ad9cf9664422.png`.
+
+Role předloh: 1. původní portrét TurboKáry ID 7 = identita a výřez; 2. nový portrét Mečovačky ID 0 = pouze styl kostýmu a série.
+
+Přesný prompt:
+
+```text
+Use case: identity-preserve. Edit the first reference image into a Mečovačka foam-sword sport character portrait. Image 1 is the original character identity and composition to preserve. Image 2 is ONLY the costume, linework, padding style, and overall head-and-shoulders framing reference; do not copy Image 2's fox face or species. Preserve the original character's recognizable face, fur/head colors, ears, nose, eyes, apparent head size and cheerful identity. Head-and-shoulders front or very slight three-quarter crop, entire ears visible, portrait fills the square similarly to Image 2. Thick clean dark-plum #1b1430 outlines, softly shaded simple cartoon forms, bright polished cel shading. Remove the original neck scarf completely. Add a plain sports headband across the forehead with short tied tails behind the head, and a thick protective padded training vest over the visible T-shirt sleeves, simple rounded quilted panels and TWO small rounded central fastenings, matching reference 2. Cheerful confident determined friendly smile with slightly focused eyebrows, never angry. No glasses, goggles, scarf, sword, weapons, hands, text, letters, logos, scenery, frame or badge. Genuinely transparent background with clean alpha, no checkerboard or white fill. Final intended asset 512x512 PNG. Character: Kvík, friendly pink piglet with softly folded ears, a round pink snout with two nostrils, large lively brown eyes and plump cheeks. Exact palette: primary fur/head #ffa7bb, secondary facial color #ff7f9e; headband and padded vest #ffd21f; vest edging and two fastenings #ff6f91; visible short T-shirt sleeves #118ab2. Preserve face details and all species cues from image 1.
+```
