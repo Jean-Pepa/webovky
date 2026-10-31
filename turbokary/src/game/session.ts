@@ -24,6 +24,8 @@ export interface Player {
   ping: number;
   hudKey: string;
   hudAt: number;
+  /** zpětné zrcátko (lze vypnout v telefonu) */
+  mirror: boolean;
 }
 
 const OFFLINE_MS = 4000;
@@ -75,6 +77,7 @@ export class Session {
       ping: 0,
       hudKey: "",
       hudAt: 0,
+      mirror: true,
     };
     this.players.push(p);
     this.players.sort((a, b) => a.slot - b.slot);

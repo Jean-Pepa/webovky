@@ -57,6 +57,53 @@ export class ChaseCam {
   }
 }
 
+/** Poloha zpětného zrcátka v rámci výřezu hráče (nahoře uprostřed). */
+export function mirrorRect(r: Rect): Rect {
+  const w = Math.round(Math.max(170, Math.min(440, r.w * 0.3)));
+  const h = Math.round(w / 3.3);
+  return { x: Math.round(r.x + (r.w - w) / 2), y: r.y + Math.round(Math.max(8, r.h * 0.025)), w, h };
+}
+
+let mirrorMask: THREE.Texture | null = null;
+function maskTexture() {
+  if (mirrorMask) return mirrorMask;
+  const c = document.createElement("canvas");
+  c.width = 330;
+  c.height = 100;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#fff";
+  g.beginPath();
+  g.roundRect(0, 0, 330, 100, [{ x: 39.6, y: 40 }]);
+  g.fill();
+  mirrorMask = new THREE.CanvasTexture(c);
+  return mirrorMask;
+}
+
+/** Zpětné zrcátko: kamera za řidičem kreslí do textury, ta se zobrazí zrcadlově převrácená. */
+class Mirror {
+  readonly rt = new THREE.WebGLRenderTarget(2, 2);
+  readonly cam = new THREE.PerspectiveCamera(50, 3.3, 0.5, 900);
+  readonly scene = new THREE.Scene();
+  readonly ortho = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 0, 1);
+
+  constructor(slot: number) {
+    this.cam.layers.enableAll();
+    this.cam.layers.disable(1 + slot);
+    const geo = new THREE.PlaneGeometry(1, 1);
+    const uv = geo.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setX(i, 1 - uv.getX(i));
+    const mat = new THREE.MeshBasicMaterial({
+      map: this.rt.texture,
+      alphaMap: maskTexture(),
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      fog: false,
+    });
+    this.scene.add(new THREE.Mesh(geo, mat));
+  }
+}
+
 export class View {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
@@ -67,6 +114,8 @@ export class View {
   private attractMode = 0;
   private attractKart = 0;
   private chase = new ChaseCam(-1);
+  private mirrors = [0, 1, 2, 3].map((i) => new Mirror(i));
+  private frameNo = 0;
   width = 1;
   height = 1;
 
@@ -127,12 +176,46 @@ export class View {
     if (c) c.shake = Math.max(c.shake, amount);
   }
 
-  renderRace(track: Track, fx: Effects, humans: Kart[], all: Kart[], dt: number) {
+  private drawMirror(i: number, k: Kart, r: Rect, fx: Effects, refresh: boolean) {
+    const gl = this.renderer;
+    const m = this.mirrors[i];
+    const mr = mirrorRect(r);
+    if (refresh) {
+      const pr = gl.getPixelRatio();
+      const W = Math.max(2, Math.round(mr.w * pr)), H = Math.max(2, Math.round(mr.h * pr));
+      if (m.rt.width !== W || m.rt.height !== H) m.rt.setSize(W, H);
+      const fx0 = Math.sin(k.heading), fz0 = Math.cos(k.heading);
+      m.cam.position.set(k.x - fx0 * 0.9, 1.8 + k.y, k.z - fz0 * 0.9);
+      m.cam.lookAt(k.x - fx0 * 30, 0.7 + k.y * 0.5, k.z - fz0 * 30);
+      m.cam.aspect = mr.w / mr.h;
+      m.cam.updateProjectionMatrix();
+      const vis = k.visual.root.visible;
+      k.visual.root.visible = false;
+      gl.setRenderTarget(m.rt);
+      fx.setViewport(H, m.cam.fov);
+      gl.render(this.scene, m.cam);
+      gl.setRenderTarget(null);
+      k.visual.root.visible = vis;
+    }
+    const y = this.height - mr.y - mr.h;
+    gl.setScissorTest(true);
+    gl.setViewport(mr.x, y, mr.w, mr.h);
+    gl.setScissor(mr.x, y, mr.w, mr.h);
+    const ac = gl.autoClear;
+    gl.autoClear = false;
+    gl.render(m.scene, m.ortho);
+    gl.autoClear = ac;
+  }
+
+  renderRace(track: Track, fx: Effects, humans: Kart[], all: Kart[], dt: number, mirrors: boolean[] = []) {
     const rects = this.layout(humans.length);
+    this.frameNo++;
     this.renderer.setScissorTest(true);
     humans.forEach((k, i) => {
       this.cams[i].update(k, dt);
       this.draw(this.cams[i].cam, rects[i], fx);
+      // při 3–4 hráčích se zrcátka obnovují ob snímek (šetří výkon)
+      if (mirrors[i]) this.drawMirror(i, k, rects[i], fx, humans.length < 3 || (this.frameNo + i) % 2 === 0);
     });
     if (humans.length === 3) {
       this.updateOverview(track, all, dt);

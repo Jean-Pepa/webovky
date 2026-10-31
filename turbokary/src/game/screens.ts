@@ -15,6 +15,7 @@ export interface LobbyHandlers {
   removePlayer(slot: number): void;
   toggleSound(): void;
   fullscreen(): void;
+  mirrors(): void;
 }
 
 export interface LobbyView {
@@ -32,6 +33,7 @@ export interface LobbyView {
   speed: number;
   speedName: string;
   trackCount: number;
+  mirrors: boolean;
 }
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
@@ -81,7 +83,7 @@ export class Lobby {
         </section>
         <footer class="lb-foot">
           <span>Bez telefonu: <kbd>K</kbd> přidá hráče na klávesnici (šipky/WASD, <kbd>mezerník</kbd> drift, <kbd>E</kbd>/<kbd>Enter</kbd> věc, <kbd>Q</kbd> hod opačně). <kbd>T</kbd> trať, <kbd>P</kbd> pohár, <kbd>R</kbd> rychlost.</span>
-          <span class="foot-btns"><button data-a="kb">⌨️ Hráč na klávesnici</button><button data-a="sound" class="snd">🔊 Zvuk</button><button data-a="fs">⛶ Celá obrazovka</button></span>
+          <span class="foot-btns"><button data-a="kb">⌨️ Hráč na klávesnici</button><button data-a="mirrors" class="mir">🪞 Zrcátka</button><button data-a="sound" class="snd">🔊 Zvuk</button><button data-a="fs">⛶ Celá obrazovka</button></span>
         </footer>
       </div>`;
     parent.append(this.el);
@@ -103,6 +105,7 @@ export class Lobby {
       else if (a === "kb") h.addKeyboard();
       else if (a === "sound") h.toggleSound();
       else if (a === "fs") h.fullscreen();
+      else if (a === "mirrors") h.mirrors();
       else if (a === "kick") h.removePlayer(Number(b.dataset.slot));
     });
   }
@@ -156,6 +159,7 @@ export class Lobby {
     const start = this.el.querySelector(".start-btn") as HTMLButtonElement;
     start.disabled = !v.canStart;
     start.title = v.canStart ? "" : "Nejdřív se musí připojit aspoň jeden hráč";
+    (this.el.querySelector(".mir") as HTMLElement).textContent = v.mirrors ? "🪞 Zrcátka: zap" : "🪞 Zrcátka: vyp";
     (this.el.querySelector(".snd") as HTMLElement).textContent = !v.soundReady
       ? "🔈 Klikni pro zvuk"
       : v.muted

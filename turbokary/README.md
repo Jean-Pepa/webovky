@@ -41,6 +41,9 @@ Kvík) mají vyšší max. rychlost a při srážce odstrčí lehčí.
   - 🛡️ **Štít** tě ochrání před jedním zásahem.
   - 🐏 **Beranidlo:** pár sekund jsi rychlejší a nezranitelný a koho trkneš, toho roztočíš.
   Čím jsi dál vzadu, tím lepší věci padají.
+- **Zpětné zrcátko** nahoře uprostřed obrazovky ukazuje, kdo se blíží zezadu. Každý hráč si ho
+  může vypnout v nastavení na telefonu, na PC jde vypnout pro všechny tlačítkem 🪞 v lobby
+  (nebo klávesou `Z`).
 - Telefon vibruje při nárazu, zásahu a v cíli. Na iPhonu vibrace nejsou, Safari je nepodporuje.
 
 **Bez telefonu:** v lobby klávesa `K` přidá hráče na klávesnici (max. dva). Ovládá se šipkami nebo
@@ -89,7 +92,9 @@ náhled do `e2e/out/tracks.html`.
 
 ## Grafika
 
-Hra si všechno kreslí sama (tvary, textury, emoji). Obrázky v `public/img/` (portréty postav,
+Hra si všechno kreslí sama (tvary, textury, emoji). 3D modely motokár a řidičů ve formátu GLB
+v `public/models/` (`kart.glb`, `karts/<id>.glb`, `chars/<id>.glb`) nahradí modely z kódu.
+Pravidla pro modely jsou v `AGENTS.md`, vzor vyrobí `node scripts/sample-models.mjs`. Obrázky v `public/img/` (portréty postav,
 ikony věcí, logo, obloha, reklamní plachty, ikony tlačítek) je automaticky nahradí. Seznam
 a rozměry jsou v `AGENTS.md`, oddíl „Zadání grafiky“. Které obrázky existují, zjistí build sám
 (modul `virtual:assets` ve `vite.config.ts`).

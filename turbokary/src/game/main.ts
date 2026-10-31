@@ -32,6 +32,7 @@ import { THEMES } from "./themes";
 import { Track } from "./track";
 import { View } from "./view";
 import { Effects, Snow } from "./effects";
+import { loadModels } from "./models";
 import { Race, type Entry, type RaceListener } from "./race";
 import { Hud } from "./hud";
 import { Lobby, Results } from "./screens";
@@ -105,6 +106,9 @@ class Game {
   private forced = new Set<number>();
   private paused = false;
   private pauseEl!: HTMLElement;
+  /** zpětná zrcátka (hlavní vypínač na PC) */
+  private mirrors = store("tk_mirrors", true);
+  private mirrorFlags: boolean[] = [];
   private snow: Snow | null = null;
 
   constructor() {
@@ -119,6 +123,7 @@ class Game {
       removePlayer: (s) => this.removePlayer(s),
       toggleSound: () => this.toggleSound(),
       fullscreen: () => void document.documentElement.requestFullscreen?.().catch(() => {}),
+      mirrors: () => this.toggleMirrors(),
     });
     this.results = new Results(this.ui, () => this.next());
     this.pauseEl = document.createElement("div");
@@ -152,6 +157,10 @@ class Game {
     addEventListener("keydown", unlock);
     this.renderLobby();
     this.lanCheck();
+    // 3D modely od Codexe (pokud jsou): po načtení se lobby scéna postaví znovu
+    void loadModels().then((ok) => {
+      if (ok && this.phase === "lobby") this.startDemo();
+    });
     this.net.start();
     this.debugHooks();
     requestAnimationFrame((t) => this.frame(t));
@@ -265,6 +274,7 @@ class Game {
       speed: this.speed,
       speedName: SPEED_CLASSES[this.speed].name,
       trackCount: TRACKS.length,
+      mirrors: this.mirrors,
     });
   }
 
@@ -312,6 +322,12 @@ class Game {
     this.session.remove(slot);
     this.renderLobby();
     this.broadcastLobby();
+  }
+
+  private toggleMirrors() {
+    this.mirrors = !this.mirrors;
+    save("tk_mirrors", this.mirrors);
+    this.renderLobby();
   }
 
   private toggleSound() {
@@ -372,6 +388,7 @@ class Game {
         break;
       case "me":
         if (typeof msg.name === "string") p.name = cleanName(msg.name) || p.name;
+        if (typeof msg.mirror === "boolean") p.mirror = msg.mirror;
         if (typeof msg.char === "number" && this.phase !== "countdown" && this.phase !== "race")
           p.char = this.session.freeChar(msg.char, p.slot) === msg.char ? msg.char : p.char;
         this.renderLobby();
@@ -568,10 +585,12 @@ class Game {
     for (const s of this.forced) race.autopilot.add(s);
     this.humans = this.session.players.map((p) => race.kartOf(p.slot)!);
     this.view.snapCams(this.humans);
+    this.mirrorFlags = this.session.players.map((p) => this.mirrors && p.mirror);
     this.hud.layout(
       this.view.layout(this.humans.length),
       this.humans,
       this.session.players.map((p) => (p.kind === "kb" ? "⌨️" : "📱")),
+      this.mirrorFlags,
     );
     this.hud.show(false);
     this.lobby.show(false);
@@ -871,6 +890,7 @@ class Game {
       else if (code === "KeyT") this.setTrack(this.trackIdx + 1);
       else if (code === "KeyP") this.setMode(this.mode === "cup" ? "race" : "cup");
       else if (code === "KeyR") this.setSpeed((this.speed + 1) % SPEED_CLASSES.length);
+      else if (code === "KeyZ") this.toggleMirrors();
       else if (code === "Backspace" || code === "Delete") {
         const kb = this.session.players.filter((p) => p.kind === "kb").pop();
         if (kb) this.removePlayer(kb.slot);
@@ -922,7 +942,7 @@ class Game {
       } else if (this.phase === "results") {
         this.view.renderPodium(this.track, this.fx, this.race.standings[0], real);
       } else {
-        this.view.renderRace(this.track, this.fx, this.humans, this.race.karts, real);
+        this.view.renderRace(this.track, this.fx, this.humans, this.race.karts, real, this.mirrorFlags);
         this.hud.update(this.race, this.humans, this.isOffline);
       }
       this.updateEngines();

@@ -10,21 +10,26 @@ const here = (p: string) => fileURLToPath(new URL(p, import.meta.url));
  * Hra tak ví, které obrázky existují, a jinak použije náhradu — bez zbytečných 404.
  */
 function assetList(): Plugin {
-  const id = "virtual:assets";
-  const rid = "\0" + id;
-  const root = here("./public/img");
-  const walk = (dir: string, out: string[]) => {
+  const lists: Record<string, { root: string; ext: RegExp }> = {
+    "virtual:assets": { root: here("./public/img"), ext: /\.(png|webp|jpe?g|svg)$/i },
+    "virtual:models": { root: here("./public/models"), ext: /\.(glb|gltf)$/i },
+  };
+  const walk = (root: string, dir: string, ext: RegExp, out: string[]) => {
     for (const name of readdirSync(dir)) {
       const p = join(dir, name);
-      if (statSync(p).isDirectory()) walk(p, out);
-      else if (/\.(png|webp|jpe?g|svg)$/i.test(name)) out.push(relative(root, p).split("\\").join("/"));
+      if (statSync(p).isDirectory()) walk(root, p, ext, out);
+      else if (ext.test(name)) out.push(relative(root, p).split("\\").join("/"));
     }
     return out;
   };
   return {
     name: "turbokary-assets",
-    resolveId: (s) => (s === id ? rid : null),
-    load: (i) => (i === rid ? `export default ${JSON.stringify(existsSync(root) ? walk(root, []) : [])};` : null),
+    resolveId: (s) => (lists[s] ? "\0" + s : null),
+    load: (i) => {
+      const l = lists[i.slice(1)];
+      if (!i.startsWith("\0") || !l) return null;
+      return `export default ${JSON.stringify(existsSync(l.root) ? walk(l.root, l.root, l.ext, []) : [])};`;
+    },
   };
 }
 
