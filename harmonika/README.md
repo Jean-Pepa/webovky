@@ -9,12 +9,12 @@ pak se otevírá přes celou obrazovku a po prvním načtení funguje i offline.
 
 ## Co umí
 
+- **Jen 12dírková chromatika** (v C rozsah C4–D7). Čip „Holes 12“ zůstává jako v originálu, jen bez výběru.
+  Na nejvyšší dírce dává tah se šoupátkem D, jako u skutečných nástrojů.
 - **Mřížka harmoniky** — řádky Slide / Blow / čísla dírek / Draw / Slide, svislé čáry mezi oktávami.
   Základní tón je oranžově, ostatní tóny stupnice modře, zbytek šedě. Ťuknutím na dírku zazní tón.
-- **Holes** 10 / 12 / 14 / 16 (G3–Db6, C4–D7, G3–D7, C3–D7). Na nejvyšší dírce dává tah se šoupátkem
-  D, jako u skutečných 12–16dírkových chromatik.
 - **Harmonica** — ladění nástroje v libovolné tónině (C, G, Bb …), přepočítá celou mřížku.
-- **Scale | Arpeggios** — 41 stupnic (durové módy, mollové, jazzové módy melodické molly, pentatoniky
+- **Scale | Arpeggios | Songs** — 41 stupnic (durové módy, mollové, jazzové módy melodické molly, pentatoniky
   a blues, bebop, symetrické, exotické) a 27 arpeggií (kvintakordy, septakordy, nóny, undecimy, tercdecimy).
 - **Key** — všech 17 názvů tónin. Pravopis je vždy správně (F dur = Bb, ne A#).
 - Lišta **Note** (tóny stupnice) a **Degrees** (intervaly P1 M2 M3 …). Při přehrávání se hraný tón zvýrazní.
@@ -30,6 +30,18 @@ pak se otevírá přes celou obrazovku a po prvním načtení funguje i offline.
   - *My Routines* — uložení cvičení a jeho spuštění jedním ťuknutím.
   - *Harmonica & Sound* — ladění Solo / Diminished, popisky Notes / Degrees, ladění A4, hlasitost,
     reset postupu.
+- **Songs** — 15 písniček na trénink (jen melodie volné k užití: lidové, klasika, vlastní cvičení):
+  Twinkle Twinkle, When the Saints, Jingle Bells, Óda na radost, Bratře Kubo, Happy Birthday, Largo
+  (Dvořák), Amazing Grace, Tichá noc, Menuet G dur, Vltava (Smetana), Greensleeves, Pro Elišku,
+  Blues for Harp a ii–V–I etuda. Rozdělené na Easy / Melodies / Slide practice / Jazz & Blues.
+  - Lišta s tabulaturou nad mřížkou: `4` = foukni do 4. dírky, `-4` = táhni, `<` = se šoupátkem.
+  - **▶** zahraje písničku v rytmu (s metronomem napřed jeden takt předtaktí), zvýrazňuje dírku i notu.
+    Přepínač **Melody / Play-along** — bez melodie hraješ sám podle zvýraznění.
+  - **🎤 Practice** — appka poslouchá mikrofonem a na každý tón počká, dokud ho nezahraješ správně
+    (±40 centů). Opakovaný stejný tón se uzná až po novém nasazení. Na konci ukáže, kolik procent
+    jsi trefil napoprvé, a nejlepší výsledek si zapamatuje.
+  - **Key** písničku převede do jiné tóniny (se správným pravopisem a do rozsahu harmoniky).
+  - Ťuknutím na notu v liště se začne hrát / procvičovat od ní.
 - **Learning** — „All Lessons | 0 of 8 completed“, lekce 1–3 odemčené, další se odemykají po dokončení
   předchozích. U lekcí se počítá čas a interakce. Každá lekce má interaktivní ukázky (klávesnice,
   mřížka, kvintový kruh, přehrávače intervalů, akordů a ii–V–I) a kvíz na konci.
@@ -55,7 +67,7 @@ npm run e2e                         # v druhém
 ```
 
 Viewport jde změnit přes `E2E_W` / `E2E_H`. S `E2E_TONE=/cesta/k/tonu.wav` dostane prohlížeč WAV jako
-falešný mikrofon a test ověří i ladičku.
+falešný mikrofon a test ověří i ladičku a procvičování písničky (stačí tón C4, první nota „Twinkle“).
 
 ## Nasazení na Vercel
 

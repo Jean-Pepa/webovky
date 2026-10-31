@@ -213,30 +213,18 @@ export function SpellingCompare() {
 
 type Choice = { label: string; key: string; mode: Mode; id: string };
 
-export function MiniGrid({
-  holes = 12,
-  holeChoices,
-  choices,
-  initial = 0,
-}: {
-  holes?: number;
-  holeChoices?: number[];
-  choices: Choice[];
-  initial?: number;
-}) {
+export function MiniGrid({ choices, initial = 0 }: { choices: Choice[]; initial?: number }) {
   const { interact } = useLesson();
-  const [h, setH] = useState(holes);
   const [c, setC] = useState(initial);
   const [info, setInfo] = useState("Tap a hole to hear it.");
-  const layout = useMemo(() => buildLayout(h, "solo", "C"), [h]);
+  const layout = useMemo(() => buildLayout("solo", "C"), []);
   const cur = choices[c];
   const pattern = useMemo(() => buildPattern(cur.key, findDef(cur.mode, cur.id)), [cur]);
   return (
     <div className="w-box">
-      {(choices.length > 1 || holeChoices) && (
+      {choices.length > 1 && (
         <div className="w-row" style={{ marginBottom: 8 }}>
-          {choices.length > 1 &&
-            choices.map((ch, i) => (
+          {choices.map((ch, i) => (
               <button
                 key={ch.label}
                 type="button"
@@ -249,19 +237,6 @@ export function MiniGrid({
                 {ch.label}
               </button>
             ))}
-          {holeChoices?.map((hh) => (
-            <button
-              key={hh}
-              type="button"
-              className={`w-btn ${hh === h ? "sel" : ""}`}
-              onClick={() => {
-                setH(hh);
-                interact();
-              }}
-            >
-              {hh} holes
-            </button>
-          ))}
         </div>
       )}
       <HarpGrid
@@ -286,7 +261,7 @@ export function MiniGrid({
 
 export function IntervalFinder() {
   const { interact } = useLesson();
-  const layout = useMemo(() => buildLayout(12, "solo", "C"), []);
+  const layout = useMemo(() => buildLayout("solo", "C"), []);
   const pattern = useMemo(() => buildPattern("C", findDef("scale", "major")), []);
   const [picked, setPicked] = useState<{ k: string; midi: number; hole: number; action: Action }[]>([]);
   const onTap = (midi: number, hole: number, action: Action) => {
@@ -946,7 +921,7 @@ const APPROACHES = [
 
 export function ApproachPlayer() {
   const { interact } = useLesson();
-  const layout = useMemo(() => buildLayout(12, "solo", "C"), []);
+  const layout = useMemo(() => buildLayout("solo", "C"), []);
   const [sel, setSel] = useState<number | null>(null);
   const where = (m: number) => {
     const ps = positionsOf(layout, m).sort((a, b) => Number(a.action.includes("Slide")) - Number(b.action.includes("Slide")));
@@ -1023,14 +998,16 @@ export function DetunePlayer() {
 // --------------------------------------------------------- hotové rutiny
 
 const PRESETS: { name: string; s: Routine["settings"] }[] = [
-  { name: "Warm-up · C Major · Both · 60 BPM", s: { mode: "scale", holes: 12, harpKey: "C", scaleId: "major", arpId: "maj7", key: "C", bpm: 60, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 2 } },
-  { name: "D Dorian · 80 BPM", s: { mode: "scale", holes: 12, harpKey: "C", scaleId: "dorian", arpId: "min7", key: "D", bpm: 80, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 1 } },
-  { name: "G Mixolydian · 80 BPM", s: { mode: "scale", holes: 12, harpKey: "C", scaleId: "mixolydian", arpId: "dom7", key: "G", bpm: 80, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 1 } },
-  { name: "ii: Dm7 arpeggio · 90 BPM", s: { mode: "arpeggio", holes: 12, harpKey: "C", scaleId: "dorian", arpId: "min7", key: "D", bpm: 90, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 1 } },
-  { name: "V: G7 arpeggio · 90 BPM", s: { mode: "arpeggio", holes: 12, harpKey: "C", scaleId: "mixolydian", arpId: "dom7", key: "G", bpm: 90, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 1 } },
-  { name: "I: Cmaj7 arpeggio · 90 BPM", s: { mode: "arpeggio", holes: 12, harpKey: "C", scaleId: "major", arpId: "maj7", key: "C", bpm: 90, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 1 } },
-  { name: "G Altered · 70 BPM", s: { mode: "scale", holes: 12, harpKey: "C", scaleId: "altered", arpId: "dom7s9", key: "G", bpm: 70, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 1 } },
-  { name: "C Blues · 100 BPM", s: { mode: "scale", holes: 12, harpKey: "C", scaleId: "blues", arpId: "dom7", key: "C", bpm: 100, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 2 } },
+  { name: "Warm-up · C Major · Both · 60 BPM", s: { mode: "scale", harpKey: "C", scaleId: "major", arpId: "maj7", key: "C", bpm: 60, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 2 } },
+  { name: "D Dorian · 80 BPM", s: { mode: "scale", harpKey: "C", scaleId: "dorian", arpId: "min7", key: "D", bpm: 80, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 1 } },
+  { name: "G Mixolydian · 80 BPM", s: { mode: "scale", harpKey: "C", scaleId: "mixolydian", arpId: "dom7", key: "G", bpm: 80, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 1 } },
+  { name: "ii: Dm7 arpeggio · 90 BPM", s: { mode: "arpeggio", harpKey: "C", scaleId: "dorian", arpId: "min7", key: "D", bpm: 90, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 1 } },
+  { name: "V: G7 arpeggio · 90 BPM", s: { mode: "arpeggio", harpKey: "C", scaleId: "mixolydian", arpId: "dom7", key: "G", bpm: 90, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 1 } },
+  { name: "I: Cmaj7 arpeggio · 90 BPM", s: { mode: "arpeggio", harpKey: "C", scaleId: "major", arpId: "maj7", key: "C", bpm: 90, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 1 } },
+  { name: "G Altered · 70 BPM", s: { mode: "scale", harpKey: "C", scaleId: "altered", arpId: "dom7s9", key: "G", bpm: 70, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 1 } },
+  { name: "🎵 Song: Greensleeves (slide practice) · 80 BPM", s: { mode: "song", songId: "greensleeves", songKey: null, bpm: 80, metronome: true, repetitions: 1 } },
+  { name: "🎵 Song: Blues for Harp · 90 BPM", s: { mode: "song", songId: "blues", songKey: null, bpm: 90, metronome: true, repetitions: 2 } },
+  { name: "C Blues · 100 BPM", s: { mode: "scale", harpKey: "C", scaleId: "blues", arpId: "dom7", key: "C", bpm: 100, direction: "both", metronome: true, startHole: 1, endHole: 12, repetitions: 2 } },
 ];
 
 export function RoutinePresets() {

@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { holesRange, TUNINGS, type Direction } from "@/lib/harmonica";
-import { findDef, patternTitle } from "@/lib/music";
+import { HOLES, TUNINGS, buildLayout, layoutRange, type Direction } from "@/lib/harmonica";
+import { findDef, midiName, patternTitle } from "@/lib/music";
+import { findSong, songKeyLabel } from "@/lib/songs";
 import { routineFrom, uid, type Routine, type Settings } from "@/lib/store";
 import { SheetClose, Stepper, Switch } from "./ui";
 
@@ -105,6 +106,9 @@ export function PlaybackSheet({
     { id: "both", label: "Both" },
   ];
   const setBpm = (v: number) => update({ bpm: v });
+  const song = s.mode === "song";
+  const [lo, hi] = layoutRange(buildLayout(s.tuning, s.harpKey));
+  const range = `${midiName(lo)} – ${midiName(hi)}`;
 
   return (
     <div className="sheet" role="dialog" aria-label="Playback Options">
@@ -114,7 +118,8 @@ export function PlaybackSheet({
         <br />
         Options
       </h1>
-      <div className="po-grid">
+      <div className={`po-grid ${song ? "two" : ""}`}>
+        {!song && (
         <div className="card">
           <div className="card-title">Direction</div>
           <div className="dir-btns">
@@ -130,6 +135,7 @@ export function PlaybackSheet({
             ))}
           </div>
         </div>
+        )}
 
         <div className="card">
           <div className="card-title">Time</div>
@@ -155,27 +161,31 @@ export function PlaybackSheet({
         </div>
 
         <div className="card white">
-          <div className="card-title">Range &amp; Repetitions</div>
-          <Stepper
-            label="Start hole"
-            value={start}
-            min={1}
-            max={s.holes}
-            onChange={(v) => {
-              setStart(v);
-              if (v > end) setEnd(v);
-            }}
-          />
-          <Stepper
-            label="End hole"
-            value={end}
-            min={1}
-            max={s.holes}
-            onChange={(v) => {
-              setEnd(v);
-              if (v < start) setStart(v);
-            }}
-          />
+          <div className="card-title">{song ? "Repeat song" : "Range & Repetitions"}</div>
+          {!song && (
+            <>
+              <Stepper
+                label="Start hole"
+                value={start}
+                min={1}
+                max={HOLES}
+                onChange={(v) => {
+                  setStart(v);
+                  if (v > end) setEnd(v);
+                }}
+              />
+              <Stepper
+                label="End hole"
+                value={end}
+                min={1}
+                max={HOLES}
+                onChange={(v) => {
+                  setEnd(v);
+                  if (v < start) setStart(v);
+                }}
+              />
+            </>
+          )}
           <Stepper label="Repetitions" value={reps} min={1} max={20} onChange={setReps} />
           <button
             type="button"
@@ -190,8 +200,9 @@ export function PlaybackSheet({
         </div>
       </div>
       <p className="po-summary">
-        {s.holes}-hole harmonica in {s.harpKey} ({holesRange(s.holes)}). Playback runs one note per beat through every
-        highlighted note between the start and end hole.
+        {song
+          ? "Songs play in their own rhythm. With the metronome on you get one bar of count-in clicks first."
+          : `12-hole harmonica in ${s.harpKey} (${range}). Playback runs one note per beat through every highlighted note between the start and end hole.`}
       </p>
     </div>
   );
@@ -200,9 +211,16 @@ export function PlaybackSheet({
 // ------------------------------------------------------------------ rutiny
 
 function describe(r: Routine["settings"]) {
-  const def = findDef(r.mode, r.mode === "scale" ? r.scaleId : r.arpId);
-  const dir = r.direction === "both" ? "Both" : r.direction === "forward" ? "Forward" : "Reverse";
-  return `${patternTitle(r.mode, def, r.key)} · ${r.bpm} BPM · ${dir} · holes ${r.startHole}–${r.endHole} · ×${r.repetitions} · ${r.holes}-hole ${r.harpKey} harp${r.metronome ? " · metronome" : ""}`;
+  const mode = r.mode ?? "scale";
+  const reps = r.repetitions ?? 1;
+  const tail = ` · ×${reps} · ${r.harpKey ?? "C"} harp${r.metronome ? " · metronome" : ""}`;
+  if (mode === "song") {
+    const d = findSong(r.songId ?? "");
+    return `🎵 ${d.title} · key ${songKeyLabel(d, r.songKey ?? d.key)} · ${r.bpm ?? d.bpm} BPM${tail}`;
+  }
+  const def = findDef(mode, mode === "scale" ? (r.scaleId ?? "major") : (r.arpId ?? "maj7"));
+  const dir = r.direction === "forward" ? "Forward" : r.direction === "reverse" ? "Reverse" : "Both";
+  return `${patternTitle(mode, def, r.key ?? "C")} · ${r.bpm ?? 90} BPM · ${dir} · holes ${r.startHole ?? 1}–${r.endHole ?? HOLES}${tail}`;
 }
 
 export function RoutinesSheet({
@@ -218,8 +236,10 @@ export function RoutinesSheet({
   onLoad: (r: Routine, play: boolean) => void;
   onClose: () => void;
 }) {
-  const def = findDef(s.mode, s.mode === "scale" ? s.scaleId : s.arpId);
-  const suggested = `${patternTitle(s.mode, def, s.key)} · ${s.bpm} BPM`;
+  const suggested =
+    s.mode === "song"
+      ? `${findSong(s.songId).title} · ${s.bpm} BPM`
+      : `${patternTitle(s.mode, findDef(s.mode, s.mode === "scale" ? s.scaleId : s.arpId), s.key)} · ${s.bpm} BPM`;
   const [name, setName] = useState("");
 
   return (
@@ -401,7 +421,7 @@ export function SettingsSheet({
         <div className="list-row">
           <div className="grow">
             <div className="set-label">Reset settings</div>
-            <div className="set-desc">Back to 12 holes, C harmonica, C Major, 90 BPM.</div>
+            <div className="set-desc">Back to C harmonica, C Major, 90 BPM.</div>
           </div>
           <button
             type="button"
@@ -433,6 +453,12 @@ export function AboutSheet({ onClose }: { onClose: () => void }) {
         repetitions from <i>Menu → Playback Options</i>. The <b>metronome</b> button starts a click track, the{" "}
         <b>tuning fork</b> starts the tuner — play a note and the matching hole shows a line: high in the box = sharp,
         low = flat.
+      </p>
+      <p>
+        <b>Songs</b> — 15 melodies for practice. The strip above the grid shows the tab: <b>4</b> = blow hole 4,{" "}
+        <b>-4</b> = draw hole 4, <b>&lt;</b> = with the slide pressed. ▶ plays the song in rhythm (switch the melody off to
+        play along yourself). <b>🎤 Practice</b> listens through the microphone and waits until you play each note
+        correctly; your best first-try score is saved. Tap any note in the strip to start from there.
       </p>
       <p>
         <b>Install on iPad / iPhone:</b> open the page in Safari → Share → <i>Add to Home Screen</i>. The app then opens

@@ -1,23 +1,8 @@
 "use client";
 
-import { HOLE_OPTIONS, holesRange } from "@/lib/harmonica";
+import { SONG_GROUPS, SONGS } from "@/lib/songs";
+import type { SongScore } from "@/lib/store";
 import { ARPEGGIOS, HARP_KEYS, KEY_ROWS, SCALES, type Mode, type PatternDef } from "@/lib/music";
-
-export function HolesPicker({ value, onPick }: { value: number; onPick: (v: number) => void }) {
-  return (
-    <div style={{ width: 300 }}>
-      <div className="pick-title">Holes</div>
-      <div className="pick-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
-        {HOLE_OPTIONS.map((h) => (
-          <button key={h} type="button" className={`pick-btn lime ${h === value ? "sel" : ""}`} onClick={() => onPick(h)}>
-            {h} holes
-            <span className="sub">{holesRange(h)}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export function HarpKeyPicker({ value, onPick }: { value: string; onPick: (v: string) => void }) {
   return (
@@ -104,6 +89,55 @@ export function PatternPicker({
                     <span className="formula">{formula(d)}</span>
                   </button>
                 ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const LEVEL = ["", "●○○", "●●○", "●●●"];
+
+export function SongPicker({
+  value,
+  scores,
+  onPick,
+}: {
+  value: string;
+  scores: Record<string, SongScore>;
+  onPick: (id: string) => void;
+}) {
+  return (
+    <div style={{ width: 680 }}>
+      <div className="pick-title">Songs</div>
+      <div className="pick-cols">
+        {SONG_GROUPS.map((g) => (
+          <div className="pick-section" key={g}>
+            <div className="pick-title" style={{ paddingTop: 10 }}>
+              {g}
+            </div>
+            <div className="pick-list">
+              {SONGS.filter((x) => x.group === g).map((x) => (
+                <button
+                  key={x.id}
+                  type="button"
+                  className={`pick-row song-row ${x.id === value ? "sel" : ""}`}
+                  onClick={() => onPick(x.id)}
+                >
+                  <span className="song-row-title">
+                    {x.title}
+                    <small>
+                      {x.by} · {x.key}
+                      {x.minor ? "m" : ""}
+                    </small>
+                  </span>
+                  <span className="formula">
+                    <span className="song-level">{LEVEL[x.level]}</span>
+                    {scores[x.id] ? <span className="song-best"> {scores[x.id].best}%</span> : null}
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
         ))}

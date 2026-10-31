@@ -2,7 +2,7 @@
 // Noty se píšou ASCII znaky (C#, Bb) stejně jako v originální appce.
 
 export const LETTERS = ["C", "D", "E", "F", "G", "A", "B"] as const;
-const LETTER_PC = [0, 2, 4, 5, 7, 9, 11];
+export const LETTER_PC = [0, 2, 4, 5, 7, 9, 11];
 const MAJOR_SEMIS = [0, 2, 4, 5, 7, 9, 11];
 const PERFECT_DEGREES = new Set([0, 3, 4]); // 1, 4, 5 (0-based)
 

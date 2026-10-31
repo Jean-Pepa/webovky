@@ -178,30 +178,21 @@ export const LESSONS: Lesson[] = [
         widget: <MiniGrid choices={[CHROMATIC, C_MAJOR]} />,
       },
       {
-        title: "Octaves and ranges",
+        title: "Three octaves: C4 – D7",
         body: (
           <>
             <p>
-              The vertical lines in the grid separate the octaves. The <b>top hole</b> is special: on most 12-, 14- and
-              16-hole chromatics draw + slide gives <b>D</b> instead of C, extending the range to D7.
+              The vertical lines in the grid separate the octaves of the 12-hole chromatic: holes <b>1–4</b> play C4–B4
+              (middle C up), holes <b>5–8</b> C5–B5 and holes <b>9–12</b> C6–C7. Every group uses exactly the same
+              breathing pattern, so a fingering you learn in one octave works in the others.
             </p>
-            <ul>
-              <li>
-                <b>10 holes</b> (e.g. Chrometta 10): G3 – Db6
-              </li>
-              <li>
-                <b>12 holes</b>: C4 – D7 — the classic jazz chromatic
-              </li>
-              <li>
-                <b>14 holes</b>: G3 – D7
-              </li>
-              <li>
-                <b>16 holes</b>: C3 – D7 — a whole extra low octave
-              </li>
-            </ul>
+            <p>
+              The <b>top hole</b> is special: draw + slide on hole 12 gives <b>D7</b> instead of C, so the instrument
+              reaches from <b>C4 up to D7</b>.
+            </p>
           </>
         ),
-        widget: <MiniGrid choices={[C_MAJOR]} holeChoices={[10, 12, 14, 16]} />,
+        widget: <MiniGrid choices={[C_MAJOR, CHROMATIC]} />,
       },
       {
         title: "Reading the grid",
@@ -236,7 +227,7 @@ export const LESSONS: Lesson[] = [
           { q: "Where is F#4 on a 12-hole C chromatic?", options: ["Hole 2 draw + slide", "Hole 2 blow + slide", "Hole 3 draw", "Hole 1 draw + slide"], answer: 0, explain: "Draw 2 is F; the slide raises it to F#." },
           { q: "Hole 3 blow + slide gives…", options: ["G#", "A", "G", "F#"], answer: 0, explain: "Blow 3 is G, the slide makes it G#." },
           { q: "Which notes appear twice in every octave of the solo tuning?", options: ["C and F", "D and A", "E and B", "G and C#"], answer: 0, explain: "C: blow 4 = blow 5 (= draw 4 + slide). F: draw 2 = blow 2 + slide." },
-          { q: "Lowest note of a 16-hole chromatic in C?", options: ["C3", "C4", "G3", "A2"], answer: 0, explain: "The 16-hole adds a full octave below middle C: C3 – D7." },
+          { q: "What is the highest note of a 12-hole chromatic in C?", options: ["D7 (hole 12 draw + slide)", "C7 (hole 12 blow)", "B6 (hole 12 draw)", "C#7 (hole 12 blow + slide)"], answer: 0, explain: "The top hole’s draw + slide is tuned to D, so the range is C4 – D7." },
         ],
       },
     ],
@@ -736,6 +727,9 @@ export const LESSONS: Lesson[] = [
             <li>Scales around the circle of fourths — direction Both, metronome on, start at 60 BPM.</li>
             <li>ii–V–I arpeggios in all keys.</li>
             <li>Improvise with the scale of the week.</li>
+            <li>
+              Finish with a song: <b>Songs</b> tab → <b>🎤 Practice</b>. The app waits until you hit every note.
+            </li>
           </ol>
         ),
         widget: <RoutinePresets />,

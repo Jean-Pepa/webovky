@@ -90,13 +90,10 @@ await step("Výchozí obrazovka: 12 dírek, C dur, horní dírka táhnutí+šoup
   expect(await page.$eval('[data-pos="1-blowSlide"]', (e) => e.classList.contains("out")), "C# šedě");
 });
 
-await step("Holes → 16 (C3–D7)", async () => {
-  await page.click(".chip.lime >> nth=0");
-  await page.locator(".pick-btn", { hasText: "16 holes" }).click();
-  expect((await page.$$(".hole-col")).length === 16, "16 sloupců");
-  expect((await cell("16-drawSlide")) === "D", "16 draw slide D");
-  await page.click(".chip.lime >> nth=0");
-  await page.locator(".pick-btn", { hasText: "12 holes" }).click();
+await step("Holes: jen 12dírková (čip bez výběru)", async () => {
+  expect((await text(".chip.static .chip-value")) === "12", "Holes 12");
+  await page.click(".chip.static");
+  expect((await page.$$(".popover")).length === 0, "žádný výběr dírek");
 });
 
 await step("Harmonica → G a zpět na C", async () => {
@@ -198,6 +195,57 @@ await step("Ladička: panel s pravítkem a údaji", async () => {
     expect((await page.$$(".pitch-line")).length > 0, "čárka v dírce");
   }
   await page.click('[aria-label="Tuner"]');
+});
+
+await step("Songs: výběr písničky, tabulatura, přehrávání v rytmu", async () => {
+  await page.getByRole("tab", { name: "Songs" }).click();
+  await page.waitForSelector(".song-bar");
+  await page.click(".song-chip");
+  await page.locator(".song-row", { hasText: "Greensleeves" }).click();
+  expect((await text(".song-chip .chip-value")) === "Greensleeves", await text(".song-chip .chip-value"));
+  expect((await text(".chip.orange .chip-value")) === "Am", "tónina Am");
+  const first = await page.$eval(".tab", (e) => e.textContent);
+  expect(first === "-3A", `první tab ${first}`);
+  expect((await page.$$(".tab")).length === 70, "70 not");
+  await page.click('[aria-label="Play"]');
+  await page.waitForSelector(".tab.now", { timeout: 6000 });
+  await page.waitForSelector(".cell.playing", { timeout: 2000 });
+  await page.click('[aria-label="Stop"]');
+  expect((await page.$$(".tab.now")).length === 0, "po stopu nic");
+});
+
+await step("Songs: transpozice (Am → Gm) a začátek od vybrané noty", async () => {
+  await page.click(".chip.orange");
+  await page.locator(".pick-btn.orange", { hasText: /^G$/ }).click();
+  expect((await text(".chip.orange .chip-value")) === "Gm", await text(".chip.orange .chip-value"));
+  const first = await page.$eval(".tab .n", (e) => e.textContent);
+  expect(first === "G", `první nota ${first}`);
+  await page.locator(".tab").nth(8).click();
+  expect(await page.locator(".tab").nth(8).evaluate((e) => e.classList.contains("cursor")), "kurzor na 9. notě");
+  await page.click('[aria-label="Back to start"]');
+  await page.click(".chip.orange");
+  await page.locator(".pick-btn.orange", { hasText: /^A$/ }).click();
+});
+
+await step("Songs: Melody / Play-along přepínač", async () => {
+  await page.locator(".song-btn", { hasText: "Melody" }).click();
+  await page.locator(".song-btn", { hasText: "Play-along" }).waitFor();
+  await page.locator(".song-btn", { hasText: "Play-along" }).click();
+  await page.locator(".song-btn", { hasText: "Melody" }).waitFor();
+});
+
+await step("Songs: Practice (mikrofon čeká na správný tón)", async () => {
+  await page.click(".song-chip");
+  await page.locator(".song-row", { hasText: "Twinkle" }).click();
+  await page.locator(".song-btn", { hasText: "Practice" }).click();
+  await page.waitForSelector(".tab.now");
+  if (TONE) {
+    await page.waitForSelector(".tab.ok", { timeout: 5000 });
+    console.log("   procvičování:", await text(".song-stat"));
+  }
+  await page.locator(".song-btn", { hasText: "Practice" }).click();
+  expect((await page.$$(".tab.now")).length === 0, "procvičování vypnuto");
+  await page.getByRole("tab", { name: "Scale" }).click();
 });
 
 await step("Learning: 0 of 8, lekce 1 až do konce, odemknutí", async () => {
