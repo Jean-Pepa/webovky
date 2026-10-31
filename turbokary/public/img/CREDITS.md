@@ -237,3 +237,25 @@ Use case: logo-brand. Asset type: original cheerful kart racing game START / FIN
 ```
 
 
+## Náhledy tratí
+
+Všechny tři náhledy jsou původní ilustrace vytvořené vestavěným nástrojem OpenAI ImageGen (`transparent_background=true`) z níže uvedených promptů, bez cizích předloh. Náměty vycházejí z popisů v `src/game/tracks.ts`; jde o stylizované ilustrace prostředí, nikoli přesné mapy geometrie. Export přes Windows System.Drawing/GDI+: proporcionální bicubic zmenšení do prostoru 624×344 px, vystředění na průhledném PNG plátně 640×360 px, zachování alfa kanálu a barev RGB/sRGB. Každý soubor má průhledné rohy, žádné texty ani skutečné značky. Nezměnil se žádný zdrojový kód hry.
+
+### `tracks/louka.png`
+
+Prompt:
+
+> Use case: stylized-concept. Asset type: 640x360 landscape lobby thumbnail of the Zelená louka meadow course in original cartoon kart-racing game TurboKáry. A beautiful readable isometric three-quarter aerial miniature diorama, wide composition, the entire terrain island isolated on genuinely transparent background with small clear margins. Show a continuous friendly winding asphalt kart circuit forming a broad irregular kidney-shaped closed loop, long straight in the front, easy rounded bends, red-and-white curbs, a small checkerboard start line and one small jump ramp. Lush emerald grass and rounded lime-green deciduous trees surrounding the road, rolling meadow hills behind. One tiny orange generic kart adds scale. Cheerful polished hand-drawn cartoon art, bold clean dark-indigo #1b1430 contour lines, rounded simplified shapes, soft cel shading, vivid green/blue with accents #ffd21f #ff7a1a #7cf3ff, consistent with a playful low-poly game. Preserve readable road silhouette at thumbnail size. No text, no letters, no names, no logos, no Nintendo motifs, no mushrooms, turtles or question blocks. Genuine alpha outside the diorama, no white/gray/checkerboard backdrop and no external drop shadow.
+
+### `tracks/kanon.png`
+
+Prompt:
+
+> Use case: stylized-concept. Asset type: 640x360 landscape lobby thumbnail of the Písečný kaňon desert course in original cartoon kart-racing game TurboKáry. A beautiful readable isometric three-quarter aerial miniature diorama, wide composition, the entire terrain island isolated on genuinely transparent background with small clear margins. Show a continuous winding asphalt kart circuit forming a broad irregular closed loop, long straight in the front and two sharp hairpin switchbacks deeper into the canyon. Red-and-white curbs, small checkerboard start line and two small jump ramps. Golden sandy ground, warm red-orange sandstone mesas with flat tops, rounded layered canyon walls and several bright green cacti around the road. One tiny red generic kart adds scale. Cheerful polished hand-drawn cartoon art, bold clean dark-indigo #1b1430 contour lines, rounded simplified shapes, soft cel shading, warm orange/coral/sand with turquoise accents, consistent with a playful low-poly game. Preserve readable road silhouette at thumbnail size. No text, no letters, no names, no logos, no Nintendo motifs, no mushrooms, turtles or question blocks. Genuine alpha outside the diorama, no white/gray/checkerboard backdrop and no external drop shadow.
+
+### `tracks/jezero.png`
+
+Prompt:
+
+> Use case: stylized-concept. Asset type: 640x360 landscape lobby thumbnail of the Ledové jezero frozen lake course in original cartoon kart-racing game TurboKáry. A beautiful readable isometric three-quarter aerial miniature diorama, wide composition, the entire terrain island isolated on genuinely transparent background with small clear margins. Show a continuous slippery pale cyan ice kart circuit forming a broad irregular kidney-shaped closed loop on a frozen lake, long straight in the front and wide sweeping bends. Dark icy-blue subtle tire marks, small checkerboard start line, snow banks and occasional low blue barriers mark the edges, one small icy jump ramp. White snow-covered shores, a few snow-laden fir trees, angular little snow-covered mountains at the rear. One tiny cyan generic kart adds scale. Cheerful polished hand-drawn cartoon art, bold clean dark-indigo #1b1430 contour lines, rounded simplified shapes, soft cel shading, cool blue/periwinkle/lilac and white with vivid cyan accents, consistent with a playful low-poly game. Preserve readable road silhouette at thumbnail size. No text, no letters, no names, no logos, no Nintendo motifs, no mushrooms, turtles or question blocks. Genuine alpha outside the diorama, no white/gray/checkerboard backdrop and no external drop shadow.
+
