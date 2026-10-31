@@ -48,3 +48,88 @@ Prompt: Use case: ads-marketing. Final original trackside sponsor billboard text
 
 Prompt: Use case: ads-marketing. Final original trackside sponsor billboard texture for the Czech cartoon kart game TurboKáry. One very wide 4:1 banner, final use 1024x256 PNG. Cheerful simple cartoon with bold thick dark purple #1b1430 outlines, soft cel shading, no photorealism. A bright coral #ff4d6d and warm orange rounded rectangular sign panel occupies almost the entire image, transparent exterior corners, no wall or environment. VERY LARGE playful chunky rounded type in cream white with dark purple outline saying EXACTLY "Koblihy Zrzka" and no other words. Czech accents must be correct. Text takes about 75 percent of the width; modest decorative mascot at one end: an orange fox ear silhouette behind a plump golden Czech jam doughnut with a tiny red jam dot. Simple tiny checker race accent. Readable at a distance. Front-on completely flat sign, centered, generous safety margin all around, no frame cropping. No actual companies, no Nintendo imagery, no watermark. ONLY the complete sign on transparent background.
 
+## Ikony věcí
+
+Vytvořeno 31. října 2026 vestavěným nástrojem OpenAI ImageGen (nikoli API/CLI fallback). Osm samostatných generování podle zadání TurboKáry; bez externích obrazových předloh. Originální kreslená grafika, žádné značky či převzaté herní postavy. Mechanické zmenšení na 256×256 pomocí Windows System.Drawing, vysoce kvalitní bicubická interpolace, průhledný kanál alfa zachován. Export PNG sRGB. Kontrola vzhledu jednotlivě a společně ve velikosti 48 px.
+
+### `items/turbo.png`
+
+Zdrojový generovaný soubor: `exec-ae28b48d-77c8-4da7-8b42-169c7946cb77.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Subject: one chunky yellow-to-orange lightning bolt representing turbo speed, dynamic diagonal silhouette. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Palette: golden yellow #ffd21f, orange #ff7a1a, tiny pale cream highlight. Composition: one centered isolated icon, generous 10% transparent margin, fills square well and recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size.
+```
+
+### `items/turbo3.png`
+
+Zdrojový generovaný soubor: `exec-f0078ecd-d8e9-4cba-bee5-7526d17fdb1b.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Composition: centered isolated icon, generous 10% transparent margin, fills square well and unmistakably recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size. Subject: Exactly THREE clearly distinct chunky lightning bolts side by side in a dynamic fan, each yellow #ffd21f with orange #ff7a1a edges and pale cream highlight. They must form one balanced inventory icon with exactly three visible zigzag bolt silhouettes, visually legible as triple turbo speed.
+```
+
+### `items/oil.png`
+
+Zdrojový generovaný soubor: `exec-21ebb0ac-1277-4f6f-b61d-45c71df73b1f.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Composition: centered isolated icon, generous 10% transparent margin, fills square well and unmistakably recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size. Subject: One chunky black-charcoal oil jerrycan in slight three-quarter view with handle and spout, a wide horizontal yellow #ffd21f stripe on its front and one bold black oil droplet symbol in that stripe. The can is the whole silhouette, with a warm gray edge highlight. No lettering.
+```
+
+### `items/coconut.png`
+
+Zdrojový generovaný soubor: `exec-08144e14-5406-4ff5-abbf-6bce133fd487.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Composition: centered isolated icon, generous 10% transparent margin, fills square well and unmistakably recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size. Subject: One whole round brown coconut with three dark circular coconut pores arranged as two eyes and a tiny mouth, cute and mischievous. Warm brown simple segmented shell shading, a few broad curved husk marks, pale tan highlights. No limbs and no cut-open flesh. Very simple big silhouette.
+```
+
+### `items/rocket.png`
+
+Zdrojový generovaný soubor: `exec-568a0b53-87b1-49b0-9f48-cbe867943ecb.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Composition: centered isolated icon, generous 10% transparent margin, fills square well and unmistakably recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size. Subject: One chunky toy-like red-and-white rocket diagonally pointing to upper right, red rounded nose cone #ff4d6d, white main body, red triangular fins, simple cyan porthole, short bright golden yellow and orange exhaust flame. Friendly playful power-up, not a realistic weapon.
+```
+
+### `items/bees.png`
+
+Zdrojový generovaný soubor: `exec-6067b942-2b80-4428-8ab3-f034406bc5eb.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Composition: centered isolated icon, generous 10% transparent margin, fills square well and unmistakably recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size. Subject: Exactly THREE happy chubby yellow-and-black bees flying together in a compact triangular swarm. One larger central bee and two smaller bees at its sides. Each has black stripes, tiny antennae, two pale cyan wings, smiling cute face. The three separate bodies must be clearly countable and recognizable at tiny icon size. Very simple big shapes.
+```
+
+### `items/shield.png`
+
+Zdrojový generovaný soubor: `exec-16f09ba1-34cf-4e07-b85a-e1d2325c6a20.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Composition: centered isolated icon, generous 10% transparent margin, fills square well and unmistakably recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size. Subject: One round translucent blue protective bubble shield. Thick dark plum outer contour, bright cyan #7cf3ff rim and white curved reflection highlights, clear softly blue transparent center with subtle light azure glass shading. Single spherical bubble, not a medieval shield and no emblem, no object inside. Bold simple silhouette recognizable at 48 px.
+```
+
+### `items/ram.png`
+
+Zdrojový generovaný soubor: `exec-285418d7-3595-4b6a-8609-35b57e1fd108.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Composition: centered isolated icon, generous 10% transparent margin, fills square well and unmistakably recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size. Subject: A symmetrical pair of thick curled ram horns made from glowing golden yellow metal, facing front. Two clearly separated spiral curls join at short central golden bridge, with a small warm orange golden halo close around the horns and two tiny gleam marks. No ram head or face. The two spiral horns are the entire power-up symbol. Thick dark plum contour, bright gold #ffd21f and orange #ff7a1a shade.
+```
+
+
