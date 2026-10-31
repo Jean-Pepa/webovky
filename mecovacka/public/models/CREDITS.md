@@ -33,7 +33,7 @@ Hierarchie a místní polohy všech 15 kloubů přesně podle AGENTS.md. Klouby 
 
 Exportovaný rozsah: finální public/models/fighters. Vizuálně ověřeny finální GLB a pohyb postav v souboji a tréninku skutečného sestavení hry; všech deset dosud dodaných GLB načteno bez chyb nebo varování.
 
-Finální geometrická revize: hlavy na 80 % původní velikosti kolem pevného středu 0,27 m nad krkem, čelenky poměrově sladěny, vyšší polstrovaný límec, zakrytý pas. Pytlové tělo panáka tvoří jediná souvislá rotační geometrie. Degenerované trojúhelníky odstraněny; ploché normály znovu vypočítány a normalizovány. Všech 9 modelů prošlo nezávislým kontraktním validátorem bez chyb i varování, včetně kloubů, PBR, geometrie a limitů. Výška hlavního objemu lebky je přibližně 1,75–1,81 m, uši a účesy mohou přesahovat. Vizuální ověření skutečných finálních GLB probíhá před commitem.
+Finální geometrická revize: hlavy na 80 % původní velikosti kolem pevného středu 0,27 m nad krkem, čelenky poměrově sladěny, vyšší polstrovaný límec, zakrytý pas. Pytlové tělo panáka tvoří jediná souvislá rotační geometrie. Degenerované trojúhelníky odstraněny; ploché normály znovu vypočítány a normalizovány. Všech 9 modelů prošlo nezávislým kontraktním validátorem bez chyb i varování, včetně kloubů, PBR, geometrie a limitů. Výška hlavního objemu lebky je přibližně 1,75–1,81 m, uši a účesy mohou přesahovat. Finální GLB byly vizuálně ověřeny před commitem.
 
 Poslední oprava panáka: prodloužení kůlu od y=0 do y=0,84 m, s překryvem 4 cm do pytle (pytel začíná v y=0,80 m). Upravená pouze geometrie kůlu; všech 15 kloubů a soubory 0–7 beze změny, ověřeno kontrolními součty.
 
@@ -69,4 +69,8 @@ Osm krájených objektů má identity uzly half_a (x≥0) a half_b (x≤0), geom
 
 Modelování vychází z rozměrů AGENTS.md; stopky, listy a bodliny jsou přirozené drobné přesahy hlavního objemu. Podlouhlé tvary i sýrové kolo mají osu X. Export do finální složky. Nezávislá kontraktní kontrola prošla; všechny celky i rozevřené poloviny byly vizuálně ověřeny z finálních GLB.
 
-QA finálních GLB: kontraktní validátor PASS. U řezů zachováno obvyklé doporučení vizuální prohlídky. Doplněný geometrický audit svařuje shodné pozice s přesností 1 mikrometr a kontroluje počet přilehlých ploch každé hrany: všech 16 polovin a celý ježek mají 0 otevřených hran a 0 hran s více než dvěma plochami. Žádné degenerované trojúhelníky; velikosti a počty podle tabulky výše. Vizuální kontrola celých i rozevřených modelů probíhá skutečným Three.js renderem před commitem.
+QA finálních GLB: kontraktní validátor PASS. U řezů zachováno obvyklé doporučení vizuální prohlídky. Doplněný geometrický audit svařuje shodné pozice s přesností 1 mikrometr a kontroluje počet přilehlých ploch každé hrany: všech 16 polovin a celý ježek mají 0 otevřených hran a 0 hran s více než dvěma plochami. Žádné degenerované trojúhelníky; velikosti a počty podle tabulky výše. Celé i rozevřené finální modely byly vizuálně ověřeny skutečným Three.js renderem před commitem.
+
+## Závěrečná kontrola celé dodávky
+
+Všech 20 finálních GLB prošlo kontrolou pojmenovaných uzlů, os, rozměrů, geometrie a limitů. Doporučení vizuální kontroly bočních provazů arény a vnitřních řezů byla provedena; řezy navíc prošly auditem uzavřenosti hran. Produkční sestavení hry prošlo. Místní prohlížeč načetl všech 20 GLB bez chyb nebo varování a zobrazil souboj, krájení a trénink. Ověřeno také propojení se simulovaným telefonem a zobrazení jeho grafiky; pohybové senzory na skutečném zařízení nebyly součástí této kontroly.

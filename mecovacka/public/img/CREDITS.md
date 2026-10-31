@@ -437,4 +437,251 @@ Sharp: oba PNG zdroje rovnoměrně zmenšeny do 936×516 metodou contain, bez de
 
 Vizuálně ověřeny tváře a identita lišky/žabáka, správné úbory, motokáry v zatáčce, dva pěnové meče s bílými tupými špičkami, oba boční provazové pásy mola, absence textu a rámů. Ve finálních kartách zůstává průhledný odstup od hran; postavy ani špičky nejsou uříznuty. Pozadí je klidné, bez postav a s tmavými okraji. Kompozitní kontrola obou karet na výsledném pozadí: `CLAUD DATA/tmp/mc-hub/preview.png`. Strojové hodnoty: `CLAUD DATA/tmp/mc-hub/qa.json`.
 
+## Návrhy PC lobby a herního HUD
 
+Created 2026-10-31 with the built-in OpenAI ImageGen tool, one separate call for each design. No API or CLI fallback was used. These are visual design proposals for implementation, not screenshots of changes already applied to the game.
+
+Projektové cesty: `mecovacka/public/img/design/lobby.png` and `mecovacka/public/img/design/hud.png`.
+
+### Read-only implementation review
+
+The proposal was grounded in `mecovacka/AGENTS.md` and the current `src/game/screens.ts`, `hud.ts`, `duel-mode.ts`, `main.ts` and `src/shared/protocol.ts`.
+
+Supported elements reflected in the lobby: joining by QR / four-character room code; one player and computer opponent; Souboj, Krájení and Trénink modes; computer difficulty (Pohodový / Rytířský / Mistrovský), match length of one, two or three wins, START, sound and fullscreen. The shown state uses Souboj, Rytířský and “na 2 vítězná”. The QR area is intentionally a clear nonfunctional placeholder labeled “UKÁZKA”, with only three broad finder-square shapes and no encoded data. The room code is four dashes, and no real address or code appears.
+
+Supported HUD elements: player portraits/names at left/right, computer subtitle, round-win dots, round number, 60-second timer shown as “1:00”, and a small guard/calibration-related prompt. No health, stamina, XP, inventory or unsupported game system is proposed. Zrzka and Frak provide the requested orange/cyan foam sword colors. The screenshot's behind-player camera and arena layout ground the scene.
+
+Typography is a raster visual approximation of the project's Lilita One / Baloo 2 treatment; implementation should use the real existing font files. The source review does not imply that these proposed layouts were implemented.
+
+### References
+
+All image inputs were visually inspected before use. References are the project's own original logo/portraits and actual local game captures.
+
+### Lobby input order
+
+1. `mecovacka\public\img\logo.png` — official Mečovačka logo and exact Czech lettering.
+2. `mecovacka\public\img\chars\0.png` — Zrzka identity and outfit.
+3. `mecovacka\public\img\chars\2.png` — Frak identity and outfit.
+4. `C:\Users\krist\OneDrive\Plocha\CLAUD DATA\tmp\mc3d\game\fighters-lobby.png` — actual lobby; supported feature set only, old QR/debug details excluded.
+5. `C:\Users\krist\OneDrive\Plocha\CLAUD DATA\tmp\mc3d\game\arena-scene.png` — actual arena environment: pier, pond, wooded shore.
+
+### HUD input order
+
+1. `C:\Users\krist\OneDrive\Plocha\CLAUD DATA\tmp\mc3d\game\fighters-mode-0.png` — actual behind-fighter view, arena and camera layout; old HUD removed.
+2. `mecovacka\public\img\chars\0.png` — Zrzka identity and outfit.
+3. `mecovacka\public\img\chars\2.png` — Frak identity and outfit.
+4. `C:\Users\krist\.codex\generated_images\01a1922e-faf2-7f73-a493-a809c570402c\exec-d8481cb8-144c-4681-9707-9c8fd2996fd8.png` — new lobby proposal for matching interface styling only.
+
+### Exact generation prompts
+
+### lobby.png
+
+Generated source: `C:\Users\krist\.codex\generated_images\01a1922e-faf2-7f73-a493-a809c570402c\exec-d8481cb8-144c-4681-9707-9c8fd2996fd8.png`
+
+`transparent_background: true`
+
+```text
+Use case: ui-mockup.
+Asset type: polished PC lobby visual design proposal for the original Czech foam-sword game Mečovačka, full-screen interface canvas 1920x1080 (16:9).
+Reference image 1 is the EXACT official logo, preserving its typography, both Czech č accents, yellow/cyan colors and foam-sword underline. Image 2 is the original fox Zrzka portrait. Image 3 is the original penguin Frak portrait. Image 4 is the ACTUAL current lobby, reference for supported features only, NOT for its old typography, temporary network/debug warnings, URLs or real QR content. Image 5 is the actual low-poly pond arena, environment reference.
+Design a refined inviting game menu with clean information hierarchy, large readable controls, rounded dark-purple #14123a cards, warm yellow #ffd21f primary action, cyan #4fd1ff accents, white text, soft subtle depth, generous spacing, thick clean #1b1430 outlines for illustrated assets. Typography visually matching Lilita One for headings and Baloo 2 for UI labels. Bright afternoon low-poly pond and long narrow wooden pier visible behind the interface, preserving the game's wooded shore, water, side rope railings and open short ends.
+Layout: official logo prominent across the upper left/center; small supporting exact text "Mečem je tvůj telefon". Main content is an elegantly organized wide dark translucent panel. Left column is joining: heading "Připoj telefon", a large white square NONFUNCTIONAL QR PLACEHOLDER with only three broad corner finder squares and an otherwise sparse empty center bearing the clear bold word "UKÁZKA"; do NOT make a real scannable QR and do NOT copy any QR from reference. Below it exact label "KÓD: — — — —". No real link or address anywhere.
+Right area has TWO equal player cards: first uses the exact fox portrait with name "Zrzka", small status "Hráč 1"; second uses the exact penguin portrait with name "Frak", small status "Počítač". Under the cards is a single horizontal row of THREE large mode buttons with clear simple icons and exactly these labels: "Souboj" (selected, crossed colorful FOAM swords with white round tips), "Krájení" (split watermelon and small arrow), "Trénink" (straw dummy with target).
+Below modes, compact setup controls: header "Počítač" above a minus button, value "Rytířský", and plus button; header "Zápas" above minus button, value "na 2 vítězná", and plus button. To the right a large cheerful yellow primary button reading only "START" with a simple play triangle.
+A quiet small footer can contain just "Zvuk" with speaker symbol and "Celá obrazovka" with expand symbol. No extra menu features.
+All Czech text must be exactly spelled as quoted, clean and large, real typography, no invented microtext. Only the described controls; no health bars, XP, shop, rewards, matchmaking or other unsupported features.
+This is the full UI itself, no monitor, laptop, console, phone or browser chrome; no photo of a device, no perspective on the UI panel. A complete opaque fullscreen UI design INSIDE a softly rounded rectangle almost filling the canvas, with only a tiny 8–12 px genuinely ALPHA TRANSPARENT outside margin and rounded outer corners. Do not make the actual interface content transparent or cut out individual controls. Keep all content safely within the rectangle. No watermark or additional text.
+```
+
+### hud.png
+
+Generated source: `C:\Users\krist\.codex\generated_images\01a1922e-faf2-7f73-a493-a809c570402c\exec-ba764cc5-24af-4f9a-a52e-1d2eacef7374.png`
+
+`transparent_background: true`
+
+```text
+Use case: ui-mockup.
+Asset type: in-match PC HUD design for the original Czech foam-sword game Mečovačka, fullscreen 1920x1080 (16:9). This is the game's interface itself, not a device photograph.
+Image 1 is the ACTUAL behind-the-fighter game screenshot, authoritative for camera angle and arena layout. Preserve the long narrow wooden pier viewed along its length, rope rails on both long sides, open far end, pond around it, green wooded shore and boats. Preserve third-person behind-player camera at slightly elevated head level. Remove the old HUD and mouse prompt.
+Image 2 is the original FOX Zrzka portrait, identity/costume reference for the local player. Image 3 is original PENGUIN Frak portrait, identity/costume reference for the opponent. Image 4 is the new approved LOBBY VISUAL STYLE, reference only for crisp purple panels, friendly round typography, yellow/cyan accents and portrait presentation; do not copy the lobby layout, logo or mode controls into gameplay.
+Scene: actual gameplay-style low-poly 3D view, NOT a flat cartoon battle illustration and NOT a side-on spectator view. The near FOX wears orange headband and padded vest with dark navy sleeves, seen from behind in the lower foreground, slightly semi-transparent just like the game screenshot so the opponent and blade remain visible. The PENGUIN opponent stands farther along the same narrow pier, facing the player, with cyan blue headband and padded vest, white face and golden-yellow sleeves. Each has one thick rounded FOAM sword: fox ORANGE, penguin CYAN BLUE, both with conspicuous WHITE ROUND PADDED CAPS, simple rounded guards and short grips. Blades visible diagonally in the middle without covering opponent's face. Friendly sporting stance, no metallic weapon, sharp points or violence. Warm sunny pond lighting and clear stylized low-poly geometry. Keep foreground body and swords in lower half so the opponent and pier are readable. A couple of small spectator boats beside the pier may remain from the scene.
+HUD only: at TOP LEFT, compact dark-purple #14123a rounded panel with the exact fox portrait in a small circle, name "Zrzka", and TWO small empty outlined circular round-win pips. At TOP RIGHT, a matching panel with the exact penguin portrait, name "Frak", small subtitle "Počítač", and TWO small empty outlined circular round-win pips. These are round points, never health bars or meters. Compact center-top timer pill: small heading "Kolo 1" above large "1:00" (sixty seconds). White letters, warm yellow timer digits, subtle cyan/orange outlines. Heading letterforms visually match Lilita One and supporting text Baloo 2. Generous safe padding at top and sides. Keep the center of the view unobstructed.
+At bottom center ONLY a discreet slim rounded prompt chip with a small shield symbol and exact short text "Podrž KRYT". No progress bar. No other words.
+Do not show health, stamina, XP bars, inventory, skill buttons, joystick, crosshair, huge score numerals, victory banners, debug text, logo, lobby controls, fake console buttons, phones or browser chrome.
+The complete fullscreen scene and HUD are inside an almost full-canvas subtly rounded rectangle with ONLY a tiny 8–12 px true alpha-transparent outer margin and rounded outer corners. The main scene itself is opaque. Crisp professional game UI proposal, clean consistent spacing, no watermark. Only the exact quoted Czech labels.
+```
+
+### Mechanical export and QA
+
+Both generated sources are 1672 × 941 PNG. Bundled Sharp performs a mechanical contain resize to 1904 × 1064 with transparent padding, followed by an 8 px transparent extension on each side to reach exactly 1920 × 1080. This retains the complete UI and provides the requested thin true-alpha outer margin. Existing generated alpha, including the HUD's rounded corners, is retained. The export embeds/converts to sRGB and encodes PNG with compression level 9 and adaptive filtering. No text, icons or scene content was drawn or patched in code.
+
+External export helper: `tmp/mc-design-pc-export.cjs`; technical QA: `tmp/mc-design/pc-qa.json`. Original source images remain at the paths listed above. The 960 × 540 preview PNGs in the staging directory are QA aids only.
+
+| Final | Dimensions | Bytes | Fully transparent pixels | Alpha at all corners |
+|---|---:|---:|---:|---|
+| `lobby.png` | 1920 × 1080 | 2743844 | 61576 | 0 |
+| `hud.png` | 1920 × 1080 | 2734350 | 61667 | 0 |
+
+Both finals are RGBA PNG with embedded sRGB profiles. Inspected source generations and the resized final previews. Checked exact logo carons and Czech labels, clear nonfunctional joining placeholder, readable control hierarchy, recognizable portraits and color families. HUD check: behind-Zrzka view along the pier, Frak visible ahead, orange/cyan foam swords with rounded white ends, side rope rails, open far end, two empty round-win dots per player, “Kolo 1”, “1:00”, and “Podrž KRYT”. No health bars, browser chrome, monitor/device frame, debug/console details, or extraneous controls. The middle view remains uncluttered.
+
+## Návrhy telefonního ovládání
+
+Datum: 2026-10-31. Autor: Codex za pomoci vestavěného OpenAI ImageGen. Každý návrh a každá následná úprava byly samostatným voláním ImageGen; všude `transparent_background: true`. Bez API/CLI fallbacku, bez externích stažených obrázků.
+
+### Finální zmrazené soubory
+
+| Soubor ve stagingu | Projektový soubor | Rozměry / formát | Bytes | SHA-256 |
+|---|---|---|---:|---|
+| `tmp/mc-design/pad-lobby.png` | `mecovacka/public/img/design/pad-lobby.png` | 780×1688, PNG RGBA 8 bit, sRGB | 2162517 | `DCCCC05537D628023102FB5106713D6D0DF9B77FAABEED76B55CE9B0F69D0477` |
+| `tmp/mc-design/pad-game.png` | `mecovacka/public/img/design/pad-game.png` | 780×1688, PNG RGBA 8 bit, sRGB | 2086406 | `4DD4E374ACDCDC18CF5EA17AD720BB23479C88A562A6FF51BD577B40FB6A4B9A` |
+
+Staging root: `C:\Users\krist\OneDrive\Plocha\CLAUD DATA\tmp\mc-design`.
+Soubory jsou návrhy rozvržení a vzhledu pro Claude; nejde o implementaci funkčních ovladačů.
+
+### Původ a reference
+
+Přečteny read-only `mecovacka/AGENTS.md`, `mecovacka/src/pad/main.ts`, `mecovacka/pad.html`, `mecovacka/src/styles/pad.css` a definice herních režimů/obtížností. Lobby odpovídá stavu hostitele: jméno, spojení, stav gyroskopu, 8 postav, dominantní ruka, vibrace, Souboj/Krájení/Trénink, počítač a počet vítězných kol, START. Herní návrh předpokládá funkční gyroskop: Vyrovnat, skóre kola, pauza hostitele a jediný velký přidržovaný KRYT; žádný útočný/jump/joystick ovladač nebyl přidán. Jméno/portrét a stav spojení jsou přidány do návrhu dle zadání; tato data již hra má. `Pepa` je ukázkové jméno.
+
+Všechny vstupní ilustrace jsou již vytvořené vlastní assety projektu:
+- `mecovacka/public/img/logo.png`: originální logo Mečovačky.
+- `mecovacka/public/img/chars/0.png` až `7.png`: vlastní finální postavy Zrzka, Kvak, Frak, Hop, Mour, Huňáč, Šroubek, Kvík.
+- `tmp/mc-design/phone-portraits-reference.png`: mechanický kontaktní přehled uvedených osmi portrétů, vytvořený jen jako reference pro ImageGen.
+- `tmp/mc-images/pad/shield.png`: vlastní finální kulatý štít, jako ilustrace jediného herního tlačítka.
+- Již vygenerovaná lobby byla referencí vizuální konzistence hry; finální herní panel byl později referencí neprůhledné podkladové karty lobby.
+
+Vstupy byly před použitím vizuálně prohlédnuty. Není použit cizí brand, stock ilustrace ani licencovaný fontový soubor; typografie je rastrová interpretace stylu Lilita One/Baloo 2.
+
+### Export a kontrola
+
+Vestavěný ImageGen uložil originály do uživatelského adresáře generated_images. Vybrané finální zdroje obou obrazovek mají 853×1844. Byly celé, bez ořezu či další obsahové úpravy, přepočteny na přesných 780×1688 pomocí System.Drawing, HighQualityBicubic/HighQuality/SourceCopy, do Format32bppArgb. Alfa kanál byl zachován. PNG export obsahuje sRGB a gAMA chunky. Zachovány skutečně průhledné vnější okraje a zaoblené rohy; obě levé horní rohové hodnoty alfa jsou 0.
+
+Export: `tmp/mc-design/export-phone.ps1`. Metadata a hashe: `tmp/mc-design/phone-qa.json`.
+Kontaktní kontrola při přesném zobrazení 390×844 na kontrastním podkladu: `tmp/mc-design/phone-preview.png`.
+Vizuálně ověřeny všechny názvy, česká diakritika, správné pořadí 8 postav a čitelnost základních ovladačů. Nejsou přidány okolní telefony, ruce ani hardwarové rámy. První návrh hry byl nástrojem znovu rozvržen na správný vysoký poměr stran. První lobby měla průhledné plochy uvnitř; vybraný finální průchod dostal souvislý neprůhledný fialový panel a prošel kontrolou na světlém podkladu.
+
+### Přesná volání a prompty
+
+### Lobby — první návrh
+
+Režim: vestavěný ImageGen, `transparent_background: true`.
+
+Vstupní cesty:
+- `mecovacka\public\img\logo.png`
+- `C:\Users\krist\OneDrive\Plocha\CLAUD DATA\tmp\mc-design\phone-portraits-reference.png`
+
+Výstupní originál: `C:\Users\krist\.codex\generated_images\01a1922f-1647-7ba3-b7cf-ddb0fa6306df\exec-ce341c87-2502-46d3-a551-3bd7a9ade741.png`.
+
+```text
+Use case: ui-mockup. Create a finished DIRECT PIXEL UI DESIGN for a Czech mobile web controller lobby for the original cheerful foam-sword game Mečovačka. Exact target canvas 780 wide × 1688 high, portrait aspect 390:844. This is the UI itself, NOT a photographed phone, NO hardware, NO bezel, NO perspective, NO hands, NO device status bar. One complete rounded dark-purple #14123a screen panel nearly fills the canvas; only a tiny 6px outer margin and softly rounded corner cutouts are genuinely transparent. All UI remains opaque and fully visible. Reference 1 is the real Mečovačka logo: reproduce its original correct lettering Mečovačka at the top. Reference 2 is the actual ordered eight-character roster: preserve species, faces, costumes and colors, use those portraits in a four-column by two-row selector; do not copy the reference sheet layout beyond the portraits. Polished, implementable game UI with simple rounded cards, thick clean dark-plum outlines, subtle soft shadows, restrained cyan #4fd1ff accents, golden yellow #ffd21f selected states and primary button. Typography looks like Lilita One for chunky headings and Baloo 2 for rounded readable labels. Legible clean Czech text, exact diacritics, all labels at least 28px at this 780px canvas. No invented features, no shop, currency, health bars, chat, tabs, bottom nav or joystick.
+
+Layout top to bottom, everything fits without scrolling in this single view, with sensible spacing and 32px horizontal content padding:
+1. Compact centered existing logo, about 110px high, at the top.
+2. Player identity card: fox portrait at left; right label exactly "Tvoje jméno", a clear name input containing "Pepa", then a tiny green connected dot and text "Připojeno · Hráč 1". This is the HOST lobby.
+3. Thin calm cyan status strip: check icon and exact text "Meč sleduje telefon". Below it, a short instruction line "Drž telefon na výšku.".
+4. Heading exactly "Vyber si šermíře". Eight compact portrait cards in a precise 4×2 grid, with one short name each. Top row in order: fox "Zrzka", frog "Kvak", penguin "Frak", rabbit "Hop". Bottom row: gray cat "Mour", brown bear "Huňáč", silver robot "Šroubek", pink pig "Kvík". The fox card is selected with a yellow outline and small checkmark. Portraits around 110px high, no extra trait descriptions.
+5. One clear control row: segmented buttons "Pravák" (selected yellow) and "Levák"; alongside them a switch ON labeled "Vibrace". No third handedness option.
+6. Host section with three mode tabs in one row: "Souboj" selected, "Krájení", "Trénink". Small section label "Hra". Keep these as simple clear text tabs.
+7. Compact opponent line exactly "Soupeř: počítač". One stepper row labeled "Počítač", with left chevron, value "Pohodový", right chevron. Another stepper row labeled "Zápas", with left chevron, value "na 2 vítězná", right chevron. Both are genuine settings already in the game.
+8. Large full-width raised golden yellow button at the bottom reading exactly "START", about 110px high. Leave small safe-area spacing below. No additional action buttons.
+
+Use only the quoted UI text plus the supplied logo. No lorem ipsum, no extra descriptions, no duplicate words, no explanatory annotations, no numeric layout labels. Ensure every label remains inside its control and no content is cropped.
+```
+
+### Hra — první návrh
+
+Režim: vestavěný ImageGen, `transparent_background: true`.
+
+Vstupní cesty:
+- `C:\Users\krist\.codex\generated_images\01a1922f-1647-7ba3-b7cf-ddb0fa6306df\exec-ce341c87-2502-46d3-a551-3bd7a9ade741.png`
+- `mecovacka\public\img\logo.png`
+- `mecovacka\public\img\chars\0.png`
+- `C:\Users\krist\OneDrive\Plocha\CLAUD DATA\tmp\mc-images\pad\shield.png`
+
+Výstupní originál: `C:\Users\krist\.codex\generated_images\01a1922f-1647-7ba3-b7cf-ddb0fa6306df\exec-31ff1069-349b-45f9-8252-7a693c589d6b.png`.
+
+```text
+Use case: ui-mockup. Create a finished DIRECT PIXEL UI DESIGN for the active play screen of the original Czech mobile foam-sword controller game Mečovačka. Exact target canvas 780 wide × 1688 high, portrait aspect 390:844. This is the interface itself, NOT a phone photograph, NO hardware, NO bezel, NO perspective, NO hands, NO device status bar. One complete rounded dark-purple #14123a UI panel nearly fills the canvas; only a tiny 6px outer margin and softly rounded corner cutouts are genuinely transparent. Everything inside the panel is opaque. Reference 1 is the already approved lobby screen: match its exact polished visual language, rounded raised controls, plum borders, cyan highlights, golden-yellow primary controls, typography like Lilita One and Baloo 2, soft restrained shadows. Reference 2 is the real existing logo with correct lettering Mečovačka. Reference 3 is the selected fox character portrait, preserve her orange padded vest and headband, happy determined face. Reference 4 is the actual shield icon: use its broad friendly rounded white/cream shield with cyan interior and dark-plum outline, as the KRYT symbol.
+
+Design a clean IMPLEMENTABLE host gameplay screen assuming working phone motion sensors. This is a thumb-friendly game controller, not a conventional action game HUD. No attack buttons, no jump, no dodge, no weapon selector, no joystick, no directional arrows, no inventory, no currency, no health meter, no timer, no tabs, no bottom navigation. The only gameplay button is ONE giant HOLD control labelled KRYT. The only additional utility controls are Vyrovnat and pause. All visible Czech text must be precisely as quoted below with correct diacritics, highly readable, at least 30px at this 780px canvas.
+
+Layout top to bottom:
+1. Compact real Mečovačka logo centered at top, about 95px high. Retain its lettering.
+2. Short player identity strip, fox portrait on left around 95px tall, large name "Pepa", a green connected status dot and label "Připojeno" on the right. Do not show name editing.
+3. Top utility bar: left rounded button with small circular-arrow symbol and exact label "Vyrovnat"; center scoreboard with small "Kolo 1" above a large "0 : 0"; right compact rounded pause button showing only the standard two-bar pause symbol. Do not spell Pause.
+4. Quiet narrow cyan-tinted status strip with a small checkmark and exact text "Meč sleduje telefon". Below, on dark purple, one short gentle instruction "Pohyb telefonu řídí meč."
+5. A single enormous rounded rectangular cyan HOLD BUTTON occupies most of the lower half to lower two-thirds of the screen, around 700px wide and 790px high, with a clean thick plum border, subtly dimensional edge, and generous empty touch area. Use the provided actual shield icon prominently centered in its upper-middle; below it very large dark-plum bold exact text "KRYT", then smaller dark-plum exact helper text "drž palcem". This button is one uninterrupted touch target. No circular button on top of another button. Show the idle, ready-to-hold state, not a finger or a hand.
+6. Beneath this giant button, leave a short calm footer/safe area with one small subtle green check badge and exact text "Vyrovnáno". No second button and no other text.
+
+Use the hierarchy and spacing to communicate: player connected; utility controls at top; one big comfortable shield hold target below. Keep the complete interface comfortably inside the canvas, no cropped controls. Do not copy the lobby character grid or lobby START/settings into this screen. No extra annotations, no explanatory text outside the UI. Genuine transparent tiny outer margins/corners, never a checkerboard background drawn into the image.
+```
+
+### Hra — úprava poměru stran
+
+Režim: vestavěný ImageGen, `transparent_background: true`.
+
+Vstupní cesty:
+- `C:\Users\krist\.codex\generated_images\01a1922f-1647-7ba3-b7cf-ddb0fa6306df\exec-31ff1069-349b-45f9-8252-7a693c589d6b.png`
+
+Výstupní originál: `C:\Users\krist\.codex\generated_images\01a1922f-1647-7ba3-b7cf-ddb0fa6306df\exec-6edb3190-40eb-4119-ad9c-aa1bfa557409.png`.
+
+```text
+Edit this supplied Mečovačka gameplay UI to the REQUIRED MUCH TALLER PHONE CANVAS: exactly 780 pixels wide by 1688 pixels tall, width:height = 390:844 = 0.4621, height is 2.1641 times the width. The supplied design is too broad. Reflow the layout into this tall narrow aspect without squashing or stretching the lettering, portrait, shield, or logo. This is a complete pixel UI, no phone device. Preserve the entire excellent design, exact Czech wording and spelling, and all same controls. Keep dark-purple #14123a, cyan #4fd1ff and yellow #ffd21f, rounded Lilita One/Baloo 2 style. Only transparent tiny outer margin and rounded outside corner cutouts, otherwise all opaque. Target full 780×1688 canvas.
+
+Specific tall layout:
+Top logo about 95px high.
+Player card around 150px high, fox portrait on left, "Pepa" and "Připojeno" right.
+Utility bar around 130px high with "Vyrovnat", center "Kolo 1" over "0 : 0", and pause symbol.
+Narrow status strip "Meč sleduje telefon".
+Single quiet instruction "Pohyb telefonu řídí meč."
+Make the ONE cyan KRYT hold button MUCH TALLER to fill the extra vertical space: approximately 700px wide and 900px high. Add generous empty cyan space above and below its artwork instead of distorting it. Rounded cream-and-cyan shield in its upper middle, bold huge "KRYT" below, smaller "drž palcem" beneath. All inside one continuous touch area.
+Footer with green check and "Vyrovnáno".
+Everything fits within 780×1688 with modest 30px side margins. No new text, no new controls, no phone bezel. The final image must be conspicuously tall, same tall aspect as a 390×844 CSS-pixel phone screen.
+```
+
+### Hra — zaoblený neprůhledný panel, vybraný zdroj
+
+Režim: vestavěný ImageGen, `transparent_background: true`.
+
+Vstupní cesty:
+- `C:\Users\krist\.codex\generated_images\01a1922f-1647-7ba3-b7cf-ddb0fa6306df\exec-6edb3190-40eb-4119-ad9c-aa1bfa557409.png`
+
+Výstupní originál: `C:\Users\krist\.codex\generated_images\01a1922f-1647-7ba3-b7cf-ddb0fa6306df\exec-5fb7b3c5-6deb-4ed9-a44d-03212b6e5208.png`.
+
+```text
+Make one extremely small production finishing edit to this finished Mečovačka gameplay UI. Keep the exact same tall aspect ratio, the exact same interface, all pixel composition, all Czech lettering and spelling, same colors, same logo, same fox portrait, same single enormous KRYT button and all other controls. DO NOT redesign or reflow anything. ONLY change the outermost boundary: the complete dark-purple interface should be a rounded rectangle with gently rounded OUTER corners of about 24 pixels radius, surrounded by a tiny 5-pixel genuinely transparent clear margin on all four sides. The four outer corner cutouts are transparent too. The screen interior must be fully opaque dark purple/cyan/yellow as it is now. No phone hardware, no extra framing and no checkerboard painted into the image. A tall rounded UI card cutout, full screen size target 780×1688, for a 390×844 mobile UI concept. All existing Czech text remains exactly unchanged.
+```
+
+### Lobby — první pokus opravy alfa, nepoužitý
+
+Režim: vestavěný ImageGen, `transparent_background: true`.
+
+Vstupní cesty:
+- `C:\Users\krist\.codex\generated_images\01a1922f-1647-7ba3-b7cf-ddb0fa6306df\exec-ce341c87-2502-46d3-a551-3bd7a9ade741.png`
+
+Výstupní originál: `C:\Users\krist\.codex\generated_images\01a1922f-1647-7ba3-b7cf-ddb0fa6306df\exec-f7af9f9e-d2f1-46be-8293-b25848771544.png`.
+
+```text
+Make a production alpha-channel correction to this finished Mečovačka PHONE LOBBY UI. Do NOT redesign the screen. Preserve the exact same tall 390:844 aspect ratio, layout, logo, all eight portraits and Czech text. Do not add, remove, reflow, rename or crop anything. Exact final canvas target 780×1688.
+CRITICAL CORRECTION: the current image has unwanted patches of transparency WITHIN the purple screen, particularly behind the logo, behind the roster heading and between controls. Replace all that interior transparency with a completely opaque uninterrupted dark-purple #14123a background. The whole rectangular screen interior must have alpha 255, including every background gap and every control. Absolutely NO see-through/cloudy/translucent areas anywhere inside the screen. ONLY a tiny clear margin outside the full UI and its smoothly rounded outer corner cutouts are genuinely transparent. Think an opaque printed UI card with rounded corners, cut out from a transparent canvas. No phone device, no new frame, no checkerboard in artwork.
+Keep all existing lettering exactly unchanged and readable: Mečovačka logo; "Tvoje jméno"; "Pepa"; "Připojeno · Hráč 1"; "Meč sleduje telefon"; "Drž telefon na výšku."; "Vyber si šermíře"; roster top row "Zrzka", "Kvak", "Frak", "Hop"; bottom "Mour", "Huňáč", "Šroubek", "Kvík"; "Pravák", "Levák", "Vibrace"; "Hra"; "Souboj", "Krájení", "Trénink"; "Soupeř: počítač"; "Počítač", "Pohodový"; "Zápas", "na 2 vítězná"; "START". Preserve selected states and all control arrows, the happy original characters, yellow/cyan colors and rounded style. All UI stays entirely opaque, with transparent external margin only.
+```
+
+### Lobby — finální neprůhledný panel, vybraný zdroj
+
+Režim: vestavěný ImageGen, `transparent_background: true`.
+
+Vstupní cesty:
+- `C:\Users\krist\.codex\generated_images\01a1922f-1647-7ba3-b7cf-ddb0fa6306df\exec-ce341c87-2502-46d3-a551-3bd7a9ade741.png`
+- `C:\Users\krist\.codex\generated_images\01a1922f-1647-7ba3-b7cf-ddb0fa6306df\exec-5fb7b3c5-6deb-4ed9-a44d-03212b6e5208.png`
+
+Výstupní originál: `C:\Users\krist\.codex\generated_images\01a1922f-1647-7ba3-b7cf-ddb0fa6306df\exec-58011531-7b73-42e5-a177-bc36d31f48fd.png`.
+
+```text
+Use case: compositing. Reference image 1 is the exact finished lobby interface to preserve. Reference image 2 is a finished gameplay interface with the correct SOLID ROUNDED PURPLE BACKING PANEL. Give image 1 the same solid opaque rounded purple card backing as image 2. The lobby's logo, identity card, roster, controls and all text are printed ON the single solid flat dark-purple backing card. They are not floating cutout fragments. Only OUTSIDE that one solid card is transparent. The card is ONE opaque object. Its dark-purple surface must stay perfectly solid across the entire rectangle behind the logo, behind the headings, between the controls and all the way to its four rounded corners. Add a subtle continuous purple perimeter edge that fully encloses the card, matching image 2. Interior alpha must be fully opaque everywhere. A tiny outer transparent margin surrounds the whole card.
+
+Keep all image 1 content intact, no content from image 2 except its opaque rounded card shape. Keep the exact tall 390:844 aspect, target 780×1688. Do not invent phone hardware. No redesign. Exact same eight original characters, same sizes, selected fox, yellow START button, all settings, Czech wording, palette. Keep all existing text from image 1: "Tvoje jméno", "Pepa", "Připojeno · Hráč 1", "Meč sleduje telefon", "Drž telefon na výšku.", "Vyber si šermíře", "Zrzka", "Kvak", "Frak", "Hop", "Mour", "Huňáč", "Šroubek", "Kvík", "Pravák", "Levák", "Vibrace", "Hra", "Souboj", "Krájení", "Trénink", "Soupeř: počítač", "Počítač", "Pohodový", "Zápas", "na 2 vítězná", "START". Keep correct Mečovačka logo at top. No transparent holes anywhere in the card surface. No translucent glow or smoke; just dark-purple opaque background between the unchanged crisp UI controls.
+```
+
+## Závěrečná kontrola obrázků
+
+Dodáno 21 povinných obrázků a 4 volitelné návrhy obrazovek. Ověřeny přesné cesty a rozměry, barevný prostor sRGB (ICC nebo PNG sRGB chunk), průhlednost podle zadání a neprůhledné pozadí ikon aplikace #14123a. Skutečná hra správně načítá logo, portréty, ikony režimů, oblohu i telefonní ilustrace; rozcestník ověřen společným náhledem karet na finálním pozadí. Čtyři soubory design/ jsou pouze obrazové podklady pro následnou implementaci rozhraní.
