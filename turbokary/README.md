@@ -61,9 +61,10 @@ Pauzu může dát i hráč 1 tlačítkem ⏸ na telefonu.
 
 ## Jak to funguje
 
-- **PC** (`index.html`, `src/game/`) vykresluje 3D scénu (three.js), počítá fyziku, boty, věci
+- **PC** (`kary.html`, `src/game/`) vykresluje 3D scénu (three.js), počítá fyziku, boty, věci
   a pořadí. Obrazovku rozdělí podle počtu hráčů: dva hráči vlevo a vpravo, tři a čtyři do
-  čtverce 2×2 (u tří je ve volném čtverci pohled na závod, mapa a průběžné pořadí). Před startem proletí kamera nad tratí, při
+  čtverce 2×2 (u tří je ve volném čtverci pohled na závod, mapa a průběžné pořadí). Před startem
+  proletí kamera nad tratí, při
   výsledcích krouží kolem vítěze. Hudba i zvuky se generují v prohlížeči (Web Audio) a mají
   vlastní melodie pro každou trať.
 - **Telefon** (`pad.html`, `src/pad/`) posílá asi 30× za sekundu, jak je natočený a co mačkáš.
@@ -74,12 +75,19 @@ Pauzu může dát i hráč 1 tlačítkem ⏸ na telefonu.
 - Kontrakt zpráv je v `src/shared/protocol.ts` a popis v `AGENTS.md`.
 - Rekordy trati se ukládají v prohlížeči na PC (`localStorage`). Žádný server ani databáze.
 
+## Web: volba hry
+
+Na webu TurboKár běží i druhá hra, **Mečovačka** (šermování, mečem je telefon — zdroják v `../mecovacka/`):
+`/` = volba hry (`index.html`, `src/hub/`), `/kary` = TurboKáry, `/pad` = volant v telefonu,
+`/mece/` = Mečovačka, `/mece/pad` = meč v telefonu. Mečovačka je v `public/mece/` jako hotový build
+(`npm run build:kary` v `mecovacka/`), Vercel ji jen přibalí.
+
 ## Vývoj
 
 ```bash
 cd turbokary
 npm install
-npm run dev        # http://localhost:5173 a adresa „Network“ pro telefon
+npm run dev        # http://localhost:5173 (volba hry), TurboKáry na /kary.html, adresa „Network“ pro telefon
 npm run build      # kontrola typů a produkční build do dist/
 npm run e2e        # automatický test (sám si spustí preview a lokální signalizační server)
 npm run peer       # samostatný lokální signalizační server na :9000

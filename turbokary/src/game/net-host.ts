@@ -96,7 +96,8 @@ export class NetHost {
   }
 
   send(conn: DataConnection | null, msg: HostMsg) {
-    if (!conn || !conn.open) return;
+    // kanál se může zavírat dřív, než o tom PeerJS ví (telefon obnovil stránku) → neposílat
+    if (!conn || !conn.open || conn.dataChannel?.readyState !== "open") return;
     try {
       void conn.send(msg);
     } catch {

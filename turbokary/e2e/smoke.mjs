@@ -119,7 +119,7 @@ const pcCtx = await browser.newContext({ viewport: { width: W, height: H } });
 const pc = await pcCtx.newPage();
 watch(pc, "PC");
 const state = () => pc.evaluate(() => window.__tk.state());
-await pc.goto(`${BASE}/?peer=${PEER}&speed=4`, { waitUntil: "load" });
+await pc.goto(`${BASE}/kary?peer=${PEER}&speed=4`, { waitUntil: "load" });
 
 let padUrl = "";
 await step("PC: lobby s QR kódem a kódem místnosti", async () => {

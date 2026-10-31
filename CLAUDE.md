@@ -19,6 +19,15 @@ Bezpečný postup (squash deploy do `main`):
 6. `git push origin main`
 7. `git checkout <pracovní-větev>` (návrat)
 
+## Hry s telefonem (TurboKáry + Mečovačka) — jeden web
+- Vercel projekt s Root Directory `turbokary` hostí obě hry: `/` = volba hry (`turbokary/index.html`,
+  `turbokary/src/hub/`), `/kary` = TurboKáry, `/mece/` = Mečovačka.
+- Mečovačka (zdroják v `mecovacka/`) je na webu jako **hotový build** v `turbokary/public/mece/`
+  (Vercel při buildu nevidí soubory mimo `turbokary/`). Před nasazením změn Mečovačky:
+  `cd mecovacka && npm run build:kary` a commitnout i `turbokary/public/mece/`.
+- Kdo nasazuje TurboKáry squash postupem, musí mít ve větvi aktuální `main` (`git merge origin/main`),
+  jinak `git checkout <větev> -- .` vrátí rozcestník a build Mečovačky na starou verzi.
+
 ## Data
 - Data jsou v **Upstash Redis** (členové, finance, role, merch, výběr…). Nasazení kódu se jich nedotýká.
 - Demo režim bez Redisu běží přes `localStorage` (heslo `marena<rok>`, např. `marena2026`).

@@ -10,7 +10,9 @@ Je to **originální hra**, ne kopie Mario Kart: vlastní postavy (zvířátka),
 věci. Žádné postavy, názvy, grafika, hudba ani zvuky od Nintenda.
 
 ## Jak to funguje
-- **PC** (`index.html`, `src/game/`): 3D hra (three.js), lobby s QR kódem, závod, výsledky.
+- **PC** (`kary.html`, `src/game/`): 3D hra (three.js), lobby s QR kódem, závod, výsledky.
+- **Volba hry** (`index.html`, `src/hub/`): rozcestník na `/` — TurboKáry (`/kary`), nebo Mečovačka
+  (`/mece/`, hotový build v `public/mece/` z `../mecovacka`, viz `mecovacka/AGENTS.md`).
 - **Telefon** (`pad.html`, `src/pad/`): ovladač. Náklon = volant (gyroskop), tlačítka
   plyn / brzda / drift / věc, záložní dotykové řízení.
 - **Spojení**: WebRTC datový kanál přes PeerJS. Signalizace přes veřejný server 0.peerjs.com,
@@ -35,7 +37,7 @@ věci. Žádné postavy, názvy, grafika, hudba ani zvuky od Nintenda.
 ## Kdo co dělá
 | Část | Kdo | Soubory |
 |---|---|---|
-| Veškerý kód: hra na PC, ovladač v telefonu, spojení, zvuk | Claude | `src/`, `index.html`, `pad.html`, `e2e/`, `scripts/` |
+| Veškerý kód: hra na PC, ovladač v telefonu, spojení, zvuk, volba hry | Claude | `src/`, `index.html`, `kary.html`, `pad.html`, `e2e/`, `scripts/`, `public/mece/` (build Mečovačky) |
 | Grafika a design: 3D modely postav a motokár, portréty, ikony, logo, obloha, plachty, ikony aplikace | Codex | `public/models/`, `public/img/`, `public/icon-*.png`, `public/og.png` |
 | Test na skutečném PC a telefonu, hlášení chyb | Codex (s uživatelem) | — |
 

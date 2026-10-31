@@ -1,0 +1,38 @@
+/* Rozcestník (volba hry). Výtvarný návrh dodává Codex (public/img/hub/), tohle je funkční vzhled. */
+:root {
+  --ink: #160f33;
+  --line: #1b1430;
+  --yellow: #ffd21f;
+  --muted: #b9b3d9;
+  --title: "Lilita One", "Arial Black", system-ui, sans-serif;
+  --text: "Baloo 2", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body.hub { background: var(--hub-bg, radial-gradient(ellipse at 50% -10%, #3a2a85, var(--ink) 65%)) center / cover fixed, var(--ink);
+  color: #fff; font-family: var(--text); }
+#hub { min-height: 100vh; display: grid; align-content: center; gap: clamp(18px, 4vh, 40px); padding: 4vh max(16px, 4vw); max-width: 1280px; margin: 0 auto; }
+.hub-head { text-align: center; }
+.hub-head h1 { margin: 0; font-family: var(--title); font-weight: 400; font-size: clamp(44px, 7vw, 88px); line-height: 1; color: var(--yellow);
+  -webkit-text-stroke: 3px var(--line); paint-order: stroke fill; text-shadow: 0 6px 0 var(--line), 0 12px 30px rgba(0,0,0,0.4); }
+.hub-head p { margin: 10px 0 0; color: var(--muted); font-size: clamp(16px, 1.7vw, 22px); font-weight: 600; }
+.hub-head p b { color: #fff; }
+.hub-games { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: clamp(14px, 2.5vw, 32px); }
+.game { display: grid; grid-template-rows: auto 1fr; border-radius: 28px; overflow: hidden; text-decoration: none; color: #fff;
+  background: color-mix(in srgb, var(--c) 16%, rgba(22,15,51,0.92)); border: 4px solid color-mix(in srgb, var(--c) 55%, transparent);
+  box-shadow: 0 10px 0 var(--line), 0 24px 60px rgba(0,0,0,0.4); transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; outline: none; }
+.game:hover, .game:focus-visible { transform: translateY(-6px) scale(1.015); border-color: var(--c); box-shadow: 0 16px 0 var(--line), 0 30px 70px rgba(0,0,0,0.5); }
+.g-pic { aspect-ratio: 16 / 8; display: grid; place-items: center; overflow: hidden;
+  background: radial-gradient(circle at 50% 120%, color-mix(in srgb, var(--c) 70%, #fff), color-mix(in srgb, var(--c) 35%, var(--ink)) 70%); }
+.g-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.g-emoji { font-size: clamp(70px, 10vw, 130px); filter: drop-shadow(0 8px 0 rgba(0,0,0,0.25)); }
+.g-body { display: grid; gap: 8px; padding: 16px 22px 20px; align-content: start; }
+.g-logo { height: clamp(54px, 7vw, 86px); max-width: 100%; object-fit: contain; justify-self: start; }
+.g-title { font-family: var(--title); font-size: clamp(40px, 5vw, 64px); line-height: 1; color: var(--yellow); -webkit-text-stroke: 2px var(--line); paint-order: stroke fill;
+  text-shadow: 0 4px 0 var(--line); }
+.game-mece .g-title { color: var(--c); }
+.g-text { font-size: clamp(16px, 1.5vw, 20px); font-weight: 600; line-height: 1.3; }
+.g-meta { color: var(--muted); font-size: 15px; font-weight: 600; }
+kbd { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-bottom-width: 2px; border-radius: 6px; padding: 0 6px; font-family: var(--text); font-weight: 800; }
+.hub-foot { text-align: center; color: var(--muted); font-size: 14px; }
