@@ -304,37 +304,36 @@ class Pad {
       <header class="lb-top"><span class="me-av"></span><div class="me"><b class="me-name"></b><small class="status"></small></div></header>
       <label class="name-row">Jméno <input class="name-in" maxlength="14" value="${esc(this.name)}" placeholder="Tvoje jméno" autocomplete="off"></label>
       <div class="chars">${chars}</div>
-      <div class="stats"></div>
-      <section class="card settings">
-        <h3>Ovládání</h3>
-        <div class="seg" data-set="mode">
-          <button data-v="tilt" ${secure ? "" : "disabled"}>📱 Náklon jako volant</button>
-          <button data-v="touch">👆 Dotykem</button>
-        </div>
-        ${secure ? "" : `<p class="warn">Náklon funguje jen přes https (např. na Vercelu). Teď jde jen dotykové řízení.</p>`}
-        <button class="big perm" data-a="perm" hidden>Povolit náklon telefonu</button>
-        <div class="tilt-row" ${s.mode === "tilt" ? "" : "hidden"}>
-          <span>Citlivost</span>
-          <div class="seg small" data-set="sens">${SENS_LABEL.map((l, i) => `<button data-v="${i}">${l}</button>`).join("")}</div>
-          <div class="wheel-mini"><div class="wheel-svg">${wheelSvg()}</div></div>
-          <button class="link" data-a="center">Srovnat volant</button>
-        </div>
-        <label class="tog"><input type="checkbox" data-set="autoGas" ${s.autoGas ? "checked" : ""}><span>Automatický plyn</span></label>
-        <label class="tog"><input type="checkbox" data-set="vibrate" ${s.vibrate ? "checked" : ""}><span>Vibrace</span></label>
-        <label class="tog"><input type="checkbox" data-set="mirror" ${s.mirror !== false ? "checked" : ""}><span>Zpětné zrcátko na obrazovce</span></label>
-      </section>
+      <button class="big perm" data-a="perm" hidden>Povolit náklon telefonu</button>
       <section class="card host-box" hidden>
         <h3>👑 Ty vybíráš závod</h3>
-        <div class="seg" data-host="mode"><button data-v="0">🏁 Jeden závod</button><button data-v="1">🏆 Pohár (všechny tratě)</button></div>
+        <div class="host-track"><button data-a="track-" aria-label="Předchozí">◀</button><b class="track-name"></b><button data-a="track+" aria-label="Další">▶</button></div>
         <div class="host-opts">
-          <div class="wide"><small class="track-label">Trať</small><div class="stepper"><button data-a="track-">◀</button><b class="track-name"></b><button data-a="track+">▶</button></div></div>
-          <div class="wide"><small>Rychlost</small><div class="stepper"><button data-a="speed-">◀</button><b class="speed-name"></b><button data-a="speed+">▶</button></div></div>
           <div><small>Kola</small><div class="stepper"><button data-a="laps-">−</button><b class="laps"></b><button data-a="laps+">+</button></div></div>
           <div><small>Soupeři</small><div class="stepper"><button data-a="bots-">−</button><b class="bots"></b><button data-a="bots+">+</button></div></div>
         </div>
       </section>
       <p class="wait"></p>
       <div class="players"></div>
+      <details class="settings">
+        <summary><span>⚙️ Ovládání</span><small class="set-sum"></small></summary>
+        <div class="set-body">
+          <div class="seg" data-set="mode">
+            <button data-v="tilt" ${secure ? "" : "disabled"}>📱 Náklon jako volant</button>
+            <button data-v="touch">👆 Dotykem</button>
+          </div>
+          ${secure ? "" : `<p class="warn">Náklon funguje jen přes https (např. na Vercelu). Teď jde jen dotykové řízení.</p>`}
+          <div class="tilt-row" ${s.mode === "tilt" ? "" : "hidden"}>
+            <span>Citlivost</span>
+            <div class="seg small" data-set="sens">${SENS_LABEL.map((l, i) => `<button data-v="${i}">${l}</button>`).join("")}</div>
+            <div class="wheel-mini"><div class="wheel-svg">${wheelSvg()}</div></div>
+            <button class="link" data-a="center">Srovnat volant</button>
+          </div>
+          <label class="tog"><input type="checkbox" data-set="autoGas" ${s.autoGas ? "checked" : ""}><span>Automatický plyn</span></label>
+          <label class="tog"><input type="checkbox" data-set="vibrate" ${s.vibrate ? "checked" : ""}><span>Vibrace</span></label>
+          <label class="tog"><input type="checkbox" data-set="mirror" ${s.mirror !== false ? "checked" : ""}><span>Zpětné zrcátko na obrazovce</span></label>
+        </div>
+      </details>
       <div class="start-bar" hidden><button class="big start" data-a="start">START ▶</button></div>
     </div>`;
   }
@@ -365,22 +364,13 @@ class Pad {
     host.hidden = !isHost;
     (app.querySelector(".start-bar") as HTMLElement).hidden = !isHost || !!l?.racing;
     if (l) {
-      (app.querySelector(".track-name") as HTMLElement).textContent = l.tracks[l.track] ?? "";
-      (app.querySelector(".track-label") as HTMLElement).textContent = l.mode === "cup" ? "První trať poháru" : "Trať";
-      (app.querySelector(".speed-name") as HTMLElement).textContent = l.speeds[l.speed] ?? "";
+      (app.querySelector(".track-name") as HTMLElement).textContent = l.mode === "cup" ? "🏆 Pohár (všechny tratě)" : l.tracks[l.track] ?? "";
       (app.querySelector(".laps") as HTMLElement).textContent = String(l.laps);
       (app.querySelector(".bots") as HTMLElement).textContent = String(l.bots);
-      app.querySelectorAll<HTMLButtonElement>("[data-host=mode] button").forEach((b) => b.classList.toggle("on", (l.mode === "cup" ? "1" : "0") === b.dataset.v));
     }
-    const c = CHARACTERS[this.char >= 0 ? this.char : 0];
-    const bar = (label: string, key: keyof (typeof c)["stats"]) => {
-      const all = CHARACTERS.map((x) => x.stats[key]);
-      const lo = Math.min(...all), hi = Math.max(...all);
-      const v = 20 + ((c.stats[key] - lo) / (hi - lo || 1)) * 80;
-      return `<div class="st"><span>${label}</span><i style="--v:${Math.round(v)}%"></i></div>`;
-    };
-    (app.querySelector(".stats") as HTMLElement).innerHTML = `<b>${c.name}</b><small>${c.cls} postava</small>
-      ${bar("Rychlost", "speed")}${bar("Zrychlení", "accel")}${bar("Ovladatelnost", "handling")}${bar("Váha", "weight")}`;
+    const st = this.settings;
+    (app.querySelector(".set-sum") as HTMLElement).textContent =
+      (st.mode === "tilt" ? "📱 náklon" : "👆 dotyk") + (st.autoGas ? " · auto plyn" : "");
     const wait = app.querySelector(".wait") as HTMLElement;
     const hostP = l?.players.find((p) => p.host);
     wait.textContent = l?.racing
@@ -653,10 +643,6 @@ class Pad {
         if (this.settings.vibrate) navigator.vibrate?.(10);
         return;
       }
-      if (seg && (seg.parentElement as HTMLElement).dataset.host === "mode") {
-        this.net?.send({ t: "cmd", c: "mode", v: Number(seg.dataset.v) });
-        return;
-      }
       if (seg && !seg.disabled) {
         const key = (seg.parentElement as HTMLElement).dataset.set as "mode" | "sens";
         if (key === "mode") {
@@ -735,16 +721,11 @@ class Pad {
           break;
         case "track-":
         case "track+":
+          // tratě a jako poslední možnost pohár (v = počet tratí)
           if (this.lobby) {
-            const n = this.lobby.tracks.length;
-            this.net?.send({ t: "cmd", c: "track", v: (this.lobby.track + (a.dataset.a === "track+" ? 1 : -1) + n) % n });
-          }
-          break;
-        case "speed-":
-        case "speed+":
-          if (this.lobby) {
-            const n = this.lobby.speeds.length;
-            this.net?.send({ t: "cmd", c: "speed", v: Math.max(0, Math.min(n - 1, this.lobby.speed + (a.dataset.a === "speed+" ? 1 : -1))) });
+            const n = this.lobby.tracks.length + 1;
+            const cur = this.lobby.mode === "cup" ? n - 1 : this.lobby.track;
+            this.net?.send({ t: "cmd", c: "track", v: (cur + (a.dataset.a === "track+" ? 1 : -1) + n) % n });
           }
           break;
         case "bots-":
@@ -760,6 +741,7 @@ class Pad {
         this.settings[key] = t.checked;
         save("tk_pad", this.settings);
         if (key === "mirror") this.net?.send({ t: "me", mirror: t.checked });
+        if (key === "autoGas") this.updateLobby();
       }
     };
     app.oninput = (e) => {

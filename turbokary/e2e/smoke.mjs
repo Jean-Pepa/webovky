@@ -59,6 +59,16 @@ function findChrome() {
 
 const results = [];
 const errors = [];
+/** Výřezy hráčů na PC (panely HUD) seřazené podle polohy. */
+async function panels(page) {
+  return page.$$eval(".pp", (els) =>
+    els.map((e) => {
+      const r = e.getBoundingClientRect();
+      return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) };
+    }),
+  );
+}
+const near = (a, b, tol = 3) => Math.abs(a - b) <= tol;
 function rec(ok, name, detail = "") {
   results.push({ ok, name });
   console.log(`${ok ? "✅" : "❌"} ${name}${detail ? " — " + detail : ""}`);
@@ -215,8 +225,12 @@ await step("Telefon: jméno a postavička se propíšou na PC", async () => {
   expect(txt.includes("Kristýna"), "PC lobby neukazuje jméno");
 });
 
-await step("Telefon: hráč 1 je hostitel a vidí START", async () => {
+await step("Telefon: hráč 1 je hostitel a vidí START, nastavení ovládání je sbalené", async () => {
   await p1.page.waitForSelector(".host-box:not([hidden])", { timeout: 5000 });
+  expect(await p1.page.isVisible(".host-box"), "panel hostitele není vidět");
+  expect(!(await p1.page.$eval("details.settings", (d) => d.open)), "nastavení má být sbalené");
+  expect(!(await p1.page.isVisible(".tilt-row")), "citlivost je vidět i ve sbaleném nastavení");
+  expect((await p1.page.$$(".stats")).length === 0, "vlastnosti postav už nemají být");
   await p1.page.click("[data-a=laps-]");
   await p1.page.click("[data-a=laps-]");
   await until(async () => (await p1.page.textContent(".laps")) === "1", 4000, "počet kol 1");
@@ -304,6 +318,7 @@ await step("Druhý telefon se připojí jako hráč 2 (jiná postavička)", asyn
   expect(disabled, "obsazená postava není zašedlá");
   const host2 = await p2.page.$eval(".host-box", (b) => b.hidden);
   expect(host2, "hráč 2 nemá být hostitel");
+  expect(!(await p2.page.isVisible(".host-box")), "hráč 2 vidí panel hostitele");
 });
 
 await step("Obnovení stránky telefonu → stejný slot (znovupřipojení)", async () => {
@@ -314,14 +329,36 @@ await step("Obnovení stránky telefonu → stejný slot (znovupřipojení)", as
   expect(s.players.length === 2, "hráčů: " + s.players.length);
 });
 
-await step("Klávesnice + 2 telefony → rozdělená obrazovka pro 3 hráče", async () => {
+await step("2 telefony → obrazovka rozdělená vlevo a vpravo", async () => {
+  await p1.page.click("[data-a=start]");
+  await until(async () => (await state()).phase === "race", 25000, "start");
+  await sleep(1200);
+  const ps = await panels(pc);
+  expect(ps.length === 2, "panelů HUD: " + ps.length);
+  const [a, b] = ps.sort((u, v) => u.x - v.x);
+  expect(a.x === 0 && a.y === 0 && b.y === 0, "poloha " + JSON.stringify(ps));
+  expect(near(a.h, H) && near(b.h, H), "výška " + JSON.stringify(ps));
+  expect(near(a.w, W / 2) && near(b.x, W / 2), "šířka " + JSON.stringify(ps));
+  expect((await pc.$$(".split.v")).length === 1, "chybí svislá dělicí čára");
+  await pc.screenshot({ path: join(OUT, "pc-race-2p.png") });
+  await pc.keyboard.press("Escape");
+  await sleep(300);
+  await pc.keyboard.press("KeyQ");
+  await until(async () => (await state()).phase === "lobby", 6000, "zpět do lobby");
+});
+
+await step("Klávesnice + 2 telefony → 3 hráči ve čtverci, ve 4. čtverci pořadí a mapa", async () => {
   await pc.keyboard.press("KeyK");
   await until(async () => (await state()).players.length === 3, 3000, "hráč na klávesnici");
   await p1.page.click("[data-a=start]");
   await until(async () => (await state()).phase === "race", 25000, "start");
   await sleep(1500);
-  const panels = await pc.$$eval(".pp", (e) => e.length);
-  expect(panels === 3, "panelů HUD: " + panels);
+  const ps = await panels(pc);
+  expect(ps.length === 3, "panelů HUD: " + ps.length);
+  expect(ps.every((r) => near(r.w, W / 2) && near(r.h, H / 2)), "čtvrtiny " + JSON.stringify(ps));
+  const rows = (await state()).race.karts.length;
+  const board = await pc.$$eval(".board li", (e) => e.length);
+  expect(board === rows, `pořadí: ${board} řádků, závodníků ${rows}`);
   await pc.screenshot({ path: join(OUT, "pc-race-3p.png") });
   // pauza z telefonu hostitele a návrat do lobby
   await p1.page.waitForSelector(".pause-btn:not([hidden])", { timeout: 5000 });
@@ -333,14 +370,28 @@ await step("Klávesnice + 2 telefony → rozdělená obrazovka pro 3 hráče", a
   await until(async () => (await state()).phase === "lobby", 5000, "zpět do lobby");
 });
 
-await step("Pohár: hostitel z telefonu zvolí pohár a po 1. závodě jede další trať", async () => {
-  await p1.page.click('[data-host=mode] button[data-v="1"]');
+await step("4 hráči (2 telefony + 2 klávesnice) → čtverec 2×2", async () => {
+  await pc.keyboard.press("KeyK");
+  await until(async () => (await state()).players.length === 4, 3000, "druhý hráč na klávesnici");
+});
+
+await step("Pohár: hostitel ho vybere v nabídce tratí (4 hráči) a po 1. závodě jede další trať", async () => {
+  // pohár je poslední možnost v nabídce tratí → o jednu zpět z první trati
+  await p1.page.click('[data-a="track-"]');
   await until(async () => (await state()).mode === "cup", 4000, "režim pohár");
+  await until(async () => /Pohár/.test(await p1.page.textContent(".track-name")), 4000, "pohár na telefonu");
   const t0 = (await state()).track;
+  expect(t0 === 0, "pohár má začít první tratí, ne " + t0);
   await p1.page.click("[data-a=start]");
-  await until(async () => (await state()).phase !== "lobby", 6000, "start poháru");
-  for (const s of [0, 1, 2]) await pc.evaluate((x) => window.__tk.autopilot(x, true), s);
-  await until(async () => (await state()).phase === "results", 150000, "konec 1. závodu poháru");
+  await until(async () => (await state()).phase === "race", 25000, "start poháru");
+  await sleep(1000);
+  const ps = await panels(pc);
+  expect(ps.length === 4, "panelů HUD: " + ps.length);
+  const xs = new Set(ps.map((r) => r.x)), ys = new Set(ps.map((r) => r.y));
+  expect(xs.size === 2 && ys.size === 2 && ps.every((r) => near(r.w, W / 2) && near(r.h, H / 2)), "mřížka " + JSON.stringify(ps));
+  await pc.screenshot({ path: join(OUT, "pc-race-4p.png") });
+  for (const s of [0, 1, 2, 3]) await pc.evaluate((x) => window.__tk.autopilot(x, true), s);
+  await until(async () => (await state()).phase === "results", 240000, "konec 1. závodu poháru");
   await p1.page.waitForSelector(".cup-line", { timeout: 6000 });
   const line = await p1.page.textContent(".cup-line");
   expect(/1\/4/.test(line), "pohár: " + line);
@@ -359,15 +410,19 @@ await step("Pohár: hostitel z telefonu zvolí pohár a po 1. závodě jede dal�
 });
 
 await step("Šílená hora: výškové rozdíly, padající letadlo s troskami a let s křídly", async () => {
+  // zpět na 3 hráče (Backspace v lobby odebere hráče na klávesnici), ať test neběží zbytečně pomalu
+  await pc.keyboard.press("Backspace");
+  await until(async () => (await state()).players.length === 3, 3000, "odebrání hráče na klávesnici");
   await pc.evaluate(() => window.__tk.autopilot(0, true));
-  // trať 4 vybere hostitel z telefonu
-  await p1.page.click('[data-host=mode] button[data-v="0"]');
-  for (let i = 0; i < 4; i++) {
-    if ((await state()).track === 3) break;
+  // trať 4 vybere hostitel z telefonu (z poháru dál: louka → kaňon → jezero → hora)
+  for (let i = 0; i < 6; i++) {
+    const st = await state();
+    if (st.track === 3 && st.mode === "race") break;
     await p1.page.click('[data-a="track+"]');
     await sleep(400);
   }
-  expect((await state()).track === 3, "trať " + (await state()).track);
+  const st0 = await state();
+  expect(st0.track === 3 && st0.mode === "race", `trať ${st0.track} (${st0.mode})`);
   await p1.page.click("[data-a=start]");
   await until(async () => (await state()).race?.phase === "running", 30000, "start na Šílené hoře");
   const hmax = await until(async () => {
@@ -384,11 +439,17 @@ await step("Šílená hora: výškové rozdíly, padající letadlo s troskami a
   await pc.screenshot({ path: join(OUT, "pc-crazy.png") });
   await pc.evaluate(() => window.__tk.autopilot(0, false));
   await pc.evaluate(() => window.__tk.giveItem(0, "wings"));
-  await p1.tap(".item-big");
+  // když se motokára zrovna točí po zásahu, věc nejde použít → ťuknout znovu
+  let tapAt = 0;
   await until(async () => {
     const h = await pc.evaluate(() => window.__tk.height(0));
-    return h && h.fly > 0 && h.y > 3;
-  }, 6000, "let s křídly");
+    if (h && h.fly > 0 && h.y > 3) return true;
+    if ((!h || h.fly <= 0) && Date.now() - tapAt > 1500) {
+      tapAt = Date.now();
+      await p1.tap(".item-big");
+    }
+    return false;
+  }, 12000, "let s křídly");
   await pc.screenshot({ path: join(OUT, "pc-wings.png") });
   await pc.evaluate(() => window.__tk.autopilot(0, true));
   await pc.keyboard.press("Escape");

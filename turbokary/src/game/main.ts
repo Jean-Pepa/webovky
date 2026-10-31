@@ -18,7 +18,6 @@ import {
   CUP_POINTS,
   MAX_RACERS,
   PROTOCOL_VERSION,
-  SPEED_CLASSES,
   type CupInfo,
   type HostMsg,
   type HudState,
@@ -88,7 +87,6 @@ class Game {
   private laps = clamp(store("tk_laps", 3), 1, 5);
   private bots = clamp(store("tk_bots", 5), 0, 7);
   private mode: Mode = store<Mode>("tk_mode", "race") === "cup" ? "cup" : "race";
-  private speed = clamp(store("tk_speed", 1), 0, SPEED_CLASSES.length - 1);
   private cup: Cup | null = null;
   private lastCup: CupInfo | null = null;
   phase: Phase = "lobby";
@@ -106,8 +104,7 @@ class Game {
   private forced = new Set<number>();
   private paused = false;
   private pauseEl!: HTMLElement;
-  /** zpětná zrcátka (hlavní vypínač na PC) */
-  private mirrors = store("tk_mirrors", true);
+  /** zpětná zrcátka hráčů v závodě (každý si je může vypnout v telefonu) */
   private mirrorFlags: boolean[] = [];
   private snow: Snow | null = null;
 
@@ -116,14 +113,11 @@ class Game {
       start: () => this.start(),
       laps: (d) => this.setLaps(this.laps + d),
       bots: (d) => this.setBots(this.bots + d),
-      track: (d) => this.setTrack(this.trackIdx + d),
-      mode: () => this.setMode(this.mode === "cup" ? "race" : "cup"),
-      speed: (d) => this.setSpeed(this.speed + d),
+      track: (d) => this.setChoice(this.choice + d),
       addKeyboard: () => this.addKeyboard(),
       removePlayer: (s) => this.removePlayer(s),
       toggleSound: () => this.toggleSound(),
       fullscreen: () => void document.documentElement.requestFullscreen?.().catch(() => {}),
-      mirrors: () => this.toggleMirrors(),
     });
     this.results = new Results(this.ui, () => this.next());
     this.pauseEl = document.createElement("div");
@@ -147,6 +141,12 @@ class Game {
     this.sound.setMuted(store("tk_muted", false));
     this.view.scene.add(this.fx.group);
     this.loadTrack(0);
+    // změna velikosti okna (celá obrazovka) → přepočítat panely hráčů
+    let relayout = 0;
+    addEventListener("resize", () => {
+      cancelAnimationFrame(relayout);
+      relayout = requestAnimationFrame(() => this.layoutHud());
+    });
     this.kb.onKey = (code, e) => this.onKey(code, e);
     const unlock = () => {
       const was = this.sound.ready;
@@ -235,34 +235,30 @@ class Game {
     this.broadcastLobby();
   }
 
-  private setMode(m: Mode) {
-    this.mode = m === "cup" ? "cup" : "race";
-    save("tk_mode", this.mode);
-    this.renderLobby();
-    this.broadcastLobby();
+  /** Volba v lobby: index trati, poslední možnost (TRACKS.length) je pohár ze všech tratí. */
+  private get choice() {
+    return this.mode === "cup" ? TRACKS.length : this.trackIdx;
   }
 
-  private setSpeed(n: number) {
-    this.speed = clamp(Math.round(n), 0, SPEED_CLASSES.length - 1);
-    save("tk_speed", this.speed);
-    this.renderLobby();
-    this.broadcastLobby();
-  }
-
-  private setTrack(i: number) {
-    const n = TRACKS.length;
-    const idx = ((Math.round(i) % n) + n) % n;
+  private setChoice(i: number) {
+    const n = TRACKS.length + 1;
+    const c = ((Math.round(i) % n) + n) % n;
+    this.mode = c === TRACKS.length ? "cup" : "race";
+    // pohár začíná vždy první tratí
+    const idx = this.mode === "cup" ? 0 : c;
     if (idx !== this.trackIdx) this.loadTrack(idx);
+    save("tk_mode", this.mode);
     this.renderLobby();
     this.broadcastLobby();
   }
 
   private renderLobby() {
     const def = TRACKS[this.trackIdx];
+    const cup = this.mode === "cup";
     this.lobby.render({
       players: this.session.lobbyPlayers(),
-      trackName: def.name,
-      trackDesc: def.desc,
+      trackName: cup ? "🏆 Pohár" : def.name,
+      trackDesc: cup ? `Všechny ${TRACKS.length} tratě za sebou, body za umístění.` : def.desc,
       trackId: def.id,
       laps: this.laps,
       bots: Math.min(this.bots, this.maxBots()),
@@ -270,11 +266,6 @@ class Game {
       canStart: this.session.players.length > 0,
       muted: this.sound.muted,
       soundReady: this.sound.ready,
-      mode: this.mode,
-      speed: this.speed,
-      speedName: SPEED_CLASSES[this.speed].name,
-      trackCount: TRACKS.length,
-      mirrors: this.mirrors,
     });
   }
 
@@ -291,8 +282,6 @@ class Game {
       maxBots: this.maxBots(),
       racing: this.phase === "countdown" || this.phase === "race",
       mode: this.mode,
-      speed: this.speed,
-      speeds: SPEED_CLASSES.map((c) => c.name),
       cupRound: this.cup ? this.cup.round + 1 : 0,
     };
   }
@@ -322,12 +311,6 @@ class Game {
     this.session.remove(slot);
     this.renderLobby();
     this.broadcastLobby();
-  }
-
-  private toggleMirrors() {
-    this.mirrors = !this.mirrors;
-    save("tk_mirrors", this.mirrors);
-    this.renderLobby();
   }
 
   private toggleSound() {
@@ -450,9 +433,6 @@ class Game {
       case "next":
         if (this.phase === "results") this.next();
         break;
-      case "mode":
-        if (this.phase === "lobby") this.setMode(msg.v === 1 ? "cup" : "race");
-        break;
       case "pause":
         if (this.phase === "countdown" || this.phase === "race") this.setPaused(!this.paused);
         break;
@@ -462,18 +442,18 @@ class Game {
       case "quit":
         if (this.paused || this.phase === "results") this.toLobby();
         break;
-      case "speed":
-        if (this.phase === "lobby") this.setSpeed(Number(msg.v));
-        break;
       case "laps":
         if (this.phase === "lobby") this.setLaps(Number(msg.v));
         break;
       case "bots":
         if (this.phase === "lobby") this.setBots(Number(msg.v));
         break;
-      case "track":
-        if (this.phase === "lobby" && TRACKS[Number(msg.v)]) this.setTrack(Number(msg.v));
+      case "track": {
+        // v = index trati, TRACKS.length = pohár
+        const v = Number(msg.v);
+        if (this.phase === "lobby" && Number.isInteger(v) && v >= 0 && v <= TRACKS.length) this.setChoice(v);
         break;
+      }
     }
   }
 
@@ -545,7 +525,7 @@ class Game {
   private start() {
     if (this.phase !== "lobby" || this.session.players.length === 0) return;
     if (this.mode === "cup") {
-      const order = TRACKS.map((_, i) => (this.trackIdx + i) % TRACKS.length);
+      const order = TRACKS.map((_, i) => i);
       this.cup = { tracks: order, round: 0, points: new Map(), info: new Map(), bots: this.pickBots() };
       this.startRace(order[0]);
     } else {
@@ -575,23 +555,15 @@ class Game {
     this.demo?.dispose();
     this.demo = null;
     this.fx.update(10);
-    const race = new Race(this.track, this.fx, entries, bots, this.laps, this.listener(), {
-      speedMul: SPEED_CLASSES[this.speed].mul,
-      intro: 3,
-    });
+    const race = new Race(this.track, this.fx, entries, bots, this.laps, this.listener(), { intro: 3 });
     this.race = race;
     this.view.scene.add(race.group);
     if (AUTOPILOT) for (const p of this.session.players) race.autopilot.add(p.slot);
     for (const s of this.forced) race.autopilot.add(s);
     this.humans = this.session.players.map((p) => race.kartOf(p.slot)!);
     this.view.snapCams(this.humans);
-    this.mirrorFlags = this.session.players.map((p) => this.mirrors && p.mirror);
-    this.hud.layout(
-      this.view.layout(this.humans.length),
-      this.humans,
-      this.session.players.map((p) => (p.kind === "kb" ? "⌨️" : "📱")),
-      this.mirrorFlags,
-    );
+    this.mirrorFlags = this.humans.map((k) => this.session.bySlot(k.slot)?.mirror !== false);
+    this.layoutHud();
     this.hud.show(false);
     this.lobby.show(false);
     this.kb.blockGameKeys = true;
@@ -600,6 +572,17 @@ class Game {
     this.setPhase("countdown");
     this.startEngines();
     this.music.play(this.track.theme.id);
+  }
+
+  /** Panely hráčů podle rozdělení obrazovky (při startu a změně velikosti okna). */
+  private layoutHud() {
+    if (!this.race || !this.humans.length) return;
+    this.hud.layout(
+      this.view.layout(this.humans.length),
+      this.humans,
+      this.humans.map((k) => (this.session.bySlot(k.slot)?.kind === "kb" ? "⌨️" : "📱")),
+      this.mirrorFlags,
+    );
   }
 
   /** Tlačítko „Další závod“: v poháru další trať, jinak zpět do lobby. */
@@ -835,7 +818,9 @@ class Game {
     this.hud.show(false);
     this.stopEngines();
     this.kb.blockGameKeys = false;
-    this.startDemo();
+    // pohár se v lobby ukazuje (a začíná) první tratí
+    if (this.mode === "cup" && this.trackIdx !== 0) this.loadTrack(0);
+    else this.startDemo();
     this.lobby.show(true);
     this.setPhase("lobby");
     this.renderLobby();
@@ -914,10 +899,7 @@ class Game {
       else if (code === "ArrowDown") this.setLaps(this.laps - 1);
       else if (code === "ArrowRight") this.setBots(this.bots + 1);
       else if (code === "ArrowLeft") this.setBots(this.bots - 1);
-      else if (code === "KeyT") this.setTrack(this.trackIdx + 1);
-      else if (code === "KeyP") this.setMode(this.mode === "cup" ? "race" : "cup");
-      else if (code === "KeyR") this.setSpeed((this.speed + 1) % SPEED_CLASSES.length);
-      else if (code === "KeyZ") this.toggleMirrors();
+      else if (code === "KeyT") this.setChoice(this.choice + 1);
       else if (code === "Backspace" || code === "Delete") {
         const kb = this.session.players.filter((p) => p.kind === "kb").pop();
         if (kb) this.removePlayer(kb.slot);
@@ -969,7 +951,8 @@ class Game {
       } else if (this.phase === "results") {
         this.view.renderPodium(this.track, this.fx, this.race.standings[0], real);
       } else {
-        this.view.renderRace(this.track, this.fx, this.humans, this.race.karts, real, this.mirrorFlags);
+        // kamery jedou v herním čase (při ?speed= nezaostávají za motokárami)
+        this.view.renderRace(this.track, this.fx, this.humans, this.race.karts, this.paused ? 0 : dt, this.mirrorFlags);
         this.hud.update(this.race, this.humans, this.isOffline);
       }
       this.updateEngines();
@@ -1040,6 +1023,8 @@ class Game {
             steer: Math.round(k.input.steer * 100) / 100,
             gas: k.input.gas,
             auto: this.race!.autopilot.has(k.slot),
+            skill: this.race!.skillOf(k),
+            time: k.finished ? Math.round(k.finishTime * 100) / 100 : null,
           })),
         },
       }),
@@ -1064,6 +1049,8 @@ class Game {
         if (k) {
           k.item = item as Kart["item"];
           k.itemN = item === "turbo3" ? 3 : 1;
+          // roztočená „kostka“ po sebraném krystalu by věc po dotočení přepsala
+          k.rollT = 0;
         }
       },
     };

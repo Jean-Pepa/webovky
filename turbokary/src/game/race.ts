@@ -50,7 +50,6 @@ export interface RaceListener {
 
 export interface RaceOptions {
   attract?: boolean;
-  speedMul?: number;
   intro?: number;
 }
 
@@ -101,17 +100,17 @@ export class Race {
     const r = rng((Date.now() & 0xffffff) ^ 0x5eed);
     this.r = r;
     const botEntries: Entry[] = bots.map((c) => ({ char: c, slot: -1, name: c.short }));
-    const skills = [0.99, 0.975, 0.96, 0.95, 0.94, 0.93, 0.92].sort(() => r() - 0.5);
+    // boti mají stejné motokáry jako hráči, liší se jen tím, jak dobře řídí
+    const skills = [1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7].sort(() => r() - 0.5);
     const order = [...botEntries, ...entries];
     order.forEach((e, i) => {
       const k = new Kart(i, e.char, e.slot, e.name);
       const p = track.gridSlot(i);
       k.placeAt(p.x, p.z, p.heading, track);
-      k.classMul = opts.speedMul ?? 1;
       this.karts.push(k);
       this.group.add(k.visual.root);
       if (k.visual.label) k.visual.label.layers.set(1 + e.slot);
-      this.brains.set(k, new BotBrain(r, e.slot < 0 ? skills[i % skills.length] : 0.97));
+      this.brains.set(k, new BotBrain(r, e.slot < 0 ? skills[i % skills.length] : 1));
     });
     this.standings = [...this.karts];
     this.kev = {
@@ -212,10 +211,6 @@ export class Race {
     const canDrive = this.phase === "running" || this.phase === "over";
     const n = this.standings.length;
 
-    // gumička: boti daleko za nejlepším hráčem trochu zrychlí, vepředu zpomalí
-    let bestHuman = -Infinity;
-    for (const k of this.karts) if (k.human) bestHuman = Math.max(bestHuman, k.dist);
-
     for (const k of this.karts) {
       const brain = this.brains.get(k)!;
       const auto = !k.human || k.finished || this.autopilot.has(k.slot);
@@ -233,15 +228,8 @@ export class Race {
         k.input = out.c;
         if (out.useItem && canDrive && !k.finished) this.useItem(k, out.dir);
       }
-      if (!k.human) {
-        let band = 1;
-        if (!this.attract && isFinite(bestHuman)) {
-          const gap = k.dist - bestHuman;
-          if (gap < -40) band = 1 + Math.min(0.07, (-gap - 40) / 600);
-          else if (gap > 60) band = 1 - Math.min(0.08, (gap - 60) / 500);
-        }
-        k.speedMul = brain.skill * band;
-      } else k.speedMul = k.finished ? 0.75 : 1;
+      // všichni stejně rychlí (žádná skrytá „gumička“), po cíli se jen dojíždí
+      k.speedMul = k.finished ? 0.75 : 1;
       if (k.stallT > 0 && Math.random() < 0.3) this.fx.smoke(k.x - Math.sin(k.heading) * 1.4, 0.7, k.z - Math.cos(k.heading) * 1.4, 0.4);
       k.step(dt, tr, tr.theme, canDrive, this.kev);
     }
@@ -478,6 +466,11 @@ export class Race {
 
   get flying() {
     return this.items.flying;
+  }
+
+  /** Ladění: jak dobře bot řídí (1 = jako autopilot). */
+  skillOf(k: Kart) {
+    return this.brains.get(k)?.skill ?? 1;
   }
 
   /** Ladění: pošle letadlo hned. */

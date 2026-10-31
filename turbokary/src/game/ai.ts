@@ -1,5 +1,7 @@
 // Boti: jedou po ideální stopě (do vnitřku zatáček), driftují a používají věci.
-import type { Controls, Kart } from "./kart";
+// Motokáru mají stejnou jako hráči. Obtížnost (skill) mění jen to, jak dobře řídí:
+// slabší boti méně driftují a v ostrých zatáčkách ubírají plyn.
+import { MAX_SPEED, type Controls, type Kart } from "./kart";
 import type { Track } from "./track";
 import { clamp, wrapAngle } from "./util";
 
@@ -65,6 +67,9 @@ export class BotBrain {
       gas = 0;
       brake = 1;
       steer = -steer;
+    } else if (this.skill < 1 && ctx.racing && k.boostT <= 0) {
+      const sharp = clamp((Math.abs(track.curvAhead(idx, 4, 26)) - 0.02) / 0.04, 0, 1);
+      if (vF > MAX_SPEED * (1 - (1 - this.skill) * 1.2 * sharp)) gas = 0;
     }
 
     // drift do delších zatáček

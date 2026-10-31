@@ -56,13 +56,6 @@ export function peerServerFromUrl(search: URLSearchParams): PeerServerOptions | 
 export type Phase = "lobby" | "countdown" | "race" | "results";
 export type Mode = "race" | "cup";
 
-/** Rychlostní třídy (násobek max. rychlosti všech motokár). */
-export const SPEED_CLASSES = [
-  { name: "Pohodová", mul: 0.86 },
-  { name: "Závodní", mul: 1 },
-  { name: "Šílená", mul: 1.14 },
-];
-
 /** Body v poháru podle umístění. */
 export const CUP_POINTS = [10, 8, 6, 5, 4, 3, 2, 1];
 
@@ -110,7 +103,8 @@ export type PadMsg =
   | { t: "in"; s: number; g: number; b: number; d: number }
   | { t: "item"; dir?: -1 | 0 | 1 }
   | { t: "me"; name?: string; char?: number; mirror?: boolean }
-  | { t: "cmd"; c: "start" | "lobby" | "next" | "track" | "laps" | "bots" | "mode" | "speed" | "pause" | "restart" | "quit"; v?: number }
+  /** track: v = index trati, v = počet tratí znamená pohár (všechny tratě za sebou) */
+  | { t: "cmd"; c: "start" | "lobby" | "next" | "track" | "laps" | "bots" | "pause" | "restart" | "quit"; v?: number }
   | { t: "ping"; ts: number };
 
 // ---- PC → telefon ----
@@ -146,9 +140,8 @@ export type HostMsg =
       bots: number;
       maxBots: number;
       racing: boolean;
+      /** "cup" = vybraný pohár (pak track = 0, pohár začíná první tratí) */
       mode: Mode;
-      speed: number;
-      speeds: string[];
       cupRound: number;
     }
   | { t: "phase"; p: Phase; n?: number }
