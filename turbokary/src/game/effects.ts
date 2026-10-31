@@ -177,3 +177,45 @@ export class Effects {
     this.smokePool.update(dt);
   }
 }
+
+/** Sněžení kolem hráčů (jen na zasněžené trati). */
+export class Snow {
+  readonly points: THREE.Points;
+  private pos: Float32Array;
+  private vel: Float32Array;
+  private n = 1800;
+  private box = { x: 150, y: 70, z: 150 };
+
+  constructor() {
+    this.pos = new Float32Array(this.n * 3);
+    this.vel = new Float32Array(this.n);
+    for (let i = 0; i < this.n; i++) {
+      this.pos[i * 3] = (Math.random() - 0.5) * this.box.x;
+      this.pos[i * 3 + 1] = Math.random() * this.box.y;
+      this.pos[i * 3 + 2] = (Math.random() - 0.5) * this.box.z;
+      this.vel[i] = 2 + Math.random() * 2.5;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage));
+    const m = new THREE.PointsMaterial({ color: 0xffffff, size: 0.35, map: TX.glow(), transparent: true, depthWrite: false, opacity: 0.9 });
+    this.points = new THREE.Points(g, m);
+    this.points.frustumCulled = false;
+  }
+
+  update(dt: number, cx: number, cz: number, time: number) {
+    const { x: bx, y: by, z: bz } = this.box;
+    for (let i = 0; i < this.n; i++) {
+      let x = this.pos[i * 3], y = this.pos[i * 3 + 1], z = this.pos[i * 3 + 2];
+      y -= this.vel[i] * dt;
+      x += Math.sin(time * 0.7 + i) * dt * 0.8;
+      if (y < 0) y += by;
+      // posouvat vločky s hráči (obal kolem středu)
+      x = ((((x - cx + bx / 2) % bx) + bx) % bx) + cx - bx / 2;
+      z = ((((z - cz + bz / 2) % bz) + bz) % bz) + cz - bz / 2;
+      this.pos[i * 3] = x;
+      this.pos[i * 3 + 1] = y;
+      this.pos[i * 3 + 2] = z;
+    }
+    this.points.geometry.getAttribute("position").needsUpdate = true;
+  }
+}

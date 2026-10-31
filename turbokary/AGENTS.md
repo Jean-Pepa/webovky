@@ -15,11 +15,15 @@ věci. Žádné postavy, názvy, grafika, hudba ani zvuky od Nintenda.
 - **Spojení**: WebRTC datový kanál přes PeerJS. Signalizace přes veřejný server 0.peerjs.com,
   samotná data jdou přímo telefon ↔ PC po Wi-Fi. Kontrakt zpráv: `src/shared/protocol.ts`.
 
-## Rozsah verze 1
-- 1 trať: Zelená louka (`src/game/tracks.ts`). Další tratě později.
-- 8 postav (`src/shared/characters.ts`), věci (`src/shared/items.ts`): turbo, trojité turbo,
-  olej, raketa, štít.
-- 3 kola, boti, drift s turbo bonusem, pořadí, výsledky.
+## Rozsah
+- 3 tratě (`src/game/tracks.ts`): Zelená louka, Písečný kaňon, Ledové jezero (klouže).
+  Jeden závod nebo pohár ze všech tratí s body. 3 rychlosti, 1–5 kol, 0–7 botů.
+- 8 postav s vlastnostmi (lehké / střední / těžké — `src/shared/characters.ts`).
+- Věci (`src/shared/items.ts`): turbo, trojité turbo, olej (vylít za sebe / hodit dopředu),
+  kokos (letí rovně a odráží se), raketa (navádí se dopředu i dozadu), roj včel (letí na
+  vedoucího), štít, beranidlo (krátká nezranitelnost a trkání).
+- Jízda: drift se 3 stupni turba, turbo start, závětří, skokánky s triky (turbo po dopadu),
+  turbo pásy, bariéry, srážky podle váhy.
 
 ## Kdo co dělá
 | Část | Kdo | Soubory |
@@ -72,17 +76,23 @@ grafiku jde dodávat postupně.
    | 6 | Robot Šroubek (robot) | `#c3ccd3` | oči `#4fe3ff` | `#e53935` | `#37474f` |
    | 7 | Prasátko Kvík (prasátko) | `#ffa7bb` | `#ff7f9e` | `#ffd21f` | `#118ab2` |
 
-2. **Ikony věcí** — `public/img/items/turbo.png`, `turbo3.png`, `oil.png`, `rocket.png`,
-   `shield.png`, 256×256, čitelné i ve 48 px.
-   Turbo = žlutooranžový blesk nebo láhev nitra, trojité turbo = tři blesky, olej = černá
-   kaluž s kapkou, raketa = červenobílá raketa s plamenem, štít = modrá průhledná bublina/štít.
+2. **Ikony věcí** — `public/img/items/turbo.png`, `turbo3.png`, `oil.png`, `coconut.png`,
+   `rocket.png`, `bees.png`, `shield.png`, `ram.png`, 256×256, čitelné i ve 48 px.
+   Turbo = žlutooranžový blesk nebo láhev nitra, trojité turbo = tři blesky, olej = černý
+   kanystr se žlutým pruhem a kapkou, kokos = hnědý kokos s „očičkama“, raketa = červenobílá
+   raketa s plamenem, roj včel = tři veselé včelky, štít = modrá průhledná bublina,
+   beranidlo = zlaté zatočené beraní rohy se září.
 3. **Logo** — `public/img/logo.png`, asi 1600×560. Nápis „TurboKáry“ (s Á), tlustá kreslená
    písmena, přechod žlutá → oranžová → červená, tmavý obrys, malá šachovnicová vlajka nebo
    motokára. Musí být čitelné na `#160f33` i přes 3D scénu.
-4. **Obloha** — `public/img/sky.jpg`, 4096×1024, panorama kolem dokola: levý a pravý okraj
-   musí navazovat bez švu. Nahoře modrá obloha (`#3a8dff`) s pár kupovitými mraky, u obzoru
-   modrošedé hory se sněhem a zelené kopce, spodní okraj přechází do barvy mlhy `#d6eeff`.
-   Bez slunce. JPG kvalita ~85, do 1,5 MB.
+4. **Obloha pro každou trať** — 4096×1024, panorama kolem dokola (levý a pravý okraj musí
+   navazovat bez švu), bez slunce, JPG kvalita ~85, do 1,5 MB. Spodní okraj přechází do barvy
+   mlhy dané trati:
+   - `public/img/sky-meadow.jpg` — modrá obloha (`#3a8dff`), kupovité mraky, modrošedé hory se
+     sněhem a zelené kopce, spodek `#d6eeff`.
+   - `public/img/sky-desert.jpg` — sytě modrá až broskvová obloha, stolové hory z červenohnědého
+     pískovce, spodek `#ffe3b8`.
+   - `public/img/sky-ice.jpg` — chladná modrofialová obloha, zasněžené štíty, spodek `#e3ecff`.
 5. **Reklamní plachty kolem trati** — `public/img/banners/1.png` … `4.png`, 1024×256,
    vymyšlení sponzoři s vtipnými českými názvy (např. „Turbo Knedlík“, „Pneu Hop“,
    „Benzínka U Žabáka“, „Koblihy Zrzka“). Výrazné barvy, velké čitelné písmo.
@@ -93,6 +103,8 @@ grafiku jde dodávat postupně.
    krystal). Pozadí tlačítek kreslí kód.
 8. **Ikony aplikace** — `public/icon-192.png`, `public/icon-512.png` (motokára nebo „TK“
    na `#160f33`) a `public/og.png` 1200×630 (náhled odkazu: logo a motokáry).
+9. **Náhledy tratí do lobby** — `public/img/tracks/louka.png`, `kanon.png`, `jezero.png`,
+   640×360, ilustrace trati (pohled shora nebo ze startu), bez textu.
 
 ### Test na skutečném zařízení
 Až bude hra hratelná (Claude dá vědět přes uživatele), spusť ji na PC (`npm run dev`)
@@ -121,7 +133,8 @@ a předej uživateli nebo založ GitHub issue v repu `Jean-Pepa/webovky`.
   `screen.orientation.angle`. ±30° = plný rejd, mrtvá zóna 3°. Na iOS
   `DeviceOrientationEvent.requestPermission()` po ťuknutí. Náklon funguje jen přes HTTPS.
 - Dotykové řízení jako záloha: levá polovina displeje, táhnutí do stran.
-- Tlačítka: PLYN (držet), BRZDA/COUVAT (držet), DRIFT (držet), VĚC (ťuknout).
+- Tlačítka: PLYN (držet), BRZDA/COUVAT (držet), DRIFT (držet, ve vzduchu = trik),
+  VĚC (ťuknout = výchozí směr, švihnout nahoru = dopředu, dolů = za sebe).
   Volba „automatický plyn“.
 - Multi-touch přes pointer events, `touch-action: none`, žádný zoom ani označování textu.
 - Wake Lock (displej nezhasne), na Androidu celá obrazovka.
@@ -141,4 +154,8 @@ Test s telefonem doma: PC i telefon na stejné Wi-Fi, na PC otevři adresu „Ne
 náklon až přes HTTPS (Vercel).
 
 ## Změny protokolu
-(zatím žádné)
+- v2: `item` má volitelné `dir` (1 = dopředu, -1 = za sebe, 0 = výchozí směr věci).
+- v2: `cmd` navíc `next` (další závod poháru / zpět do lobby), `mode` (v = 0 jeden závod,
+  1 pohár), `speed` (v = index rychlosti).
+- v2: `lobby` navíc `mode`, `speed`, `speeds`, `cupRound`; `results` navíc `cup` (tabulka poháru).
+- v2: `hud.drift` je -1 (nedriftuje) až 3 (třetí stupeň).

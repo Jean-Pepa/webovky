@@ -30,7 +30,7 @@ export class BotBrain {
     this.laneGoal = this.lane;
   }
 
-  think(k: Kart, track: Track, dt: number, ctx: BotContext): { c: Controls; useItem: boolean } {
+  think(k: Kart, track: Track, dt: number, ctx: BotContext): { c: Controls; useItem: boolean; dir: number } {
     const r = this.r;
     this.laneT -= dt;
     if (this.laneT <= 0) {
@@ -88,20 +88,45 @@ export class BotBrain {
 
     // věci
     let useItem = false;
+    let dir = 0;
     if (k.item && k.rollT <= 0) {
       this.itemT -= dt;
       if (this.itemT <= 0) {
+        const straight = Math.abs(track.curvAhead(idx, 0, 40)) < 0.01;
+        const ahead = !!ctx.ahead && ctx.aheadGap < 45;
+        const behind = !!ctx.behind && ctx.behindGap < 20;
         switch (k.item) {
           case "turbo":
           case "turbo3":
-            useItem = Math.abs(track.curvAhead(idx, 0, 40)) < 0.01;
+            useItem = straight;
             break;
           case "rocket":
-            useItem = !!ctx.ahead && ctx.aheadGap < 70;
+            if (ctx.ahead && ctx.aheadGap < 70) useItem = true;
+            else if (behind) {
+              useItem = true;
+              dir = -1;
+            }
+            break;
+          case "coconut":
+            if (ahead && straight) useItem = true;
+            else if (behind) {
+              useItem = true;
+              dir = -1;
+            } else useItem = this.itemT < -10;
             break;
           case "oil":
-            useItem = (!!ctx.behind && ctx.behindGap < 22) || this.itemT < -9;
+            if (behind || this.itemT < -9) {
+              useItem = true;
+              dir = -1;
+            } else if (ahead && ctx.aheadGap < 26) {
+              useItem = true;
+              dir = 1;
+            }
             break;
+          case "ram":
+            useItem = straight || ahead || behind;
+            break;
+          case "bees":
           case "shield":
             useItem = true;
             break;
@@ -110,6 +135,6 @@ export class BotBrain {
       }
     } else if (!k.item) this.itemT = 0.8 + r() * 2.2;
 
-    return { c: { steer, gas, brake, drift }, useItem };
+    return { c: { steer, gas, brake, drift }, useItem, dir };
   }
 }

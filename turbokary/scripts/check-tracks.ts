@@ -42,12 +42,27 @@ for (const def of TRACKS) {
       if (d < minSep) { minSep = d; sepAt = [i, j]; }
     }
   }
+  // rovné úseky (kandidáti na skokánky a turbo pásy)
+  const straight: string[] = [];
+  let run = -1;
+  for (let i = 0; i <= n; i++) {
+    let dh = head[(i + 3) % n] - head[(i - 3 + n) % n];
+    while (dh > Math.PI) dh -= 2 * Math.PI;
+    while (dh < -Math.PI) dh += 2 * Math.PI;
+    const flat = i < n && Math.abs(dh) / (6 * ds) < 0.006;
+    if (flat && run < 0) run = i;
+    if (!flat && run >= 0) {
+      if ((i - run) * ds > 40) straight.push(`${(run / n).toFixed(2)}–${(i / n).toFixed(2)}`);
+      run = -1;
+    }
+  }
   const okR = minR > wallD + 3;
   const okS = minSep > need;
   if (!okR || !okS) bad = true;
   console.log(
     `${def.name}: délka ${L.toFixed(0)} m, min. poloměr ${minR.toFixed(1)} m (bod ${minRAt}) ${okR ? "OK" : "MOC OSTRÁ"}, ` +
-      `min. odstup ${minSep.toFixed(1)} m (potřeba ${need}) ${okS ? "OK" : "PŘEKRYV u " + sepAt.join("/")}`,
+      `min. odstup ${minSep.toFixed(1)} m (potřeba ${need}) ${okS ? "OK" : "PŘEKRYV u " + sepAt.join("/")}` +
+      `\n   rovinky: ${straight.join(", ")}`,
   );
   // SVG náhled
   const xs = pts.map((p) => p.x), zs = pts.map((p) => p.z);
@@ -63,6 +78,10 @@ for (const def of TRACKS) {
     .map((b) => pts[Math.floor(b.at * n) % n])
     .map((p) => `<circle cx="${p.x}" cy="${p.z}" r="5" fill="#f59e0b"/>`)
     .join("");
+  const ramps = (def.ramps ?? [])
+    .map((b) => pts[Math.floor(b.at * n) % n])
+    .map((p) => `<rect x="${p.x - 5}" y="${p.z - 5}" width="10" height="10" fill="#111"/>`)
+    .join("");
   const s0 = pts[0], s1 = pts[6];
   const arrows = [0.25, 0.5, 0.75].map((f) => {
     const i = Math.floor(f * n), p = pts[i], q = pts[(i + 8) % n];
@@ -76,7 +95,7 @@ for (const def of TRACKS) {
   <path d="${path}" fill="none" stroke="#444" stroke-width="${2 * def.hw}" stroke-linejoin="round"/>
   <path d="${path}" fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="4 6"/>
   <line x1="${s0.x}" y1="${s0.z}" x2="${s1.x}" y2="${s1.z}" stroke="#fff" stroke-width="6"/>
-  ${marks}${boosts}${arrows}${bad1}
+  ${marks}${boosts}${ramps}${arrows}${bad1}
   ${def.pts.map(([x, z], i) => `<text x="${x}" y="${z}" font-size="9" fill="#003">${i}</text>`).join("")}
   </svg><figcaption>${def.name} — ${L.toFixed(0)} m</figcaption></figure>`;
 }

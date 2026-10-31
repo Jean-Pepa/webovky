@@ -16,6 +16,14 @@ export interface Projection {
   d: number;
 }
 
+export interface Ramp {
+  s0: number;
+  len: number;
+  d: number;
+  halfW: number;
+  h: number;
+}
+
 export interface Pad {
   s0: number;
   len: number;
@@ -43,6 +51,7 @@ export class Track {
   readonly group = new THREE.Group();
   readonly itemSpots: { x: number; z: number }[] = [];
   readonly pads: Pad[] = [];
+  readonly ramps: Ramp[] = [];
   readonly bounds = { minX: 0, maxX: 0, minZ: 0, maxZ: 0 };
   readonly center = new THREE.Vector3();
   private boostTex: THREE.Texture | null = null;
@@ -128,6 +137,9 @@ export class Track {
     }
     for (const b of def.boosts) {
       this.pads.push({ s0: b.at * this.length, len: 8, d: b.d * this.hw * 0.7, halfW: 2.3 });
+    }
+    for (const r of def.ramps) {
+      this.ramps.push({ s0: r.at * this.length, len: 7, d: r.d * this.hw * 0.7, halfW: 3, h: 1.1 });
     }
 
     this.build();
@@ -366,7 +378,7 @@ export class Track {
     this.group.add(hemi, sun);
 
     // zem
-    const gTex = TX.ground(th.ground, th.groundDots);
+    const gTex = TX.ground(th.ground, th.groundDots, th.flowers);
     gTex.repeat.set(60, 60);
     const groundMesh = new THREE.Mesh(
       new THREE.PlaneGeometry(2400, 2400),
@@ -423,9 +435,37 @@ export class Track {
       this.group.add(new THREE.Mesh(g, padMat));
     }
 
+    this.buildRamps();
     this.buildBanners();
     this.buildDecor();
     this.buildScenery();
+  }
+
+  private buildRamps() {
+    const topMat = new THREE.MeshLambertMaterial({ map: TX.ramp() });
+    const sideMat = new THREE.MeshLambertMaterial({ color: 0x2b2d42 });
+    for (const r of this.ramps) {
+      const w = r.halfW, L = r.len, h = r.h, z0 = -L / 2, z1 = L / 2;
+      const top = new THREE.BufferGeometry();
+      top.setAttribute("position", new THREE.Float32BufferAttribute([-w, 0, z0, w, h, z1, w, 0, z0, -w, 0, z0, -w, h, z1, w, h, z1], 3));
+      top.setAttribute("uv", new THREE.Float32BufferAttribute([0, 0, 1, 1.5, 1, 0, 0, 0, 0, 1.5, 1, 1.5], 2));
+      top.computeVertexNormals();
+      const side = new THREE.BufferGeometry();
+      side.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(
+          [-w, 0, z1, w, 0, z1, w, h, z1, -w, 0, z1, w, h, z1, -w, h, z1, -w, 0, z0, -w, 0, z1, -w, h, z1, w, 0, z0, w, h, z1, w, 0, z1],
+          3,
+        ),
+      );
+      side.computeVertexNormals();
+      const p = this.pointAt(r.s0 + L / 2, r.d);
+      const g = new THREE.Group();
+      g.position.set(p.x, 0.02, p.z);
+      g.rotation.y = p.heading;
+      g.add(new THREE.Mesh(top, topMat), new THREE.Mesh(side, sideMat));
+      this.group.add(g);
+    }
   }
 
   private projectS(x: number, z: number) {
@@ -562,35 +602,37 @@ export class Track {
       tryPlace(x, z);
     }
 
-    const dummy = new THREE.Object3D();
     const color = new THREE.Color();
-    const addInstanced = (geo: THREE.BufferGeometry, list: Inst[], colors: number[], y: number, sy = 1, rand = 0) => {
-      if (!list.length) return;
-      const mat = new THREE.MeshLambertMaterial({ flatShading: true });
-      const mesh = new THREE.InstancedMesh(geo, mat, list.length);
-      list.forEach((it, i) => {
-        dummy.position.set(it.x, y * it.s, it.z);
-        dummy.rotation.set(rand ? (it.tint - 0.5) * rand : 0, it.rot, 0);
-        dummy.scale.set(it.s, it.s * sy, it.s);
-        dummy.updateMatrix();
-        mesh.setMatrixAt(i, dummy.matrix);
-        color.set(colors[Math.floor(it.tint * colors.length) % colors.length]);
-        mesh.setColorAt(i, color);
-      });
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-      this.group.add(mesh);
-    };
-    const trees = lists.get("tree") ?? [];
-    addInstanced(new THREE.CylinderGeometry(0.28, 0.4, 2.6, 6), trees, [0x7a4b2a, 0x6b3f22], 1.3);
-    addInstanced(new THREE.IcosahedronGeometry(2.1, 0), trees, [0x3f9e3a, 0x4fb543, 0x2f8a34, 0x63c24a], 3.9);
-    const pines = lists.get("pine") ?? [];
-    addInstanced(new THREE.CylinderGeometry(0.22, 0.3, 1.6, 6), pines, [0x6b3f22], 0.8);
-    addInstanced(new THREE.ConeGeometry(1.9, 5.5, 7), pines, [0x2a6e3a, 0x31804a, 0x245f33], 4.2);
-    const bushes = lists.get("bush") ?? [];
-    addInstanced(new THREE.IcosahedronGeometry(1.2, 0), bushes, [0x4caf50, 0x5cbf4a, 0x66bb6a, 0x8bc34a], 0.6, 0.65);
-    const rocks = lists.get("rock") ?? [];
-    addInstanced(new THREE.DodecahedronGeometry(1.3, 0), rocks, [0x9e9e9e, 0x8d8d8d, 0xb0aaa0], 0.5, 0.6, 1.2);
+    const mInst = new THREE.Matrix4();
+    const mLocal = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const e = new THREE.Euler();
+    const v = new THREE.Vector3();
+    const sc = new THREE.Vector3();
+    for (const [kind, list] of lists) {
+      if (!list.length) continue;
+      for (const part of DECOR[kind]) {
+        const mat = part.glow
+          ? new THREE.MeshPhongMaterial({ flatShading: true, emissive: 0x3a7bd5, transparent: true, opacity: 0.85, shininess: 100 })
+          : new THREE.MeshLambertMaterial({ flatShading: true });
+        const mesh = new THREE.InstancedMesh(part.geo, mat, list.length);
+        mLocal.compose(
+          v.set(...part.pos),
+          q.setFromEuler(e.set(...(part.rot ?? [0, 0, 0]))),
+          sc.set(...(part.scale ?? [1, 1, 1])),
+        );
+        list.forEach((it, i) => {
+          mInst.compose(v.set(it.x, 0, it.z), q.setFromEuler(e.set(0, it.rot, 0)), sc.set(it.s, it.s, it.s));
+          mInst.multiply(mLocal);
+          mesh.setMatrixAt(i, mInst);
+          color.set(part.colors[Math.floor(it.tint * part.colors.length) % part.colors.length]);
+          mesh.setColorAt(i, color);
+        });
+        mesh.instanceMatrix.needsUpdate = true;
+        if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+        this.group.add(mesh);
+      }
+    }
   }
 
   private buildScenery() {
@@ -598,32 +640,59 @@ export class Track {
     const r = rng(99);
     const c = this.center;
     const radius = Math.max(this.bounds.maxX - this.bounds.minX, this.bounds.maxZ - this.bounds.minZ) / 2;
-    // kopce
+    // kopce / duny
     const hillMat = new THREE.MeshLambertMaterial({ color: th.hill, flatShading: true });
     for (let i = 0; i < 26; i++) {
       const a = (i / 26) * Math.PI * 2 + r() * 0.2;
       const dist = radius + 260 + r() * 140;
       const rr = 60 + r() * 70;
       const hill = new THREE.Mesh(new THREE.SphereGeometry(rr, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), hillMat);
-      hill.scale.y = 0.35 + r() * 0.3;
+      hill.scale.y = th.scenery === "mesas" ? 0.18 + r() * 0.12 : 0.35 + r() * 0.3;
       hill.position.set(c.x + Math.cos(a) * dist, -2, c.z + Math.sin(a) * dist);
       this.group.add(hill);
     }
-    // hory se sněhem
-    const mMat = new THREE.MeshLambertMaterial({ color: th.mountain, flatShading: true });
-    const capMat = new THREE.MeshLambertMaterial({ color: th.mountainCap, flatShading: true });
-    for (let i = 0; i < 18; i++) {
-      const a = (i / 18) * Math.PI * 2 + r() * 0.25;
-      const dist = radius + 640 + r() * 220;
-      const h = 160 + r() * 170;
-      const w = 130 + r() * 110;
-      const m = new THREE.Mesh(new THREE.ConeGeometry(w, h, 6 + Math.floor(r() * 3)), mMat);
-      m.position.set(c.x + Math.cos(a) * dist, h / 2 - 5, c.z + Math.sin(a) * dist);
-      m.rotation.y = r() * 3;
-      this.group.add(m);
-      const cap = new THREE.Mesh(new THREE.ConeGeometry(w * 0.31, h * 0.3, m.geometry.parameters.radialSegments), capMat);
-      cap.position.set(0, h * 0.35 + 0.5, 0);
-      m.add(cap);
+    if (th.scenery === "mesas") {
+      // stolové hory z vrstev pískovce
+      const bands = [th.mountain, th.mountainCap, 0xb85f30];
+      for (let i = 0; i < 16; i++) {
+        const a = (i / 16) * Math.PI * 2 + r() * 0.3;
+        const dist = radius + 420 + r() * 360;
+        const w = 60 + r() * 90;
+        const g = new THREE.Group();
+        let y = 0;
+        const layers = 2 + Math.floor(r() * 3);
+        for (let k = 0; k < layers; k++) {
+          const h = 30 + r() * 40;
+          const rad = w * (1 - k * 0.16);
+          const m = new THREE.Mesh(
+            new THREE.CylinderGeometry(rad * 0.92, rad, h, 7),
+            new THREE.MeshLambertMaterial({ color: bands[k % bands.length], flatShading: true }),
+          );
+          m.position.y = y + h / 2;
+          m.rotation.y = r() * 3;
+          g.add(m);
+          y += h;
+        }
+        g.position.set(c.x + Math.cos(a) * dist, -4, c.z + Math.sin(a) * dist);
+        this.group.add(g);
+      }
+    } else {
+      // hory se sněhem
+      const mMat = new THREE.MeshLambertMaterial({ color: th.mountain, flatShading: true });
+      const capMat = new THREE.MeshLambertMaterial({ color: th.mountainCap, flatShading: true });
+      for (let i = 0; i < 18; i++) {
+        const a = (i / 18) * Math.PI * 2 + r() * 0.25;
+        const dist = radius + 640 + r() * 220;
+        const h = 160 + r() * 170;
+        const w = 130 + r() * 110;
+        const m = new THREE.Mesh(new THREE.ConeGeometry(w, h, 6 + Math.floor(r() * 3)), mMat);
+        m.position.set(c.x + Math.cos(a) * dist, h / 2 - 5, c.z + Math.sin(a) * dist);
+        m.rotation.y = r() * 3;
+        this.group.add(m);
+        const cap = new THREE.Mesh(new THREE.ConeGeometry(w * (th.scenery === "snow" ? 0.55 : 0.31), h * (th.scenery === "snow" ? 0.55 : 0.3), m.geometry.parameters.radialSegments), capMat);
+        cap.position.set(0, th.scenery === "snow" ? h * 0.225 + 0.5 : h * 0.35 + 0.5, 0);
+        m.add(cap);
+      }
     }
     // mraky
     const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, fog: false, emissive: 0x9ab4d0 });
@@ -703,3 +772,65 @@ export class Track {
     this.group.add(g);
   }
 }
+
+// ---------------------------------------------------------------- výzdoba (instancované díly)
+
+type V3 = [number, number, number];
+interface DecorPart {
+  geo: THREE.BufferGeometry;
+  colors: number[];
+  pos: V3;
+  rot?: V3;
+  scale?: V3;
+  glow?: boolean;
+}
+
+const GREENS = [0x3f9e3a, 0x4fb543, 0x2f8a34, 0x63c24a];
+const DARK_GREENS = [0x2a6e3a, 0x31804a, 0x245f33];
+const BROWNS = [0x7a4b2a, 0x6b3f22];
+const CACTUS = [0x3f8f3a, 0x4a9f44, 0x367f35];
+
+const DECOR: Record<DecorKind, DecorPart[]> = {
+  tree: [
+    { geo: new THREE.CylinderGeometry(0.28, 0.4, 2.6, 6), colors: BROWNS, pos: [0, 1.3, 0] },
+    { geo: new THREE.IcosahedronGeometry(2.1, 0), colors: GREENS, pos: [0, 3.9, 0] },
+  ],
+  pine: [
+    { geo: new THREE.CylinderGeometry(0.22, 0.3, 1.6, 6), colors: BROWNS, pos: [0, 0.8, 0] },
+    { geo: new THREE.ConeGeometry(1.9, 5.5, 7), colors: DARK_GREENS, pos: [0, 4.2, 0] },
+  ],
+  bush: [{ geo: new THREE.IcosahedronGeometry(1.2, 0), colors: [0x4caf50, 0x5cbf4a, 0x66bb6a, 0x8bc34a], pos: [0, 0.6, 0], scale: [1, 0.65, 1] }],
+  rock: [{ geo: new THREE.DodecahedronGeometry(1.3, 0), colors: [0x9e9e9e, 0x8d8d8d, 0xb0aaa0], pos: [0, 0.5, 0], rot: [0.4, 0, 0.3], scale: [1, 0.6, 1] }],
+  cactus: [
+    { geo: new THREE.CylinderGeometry(0.45, 0.5, 4.2, 8), colors: CACTUS, pos: [0, 2.1, 0] },
+    { geo: new THREE.SphereGeometry(0.45, 8, 6), colors: CACTUS, pos: [0, 4.2, 0] },
+    { geo: new THREE.CylinderGeometry(0.28, 0.28, 1.0, 7), colors: CACTUS, pos: [0.55, 2.0, 0], rot: [0, 0, Math.PI / 2] },
+    { geo: new THREE.CylinderGeometry(0.3, 0.3, 1.5, 7), colors: CACTUS, pos: [1.0, 2.7, 0] },
+    { geo: new THREE.CylinderGeometry(0.26, 0.26, 0.9, 7), colors: CACTUS, pos: [-0.5, 2.6, 0], rot: [0, 0, Math.PI / 2] },
+    { geo: new THREE.CylinderGeometry(0.28, 0.28, 1.2, 7), colors: CACTUS, pos: [-0.9, 3.2, 0] },
+  ],
+  palm: [
+    { geo: new THREE.CylinderGeometry(0.25, 0.42, 6.2, 6), colors: [0x8a5a2b, 0x7a4a22], pos: [0.35, 3.1, 0], rot: [0, 0, -0.12] },
+    { geo: new THREE.ConeGeometry(2.8, 1.4, 7), colors: [0x2f9a3a, 0x3caf45], pos: [0.75, 6.2, 0], rot: [Math.PI, 0, 0] },
+    { geo: new THREE.SphereGeometry(0.28, 6, 4), colors: [0x6b3f22], pos: [0.75, 5.6, 0.35] },
+  ],
+  snowpine: [
+    { geo: new THREE.CylinderGeometry(0.22, 0.3, 1.4, 6), colors: BROWNS, pos: [0, 0.7, 0] },
+    { geo: new THREE.ConeGeometry(2.1, 3.2, 7), colors: DARK_GREENS, pos: [0, 2.6, 0] },
+    { geo: new THREE.ConeGeometry(1.5, 2.6, 7), colors: DARK_GREENS, pos: [0, 4.3, 0] },
+    { geo: new THREE.ConeGeometry(0.95, 1.5, 7), colors: [0xffffff, 0xf2f7ff], pos: [0, 5.45, 0] },
+  ],
+  snowman: [
+    { geo: new THREE.SphereGeometry(1.1, 12, 8), colors: [0xffffff], pos: [0, 1.0, 0] },
+    { geo: new THREE.SphereGeometry(0.8, 12, 8), colors: [0xffffff], pos: [0, 2.5, 0] },
+    { geo: new THREE.SphereGeometry(0.55, 12, 8), colors: [0xffffff], pos: [0, 3.55, 0] },
+    { geo: new THREE.ConeGeometry(0.1, 0.6, 6), colors: [0xff7a1a], pos: [0, 3.55, 0.75], rot: [Math.PI / 2, 0, 0] },
+    { geo: new THREE.CylinderGeometry(0.6, 0.6, 0.08, 12), colors: [0x1b1430], pos: [0, 4.0, 0] },
+    { geo: new THREE.CylinderGeometry(0.4, 0.4, 0.6, 12), colors: [0x1b1430], pos: [0, 4.3, 0] },
+  ],
+  crystal: [
+    { geo: new THREE.OctahedronGeometry(1, 0), colors: [0xaee6ff, 0x8fd3ff], pos: [0, 2, 0], scale: [0.6, 2.2, 0.6], glow: true },
+    { geo: new THREE.OctahedronGeometry(1, 0), colors: [0xc8f0ff], pos: [0.8, 1.2, 0.3], rot: [0, 0, -0.5], scale: [0.4, 1.4, 0.4], glow: true },
+    { geo: new THREE.OctahedronGeometry(1, 0), colors: [0x9fdcff], pos: [-0.7, 1.0, -0.2], rot: [0.3, 0, 0.6], scale: [0.35, 1.2, 0.35], glow: true },
+  ],
+};

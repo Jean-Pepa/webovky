@@ -113,8 +113,29 @@ export function boostPad() {
   return toTexture(c);
 }
 
-/** Tráva se skvrnami a kytičkami. */
-export function ground(base: number, dots: number) {
+/** Skokánek: žlutá s černými šipkami. */
+export function ramp() {
+  const { c, g } = canvas(128, 128);
+  g.fillStyle = "#ffd21f";
+  g.fillRect(0, 0, 128, 128);
+  g.fillStyle = "#1b1430";
+  for (let i = 0; i < 2; i++) {
+    const y = i * 64 + 6;
+    g.beginPath();
+    g.moveTo(16, y + 44);
+    g.lineTo(64, y + 8);
+    g.lineTo(112, y + 44);
+    g.lineTo(92, y + 44);
+    g.lineTo(64, y + 24);
+    g.lineTo(36, y + 44);
+    g.closePath();
+    g.fill();
+  }
+  return toTexture(c);
+}
+
+/** Zem (tráva / písek / sníh) se skvrnami, případně s kytičkami. */
+export function ground(base: number, dots: number, flowers = true) {
   const { c, g } = canvas(512, 512);
   g.fillStyle = css(base);
   g.fillRect(0, 0, 512, 512);
@@ -125,10 +146,12 @@ export function ground(base: number, dots: number) {
     g.fill();
   }
   noise(g, 512, 512, 14, 3);
-  const flowers = ["#fff7d6", "#ffd21f", "#ff8fab", "#ffffff"];
-  for (let i = 0; i < 260; i++) {
-    g.fillStyle = flowers[i % flowers.length];
-    g.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
+  if (flowers) {
+    const cols = ["#fff7d6", "#ffd21f", "#ff8fab", "#ffffff"];
+    for (let i = 0; i < 260; i++) {
+      g.fillStyle = cols[i % cols.length];
+      g.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
+    }
   }
   return toTexture(c);
 }

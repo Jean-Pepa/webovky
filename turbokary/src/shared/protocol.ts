@@ -54,6 +54,17 @@ export function peerServerFromUrl(search: URLSearchParams): PeerServerOptions | 
 }
 
 export type Phase = "lobby" | "countdown" | "race" | "results";
+export type Mode = "race" | "cup";
+
+/** Rychlostní třídy (násobek max. rychlosti všech motokár). */
+export const SPEED_CLASSES = [
+  { name: "Pohodová", mul: 0.86 },
+  { name: "Závodní", mul: 1 },
+  { name: "Šílená", mul: 1.14 },
+];
+
+/** Body v poháru podle umístění. */
+export const CUP_POINTS = [10, 8, 6, 5, 4, 3, 2, 1];
 
 export interface LobbyPlayer {
   slot: number;
@@ -63,6 +74,24 @@ export interface LobbyPlayer {
   online: boolean;
   /** "pad" = telefon, "kb" = klávesnice na PC */
   kind: "pad" | "kb";
+}
+
+export interface CupRow {
+  place: number;
+  name: string;
+  char: number;
+  pts: number;
+  add: number;
+  human: boolean;
+  slot: number;
+}
+
+export interface CupInfo {
+  round: number;
+  of: number;
+  rows: CupRow[];
+  final: boolean;
+  next: string | null;
 }
 
 export interface ResultRow {
@@ -79,9 +108,9 @@ export interface ResultRow {
 export type PadMsg =
   | { t: "hello"; cid: string; name: string; char: number; v: number }
   | { t: "in"; s: number; g: number; b: number; d: number }
-  | { t: "item" }
+  | { t: "item"; dir?: -1 | 0 | 1 }
   | { t: "me"; name?: string; char?: number }
-  | { t: "cmd"; c: "start" | "lobby" | "track" | "laps" | "bots"; v?: number }
+  | { t: "cmd"; c: "start" | "lobby" | "next" | "track" | "laps" | "bots" | "mode" | "speed" | "pause" | "restart" | "quit"; v?: number }
   | { t: "ping"; ts: number };
 
 // ---- PC → telefon ----
@@ -97,6 +126,10 @@ export interface HudState {
   drift: number;
   boost: boolean;
   shield: boolean;
+  /** závod je pozastavený */
+  pause: boolean;
+  /** jsi hostitel (smíš pauzu a restart) */
+  host: boolean;
 }
 
 export type HostMsg =
@@ -113,9 +146,13 @@ export type HostMsg =
       bots: number;
       maxBots: number;
       racing: boolean;
+      mode: Mode;
+      speed: number;
+      speeds: string[];
+      cupRound: number;
     }
   | { t: "phase"; p: Phase; n?: number }
   | ({ t: "hud" } & HudState)
   | { t: "buzz"; ms: number | number[] }
-  | { t: "results"; rows: ResultRow[]; you: number; record?: string }
+  | { t: "results"; rows: ResultRow[]; you: number; record?: string; cup?: CupInfo }
   | { t: "pong"; ts: number };

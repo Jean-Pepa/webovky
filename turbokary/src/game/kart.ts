@@ -1,4 +1,6 @@
-// Fyzika motokáry: „arkádový“ model s driftem, turbem, smykem a nárazy do bariér.
+// Fyzika motokáry: „arkádový“ model s driftem (3 stupně), turbem, skoky s triky,
+// beranidlem, smykem a nárazy do bariér. Vlastnosti postav mění rychlost, zrychlení,
+// ovladatelnost a váhu.
 import type { CharacterDef } from "../shared/characters";
 import type { ItemId } from "../shared/items";
 import type { Track, Projection } from "./track";
@@ -22,11 +24,13 @@ const TRACTION = 0.9;
 const DRIFT_TRACTION = 0.55;
 const BOOST_MULT = 1.4;
 const BOOST_ACCEL = 34;
+const RAM_MULT = 1.18;
 const HOP_V = 3.6;
-const GRAVITY = 24;
+export const GRAVITY = 24;
 const DRIFT_MIN = 9;
-export const DRIFT_L1 = 0.95;
-export const DRIFT_L2 = 2.1;
+/** časy driftu pro 1., 2. a 3. stupeň a délka turba za ně */
+export const DRIFT_LEVELS = [0.9, 1.9, 3.0];
+const DRIFT_BOOST = [0, 0.55, 1.0, 1.5];
 
 export interface Controls {
   steer: number;
@@ -35,11 +39,15 @@ export interface Controls {
   drift: boolean;
 }
 
+export type HitKind = "spin" | "bees" | "ram";
+
 export interface KartEvents {
   wall(k: Kart, strength: number): void;
   driftLevel(k: Kart, level: number): void;
-  boost(k: Kart, kind: "drift" | "pad" | "item"): void;
+  boost(k: Kart, kind: "drift" | "pad" | "item" | "trick" | "start" | "draft"): void;
   hop(k: Kart): void;
+  trick(k: Kart): void;
+  land(k: Kart): void;
 }
 
 export class Kart {
@@ -61,6 +69,8 @@ export class Kart {
   vF = 0;
   /** násobek max. rychlosti (boti: obtížnost a „gumička“) */
   speedMul = 1;
+  /** rychlostní třída závodu */
+  classMul = 1;
   input: Controls = { steer: 0, gas: 0, brake: 0, drift: false };
 
   driftHeld = false;
@@ -72,9 +82,21 @@ export class Kart {
   spinT = 0;
   spinAngle = 0;
   shieldT = 0;
+  ramT = 0;
+  stallT = 0;
   padCool = 0;
   hitCool = 0;
+  draftT = 0;
   offroad = false;
+  /** ve vzduchu po skokánku */
+  air = false;
+  trickReady = false;
+  trickDone = false;
+  trickT = 0;
+  onRamp = -1;
+  rampF = 0;
+  /** od kdy (čas odpočtu) drží plyn – pro turbo start */
+  gasFrom = -1;
 
   item: ItemId | null = null;
   itemN = 0;
@@ -90,10 +112,12 @@ export class Kart {
   finishTime = 0;
   place = 1;
   wrongT = 0;
+  celebrateT = 0;
 
   private wheelSpin = 0;
   private yawVis = 0;
   private steerVis = 0;
+  private rollVis = 0;
 
   constructor(id: number, char: CharacterDef, slot: number, name: string) {
     this.id = id;
@@ -107,6 +131,10 @@ export class Kart {
     return this.slot >= 0;
   }
 
+  get weight() {
+    return this.char.stats.weight * (this.ramT > 0 ? 3 : 1);
+  }
+
   /** Postaví motokáru na místo a vynuluje stav. */
   placeAt(x: number, z: number, heading: number, track: Track) {
     this.x = x;
@@ -115,7 +143,12 @@ export class Kart {
     this.heading = heading;
     this.drifting = this.driftHeld = false;
     this.driftDir = this.driftT = this.driftLevel = 0;
-    this.boostT = this.spinT = this.spinAngle = this.shieldT = this.padCool = this.hitCool = 0;
+    this.boostT = this.spinT = this.spinAngle = this.shieldT = this.ramT = this.stallT = 0;
+    this.padCool = this.hitCool = this.draftT = 0;
+    this.air = this.trickReady = this.trickDone = false;
+    this.trickT = 0;
+    this.onRamp = -1;
+    this.gasFrom = -1;
     this.item = null;
     this.itemN = this.rollT = 0;
     this.finished = false;
@@ -124,6 +157,7 @@ export class Kart {
     this.lapStart = 0;
     this.bestLap = Infinity;
     this.wrongT = 0;
+    this.celebrateT = 0;
     this.proj.idx = -1;
     track.project(x, z, -1, this.proj);
     this.lastS = this.proj.s;
@@ -133,15 +167,20 @@ export class Kart {
 
   step(dt: number, track: Track, theme: Theme, canDrive: boolean, ev: KartEvents) {
     const c = this.input;
+    const st = this.char.stats;
     const active = canDrive && this.spinT <= 0;
     const steer = active ? clamp(c.steer, -1, 1) : 0;
-    const gas = active ? clamp(c.gas, 0, 1) : 0;
+    const gas = active && this.stallT <= 0 ? clamp(c.gas, 0, 1) : 0;
     const brake = active && c.brake > 0 ? 1 : 0;
 
     this.boostT = Math.max(0, this.boostT - dt);
     this.shieldT = Math.max(0, this.shieldT - dt);
+    this.ramT = Math.max(0, this.ramT - dt);
+    this.stallT = Math.max(0, this.stallT - dt);
     this.padCool = Math.max(0, this.padCool - dt);
     this.hitCool = Math.max(0, this.hitCool - dt);
+    this.trickT = Math.max(0, this.trickT - dt);
+    this.celebrateT = Math.max(0, this.celebrateT - dt);
     if (this.spinT > 0) {
       this.spinT -= dt;
       this.spinAngle += dt * 12.5;
@@ -156,41 +195,49 @@ export class Kart {
     let vF = this.vx * fx + this.vz * fz;
     let vR = this.vx * rx + this.vz * rz;
 
-    this.offroad = Math.abs(this.proj.d) > track.hw + 0.9;
-    let vmax = MAX_SPEED * this.speedMul;
-    if (this.offroad && this.boostT <= 0) vmax *= theme.offroad;
+    const airborne = this.y > 0.25 && this.onRamp < 0;
+    this.offroad = !airborne && Math.abs(this.proj.d) > track.hw + 0.9;
+    let vmax = MAX_SPEED * this.speedMul * this.classMul * st.speed;
+    if (this.offroad && this.boostT <= 0 && this.ramT <= 0) vmax *= theme.offroad;
     if (this.boostT > 0) vmax *= BOOST_MULT;
+    if (this.ramT > 0) vmax *= RAM_MULT;
     if (this.drifting) vmax *= 0.98;
+    const accel = ACCEL * st.accel * this.classMul;
 
-    if (gas > 0 && vF > -1 && vF < vmax) {
-      vF = Math.min(vmax, vF + ACCEL * gas * (1 - (0.5 * Math.max(0, vF)) / vmax) * dt);
+    if (gas > 0 && vF > -1 && vF < vmax && !airborne) {
+      vF = Math.min(vmax, vF + accel * gas * (1 - (0.5 * Math.max(0, vF)) / vmax) * dt);
     }
-    if (brake) {
+    if (brake && !airborne) {
       if (vF > 0.5) vF -= BRAKE * dt;
       else if (gas === 0) vF = Math.max(-REV_MAX, vF - REV_ACCEL * dt);
     }
-    if (this.boostT > 0) vF = Math.min(vmax, vF + BOOST_ACCEL * dt);
+    if (this.boostT > 0 || this.ramT > 0) vF = Math.min(vmax, vF + BOOST_ACCEL * dt);
     if (vF > vmax) vF = Math.max(vmax, vF - (this.offroad ? 30 : 9) * dt);
-    if (gas === 0 && !brake) {
+    if (gas === 0 && !brake && !airborne) {
       const dec = (COAST + (this.spinT > 0 ? 16 : 0) + (this.offroad ? 4 : 0)) * dt;
       vF = Math.abs(vF) <= dec ? 0 : vF - Math.sign(vF) * dec;
     }
     if (vF < -REV_MAX) vF = -REV_MAX;
 
-    const grip = (this.drifting ? DRIFT_GRIP : GRIP) * theme.grip * (this.spinT > 0 ? 0.25 : 1);
+    const grip = (this.drifting ? DRIFT_GRIP : GRIP) * theme.grip * (this.spinT > 0 ? 0.25 : 1) * (airborne ? 0.2 : 1);
     vR *= Math.exp(-grip * dt);
 
-    // drift: stisk = poskok, se zatočením se rozjede smyk; puštění dá turbo podle délky smyku
+    // drift (na zemi) a triky (ve vzduchu)
     const grounded = this.y <= 0 && this.vy <= 0;
     if (c.drift && active) {
       if (!this.driftHeld) {
         this.driftHeld = true;
-        if (grounded) {
+        if (airborne && this.trickReady) {
+          this.trickReady = false;
+          this.trickDone = true;
+          this.trickT = 0.5;
+          ev.trick(this);
+        } else if (grounded) {
           this.vy = HOP_V;
           ev.hop(this);
         }
       }
-      if (!this.drifting && Math.abs(steer) > 0.35 && vF > DRIFT_MIN) {
+      if (!this.drifting && !airborne && Math.abs(steer) > 0.35 && vF > DRIFT_MIN) {
         this.drifting = true;
         this.driftDir = Math.sign(steer);
         this.driftT = 0;
@@ -205,7 +252,8 @@ export class Kart {
       else {
         const tight = clamp(steer * this.driftDir, -1, 1);
         this.driftT += dt * (0.75 + 0.5 * Math.max(0, tight));
-        const lvl = this.driftT > DRIFT_L2 ? 2 : this.driftT > DRIFT_L1 ? 1 : 0;
+        let lvl = 0;
+        for (const t of DRIFT_LEVELS) if (this.driftT > t) lvl++;
         if (lvl !== this.driftLevel) {
           this.driftLevel = lvl;
           ev.driftLevel(this, lvl);
@@ -216,18 +264,19 @@ export class Kart {
     let turn: number;
     if (this.drifting) {
       const tight = clamp(steer * this.driftDir, -1, 1);
-      turn = -this.driftDir * (DRIFT_BASE + DRIFT_EXTRA * tight);
+      turn = -this.driftDir * (DRIFT_BASE + DRIFT_EXTRA * tight) * Math.sqrt(st.handling);
     } else {
       const sf = clamp(Math.abs(vF) / 6, 0, 1) * (1 - 0.28 * clamp(Math.abs(vF) / MAX_SPEED, 0, 1));
-      turn = -steer * TURN * sf * (vF >= 0 ? 1 : -1);
+      turn = -steer * TURN * st.handling * sf * (vF >= 0 ? 1 : -1);
     }
+    if (airborne) turn *= 0.5;
     if (this.spinT > 0) turn = 0;
 
     this.vx = fx * vF + rx * vR;
     this.vz = fz * vF + rz * vR;
     const dTheta = turn * dt;
     this.heading = wrapAngle(this.heading + dTheta);
-    const trac = (this.drifting ? DRIFT_TRACTION : TRACTION) * (0.35 + 0.65 * theme.grip);
+    const trac = (this.drifting ? DRIFT_TRACTION : TRACTION) * (0.35 + 0.65 * theme.grip) * (airborne ? 0.6 : 1);
     const a = dTheta * trac, ca = Math.cos(a), sa = Math.sin(a);
     const nvx = this.vx * ca + this.vz * sa;
     const nvz = -this.vx * sa + this.vz * ca;
@@ -241,6 +290,16 @@ export class Kart {
       if (this.y <= 0) {
         this.y = 0;
         this.vy = 0;
+        if (this.air) {
+          this.air = false;
+          this.trickReady = false;
+          if (this.trickDone) {
+            this.trickDone = false;
+            this.boost(0.8);
+            ev.boost(this, "trick");
+          }
+          ev.land(this);
+        }
       }
     }
 
@@ -275,7 +334,7 @@ export class Kart {
 
   endDrift(reward: boolean, ev: KartEvents) {
     if (reward && this.driftLevel > 0) {
-      this.boost(this.driftLevel === 2 ? 1.25 : 0.6);
+      this.boost(DRIFT_BOOST[this.driftLevel]);
       ev.boost(this, "drift");
     }
     this.drifting = false;
@@ -288,21 +347,23 @@ export class Kart {
     this.boostT = Math.max(this.boostT, t);
   }
 
-  /** Zásah raketou nebo olejem. */
-  hit(): "hit" | "shield" | "immune" {
-    if (this.hitCool > 0 || this.spinT > 0) return "immune";
+  /** Zásah (raketa, kokos, olej, včely, beranidlo). */
+  hit(kind: HitKind = "spin"): "hit" | "shield" | "immune" {
+    if (this.ramT > 0 || this.hitCool > 0 || this.spinT > 0) return "immune";
     if (this.shieldT > 0) {
       this.shieldT = 0;
       this.hitCool = 0.6;
       return "shield";
     }
-    this.spinT = 1.25;
-    this.hitCool = 1.8;
+    this.spinT = kind === "bees" ? 1.7 : 1.25;
+    this.hitCool = this.spinT + 0.6;
     this.drifting = false;
     this.driftDir = this.driftT = this.driftLevel = 0;
     this.boostT = 0;
-    this.vx *= 0.45;
-    this.vz *= 0.45;
+    const keep = kind === "bees" ? 0.25 : 0.45;
+    this.vx *= keep;
+    this.vz *= keep;
+    if (kind !== "spin" && this.y <= 0) this.vy = kind === "bees" ? 5 : 3.5;
     return "hit";
   }
 
@@ -324,24 +385,30 @@ export class Kart {
     this.yawVis = damp(this.yawVis, this.drifting ? -this.driftDir * 0.42 : 0, 10, dt);
     this.steerVis = damp(this.steerVis, this.spinT > 0 ? 0 : clamp(this.input.steer, -1, 1), 14, dt);
     const sp = clamp(this.vF / MAX_SPEED, -1, 1.5);
+    // trik = otočka kolem podélné osy, oslava v cíli = poskakování
+    if (this.trickT > 0) this.rollVis = (1 - this.trickT / 0.5) * Math.PI * 2;
+    else this.rollVis = 0;
     v.body.rotation.y = this.yawVis + this.spinAngle;
-    v.body.rotation.z = -this.steerVis * 0.07 * Math.abs(sp) * (this.drifting ? 1.7 : 1);
-    v.body.rotation.x = this.boostT > 0 ? -0.04 : 0;
+    v.body.rotation.z = -this.steerVis * 0.07 * Math.abs(sp) * (this.drifting ? 1.7 : 1) + this.rollVis;
+    v.body.rotation.x = this.boostT > 0 ? -0.04 : this.onRamp >= 0 ? -0.14 : this.air ? -0.06 + Math.min(0.2, -this.vy * 0.02) : 0;
     const rumble = this.offroad && Math.abs(this.vF) > 3 ? Math.sin(time * 42 + this.id) * 0.035 : 0;
-    v.body.position.y = this.y + rumble;
+    const cheer = this.celebrateT > 0 ? Math.abs(Math.sin(time * 9)) * 0.45 : 0;
+    v.body.position.y = this.y + rumble + cheer;
     this.wheelSpin += (this.vF * dt) / 0.32;
     for (const s of v.spinners) s.rotation.x = this.wheelSpin;
     for (const p of v.steerPivots) p.rotation.y = -this.steerVis * 0.42;
     v.head.rotation.z = -this.steerVis * 0.15;
-    v.head.rotation.y = this.spinT > 0 ? Math.sin(time * 30) * 0.4 : 0;
-    const sh = 1 - Math.min(0.45, this.y * 0.9);
+    v.head.rotation.y = this.spinT > 0 ? Math.sin(time * 30) * 0.4 : this.celebrateT > 0 ? Math.sin(time * 6) * 0.5 : 0;
+    const sh = 1 - Math.min(0.55, this.y * 0.5);
     v.shadow.scale.set(sh, sh, 1);
-    v.shield.visible = this.shieldT > 0;
+    v.shield.visible = this.shieldT > 0 || this.ramT > 0;
     if (v.shield.visible) {
-      const pulse = 1 + Math.sin(time * 8) * 0.04;
+      const m = v.shield.material as unknown as { opacity: number; color: { setHex(h: number): void } };
+      const pulse = 1 + Math.sin(time * (this.ramT > 0 ? 16 : 8)) * 0.05;
       v.shield.scale.setScalar(pulse);
-      (v.shield.material as { opacity: number }).opacity =
-        this.shieldT < 1.5 && Math.sin(time * 30) > 0 ? 0.1 : 0.28;
+      m.color.setHex(this.ramT > 0 ? 0xffc53d : 0x7cf3ff);
+      const left = this.ramT > 0 ? this.ramT : this.shieldT;
+      m.opacity = left < 1.5 && Math.sin(time * 30) > 0 ? 0.1 : this.ramT > 0 ? 0.38 : 0.28;
     }
   }
 }

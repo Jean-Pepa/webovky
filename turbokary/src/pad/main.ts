@@ -7,7 +7,7 @@ import "@fontsource/baloo-2/latin-800.css";
 import "@fontsource/baloo-2/latin-ext-800.css";
 import "../styles/pad.css";
 import { CHARACTERS, hex } from "../shared/characters";
-import { ITEMS, ITEM_IDS, type ItemId } from "../shared/items";
+import { ITEMS, ITEM_IDS, throwable, type ItemId } from "../shared/items";
 import { charImg, itemImg, padImg } from "../shared/assets";
 import {
   CODE_LENGTH,
@@ -250,8 +250,8 @@ class Pad {
     }
   }
 
-  private useItem() {
-    this.net?.send({ t: "item" });
+  private useItem(dir: -1 | 0 | 1 = 0) {
+    this.net?.send({ t: "item", dir });
     if (this.settings.vibrate) navigator.vibrate?.(12);
   }
 
@@ -302,6 +302,7 @@ class Pad {
       <header class="lb-top"><span class="me-av"></span><div class="me"><b class="me-name"></b><small class="status"></small></div></header>
       <label class="name-row">Jméno <input class="name-in" maxlength="14" value="${esc(this.name)}" placeholder="Tvoje jméno" autocomplete="off"></label>
       <div class="chars">${chars}</div>
+      <div class="stats"></div>
       <section class="card settings">
         <h3>Ovládání</h3>
         <div class="seg" data-set="mode">
@@ -321,8 +322,10 @@ class Pad {
       </section>
       <section class="card host-box" hidden>
         <h3>👑 Ty vybíráš závod</h3>
+        <div class="seg" data-host="mode"><button data-v="0">🏁 Jeden závod</button><button data-v="1">🏆 Pohár (3 tratě)</button></div>
         <div class="host-opts">
-          <div><small>Trať</small><b class="track-name"></b></div>
+          <div class="wide"><small class="track-label">Trať</small><div class="stepper"><button data-a="track-">◀</button><b class="track-name"></b><button data-a="track+">▶</button></div></div>
+          <div class="wide"><small>Rychlost</small><div class="stepper"><button data-a="speed-">◀</button><b class="speed-name"></b><button data-a="speed+">▶</button></div></div>
           <div><small>Kola</small><div class="stepper"><button data-a="laps-">−</button><b class="laps"></b><button data-a="laps+">+</button></div></div>
           <div><small>Soupeři</small><div class="stepper"><button data-a="bots-">−</button><b class="bots"></b><button data-a="bots+">+</button></div></div>
         </div>
@@ -360,9 +363,21 @@ class Pad {
     (app.querySelector(".start-bar") as HTMLElement).hidden = !isHost || !!l?.racing;
     if (l) {
       (app.querySelector(".track-name") as HTMLElement).textContent = l.tracks[l.track] ?? "";
+      (app.querySelector(".track-label") as HTMLElement).textContent = l.mode === "cup" ? "První trať poháru" : "Trať";
+      (app.querySelector(".speed-name") as HTMLElement).textContent = l.speeds[l.speed] ?? "";
       (app.querySelector(".laps") as HTMLElement).textContent = String(l.laps);
       (app.querySelector(".bots") as HTMLElement).textContent = String(l.bots);
+      app.querySelectorAll<HTMLButtonElement>("[data-host=mode] button").forEach((b) => b.classList.toggle("on", (l.mode === "cup" ? "1" : "0") === b.dataset.v));
     }
+    const c = CHARACTERS[this.char >= 0 ? this.char : 0];
+    const bar = (label: string, key: keyof (typeof c)["stats"]) => {
+      const all = CHARACTERS.map((x) => x.stats[key]);
+      const lo = Math.min(...all), hi = Math.max(...all);
+      const v = 20 + ((c.stats[key] - lo) / (hi - lo || 1)) * 80;
+      return `<div class="st"><span>${label}</span><i style="--v:${Math.round(v)}%"></i></div>`;
+    };
+    (app.querySelector(".stats") as HTMLElement).innerHTML = `<b>${c.name}</b><small>${c.cls} postava</small>
+      ${bar("Rychlost", "speed")}${bar("Zrychlení", "accel")}${bar("Ovladatelnost", "handling")}${bar("Váha", "weight")}`;
     const wait = app.querySelector(".wait") as HTMLElement;
     const hostP = l?.players.find((p) => p.host);
     wait.textContent = l?.racing
@@ -391,13 +406,19 @@ class Pad {
     if (!r) return `<div class="scr center"><div class="spinner"></div></div>`;
     const me = r.rows.find((x) => x.slot === this.slot);
     const isHost = !!this.lobby?.host;
+    const cup = r.cup;
+    const myCup = cup?.rows.find((x) => x.human && x.slot === this.slot);
+    const rows = cup ? cup.rows.map((x) => ({ place: x.place, char: x.char, name: x.name, slot: x.human ? x.slot : -1, val: `${x.pts} b. (+${x.add})` }))
+      : r.rows.map((x) => ({ place: x.place, char: x.char, name: x.name, slot: x.human ? x.slot : -1, val: x.time }));
+    const btn = cup && !cup.final ? `Další závod: ${esc(cup.next ?? "")} ▶` : cup ? "Zpět do lobby" : "Další závod ▶";
     return `<div class="scr results-scr">
       <div class="res-head">${avatar(this.char)}<div><div class="place">${me ? me.place + "." : "–"}</div><small>místo${me ? " · " + me.time : ""}</small></div></div>
+      ${cup ? `<p class="cup-line">${cup.final ? "🏆 Konec poháru" : `Pohár · ${cup.round}/${cup.of}`}${myCup ? ` · celkem <b>${myCup.place}.</b> (${myCup.pts} b.)` : ""}</p>` : ""}
       ${r.record ? `<p class="record">🏆 ${esc(r.record)}</p>` : ""}
-      <ol class="res-list">${r.rows
-        .map((x) => `<li class="${x.slot === this.slot ? "me" : ""}"><b>${x.place}.</b>${avatar(x.char, "av sm")}<span>${esc(x.name)}</span><i>${x.time}</i></li>`)
+      <ol class="res-list">${rows
+        .map((x) => `<li class="${x.slot === this.slot ? "me" : ""}"><b>${x.place}.</b>${avatar(x.char, "av sm")}<span>${esc(x.name)}</span><i>${x.val}</i></li>`)
         .join("")}</ol>
-      ${isHost ? `<button class="big" data-a="next">Další závod ▶</button>` : `<p class="wait">Čekáme na hráče 1…</p>`}
+      ${isHost ? `<div class="start-bar"><button class="big" data-a="next">${btn}</button></div>` : `<p class="wait">Čekáme na hráče 1…</p>`}
     </div>`;
   }
 
@@ -417,8 +438,10 @@ class Pad {
         <div class="pos"><b>–</b><small></small></div>
         <div class="lap"></div>
         <button class="item-big" data-b="item"><span class="ic"></span><small class="cnt"></small></button>
+        <div class="throw-hint">↑ švihni dopředu · ↓ za sebe</div>
         <div class="wheel">${wheelSvg()}</div>
         <button class="link center-btn" data-a="center">Srovnat</button>
+        <button class="pause-btn" data-a="pause" hidden aria-label="Pauza">⏸</button>
       </div>
       <div class="col right">
         <button class="btn brake" data-b="brake">${btnIcon("brake", "▼")}<b>BRZDA</b></button>
@@ -426,6 +449,8 @@ class Pad {
         <button class="btn drift drift2" data-b="drift">${btnIcon("drift", "↯")}<b>DRIFT</b></button>
       </div>
       <div class="overlay-msg"></div>
+      <div class="pause-ov" hidden><b>Pauza</b><div class="pause-host"><button class="big" data-a="pause">▶ Pokračovat</button>
+        <button data-a="restart">↻ Znovu</button><button data-a="quit">⏏ Do lobby</button></div><p class="pause-wait">Čekáme, až hostitel bude pokračovat…</p></div>
       <div class="toast"></div>
       <div class="rotate" data-a="fs">🔄<b>Otoč telefon na šířku</b><small>${isIOS ? "" : "nebo sem ťukni"}</small></div>
       ${this.tiltBlocked() ? `<button class="perm-overlay" data-a="perm">Ťukni a povol náklon telefonu</button>` : ""}
@@ -470,12 +495,18 @@ class Pad {
     }
     (big.querySelector(".cnt") as HTMLElement).textContent = h.item === "turbo3" && h.n > 1 ? `×${h.n}` : "";
     big.classList.toggle("has", !!h.item && !h.roll);
+    el.classList.toggle("can-throw", !!h.item && !h.roll && throwable(h.item as ItemId));
     big.classList.toggle("roll", h.roll);
     el.querySelectorAll(".btn.item").forEach((b) => b.classList.toggle("ready", !!h.item && !h.roll));
     el.dataset.drift = String(h.drift);
     el.classList.toggle("boost", h.boost);
     el.classList.toggle("shield", h.shield);
     if (h.fin) this.setOverlay("🏁 Cíl!");
+    (el.querySelector(".pause-btn") as HTMLElement).hidden = !h.host;
+    const ov = el.querySelector(".pause-ov") as HTMLElement;
+    ov.hidden = !h.pause;
+    (ov.querySelector(".pause-host") as HTMLElement).hidden = !h.host;
+    (ov.querySelector(".pause-wait") as HTMLElement).hidden = h.host;
   }
 
   private anim() {
@@ -505,7 +536,7 @@ class Pad {
     const press = (b: HTMLElement, on: boolean) => {
       const k = b.dataset.b as "gas" | "brake" | "drift" | "item";
       if (k === "item") {
-        if (on) this.useItem();
+        /* věc se použije až při puštění nebo švihnutí (viz níže) */
       } else {
         this.held[k] = on;
         root.querySelectorAll(`[data-b=${k}]`).forEach((x) => x.classList.toggle("on", on));
@@ -513,7 +544,47 @@ class Pad {
       if (on) b.classList.add("on");
       else if (k === "item") b.classList.remove("on");
     };
-    root.querySelectorAll<HTMLElement>("[data-b]").forEach((b) => {
+    // VĚC: ťuknutí = výchozí směr, švihnutí nahoru = dopředu, dolů = za sebe
+    root.querySelectorAll<HTMLElement>("[data-b=item]").forEach((b) => {
+      let pid = -1, y0 = 0, dy = 0, fired = true;
+      const fire = (dir: -1 | 0 | 1) => {
+        if (fired) return;
+        fired = true;
+        pid = -1;
+        this.useItem(dir);
+        b.classList.add("on");
+        setTimeout(() => b.classList.remove("on"), 120);
+      };
+      const dirOf = (d: number): -1 | 0 | 1 => (d < -28 ? 1 : d > 28 ? -1 : 0);
+      b.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        this.goFullscreen();
+        try {
+          b.setPointerCapture(e.pointerId);
+        } catch {
+          /* ukazatel už není aktivní */
+        }
+        pid = e.pointerId;
+        y0 = e.clientY;
+        dy = 0;
+        fired = false;
+      });
+      b.addEventListener("pointermove", (e) => {
+        if (e.pointerId !== pid || fired) return;
+        dy = e.clientY - y0;
+        if (dirOf(dy)) fire(dirOf(dy));
+      });
+      // puštění i zrušení dotyku (prohlížeč si gesto „vzal“) = použít věc
+      const end = (e: PointerEvent) => {
+        if (e.pointerId !== pid) return;
+        if (e.type === "pointerup") dy = e.clientY - y0;
+        fire(dirOf(dy));
+      };
+      b.addEventListener("pointerup", end);
+      b.addEventListener("pointercancel", end);
+      b.addEventListener("lostpointercapture", end);
+    });
+    root.querySelectorAll<HTMLElement>("[data-b]:not([data-b=item])").forEach((b) => {
       const pointers = new Set<number>();
       b.addEventListener("pointerdown", (e) => {
         e.preventDefault();
@@ -579,6 +650,10 @@ class Pad {
         if (this.settings.vibrate) navigator.vibrate?.(10);
         return;
       }
+      if (seg && (seg.parentElement as HTMLElement).dataset.host === "mode") {
+        this.net?.send({ t: "cmd", c: "mode", v: Number(seg.dataset.v) });
+        return;
+      }
       if (seg && !seg.disabled) {
         const key = (seg.parentElement as HTMLElement).dataset.set as "mode" | "sens";
         if (key === "mode") {
@@ -640,11 +715,34 @@ class Pad {
           this.net?.send({ t: "cmd", c: "start" });
           break;
         case "next":
-          this.net?.send({ t: "cmd", c: "lobby" });
+          this.net?.send({ t: "cmd", c: "next" });
+          break;
+        case "pause":
+          this.net?.send({ t: "cmd", c: "pause" });
+          break;
+        case "restart":
+          this.net?.send({ t: "cmd", c: "restart" });
+          break;
+        case "quit":
+          this.net?.send({ t: "cmd", c: "quit" });
           break;
         case "laps-":
         case "laps+":
           if (this.lobby) this.net?.send({ t: "cmd", c: "laps", v: this.lobby.laps + (a.dataset.a === "laps+" ? 1 : -1) });
+          break;
+        case "track-":
+        case "track+":
+          if (this.lobby) {
+            const n = this.lobby.tracks.length;
+            this.net?.send({ t: "cmd", c: "track", v: (this.lobby.track + (a.dataset.a === "track+" ? 1 : -1) + n) % n });
+          }
+          break;
+        case "speed-":
+        case "speed+":
+          if (this.lobby) {
+            const n = this.lobby.speeds.length;
+            this.net?.send({ t: "cmd", c: "speed", v: Math.max(0, Math.min(n - 1, this.lobby.speed + (a.dataset.a === "speed+" ? 1 : -1))) });
+          }
           break;
         case "bots-":
         case "bots+":

@@ -153,6 +153,35 @@ export class View {
     this.renderer.setScissorTest(false);
   }
 
+  /** Průlet kamerou nad tratí ke startovnímu roštu (t = 0 → 1). */
+  renderIntro(track: Track, fx: Effects, t: number) {
+    const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const L = track.length;
+    const p = track.pointAt(L - 170 + 150 * e, 26 * (1 - e));
+    const look = track.pointAt(L - 12, 0);
+    const cam = this.attractCam;
+    cam.position.set(p.x, 6 + 46 * (1 - e), p.z);
+    cam.lookAt(look.x, 1, look.z);
+    cam.fov = 60;
+    this.renderer.setScissorTest(true);
+    this.draw(cam, { x: 0, y: 0, w: this.width, h: this.height }, fx);
+    this.renderer.setScissorTest(false);
+  }
+
+  /** Kamera kroužící kolem vítěze (při výsledcích). */
+  renderPodium(track: Track, fx: Effects, k: Kart, dt: number) {
+    this.attractT += dt;
+    const a = this.attractT * 0.45;
+    const cam = this.attractCam;
+    cam.position.set(k.x + Math.cos(a) * 8.5, 3.2, k.z + Math.sin(a) * 8.5);
+    cam.lookAt(k.x, 1.1, k.z);
+    cam.fov = 55;
+    this.renderer.setScissorTest(true);
+    this.draw(cam, { x: 0, y: 0, w: this.width, h: this.height }, fx);
+    this.renderer.setScissorTest(false);
+    void track;
+  }
+
   private updateOverview(track: Track, karts: Kart[], dt: number) {
     this.attractT += dt;
     const lead = karts.reduce((a, b) => (b.dist > a.dist ? b : a), karts[0]);

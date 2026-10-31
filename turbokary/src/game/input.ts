@@ -40,10 +40,15 @@ export class Keyboard {
     return { s: (right ? 1 : 0) - (left ? 1 : 0), g: gas ? 1 : 0, b: brake ? 1 : 0, d: drift ? 1 : 0 };
   }
 
-  /** Klávesa pro použití věci podle schématu. */
+  /** Klávesa pro použití věci (výchozí směr) podle schématu. */
   static isItemKey(code: string, s: Scheme) {
     const w = s !== "arrows", a = s !== "wasd";
-    return (w && (code === "KeyE" || code === "KeyQ" || code === "ControlLeft")) ||
-      (a && (code === "Enter" || code === "NumpadEnter" || code === "ControlRight" || code === "Slash"));
+    return (w && (code === "KeyE" || code === "ControlLeft")) || (a && (code === "Enter" || code === "NumpadEnter"));
+  }
+
+  /** Klávesa pro hod opačným směrem (olej dopředu, kokos / raketa dozadu). */
+  static isBackKey(code: string, s: Scheme) {
+    const w = s !== "arrows", a = s !== "wasd";
+    return (w && code === "KeyQ") || (a && (code === "ControlRight" || code === "Slash"));
   }
 }

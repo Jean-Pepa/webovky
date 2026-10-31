@@ -14,7 +14,8 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; min-height: 100%; background: var(--ink); color: #fff; font-family: var(--text); }
+html, body { margin: 0; min-height: 100%; background: var(--ink); color: #fff; font-family: var(--text); overscroll-behavior: none; }
+html:has(body[data-screen="race"]) { touch-action: none; }
 body { background: radial-gradient(circle at 50% -20%, #3a2a85, var(--ink) 60%) fixed; -webkit-user-select: none; user-select: none;
   -webkit-touch-callout: none; overscroll-behavior: none; touch-action: manipulation; }
 body[data-screen="race"] { position: fixed; inset: 0; overflow: hidden; touch-action: none; }
@@ -72,7 +73,15 @@ input { font-family: var(--text); -webkit-user-select: text; user-select: text; 
 .tog input { width: 26px; height: 26px; accent-color: var(--yellow); }
 .warn { margin: 0; padding: 8px 10px; border-radius: 12px; background: rgba(255,77,109,0.18); font-size: 14px; }
 .perm { font-size: 20px; }
-.host-opts { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px; }
+.host-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.host-opts .wide .stepper b { font-family: var(--text); font-weight: 800; font-size: 16px; flex: 1; }
+.stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; background: rgba(255,255,255,0.05); border-radius: 16px; padding: 10px 14px; }
+.stats > b { font-size: 16px; }
+.stats > small { color: var(--muted); font-weight: 700; justify-self: end; }
+.st { display: contents; }
+.st span { font-size: 13px; font-weight: 700; color: var(--muted); }
+.st i { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--yellow) var(--v), rgba(255,255,255,0.12) var(--v)); }
+.cup-line { margin: 0; text-align: center; font-weight: 800; color: var(--cyan); }
 .host-opts small { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
 .host-opts b { font-size: 17px; }
 .stepper { display: flex; align-items: center; gap: 8px; }
@@ -136,6 +145,9 @@ input { font-family: var(--text); -webkit-user-select: text; user-select: text; 
 .race-scr[data-drift="0"] .drift { box-shadow: 0 0 0 4px #fff3d0, 0 6px 0 rgba(0,0,0,0.35); }
 .race-scr[data-drift="1"] .drift { box-shadow: 0 0 0 5px var(--yellow), 0 0 30px var(--yellow); }
 .race-scr[data-drift="2"] .drift { box-shadow: 0 0 0 5px var(--cyan), 0 0 36px var(--cyan); }
+.race-scr[data-drift="3"] .drift { box-shadow: 0 0 0 6px #ff6bd6, 0 0 44px #ff6bd6; }
+.throw-hint { font-size: 12px; font-weight: 800; color: var(--yellow); opacity: 0; transition: opacity 0.2s; margin-top: -2px; white-space: nowrap; }
+.race-scr.can-throw .throw-hint { opacity: 1; }
 .steer-pad { position: relative; border-radius: 24px; background: rgba(255,255,255,0.06); border: 3px dashed rgba(255,255,255,0.2);
   display: grid; place-items: center; touch-action: none; overflow: hidden; }
 .steer-pad span { position: absolute; bottom: 10px; color: var(--muted); font-weight: 700; font-size: 14px; }
@@ -175,3 +187,11 @@ input { font-family: var(--text); -webkit-user-select: text; user-select: text; 
   .rotate b { font-size: 24px; }
   .rotate small { font-size: 15px; color: var(--muted); }
 }
+.pause-btn { position: absolute; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); border: 0; border-radius: 12px;
+  width: 44px; height: 34px; background: rgba(255,255,255,0.12); font-size: 18px; z-index: 3; }
+.pause-btn[hidden], .pause-ov[hidden], .pause-host[hidden], .pause-wait[hidden] { display: none; }
+.pause-ov { position: absolute; inset: 0; z-index: 8; display: grid; place-content: center; justify-items: center; gap: 12px; background: rgba(22,15,51,0.88); text-align: center; }
+.pause-ov > b { font-family: var(--title); font-weight: 400; font-size: 48px; color: var(--yellow); }
+.pause-host { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.pause-host button:not(.big) { border: 0; border-radius: 14px; padding: 10px 16px; font-weight: 800; font-size: 18px; background: rgba(255,255,255,0.14); }
+.pause-wait { margin: 0; color: var(--muted); font-weight: 700; }

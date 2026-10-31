@@ -138,8 +138,17 @@ async function phone(label) {
   watch(page, label);
   const cdp = await ctx.newCDPSession(page);
   const touches = new Map();
-  const send = (type) =>
-    cdp.send("Input.dispatchTouchEvent", { type, touchPoints: [...touches.entries()].map(([id, p]) => ({ x: p.x, y: p.y, id })) });
+  // CDP neumí zvednout jen jeden z více prstů: touchEnd (bez bodů) zvedne všechny,
+  // zbylé prsty se hned znovu položí.
+  const send = async (type) => {
+    if (type === "touchEnd") {
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      if (!touches.size) return;
+      type = "touchStart";
+    }
+    const touchPoints = [...touches.entries()].map(([id, p]) => ({ x: p.x, y: p.y, id }));
+    await cdp.send("Input.dispatchTouchEvent", { type, touchPoints });
+  };
   const center = async (sel) => {
     const b = await page.locator(sel).first().boundingBox();
     return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
@@ -153,7 +162,19 @@ async function phone(label) {
     },
     async release(id) {
       touches.delete(id);
-      await send(touches.size ? "touchEnd" : "touchEnd");
+      await send("touchEnd");
+    },
+    async swipe(sel, dy) {
+      const c = await center(sel);
+      touches.set(98, c);
+      await send("touchStart");
+      for (let i = 1; i <= 4; i++) {
+        touches.set(98, { x: c.x, y: c.y + (dy * i) / 4 });
+        await send("touchMove");
+        await sleep(20);
+      }
+      touches.delete(98);
+      await send("touchEnd");
     },
     async tap(sel) {
       touches.set(99, await center(sel));
@@ -240,6 +261,20 @@ await step("Věc: telefon ukáže věc a tlačítkem ji použije", async () => {
   await p1.release(1);
 });
 
+await step("Hod: švihnutí nahoru hodí kokos dopředu, švihnutí dolů vylije olej za sebe", async () => {
+  await pc.evaluate(() => window.__tk.giveItem(0, "coconut"));
+  await p1.page.waitForSelector(".race-scr.can-throw", { timeout: 4000 });
+  await p1.swipe(".item-big", -70);
+  await until(async () => {
+    const s = await state();
+    return s.race.karts.find((k) => k.slot === 0).item === null && s.race.flying >= 1;
+  }, 4000, "letící kokos");
+  await pc.evaluate(() => window.__tk.giveItem(0, "oil"));
+  await p1.page.waitForSelector(".race-scr.can-throw", { timeout: 4000 });
+  await p1.swipe(".item-big", 70);
+  await until(async () => (await state()).race.karts.find((k) => k.slot === 0).item === null, 4000, "vylitý olej");
+});
+
 await step("Závod do cíle (autopilot) → výsledky na PC i telefonu", async () => {
   await pc.evaluate(() => window.__tk.autopilot(0, true));
   await until(async () => (await state()).phase === "results", 120000, "konec závodu");
@@ -288,8 +323,39 @@ await step("Klávesnice + 2 telefony → rozdělená obrazovka pro 3 hráče", a
   const panels = await pc.$$eval(".pp", (e) => e.length);
   expect(panels === 3, "panelů HUD: " + panels);
   await pc.screenshot({ path: join(OUT, "pc-race-3p.png") });
-  await pc.keyboard.press("Escape");
+  // pauza z telefonu hostitele a návrat do lobby
+  await p1.page.waitForSelector(".pause-btn:not([hidden])", { timeout: 5000 });
+  await p1.page.click(".pause-btn");
+  await p1.page.waitForSelector(".pause-ov:not([hidden])", { timeout: 5000 });
+  const paused = await pc.$eval(".pause", (e) => !e.classList.contains("hidden"));
+  expect(paused, "PC neukazuje pauzu");
+  await p1.page.click(".pause-host [data-a=quit]");
   await until(async () => (await state()).phase === "lobby", 5000, "zpět do lobby");
+});
+
+await step("Pohár: hostitel z telefonu zvolí pohár a po 1. závodě jede další trať", async () => {
+  await p1.page.click('[data-host=mode] button[data-v="1"]');
+  await until(async () => (await state()).mode === "cup", 4000, "režim pohár");
+  const t0 = (await state()).track;
+  await p1.page.click("[data-a=start]");
+  await until(async () => (await state()).phase !== "lobby", 6000, "start poháru");
+  for (const s of [0, 1, 2]) await pc.evaluate((x) => window.__tk.autopilot(x, true), s);
+  await until(async () => (await state()).phase === "results", 150000, "konec 1. závodu poháru");
+  await p1.page.waitForSelector(".cup-line", { timeout: 6000 });
+  const line = await p1.page.textContent(".cup-line");
+  expect(line.includes("1/3"), "pohár: " + line);
+  const st = await state();
+  expect(st.cup && st.cup.rows.length >= 3 && st.cup.rows[0].pts >= st.cup.rows[1].pts, "tabulka poháru");
+  await pc.screenshot({ path: join(OUT, "pc-cup-results.png") });
+  await p1.page.click("[data-a=next]");
+  await until(async () => {
+    const s2 = await state();
+    return s2.phase !== "results" && s2.track !== t0;
+  }, 8000, "druhá trať poháru");
+  await pc.keyboard.press("Escape");
+  await sleep(300);
+  await pc.keyboard.press("KeyQ");
+  await until(async () => (await state()).phase === "lobby", 6000, "zpět do lobby");
 });
 
 await step("Žádné chyby v konzoli", async () => {
