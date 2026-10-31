@@ -191,3 +191,51 @@ Přesný prompt:
 ```text
 Use case: identity-preserve. Edit the first reference image into a Mečovačka foam-sword sport character portrait. Image 1 is the original character identity and composition to preserve. Image 2 is ONLY the costume, linework, padding style, and overall head-and-shoulders framing reference; do not copy Image 2's fox face or species. Preserve the original character's recognizable face, fur/head colors, ears, nose, eyes, apparent head size and cheerful identity. Head-and-shoulders front or very slight three-quarter crop, entire ears visible, portrait fills the square similarly to Image 2. Thick clean dark-plum #1b1430 outlines, softly shaded simple cartoon forms, bright polished cel shading. Remove the original neck scarf completely. Add a plain sports headband across the forehead with short tied tails behind the head, and a thick protective padded training vest over the visible T-shirt sleeves, simple rounded quilted panels and TWO small rounded central fastenings, matching reference 2. Cheerful confident determined friendly smile with slightly focused eyebrows, never angry. No glasses, goggles, scarf, sword, weapons, hands, text, letters, logos, scenery, frame or badge. Genuinely transparent background with clean alpha, no checkerboard or white fill. Final intended asset 512x512 PNG. Character: Kvík, friendly pink piglet with softly folded ears, a round pink snout with two nostrils, large lively brown eyes and plump cheeks. Exact palette: primary fur/head #ffa7bb, secondary facial color #ff7f9e; headband and padded vest #ffd21f; vest edging and two fastenings #ff6f91; visible short T-shirt sleeves #118ab2. Preserve face details and all species cues from image 1.
 ```
+
+## Ikony režimů Mečovačky
+
+Tři samostatná generování vestavěným OpenAI ImageGen; nejde o CLI/API fallback. Předlohy jsou vlastní již vytvořené logo Mečovačky a náhledy skutečných herních GLB modelů meče a tréninkového panáka. Logo je pouze referencí barev a kresleného stylu, modelové náhledy pouze referencí tvaru. Žádné externí obrázky, značky, text ani převzaté herní postavy.
+
+Výsledné soubory: `modes/duel.png`, `modes/slice.png`, `modes/train.png`. Export 256×256 RGBA PNG sRGB: mechanické oříznutí prázdného okolí podle alfa > 16/255 s osmipixelovým ochranným lemem, proporční bicubické zmenšení do 230×230 a vystředění na průhledné plátno 256×256. Původní vygenerovaná alfa zachována; bez překreslování motivu. Použito Windows System.Drawing.
+
+Motivy: Souboj — právě dva zkřížené žluté/tyrkysové pěnové meče se zaoblenými bílými konci; Krájení — dvě půlky melounu a výrazná směrová šipka; Trénink — veselý slaměný panák s velkým červenobílým terčem. Vizuální kontrola jednotlivých generovaných motivů a konečného přehledu na tmavě fialovém pozadí, včetně velikosti 48 px.
+
+### `modes/duel.png`
+
+Zdrojový generovaný soubor: `exec-0c18cfac-d3b1-4491-8e02-1eb3351ab3b5.png`.
+
+Reference: `img/logo.png`, `previews/sword.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset: one compact square game mode icon, DUEL, for original cheerful foam-sword sports game Mečovačka. Image 1 is only the graphic style reference: thick dark plum #1b1430 contour, vivid yellow and turquoise, soft cel shading and clean cream highlights. Do NOT reproduce any text from it. Image 2 is only the safe foam training sword SHAPE reference, not a background or realistic render to copy. Create exactly two crossed friendly FOAM TRAINING SWORDS in a balanced X silhouette: one cylindrical blade golden yellow #ffd21f, the other cylindrical blade turquoise #4fd1ff. Both blades have uniform thick soft round foam sides and big rounded WHITE HEMISPHERICAL TIPS; absolutely no pointed ends, sharp blades, metallic edges or realistic weapons. Short dark-purple ribbed handles and broad rounded soft guards with contrasting yellow/turquoise accents. Simplify their length and detail for instant readability at 48 px. The two white rounded tips occupy upper left and upper right, handles lower left and lower right, crossing in the middle. Cheerful premium cartoon game UI illustration, strong thick #1b1430 outline and a restrained fine cream outer keyline as in the logo, soft simple shading, no tiny details. Center the complete icon in a square with 9% clear padding. Genuine transparent background, no checkerboard, no background color, no panel, no frame, no badge, no text, no lettering, no logos, no sparks, no extra objects. Final intended output 256x256 PNG with alpha.
+```
+
+### `modes/slice.png`
+
+Zdrojový generovaný soubor: `exec-e09694d0-3f2c-47ab-835a-ae8f43f65f86.png`.
+
+Reference: `img/logo.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset: one compact square game MODE icon for original cheerful foam-sword sports game Mečovačka. Primary request: exactly TWO separated halves of one round watermelon, cut faces clearly visible, red #ff4d6d juicy flesh, a few large dark plum seeds, pale cream inner rind and thick green striped outer rind. The two halves tilt slightly apart across a clear diagonal gap. One bold turquoise #4fd1ff curved directional slicing arrow passes diagonally through the gap from upper-left towards lower-right; a single obvious large arrowhead, thick cream highlight and dark outline, still recognizable when the whole icon is 48 px. No knife or sword. No fruit juice splash, droplets or extra fruit. Compact balanced composition with the melon halves and arrow functioning as one simple readable symbol. Reference image is ONLY the thick-outline cheerful cel-shading style and clean cream/yellow/turquoise highlight treatment, never copy its lettering. Style: premium cheerful cartoon UI illustration, very thick clean dark plum #1b1430 outline, restrained fine cream outer keyline matching the logo, simple rounded shapes, soft cel shading, big clear silhouettes, minimal fine detail. Center the complete icon within square with 9% transparent padding, similar scale to a large inventory power-up icon. Genuine transparent background with clean alpha; no checkerboard, no background color, no panel, no frame, no badge, no text, lettering, labels, logo or watermark. Final intended output 256x256 PNG with alpha.
+```
+
+### `modes/train.png`
+
+Zdrojový generovaný soubor: `exec-ce6fe2d1-912f-4c4c-be15-768804fef337.png`.
+
+Reference: `img/logo.png`, `previews/fighter-dummy.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset: one compact square game MODE icon for original cheerful foam-sword sports game Mečovačka. Primary request: a friendly straw practice dummy with a very large round red-and-cream bullseye target centered on its stuffed burlap torso. Compact full dummy, big simple rounded straw head, two simple stitched X eyes and a tiny cheerful stitched curved smile, a few short golden straw tufts. Two short padded straw arms extend out and down in a welcoming stance, a short brown wooden support post below. Warm golden tan #c7a66a body and golden straw, dark brown rope ties, clean target with two thick red #ff4d6d concentric rings and cream center. The target must be the clearest largest detail, instantly legible at 48 px. Cheerful safe sports training mascot, not spooky or injured, no weapons. Image1 is ONLY the thick-outline cheerful graphic style reference with clean cream highlights; do not copy its letters. Image2 is ONLY the actual game's dummy design reference (straw body, stitched face, chest target, wooden support), simplify it into this compact strong icon and do not copy its studio background, text or realistic 3D rendering. Style: premium cheerful cartoon UI illustration, very thick clean dark plum #1b1430 outline, restrained fine cream outer keyline matching the logo, simple rounded shapes, soft cel shading, big clear silhouettes, minimal fine detail. Center the complete icon within square with 9% transparent padding, similar scale to a large inventory power-up icon. Genuine transparent background with clean alpha; no checkerboard, no background color, no panel, no frame, no badge, no text, lettering, labels, logo or watermark. Final intended output 256x256 PNG with alpha.
+```
+
+
+Finální QA: všechny tři soubory přesně 256×256, PNG RGBA, sRGB chunk potvrzen, rohová alfa = 0. Velikosti: duel.png 74 592 B; slice.png 89 223 B; train.png 53 881 B. Kontaktní přehled s náhledy 256 px a skutečnými 48 px: tmp/mc-images/modes-preview.png. Ikony jsou barevně i tvarově rozeznatelné při 48 px; žádný text ani pozadí.
+
