@@ -16,7 +16,12 @@ Postavy (zvířátka), trať i věci jsou vlastní, nejde o kopii žádné exist
    trať, rychlost (Pohodová / Závodní / Šílená), kola a soupeře. Pak dá **START**.
 
 **Tratě:** Zelená louka (pro začátek), Písečný kaňon (vracečky, dva skokánky), Ledové jezero
-(silnice klouže).
+(silnice klouže) a **Šílená hora**: serpentiny do kopce, tunel skrz skálu, most přes vlastní trať,
+velký skok z hřebene, horizonty, ze kterých se vyletí, a padající letadla. Kam letadlo dopadne,
+ukáže červený kruh na silnici a varování na obrazovce. Hořící trosky pak chvíli zůstanou na trati.
+
+**Zlaté bedny** visí ve vzduchu nad skokánky, sebrat jdou jen výskokem. Nejčastěji z nich padnou
+🦅 **Křídla**: pár vteřin letíš nad tratí, jsi rychlejší a nic tě netrefí.
 
 **Postavičky** se liší: lehké (Kvak, Hop) rychle zrychlí a dobře zatáčí, těžké (Huňáč, Šroubek,
 Kvík) mají vyšší max. rychlost a při srážce odstrčí lehčí.
@@ -40,6 +45,7 @@ Kvík) mají vyšší max. rychlost a při srážce odstrčí lehčí.
   - 🐝 **Roj včel** letí na vedoucího závodníka.
   - 🛡️ **Štít** tě ochrání před jedním zásahem.
   - 🐏 **Beranidlo:** pár sekund jsi rychlejší a nezranitelný a koho trkneš, toho roztočíš.
+  - 🦅 **Křídla** (hlavně ze zlaté bedny) — let nad tratí.
   Čím jsi dál vzadu, tím lepší věci padají.
 - **Zpětné zrcátko** nahoře uprostřed obrazovky ukazuje, kdo se blíží zezadu. Každý hráč si ho
   může vypnout v nastavení na telefonu, na PC jde vypnout pro všechny tlačítkem 🪞 v lobby

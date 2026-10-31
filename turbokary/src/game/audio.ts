@@ -27,7 +27,8 @@ export type Sfx =
   | "bonk"
   | "ram"
   | "throw"
-  | "fanfare";
+  | "fanfare"
+  | "warn";
 
 export class EngineVoice {
   private o1: OscillatorNode;
@@ -275,6 +276,9 @@ export class Sound {
       case "throw":
         this.hiss(0.25, v * 0.5, 2500, 600);
         break;
+      case "warn":
+        for (let i = 0; i < 4; i++) this.tone(i % 2 ? 660 : 880, 0.22, "square", v * 0.3, i * 0.24);
+        break;
       case "fanfare":
         [523, 659, 784, 1046, 1046, 1318, 1568].forEach((f, i) => this.tone(f, i > 4 ? 0.5 : 0.2, "square", v * 0.35, i * 0.14));
         break;
@@ -329,6 +333,18 @@ const SONGS: Record<string, Song> = {
     ],
     leadType: "triangle",
   },
+};
+
+SONGS.crazy = {
+  bpm: 142,
+  chords: [[45, 48, 52], [41, 45, 48], [43, 47, 50], [40, 44, 47]],
+  lead: [
+    69, 72, 76, _, 74, 72, 69, _, 76, _, 79, 77, 76, 74, 72, _,
+    65, 69, 72, _, 71, 69, 65, _, 72, _, 74, 72, 71, 69, 67, _,
+    67, 71, 74, _, 72, 71, 67, _, 74, _, 76, 74, 72, 71, 69, _,
+    68, _, 71, _, 74, _, 76, _, 80, _, 79, 76, 74, 71, 68, _,
+  ],
+  leadType: "square",
 };
 
 const hz = (n: number) => 440 * Math.pow(2, (n - 69) / 12);

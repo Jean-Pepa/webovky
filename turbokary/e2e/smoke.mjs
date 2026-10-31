@@ -343,7 +343,7 @@ await step("Pohár: hostitel z telefonu zvolí pohár a po 1. závodě jede dal�
   await until(async () => (await state()).phase === "results", 150000, "konec 1. závodu poháru");
   await p1.page.waitForSelector(".cup-line", { timeout: 6000 });
   const line = await p1.page.textContent(".cup-line");
-  expect(line.includes("1/3"), "pohár: " + line);
+  expect(/1\/4/.test(line), "pohár: " + line);
   const st = await state();
   expect(st.cup && st.cup.rows.length >= 3 && st.cup.rows[0].pts >= st.cup.rows[1].pts, "tabulka poháru");
   await pc.screenshot({ path: join(OUT, "pc-cup-results.png") });
@@ -352,6 +352,45 @@ await step("Pohár: hostitel z telefonu zvolí pohár a po 1. závodě jede dal�
     const s2 = await state();
     return s2.phase !== "results" && s2.track !== t0;
   }, 8000, "druhá trať poháru");
+  await pc.keyboard.press("Escape");
+  await sleep(300);
+  await pc.keyboard.press("KeyQ");
+  await until(async () => (await state()).phase === "lobby", 6000, "zpět do lobby");
+});
+
+await step("Šílená hora: výškové rozdíly, padající letadlo s troskami a let s křídly", async () => {
+  await pc.evaluate(() => window.__tk.autopilot(0, true));
+  // trať 4 vybere hostitel z telefonu
+  await p1.page.click('[data-host=mode] button[data-v="0"]');
+  for (let i = 0; i < 4; i++) {
+    if ((await state()).track === 3) break;
+    await p1.page.click('[data-a="track+"]');
+    await sleep(400);
+  }
+  expect((await state()).track === 3, "trať " + (await state()).track);
+  await p1.page.click("[data-a=start]");
+  await until(async () => (await state()).race?.phase === "running", 30000, "start na Šílené hoře");
+  const hmax = await until(async () => {
+    const h = await pc.evaluate(() => window.__tk.height(0));
+    return h && h.gy > 6 ? h : null;
+  }, 90000, "stoupání do kopce");
+  expect(hmax.gy > 6, "výška silnice " + hmax.gy);
+  await pc.evaluate(() => window.__tk.plane());
+  // trosky po dopadu (nebo aspoň kráter, když je motokáry hned rozbily)
+  await until(async () => {
+    const e = await pc.evaluate(() => window.__tk.events());
+    return e && e.planes === 0 && (e.debris > 0 || e.craters > 0);
+  }, 90000, "dopad letadla");
+  await pc.screenshot({ path: join(OUT, "pc-crazy.png") });
+  await pc.evaluate(() => window.__tk.autopilot(0, false));
+  await pc.evaluate(() => window.__tk.giveItem(0, "wings"));
+  await p1.tap(".item-big");
+  await until(async () => {
+    const h = await pc.evaluate(() => window.__tk.height(0));
+    return h && h.fly > 0 && h.y > 3;
+  }, 6000, "let s křídly");
+  await pc.screenshot({ path: join(OUT, "pc-wings.png") });
+  await pc.evaluate(() => window.__tk.autopilot(0, true));
   await pc.keyboard.press("Escape");
   await sleep(300);
   await pc.keyboard.press("KeyQ");

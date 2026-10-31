@@ -156,6 +156,33 @@ export function ground(base: number, dots: number, flowers = true) {
   return toTexture(c);
 }
 
+/** Skála (srázy, tunel). */
+export function rock(base = 0x8a7f74) {
+  const { c, g } = canvas(256, 256);
+  g.fillStyle = css(base);
+  g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 90; i++) {
+    g.fillStyle = `rgba(${Math.random() < 0.5 ? "0,0,0" : "255,255,255"},${0.04 + Math.random() * 0.08})`;
+    g.beginPath();
+    const x = Math.random() * 256, y = Math.random() * 256;
+    g.moveTo(x, y);
+    for (let k = 0; k < 5; k++) g.lineTo(x + (Math.random() - 0.5) * 70, y + (Math.random() - 0.5) * 40);
+    g.closePath();
+    g.fill();
+  }
+  g.strokeStyle = "rgba(0,0,0,0.25)";
+  g.lineWidth = 2;
+  for (let i = 0; i < 14; i++) {
+    g.beginPath();
+    let x = Math.random() * 256, y = Math.random() * 256;
+    g.moveTo(x, y);
+    for (let k = 0; k < 4; k++) g.lineTo((x += (Math.random() - 0.5) * 40), (y += Math.random() * 30));
+    g.stroke();
+  }
+  noise(g, 256, 256, 18, 11);
+  return toTexture(c);
+}
+
 /** Měkký kulatý stín pod motokárou. */
 export function blobShadow() {
   const { c, g } = canvas(128, 128);

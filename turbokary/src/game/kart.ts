@@ -25,6 +25,10 @@ const DRIFT_TRACTION = 0.55;
 const BOOST_MULT = 1.4;
 const BOOST_ACCEL = 34;
 const RAM_MULT = 1.18;
+const FLY_MULT = 1.3;
+/** let s křídly: délka (s) a výška nad silnicí (m) */
+export const FLY_TIME = 7.5;
+const FLY_H = 7;
 const HOP_V = 3.6;
 export const GRAVITY = 24;
 const DRIFT_MIN = 9;
@@ -60,7 +64,15 @@ export class Kart {
 
   x = 0;
   z = 0;
+  /** výška nad silnicí (0 = na zemi) */
   y = 0;
+  /** výška silnice pod motokárou */
+  gy = 0;
+  /** výška v prostoru (gy + y) */
+  wy = 0;
+  /** svislá rychlost silnice pod motokárou (stoupání/klesání) */
+  gv = 0;
+  flyT = 0;
   vx = 0;
   vz = 0;
   vy = 0;
@@ -115,6 +127,7 @@ export class Kart {
   celebrateT = 0;
 
   private wheelSpin = 0;
+  private pitchVis = 0;
   private yawVis = 0;
   private steerVis = 0;
   private rollVis = 0;
@@ -143,7 +156,7 @@ export class Kart {
     this.heading = heading;
     this.drifting = this.driftHeld = false;
     this.driftDir = this.driftT = this.driftLevel = 0;
-    this.boostT = this.spinT = this.spinAngle = this.shieldT = this.ramT = this.stallT = 0;
+    this.boostT = this.spinT = this.spinAngle = this.shieldT = this.ramT = this.stallT = this.flyT = 0;
     this.padCool = this.hitCool = this.draftT = 0;
     this.air = this.trickReady = this.trickDone = false;
     this.trickT = 0;
@@ -160,6 +173,8 @@ export class Kart {
     this.celebrateT = 0;
     this.proj.idx = -1;
     track.project(x, z, -1, this.proj);
+    this.gy = this.wy = track.heightAt(this.proj.s);
+    this.gv = 0;
     this.lastS = this.proj.s;
     this.dist = this.proj.s > track.length / 2 ? this.proj.s - track.length : this.proj.s;
     this.input = { steer: 0, gas: 0, brake: 0, drift: false };
@@ -195,23 +210,31 @@ export class Kart {
     let vF = this.vx * fx + this.vz * fz;
     let vR = this.vx * rx + this.vz * rz;
 
-    const airborne = this.y > 0.25 && this.onRamp < 0;
+    const flying = this.flyT > 0;
+    const airborne = (this.y > 0.25 && this.onRamp < 0) || flying;
     this.offroad = !airborne && Math.abs(this.proj.d) > track.hw + 0.9;
     let vmax = MAX_SPEED * this.speedMul * this.classMul * st.speed;
     if (this.offroad && this.boostT <= 0 && this.ramT <= 0) vmax *= theme.offroad;
     if (this.boostT > 0) vmax *= BOOST_MULT;
     if (this.ramT > 0) vmax *= RAM_MULT;
+    if (flying) vmax *= FLY_MULT;
     if (this.drifting) vmax *= 0.98;
     const accel = ACCEL * st.accel * this.classMul;
 
-    if (gas > 0 && vF > -1 && vF < vmax && !airborne) {
+    if (gas > 0 && vF > -1 && vF < vmax && (!airborne || flying)) {
       vF = Math.min(vmax, vF + accel * gas * (1 - (0.5 * Math.max(0, vF)) / vmax) * dt);
+    }
+    // do kopce zpomaluje, z kopce zrychluje
+    if (!airborne && track.hasHeight) {
+      const i0 = this.proj.idx < 0 ? 0 : this.proj.idx;
+      const along = track.slopeAt(this.proj.s) * (fx * track.tx[i0] + fz * track.tz[i0]);
+      vF -= GRAVITY * 0.5 * along * dt;
     }
     if (brake && !airborne) {
       if (vF > 0.5) vF -= BRAKE * dt;
       else if (gas === 0) vF = Math.max(-REV_MAX, vF - REV_ACCEL * dt);
     }
-    if (this.boostT > 0 || this.ramT > 0) vF = Math.min(vmax, vF + BOOST_ACCEL * dt);
+    if (this.boostT > 0 || this.ramT > 0 || flying) vF = Math.min(vmax, vF + BOOST_ACCEL * dt);
     if (vF > vmax) vF = Math.max(vmax, vF - (this.offroad ? 30 : 9) * dt);
     if (gas === 0 && !brake && !airborne) {
       const dec = (COAST + (this.spinT > 0 ? 16 : 0) + (this.offroad ? 4 : 0)) * dt;
@@ -223,7 +246,7 @@ export class Kart {
     vR *= Math.exp(-grip * dt);
 
     // drift (na zemi) a triky (ve vzduchu)
-    const grounded = this.y <= 0 && this.vy <= 0;
+    const grounded = this.y <= 0.02 && !flying;
     if (c.drift && active) {
       if (!this.driftHeld) {
         this.driftHeld = true;
@@ -233,7 +256,7 @@ export class Kart {
           this.trickT = 0.5;
           ev.trick(this);
         } else if (grounded) {
-          this.vy = HOP_V;
+          this.vy = HOP_V + Math.max(0, this.gv);
           ev.hop(this);
         }
       }
@@ -269,7 +292,7 @@ export class Kart {
       const sf = clamp(Math.abs(vF) / 6, 0, 1) * (1 - 0.28 * clamp(Math.abs(vF) / MAX_SPEED, 0, 1));
       turn = -steer * TURN * st.handling * sf * (vF >= 0 ? 1 : -1);
     }
-    if (airborne) turn *= 0.5;
+    if (airborne && !flying) turn *= 0.5;
     if (this.spinT > 0) turn = 0;
 
     this.vx = fx * vF + rx * vR;
@@ -283,25 +306,6 @@ export class Kart {
     this.vx = nvx;
     this.vz = nvz;
     this.vF = vF;
-
-    if (!grounded) {
-      this.vy -= GRAVITY * dt;
-      this.y += this.vy * dt;
-      if (this.y <= 0) {
-        this.y = 0;
-        this.vy = 0;
-        if (this.air) {
-          this.air = false;
-          this.trickReady = false;
-          if (this.trickDone) {
-            this.trickDone = false;
-            this.boost(0.8);
-            ev.boost(this, "trick");
-          }
-          ev.land(this);
-        }
-      }
-    }
 
     this.x += this.vx * dt;
     this.z += this.vz * dt;
@@ -330,6 +334,51 @@ export class Kart {
         }
       }
     }
+    this.vertical(dt, track, ev);
+  }
+
+  /** Svislý pohyb v prostoru: silnice stoupá a klesá, na horizontu motokára vyletí. */
+  private vertical(dt: number, track: Track, ev: KartEvents) {
+    const gyNew = track.heightAt(this.proj.s);
+    const gv = (gyNew - this.gy) / Math.max(1e-4, dt);
+    if (this.flyT > 0) {
+      this.flyT = Math.max(0, this.flyT - dt);
+      const t = FLY_TIME - this.flyT;
+      const lift = Math.min(1, t / 0.8) * Math.min(1, this.flyT / 1.1);
+      const target = gyNew + FLY_H * lift;
+      const nwy = this.wy + (target - this.wy) * Math.min(1, dt * 5);
+      this.vy = (nwy - this.wy) / Math.max(1e-4, dt);
+      this.wy = nwy;
+      if (this.flyT <= 0) {
+        this.air = true;
+        this.trickReady = false;
+      }
+    } else if (this.onRamp < 0) {
+      this.vy -= GRAVITY * dt;
+      this.wy += this.vy * dt;
+      if (this.wy <= gyNew) {
+        this.wy = gyNew;
+        if (this.vy < gv) this.vy = gv;
+        if (this.air) {
+          this.air = false;
+          this.trickReady = false;
+          if (this.trickDone) {
+            this.trickDone = false;
+            this.boost(0.8);
+            ev.boost(this, "trick");
+          }
+          ev.land(this);
+        }
+      } else if (this.wy - gyNew > 0.7 && !this.air) {
+        // vyletěl na horizontu → může udělat trik
+        this.air = true;
+        this.trickReady = true;
+        this.trickDone = false;
+      }
+    }
+    this.gy = gyNew;
+    this.gv = gv;
+    this.y = Math.max(0, this.wy - this.gy);
   }
 
   endDrift(reward: boolean, ev: KartEvents) {
@@ -349,7 +398,7 @@ export class Kart {
 
   /** Zásah (raketa, kokos, olej, včely, beranidlo). */
   hit(kind: HitKind = "spin"): "hit" | "shield" | "immune" {
-    if (this.ramT > 0 || this.hitCool > 0 || this.spinT > 0) return "immune";
+    if (this.ramT > 0 || this.flyT > 0 || this.hitCool > 0 || this.spinT > 0) return "immune";
     if (this.shieldT > 0) {
       this.shieldT = 0;
       this.hitCool = 0.6;
@@ -380,7 +429,7 @@ export class Kart {
 
   updateVisual(dt: number, time: number) {
     const v = this.visual;
-    v.root.position.set(this.x, 0, this.z);
+    v.root.position.set(this.x, this.gy, this.z);
     v.root.rotation.y = this.heading;
     this.yawVis = damp(this.yawVis, this.drifting ? -this.driftDir * 0.42 : 0, 10, dt);
     this.steerVis = damp(this.steerVis, this.spinT > 0 ? 0 : clamp(this.input.steer, -1, 1), 14, dt);
@@ -390,7 +439,17 @@ export class Kart {
     else this.rollVis = 0;
     v.body.rotation.y = this.yawVis + this.spinAngle;
     v.body.rotation.z = -this.steerVis * 0.07 * Math.abs(sp) * (this.drifting ? 1.7 : 1) + this.rollVis;
-    v.body.rotation.x = this.boostT > 0 ? -0.04 : this.onRamp >= 0 ? -0.14 : this.air ? -0.06 + Math.min(0.2, -this.vy * 0.02) : 0;
+    const hf = Math.max(1, Math.abs(this.vF));
+    const pitchT = this.flyT > 0 ? -0.08 : this.y > 0.25 ? Math.max(-0.4, Math.min(0.4, -Math.atan2(this.vy, hf))) : -Math.atan(this.gv / hf);
+    this.pitchVis = damp(this.pitchVis, pitchT, 8, dt);
+    v.body.rotation.x = this.pitchVis + (this.boostT > 0 ? -0.04 : 0);
+    v.wings.visible = this.flyT > 0;
+    if (v.wings.visible) {
+      const flap = Math.sin(time * 14) * 0.25;
+      v.wings.children[0].rotation.z = 0.25 + flap;
+      v.wings.children[1].rotation.z = -0.25 - flap;
+      v.wings.children[2].rotation.z += dt * 40;
+    }
     const rumble = this.offroad && Math.abs(this.vF) > 3 ? Math.sin(time * 42 + this.id) * 0.035 : 0;
     const cheer = this.celebrateT > 0 ? Math.abs(Math.sin(time * 9)) * 0.45 : 0;
     v.body.position.y = this.y + rumble + cheer;
@@ -399,7 +458,7 @@ export class Kart {
     for (const p of v.steerPivots) p.rotation.y = -this.steerVis * 0.42;
     v.head.rotation.z = -this.steerVis * 0.15;
     v.head.rotation.y = this.spinT > 0 ? Math.sin(time * 30) * 0.4 : this.celebrateT > 0 ? Math.sin(time * 6) * 0.5 : 0;
-    const sh = 1 - Math.min(0.55, this.y * 0.5);
+    const sh = 1 - Math.min(0.6, this.y * 0.12);
     v.shadow.scale.set(sh, sh, 1);
     v.shield.visible = this.shieldT > 0 || this.ramT > 0;
     if (v.shield.visible) {

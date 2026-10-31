@@ -7,6 +7,7 @@ import type { ResultRow } from "../shared/protocol";
 import { Kart, KART_R, type KartEvents } from "./kart";
 import { BotBrain } from "./ai";
 import { Items, type HitBy } from "./items";
+import { PlaneEvents } from "./events";
 import type { Track } from "./track";
 import type { Effects } from "./effects";
 import { formatTime, rng } from "./util";
@@ -42,6 +43,9 @@ export interface RaceListener {
   explosion?(x: number, z: number): void;
   bounce?(x: number, z: number): void;
   bees?(target: Kart): void;
+  golden?(k: Kart, item: ItemId): void;
+  planeWarn?(x: number, y: number, z: number, inS: number): void;
+  planeCrash?(x: number, y: number, z: number): void;
 }
 
 export interface RaceOptions {
@@ -60,6 +64,7 @@ export class Race {
   readonly karts: Kart[] = [];
   readonly group = new THREE.Group();
   readonly items: Items;
+  readonly events: PlaneEvents | null;
   readonly track: Track;
   readonly laps: number;
   readonly attract: boolean;
@@ -116,7 +121,7 @@ export class Race {
       hop: (k) => this.L.hop?.(k),
       trick: (k) => this.L.trick?.(k),
       land: (k) => {
-        this.fx.burst(k.x, 0.3, k.z, [0xffffff, this.track.theme.dust], 14, 5, 0.5, 0.4);
+        this.fx.burst(k.x, k.gy + 0.3, k.z, [0xffffff, this.track.theme.dust], 14, 5, 0.5, 0.4);
         this.L.land?.(k);
       },
     };
@@ -129,8 +134,17 @@ export class Race {
       explosion: (x, z) => this.L.explosion?.(x, z),
       bounce: (x, z) => this.L.bounce?.(x, z),
       bees: (t) => this.L.bees?.(t),
+      golden: (k, it) => this.L.golden?.(k, it),
     });
     this.group.add(this.items.group);
+    this.events = track.planeSpots.length
+      ? new PlaneEvents(track, fx, {
+          warn: (x, y, z, t) => this.L.planeWarn?.(x, y, z, t),
+          crash: (x, y, z) => this.L.planeCrash?.(x, y, z),
+          hit: (k) => this.L.hit?.(k, null, "plane"),
+        })
+      : null;
+    if (this.events) this.group.add(this.events.group);
     track.setLights(0);
   }
 
@@ -260,6 +274,7 @@ export class Race {
     if (canDrive) this.slipstream(dt);
 
     this.items.update(dt, this.clock, this.karts, this.standings);
+    this.events?.update(dt, this.clock, this.attract ? this.clock : this.time, this.karts, this.standings[0] ?? null, canDrive);
 
     this.standings.sort((a, b) => {
       if (a.finished !== b.finished) return a.finished ? -1 : 1;
@@ -300,10 +315,11 @@ export class Race {
         break;
       }
     }
-    if (on >= 0) {
+    if (on >= 0 && k.flyT <= 0) {
       const r = tr.ramps[on];
       k.y = r.h * f;
-      k.vy = 0;
+      k.wy = k.gy + k.y;
+      k.vy = k.gv;
       k.onRamp = on;
       k.rampF = f;
     } else if (k.onRamp >= 0) {
@@ -311,7 +327,8 @@ export class Race {
       k.onRamp = -1;
       if (k.rampF > 0.8 && k.vF > 6) {
         k.y = r.h;
-        k.vy = 3 + Math.max(0, k.vF) * 0.22;
+        k.wy = k.gy + r.h;
+        k.vy = 3 + Math.max(0, k.vF) * 0.22 + Math.max(0, k.gv);
         k.air = true;
         k.trickReady = true;
         k.trickDone = false;
@@ -430,18 +447,19 @@ export class Race {
           fx.flame(v3.x, v3.y, v3.z, -Math.sin(k.heading) * 4, -Math.cos(k.heading) * 4, k.ramT > 0);
         }
       }
-      if (k.ramT > 0 && Math.random() < 0.6) fx.spark(k.x, 1 + Math.random(), k.z, 0xffc53d, 3, 0.3);
+      if (k.ramT > 0 && Math.random() < 0.6) fx.spark(k.x, k.gy + 1 + Math.random(), k.z, 0xffc53d, 3, 0.3);
+      if (k.flyT > 0 && Math.random() < 0.7) fx.spark(k.x, k.wy + 0.6, k.z, [0xffffff, 0x7cf3ff, 0xffd21f][Math.floor(Math.random() * 3)], 2, 0.22);
       if (k.draftT > 0.3 && Math.random() < 0.6) {
         const side = (Math.random() - 0.5) * 2.4;
-        fx.spark(k.x + Math.cos(k.heading) * side, 0.6 + Math.random(), k.z - Math.sin(k.heading) * side, 0xffffff, 1, 0.12);
+        fx.spark(k.x + Math.cos(k.heading) * side, k.gy + 0.6 + Math.random(), k.z - Math.sin(k.heading) * side, 0xffffff, 1, 0.12);
       }
       if (k.offroad && sp > 6 && Math.random() < 0.5) {
         const w = v.wheelLocal[Math.random() < 0.5 ? 0 : 1];
         v3.copy(w);
         v.body.localToWorld(v3);
-        fx.dust(v3.x, v3.z, th.dust, k.vx, k.vz);
+        fx.dust(v3.x, v3.z, th.dust, k.vx, k.vz, v3.y);
       }
-      if (k.spinT > 0 && Math.random() < 0.3) fx.smoke(k.x, 0.6, k.z, 0.9);
+      if (k.spinT > 0 && Math.random() < 0.3) fx.smoke(k.x, k.gy + 0.6, k.z, 0.9);
     }
     fx.update(dt);
   }
@@ -460,6 +478,11 @@ export class Race {
 
   get flying() {
     return this.items.flying;
+  }
+
+  /** Ladění: pošle letadlo hned. */
+  forcePlane() {
+    this.events?.spawn(this.standings[0] ?? null);
   }
 
   dispose() {

@@ -28,8 +28,8 @@ export class ChaseCam {
   snap(k: Kart) {
     this.yaw = k.heading;
     const fx = Math.sin(this.yaw), fz = Math.cos(this.yaw);
-    this.pos.set(k.x - fx * 6.4, 2.7, k.z - fz * 6.4);
-    this.look.set(k.x + fx * 4, 1.1, k.z + fz * 4);
+    this.pos.set(k.x - fx * 6.4, k.gy + 2.7, k.z - fz * 6.4);
+    this.look.set(k.x + fx * 4, k.gy + 1.1, k.z + fz * 4);
     this.cam.position.copy(this.pos);
     this.cam.lookAt(this.look);
   }
@@ -40,9 +40,11 @@ export class ChaseCam {
     const target = dampAngle(k.heading, velYaw, 1, 0.35);
     this.yaw = dampAngle(this.yaw, target, 5.5, dt);
     const fx = Math.sin(this.yaw), fz = Math.cos(this.yaw);
-    const want = new THREE.Vector3(k.x - fx * 6.4, 2.7 + k.y * 0.6, k.z - fz * 6.4);
+    const want = new THREE.Vector3(k.x - fx * 6.4, k.gy + 2.7 + k.y * 0.8, k.z - fz * 6.4);
     this.pos.lerp(want, 1 - Math.exp(-12 * dt));
-    this.look.set(k.x + fx * 4, 1.1 + k.y * 0.5, k.z + fz * 4);
+    // kamera nesmí pod silnici (sjezd z kopce)
+    this.pos.y = Math.max(this.pos.y, k.gy + 1.6);
+    this.look.set(k.x + fx * 4, k.gy + 1.1 + k.y * 0.85, k.z + fz * 4);
     const f = 66 + 10 * clamp(k.vF / MAX_SPEED, 0, 1.4) + (k.boostT > 0 ? 6 : 0);
     this.fov = damp(this.fov, f, 4, dt);
     this.cam.fov = this.fov;
@@ -185,8 +187,8 @@ export class View {
       const W = Math.max(2, Math.round(mr.w * pr)), H = Math.max(2, Math.round(mr.h * pr));
       if (m.rt.width !== W || m.rt.height !== H) m.rt.setSize(W, H);
       const fx0 = Math.sin(k.heading), fz0 = Math.cos(k.heading);
-      m.cam.position.set(k.x - fx0 * 0.9, 1.8 + k.y, k.z - fz0 * 0.9);
-      m.cam.lookAt(k.x - fx0 * 30, 0.7 + k.y * 0.5, k.z - fz0 * 30);
+      m.cam.position.set(k.x - fx0 * 0.9, k.wy + 1.8, k.z - fz0 * 0.9);
+      m.cam.lookAt(k.x - fx0 * 30, k.wy + 0.7 - k.y * 0.5, k.z - fz0 * 30);
       m.cam.aspect = mr.w / mr.h;
       m.cam.updateProjectionMatrix();
       const vis = k.visual.root.visible;
@@ -243,8 +245,8 @@ export class View {
     const p = track.pointAt(L - 170 + 150 * e, 26 * (1 - e));
     const look = track.pointAt(L - 12, 0);
     const cam = this.attractCam;
-    cam.position.set(p.x, 6 + 46 * (1 - e), p.z);
-    cam.lookAt(look.x, 1, look.z);
+    cam.position.set(p.x, p.y + 6 + 46 * (1 - e), p.z);
+    cam.lookAt(look.x, look.y + 1, look.z);
     cam.fov = 60;
     this.renderer.setScissorTest(true);
     this.draw(cam, { x: 0, y: 0, w: this.width, h: this.height }, fx);
@@ -256,8 +258,8 @@ export class View {
     this.attractT += dt;
     const a = this.attractT * 0.45;
     const cam = this.attractCam;
-    cam.position.set(k.x + Math.cos(a) * 8.5, 3.2, k.z + Math.sin(a) * 8.5);
-    cam.lookAt(k.x, 1.1, k.z);
+    cam.position.set(k.x + Math.cos(a) * 8.5, k.wy + 3.2, k.z + Math.sin(a) * 8.5);
+    cam.lookAt(k.x, k.wy + 1.1, k.z);
     cam.fov = 55;
     this.renderer.setScissorTest(true);
     this.draw(cam, { x: 0, y: 0, w: this.width, h: this.height }, fx);
@@ -269,8 +271,8 @@ export class View {
     this.attractT += dt;
     const lead = karts.reduce((a, b) => (b.dist > a.dist ? b : a), karts[0]);
     const a = this.attractT * 0.15;
-    this.overview.position.set(lead.x + Math.cos(a) * 60, 55, lead.z + Math.sin(a) * 60);
-    this.overview.lookAt(lead.x, 0, lead.z);
+    this.overview.position.set(lead.x + Math.cos(a) * 60, lead.wy + 55, lead.z + Math.sin(a) * 60);
+    this.overview.lookAt(lead.x, lead.wy, lead.z);
     void track;
   }
 

@@ -48,6 +48,8 @@ export interface KartVisual {
   steerPivots: THREE.Object3D[];
   spinners: THREE.Object3D[];
   head: THREE.Group;
+  /** křídla při letu: [levé, pravé, vrtule] */
+  wings: THREE.Group;
   shield: THREE.Mesh;
   shadow: THREE.Mesh;
   /** místní souřadnice výfuků a zadních kol (pro plameny a jiskry) */
@@ -223,6 +225,30 @@ function wheel(r: number, w: number, hub: number) {
 }
 
 let shadowTex: THREE.Texture | null = null;
+
+/** Křídla a vrtule (zobrazí se jen při letu). */
+function buildWings(c: CharacterDef) {
+  const g = new THREE.Group();
+  const white = lambert(0xffffff);
+  const tip = lambert(c.kart);
+  for (const sx of [1, -1]) {
+    const pivot = new THREE.Group();
+    pivot.position.set(sx * 0.7, 0.75, -0.35);
+    const wing = box(2.3, 0.07, 0.95, white, sx * 1.15, 0, 0);
+    wing.rotation.y = sx * 0.12;
+    pivot.add(wing);
+    pivot.add(box(0.45, 0.09, 1.0, tip, sx * 2.2, 0.01, -0.05));
+    for (let k = 0; k < 3; k++) pivot.add(box(0.06, 0.08, 0.7, lambert(0xdde3ea), sx * (0.5 + k * 0.6), 0.04, 0));
+    g.add(pivot);
+  }
+  const prop = new THREE.Group();
+  prop.position.set(0, 1.25, -1.5);
+  prop.add(box(1.5, 0.1, 0.12, lambert(DARK)));
+  prop.add(sphere(0.12, lambert(c.accent)));
+  g.add(prop);
+  g.visible = false;
+  return g;
+}
 
 interface BodyParts {
   group: THREE.Group;
@@ -406,6 +432,8 @@ export function buildKart(c: CharacterDef, label: string | null): KartVisual {
   d.group.position.copy(k.seat);
   body.add(d.group);
   const { steerPivots, spinners } = k;
+  const wings = buildWings(c);
+  body.add(wings);
   const exhaustLocal = k.exhaust;
   const wheelLocal = k.wheels;
   const head = d.head;
@@ -451,5 +479,5 @@ export function buildKart(c: CharacterDef, label: string | null): KartVisual {
     root.add(sprite);
   }
 
-  return { root, body, steerPivots, spinners, head, shield, shadow, exhaustLocal, wheelLocal, label: sprite };
+  return { root, body, steerPivots, spinners, head, wings, shield, shadow, exhaustLocal, wheelLocal, label: sprite };
 }

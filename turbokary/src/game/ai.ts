@@ -130,6 +130,9 @@ export class BotBrain {
           case "shield":
             useItem = true;
             break;
+          case "wings":
+            useItem = straight || this.itemT < -3;
+            break;
         }
         if (useItem) this.itemT = 0.5 + r() * 2.5;
       }

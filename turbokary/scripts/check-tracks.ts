@@ -11,7 +11,7 @@ let svgs = "";
 let bad = false;
 
 for (const def of TRACKS) {
-  const curve = new CatmullRomCurve3(def.pts.map(([x, z]) => new Vector3(x, 0, z)), true, "centripetal");
+  const curve = new CatmullRomCurve3(def.pts.map((p) => new Vector3(p[0], p[2] ?? 0, p[1])), true, "centripetal");
   curve.arcLengthDivisions = 6000;
   const L = curve.getLength();
   const n = Math.round(L);
@@ -34,14 +34,27 @@ for (const def of TRACKS) {
   const wallD = def.hw + OFFROAD;
   const need = 2 * wallD + 6;
   let minSep = Infinity, sepAt: [number, number] = [0, 0];
+  let bridges = 0;
   for (let i = 0; i < n; i += 2) {
     for (let j = i + 1; j < n; j += 2) {
       const along = Math.min(j - i, n - (j - i)) * ds;
       if (along < Math.PI * wallD * 1.2) continue;
-      const d = pts[i].distanceTo(pts[j]);
+      const d = Math.hypot(pts[i].x - pts[j].x, pts[i].z - pts[j].z);
+      // křížení je povolené, když je jedna část aspoň 7 m nad druhou (most)
+      if (Math.abs(pts[i].y - pts[j].y) >= 7) {
+        if (d < 2 * wallD + 6) bridges++;
+        continue;
+      }
       if (d < minSep) { minSep = d; sepAt = [i, j]; }
     }
   }
+  let maxSlope = 0, maxAt = 0;
+  for (let i = 0; i < n; i++) {
+    const a = pts[i], b = pts[(i + 1) % n];
+    const sl = Math.abs(b.y - a.y) / Math.max(0.01, Math.hypot(b.x - a.x, b.z - a.z));
+    if (sl > maxSlope) { maxSlope = sl; maxAt = i; }
+  }
+  const maxY = Math.max(...pts.map((p) => p.y));
   // rovné úseky (kandidáti na skokánky a turbo pásy)
   const straight: string[] = [];
   let run = -1;
@@ -58,10 +71,11 @@ for (const def of TRACKS) {
   }
   const okR = minR > wallD + 3;
   const okS = minSep > need;
-  if (!okR || !okS) bad = true;
+  if (!okR || !okS || maxSlope > 0.22) bad = true;
   console.log(
     `${def.name}: délka ${L.toFixed(0)} m, min. poloměr ${minR.toFixed(1)} m (bod ${minRAt}) ${okR ? "OK" : "MOC OSTRÁ"}, ` +
       `min. odstup ${minSep.toFixed(1)} m (potřeba ${need}) ${okS ? "OK" : "PŘEKRYV u " + sepAt.join("/")}` +
+      (maxY > 0 ? `\n   výška max ${maxY.toFixed(1)} m, max. sklon ${(maxSlope * 100).toFixed(0)} % (bod ${maxAt}, ${(maxAt / n).toFixed(2)})${maxSlope > 0.22 ? " MOC PRUDKÉ" : ""}, mosty: ${bridges ? "ano" : "ne"}` : "") +
       `\n   rovinky: ${straight.join(", ")}`,
   );
   // SVG náhled
@@ -96,7 +110,11 @@ for (const def of TRACKS) {
   <path d="${path}" fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="4 6"/>
   <line x1="${s0.x}" y1="${s0.z}" x2="${s1.x}" y2="${s1.z}" stroke="#fff" stroke-width="6"/>
   ${marks}${boosts}${ramps}${arrows}${bad1}
-  ${def.pts.map(([x, z], i) => `<text x="${x}" y="${z}" font-size="9" fill="#003">${i}</text>`).join("")}
+  ${pts.filter((_, i) => i % 6 === 0).map((p) => `<circle cx="${p.x}" cy="${p.z}" r="${1.5 + p.y * 0.12}" fill="hsl(${200 - p.y * 6},90%,50%)"/>`).join("")}
+  ${(def.tunnels ?? []).map((t) => { const a = pts[Math.floor(t.from * n)], b = pts[Math.floor(t.to * n)]; return `<line x1="${a.x}" y1="${a.z}" x2="${b.x}" y2="${b.z}" stroke="#5a3b1a" stroke-width="10" opacity="0.8"/>`; }).join("")}
+  ${(def.golden ?? []).map((g) => { const p = pts[Math.floor(g.at * n) % n]; return `<circle cx="${p.x}" cy="${p.z}" r="6" fill="gold" stroke="#000"/>`; }).join("")}
+  ${(def.planes ?? []).map((f) => { const p = pts[Math.floor(f * n) % n]; return `<text x="${p.x}" y="${p.z}" font-size="16">✈</text>`; }).join("")}
+  ${def.pts.map((p, i) => `<text x="${p[0]}" y="${p[1]}" font-size="9" fill="#003">${i}</text>`).join("")}
   </svg><figcaption>${def.name} — ${L.toFixed(0)} m</figcaption></figure>`;
 }
 mkdirSync(dirname(out), { recursive: true });
