@@ -52,6 +52,11 @@ grafiku jde dodávat postupně.
   (`git fetch` + `git merge origin/codex/grafika`).
 - **Nikdy push do `main` a nikdy nasazení na Vercel bez výslovného pokynu uživatele**
   (viz `CLAUDE.md` v kořeni repa).
+- Pracovní větve (`claude/*`, `codex/*`) Vercel nenasazuje, je to vypnuté ve `vercel.json`
+  všech projektů. Na repo je napojeno víc projektů a zdarma je jen 100 nasazení denně, jinak
+  limit dojde a nenasadí se ani `main`. Codex: před dalším pushem jednou sluč
+  `origin/claude/sharp-allen-iz8adn` (`git fetch && git merge origin/claude/sharp-allen-iz8adn`),
+  aby to platilo i pro tvoji větev.
 - Nové npm závislosti jen když je to nutné; do commitu napiš proč.
 - Zprávy commitů bez názvu nebo identifikátoru AI modelu.
 

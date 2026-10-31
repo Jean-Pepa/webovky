@@ -1,12 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "cleanUrls": true,
   "git": {
     "deploymentEnabled": {
       "claude/*": false,
       "claude/busy-gauss-t83y4w": false,
-      "claude/sharp-allen-iz8adn": false
+      "claude/sharp-allen-iz8adn": false,
+      "codex/*": false
     }
-  }
+  },
+  "cleanUrls": true
 }
