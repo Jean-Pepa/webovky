@@ -29,11 +29,11 @@ věci. Žádné postavy, názvy, grafika, hudba ani zvuky od Nintenda.
 | Část | Kdo | Soubory |
 |---|---|---|
 | Veškerý kód: hra na PC, ovladač v telefonu, spojení, zvuk | Claude | `src/`, `index.html`, `pad.html`, `e2e/`, `scripts/` |
-| Grafika a design: portréty postav, ikony, logo, obloha, plachty, ikony aplikace | Codex | `public/img/`, `public/icon-*.png`, `public/og.png` |
+| Grafika a design: 3D modely postav a motokár, portréty, ikony, logo, obloha, plachty, ikony aplikace | Codex | `public/models/`, `public/img/`, `public/icon-*.png`, `public/og.png` |
 | Test na skutečném PC a telefonu, hlášení chyb | Codex (s uživatelem) | — |
 
-Do cizích souborů nesahej. Codex nemění kód, Claude nemění obrázky. Kód obrázky jen načítá
-podle názvů níže. Když obrázek chybí, hra použije náhradu (emoji / kreslení v kódu), takže
+Do cizích souborů nesahej. Codex nemění kód, Claude nemění obrázky ani modely. Kód je jen načítá
+podle názvů níže. Když obrázek nebo model chybí, hra použije náhradu (emoji / kreslení v kódu), takže
 grafiku jde dodávat postupně.
 
 ## Pravidla pro Git
@@ -105,6 +105,42 @@ grafiku jde dodávat postupně.
    na `#160f33`) a `public/og.png` 1200×630 (náhled odkazu: logo a motokáry).
 9. **Náhledy tratí do lobby** — `public/img/tracks/louka.png`, `kanon.png`, `jezero.png`,
    640×360, ilustrace trati (pohled shora nebo ze startu), bez textu.
+
+### 3D modely postav a motokár (GLB)
+Hra má zatím vlastní jednoduché modely poskládané v kódu. Když do `public/models/` přidáš
+soubory **GLB** (glTF 2.0 binary), hra je sama použije místo nich. V kódu se nic nemění.
+
+Soubory:
+- `public/models/kart.glb` — jedna motokára pro všechny postavy (hra ji přebarví podle postavy).
+- `public/models/karts/<id>.glb` — volitelně vlastní motokára jen pro postavu `<id>` (má přednost).
+- `public/models/chars/<id>.glb` — řidič (postavička) `<id>` = 0–7 podle tabulky výše, bez motokáry.
+
+Pravidla (musí sedět, jinak se model zobrazí špatně):
+- Jednotky metry, osa **Y nahoru**, předek motokáry i řidiče míří do **+Z** (standard glTF).
+- **Motokára:** počátek na zemi pod středem motokáry. Délka 2,4–2,8 m, šířka i s koly do 2 m,
+  výška do 1,2 m (bez řidiče).
+- 4 kola jako samostatné uzly `wheel_fl`, `wheel_fr`, `wheel_rl`, `wheel_rr` (f = přední,
+  r = zadní; l = levé = +X, r = pravé = −X). Počátek uzlu ve středu kola, osa kola podél X, uzel
+  bez vlastního natočení. Hra kola točí kolem X a přední natáčí kolem Y.
+- Prázdné uzly (empty): `seat` = kam si sedne řidič (spodek pánve na sedačce, cca 0,5–0,6 m
+  nad zemí), `exhaust_l` a `exhaust_r` = konce výfuků (odtud šlehají plameny turba).
+- Materiály pojmenuj `paint` (hlavní barva, hra ji obarví barvou motokáry z tabulky) a `accent`
+  (doplňková barva). Ostatní materiály si nech v barvách, jak je navrhneš.
+- **Řidič:** počátek = místo sezení (spodek pánve), dívá se do +Z. Od sedačky po vršek hlavy
+  (i s ušima) asi 1,0–1,3 m. Ruce natažené dopředu k volantu (asi 0,6 m před a 0,3 m nad
+  počátkem). Hlava je samostatný uzel `head` (počátek u krku), aby ji hra mohla naklánět.
+  Barvy podle tabulky postav (srst, druhá barva, tričko, šátek v barvě motokáry).
+- Styl low-poly, ploché stínování, veselé tvary, stejně jako obrázky. Bez textur, jen barvy
+  materiálů. PBR materiál: roughness 0,6–0,9, metalness nejvýš 0,2.
+- Do ~4000 trojúhelníků na motokáru a ~3000 na řidiče, soubor do ~600 kB.
+- Vzorové soubory podle těchto pravidel vyrobí `node scripts/sample-models.mjs`
+  (krabicová motokára a řidič do `e2e/out/sample-models/`). Můžeš z nich vyjít nebo si je
+  otevřít v Blenderu.
+- Zkouška ve hře: zkopíruj modely do `public/models/`, pak `npm run build && npm run preview`.
+
+Když 3D modely dělat neumíš: nakresli návrhy jako obrázky `public/img/design/kart.png`
+a `public/img/design/char-<id>.png` (pohled zepředu, z boku a zezadu, barvy podle tabulky).
+Claude podle nich upraví modely v kódu.
 
 ### Test na skutečném zařízení
 Až bude hra hratelná (Claude dá vědět přes uživatele), spusť ji na PC (`npm run dev`)

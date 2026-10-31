@@ -5,3 +5,9 @@ declare module "virtual:assets" {
   const files: string[];
   export default files;
 }
+
+declare module "virtual:models" {
+  /** cesty k 3D modelům v public/models, např. "kart.glb", "chars/0.glb" */
+  const files: string[];
+  export default files;
+}

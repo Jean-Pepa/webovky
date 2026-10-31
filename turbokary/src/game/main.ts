@@ -32,6 +32,7 @@ import { THEMES } from "./themes";
 import { Track } from "./track";
 import { View } from "./view";
 import { Effects, Snow } from "./effects";
+import { loadModels } from "./models";
 import { Race, type Entry, type RaceListener } from "./race";
 import { Hud } from "./hud";
 import { Lobby, Results } from "./screens";
@@ -156,6 +157,10 @@ class Game {
     addEventListener("keydown", unlock);
     this.renderLobby();
     this.lanCheck();
+    // 3D modely od Codexe (pokud jsou): po načtení se lobby scéna postaví znovu
+    void loadModels().then((ok) => {
+      if (ok && this.phase === "lobby") this.startDemo();
+    });
     this.net.start();
     this.debugHooks();
     requestAnimationFrame((t) => this.frame(t));

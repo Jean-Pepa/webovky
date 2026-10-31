@@ -2,6 +2,7 @@
 import * as THREE from "three";
 import type { CharacterDef } from "../shared/characters";
 import * as TX from "./textures";
+import { MODELS } from "./models";
 
 const matCache = new Map<string, THREE.Material>();
 function lambert(color: number) {
@@ -223,82 +224,191 @@ function wheel(r: number, w: number, hub: number) {
 
 let shadowTex: THREE.Texture | null = null;
 
-export function buildKart(c: CharacterDef, label: string | null): KartVisual {
-  const root = new THREE.Group();
-  const body = new THREE.Group();
-  root.add(body);
+interface BodyParts {
+  group: THREE.Group;
+  steerPivots: THREE.Object3D[];
+  spinners: THREE.Object3D[];
+  exhaust: THREE.Vector3[];
+  wheels: THREE.Vector3[];
+  /** místo, kam se posadí řidič */
+  seat: THREE.Vector3;
+}
+
+/** Motokára poskládaná z tvarů (náhrada, dokud nejsou 3D modely od Codexe). */
+function proceduralKart(c: CharacterDef): BodyParts {
+  const g = new THREE.Group();
   const kart = paint(c.kart);
   const accent = paint(c.accent);
   const dark = lambert(DARK);
-
-  body.add(box(1.45, 0.07, 2.35, dark, 0, 0.2, 0));
-  body.add(box(1.25, 0.22, 2.05, kart, 0, 0.33, -0.02));
+  g.add(box(1.45, 0.07, 2.35, dark, 0, 0.2, 0));
+  g.add(box(1.25, 0.22, 2.05, kart, 0, 0.33, -0.02));
   const nose = box(1.05, 0.2, 0.75, kart, 0, 0.36, 1.28);
   nose.rotation.x = 0.16;
-  body.add(nose);
-  body.add(box(1.55, 0.14, 0.18, dark, 0, 0.25, 1.62));
-  for (const sx of [-1, 1]) body.add(box(0.32, 0.3, 1.3, accent, sx * 0.8, 0.37, 0.05));
-  body.add(box(0.78, 0.13, 0.62, dark, 0, 0.47, -0.32));
-  body.add(box(0.78, 0.6, 0.16, dark, 0, 0.72, -0.58));
-  body.add(box(0.88, 0.42, 0.55, lambert(0x3b3f4a), 0, 0.56, -1.0));
-  body.add(box(0.9, 0.08, 0.57, kart, 0, 0.8, -1.0));
-  const exhaustLocal: THREE.Vector3[] = [];
+  g.add(nose);
+  g.add(box(1.55, 0.14, 0.18, dark, 0, 0.25, 1.62));
+  for (const sx of [-1, 1]) g.add(box(0.32, 0.3, 1.3, accent, sx * 0.8, 0.37, 0.05));
+  g.add(box(0.78, 0.13, 0.62, dark, 0, 0.47, -0.32));
+  g.add(box(0.78, 0.6, 0.16, dark, 0, 0.72, -0.58));
+  g.add(box(0.88, 0.42, 0.55, lambert(0x3b3f4a), 0, 0.56, -1.0));
+  g.add(box(0.9, 0.08, 0.57, kart, 0, 0.8, -1.0));
+  const exhaust: THREE.Vector3[] = [];
   for (const sx of [-1, 1]) {
     const ex = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.095, 0.42, 10), lambert(METAL));
     ex.rotation.x = Math.PI / 2;
     ex.position.set(sx * 0.26, 0.62, -1.38);
-    body.add(ex);
-    exhaustLocal.push(new THREE.Vector3(sx * 0.26, 0.62, -1.62));
-    body.add(box(0.06, 0.4, 0.12, dark, sx * 0.5, 0.86, -1.22));
+    g.add(ex);
+    exhaust.push(new THREE.Vector3(sx * 0.26, 0.62, -1.62));
+    g.add(box(0.06, 0.4, 0.12, dark, sx * 0.5, 0.86, -1.22));
   }
-  body.add(box(1.55, 0.07, 0.4, kart, 0, 1.08, -1.24));
-  for (const sx of [-1, 1]) body.add(box(0.06, 0.3, 0.42, accent, sx * 0.78, 1.0, -1.24));
-  // volant
+  g.add(box(1.55, 0.07, 0.4, kart, 0, 1.08, -1.24));
+  for (const sx of [-1, 1]) g.add(box(0.06, 0.3, 0.42, accent, sx * 0.78, 1.0, -1.24));
   const col = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 6), dark);
   col.position.set(0, 0.66, 0.5);
   col.rotation.x = -0.9;
-  body.add(col);
+  g.add(col);
   const wheelRim = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.035, 6, 16), dark);
   wheelRim.position.set(0, 0.86, 0.32);
   wheelRim.rotation.x = -0.9;
-  body.add(wheelRim);
-  // řidič
-  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.52, 12), lambert(c.shirt));
-  torso.position.set(0, 0.92, -0.4);
-  body.add(torso);
-  for (const sx of [-1, 1]) {
-    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.55, 6), lambert(c.shirt));
-    arm.position.set(sx * 0.24, 0.98, -0.08);
-    arm.rotation.x = 1.15;
-    arm.rotation.z = sx * 0.15;
-    body.add(arm);
-    body.add(sphere(0.075, lambert(c.style === "robot" ? METAL : c.fur), sx * 0.17, 0.86, 0.22, 8));
-  }
-  // šátek v barvě motokáry
-  const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.06, 6, 14), lambert(c.kart));
-  scarf.rotation.x = Math.PI / 2;
-  scarf.position.set(0, 1.17, -0.36);
-  body.add(scarf);
-  const head = buildHead(c);
-  head.position.set(0, 1.45, -0.34);
-  body.add(head);
-
-  // kola
+  g.add(wheelRim);
   const steerPivots: THREE.Object3D[] = [];
   const spinners: THREE.Object3D[] = [];
-  const wheelLocal: THREE.Vector3[] = [];
+  const wheels: THREE.Vector3[] = [];
   for (const sx of [-1, 1]) {
     const rw = wheel(0.34, 0.36, c.accent);
     rw.pivot.position.set(sx * 0.84, 0.34, -0.78);
-    body.add(rw.pivot);
+    g.add(rw.pivot);
     spinners.push(rw.spin);
-    wheelLocal.push(new THREE.Vector3(sx * 0.84, 0.05, -0.95));
+    wheels.push(new THREE.Vector3(sx * 0.84, 0.05, -0.95));
     const fw = wheel(0.29, 0.28, c.accent);
     fw.pivot.position.set(sx * 0.8, 0.29, 0.86);
-    body.add(fw.pivot);
+    g.add(fw.pivot);
     spinners.push(fw.spin);
     steerPivots.push(fw.pivot);
   }
+  return { group: g, steerPivots, spinners, exhaust, wheels, seat: new THREE.Vector3(0, 0.55, -0.4) };
+}
+
+/** Řidič poskládaný z tvarů; počátek = sedák. */
+function proceduralDriver(c: CharacterDef): { group: THREE.Group; head: THREE.Group } {
+  const g = new THREE.Group();
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.52, 12), lambert(c.shirt));
+  torso.position.set(0, 0.37, 0);
+  g.add(torso);
+  for (const sx of [-1, 1]) {
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.55, 6), lambert(c.shirt));
+    arm.position.set(sx * 0.24, 0.43, 0.32);
+    arm.rotation.x = 1.15;
+    arm.rotation.z = sx * 0.15;
+    g.add(arm);
+    g.add(sphere(0.075, lambert(c.style === "robot" ? METAL : c.fur), sx * 0.17, 0.31, 0.62, 8));
+  }
+  const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.06, 6, 14), lambert(c.kart));
+  scarf.rotation.x = Math.PI / 2;
+  scarf.position.set(0, 0.62, 0.04);
+  g.add(scarf);
+  const head = buildHead(c);
+  head.position.set(0, 0.9, 0.06);
+  g.add(head);
+  return { group: g, head };
+}
+
+const findNode = (root: THREE.Object3D, name: string) => {
+  let hit: THREE.Object3D | null = null;
+  const want = name.toLowerCase();
+  root.traverse((o) => {
+    if (!hit && o.name.toLowerCase() === want) hit = o;
+  });
+  return hit as THREE.Object3D | null;
+};
+
+/** Motokára z 3D modelu (GLB od Codexe): přebarví materiály „paint“ a „accent“, najde kola. */
+function modelKart(tpl: THREE.Object3D, c: CharacterDef): BodyParts {
+  const g = new THREE.Group();
+  const m = tpl.clone(true);
+  g.add(m);
+  m.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const recolor = (mat: THREE.Material) => {
+      const n = mat.name.toLowerCase();
+      const col = n.includes("paint") ? c.kart : n.includes("accent") ? c.accent : null;
+      if (col === null) return mat;
+      const cl = mat.clone() as THREE.MeshStandardMaterial;
+      cl.color?.set(col);
+      return cl;
+    };
+    mesh.material = Array.isArray(mesh.material) ? mesh.material.map(recolor) : recolor(mesh.material);
+  });
+  m.updateMatrixWorld(true);
+  const local = (o: THREE.Object3D) => g.worldToLocal(o.getWorldPosition(new THREE.Vector3()));
+  const steerPivots: THREE.Object3D[] = [];
+  const spinners: THREE.Object3D[] = [];
+  const wheels: THREE.Vector3[] = [];
+  for (const id of ["wheel_fl", "wheel_fr", "wheel_rl", "wheel_rr"]) {
+    const w = findNode(m, id);
+    if (!w || !w.parent) continue;
+    spinners.push(w);
+    if (id.includes("_f")) {
+      // přední kolo: otočný čep (zatáčení) a v něm kolo (otáčení)
+      const pivot = new THREE.Group();
+      pivot.position.copy(w.position);
+      pivot.quaternion.copy(w.quaternion);
+      w.parent.add(pivot);
+      pivot.add(w);
+      w.position.set(0, 0, 0);
+      w.quaternion.identity();
+      steerPivots.push(pivot);
+    } else {
+      const p = local(w);
+      wheels.push(new THREE.Vector3(p.x, 0.05, p.z - 0.15));
+    }
+  }
+  const exhaust = ["exhaust_l", "exhaust_r"].map((n) => findNode(m, n)).filter((o): o is THREE.Object3D => !!o).map(local);
+  const seatNode = findNode(m, "seat");
+  return {
+    group: g,
+    steerPivots,
+    spinners,
+    exhaust: exhaust.length ? exhaust : [new THREE.Vector3(-0.26, 0.62, -1.6), new THREE.Vector3(0.26, 0.62, -1.6)],
+    wheels: wheels.length ? wheels : [new THREE.Vector3(-0.84, 0.05, -0.95), new THREE.Vector3(0.84, 0.05, -0.95)],
+    seat: seatNode ? local(seatNode) : new THREE.Vector3(0, 0.55, -0.4),
+  };
+}
+
+function modelDriver(tpl: THREE.Object3D): { group: THREE.Group; head: THREE.Group } {
+  const g = new THREE.Group();
+  const m = tpl.clone(true);
+  g.add(m);
+  const headNode = findNode(m, "head");
+  if (headNode && headNode.parent) {
+    // hlava do vlastní skupiny, aby se dala naklánět
+    const head = new THREE.Group();
+    head.position.copy(headNode.position);
+    headNode.parent.add(head);
+    head.add(headNode);
+    headNode.position.set(0, 0, 0);
+    return { group: g, head };
+  }
+  const head = new THREE.Group();
+  g.add(head);
+  return { group: g, head };
+}
+
+export function buildKart(c: CharacterDef, label: string | null): KartVisual {
+  const root = new THREE.Group();
+  const body = new THREE.Group();
+  root.add(body);
+  const kartTpl = MODELS.karts.get(c.id) ?? MODELS.kart;
+  const k = kartTpl ? modelKart(kartTpl, c) : proceduralKart(c);
+  body.add(k.group);
+  const charTpl = MODELS.chars.get(c.id);
+  const d = charTpl ? modelDriver(charTpl) : proceduralDriver(c);
+  d.group.position.copy(k.seat);
+  body.add(d.group);
+  const { steerPivots, spinners } = k;
+  const exhaustLocal = k.exhaust;
+  const wheelLocal = k.wheels;
+  const head = d.head;
 
   const shield = new THREE.Mesh(
     new THREE.SphereGeometry(1.75, 22, 14),
