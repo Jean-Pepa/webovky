@@ -17,18 +17,34 @@ export interface RampDef {
   d: number;
 }
 
+export interface GoldenDef {
+  /** poloha podél trati (0–1) */
+  at: number;
+  /** příčná poloha (-1 … 1) */
+  d: number;
+  /** výška nad silnicí (m) — vysoko visící bedna jde sebrat jen výskokem */
+  h: number;
+}
+
 export interface TrackDef {
   id: string;
   name: string;
   desc: string;
-  theme: "meadow" | "desert" | "ice";
-  pts: [number, number][];
+  theme: "meadow" | "desert" | "ice" | "crazy";
+  /** řídicí body [x, z] nebo [x, z, výška] */
+  pts: ([number, number] | [number, number, number])[];
   /** polovina šířky silnice */
   hw: number;
   /** řady krystalů (zlomky délky trati) */
   items: number[];
   boosts: BoostPad[];
   ramps: RampDef[];
+  /** zlaté bedny (křídla a jiné silné věci) */
+  golden: GoldenDef[];
+  /** tunely skrz skálu (zlomky délky trati) */
+  tunnels?: { from: number; to: number }[];
+  /** místa, kam občas spadne letadlo (zlomky délky trati) */
+  planes?: number[];
 }
 
 export const TRACKS: TrackDef[] = [
@@ -45,6 +61,7 @@ export const TRACKS: TrackDef[] = [
     items: [0.2, 0.52, 0.8],
     boosts: [{ at: 0.06, d: 0 }, { at: 0.62, d: -0.3 }],
     ramps: [{ at: 0.13, d: 0.3 }],
+    golden: [{ at: 0.147, d: 0.3, h: 2.6 }],
   },
   {
     id: "kanon",
@@ -60,6 +77,7 @@ export const TRACKS: TrackDef[] = [
     items: [0.18, 0.47, 0.74],
     boosts: [{ at: 0.04, d: 0.25 }, { at: 0.56, d: 0 }, { at: 0.83, d: -0.2 }],
     ramps: [{ at: 0.495, d: -0.3 }, { at: 0.79, d: 0.3 }],
+    golden: [{ at: 0.802, d: 0.3, h: 2.6 }],
   },
   {
     id: "jezero",
@@ -74,5 +92,27 @@ export const TRACKS: TrackDef[] = [
     items: [0.16, 0.45, 0.75],
     boosts: [{ at: 0.05, d: 0 }, { at: 0.58, d: 0.2 }],
     ramps: [{ at: 0.11, d: -0.3 }],
+    golden: [{ at: 0.127, d: -0.3, h: 2.6 }],
+  },
+  {
+    id: "hora",
+    name: "Šílená hora",
+    desc: "Serpentiny do kopce, tunel skrz skálu, most, velký skok a padající letadla!",
+    theme: "crazy",
+    hw: 8.5,
+    pts: [
+      [-40, 0, 0], [40, 0, 0], [110, 6, 0], [158, 46, 2], [162, 100, 5], [161, 140, 7.5],
+      [162, 172, 9], [171, 196, 9.8], [192, 206, 10.3], [213, 196, 10.8], [222, 172, 11.6], [223, 140, 13],
+      [220, 96, 15.5], [221, 76, 16.5], [231, 54, 17.5], [257, 44, 19], [283, 54, 20], [293, 78, 21], [294, 100, 22.5],
+      [290, 160, 25.5], [266, 222, 28], [216, 248, 29], [160, 252, 29], [112, 240, 27],
+      [70, 226, 20], [44, 186, 22], [42, 140, 17], [48, 92, 19], [52, 44, 14], [50, -6, 12],
+      [46, -56, 9], [16, -94, 6], [-40, -104, 4], [-90, -76, 2], [-110, -26, 1], [-90, 4, 0],
+    ],
+    items: [0.1, 0.305, 0.645, 0.86],
+    boosts: [{ at: 0.035, d: 0 }, { at: 0.465, d: 0 }, { at: 0.705, d: 0.2 }],
+    ramps: [{ at: 0.583, d: 0 }],
+    golden: [{ at: 0.596, d: 0, h: 3 }, { at: 0.9, d: -0.8, h: 0.6 }],
+    tunnels: [{ from: 0.505, to: 0.565 }],
+    planes: [0.72, 0.88, 0.2],
   },
 ];

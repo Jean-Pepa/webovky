@@ -4,12 +4,12 @@ import * as THREE from "three";
 import type { ItemId } from "../shared/items";
 import { ITEMS } from "../shared/items";
 import type { Kart, HitKind } from "./kart";
-import { KART_R } from "./kart";
+import { FLY_TIME, KART_R } from "./kart";
 import type { Track, Projection } from "./track";
 import type { Effects } from "./effects";
 import { clamp, pickWeighted, wrapAngle } from "./util";
 
-export type HitBy = "rocket" | "oil" | "coconut" | "bees" | "ram";
+export type HitBy = "rocket" | "oil" | "coconut" | "bees" | "ram" | "plane";
 
 export interface ItemEvents {
   pickup(k: Kart): void;
@@ -20,17 +20,20 @@ export interface ItemEvents {
   explosion(x: number, z: number): void;
   bounce(x: number, z: number): void;
   bees(target: Kart): void;
+  golden(k: Kart, item: ItemId): void;
 }
 
 interface Crystal {
   x: number;
   z: number;
+  y: number;
   mesh: THREE.Group;
   respawn: number;
 }
 interface Oil {
   x: number;
   z: number;
+  y: number;
   mesh: THREE.Mesh;
   owner: Kart;
   safe: number;
@@ -83,17 +86,25 @@ const TABLES: { v: ItemId; w: number }[][] = [
   ],
   // poslední
   [
-    { v: "turbo3", w: 28 },
-    { v: "rocket", w: 22 },
-    { v: "ram", w: 20 },
-    { v: "bees", w: 16 },
-    { v: "turbo", w: 14 },
+    { v: "turbo3", w: 26 },
+    { v: "rocket", w: 20 },
+    { v: "ram", w: 18 },
+    { v: "bees", w: 14 },
+    { v: "wings", w: 10 },
+    { v: "turbo", w: 12 },
   ],
+];
+/** zlatá bedna: hlavně křídla */
+const GOLDEN: { v: ItemId; w: number }[] = [
+  { v: "wings", w: 65 },
+  { v: "ram", w: 20 },
+  { v: "turbo3", w: 15 },
 ];
 
 export class Items {
   readonly group = new THREE.Group();
   private crystals: Crystal[] = [];
+  private goldens: Crystal[] = [];
   private oils: Oil[] = [];
   private projs: Proj[] = [];
   private crystalMat: THREE.MeshPhongMaterial;
@@ -130,9 +141,35 @@ export class Items {
       m.scale.y = 1.25;
       g.add(m);
       g.add(new THREE.Mesh(core, this.coreMat));
-      g.position.set(p.x, 1.25, p.z);
+      g.position.set(p.x, p.y + 1.25, p.z);
       this.group.add(g);
-      this.crystals.push({ x: p.x, z: p.z, mesh: g, respawn: 0 });
+      this.crystals.push({ x: p.x, z: p.z, y: p.y, mesh: g, respawn: 0 });
+    }
+    // zlaté bedny
+    const gold = new THREE.MeshPhongMaterial({ color: 0xffc53d, emissive: 0x7a4a00, shininess: 120, specular: 0xffffff });
+    const dark = new THREE.MeshLambertMaterial({ color: 0x8a4b12 });
+    const glow = new THREE.MeshBasicMaterial({ color: 0xfff3b0, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false });
+    for (const p of track.goldens) {
+      const g = new THREE.Group();
+      const base = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 1.0), gold);
+      g.add(base);
+      const lid = new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.35, 1.06), gold);
+      lid.position.y = 0.62;
+      g.add(lid);
+      for (const x of [-0.5, 0.5]) {
+        const band = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.32, 1.1), dark);
+        band.position.set(x, 0.2, 0);
+        g.add(band);
+      }
+      const lock = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.1), dark);
+      lock.position.set(0, 0.35, 0.53);
+      g.add(lock);
+      const halo = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 10), glow);
+      halo.position.y = 0.2;
+      g.add(halo);
+      g.position.set(p.x, p.y, p.z);
+      this.group.add(g);
+      this.goldens.push({ x: p.x, z: p.z, y: p.y, mesh: g, respawn: 0 });
     }
   }
 
@@ -175,6 +212,10 @@ export class Items {
         k.ramT = 6.5;
         k.boost(0.5);
         break;
+      case "wings":
+        k.flyT = FLY_TIME;
+        k.boost(0.6);
+        break;
       case "oil":
         if (d < 0) this.addOil(k.x - fx * 2.9, k.z - fz * 2.9, k);
         else this.launch("flask", k, k.heading, 26 + spd * 0.6, 1.1, null);
@@ -213,13 +254,14 @@ export class Items {
       x -= this.track.rx[k] * sg * over;
       z -= this.track.rz[k] * sg * over;
     }
+    const y = this.track.heightAt(this.track.project(x, z, pr.idx, pr).s);
     const mesh = new THREE.Mesh(new THREE.CircleGeometry(1.75, 18), this.oilMat);
     mesh.rotation.x = -Math.PI / 2;
     mesh.rotation.z = Math.random() * 3;
     mesh.scale.set(1, 0.75 + Math.random() * 0.3, 1);
-    mesh.position.set(x, 0.06, z);
+    mesh.position.set(x, y + 0.06, z);
     this.group.add(mesh);
-    this.oils.push({ x, z, mesh, owner, safe: 1, life: 32 });
+    this.oils.push({ x, z, y, mesh, owner, safe: 1, life: 32 });
     this.ev.bounce(x, z);
   }
 
@@ -243,7 +285,7 @@ export class Items {
       proj: { idx: k.proj.idx, s: 0, d: 0 },
       t: 0,
     };
-    mesh.position.set(p.x, y, p.z);
+    mesh.position.set(p.x, this.track.heightAt(k.proj.s) + y, p.z);
     this.group.add(mesh);
     this.projs.push(p);
   }
@@ -285,16 +327,44 @@ export class Items {
       }
       if (c.mesh.scale.x < 1) c.mesh.scale.setScalar(Math.min(1, c.mesh.scale.x + dt * 3));
       c.mesh.rotation.y = time * 1.6;
-      c.mesh.position.y = 1.25 + Math.sin(time * 2.4 + c.x) * 0.15;
+      c.mesh.position.y = c.y + 1.25 + Math.sin(time * 2.4 + c.x) * 0.15;
       for (const k of karts) {
         if ((k.x - c.x) ** 2 + (k.z - c.z) ** 2 > (KART_R + 1.0) ** 2 || k.y > 2.5) continue;
         c.mesh.visible = false;
         c.respawn = 2.5;
-        this.fx.burst(c.x, 1.2, c.z, [0xff4d6d, 0xffd21f, 0x7cf3ff, 0x9b4dff, 0x3ccf4e], 26, 7, 0.45);
+        this.fx.burst(c.x, c.y + 1.2, c.z, [0xff4d6d, 0xffd21f, 0x7cf3ff, 0x9b4dff, 0x3ccf4e], 26, 7, 0.45);
         if (!k.item && k.rollT <= 0) {
           k.rollT = ROLL_TIME;
           this.ev.pickup(k);
         }
+        break;
+      }
+    }
+
+    // zlaté bedny (visí ve vzduchu — sebrat jdou výskokem)
+    for (const c of this.goldens) {
+      if (c.respawn > 0) {
+        c.respawn -= dt;
+        if (c.respawn <= 0) {
+          c.mesh.visible = true;
+          c.mesh.scale.setScalar(0.01);
+        }
+        continue;
+      }
+      if (c.mesh.scale.x < 1) c.mesh.scale.setScalar(Math.min(1, c.mesh.scale.x + dt * 2));
+      c.mesh.rotation.y = time * 1.2;
+      c.mesh.position.y = c.y + Math.sin(time * 2 + c.z) * 0.2;
+      if (Math.random() < dt * 8) this.fx.spark(c.x + (Math.random() - 0.5) * 2, c.y + Math.random(), c.z + (Math.random() - 0.5) * 2, 0xffe27a, 1.5, 0.25);
+      for (const k of karts) {
+        if ((k.x - c.x) ** 2 + (k.z - c.z) ** 2 > (KART_R + 1.3) ** 2) continue;
+        if (Math.abs(k.wy + 0.7 - c.y) > 1.7) continue;
+        c.mesh.visible = false;
+        c.respawn = 10;
+        this.fx.burst(c.x, c.y, c.z, [0xffd21f, 0xffffff, 0xff7a1a], 50, 10, 0.6);
+        k.rollT = 0;
+        k.item = pickWeighted(GOLDEN, Math.random());
+        k.itemN = k.item === "turbo3" ? 3 : 1;
+        this.ev.golden(k, k.item);
         break;
       }
     }
@@ -333,7 +403,7 @@ export class Items {
           if (res === "immune") continue;
           if (res === "hit") this.ev.hit(k, o.owner === k ? null : o.owner, "oil");
           else this.ev.blocked(k);
-          for (let s = 0; s < 10; s++) this.fx.smoke(o.x, 0.3, o.z, 0.15);
+          for (let s = 0; s < 10; s++) this.fx.smoke(o.x, o.y + 0.3, o.z, 0.15);
           gone = true;
           break;
         }
@@ -352,6 +422,7 @@ export class Items {
       p.safe -= dt;
       p.t += dt;
       tr.project(p.x, p.z, p.proj.idx, p.proj, 24);
+      const gy = tr.heightAt(p.proj.s);
       let done = p.life <= 0;
       if (p.kind === "flask") {
         p.vy -= 20 * dt;
@@ -383,7 +454,7 @@ export class Items {
           p.z -= nz * over;
           p.bounces++;
           this.ev.bounce(p.x, p.z);
-          this.fx.burst(p.x, 0.6, p.z, [0xd9b38c, 0xffffff], 8, 4, 0.3, 0.3);
+          this.fx.burst(p.x, gy + 0.6, p.z, [0xd9b38c, 0xffffff], 8, 4, 0.3, 0.3);
           if (p.bounces > 5) done = true;
         }
       } else {
@@ -408,8 +479,8 @@ export class Items {
         p.x += Math.sin(p.heading) * p.speed * dt;
         p.z += Math.cos(p.heading) * p.speed * dt;
         if (p.kind === "rocket") {
-          this.fx.flame(p.x - Math.sin(p.heading) * 0.8, 0.9, p.z - Math.cos(p.heading) * 0.8, 0, 0, false);
-          if (Math.random() < 0.5) this.fx.smoke(p.x, 0.9, p.z, 0.9);
+          this.fx.flame(p.x - Math.sin(p.heading) * 0.8, gy + 0.9, p.z - Math.cos(p.heading) * 0.8, 0, 0, false);
+          if (Math.random() < 0.5) this.fx.smoke(p.x, gy + 0.9, p.z, 0.9);
           if (Math.abs(p.proj.d) > tr.wallD - 0.4) done = true;
         } else {
           // včely: letí výš, nad cílem slétnou dolů
@@ -439,14 +510,14 @@ export class Items {
           for (const k of karts)
             if (k !== p.target && k !== p.owner && (k.x - p.x) ** 2 + (k.z - p.z) ** 2 < 4.5 ** 2) this.strike(k, p.owner, "bees", "bees");
       }
-      p.mesh.position.set(p.x, p.y, p.z);
+      p.mesh.position.set(p.x, gy + p.y, p.z);
       if (p.kind !== "coconut" && p.kind !== "flask") p.mesh.rotation.y = p.heading;
       if (done) {
         if (p.kind === "rocket") {
-          this.fx.explosion(p.x, p.z);
+          this.fx.explosion(p.x, p.z, gy);
           this.ev.explosion(p.x, p.z);
-        } else if (p.kind === "bees") this.fx.burst(p.x, p.y, p.z, [0xffd21f, 0x1b1430], 30, 8, 0.4);
-        else if (p.kind === "coconut") this.fx.burst(p.x, 0.6, p.z, [0x8b5a2b, 0xffffff], 18, 6, 0.4);
+        } else if (p.kind === "bees") this.fx.burst(p.x, gy + p.y, p.z, [0xffd21f, 0x1b1430], 30, 8, 0.4);
+        else if (p.kind === "coconut") this.fx.burst(p.x, gy + 0.6, p.z, [0x8b5a2b, 0xffffff], 18, 6, 0.4);
         this.group.remove(p.mesh);
         this.projs.splice(i, 1);
       }

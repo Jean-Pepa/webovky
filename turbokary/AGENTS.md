@@ -16,12 +16,16 @@ věci. Žádné postavy, názvy, grafika, hudba ani zvuky od Nintenda.
   samotná data jdou přímo telefon ↔ PC po Wi-Fi. Kontrakt zpráv: `src/shared/protocol.ts`.
 
 ## Rozsah
-- 3 tratě (`src/game/tracks.ts`): Zelená louka, Písečný kaňon, Ledové jezero (klouže).
-  Jeden závod nebo pohár ze všech tratí s body. 3 rychlosti, 1–5 kol, 0–7 botů.
+- 4 tratě (`src/game/tracks.ts`): Zelená louka, Písečný kaňon, Ledové jezero (klouže) a Šílená
+  hora (výškové rozdíly, serpentiny, tunel skrz skálu, most přes trať, velký skok, padající
+  letadla s hořícími troskami). Jeden závod nebo pohár ze všech tratí s body. 3 rychlosti,
+  1–5 kol, 0–7 botů.
+- Zlaté bedny (visí nad skokánky, sebrat jdou jen výskokem): nejčastěji **křídla** — pár vteřin
+  let nad tratí (rychlejší, nic tě netrefí).
 - 8 postav s vlastnostmi (lehké / střední / těžké — `src/shared/characters.ts`).
 - Věci (`src/shared/items.ts`): turbo, trojité turbo, olej (vylít za sebe / hodit dopředu),
   kokos (letí rovně a odráží se), raketa (navádí se dopředu i dozadu), roj včel (letí na
-  vedoucího), štít, beranidlo (krátká nezranitelnost a trkání).
+  vedoucího), štít, beranidlo (krátká nezranitelnost a trkání), křídla (let).
 - Jízda: drift se 3 stupni turba, turbo start, závětří, skokánky s triky (turbo po dopadu),
   turbo pásy, bariéry, srážky podle váhy.
 
@@ -77,11 +81,11 @@ grafiku jde dodávat postupně.
    | 7 | Prasátko Kvík (prasátko) | `#ffa7bb` | `#ff7f9e` | `#ffd21f` | `#118ab2` |
 
 2. **Ikony věcí** — `public/img/items/turbo.png`, `turbo3.png`, `oil.png`, `coconut.png`,
-   `rocket.png`, `bees.png`, `shield.png`, `ram.png`, 256×256, čitelné i ve 48 px.
+   `rocket.png`, `bees.png`, `shield.png`, `ram.png`, `wings.png`, 256×256, čitelné i ve 48 px.
    Turbo = žlutooranžový blesk nebo láhev nitra, trojité turbo = tři blesky, olej = černý
    kanystr se žlutým pruhem a kapkou, kokos = hnědý kokos s „očičkama“, raketa = červenobílá
    raketa s plamenem, roj včel = tři veselé včelky, štít = modrá průhledná bublina,
-   beranidlo = zlaté zatočené beraní rohy se září.
+   beranidlo = zlaté zatočené beraní rohy se září, křídla = dvě bílá křídla s barevnými konci.
 3. **Logo** — `public/img/logo.png`, asi 1600×560. Nápis „TurboKáry“ (s Á), tlustá kreslená
    písmena, přechod žlutá → oranžová → červená, tmavý obrys, malá šachovnicová vlajka nebo
    motokára. Musí být čitelné na `#160f33` i přes 3D scénu.
@@ -93,6 +97,8 @@ grafiku jde dodávat postupně.
    - `public/img/sky-desert.jpg` — sytě modrá až broskvová obloha, stolové hory z červenohnědého
      pískovce, spodek `#ffe3b8`.
    - `public/img/sky-ice.jpg` — chladná modrofialová obloha, zasněžené štíty, spodek `#e3ecff`.
+   - `public/img/sky-crazy.jpg` — dramatický západ slunce (nahoře fialová `#4b3ab8`, dole
+     broskvová), skalnaté štíty, spodek `#ffb68a`.
 5. **Reklamní plachty kolem trati** — `public/img/banners/1.png` … `4.png`, 1024×256,
    vymyšlení sponzoři s vtipnými českými názvy (např. „Turbo Knedlík“, „Pneu Hop“,
    „Benzínka U Žabáka“, „Koblihy Zrzka“). Výrazné barvy, velké čitelné písmo.
@@ -103,7 +109,7 @@ grafiku jde dodávat postupně.
    krystal). Pozadí tlačítek kreslí kód.
 8. **Ikony aplikace** — `public/icon-192.png`, `public/icon-512.png` (motokára nebo „TK“
    na `#160f33`) a `public/og.png` 1200×630 (náhled odkazu: logo a motokáry).
-9. **Náhledy tratí do lobby** — `public/img/tracks/louka.png`, `kanon.png`, `jezero.png`,
+9. **Náhledy tratí do lobby** — `public/img/tracks/louka.png`, `kanon.png`, `jezero.png`, `hora.png`,
    640×360, ilustrace trati (pohled shora nebo ze startu), bez textu.
 
 ### 3D modely postav a motokár (GLB)

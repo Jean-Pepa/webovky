@@ -98,7 +98,7 @@ class Pool {
       this.vel[i * 3 + 2] *= k;
       this.vel[i * 3 + 1] = this.vel[i * 3 + 1] * k - this.grav[i] * dt;
       this.pos[i * 3] += this.vel[i * 3] * dt;
-      this.pos[i * 3 + 1] = Math.max(0.05, this.pos[i * 3 + 1] + this.vel[i * 3 + 1] * dt);
+      this.pos[i * 3 + 1] += this.vel[i * 3 + 1] * dt;
       this.pos[i * 3 + 2] += this.vel[i * 3 + 2] * dt;
       this.size[i] = this.s0[i] + (this.s1[i] - this.s0[i]) * t;
       this.alpha[i] = t < 0.15 ? 1 : 1 - (t - 0.15) / 0.85;
@@ -139,9 +139,9 @@ export class Effects {
     this.glowPool.emit(x, y, z, vx + (Math.random() - 0.5), 0.6 + Math.random(), vz + (Math.random() - 0.5), tmp, 0.55, 0.15, 0.22, -2, 3);
   }
 
-  dust(x: number, z: number, color: number, vx: number, vz: number) {
+  dust(x: number, z: number, color: number, vx: number, vz: number, y = 0) {
     tmp.set(color);
-    this.smokePool.emit(x, 0.25, z, vx * 0.15 + (Math.random() - 0.5) * 2, 1 + Math.random() * 1.5, vz * 0.15 + (Math.random() - 0.5) * 2, tmp, 0.5, 1.6, 0.6, 2, 2);
+    this.smokePool.emit(x, y + 0.25, z, vx * 0.15 + (Math.random() - 0.5) * 2, 1 + Math.random() * 1.5, vz * 0.15 + (Math.random() - 0.5) * 2, tmp, 0.5, 1.6, 0.6, 2, 2);
   }
 
   smoke(x: number, y: number, z: number, gray = 0.85) {
@@ -159,16 +159,23 @@ export class Effects {
     }
   }
 
-  explosion(x: number, z: number) {
-    this.burst(x, 1, z, [0xffe14d, 0xff7a1a, 0xff3b1f, 0xffffff], 70, 16, 0.9, 0.6);
-    for (let i = 0; i < 26; i++) this.smoke(x + (Math.random() - 0.5) * 2, 0.8, z + (Math.random() - 0.5) * 2, 0.35 + Math.random() * 0.3);
+  explosion(x: number, z: number, y = 0, scale = 1) {
+    this.burst(x, y + 1, z, [0xffe14d, 0xff7a1a, 0xff3b1f, 0xffffff], Math.round(70 * scale), 16 * scale, 0.9 * scale, 0.6 + 0.2 * (scale - 1));
+    for (let i = 0; i < 26 * scale; i++)
+      this.smoke(x + (Math.random() - 0.5) * 2 * scale, y + 0.8, z + (Math.random() - 0.5) * 2 * scale, 0.35 + Math.random() * 0.3);
   }
 
-  confetti(x: number, z: number) {
+  fire(x: number, y: number, z: number) {
+    tmp.set(Math.random() < 0.5 ? 0xffb02e : 0xff5a1f);
+    this.glowPool.emit(x + (Math.random() - 0.5), y, z + (Math.random() - 0.5), 0, 2 + Math.random() * 2, 0, tmp, 0.9, 0.2, 0.45, -1, 1);
+    if (Math.random() < 0.3) this.smoke(x, y + 1, z, 0.25);
+  }
+
+  confetti(x: number, z: number, y = 0) {
     const cols = [0xff4d6d, 0xffd21f, 0x2f6bff, 0x3ccf4e, 0x9b4dff, 0xffffff];
     for (let i = 0; i < 90; i++) {
       tmp.set(cols[i % cols.length]);
-      this.smokePool.emit(x + (Math.random() - 0.5) * 6, 5 + Math.random() * 3, z + (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6, 2 + Math.random() * 5, (Math.random() - 0.5) * 6, tmp, 0.32, 0.3, 2.4, 3, 1.2);
+      this.smokePool.emit(x + (Math.random() - 0.5) * 6, y + 5 + Math.random() * 3, z + (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6, 2 + Math.random() * 5, (Math.random() - 0.5) * 6, tmp, 0.32, 0.3, 2.4, 3, 1.2);
     }
   }
 

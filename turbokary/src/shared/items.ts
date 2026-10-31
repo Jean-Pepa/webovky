@@ -1,6 +1,6 @@
 // Věci, které se dají sebrat z krystalů na trati.
 
-export type ItemId = "turbo" | "turbo3" | "oil" | "coconut" | "rocket" | "bees" | "shield" | "ram";
+export type ItemId = "turbo" | "turbo3" | "oil" | "coconut" | "rocket" | "bees" | "shield" | "ram" | "wings";
 
 export interface ItemDef {
   name: string;
@@ -19,6 +19,7 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   bees: { name: "Roj včel", emoji: "🐝", hint: "letí na vedoucího závodníka", dir: 1 },
   shield: { name: "Štít", emoji: "🛡️", hint: "chrání před jedním zásahem", dir: 0 },
   ram: { name: "Beranidlo", emoji: "🐏", hint: "chvíli nezranitelný a rychlejší, trkáš soupeře", dir: 0 },
+  wings: { name: "Křídla", emoji: "🦅", hint: "pár vteřin letíš nad tratí, nic tě netrefí", dir: 0 },
 };
 
 export const ITEM_IDS = Object.keys(ITEMS) as ItemId[];

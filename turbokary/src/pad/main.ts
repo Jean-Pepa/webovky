@@ -325,7 +325,7 @@ class Pad {
       </section>
       <section class="card host-box" hidden>
         <h3>👑 Ty vybíráš závod</h3>
-        <div class="seg" data-host="mode"><button data-v="0">🏁 Jeden závod</button><button data-v="1">🏆 Pohár (3 tratě)</button></div>
+        <div class="seg" data-host="mode"><button data-v="0">🏁 Jeden závod</button><button data-v="1">🏆 Pohár (všechny tratě)</button></div>
         <div class="host-opts">
           <div class="wide"><small class="track-label">Trať</small><div class="stepper"><button data-a="track-">◀</button><b class="track-name"></b><button data-a="track+">▶</button></div></div>
           <div class="wide"><small>Rychlost</small><div class="stepper"><button data-a="speed-">◀</button><b class="speed-name"></b><button data-a="speed+">▶</button></div></div>

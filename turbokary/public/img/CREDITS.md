@@ -1,0 +1,375 @@
+# TurboKáry — původ grafiky
+
+Grafika vytvořená pro tento projekt podle `turbokary/AGENTS.md`. Originální postavy a motivy; bez převzatých značek nebo herních assetů. PNG používají skutečnou průhlednost tam, kde ji zadání vyžaduje. Barevné hodnoty jsou určeny pro sRGB.
+
+## Logo
+
+- `logo.png` — vytvořeno vestavěným OpenAI ImageGen; mechanicky zmenšeno na 1600 × 560 PNG pomocí System.Drawing, průhlednost zachována. Vizuálně ověřen nápis i diakritika.
+- Prompt: Use case: logo-brand. Create the final polished original logo asset for a cheerful Czech cartoon kart racing game. Wide horizontal transparent PNG canvas approximately 1600x560. Exact single word text "TurboKáry" (capital T and K, acute accent on lowercase á; spelling T u r b o K á r y). Large wonderfully chunky playful rounded display lettering, yellow #ffd21f to orange #ff7a1a to coral red #ff4d6d gradient, very thick dark purple #1b1430 outline plus thin pale cream outer keyline for strong readability on dark purple #160f33 or a colorful 3D race scene. Dynamic slight slant, soft simple cel shading. Small original waving black and cream checker racing flag to one side. Composition fills wide canvas, all glyphs and accents fully inside with comfortable padding. Transparent empty space, no background panel, no watermark, no other text. Original visual identity, absolutely no Nintendo, Mario Kart, mushrooms, shells, question blocks, existing brands. Deliver one logo only.
+## Oblohy tratí
+
+Všechny tři oblohy byly vytvořeny vestavěným nástrojem OpenAI ImageGen (`transparent_background=false`) z níže uvedených původních promptů, bez cizích předloh. Zdrojové PNG mají 2172×724 px. Technický export přes Windows System.Drawing/GDI+: bicubic převzorkování na 4096×1024, jemné symetrické sjednocení okrajů v pásu 96 px pro horizontální opakování, plynulý přechod spodních 160 px do mlhy dané trati, RGB/sRGB a JPEG kvalita 85. JPEG může mlhovou barvu změnit o jednotku kanálu. Nezměnil se žádný zdrojový kód hry.
+
+### `sky-meadow.jpg`
+
+Prompt:
+
+> Use case: stylized-concept. Asset type: seamless horizontal sky panorama for an original cheerful low-poly kart racing game TurboKáry. Create a polished 4096 by 1024 pixel 4:1 landscape illustration, a complete 360-degree cylindrical horizon whose left and right edge continue seamlessly. Upper two-thirds: rich blue sky #3a8dff with soft chunky cumulus clouds. Lower third: layered distant blue-gray mountains with snow on a few peaks and rounded green meadow hills, gently fading into pale blue fog; bottom edge must be uniform #d6eeff. Happy colorful cartoon style, simple confident shapes, soft cel shading, clean dark indigo outlines #1b1430 softened in distant scenery. Broad continuous horizon, distant scenery only, no foreground objects, no road. Entire image opaque. No sun, moon, text, letters, logos, characters, vehicles, stars, Nintendo references, mushrooms, question blocks. Carefully match cloud placement and horizon heights at both left/right boundaries so this tiles horizontally without a seam.
+
+### `sky-desert.jpg`
+
+Prompt:
+
+> Use case: stylized-concept. Asset type: seamless horizontal sky panorama for the original cheerful low-poly kart racing game TurboKáry, desert course. Create a polished extra-wide 4096 by 1024 pixel 4:1 landscape illustration, a complete 360-degree cylindrical horizon whose left and right edge continue seamlessly with precisely identical colors, ridge heights and clouds. Upper two-thirds: rich saturated blue sky gradually softening into warm peach at the horizon, a few chunky stylized clouds. Lower third: layers of distant red-brown sandstone mesas with flat tops and softly rounded desert buttes, warm coral-orange stone faces, gently fading into pale warm fog. Bottom edge must be uniform #ffe3b8. Cheerful colorful clean cartoon game style, simple confident shapes, soft cel shading, dark indigo #1b1430 outlines softened with distance. Broad continuous horizon, distant scenery only, no foreground objects, no road. Entire image opaque. No sun, moon, text, letters, logos, characters, vehicles, Nintendo references, mushrooms, question blocks. Carefully match both left/right boundaries for seamless horizontal wrapping.
+
+### `sky-ice.jpg`
+
+Prompt:
+
+> Use case: stylized-concept. Asset type: seamless horizontal sky panorama for the original cheerful low-poly kart racing game TurboKáry, frozen lake course. Create a polished extra-wide 4096 by 1024 pixel 4:1 landscape illustration, a complete 360-degree cylindrical horizon whose left and right edge continue seamlessly with precisely identical colors and mountain heights. Upper two-thirds: cool blue-violet clear sky, a few soft chunky pale icy clouds. Lower third: layered distant angular snowy mountain peaks, white snow faces with periwinkle and blue shadows, gently fading into pale blue-lilac fog. Bottom edge must be uniform #e3ecff. Cheerful colorful clean cartoon game style, simple confident shapes, soft cel shading, dark indigo #1b1430 outlines softened with distance. Broad continuous horizon, distant scenery only, no foreground objects, no road. Entire image opaque. No sun, moon, stars, aurora, text, letters, logos, characters, vehicles, Nintendo references, mushrooms, question blocks. Carefully match both left/right boundaries for seamless horizontal wrapping.
+
+## Reklamní plachty
+
+Všechny čtyři plachty byly jednotlivě vytvořeny vestavěným OpenAI ImageGen. Mechanicky oříznuté prázdné okraje podle alfa kanálu (práh 24), proporčně zmenšené a vystředěné na průhledné plátno 1024 × 256 s minimálně 6 px okrajem pomocí System.Drawing. České názvy a diakritika byly vizuálně ověřeny.
+
+### banners/1.png — Turbo Knedlík
+
+Prompt: Use case: ads-marketing. Final original trackside sponsor billboard texture for the Czech cartoon kart game TurboKáry. One very wide 4:1 banner, final use 1024x256 PNG. Cheerful simple cartoon with bold thick dark purple #1b1430 outlines, soft cel shading, no photorealism. A bright yellow #ffd21f and orange #ff7a1a rounded rectangular sign panel occupies almost the entire image, transparent exterior corners, no wall or environment. VERY LARGE playful chunky rounded type in dark purple #1b1430 saying EXACTLY "Turbo Knedlík" and no other words. Czech accents must be correct. Text takes about 75 percent of the width; modest decorative mascot at one end: a smiling white Czech bread dumpling sliced with golden motion streaks. Simple tiny checker race accent. Readable at a distance. Front-on completely flat sign, centered, generous safety margin all around, no frame cropping. No actual companies, no Nintendo imagery, no watermark. ONLY the complete sign on transparent background.
+
+### banners/2.png — Pneu Hop
+
+Prompt: Use case: ads-marketing. Final original trackside sponsor billboard texture for the Czech cartoon kart game TurboKáry. One very wide 4:1 banner, final use 1024x256 PNG. Cheerful simple cartoon with bold thick dark purple #1b1430 outlines, soft cel shading, no photorealism. A bright turquoise #7cf3ff and teal rounded rectangular sign panel occupies almost the entire image, transparent exterior corners, no wall or environment. VERY LARGE playful chunky rounded type in dark purple #1b1430 saying EXACTLY "Pneu Hop" and no other words. Czech accents must be correct. Text takes about 75 percent of the width; modest decorative mascot at one end: one cheerful stylized black rubber tire bouncing with two small white rabbit ears. Simple tiny checker race accent. Readable at a distance. Front-on completely flat sign, centered, generous safety margin all around, no frame cropping. No actual companies, no Nintendo imagery, no watermark. ONLY the complete sign on transparent background.
+
+### banners/3.png — U Žabáka
+
+Prompt: Use case: ads-marketing. Final original trackside sponsor billboard texture for the Czech cartoon kart game TurboKáry. One very wide 4:1 banner, final use 1024x256 PNG. Cheerful simple cartoon with bold thick dark purple #1b1430 outlines, soft cel shading, no photorealism. A bright purple #160f33 rounded rectangular sign panel occupies almost the entire image, transparent exterior corners, no wall or environment. VERY LARGE playful chunky rounded type in bright yellow #ffd21f with a cream keyline saying EXACTLY "U Žabáka" and no other words. Czech accents must be correct. Text takes about 75 percent of the width; modest decorative mascot at one end: a friendly simple green frog face in a racing goggle beside a small fuel droplet. Simple tiny checker race accent. Readable at a distance. Front-on completely flat sign, centered, generous safety margin all around, no frame cropping. No actual companies, no Nintendo imagery, no watermark. ONLY the complete sign on transparent background.
+
+### banners/4.png — Koblihy Zrzka
+
+Prompt: Use case: ads-marketing. Final original trackside sponsor billboard texture for the Czech cartoon kart game TurboKáry. One very wide 4:1 banner, final use 1024x256 PNG. Cheerful simple cartoon with bold thick dark purple #1b1430 outlines, soft cel shading, no photorealism. A bright coral #ff4d6d and warm orange rounded rectangular sign panel occupies almost the entire image, transparent exterior corners, no wall or environment. VERY LARGE playful chunky rounded type in cream white with dark purple outline saying EXACTLY "Koblihy Zrzka" and no other words. Czech accents must be correct. Text takes about 75 percent of the width; modest decorative mascot at one end: an orange fox ear silhouette behind a plump golden Czech jam doughnut with a tiny red jam dot. Simple tiny checker race accent. Readable at a distance. Front-on completely flat sign, centered, generous safety margin all around, no frame cropping. No actual companies, no Nintendo imagery, no watermark. ONLY the complete sign on transparent background.
+
+## Ikony věcí
+
+Vytvořeno 31. října 2026 vestavěným nástrojem OpenAI ImageGen (nikoli API/CLI fallback). Osm samostatných generování podle zadání TurboKáry; bez externích obrazových předloh. Originální kreslená grafika, žádné značky či převzaté herní postavy. Mechanické zmenšení na 256×256 pomocí Windows System.Drawing, vysoce kvalitní bicubická interpolace, průhledný kanál alfa zachován. Export PNG sRGB. Kontrola vzhledu jednotlivě a společně ve velikosti 48 px.
+
+### `items/turbo.png`
+
+Zdrojový generovaný soubor: `exec-ae28b48d-77c8-4da7-8b42-169c7946cb77.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Subject: one chunky yellow-to-orange lightning bolt representing turbo speed, dynamic diagonal silhouette. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Palette: golden yellow #ffd21f, orange #ff7a1a, tiny pale cream highlight. Composition: one centered isolated icon, generous 10% transparent margin, fills square well and recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size.
+```
+
+### `items/turbo3.png`
+
+Zdrojový generovaný soubor: `exec-f0078ecd-d8e9-4cba-bee5-7526d17fdb1b.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Composition: centered isolated icon, generous 10% transparent margin, fills square well and unmistakably recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size. Subject: Exactly THREE clearly distinct chunky lightning bolts side by side in a dynamic fan, each yellow #ffd21f with orange #ff7a1a edges and pale cream highlight. They must form one balanced inventory icon with exactly three visible zigzag bolt silhouettes, visually legible as triple turbo speed.
+```
+
+### `items/oil.png`
+
+Zdrojový generovaný soubor: `exec-21ebb0ac-1277-4f6f-b61d-45c71df73b1f.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Composition: centered isolated icon, generous 10% transparent margin, fills square well and unmistakably recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size. Subject: One chunky black-charcoal oil jerrycan in slight three-quarter view with handle and spout, a wide horizontal yellow #ffd21f stripe on its front and one bold black oil droplet symbol in that stripe. The can is the whole silhouette, with a warm gray edge highlight. No lettering.
+```
+
+### `items/coconut.png`
+
+Zdrojový generovaný soubor: `exec-08144e14-5406-4ff5-abbf-6bce133fd487.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Composition: centered isolated icon, generous 10% transparent margin, fills square well and unmistakably recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size. Subject: One whole round brown coconut with three dark circular coconut pores arranged as two eyes and a tiny mouth, cute and mischievous. Warm brown simple segmented shell shading, a few broad curved husk marks, pale tan highlights. No limbs and no cut-open flesh. Very simple big silhouette.
+```
+
+### `items/rocket.png`
+
+Zdrojový generovaný soubor: `exec-568a0b53-87b1-49b0-9f48-cbe867943ecb.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Composition: centered isolated icon, generous 10% transparent margin, fills square well and unmistakably recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size. Subject: One chunky toy-like red-and-white rocket diagonally pointing to upper right, red rounded nose cone #ff4d6d, white main body, red triangular fins, simple cyan porthole, short bright golden yellow and orange exhaust flame. Friendly playful power-up, not a realistic weapon.
+```
+
+### `items/bees.png`
+
+Zdrojový generovaný soubor: `exec-6067b942-2b80-4428-8ab3-f034406bc5eb.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Composition: centered isolated icon, generous 10% transparent margin, fills square well and unmistakably recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size. Subject: Exactly THREE happy chubby yellow-and-black bees flying together in a compact triangular swarm. One larger central bee and two smaller bees at its sides. Each has black stripes, tiny antennae, two pale cyan wings, smiling cute face. The three separate bodies must be clearly countable and recognizable at tiny icon size. Very simple big shapes.
+```
+
+### `items/shield.png`
+
+Zdrojový generovaný soubor: `exec-16f09ba1-34cf-4e07-b85a-e1d2325c6a20.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Composition: centered isolated icon, generous 10% transparent margin, fills square well and unmistakably recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size. Subject: One round translucent blue protective bubble shield. Thick dark plum outer contour, bright cyan #7cf3ff rim and white curved reflection highlights, clear softly blue transparent center with subtle light azure glass shading. Single spherical bubble, not a medieval shield and no emblem, no object inside. Bold simple silhouette recognizable at 48 px.
+```
+
+### `items/ram.png`
+
+Zdrojový generovaný soubor: `exec-285418d7-3595-4b6a-8609-35b57e1fd108.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset type: single inventory power-up icon for original cheerful kart-racing game TurboKáry, square PNG with genuine transparent background. Style: polished cheerful hand-drawn cartoon, simple rounded shapes, very thick dark plum outline #1b1430, soft two-tone shading, crisp edge highlights. Composition: centered isolated icon, generous 10% transparent margin, fills square well and unmistakably recognizable at 48 px. No text, no border, no badge, no background, no cast shadow outside shape, no trademarks, no Nintendo motifs, no extra objects. Deliver clean transparent alpha artwork for final 256x256 size. Subject: A symmetrical pair of thick curled ram horns made from glowing golden yellow metal, facing front. Two clearly separated spiral curls join at short central golden bridge, with a small warm orange golden halo close around the horns and two tiny gleam marks. No ram head or face. The two spiral horns are the entire power-up symbol. Thick dark plum contour, bright gold #ffd21f and orange #ff7a1a shade.
+```
+
+
+## Portréty postav
+
+Všech osm portrétů vzniklo vestavěným nástrojem OpenAI ImageGen s požadavkem na skutečně průhledné pozadí. Portrét lišky byl vygenerován jako první a použit jako vlastní stylová a kompoziční reference pro ostatní postavy; nebyly použity cizí obrázky. Po generování následovalo vizuální ověření každého portrétu a mechanický export přes sharp: zmenšení na 512×512 (Lanczos3), vložení profilu sRGB a bezeztrátová PNG komprese úrovně 9 s adaptivním filtrováním, RGBA bez kvantizace. Všechny soubory mají alpha kanál, průhledné rohy a velikost 215–268 kB.
+
+### `chars/0.png` — Liška Zrzka
+
+Zdrojový výstup ImageGen: `exec-62988ca6-35fa-47b7-bdf1-0a01d576b2d7.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset: square 512x512 transparent PNG character portrait for original Czech cartoon kart-racing game TurboKáry. Character 0: a happy orange fox racer, head and shoulders, slightly turned three-quarter toward viewer. Fur #f27a24, warm cream muzzle and inner ears #fff6ea; dark navy plain T-shirt #2b2d42; orange scarf #ff7a1a at neck. Large friendly dark eyes, confident cheerful smile, two triangular ears and small head tuft. Thick clean dark-purple outline #1b1430, soft simple cel-shading, rounded chunky shapes matching a low-poly animal kart game. Polished hand-drawn 2D game UI art, simple not furry detailed, no photorealism. Composition centered, head at x256 y215 about 290px wide excluding ears, shoulders end near y460, entire ears and bust visible with generous transparent margins. No kart, no props, no text, no border, no shadow on a background, no Nintendo elements or existing characters. Actual alpha-transparent background. Render just one character.
+```
+
+### `chars/1.png` — Žabák Kvak
+
+Zdrojový výstup ImageGen: `exec-6206faab-4183-45d7-9eeb-b7f523cb2919.png`.
+Stylová reference: vlastní generovaný portrét `chars/0.png` (plné původní rozlišení).
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Make one new original character portrait for the same kart-racing game as the reference. Input image is STYLE/COMPOSITION reference only, NOT a fox character to preserve. New subject: cheerful green FROG racer, Character 1 Kvak. Bright green skin #63d34c, pale yellow-green lower face #daf7a6, big rounded protruding eyes with friendly dark pupils, broad smiling frog mouth, no ears or fur. Coral-red plain T-shirt #ff6b6b, vivid green neck scarf #3ccf4e. Match the reference's thick dark-purple #1b1430 outline, clean rounded cartoon shapes, soft cel shading, high-quality 2D game UI rendering, cheerful personality, bust crop, and same apparent head size. Front with very slight three-quarter turn, shoulders visible, all contours inside square with breathing room. Full portrait isolated on REAL TRANSPARENT BACKGROUND. Square 512x512 target. No text, no badge, no kart, no background, no existing cartoon characters.
+```
+
+### `chars/2.png` — Tučňák Frak
+
+Zdrojový výstup ImageGen: `exec-9e993124-d24c-49b3-af9b-5e9e99b286a3.png`.
+Stylová reference: vlastní generovaný portrét `chars/0.png` (plné původní rozlišení).
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Make one new original character portrait for the same kart-racing game as the reference. Input image is STYLE/COMPOSITION reference only, NOT a fox character to preserve. New subject: cheerful PENGUIN racer, Character 2 Frak. Round charcoal black head #23272e with white face patches #ffffff, large friendly dark eyes, small orange beak with joyful smile, no ears or fur. Golden-yellow plain T-shirt #ffb703 and bright cyan-blue neck scarf #22b8f0. Match the reference's thick dark-purple #1b1430 outline, clean rounded cartoon shapes, soft cel shading, high-quality 2D game UI rendering, cheerful personality, bust crop, and same apparent head size. Front with very slight three-quarter turn, shoulders visible, all contours inside square with breathing room. Full portrait isolated on REAL TRANSPARENT BACKGROUND. Square 512x512 target. No text, no badge, no kart, no background, no existing cartoon characters.
+```
+
+### `chars/3.png` — Králík Hop
+
+Zdrojový výstup ImageGen: `exec-14b47d06-890b-451a-9764-c2de43f22a24.png`.
+Stylová reference: vlastní generovaný portrét `chars/0.png` (plné původní rozlišení).
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Make one new original character portrait for the same kart-racing game as the reference. Input image is STYLE/COMPOSITION reference only, NOT a fox character to preserve. New subject: cheerful white RABBIT racer, Character 3 Hop. White fur #f4f4f4, soft pink inner ears and small nose #ffb3c9, two long upright bunny ears fully visible, round friendly eyes and a happy smile with small front teeth. Violet plain T-shirt #7b61ff, bright pink neck scarf #ff5fa8. Match the reference's thick dark-purple #1b1430 outline, clean rounded cartoon shapes, soft cel shading, high-quality 2D game UI rendering, cheerful personality, bust crop, and same apparent head width. Front with very slight three-quarter turn, shoulders visible, ears entirely inside square with breathing room. Full portrait isolated on REAL TRANSPARENT BACKGROUND. Square 512x512 target. No text, no badge, no kart, no background, no existing cartoon characters.
+```
+
+### `chars/4.png` — Kocour Mour
+
+Zdrojový výstup ImageGen: `exec-bb2ab554-98ef-493d-bdef-b447f813ef33.png`.
+Stylová reference: vlastní generovaný portrét `chars/0.png` (plné původní rozlišení).
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Make one new original character portrait for the same kart-racing game as the reference. Input image is STYLE/COMPOSITION reference only, NOT a fox character to preserve. New subject: cheerful gray tomcat racer, Character 4 Mour. Gray fur #8d8d9b, pale gray rounded muzzle #f0f0f0, triangular cat ears, small pink cat nose, a few clean whiskers, friendly dark eyes and playful confident smile. Mint-green plain T-shirt #06d6a0, rich purple neck scarf #9b4dff. Cat anatomy with short round muzzle, no long fox muzzle. Match the reference's thick dark-purple #1b1430 outline, clean rounded cartoon shapes, soft cel shading, high-quality 2D game UI rendering, cheerful personality, bust crop, and same apparent head size. Front with very slight three-quarter turn, shoulders visible, all contours inside square with breathing room. Full portrait isolated on REAL TRANSPARENT BACKGROUND. Square 512x512 target. No text, no badge, no kart, no background, no existing cartoon characters.
+```
+
+### `chars/5.png` — Medvěd Huňáč
+
+Zdrojový výstup ImageGen: `exec-b64d0b2e-1f76-4b9c-9451-72a2decf855f.png`.
+Stylová reference: vlastní generovaný portrét `chars/0.png` (plné původní rozlišení).
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Make one new original character portrait for the same kart-racing game as the reference. Input image is STYLE/COMPOSITION reference only, NOT a fox character to preserve. New subject: cheerful brown BEAR racer, Character 5 Hunac. Round broad bear head, small ROUND ears, warm brown fur #8a5a2b, tan muzzle and inner ears #d9a46c, big black nose, friendly dark eyes and warm smile. Pink-red plain T-shirt #ef476f, royal-blue neck scarf #2f6bff. Match the reference's thick dark-purple #1b1430 outline, clean rounded cartoon shapes, soft cel shading, high-quality 2D game UI rendering, cheerful personality, bust crop, and same apparent head size. Front with very slight three-quarter turn, shoulders visible, all contours inside square with breathing room. Full portrait isolated on REAL TRANSPARENT BACKGROUND. Square 512x512 target. No text, no badge, no kart, no background, no existing cartoon characters.
+```
+
+### `chars/6.png` — Robot Šroubek
+
+Zdrojový výstup ImageGen: `exec-3671ed85-4501-48c0-be80-780a9818dd76.png`.
+Stylová reference: vlastní generovaný portrét `chars/0.png` (plné původní rozlišení).
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Make one new original character portrait for the same kart-racing game as the reference. Input image is STYLE/COMPOSITION reference only, NOT a fox character to preserve. New subject: cheerful ROBOT racer, Character 6 Sroubek. A friendly rounded rectangular silver-metal robot head #c3ccd3, two cyan luminous eyes #4fe3ff in a dark face inset, simple smiling mouth display, small bolt details and round mechanical ear discs. No animal fur or animal ears. Dark blue-gray plain T-shirt #37474f on chunky robot shoulders, bright red neck scarf #e53935. Match the reference's thick dark-purple #1b1430 outline, clean rounded cartoon shapes, soft cel shading, high-quality 2D game UI rendering, cheerful personality, bust crop, and same apparent head size. Front with very slight three-quarter turn, shoulders visible, all contours inside square with breathing room. Full portrait isolated on REAL TRANSPARENT BACKGROUND. Square 512x512 target. No text, no numbers, no badge, no kart, no background, no existing cartoon characters.
+```
+
+### `chars/7.png` — Prasátko Kvík
+
+Zdrojový výstup ImageGen: `exec-049f29bf-4600-4165-ab21-064cdd45b677.png`.
+Stylová reference: vlastní generovaný portrét `chars/0.png` (plné původní rozlišení).
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Make one new original character portrait for the same kart-racing game as the reference. Input image is STYLE/COMPOSITION reference only, NOT a fox character to preserve. New subject: cheerful pink PIGLET racer, Character 7 Kvik. Round pink head #ffa7bb, darker pink snout and inner ears #ff7f9e, two small folded triangular pig ears, short round snout with exactly two nostrils, large friendly dark eyes and warm joyful smile, no fur. Teal-blue plain T-shirt #118ab2, golden-yellow neck scarf #ffd21f. Match the reference's thick dark-purple #1b1430 outline, clean rounded cartoon shapes, soft cel shading, high-quality 2D game UI rendering, cheerful personality, bust crop, and same apparent head size. Front with very slight three-quarter turn, shoulders visible, all contours inside square with breathing room. Full portrait isolated on REAL TRANSPARENT BACKGROUND. Square 512x512 target. No text, no badge, no kart, no background, no existing cartoon characters.
+```
+
+
+
+## Brána start/cíl
+
+Soubor: `start-banner.png`, 2048×256, PNG sRGB s průhledným okolím. Vytvořeno 31. října 2026 vestavěným nástrojem OpenAI ImageGen, samostatné generování bez externí obrazové předlohy. Zdroj: `exec-a2c896f5-2f19-4d43-86b2-cb301976f3c6.png`. Export Windows System.Drawing: nalezeny hranice alfa pixelů nad prahem 24/255 (ignorování neviditelného šumu), oříznut pouze prázdný okraj a zachován poměr stran ilustrace; proporční bicubické zmenšení a vystředění do průhledného plátna 2048×256. Žádná deformace písmen. Vizuálně ověřen přesný nápis START · CÍL včetně čárky nad Í a prostřední tečky.
+
+Přesný prompt:
+
+```text
+Use case: logo-brand. Asset type: original cheerful kart racing game START / FINISH gate banner texture, final 2048×256 pixels (8:1 very long horizontal aspect). Draw a single very long, low horizontal banner isolated with genuinely transparent outside area. The actual artwork must have 8:1 width-to-height proportions, centered across the image; if the canvas is taller, leave empty transparent space above and below, NEVER make the banner taller to fill the canvas. Exact text in ONE line: "START · CÍL". Preserve the Czech capital Í in CÍL (acute accent over I) and middle dot between the words. No other words. Large chunky cheerful rounded uppercase display lettering, subtle yellow #ffd21f to orange #ff7a1a shading, very thick dark plum #1b1430 outline and pale cream thin keyline so text stays readable against dark purple #160f33 or a 3D scene. A compact black-and-white checkerboard panel on EACH end of the long banner. Narrow dark-plum structural backing with softly rounded ends behind the lettering and checkerboard, small yellow trim. Face-on orthographic flat graphic, not a 3D gate, no posts, no perspective distortion. Typography consumes the central 70% of width, checkerboards each about 12% width. Crisp simple shapes, soft polished shading matching cartoon inventory icons, balanced symmetry, clean silhouette, transparent corners and surroundings. No karts, characters, scenery, trademarks, sponsor marks, Nintendo references, watermark, or extra text. Do not include any crop marks. The banner must remain very low and wide.
+```
+
+
+## Náhledy tratí
+
+Všechny tři náhledy jsou původní ilustrace vytvořené vestavěným nástrojem OpenAI ImageGen (`transparent_background=true`) z níže uvedených promptů, bez cizích předloh. Náměty vycházejí z popisů v `src/game/tracks.ts`; jde o stylizované ilustrace prostředí, nikoli přesné mapy geometrie. Export přes Windows System.Drawing/GDI+: proporcionální bicubic zmenšení do prostoru 624×344 px, vystředění na průhledném PNG plátně 640×360 px, zachování alfa kanálu a barev RGB/sRGB. Každý soubor má průhledné rohy, žádné texty ani skutečné značky. Nezměnil se žádný zdrojový kód hry.
+
+### `tracks/louka.png`
+
+Prompt:
+
+> Use case: stylized-concept. Asset type: 640x360 landscape lobby thumbnail of the Zelená louka meadow course in original cartoon kart-racing game TurboKáry. A beautiful readable isometric three-quarter aerial miniature diorama, wide composition, the entire terrain island isolated on genuinely transparent background with small clear margins. Show a continuous friendly winding asphalt kart circuit forming a broad irregular kidney-shaped closed loop, long straight in the front, easy rounded bends, red-and-white curbs, a small checkerboard start line and one small jump ramp. Lush emerald grass and rounded lime-green deciduous trees surrounding the road, rolling meadow hills behind. One tiny orange generic kart adds scale. Cheerful polished hand-drawn cartoon art, bold clean dark-indigo #1b1430 contour lines, rounded simplified shapes, soft cel shading, vivid green/blue with accents #ffd21f #ff7a1a #7cf3ff, consistent with a playful low-poly game. Preserve readable road silhouette at thumbnail size. No text, no letters, no names, no logos, no Nintendo motifs, no mushrooms, turtles or question blocks. Genuine alpha outside the diorama, no white/gray/checkerboard backdrop and no external drop shadow.
+
+### `tracks/kanon.png`
+
+Prompt:
+
+> Use case: stylized-concept. Asset type: 640x360 landscape lobby thumbnail of the Písečný kaňon desert course in original cartoon kart-racing game TurboKáry. A beautiful readable isometric three-quarter aerial miniature diorama, wide composition, the entire terrain island isolated on genuinely transparent background with small clear margins. Show a continuous winding asphalt kart circuit forming a broad irregular closed loop, long straight in the front and two sharp hairpin switchbacks deeper into the canyon. Red-and-white curbs, small checkerboard start line and two small jump ramps. Golden sandy ground, warm red-orange sandstone mesas with flat tops, rounded layered canyon walls and several bright green cacti around the road. One tiny red generic kart adds scale. Cheerful polished hand-drawn cartoon art, bold clean dark-indigo #1b1430 contour lines, rounded simplified shapes, soft cel shading, warm orange/coral/sand with turquoise accents, consistent with a playful low-poly game. Preserve readable road silhouette at thumbnail size. No text, no letters, no names, no logos, no Nintendo motifs, no mushrooms, turtles or question blocks. Genuine alpha outside the diorama, no white/gray/checkerboard backdrop and no external drop shadow.
+
+### `tracks/jezero.png`
+
+Prompt:
+
+> Use case: stylized-concept. Asset type: 640x360 landscape lobby thumbnail of the Ledové jezero frozen lake course in original cartoon kart-racing game TurboKáry. A beautiful readable isometric three-quarter aerial miniature diorama, wide composition, the entire terrain island isolated on genuinely transparent background with small clear margins. Show a continuous slippery pale cyan ice kart circuit forming a broad irregular kidney-shaped closed loop on a frozen lake, long straight in the front and wide sweeping bends. Dark icy-blue subtle tire marks, small checkerboard start line, snow banks and occasional low blue barriers mark the edges, one small icy jump ramp. White snow-covered shores, a few snow-laden fir trees, angular little snow-covered mountains at the rear. One tiny cyan generic kart adds scale. Cheerful polished hand-drawn cartoon art, bold clean dark-indigo #1b1430 contour lines, rounded simplified shapes, soft cel shading, cool blue/periwinkle/lilac and white with vivid cyan accents, consistent with a playful low-poly game. Preserve readable road silhouette at thumbnail size. No text, no letters, no names, no logos, no Nintendo motifs, no mushrooms, turtles or question blocks. Genuine alpha outside the diorama, no white/gray/checkerboard backdrop and no external drop shadow.
+
+## Ikony ovladače
+
+Každý piktogram jednotlivě vytvořen vestavěným OpenAI ImageGen, proporčně zmenšen přes System.Drawing na průhledné plátno 256 × 256, sRGB a zachovaný alfa kanál. Žádné pozadí tlačítka není součástí obrázku.
+
+### pad/gas.png
+
+Prompt: Use case: stylized-concept. Asset type: one mobile racing controller button pictogram for original cartoon game TurboKáry. Subject: a single long narrow accelerator pedal tilted slightly right, three horizontal grip grooves, a small upward speed arrow beside it. Square 256x256 final use. A beautifully clean simple bold silhouette in warm white #fff6ea with pale cyan #7cf3ff highlights and restrained soft blue-gray shading. Large rounded shapes, extremely legible at 48px. Minimal thin dark purple #1b1430 inner separators, light outer silhouette to stand out on a dark or colored UI button. Centered icon occupies 75 percent of canvas with equal safety padding. The background must be fully transparent: no button disc, no square, no badge, no ground shadow. No text, numbers, letters, branding, watermark, no existing game imagery. Only this single pictogram.
+
+### pad/brake.png
+
+Prompt: Use case: stylized-concept. Asset type: one mobile racing controller button pictogram for original cartoon game TurboKáry. Subject: a single wide short brake pedal on a small stem, three bold vertical grip grooves, a small stop bar beside it. Square 256x256 final use. A beautifully clean simple bold silhouette in warm white #fff6ea with pale cyan #7cf3ff highlights and restrained soft blue-gray shading. Large rounded shapes, extremely legible at 48px. Minimal thin dark purple #1b1430 inner separators, light outer silhouette to stand out on a dark or colored UI button. Centered icon occupies 75 percent of canvas with equal safety padding. The background must be fully transparent: no button disc, no square, no badge, no ground shadow. No text, numbers, letters, branding, watermark, no existing game imagery. Only this single pictogram.
+
+### pad/drift.png
+
+Prompt: Use case: stylized-concept. Asset type: one mobile racing controller button pictogram for original cartoon game TurboKáry. Subject: a tiny simplified top-view racing kart angled diagonally with exactly two flowing curved skid marks behind it and one broad curved directional arrow showing a sideways drift. Square 256x256 final use. A beautifully clean simple bold silhouette in warm white #fff6ea with pale cyan #7cf3ff highlights and restrained soft blue-gray shading. Large rounded shapes, extremely legible at 48px. Minimal thin dark purple #1b1430 inner separators, light outer silhouette to stand out on a dark or colored UI button. Centered icon occupies 75 percent of canvas with equal safety padding. The background must be fully transparent: no button disc, no square, no badge, no ground shadow. No text, numbers, letters, branding, watermark, no existing game imagery. Only this single pictogram.
+
+### pad/item.png
+
+Prompt: Use case: stylized-concept. Asset type: one mobile racing controller button pictogram for original cartoon game TurboKáry. Subject: one large chunky faceted crystal with a pointed top and bottom, three broad diamond facets, a tiny four-point sparkle beside it. Square 256x256 final use. A beautifully clean simple bold silhouette in warm white #fff6ea with pale cyan #7cf3ff highlights and restrained soft blue-gray shading. Large rounded shapes, extremely legible at 48px. Minimal thin dark purple #1b1430 inner separators, light outer silhouette to stand out on a dark or colored UI button. Centered icon occupies 75 percent of canvas with equal safety padding. The background must be fully transparent: no button disc, no square, no badge, no ground shadow. No text, numbers, letters, branding, watermark, no existing game imagery. Only this single pictogram.
+
+## Ikony aplikace a náhled odkazu
+
+Vytvořeno vestavěným OpenAI ImageGen. Jako vlastní reference byly použity již dodané logo a portréty ze stejné sady, žádné cizí obrazové podklady. Ověřena čitelnost malého symbolu motokáry, přesný nápis TurboKáry s čárkou a zachování vzhledu postav v náhledu. Ikony mají neprůhledné tmavě fialové pozadí dle zadání ikon; OG obsahuje plnou neprůhlednou ilustraci. Mechanický export sharp: Lanczos3 zmenšení, profil sRGB, PNG komprese 9 a adaptivní filtrování bez kvantizace.
+
+### `../icon-512.png` a `../icon-192.png`
+
+Výsledné rozměry: 512×512 a 192×192. Menší ikona je mechanicky odvozena z finální větší. Zdrojový výstup: `exec-7e6fae70-8b97-4f75-80c1-8ce7565a13c6.png`. Stylová a barevná reference: `logo.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset: square app icon for an original cheerful cartoon kart racing game, final 512x512 and 192x192. Input image is ONLY style and color reference, do NOT include its text or flag. Create one distinctive compact racing GO-KART, low to the ground, chunky four black rubber tires, orange body #ff7a1a with golden yellow nose panel #ffd21f, small cyan accents #7cf3ff, visible steering wheel and simple dark seat, NO DRIVER. View from slightly above front three-quarter, nose facing lower right, strong readable silhouette, dynamic playful attitude. Thick clean dark purple outlines #1b1430, simple rounded geometric shapes, soft cel shading and a few clean highlights, polished 2D cartoon illustration. Center the full kart with 12% safe margin all around; it occupies roughly 78% of the square. BACKGROUND is a full solid dark purple #160f33 square, no rounded tile and no border. A few simple cyan speed strokes behind the kart, restrained, no other objects. Avoid any text, letters, logos, characters, flags, mushrooms, shells, question-mark boxes, real brands, or Nintendo imagery. High contrast and clean enough to recognize at 48 pixels.
+```
+
+### `../og.png`
+
+Výsledné rozměry: 1200×630. Zdrojový výstup: `exec-b3fa7731-3abd-401b-a690-1626c67e7859.png`. Reference: `logo.png`, `chars/0.png`, `chars/1.png`, `chars/2.png`. Logo a závodní scéna byly vytvořeny společně v ImageGen s instrukcí zachovat podobu a text loga; následně pouze změna rozměrů a bezeztrátový export.
+
+Přesný prompt:
+
+```text
+Use case: ads-marketing. Create a polished landscape social share / Open Graph cover for original Czech cartoon kart-racing game, exact final aspect ratio 1200:630. Input image 1 is the EXISTING LOGO to preserve faithfully, including the exact spelling and accent "TurboKáry": T u r b o K á r y, acute accent above lowercase á, upper-case K. Images 2,3,4 are our original CHARACTER IDENTITY references: orange fox Zrzka with navy shirt/orange scarf, green frog Kvak with coral shirt/green scarf, black-and-white penguin Frak with yellow shirt/cyan scarf. Preserve their species, face style, shirt/scarf colors. Compose an exciting premium 2D cartoon game cover: the logo large and fully visible across the upper center, about 65% of canvas width, with space around the accent and the checkered flag. Below it, three happy racers in separate colorful go-karts taking a sweeping racetrack bend: orange fox driving orange kart in foreground left-center; green frog in green kart on the right; penguin in cyan-blue kart a little behind. All three faces recognizable, hands on steering wheels. Keep heads and wheels inside frame. Setting is a cheerful green meadow track with simple rolling hills and a few soft clouds, the upper backdrop behind logo smoothly becomes deep purple #160f33 for clear legibility. Bold dark-purple #1b1430 clean outlines, chunky simple rounded forms, soft cel-shading, vivid yellow #ffd21f, orange #ff7a1a, red #ff4d6d and cyan #7cf3ff accents. Dynamic but uncluttered, strong hierarchy, charming original browser game. Opaque illustrated image filling entire canvas. No extra text or tagline, no logos beyond provided TurboKáry, no Nintendo characters, mushrooms, shells or question-mark crates, no real brands. Preserve the exact supplied logo wordmark; do not add extra letters, alter á, or cut off flag.
+```
+
+
+## Nová věc: Křídla
+
+### `items/wings.png`
+
+Vytvořeno vestavěným OpenAI ImageGen. Vlastní stylové reference ze stejné sady: `items/ram.png` a `items/turbo.png`; jejich motivy nebyly převzaty. Dvě bílá křídla s tyrkysovými, žlutými a korálovými konci, tmavě fialový obrys a měkké kreslené stínování. Zdrojový výstup: `exec-9cc3acee-6d44-4e8b-b437-93236b03032c.png`. Mechanický export sharp: ořez prázdných okrajů podle alfa kanálu, Lanczos3 zmenšení na plátno 256×256 s bezpečným okrajem, profil sRGB, zachovaná průhlednost, PNG komprese 9 bez kvantizace. Ověřena čitelnost v 48×48.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept.
+Asset type: one transparent item icon for original cheerful kart racing game TurboKáry, final usage 256x256 and 48x48.
+Reference image 1 (ram.png) and reference image 2 (turbo.png) are STYLE REFERENCES ONLY: match the confident thick dark purple #1b1430 outline, bold simple shapes, clean glossy soft cel shading, vibrant color and isolated silhouette. Do not include horns or lightning.
+Subject: exactly TWO WHITE FEATHERED WINGS with colorful feather tips, a mirrored left wing and right wing opening upward and outward. The wings form a strong compact wide V, each has a chunky rounded root near the lower middle and four or five broad simplified feathers spreading out. Mostly luminous creamy WHITE feathers with gentle pale lilac and blue shadows. At the ends of the broad feathers, small crisp saturated tips alternate cyan #7cf3ff, golden yellow #ffd21f and coral #ff4d6d. This reads immediately as a pair of flying wings even at 48px. Each wing is a separate closed silhouette with a narrow transparent gap between roots, no body or central badge.
+Composition: centered in a SQUARE canvas, fills about 88% of canvas width and 72% height, balanced and energetic, all feathers inside frame with comfortable padding. Flat frontal icon view.
+Background: genuinely transparent, preserve full alpha around and between wings. No opaque background or tile, no ground shadow.
+Constraints: only the two white wings with colored tips; no text, numbers, characters, hearts, halos, stars, logos, brand references, mushrooms, shells or question-mark boxes. Clean polished 2D cartoon game inventory icon.
+```
+
+
+## Obloha Šílené hory — `sky-crazy.jpg`
+
+Vytvořeno vestavěným OpenAI ImageGen, nejprve generování se stávající herní `sky-desert.jpg` jako referencí stylu a měřítka vzdálené krajiny, poté cílená úprava horských siluet. Nebyly použity cizí fotografie ani značky. Oba kroky měly `transparent_background=false`.
+
+Technický export přes Windows System.Drawing/GDI+: zdrojové PNG 2172×724 px bylo bicubic převzorkováno na 4096×1024 px. Pro horizontální opakování byly sjednoceny levý a pravý okraj v pásu 128 px, s plně symetrickým prvním 16px pásem. Horních 96 px přechází do #4b3ab8, spodních 160 px do #ffb68a. JPEG kvalita 85. Explicitní sRGB ICC profil (480 B, již použitý v ikonách této hry) byl vložen jako APP2 metadata bez dalšího překódování.
+
+### Prompt pro generování
+
+> Use case: stylized-concept. Asset type: seamless horizontal sky panorama for the Šílená hora course in the original cheerful low-poly kart racing game TurboKáry. Image 1 is only a style/composition reference: match its clean soft cel-shaded cartoon landscape, atmospheric layers, scale of distant horizon and large open sky. Create a NEW extra-wide 4096 by 1024 pixel 4:1 panorama, a complete 360-degree cylindrical horizon whose left and right edge continue seamlessly, with identical colors, cloud shapes and ridge heights at the join. A dramatic glowing sunset WITHOUT any visible sun disk or sun rays: upper two-thirds of the image fade from saturated violet #4b3ab8 at the top through purple-pink and coral into warm peach toward the horizon. A few broad, softly faceted clouds tinted lavender and warm peach. In the lower third, layers of distant rocky jagged mountain peaks, angular sculpted ridges with indigo-violet shadows and warm peach-lit faces, fading smoothly into peach fog. Keep the mountains distant and modest in scale, comparable to Image 1. The entire bottom edge must fade to uniform #ffb68a. Colorful polished cartoon game art, simple confident shapes, soft cel shading, clean dark indigo outlines softened by atmospheric distance. No foreground objects, roads, buildings, characters, vehicles, airplanes, explosions, text, logos, sun, moon, stars, Nintendo motifs, mushrooms or question blocks. Entire image opaque. Match both horizontal edges carefully for seamless wrapping.
+
+### Prompt pro cílenou úpravu štítů
+
+> Use case: precise-object-edit. Image 1 is the edit target, a seamless cartoon sunset panorama for TurboKáry. Change ONLY the mountain silhouettes in the lower third: replace the flat-topped desert mesas and buttes with distant rugged alpine rocky peaks, sharply triangular pointed summits, steep angular cliffs and overlapping jagged ridges. This is a high mountain course, not a desert. Maintain the same restrained horizon scale and atmospheric layers, violet shadow faces and peach-lit rock. Preserve the entire violet #4b3ab8 to coral to peach sky, every cloud, the low peach fog, the composition, and horizontal wraparound edge continuity. Bottom edge fades to #ffb68a. Polished simple cartoon cel shading consistent with the current image. No snow, no sun disk, no moon, no text, no buildings, no roads or foreground objects. Desired final panoramic aspect 4:1. Opaque background.
+
+### Ověření výsledku
+
+- Rozměry: 4096×1024 px; velikost 229 873 B, tedy výrazně pod 1,5 MB.
+- Soubor: JPG, kvalita 85, RGB, vložený sRGB ICC profil ověřen čtením výsledného souboru.
+- Vizuálně: dramatický fialovo-broskvový západ, vzdálené ostré skalnaté štíty, bez slunečního kotouče, textu a popředních objektů.
+- Návaznost levého/pravého sloupce po ztrátové JPEG kompresi: průměrný rozdíl 0,2783/255 na kanál; maximální jednotlivý rozdíl 6/255. 706 z 1024 řádků má krajní pixely identické. Bez viditelného svislého švu.
+- Horní středový pixel po JPEG: RGB(74,58,183), spodní: RGB(255,182,139), odchylka nejvýše 1 na kanál od předepsaných barev.
+
+
+Zdroje vestavěného generátoru: `exec-6ef934c1-d47d-4fe5-a069-864ea31f05ed.png` (první verze), `exec-cb5f508a-2aaa-4475-8e5b-09ce9d434dbc.png` (vybraná finální verze před technickým exportem).
+
+
+## Náhled čtvrté trati — Šílená hora
+
+Soubor: `tracks/hora.png` (640×360 PNG, RGBA, vložený profil sRGB, 373 443 B).
+
+Vytvořeno vestavěným nástrojem OpenAI ImageGen podle zadání Šílené hory. Vlastní existující náhledy `tracks/kanon.png`, `tracks/louka.png` a `tracks/jezero.png` sloužily jako stylové a kompoziční reference. Následovala jedna cílená úprava v ImageGen: nahrazení potoka pod mostem spodním úsekem závodní trati, aby bylo viditelné mimoúrovňové křížení dvou cest. Scéna obsahuje serpentiny, rozdíly výšek, tunel, most přes trať a velký skok ve fialovobroskvovém osvětlení, bez textu. Nejde o snímek skutečného herního okruhu, ale stylizovanou ilustraci.
+
+Zdrojový výstup prvního generování: `exec-69361042-77c5-40d6-ac53-42b5dcd08d77.png`.
+Finální zdroj po úpravě: `exec-f1dc4c02-e79d-4172-8c4f-bc91bb2873b0.png`.
+
+Export: sharp, zmenšení Lanczos3 na 640×360 pomocí contain bez ořezu, průhledné případné doplnění okrajů, sRGB ICC, bezeztrátová PNG komprese úrovně 9 s adaptivním filtrováním. Ověřeny rozměry, skutečný alpha kanál, nulová alpha všech čtyř rohů (89 784 zcela průhledných pixelů) a vzhled v konečné velikosti. Žádné ruční dokreslování, cizí obrázky ani textury.
+
+### Přesný původní prompt
+
+```text
+Use case: stylized-concept. Asset: one lobby track thumbnail for the original Czech cartoon kart game TurboKáry, final 640x360 landscape 16:9 PNG with REAL TRANSPARENT surroundings. Input images are STYLE AND COMPOSITION REFERENCES ONLY: match their charming miniature isometric floating-island diorama, chunky clean outlined shapes, softly shaded colorful game illustration, and legibility at thumbnail size; create a different mountain track.
+Subject: "Crazy Mountain" racetrack diorama viewed from above at an isometric three-quarter angle. A spectacular small rocky mountain island with clearly visible height differences: a gray asphalt circuit climbs a series of hairpin switchbacks, enters a dark arched tunnel THROUGH the central mountain rock, emerges higher up, and passes across a sturdy elevated bridge that visibly crosses ABOVE a lower segment of the road. Include one prominent jump: a yellow launch ramp ending at a modest gap and a clearly aligned landing ramp, with a tiny orange go-kart airborne above the gap. Red-and-white curb stripes and a few simple safety rails make the driving route legible. Use layered purple and mauve crags with warm peach highlights, a few small pine trees, and dramatic violet-to-peach sunset lighting (violet #4b3ab8 shadows, peach #ffb68a rim light). Keep the tunnel opening, overpass crossing, switchbacks, and jump distinct and immediately understandable, with a compact unified island footprint. The mountain should feel adventurous and playful, not realistic or grim.
+Full island silhouette entirely visible, centered, generous clear alpha margin on all four sides, broad horizontal composition filling most of the 16:9 frame. Bold dark outline #1b1430, soft cel shading, crisp attractive details consistent with the reference thumbnails. NO SKY PANEL, no ground beyond the floating diorama, no backdrop, no cast shadow outside the island, no rectangular card. No text, labels, numbers, logos, signs with writing, people, real brands or existing game characters. Actual transparent background, NOT a checkerboard painted in the image. One illustration only.
+```
+
+### Přesný prompt cílené úpravy
+
+```text
+Use case: precise-object-edit. Edit the provided mountain kart-racing diorama. Change ONLY the water area under and behind the large central stone bridge: REPLACE ALL of that waterfall, turquoise water and water-pool rocks with a clearly visible LOWER GRAY ASPHALT RACE TRACK with red-and-white curbs that passes UNDER THE BRIDGE ARCH. The upper road on the stone bridge must visibly cross over this lower roadway. Make the lower roadway emerge from the arch toward the viewer then bend right to join the existing lower foreground circuit naturally; remove any fence blocking that connection. No water or waterfall remains. Keep the rest of the composition, purple/peach mountain colors, tunnel through the mountain on the left, switchbacks, yellow jump ramps and tiny airborne orange kart, trees, stone island silhouette, thick outlined colorful cartoon style and full transparent surroundings unchanged. This is an overpass with two racing road levels, not a bridge over a river. No new text or labels. Preserve REAL ALPHA TRANSPARENCY and 16:9 landscape composition with the whole diorama visible.
+```

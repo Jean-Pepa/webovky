@@ -647,6 +647,30 @@ class Game {
         }
       },
       bounce: () => this.sound.play("bonk", 0.5),
+      golden: (k, item) => {
+        if (!k.human) return;
+        this.sound.play("fanfare", 0.6);
+        this.hud.message(this.idx(k), item === "wings" ? "🦅 ZLATÁ BEDNA: KŘÍDLA!" : "ZLATÁ BEDNA!", "good", 1800);
+        this.buzz(k, [40, 30, 40]);
+      },
+      planeWarn: (x, _y, z, inS) => {
+        this.sound.play("warn");
+        this.humans.forEach((k, i) => {
+          if ((k.x - x) ** 2 + (k.z - z) ** 2 < 380 ** 2) {
+            this.hud.message(i, "✈️ Pozor! Padá letadlo!", "hit", Math.round(inS * 1000));
+            this.buzz(k, [80, 60, 80]);
+          }
+        });
+      },
+      planeCrash: (x, _y, z) => {
+        this.sound.play("boom", 1);
+        this.sound.play("hit", 0.8);
+        this.humans.forEach((k, i) => {
+          const d = Math.hypot(k.x - x, k.z - z);
+          if (d < 160) this.view.shake(i, Math.max(0.3, 1.4 - d / 120));
+          if (d < 60) this.buzz(k, 250);
+        });
+      },
       go: () => {
         this.hud.count("JEĎ!");
         this.sound.play("go");
@@ -663,7 +687,7 @@ class Game {
         if (!k.human) return;
         this.hud.message(this.idx(k), `CÍL! ${place}. místo`, "finish", 5000);
         this.sound.play("finish");
-        this.fx.confetti(k.x, k.z);
+        this.fx.confetti(k.x, k.z, k.gy);
         this.buzz(k, [90, 60, 90, 60, 220]);
       },
       over: () => this.showResults(),
@@ -683,7 +707,7 @@ class Game {
       hit: (k, by, kind) => {
         this.sound.play(kind === "oil" ? "oil" : "hit", k.human ? 1 : 0.5);
         if (k.human) {
-          const msg = { rocket: "Zásah raketou!", oil: "Uklouznutí na oleji!", coconut: "Bum! Kokos!", bees: "Au, včely!", ram: "Trkl tě beran!" }[kind];
+          const msg = { rocket: "Zásah raketou!", oil: "Uklouznutí na oleji!", coconut: "Bum! Kokos!", bees: "Au, včely!", ram: "Trkl tě beran!", plane: "Trosky letadla!" }[kind];
           this.hud.message(this.idx(k), msg, "hit");
           this.buzz(k, [220, 80, 220]);
           this.view.shake(this.idx(k), 1);
@@ -716,6 +740,9 @@ class Game {
         else if (item === "ram") {
           this.sound.play("ram");
           this.hud.message(this.idx(k), "BERANIDLO!", "good", 1200);
+        } else if (item === "wings") {
+          this.sound.play("jump");
+          this.hud.message(this.idx(k), "🦅 LETÍŠ!", "good", 1200);
         } else if (item === "coconut" || (item === "oil" && dir > 0)) this.sound.play("throw", v);
         else if (item !== "bees") this.sound.play("oil", 0.6);
       },
@@ -1008,6 +1035,8 @@ class Game {
             item: k.item,
             finished: k.finished,
             d: Math.round(k.proj.d * 10) / 10,
+            frac: Math.round((k.proj.s / this.track.length) * 1000) / 1000,
+            wy: Math.round(k.wy * 10) / 10,
             steer: Math.round(k.input.steer * 100) / 100,
             gas: k.input.gas,
             auto: this.race!.autopilot.has(k.slot),
@@ -1022,6 +1051,13 @@ class Game {
           this.forced.delete(slot);
           this.race?.autopilot.delete(slot);
         }
+      },
+      plane: () => this.race?.forcePlane(),
+      debris: () => this.race?.events?.debrisCount ?? 0,
+      events: () => this.race?.events?.stats ?? null,
+      height: (slot: number) => {
+        const k = this.race?.kartOf(slot);
+        return k ? { y: k.y, gy: k.gy, wy: k.wy, fly: k.flyT } : null;
       },
       giveItem: (slot: number, item: string) => {
         const k = this.race?.kartOf(slot);

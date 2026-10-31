@@ -46,10 +46,19 @@ export class Track {
   readonly rx: Float32Array;
   readonly rz: Float32Array;
   readonly sAt: Float32Array;
+  /** výška silnice (m) v každém bodu */
+  readonly py: Float32Array;
+  /** trať má výškové rozdíly */
+  readonly hasHeight: boolean;
+  /** 1 = úsek vede po mostě nad jinou částí trati */
+  readonly bridge: Uint8Array;
   /** zakřivení (+ = doleva), vyhlazené */
   readonly curv: Float32Array;
   readonly group = new THREE.Group();
-  readonly itemSpots: { x: number; z: number }[] = [];
+  readonly itemSpots: { x: number; z: number; y: number }[] = [];
+  readonly goldens: { x: number; z: number; y: number }[] = [];
+  readonly tunnels: { s0: number; s1: number }[] = [];
+  readonly planeSpots: number[] = [];
   readonly pads: Pad[] = [];
   readonly ramps: Ramp[] = [];
   readonly bounds = { minX: 0, maxX: 0, minZ: 0, maxZ: 0 };
@@ -67,7 +76,7 @@ export class Track {
     this.wallD = def.hw + OFFROAD;
 
     const curve = new THREE.CatmullRomCurve3(
-      def.pts.map(([x, z]) => new THREE.Vector3(x, 0, z)),
+      def.pts.map((p) => new THREE.Vector3(p[0], p[2] ?? 0, p[1])),
       true,
       "centripetal",
     );
@@ -84,12 +93,16 @@ export class Track {
     this.rx = new Float32Array(n);
     this.rz = new Float32Array(n);
     this.sAt = new Float32Array(n);
+    this.py = new Float32Array(n);
+    this.bridge = new Uint8Array(n);
     this.curv = new Float32Array(n);
     for (let i = 0; i < n; i++) {
       this.px[i] = pts[i].x;
       this.pz[i] = pts[i].z;
+      this.py[i] = pts[i].y;
       this.sAt[i] = i * this.ds;
     }
+    this.hasHeight = def.pts.some((p) => (p[2] ?? 0) !== 0);
     const head = new Float32Array(n);
     for (let i = 0; i < n; i++) {
       const a = (i - 1 + n) % n, b = (i + 1) % n;
@@ -129,12 +142,40 @@ export class Track {
       arr.push(i);
     }
 
+    // mosty: úsek je vysoko nad jinou (vzdálenou) částí trati
+    if (this.hasHeight) {
+      const reach = Math.ceil((2 * this.wallD + 6) / 16);
+      for (let i = 0; i < n; i++) {
+        if (this.py[i] < 5) continue;
+        const cx = Math.floor(this.px[i] / 16), cz = Math.floor(this.pz[i] / 16);
+        outer: for (let ix = -reach; ix <= reach; ix++)
+          for (let iz = -reach; iz <= reach; iz++) {
+            const arr = this.hash.get((cx + ix + 500) * 2000 + (cz + iz + 500));
+            if (!arr) continue;
+            for (const j of arr) {
+              const along = Math.min(Math.abs(i - j), n - Math.abs(i - j)) * this.ds;
+              if (along < 60 || this.py[i] - this.py[j] < 5) continue;
+              if (Math.hypot(this.px[i] - this.px[j], this.pz[i] - this.pz[j]) < 2 * this.wallD + 6) {
+                this.bridge[i] = 1;
+                break outer;
+              }
+            }
+          }
+      }
+    }
+
     for (const f of def.items) {
       for (const lat of [-0.62, -0.21, 0.21, 0.62]) {
         const p = this.pointAt(f * this.length, lat * this.hw);
         this.itemSpots.push(p);
       }
     }
+    for (const g of def.golden) {
+      const p = this.pointAt(g.at * this.length, g.d * this.hw * 0.8);
+      this.goldens.push({ x: p.x, z: p.z, y: p.y + g.h });
+    }
+    for (const t of def.tunnels ?? []) this.tunnels.push({ s0: t.from * this.length, s1: t.to * this.length });
+    for (const f of def.planes ?? []) this.planeSpots.push(f * this.length);
     for (const b of def.boosts) {
       this.pads.push({ s0: b.at * this.length, len: 8, d: b.d * this.hw * 0.7, halfW: 2.3 });
     }
@@ -214,7 +255,31 @@ export class Track {
     const i = Math.floor(f) % this.n, j = (i + 1) % this.n, t = f - Math.floor(f);
     const x = this.px[i] + (this.px[j] - this.px[i]) * t + this.rx[i] * d;
     const z = this.pz[i] + (this.pz[j] - this.pz[i]) * t + this.rz[i] * d;
-    return { x, z, heading: Math.atan2(this.tx[i], this.tz[i]), idx: i };
+    const y = this.py[i] + (this.py[j] - this.py[i]) * t;
+    return { x, y, z, heading: Math.atan2(this.tx[i], this.tz[i]), idx: i };
+  }
+
+  /** Výška silnice ve vzdálenosti s od startu. */
+  heightAt(s: number) {
+    if (!this.hasHeight) return 0;
+    const L = this.length;
+    s = ((s % L) + L) % L;
+    const f = s / this.ds;
+    const i = Math.floor(f) % this.n, j = (i + 1) % this.n;
+    return this.py[i] + (this.py[j] - this.py[i]) * (f - Math.floor(f));
+  }
+
+  /** Sklon silnice (stoupání na metr) ve směru jízdy. */
+  slopeAt(s: number) {
+    if (!this.hasHeight) return 0;
+    const i = this.idxAt(s), j = (i + 1) % this.n;
+    return (this.py[j] - this.py[i]) / this.ds;
+  }
+
+  /** Je místo s v tunelu? */
+  inTunnel(s: number) {
+    for (const t of this.tunnels) if (s >= t.s0 && s <= t.s1) return true;
+    return false;
   }
 
   /** Startovní rošt: dvě řady za startovní čarou. */
@@ -297,7 +362,8 @@ export class Track {
       const rl = Math.hypot(rx, rz) || 1;
       rx /= rl;
       rz /= rl;
-      pos.push(cx + rx * dIn, y, cz + rz * dIn, cx + rx * dOut, y, cz + rz * dOut);
+      const hy = y + this.py[i] + (this.py[j] - this.py[i]) * t;
+      pos.push(cx + rx * dIn, hy, cz + rz * dIn, cx + rx * dOut, hy, cz + rz * dOut);
       const v = (s - s0) / vScale;
       uv.push(0, v, 1, v);
       nor.push(0, 1, 0, 0, 1, 0);
@@ -321,7 +387,7 @@ export class Track {
     for (let k = 0; k <= n; k++) {
       const i = k % n;
       const x = this.px[i] + this.rx[i] * d, z = this.pz[i] + this.rz[i] * d;
-      pos.push(x, 0, z, x, h, z);
+      pos.push(x, this.py[i], z, x, this.py[i] + h, z);
       const u = (k * this.ds) / 8;
       uv.push(u, 0, u, 1);
       if (k < n) {
@@ -435,10 +501,149 @@ export class Track {
       this.group.add(new THREE.Mesh(g, padMat));
     }
 
+    if (this.hasHeight) this.buildElevation();
+    this.buildTunnels();
     this.buildRamps();
     this.buildBanners();
     this.buildDecor();
     this.buildScenery();
+  }
+
+  /** Výškové úseky: travnaté pásy v úrovni silnice, skalní srázy dolů k zemi, mosty s pilíři. */
+  private buildElevation() {
+    const th = this.theme;
+    const L = this.length;
+    const deckTex = TX.ground(th.ground, th.groundDots, th.flowers);
+    const deckMat = new THREE.MeshLambertMaterial({ map: deckTex, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
+    for (const side of [-1, 1]) {
+      const a = side * (this.hw + 1.3), b = side * this.wallD;
+      this.group.add(new THREE.Mesh(this.strip(0, L, Math.min(a, b), Math.max(a, b), 0.012, 8), deckMat));
+    }
+    // srázy a čela mostů
+    const rockMat = new THREE.MeshLambertMaterial({ map: TX.rock(), side: THREE.DoubleSide });
+    const n = this.n;
+    for (const side of [-1, 1]) {
+      const d = side * (this.wallD + 0.3);
+      let run: number[] = [];
+      const flush = () => {
+        if (run.length > 1) {
+          const pos: number[] = [], uv: number[] = [], idx: number[] = [];
+          run.forEach((i, k) => {
+            const x = this.px[i] + this.rx[i] * d, z = this.pz[i] + this.rz[i] * d;
+            const bottom = this.bridge[i] ? this.py[i] - 0.9 : -1;
+            pos.push(x, this.py[i] + 0.05, z, x, bottom, z);
+            uv.push((k * this.ds) / 6, this.py[i] / 6, (k * this.ds) / 6, bottom / 6);
+            if (k < run.length - 1) idx.push(k * 2, k * 2 + 2, k * 2 + 1, k * 2 + 1, k * 2 + 2, k * 2 + 3);
+          });
+          const g = new THREE.BufferGeometry();
+          g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+          g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+          g.setIndex(idx);
+          g.computeVertexNormals();
+          this.group.add(new THREE.Mesh(g, rockMat));
+        }
+        run = [];
+      };
+      for (let k = 0; k <= n; k++) {
+        const i = k % n;
+        if (this.py[i] > 0.3) run.push(i);
+        else flush();
+      }
+      flush();
+    }
+    // spodek mostů a pilíře
+    const concrete = new THREE.MeshLambertMaterial({ color: 0x9aa0a8, side: THREE.DoubleSide });
+    let start = -1;
+    for (let k = 0; k <= n; k++) {
+      const i = k % n;
+      const on = k < n && this.bridge[i] === 1;
+      if (on && start < 0) start = k;
+      if (!on && start >= 0) {
+        this.group.add(new THREE.Mesh(this.strip(start * this.ds, k * this.ds, -this.wallD - 0.3, this.wallD + 0.3, -0.9, 10), concrete));
+        start = -1;
+      }
+    }
+    const pillarGeo = new THREE.BoxGeometry(1.4, 1, 1.4);
+    for (let i = 0; i < n; i += Math.round(12 / this.ds)) {
+      if (!this.bridge[i]) continue;
+      for (const side of [-1, 1]) {
+        const x = this.px[i] + this.rx[i] * side * (this.wallD - 1.2);
+        const z = this.pz[i] + this.rz[i] * side * (this.wallD - 1.2);
+        // pilíř nesmí stát na silnici pod mostem
+        let blocked = false;
+        for (let j = 0; j < n && !blocked; j += 2)
+          if (this.py[j] < this.py[i] - 5 && (this.px[j] - x) ** 2 + (this.pz[j] - z) ** 2 < (this.wallD + 1.5) ** 2) blocked = true;
+        if (blocked) continue;
+        const h = this.py[i] - 0.9;
+        const m = new THREE.Mesh(pillarGeo, concrete);
+        m.scale.y = h;
+        m.position.set(x, h / 2, z);
+        this.group.add(m);
+      }
+    }
+  }
+
+  /** Tunel skrz skálu: oblouk nad silnicí, lampy a balvany nad ním. */
+  private buildTunnels() {
+    if (!this.tunnels.length) return;
+    const W = this.wallD + 0.3, H = 9, M = 14;
+    const archMat = new THREE.MeshLambertMaterial({ map: TX.rock(0x5b534c), side: THREE.DoubleSide });
+    const boulderMat = new THREE.MeshLambertMaterial({ color: 0x7a6e64, flatShading: true });
+    const lampMat = new THREE.MeshBasicMaterial({ color: 0xfff2a8 });
+    const lampGeo = new THREE.BoxGeometry(1.6, 0.25, 0.6);
+    const r = rng(77);
+    for (const t of this.tunnels) {
+      const steps = Math.max(2, Math.round((t.s1 - t.s0) / 2));
+      const pos: number[] = [], uv: number[] = [], idx: number[] = [];
+      for (let k = 0; k <= steps; k++) {
+        const s = t.s0 + ((t.s1 - t.s0) * k) / steps;
+        const p = this.pointAt(s, 0);
+        const i = p.idx;
+        for (let m = 0; m <= M; m++) {
+          const a = (Math.PI * m) / M;
+          const d = -W * Math.cos(a);
+          const y = p.y + H * Math.pow(Math.sin(a), 0.55);
+          pos.push(p.x + this.rx[i] * d, y, p.z + this.rz[i] * d);
+          uv.push(m / 3, ((s - t.s0) / 6));
+          if (k < steps && m < M) {
+            const a0 = k * (M + 1) + m, b0 = a0 + M + 1;
+            idx.push(a0, b0, a0 + 1, a0 + 1, b0, b0 + 1);
+          }
+        }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+      g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+      g.setIndex(idx);
+      g.computeVertexNormals();
+      this.group.add(new THREE.Mesh(g, archMat));
+      // lampy u stropu
+      for (let s = t.s0 + 5; s < t.s1 - 3; s += 10) {
+        const p = this.pointAt(s, 0);
+        const lamp = new THREE.Mesh(lampGeo, lampMat);
+        lamp.position.set(p.x, p.y + H - 0.35, p.z);
+        lamp.rotation.y = p.heading;
+        this.group.add(lamp);
+      }
+      // skála nad tunelem a kolem vjezdů
+      for (let s = t.s0 - 6; s <= t.s1 + 6; s += 14) {
+        const p = this.pointAt(s, 0);
+        const i = p.idx;
+        const rad = 9 + r() * 5;
+        const top = new THREE.Mesh(new THREE.DodecahedronGeometry(rad, 0), boulderMat);
+        top.position.set(p.x + this.rx[i] * (r() - 0.5) * 6, p.y + H + rad * 0.8, p.z + this.rz[i] * (r() - 0.5) * 6);
+        top.rotation.set(r() * 3, r() * 3, r() * 3);
+        top.scale.y = 0.75;
+        this.group.add(top);
+        for (const side of [-1, 1]) {
+          const rs = 7 + r() * 6;
+          const b = new THREE.Mesh(new THREE.DodecahedronGeometry(rs, 0), boulderMat);
+          b.position.set(p.x + this.rx[i] * side * (W + rs * 0.85), p.y + rs * 0.35, p.z + this.rz[i] * side * (W + rs * 0.85));
+          b.rotation.set(r() * 3, r() * 3, r() * 3);
+          this.group.add(b);
+        }
+      }
+    }
   }
 
   private buildRamps() {
@@ -461,8 +666,8 @@ export class Track {
       side.computeVertexNormals();
       const p = this.pointAt(r.s0 + L / 2, r.d);
       const g = new THREE.Group();
-      g.position.set(p.x, 0.02, p.z);
-      g.rotation.y = p.heading;
+      g.position.set(p.x, p.y + 0.02, p.z);
+      g.rotation.set(-Math.atan(this.slopeAt(r.s0 + L / 2)), p.heading, 0, "YXZ");
       g.add(new THREE.Mesh(top, topMat), new THREE.Mesh(side, sideMat));
       this.group.add(g);
     }
@@ -475,7 +680,7 @@ export class Track {
   private buildGantry() {
     const p = this.pointAt(0, 0);
     const g = new THREE.Group();
-    g.position.set(p.x, 0, p.z);
+    g.position.set(p.x, p.y, p.z);
     g.rotation.y = p.heading;
     const postMat = new THREE.MeshLambertMaterial({ color: 0x2b2d42 });
     const span = this.wallD + 0.8;
@@ -542,7 +747,7 @@ export class Track {
       const m = new THREE.MeshLambertMaterial({ map: TX.banner(k) });
       this.bannerMats.push(m);
       const g = new THREE.Group();
-      g.position.set(p.x, 0, p.z);
+      g.position.set(p.x, p.y, p.z);
       g.rotation.y = p.heading + (sp.side > 0 ? Math.PI / 2 : -Math.PI / 2);
       const board = new THREE.Mesh(new THREE.PlaneGeometry(9, 2.25), m);
       board.position.y = 1.9;
@@ -722,7 +927,7 @@ export class Track {
     const side = this.distanceToTrack(left.x, left.z) > this.distanceToTrack(right.x, right.z) ? -1 : 1;
     const p = this.pointAt(s, side * (this.wallD + 7));
     const g = new THREE.Group();
-    g.position.set(p.x, 0, p.z);
+    g.position.set(p.x, p.y, p.z);
     g.rotation.y = p.heading + (side > 0 ? Math.PI / 2 : -Math.PI / 2);
     const steelMat = new THREE.MeshLambertMaterial({ color: 0xdfe3ea });
     const seatMat = new THREE.MeshLambertMaterial({ color: 0x2f6bff });
