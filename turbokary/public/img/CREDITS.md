@@ -279,3 +279,26 @@ Prompt: Use case: stylized-concept. Asset type: one mobile racing controller but
 
 Prompt: Use case: stylized-concept. Asset type: one mobile racing controller button pictogram for original cartoon game TurboKáry. Subject: one large chunky faceted crystal with a pointed top and bottom, three broad diamond facets, a tiny four-point sparkle beside it. Square 256x256 final use. A beautifully clean simple bold silhouette in warm white #fff6ea with pale cyan #7cf3ff highlights and restrained soft blue-gray shading. Large rounded shapes, extremely legible at 48px. Minimal thin dark purple #1b1430 inner separators, light outer silhouette to stand out on a dark or colored UI button. Centered icon occupies 75 percent of canvas with equal safety padding. The background must be fully transparent: no button disc, no square, no badge, no ground shadow. No text, numbers, letters, branding, watermark, no existing game imagery. Only this single pictogram.
 
+## Ikony aplikace a náhled odkazu
+
+Vytvořeno vestavěným OpenAI ImageGen. Jako vlastní reference byly použity již dodané logo a portréty ze stejné sady, žádné cizí obrazové podklady. Ověřena čitelnost malého symbolu motokáry, přesný nápis TurboKáry s čárkou a zachování vzhledu postav v náhledu. Ikony mají neprůhledné tmavě fialové pozadí dle zadání ikon; OG obsahuje plnou neprůhlednou ilustraci. Mechanický export sharp: Lanczos3 zmenšení, profil sRGB, PNG komprese 9 a adaptivní filtrování bez kvantizace.
+
+### `../icon-512.png` a `../icon-192.png`
+
+Výsledné rozměry: 512×512 a 192×192. Menší ikona je mechanicky odvozena z finální větší. Zdrojový výstup: `exec-7e6fae70-8b97-4f75-80c1-8ce7565a13c6.png`. Stylová a barevná reference: `logo.png`.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset: square app icon for an original cheerful cartoon kart racing game, final 512x512 and 192x192. Input image is ONLY style and color reference, do NOT include its text or flag. Create one distinctive compact racing GO-KART, low to the ground, chunky four black rubber tires, orange body #ff7a1a with golden yellow nose panel #ffd21f, small cyan accents #7cf3ff, visible steering wheel and simple dark seat, NO DRIVER. View from slightly above front three-quarter, nose facing lower right, strong readable silhouette, dynamic playful attitude. Thick clean dark purple outlines #1b1430, simple rounded geometric shapes, soft cel shading and a few clean highlights, polished 2D cartoon illustration. Center the full kart with 12% safe margin all around; it occupies roughly 78% of the square. BACKGROUND is a full solid dark purple #160f33 square, no rounded tile and no border. A few simple cyan speed strokes behind the kart, restrained, no other objects. Avoid any text, letters, logos, characters, flags, mushrooms, shells, question-mark boxes, real brands, or Nintendo imagery. High contrast and clean enough to recognize at 48 pixels.
+```
+
+### `../og.png`
+
+Výsledné rozměry: 1200×630. Zdrojový výstup: `exec-b3fa7731-3abd-401b-a690-1626c67e7859.png`. Reference: `logo.png`, `chars/0.png`, `chars/1.png`, `chars/2.png`. Logo a závodní scéna byly vytvořeny společně v ImageGen s instrukcí zachovat podobu a text loga; následně pouze změna rozměrů a bezeztrátový export.
+
+Přesný prompt:
+
+```text
+Use case: ads-marketing. Create a polished landscape social share / Open Graph cover for original Czech cartoon kart-racing game, exact final aspect ratio 1200:630. Input image 1 is the EXISTING LOGO to preserve faithfully, including the exact spelling and accent "TurboKáry": T u r b o K á r y, acute accent above lowercase á, upper-case K. Images 2,3,4 are our original CHARACTER IDENTITY references: orange fox Zrzka with navy shirt/orange scarf, green frog Kvak with coral shirt/green scarf, black-and-white penguin Frak with yellow shirt/cyan scarf. Preserve their species, face style, shirt/scarf colors. Compose an exciting premium 2D cartoon game cover: the logo large and fully visible across the upper center, about 65% of canvas width, with space around the accent and the checkered flag. Below it, three happy racers in separate colorful go-karts taking a sweeping racetrack bend: orange fox driving orange kart in foreground left-center; green frog in green kart on the right; penguin in cyan-blue kart a little behind. All three faces recognizable, hands on steering wheels. Keep heads and wheels inside frame. Setting is a cheerful green meadow track with simple rolling hills and a few soft clouds, the upper backdrop behind logo smoothly becomes deep purple #160f33 for clear legibility. Bold dark-purple #1b1430 clean outlines, chunky simple rounded forms, soft cel-shading, vivid yellow #ffd21f, orange #ff7a1a, red #ff4d6d and cyan #7cf3ff accents. Dynamic but uncluttered, strong hierarchy, charming original browser game. Opaque illustrated image filling entire canvas. No extra text or tagline, no logos beyond provided TurboKáry, no Nintendo characters, mushrooms, shells or question-mark crates, no real brands. Preserve the exact supplied logo wordmark; do not add extra letters, alter á, or cut off flag.
+```
