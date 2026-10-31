@@ -36,3 +36,14 @@ Exportovaný rozsah: finální public/models/fighters. Vizuálně ověřeny fin�
 Finální geometrická revize: hlavy na 80 % původní velikosti kolem pevného středu 0,27 m nad krkem, čelenky poměrově sladěny, vyšší polstrovaný límec, zakrytý pas. Pytlové tělo panáka tvoří jediná souvislá rotační geometrie. Degenerované trojúhelníky odstraněny; ploché normály znovu vypočítány a normalizovány. Všech 9 modelů prošlo nezávislým kontraktním validátorem bez chyb i varování, včetně kloubů, PBR, geometrie a limitů. Výška hlavního objemu lebky je přibližně 1,75–1,81 m, uši a účesy mohou přesahovat. Vizuální ověření skutečných finálních GLB probíhá před commitem.
 
 Poslední oprava panáka: prodloužení kůlu od y=0 do y=0,84 m, s překryvem 4 cm do pytle (pytel začíná v y=0,80 m). Upravená pouze geometrie kůlu; všech 15 kloubů a soubory 0–7 beze změny, ověřeno kontrolními součty.
+
+
+# Pěnový tréninkový meč — původ a specifikace
+
+Původní model vytvořený vlastní geometrií v Three.js; export GLTFExporter do glTF 2.0 binary. Bez externích modelů, textur, značek nebo předloh skutečných zbraní. Generátor mimo repo: `tmp/mc3d/sword-build.mjs`. Výsledek: `models/sword.glb`.
+
+Design: měkká pěnová tyč o průměru přibližně 9–10 cm, široká zaoblená bezpečná záštita 29,8 cm, krémově bílá polokulová špička, tři jemné světlé pásky, pryžový úchop se skutečnými mělkými drážkami a barevnými lemy, měkká zaoblená hlavice. Veškeré materiály roughness 0,80–0,87 a metalness 0,0.
+
+Počátek je střed rukojeti; směr čepele +Y. Prázdné uzly přímo pod identity kořenem: `tip` = (0; 1,16; 0), `guard` = (0; 0,15; 0). Střed hlavice y = −0,132 m, spodní bod přibližně −0,171 m. Přesné přebarvitelné materiály `foam` a `accent`; bílá špička a tmavá rukojeť mají vlastní stálé materiály.
+
+Trojúhelníky: 1430; velikost: 87580 B; po sloučení 5 meshů. Ploché normály zapečeny, degenerované trojúhelníky odstraněny. Ověřeny limity 1500 trojúhelníků, přesná výška špičky a neměnné lokální uzly pro integraci sword.ts.
