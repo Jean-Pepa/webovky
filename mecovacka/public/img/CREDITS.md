@@ -239,3 +239,38 @@ Use case: stylized-concept. Asset: one compact square game MODE icon for origina
 
 Finální QA: všechny tři soubory přesně 256×256, PNG RGBA, sRGB chunk potvrzen, rohová alfa = 0. Velikosti: duel.png 74 592 B; slice.png 89 223 B; train.png 53 881 B. Kontaktní přehled s náhledy 256 px a skutečnými 48 px: tmp/mc-images/modes-preview.png. Ikony jsou barevně i tvarově rozeznatelné při 48 px; žádný text ani pozadí.
 
+
+## Ovládání telefonu
+
+### `pad/shield.png`
+
+Vytvořeno vestavěným OpenAI ImageGen. Původní kreslený návrh podle zadání Mečovačky, bez cizích značek a převzatých motivů.
+
+Zdroj: `exec-af213ecc-cbcf-47a2-912e-c01a1b9139b0.png`. Reference: logo.png (vlastní stylová reference).
+
+Mechanický export sharp: 512×512, Lanczos3 contain, ořez prázdných alfa okrajů, sRGB ICC, PNG komprese 9 bez kvantizace a zachování alfa kanálu.
+
+Přesný prompt:
+
+```text
+Use case: stylized-concept. Asset: large GUARD button pictogram for Mečovačka, a friendly cartoon foam-sword game, final512x512 PNG with transparent background. Reference image is ONLY style/color reference, do not include its lettering or sword. Create a single broad rounded protective SHIELD, warm white/light ivory face with a simple cyan #4fd1ff central inset, thick softly rounded silver-white rim, bold dark purple #1b1430 inner outline and a thin luminous ivory outside keyline so it reads on a dark #14123a button. A strong simple silhouette, upper corners rounded, bottom gently tapered and rounded, no sharp spikes. Soft cel shading with restrained pale lilac shadows and one broad clean white highlight. Centered, frontal with slight threequarter depth, icon occupies80percent of square, ample transparent padding. Very legible at64px. Only the shield: no letters, writing, coat of arms, cross, stars, jewels, characters, background tile, badge or groundshadow. Genuine alpha transparency. Cheerful clean polished 2D game illustration consistent with reference.
+```
+
+### `pad/hold.png`
+
+Vytvořeno vestavěným OpenAI ImageGen. Původní návodná ilustrace správného držení telefonu; cílenou následnou úpravou byla odstraněna samostatná rukojeť nad telefonem, takže rukojeť tvoří přímo telefon. První výstup: exec-91e35b18-18db-4740-b661-435bab0b8a6a.png.
+
+Zdroj: `exec-7c958e7b-81df-4ed4-a6f7-74754c317f82.png`. Reference: logo.png (vlastní stylová reference).
+
+Mechanický export sharp: 300×400, Lanczos3 contain, ořez prázdných alfa okrajů, sRGB ICC, PNG komprese 9 bez kvantizace a zachování alfa kanálu.
+
+Přesný prompt:
+
+```text
+Původní generování:
+Use case: stylized-concept. Asset: clear portrait instructional illustration for Mečovačka phone controller, final300x400 PNG with genuinely transparent background. Reference image is ONLY the cartoon linework and cyan/yellow/purple palette reference, do not include text. Show ONE anatomically plausible HUMAN RIGHT HAND holding one smartphone upright in PORTRAIT orientation like the HANDLE of a toy sword. View the phone screen from the front at a slight threequarter angle. Palm supports the BACK of the phone; the four fingers curl securely around the far edge, and the ONE thumb is visibly resting ON THE FRONT TOUCHSCREEN over the lower part of a simple bright shield symbol. Wrist enters from bottom right, clean natural wrist crop. Hand has warm light-peach skin, simplified friendly cartoon anatomy with exactly five fingers total and sensible joints. Phone is a rounded dark-purple #14123a rectangle, thick small rim, dark screen with a single large pale-white/cyan shield pictogram, no writing or numbers. From the phone TOP EDGE, centered along the phone's vertical axis, a soft thick cyan FOAM TRAINING BLADE extends straight upward with a large rounded WHITE safety tip; it reads as an illustrated metaphor for the phone becoming the sword handle, never a sharp metallic weapon. Keep the white rounded tip and complete phone fully visible with safe margins. Composition compact and vertically balanced; white-tipped blade fills the upper third, phone and secure hand grip fill the lower two thirds. Thick clean dark-purple #1b1430 outlines, broad soft cel shading, warm highlights, simple shapes, clean professional explanatory game art. No other hand, no person, no arrows, no text, no logos, no scenery, no background panel, no frame, no cast shadow outside artwork. Transparency around silhouette and fingers.
+
+Cílená úprava spojení čepele:
+Use case: precise-object-edit. Edit only the connection above the smartphone in this instructional illustration. The smartphone ITSELF is the sword handle: REMOVE the separate purple ribbed sword handle and the lower gold pommel ring currently floating between the phone and the cyan blade. Bring the cyan foam blade and its small upper yellow guard DOWN so the yellow guard sits directly flush on the phone TOP EDGE and the cyan blade starts immediately above it. There must be NO separate sword grip above the phone. Preserve the single hand exactly as is, all five fingers and thumb on the screen shield, phone shape, dark screen, white rounded safety tip, cyan blade, cartoon shading, dark outlines and genuine transparency. Do not change the hand anatomy or add anything. Keep all intended artwork visible within a portrait frame with margin, no text.
+```
+
