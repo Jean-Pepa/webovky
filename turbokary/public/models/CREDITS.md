@@ -43,3 +43,12 @@ Počátek je spodek pánve. Samostatný uzel `head` je u krku v poloze 0 / 0,54 
 | chars/5.glb | Medvěd Huňáč — kulaté uši, velký světlý čenich a nos | 2408 | 182280 | 1,164 |
 | chars/6.glb | Robot Šroubek — zkosená schránka, černý panel, tyrkysové oči a šrouby | 2248 | 170556 | 1,121 |
 | chars/7.glb | Prasátko Kvík — sklopené uši, růžový rypáček a nozdry | 2148 | 164328 | 1,166 |
+
+## Ověření a náhledy
+
+- Všech 9 finálních GLB bylo nezávisle znovu načteno přes GLTFLoader a kontrolováno podle kontraktu: rozměry, osy, prázdné uzly, identity natočení kol, pivot hlavy, barvy a PBR materiály, absence textur a externích odkazů, počet trojúhelníků a velikost. Bez chyb nebo varování.
+- Skutečné modely byly vykresleny v Three.js v testovacím Chrome: celá sestava, předek/bok/záď motokáry, samostatní řidiči, detail rukou u volantu, natočení předních kol, rotace kol a náklon hlavy. Bez zjevného průniku postav se sedákem či karoserií.
+- `previews/gallery.png` je přímý render všech osmi sestav a přebarvení. `previews/kart.png` jsou čtyři pohledy na stejný exportovaný model. Nejde o ilustrační návrhy ani generované obrázky náhradou za GLB.
+- `npm run build` prošel. Na čisté pracovní kopii bylo třeba provést `npm ci` v kořeni repozitáře i ve složce `turbokary`, protože Vite přebírá existující kořenovou konfiguraci PostCSS. Nebyly změněny závislosti, lock soubory ani konfigurace.
+- Přes `npm run preview` na lokálním serveru hra načetla všech devět GLB (HTTP 200) a rozběhl se závod s osmi jezdci. Automatická zkouška nezaznamenala chyby JavaScriptu ani varování modelového loaderu.
+- Toto ověření proběhlo na PC v lokálním prohlížeči; test na skutečném telefonu nebyl součástí této dodávky.
