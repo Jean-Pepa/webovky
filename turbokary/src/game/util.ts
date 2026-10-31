@@ -24,7 +24,7 @@ export function rng(seed: number) {
 }
 
 export function formatTime(ms: number): string {
-  if (!isFinite(ms) || ms <= 0) return "–:––.––";
+  if (!isFinite(ms) || ms < 0) return "–:––.––";
   const m = Math.floor(ms / 60000);
   const s = Math.floor((ms % 60000) / 1000);
   const c = Math.floor((ms % 1000) / 10);

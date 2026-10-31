@@ -7,8 +7,8 @@ function findChrome() {
   const root = "/opt/pw-browsers";
   for (const dir of readdirSync(root)) {
     if (!dir.startsWith("chromium-") || dir.includes("headless")) continue;
-    const exe = join(root, dir, "chrome-linux", "chrome");
-    if (existsSync(exe)) return exe;
+    const exe = [join(root, dir, "chrome-linux64", "chrome"), join(root, dir, "chrome-linux", "chrome")].find(existsSync);
+    if (exe) return exe;
   }
 }
 const [inp, out, w = "1600", h = "900"] = process.argv.slice(2);
