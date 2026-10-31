@@ -47,3 +47,26 @@ Design: měkká pěnová tyč o průměru přibližně 9–10 cm, široká zaobl
 Počátek je střed rukojeti; směr čepele +Y. Prázdné uzly přímo pod identity kořenem: `tip` = (0; 1,16; 0), `guard` = (0; 0,15; 0). Střed hlavice y = −0,132 m, spodní bod přibližně −0,171 m. Přesné přebarvitelné materiály `foam` a `accent`; bílá špička a tmavá rukojeť mají vlastní stálé materiály.
 
 Trojúhelníky: 1430; velikost: 87580 B; po sloučení 5 meshů. Ploché normály zapečeny, degenerované trojúhelníky odstraněny. Ověřeny limity 1500 trojúhelníků, přesná výška špičky a neměnné lokální uzly pro integraci sword.ts.
+
+
+## Věci na krájení
+
+Devět originálních low-poly modelů ručně navržených v Three.js, export glTF 2.0 binary pomocí GLTFExporter. Bez převzatých modelů, textur, externích souborů nebo kostry. Barvy PBR materiálů, roughness 0,68–0,8; metalness 0,03, u zlatého jablka 0,15–0,18. Ploché jednotkové normály, odstraněné nulové trojúhelníky.
+
+Osm krájených objektů má identity uzly half_a (x≥0) a half_b (x≤0), geometrii v souřadnicích celého plodu, obě části uzavřené v rovině x=0 materiálem flesh. Řezy mají vytriangulované barevné vložky bez překryvných koplanárních ploch: meloun pecky a světlou kůru, dýně semínkovou komoru, jablka jadřinec a semínka, okurka tři komory se semínky, knedlík kousky housky, poleno letokruhy. Sýrové díry jsou uzavřené skutečné zahloubené misky, nikoli otvory skrz model. Ježek je celý, roztomilá tvář do +Z, vlastní jehličky, oči, ouška a tlapky.
+
+| Soubor | Předmět | Trojúhelníky | Velikost B | Bounds X×Y×Z m |
+|---|---|---:|---:|---|
+| slice/meloun.glb | Meloun | 860 | 70152 | 0.500 × 0.500 × 0.500 |
+| slice/dyne.glb | Dýně | 880 | 72796 | 0.520 × 0.503 × 0.520 |
+| slice/jablko.glb | Jablko | 612 | 54196 | 0.300 × 0.316 × 0.300 |
+| slice/okurka.glb | Okurka | 724 | 60660 | 0.500 × 0.150 × 0.156 |
+| slice/knedlik.glb | Houskový knedlík | 348 | 33532 | 0.420 × 0.260 × 0.260 |
+| slice/poleno.glb | Poleno | 1208 | 94108 | 0.500 × 0.260 × 0.260 |
+| slice/syr.glb | Sýr | 1112 | 87380 | 0.160 × 0.440 × 0.440 |
+| slice/zlate.glb | Zlaté jablko | 612 | 54132 | 0.320 × 0.334 × 0.320 |
+| slice/jezek.glb | Ježek | 1428 | 109012 | 0.398 × 0.342 × 0.432 |
+
+Modelování vychází z rozměrů AGENTS.md; stopky, listy a bodliny jsou přirozené drobné přesahy hlavního objemu. Podlouhlé tvary i sýrové kolo mají osu X. Export do finální složky. Nezávislá kontraktní kontrola prošla; všechny celky i rozevřené poloviny byly vizuálně ověřeny z finálních GLB.
+
+QA finálních GLB: kontraktní validátor PASS. U řezů zachováno obvyklé doporučení vizuální prohlídky. Doplněný geometrický audit svařuje shodné pozice s přesností 1 mikrometr a kontroluje počet přilehlých ploch každé hrany: všech 16 polovin a celý ježek mají 0 otevřených hran a 0 hran s více než dvěma plochami. Žádné degenerované trojúhelníky; velikosti a počty podle tabulky výše. Vizuální kontrola celých i rozevřených modelů probíhá skutečným Three.js renderem před commitem.
