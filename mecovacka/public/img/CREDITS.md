@@ -364,3 +364,77 @@ Inspected original generations and final exports. The 192 px icon remains readab
 
 
 
+
+## Rozcestník — původ a technická kontrola
+
+Projektové cesty: `turbokary/public/img/hub/kary.png`, `mece.png`, `bg.jpg`.
+
+Vytvořeno vestavěným ImageGen podle imagegen/SKILL.md; tři samostatné ilustrace, u Mečovačky dvě cílené úpravy (doplnění blízkého bočního zábradlí, odstranění nechtěného horního oparu). Bez API/CLI fallbacku. Vlastní původní postavy, materiály a prostředí projektu; žádné převzaté značky ani postavy. Datum 31. 10. 2026.
+
+### Reference pro identitu a styl
+
+Všechny před generováním vizuálně prohlédnuty:
+- 1. `turbokary\public\img\chars\0.png`
+- 2. `turbokary\public\img\chars\1.png`
+- 3. `C:\Users\krist\OneDrive\Plocha\CLAUD DATA\tmp\tk3d\previews\gallery.png`
+- 4. `mecovacka\public\img\chars\0.png`
+- 5. `mecovacka\public\img\chars\1.png`
+- 6. `C:\Users\krist\OneDrive\Plocha\CLAUD DATA\tmp\mc3d\previews\arena-lobby.png`
+
+První dva portréty určují tváře a oblečení pro kartu TurboKár, galerie GLB pouze tvary a barvy motokár (žádné její popisky). Další dva portréty určují šermířský úbor. Skutečný render arény určuje molo, boční provazové zábradlí, rybník a krajinu.
+
+### Přesné prompty
+
+### kary.png
+
+```text
+Use case: illustration-story. Create a NEW polished game-selection card illustration, widescreen 16:9, intended final PNG 960×540 with genuinely TRANSPARENT outer background. Reference image 1 defines our original cheerful orange fox Zrzka, cream cheeks and ear interiors, navy shirt and orange neckerchief. Reference image 2 defines our original bright green frog Kvak, cream muzzle, red shirt and green neckerchief. Reference image 3 is ONLY the visual design reference for their orange/cream and green/yellow open racing karts: chunky four black tires, low broad nose, small steering wheel, rear wing, no branding. Do not copy the gallery layout or any text. Scene: these TWO friends racing their matching karts through a sweeping countryside bend, energetic three-quarter front view with one kart ahead and the second close behind, steering into the curve. Both faces visible and distinct, delighted competitive expressions, hands correctly gripping their own steering wheels. A compact curved strip of gray race road with red-and-white curbing, green meadow tufts and a few stylized motion dust puffs forms a scenic vignette under the karts. The road fragment and vegetation have a clean organically cut outer silhouette and all surrounding canvas is real transparent alpha. Composition: wide coherent single scene filling about 94% of width and 88% of height, readable at thumbnail size, both vehicles entirely in frame, strong depth and attractive diagonal action; leave slim clear transparent breathing room all around. Style: high quality friendly cartoon with subtle low-poly faceting, thick clean dark purple #1b1430 contour lines, soft warm shading, bright orange #ff7a1a, green #3ccf4e, cream/yellow accents. No enclosing rectangle, no border/frame, no opaque backdrop, no white halo, no lettering, no numbers, no logos, no UI, no watermark, no additional characters. Preserve original character identities from the references.
+```
+
+Generovaný zdroj: `C:\Users\krist\.codex\generated_images\01a1922f-3d1b-7c62-abfa-698fd23900fc\exec-59e0bf53-e875-4220-a42e-167abc126c3d.png`.
+
+### mece.png — základní generování
+
+```text
+Use case: illustration-story. Create a NEW polished game-selection card illustration, wide 16:9 landscape, intended final PNG 960×540 with genuinely TRANSPARENT outer background. Reference 1 defines our original orange fox Zrzka wearing orange headband and orange padded fencing vest with cream trim over navy sleeves. Reference 2 defines our original green frog Kvak wearing green headband and green padded vest with pale yellow trim over coral-red sleeves. Preserve their friendly expressive faces and character identities. Reference 3 is environment reference ONLY: a narrow warm wooden pier over a turquoise South Bohemian pond, timber pilings, two horizontal rope rails along the TWO LONG SIDES, BOTH SHORT ENDS OPEN with no barriers, little reeds/lily pads and green countryside. Do not copy any screenshot labels or UI. Scene: exactly TWO full-body animal fencers, fox and frog, smiling with enthusiastic concentration as they playfully meet/cross their thick brightly colored FOAM TRAINING SWORDS above the center of the pier. Fox uses an orange foam sword, frog green foam sword; both swords have very obvious large rounded WHITE soft blunt tips and chunky simple guards. Correct hands grasping handles, clear silhouettes and faces, dynamic but friendly balanced poses, dark pants and pale accent boots. Use three-quarter eye-level view showing both characters side-on facing one another, the pier deck and a small broad patch of turquoise pond water beneath, with restrained reeds and a few illustrated splashes at the low edges. No real blades, no sharp metal points, no injuries. Composition: one compact wide scenic vignette with clean organically cut outer silhouette, real transparent alpha everywhere outside the pier/pond scene. Fill about 94% canvas width and 88% height, all heads, sword tips and feet safely inside with slim transparent breathing room. Style: polished cheerful cartoon illustration with subtle low-poly faceting, thick clean #1b1430 outlines, soft sunny warm shading, orange #ff7a1a, green #3ccf4e, turquoise #4fd1ff and cream accents. No surrounding rectangle, no frame, no opaque sky/background panel, no text, no labels, no logo, no UI, no watermark, no additional characters. Rope rails stay on long sides only and must not cross either open end or obscure the central sword action.
+```
+
+Základní zdroj: `C:\Users\krist\.codex\generated_images\01a1922f-3d1b-7c62-abfa-698fd23900fc\exec-bb78500c-b380-4b66-8729-f21460643944.png`.
+
+Cílená úprava zábradlí:
+
+```text
+Use case: precise-object-edit. Edit only the near/front long-side railing of this transparent illustration. Preserve EXACTLY the fox, frog, both foam swords with rounded white tips, their poses, faces, clothing, pier deck shape, water, plants, composition, colors, style and real transparent outer background. Add the missing near/front long-side rope railing so this wooden fighting pier has two complete side railings, one on each LONG edge, matching the existing far-side railing: modest wooden posts and two gently sagging horizontal natural tan ropes. Use the visible solitary front-right post as part of this near railing, add the necessary matching near-left/intermediate posts along the LONG near edge. The rail should remain low enough to keep both faces, arms and crossed swords unobstructed. Leave BOTH SHORT ENDS COMPLETELY OPEN with no rope across them. Do not put a rope barrier across the short right or left end. Preserve wide compact scene and transparent margins. No text, no frame, no opaque background.
+```
+
+Mezivýsledek: `C:\Users\krist\.codex\generated_images\01a1922f-3d1b-7c62-abfa-698fd23900fc\exec-b159006a-be16-40d7-869b-f3ead0c53950.png`.
+
+Cílená oprava průhledného okolí:
+
+```text
+Use case: background-extraction / precise-object-edit. Correct only the unwanted gray-green cloudy backdrop in the UPPER CENTER of this PNG. Remove that large gray-green haze/blob behind and between the fox, crossed swords and frog, restoring TRUE TRANSPARENT ALPHA in all empty upper-background space above the low distant green bank. Keep every actual illustration element EXACTLY: both characters, both foam swords, the completed foreground and background rope railings, posts, deck, pond water, plants, low green distant bank, proportions, colors and outlines. The empty space around and between the character silhouettes and swords must be clean transparent, not gray, black, white, checkerboard or painted haze. Preserve the compact full scenic vignette and transparent outside edges. Do not add or redraw any content, no text, no frame.
+```
+
+Použitý finální zdroj: `C:\Users\krist\.codex\generated_images\01a1922f-3d1b-7c62-abfa-698fd23900fc\exec-27c0989f-8ed7-4e12-966e-2003516ba24c.png`.
+
+### bg.jpg
+
+```text
+Use case: stylized-concept. Create an opaque seamless-looking full-bleed background illustration for a friendly browser-game selection page, widescreen 16:9, intended final JPEG 1920×1080. A quiet South Bohemian countryside pond at violet twilight: smooth calm water with very restrained broad reflections, distant softly layered forested hills and fields, a few reeds and low foliage placed only near the far lower corners. No people or animals, no vehicles, no buildings as focal points, no text, no logos, no stars or bright sun/moon disk. Style: tasteful softly painted cartoon landscape with gentle low-poly-inspired facets, compatible with playful animal games but MUCH calmer and lower contrast than foreground cards. Composition must keep the large middle 65% of the canvas smooth, uncluttered and dim, with a low, distant horizon and no salient object in center. Deep midnight-purple #14123a corners and edges gradually soften into muted violet/blue/teal center; subtle dusk warmth near remote horizon, restrained saturation, no sharp bright highlights. Strong natural dark edge vignette for clear colorful game-card readability. Elegant atmosphere, quiet depth, no border or frame, no transparency.
+```
+
+Generovaný zdroj: `C:\Users\krist\.codex\generated_images\01a1922f-3d1b-7c62-abfa-698fd23900fc\exec-52b23227-02d2-42fa-b891-39323ceaa4ec.png`.
+
+### Mechanický export
+
+Sharp: oba PNG zdroje rovnoměrně zmenšeny do 936×516 metodou contain, bez deformace; přidán průhledný okraj 12 px na každé straně pro finálních 960×540. Zachována generovaná alfa, bez odstraňování pozadí nebo kreslení skriptem. PNG bezeztrátově, komprese 9. Pozadí přepočteno na 1920×1080 metodou cover, JPEG quality 85 (mozjpeg), bez alfa. Všechny finály převedeny na sRGB a obsahují explicitní 480bajtový ICC profil sRGB. Originály ponechány v generated_images.
+
+| Soubor | Rozměry | Velikost B | Skutečné alfa okolí | Průhledné pixely | ICC sRGB |
+|---|---|---:|---|---:|---|
+| kary.png | 960×540 | 611572 | ano; všechny rohy alfa 0 | 219002 | ano, 480 B |
+| mece.png | 960×540 | 670812 | ano; všechny rohy alfa 0 | 212371 | ano, 480 B |
+| bg.jpg | 1920×1080 | 97774 | neprůhledné JPEG | 0 | ano, 480 B |
+
+Vizuálně ověřeny tváře a identita lišky/žabáka, správné úbory, motokáry v zatáčce, dva pěnové meče s bílými tupými špičkami, oba boční provazové pásy mola, absence textu a rámů. Ve finálních kartách zůstává průhledný odstup od hran; postavy ani špičky nejsou uříznuty. Pozadí je klidné, bez postav a s tmavými okraji. Kompozitní kontrola obou karet na výsledném pozadí: `CLAUD DATA/tmp/mc-hub/preview.png`. Strojové hodnoty: `CLAUD DATA/tmp/mc-hub/qa.json`.
+
+
