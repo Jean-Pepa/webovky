@@ -321,3 +321,29 @@ Composition: centered in a SQUARE canvas, fills about 88% of canvas width and 72
 Background: genuinely transparent, preserve full alpha around and between wings. No opaque background or tile, no ground shadow.
 Constraints: only the two white wings with colored tips; no text, numbers, characters, hearts, halos, stars, logos, brand references, mushrooms, shells or question-mark boxes. Clean polished 2D cartoon game inventory icon.
 ```
+
+
+## Obloha Šílené hory — `sky-crazy.jpg`
+
+Vytvořeno vestavěným OpenAI ImageGen, nejprve generování se stávající herní `sky-desert.jpg` jako referencí stylu a měřítka vzdálené krajiny, poté cílená úprava horských siluet. Nebyly použity cizí fotografie ani značky. Oba kroky měly `transparent_background=false`.
+
+Technický export přes Windows System.Drawing/GDI+: zdrojové PNG 2172×724 px bylo bicubic převzorkováno na 4096×1024 px. Pro horizontální opakování byly sjednoceny levý a pravý okraj v pásu 128 px, s plně symetrickým prvním 16px pásem. Horních 96 px přechází do #4b3ab8, spodních 160 px do #ffb68a. JPEG kvalita 85. Explicitní sRGB ICC profil (480 B, již použitý v ikonách této hry) byl vložen jako APP2 metadata bez dalšího překódování.
+
+### Prompt pro generování
+
+> Use case: stylized-concept. Asset type: seamless horizontal sky panorama for the Šílená hora course in the original cheerful low-poly kart racing game TurboKáry. Image 1 is only a style/composition reference: match its clean soft cel-shaded cartoon landscape, atmospheric layers, scale of distant horizon and large open sky. Create a NEW extra-wide 4096 by 1024 pixel 4:1 panorama, a complete 360-degree cylindrical horizon whose left and right edge continue seamlessly, with identical colors, cloud shapes and ridge heights at the join. A dramatic glowing sunset WITHOUT any visible sun disk or sun rays: upper two-thirds of the image fade from saturated violet #4b3ab8 at the top through purple-pink and coral into warm peach toward the horizon. A few broad, softly faceted clouds tinted lavender and warm peach. In the lower third, layers of distant rocky jagged mountain peaks, angular sculpted ridges with indigo-violet shadows and warm peach-lit faces, fading smoothly into peach fog. Keep the mountains distant and modest in scale, comparable to Image 1. The entire bottom edge must fade to uniform #ffb68a. Colorful polished cartoon game art, simple confident shapes, soft cel shading, clean dark indigo outlines softened by atmospheric distance. No foreground objects, roads, buildings, characters, vehicles, airplanes, explosions, text, logos, sun, moon, stars, Nintendo motifs, mushrooms or question blocks. Entire image opaque. Match both horizontal edges carefully for seamless wrapping.
+
+### Prompt pro cílenou úpravu štítů
+
+> Use case: precise-object-edit. Image 1 is the edit target, a seamless cartoon sunset panorama for TurboKáry. Change ONLY the mountain silhouettes in the lower third: replace the flat-topped desert mesas and buttes with distant rugged alpine rocky peaks, sharply triangular pointed summits, steep angular cliffs and overlapping jagged ridges. This is a high mountain course, not a desert. Maintain the same restrained horizon scale and atmospheric layers, violet shadow faces and peach-lit rock. Preserve the entire violet #4b3ab8 to coral to peach sky, every cloud, the low peach fog, the composition, and horizontal wraparound edge continuity. Bottom edge fades to #ffb68a. Polished simple cartoon cel shading consistent with the current image. No snow, no sun disk, no moon, no text, no buildings, no roads or foreground objects. Desired final panoramic aspect 4:1. Opaque background.
+
+### Ověření výsledku
+
+- Rozměry: 4096×1024 px; velikost 229 873 B, tedy výrazně pod 1,5 MB.
+- Soubor: JPG, kvalita 85, RGB, vložený sRGB ICC profil ověřen čtením výsledného souboru.
+- Vizuálně: dramatický fialovo-broskvový západ, vzdálené ostré skalnaté štíty, bez slunečního kotouče, textu a popředních objektů.
+- Návaznost levého/pravého sloupce po ztrátové JPEG kompresi: průměrný rozdíl 0,2783/255 na kanál; maximální jednotlivý rozdíl 6/255. 706 z 1024 řádků má krajní pixely identické. Bez viditelného svislého švu.
+- Horní středový pixel po JPEG: RGB(74,58,183), spodní: RGB(255,182,139), odchylka nejvýše 1 na kanál od předepsaných barev.
+
+
+Zdroje vestavěného generátoru: `exec-6ef934c1-d47d-4fe5-a069-864ea31f05ed.png` (první verze), `exec-cb5f508a-2aaa-4475-8e5b-09ce9d434dbc.png` (vybraná finální verze před technickým exportem).
