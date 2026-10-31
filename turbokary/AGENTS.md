@@ -158,4 +158,6 @@ náklon až přes HTTPS (Vercel).
 - v2: `cmd` navíc `next` (další závod poháru / zpět do lobby), `mode` (v = 0 jeden závod,
   1 pohár), `speed` (v = index rychlosti).
 - v2: `lobby` navíc `mode`, `speed`, `speeds`, `cupRound`; `results` navíc `cup` (tabulka poháru).
-- v2: `hud.drift` je -1 (nedriftuje) až 3 (třetí stupeň).
+- v2: `hud.drift` je -1 (nedriftuje) až 3 (třetí stupeň); `hud` navíc `pause` a `host`;
+  `cmd` navíc `pause`, `restart`, `quit` (pauza z telefonu hostitele).
+- v2: `me` má volitelné `mirror` (zapnutí/vypnutí zpětného zrcátka hráče).

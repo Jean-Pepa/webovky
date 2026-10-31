@@ -41,6 +41,9 @@ Kvík) mají vyšší max. rychlost a při srážce odstrčí lehčí.
   - 🛡️ **Štít** tě ochrání před jedním zásahem.
   - 🐏 **Beranidlo:** pár sekund jsi rychlejší a nezranitelný a koho trkneš, toho roztočíš.
   Čím jsi dál vzadu, tím lepší věci padají.
+- **Zpětné zrcátko** nahoře uprostřed obrazovky ukazuje, kdo se blíží zezadu. Každý hráč si ho
+  může vypnout v nastavení na telefonu, na PC jde vypnout pro všechny tlačítkem 🪞 v lobby
+  (nebo klávesou `Z`).
 - Telefon vibruje při nárazu, zásahu a v cíli. Na iPhonu vibrace nejsou, Safari je nepodporuje.
 
 **Bez telefonu:** v lobby klávesa `K` přidá hráče na klávesnici (max. dva). Ovládá se šipkami nebo

@@ -29,6 +29,7 @@ interface Settings {
   autoGas: boolean;
   sens: number;
   vibrate: boolean;
+  mirror?: boolean;
 }
 
 const SENS = [40, 28, 18];
@@ -165,6 +166,7 @@ class Pad {
       case "welcome":
         this.slot = m.slot;
         this.status = "";
+        if (this.settings.mirror === false) this.net?.send({ t: "me", mirror: false });
         void this.keepAwake();
         break;
       case "full":
@@ -319,6 +321,7 @@ class Pad {
         </div>
         <label class="tog"><input type="checkbox" data-set="autoGas" ${s.autoGas ? "checked" : ""}><span>Automatický plyn</span></label>
         <label class="tog"><input type="checkbox" data-set="vibrate" ${s.vibrate ? "checked" : ""}><span>Vibrace</span></label>
+        <label class="tog"><input type="checkbox" data-set="mirror" ${s.mirror !== false ? "checked" : ""}><span>Zpětné zrcátko na obrazovce</span></label>
       </section>
       <section class="card host-box" hidden>
         <h3>👑 Ty vybíráš závod</h3>
@@ -752,10 +755,11 @@ class Pad {
     };
     app.onchange = (e) => {
       const t = e.target as HTMLInputElement;
-      const key = t.dataset.set as "autoGas" | "vibrate" | undefined;
+      const key = t.dataset.set as "autoGas" | "vibrate" | "mirror" | undefined;
       if (key) {
         this.settings[key] = t.checked;
         save("tk_pad", this.settings);
+        if (key === "mirror") this.net?.send({ t: "me", mirror: t.checked });
       }
     };
     app.oninput = (e) => {

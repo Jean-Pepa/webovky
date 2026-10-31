@@ -2,7 +2,7 @@
 import type { Kart } from "./kart";
 import type { Race } from "./race";
 import type { Track } from "./track";
-import type { Rect } from "./view";
+import { mirrorRect, type Rect } from "./view";
 import { ITEMS, ITEM_IDS, type ItemId } from "../shared/items";
 import { hex } from "../shared/characters";
 import { itemImg } from "../shared/assets";
@@ -88,7 +88,7 @@ export class Hud {
   }
 
   /** Vytvoří panely pro hráče podle výřezů obrazovky. */
-  layout(rects: Rect[], humans: Kart[], icons: string[]) {
+  layout(rects: Rect[], humans: Kart[], icons: string[], mirrors: boolean[] = []) {
     for (const p of this.panels) p.el.remove();
     this.panels = humans.map((k, i) => {
       const r = rects[i];
@@ -102,6 +102,13 @@ export class Hud {
         <div class="pp-tr"><div class="pp-item"><div class="slot"></div><i></i></div></div>
         <div class="pp-bl"><span class="pp-name"></span><span class="pp-time"></span></div>
         <div class="pp-msg"></div><div class="pp-warn"></div>`;
+      if (mirrors[i]) {
+        const m = mirrorRect(r);
+        const f = document.createElement("div");
+        f.className = "pp-mirror";
+        Object.assign(f.style, { left: m.x - r.x - 3 + "px", top: m.y - r.y - 3 + "px", width: m.w + 6 + "px", height: m.h + 6 + "px" });
+        el.append(f);
+      }
       this.root.insertBefore(el, this.mini);
       const q = (s: string) => el.querySelector(s) as HTMLElement;
       const panel: Panel = {

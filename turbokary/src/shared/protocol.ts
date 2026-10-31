@@ -109,7 +109,7 @@ export type PadMsg =
   | { t: "hello"; cid: string; name: string; char: number; v: number }
   | { t: "in"; s: number; g: number; b: number; d: number }
   | { t: "item"; dir?: -1 | 0 | 1 }
-  | { t: "me"; name?: string; char?: number }
+  | { t: "me"; name?: string; char?: number; mirror?: boolean }
   | { t: "cmd"; c: "start" | "lobby" | "next" | "track" | "laps" | "bots" | "mode" | "speed" | "pause" | "restart" | "quit"; v?: number }
   | { t: "ping"; ts: number };
 
