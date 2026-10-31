@@ -274,3 +274,93 @@ Cílená úprava spojení čepele:
 Use case: precise-object-edit. Edit only the connection above the smartphone in this instructional illustration. The smartphone ITSELF is the sword handle: REMOVE the separate purple ribbed sword handle and the lower gold pommel ring currently floating between the phone and the cyan blade. Bring the cyan foam blade and its small upper yellow guard DOWN so the yellow guard sits directly flush on the phone TOP EDGE and the cyan blade starts immediately above it. There must be NO separate sword grip above the phone. Preserve the single hand exactly as is, all five fingers and thumb on the screen shield, phone shape, dark screen, white rounded safety tip, cyan blade, cartoon shading, dark outlines and genuine transparency. Do not change the hand anatomy or add anything. Keep all intended artwork visible within a portrait frame with margin, no text.
 ```
 
+
+## Ikony aplikace a náhled odkazu
+
+Created 2026-10-31 with the built-in OpenAI ImageGen tool. No API/CLI fallback was used.
+
+### Deliverables
+
+| File | Dimensions | Format | Bytes |
+|---|---:|---|---:|
+| `icon-512.png` | 512 × 512 | Opaque PNG, embedded sRGB profile | 142091 |
+| `icon-192.png` | 192 × 192 | Opaque PNG, embedded sRGB profile | 28975 |
+| `og.png` | 1200 × 630 | RGBA PNG, embedded sRGB profile, true alpha surroundings | 1025691 |
+
+The app icon consists of two crossed original foam training swords with cyan/orange blades, round white padded safety tips, yellow guards/pommels and purple grips. Its background is the exact opaque color `#14123a` (RGB 20, 18, 58). The 192 px file is mechanically derived from the final 512 px file.
+
+The link preview uses the game's original Mečovačka logo and Zrzka/Kvak identities, a friendly foam-sword duel on a wooden pier with pond reeds and lily pads, and genuine alpha around the compact scene. The logo is the only text; both Czech carons in “Mečovačka” are present.
+
+### References
+
+All references were visually inspected before generation:
+
+1. `mecovacka\public\img\logo.png` — official original project logo, preserve lettering and style.
+2. `mecovacka\public\img\chars\0.png` — original Mečovačka Zrzka portrait, face and costume identity.
+3. `mecovacka\public\img\chars\1.png` — original Mečovačka Kvak portrait, face and costume identity.
+4. `C:\Users\krist\OneDrive\Plocha\CLAUD DATA\tmp\mc3d\previews\arena-lobby.png` — actual project arena render, environment reference only; diagnostic caption excluded.
+
+The icon was generated without external input imagery. Its first output was subsequently used as the target of a background-extraction edit, preserving the sword artwork while producing true alpha for exact opaque background matting at export. No stock artwork or external brand assets were used.
+
+### Sources and exact prompts
+
+### App icon — initial generation
+
+Generated source: `C:\Users\krist\.codex\generated_images\01a1922e-faf2-7f73-a493-a809c570402c\exec-a6b196af-72e9-4dc6-a5a9-419a7f09c146.png`
+
+`transparent_background: false`
+
+```text
+Use case: logo-brand.
+Asset type: square app icon for the original cheerful Czech foam-sword game Mečovačka.
+Primary request: a polished bold symbol of TWO CROSSED FOAM TRAINING SWORDS on a completely opaque, perfectly FLAT solid dark purple #14123a background filling the entire square edge to edge. No rounded-corner tile or outer frame.
+Subject: two thick soft cylindrical toy foam blades forming a balanced X, one bright cyan #4fd1ff and one vivid orange #ff7a1a, each with a prominent smooth ROUND WHITE padded safety cap at its upper tip, simple rounded yellow #ffd21f guards, and short dark-purple ribbed handles toward the lower corners. Clearly soft sports equipment, broad blunt rounded ends, no pointed blade and no metal weapon appearance.
+Style: cheerful polished cartoon, thick clean dark-purple #1b1430 outlines, soft cel shading, subtle highlights on the foam, chunky simple geometry, memorable silhouette that stays clear at 48px.
+Composition: centered symmetrical crossed swords; show both complete handles, both guards, both long foam blades and both white tips, comfortable even safe padding around entire icon, fill about 78 percent of square. Keep the solid flat background uniform with zero gradient, texture, glow or vignette.
+Target: 512x512 PNG sRGB, opaque.
+No text, letters, logo lettering, characters, extra ornaments, badge, border, backdrop objects, watermark or real brand.
+```
+
+### App icon — targeted background extraction
+
+Generated source selected for final export: `C:\Users\krist\.codex\generated_images\01a1922e-faf2-7f73-a493-a809c570402c\exec-0f8aea5f-58d9-4a85-974f-94ce8c1128fe.png`
+
+Input: initial app icon source above, inspected before editing. `transparent_background: true`. This isolated the existing sword artwork; final export then matted its alpha onto the exact requested opaque color.
+
+```text
+Use case: background-extraction.
+Remove ONLY the solid dark purple background from this original app icon, replacing it with genuine alpha transparency. Preserve the exact two crossed foam swords, cyan and orange cylindrical blades, large white rounded padded tips, yellow guards and pommels, dark-purple grips, dark outline, proportions, position, colors, shading and clean edges. No redesign or movement. Retain all dark outlines around the swords; do not mistake their dark outlines or handle details for background. Only empty background becomes transparent, including the spaces between the crossed swords and handles. One square RGBA cutout of the same artwork, full silhouettes intact with the same margins. No text, shadow backdrop, checkerboard pixels or new elements. This is an intermediate cutout for mechanical export onto the exact solid app background color.
+```
+
+### Open Graph illustration
+
+Generated source: `C:\Users\krist\.codex\generated_images\01a1922e-faf2-7f73-a493-a809c570402c\exec-795fbecc-04aa-45b6-85f7-c032afb8e85e.png`
+
+Input references in the order listed above. `transparent_background: true`.
+
+```text
+Use case: compositing.
+Asset type: horizontal social link preview / open graph illustration for the original cheerful Czech game Mečovačka. Target 1200x630, approximately 1.9:1 aspect ratio.
+Input image 1: EXACT OFFICIAL LOGO to preserve, including its original lettering, colors, outlines and foam sword underline. The text is exactly "Mečovačka", letter by letter M-e-č-o-v-a-č-k-a, both lowercase č letters have their carons. This is the only text allowed.
+Input image 2: original FOX Zrzka character identity and costume reference; preserve her face, orange fur, cream muzzle, orange headband and padded orange vest, dark navy sleeves.
+Input image 3: original FROG Kvak character identity and costume reference; preserve his face, bright green skin, pale yellow-green muzzle, green headband and padded green vest with yellow edging, coral-red sleeves.
+Input image 4: ENVIRONMENT REFERENCE ONLY: the actual game's wooden duel pier on a South Bohemian pond, narrow plank deck, rope rails ONLY along the long sides, both short ends fully OPEN with no gates or rails. Ignore the screenshot's diagnostic text and camera framing.
+Composition: a beautiful compact cheerful cartoon vignette with the EXACT PROVIDED LOGO prominently centered across the upper third, and an energetic friendly sporting duel below it. Two fully visible recognizable animal fencers, FOX to left and FROG to right, face each other in active balanced playful fencing stances on the wooden pier. Large expressive heads and faces readable at preview size. They wear padded training vests and headbands matching the portrait references, dark trousers and chunky cream/yellow shoes. Each holds ONE thick, visibly SOFT cylindrical foam sword, fox's orange and frog's green, both with big ROUND WHITE safety tips and simple guards; the two soft blades meet in a clear playful crossing above the middle of the pier without hiding faces. No sharp points or metal weapons.
+Show the pier in three-quarter slightly elevated view as a narrow horizontal stage with visible warm wooden planks and posts; side rope railings low enough not to cover faces or vests, OPEN short ends left and right. Under and around it a compact turquoise pond water shape with a few ripples, reeds and lily pads, forming a charming self-contained cutout scene. No solid full-canvas sky or background.
+Style: same thick clean dark-purple #1b1430 outlines and polished soft cel shading as our character portraits; vivid cheerful orange, green, cyan, warm wood, creamy white. Warm friendly afternoon light. Strong clear silhouette and balanced hierarchy: logo first, two smiling focused fencers second, pier and pond third.
+Actual alpha TRANSPARENT surroundings outside the logo and contained pond vignette; full artwork and logo stay safely within canvas with clean margins. Clean crisp professional game artwork, not a screenshot, not a poster panel. Do not add any words, subtitles, badges, annotation, watermark, extra characters or real brands. Preserve correct Czech logo accents and original identities.
+```
+
+### Mechanical export
+
+Bundled Sharp performed format export only. The icon cutout was resized to 512 × 512 with contain/transparent padding and matted onto `#14123a`, then converted to/embedded with sRGB and encoded with PNG compression level 9 and adaptive filtering. The 192 × 192 icon was resized from the resulting 512 × 512 PNG. The OG source was resized with contain and transparent padding to exactly 1200 × 630; its alpha was preserved. No drawing, scene compositing or content synthesis was done in code.
+
+Export helper: `tmp/mc-app-export.cjs`. Diagnostic metadata: `tmp/mc-app/qa.json`. All original generated sources are retained at the paths above.
+
+### QA and freeze
+
+Inspected original generations and final exports. The 192 px icon remains readable with both full handles, colored foam blades and large round white ends. Both icons are fully opaque and the top-left background pixel is exactly RGB 20, 18, 58. OG has the correct dimensions, embedded sRGB and 278416 fully transparent pixels; its corner is RGBA (0, 0, 0, 0). Inspected the complete OG over the game's dark purple background via `tmp/mc-app/og-preview.png`: lettering and both accents are clear, original character identities/costumes are recognizable, faces are unobstructed, foam sword tips are blunt white caps, and the wooden pier has rope side railing with open ends. The foreground is drawn open to keep the full fencing poses visible. No added subtitle, diagnostic caption, text or watermark is present.
+
+
+
+
