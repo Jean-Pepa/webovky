@@ -14,6 +14,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
 html, body { margin: 0; min-height: 100%; background: var(--ink); color: #fff; font-family: var(--text); overscroll-behavior: none; }
 html:has(body[data-screen="race"]) { touch-action: none; }
 body { background: radial-gradient(circle at 50% -20%, #3a2a85, var(--ink) 60%) fixed; -webkit-user-select: none; user-select: none;
@@ -74,13 +75,16 @@ input { font-family: var(--text); -webkit-user-select: text; user-select: text; 
 .warn { margin: 0; padding: 8px 10px; border-radius: 12px; background: rgba(255,77,109,0.18); font-size: 14px; }
 .perm { font-size: 20px; }
 .host-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.host-opts .wide .stepper b { font-family: var(--text); font-weight: 800; font-size: 16px; flex: 1; }
-.stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; background: rgba(255,255,255,0.05); border-radius: 16px; padding: 10px 14px; }
-.stats > b { font-size: 16px; }
-.stats > small { color: var(--muted); font-weight: 700; justify-self: end; }
-.st { display: contents; }
-.st span { font-size: 13px; font-weight: 700; color: var(--muted); }
-.st i { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--yellow) var(--v), rgba(255,255,255,0.12) var(--v)); }
+.host-track { display: flex; align-items: center; gap: 8px; }
+.host-track b { flex: 1; min-width: 0; text-align: center; font-size: 20px; font-weight: 800; line-height: 1.15; }
+.host-track button { flex: none; width: 46px; height: 46px; border-radius: 12px; border: 0; background: rgba(255,255,255,0.14); font-size: 20px; font-weight: 800; }
+.settings { background: rgba(255,255,255,0.06); border-radius: 20px; padding: 12px 14px; }
+.settings summary { list-style: none; display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 17px; cursor: pointer; }
+.settings summary::-webkit-details-marker { display: none; }
+.settings summary small { margin-left: auto; color: var(--muted); font-weight: 700; font-size: 14px; }
+.settings summary::after { content: "▾"; color: var(--muted); font-size: 18px; }
+.settings[open] summary::after { content: "▴"; }
+.set-body { display: grid; gap: 10px; margin-top: 12px; }
 .cup-line { margin: 0; text-align: center; font-weight: 800; color: var(--cyan); }
 .host-opts small { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
 .host-opts b { font-size: 17px; }

@@ -1,6 +1,6 @@
 // Fyzika motokáry: „arkádový“ model s driftem (3 stupně), turbem, skoky s triky,
-// beranidlem, smykem a nárazy do bariér. Vlastnosti postav mění rychlost, zrychlení,
-// ovladatelnost a váhu.
+// beranidlem, smykem a nárazy do bariér. Všechny motokáry (hráči i boti) jsou stejně
+// rychlé a stejně těžké. Rychlejší jsou jen s turbem, beranidlem, křídly a z kopce.
 import type { CharacterDef } from "../shared/characters";
 import type { ItemId } from "../shared/items";
 import type { Track, Projection } from "./track";
@@ -79,10 +79,8 @@ export class Kart {
   heading = 0;
   /** dopředná rychlost z posledního kroku */
   vF = 0;
-  /** násobek max. rychlosti (boti: obtížnost a „gumička“) */
+  /** násobek max. rychlosti (jen po dojetí do cíle, kdy motokára dojíždí pomaleji) */
   speedMul = 1;
-  /** rychlostní třída závodu */
-  classMul = 1;
   input: Controls = { steer: 0, gas: 0, brake: 0, drift: false };
 
   driftHeld = false;
@@ -144,8 +142,9 @@ export class Kart {
     return this.slot >= 0;
   }
 
+  /** váha při srážkách: všichni stejně, beranidlo odstrčí ostatní */
   get weight() {
-    return this.char.stats.weight * (this.ramT > 0 ? 3 : 1);
+    return this.ramT > 0 ? 3 : 1;
   }
 
   /** Postaví motokáru na místo a vynuluje stav. */
@@ -182,7 +181,6 @@ export class Kart {
 
   step(dt: number, track: Track, theme: Theme, canDrive: boolean, ev: KartEvents) {
     const c = this.input;
-    const st = this.char.stats;
     const active = canDrive && this.spinT <= 0;
     const steer = active ? clamp(c.steer, -1, 1) : 0;
     const gas = active && this.stallT <= 0 ? clamp(c.gas, 0, 1) : 0;
@@ -213,13 +211,13 @@ export class Kart {
     const flying = this.flyT > 0;
     const airborne = (this.y > 0.25 && this.onRamp < 0) || flying;
     this.offroad = !airborne && Math.abs(this.proj.d) > track.hw + 0.9;
-    let vmax = MAX_SPEED * this.speedMul * this.classMul * st.speed;
+    let vmax = MAX_SPEED * this.speedMul;
     if (this.offroad && this.boostT <= 0 && this.ramT <= 0) vmax *= theme.offroad;
     if (this.boostT > 0) vmax *= BOOST_MULT;
     if (this.ramT > 0) vmax *= RAM_MULT;
     if (flying) vmax *= FLY_MULT;
     if (this.drifting) vmax *= 0.98;
-    const accel = ACCEL * st.accel * this.classMul;
+    const accel = ACCEL;
 
     if (gas > 0 && vF > -1 && vF < vmax && (!airborne || flying)) {
       vF = Math.min(vmax, vF + accel * gas * (1 - (0.5 * Math.max(0, vF)) / vmax) * dt);
@@ -287,10 +285,10 @@ export class Kart {
     let turn: number;
     if (this.drifting) {
       const tight = clamp(steer * this.driftDir, -1, 1);
-      turn = -this.driftDir * (DRIFT_BASE + DRIFT_EXTRA * tight) * Math.sqrt(st.handling);
+      turn = -this.driftDir * (DRIFT_BASE + DRIFT_EXTRA * tight);
     } else {
       const sf = clamp(Math.abs(vF) / 6, 0, 1) * (1 - 0.28 * clamp(Math.abs(vF) / MAX_SPEED, 0, 1));
-      turn = -steer * TURN * st.handling * sf * (vF >= 0 ? 1 : -1);
+      turn = -steer * TURN * sf * (vF >= 0 ? 1 : -1);
     }
     if (airborne && !flying) turn *= 0.5;
     if (this.spinT > 0) turn = 0;

@@ -2,20 +2,18 @@
 import QRCode from "qrcode";
 import { CHARACTERS, hex } from "../shared/characters";
 import { charImg, img, logoImg } from "../shared/assets";
-import { MAX_PLAYERS, type CupInfo, type LobbyPlayer, type Mode, type ResultRow } from "../shared/protocol";
+import { MAX_PLAYERS, type CupInfo, type LobbyPlayer, type ResultRow } from "../shared/protocol";
 
 export interface LobbyHandlers {
   start(): void;
   laps(delta: number): void;
   bots(delta: number): void;
+  /** posun ve výběru trati (poslední možnost je pohár) */
   track(delta: number): void;
-  mode(): void;
-  speed(delta: number): void;
   addKeyboard(): void;
   removePlayer(slot: number): void;
   toggleSound(): void;
   fullscreen(): void;
-  mirrors(): void;
 }
 
 export interface LobbyView {
@@ -29,11 +27,6 @@ export interface LobbyView {
   canStart: boolean;
   muted: boolean;
   soundReady: boolean;
-  mode: Mode;
-  speed: number;
-  speedName: string;
-  trackCount: number;
-  mirrors: boolean;
 }
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
@@ -75,15 +68,13 @@ export class Lobby {
         <section class="lb-players"></section>
         <section class="lb-setup">
           <div class="opt track"><small>Trať</small><div class="tsel"><button data-a="track-" aria-label="Předchozí trať">◀</button><b class="tname"></b><button data-a="track+" aria-label="Další trať">▶</button></div><span class="tdesc"></span></div>
-          <div class="opt"><small>Režim</small><button class="mode-btn" data-a="mode"></button></div>
-          <div class="opt"><small>Rychlost</small><div class="stepper"><button data-a="speed-">−</button><b class="speedn"></b><button data-a="speed+">+</button></div></div>
           <div class="opt"><small>Kola</small><div class="stepper"><button data-a="laps-">−</button><b class="laps">3</b><button data-a="laps+">+</button></div></div>
           <div class="opt"><small>Soupeři</small><div class="stepper"><button data-a="bots-">−</button><b class="bots">5</b><button data-a="bots+">+</button></div></div>
           <button class="start-btn" data-a="start">START ▶</button>
         </section>
         <footer class="lb-foot">
-          <span>Bez telefonu: <kbd>K</kbd> přidá hráče na klávesnici (šipky/WASD, <kbd>mezerník</kbd> drift, <kbd>E</kbd>/<kbd>Enter</kbd> věc, <kbd>Q</kbd> hod opačně). <kbd>T</kbd> trať, <kbd>P</kbd> pohár, <kbd>R</kbd> rychlost.</span>
-          <span class="foot-btns"><button data-a="kb">⌨️ Hráč na klávesnici</button><button data-a="mirrors" class="mir">🪞 Zrcátka</button><button data-a="sound" class="snd">🔊 Zvuk</button><button data-a="fs">⛶ Celá obrazovka</button></span>
+          <span>Bez telefonu: <kbd>K</kbd> přidá hráče na klávesnici (šipky nebo WASD, <kbd>mezerník</kbd> drift, <kbd>E</kbd> věc).</span>
+          <span class="foot-btns"><button data-a="kb">⌨️ Hráč na klávesnici</button><button data-a="sound" class="snd">🔊 Zvuk</button><button data-a="fs">⛶ Celá obrazovka</button></span>
         </footer>
       </div>`;
     parent.append(this.el);
@@ -99,13 +90,9 @@ export class Lobby {
       else if (a === "bots+") h.bots(1);
       else if (a === "track-") h.track(-1);
       else if (a === "track+") h.track(1);
-      else if (a === "mode") h.mode();
-      else if (a === "speed-") h.speed(-1);
-      else if (a === "speed+") h.speed(1);
       else if (a === "kb") h.addKeyboard();
       else if (a === "sound") h.toggleSound();
       else if (a === "fs") h.fullscreen();
-      else if (a === "mirrors") h.mirrors();
       else if (a === "kick") h.removePlayer(Number(b.dataset.slot));
     });
   }
@@ -150,16 +137,12 @@ export class Lobby {
     const opt = this.el.querySelector(".opt.track") as HTMLElement;
     opt.style.backgroundImage = thumb ? `linear-gradient(90deg, rgba(22,15,51,0.92) 45%, rgba(22,15,51,0.4)), url("${thumb}")` : "";
     opt.style.backgroundSize = "cover";
-    (this.el.querySelector(".tdesc") as HTMLElement).textContent =
-      v.mode === "cup" ? `Pohár: všech ${v.trackCount} tratí za sebou, body za umístění.` : v.trackDesc;
-    (this.el.querySelector(".mode-btn") as HTMLElement).textContent = v.mode === "cup" ? "🏆 Pohár" : "🏁 Jeden závod";
-    (this.el.querySelector(".speedn") as HTMLElement).textContent = v.speedName;
+    (this.el.querySelector(".tdesc") as HTMLElement).textContent = v.trackDesc;
     (this.el.querySelector(".laps") as HTMLElement).textContent = String(v.laps);
     (this.el.querySelector(".bots") as HTMLElement).textContent = String(v.bots);
     const start = this.el.querySelector(".start-btn") as HTMLButtonElement;
     start.disabled = !v.canStart;
     start.title = v.canStart ? "" : "Nejdřív se musí připojit aspoň jeden hráč";
-    (this.el.querySelector(".mir") as HTMLElement).textContent = v.mirrors ? "🪞 Zrcátka: zap" : "🪞 Zrcátka: vyp";
     (this.el.querySelector(".snd") as HTMLElement).textContent = !v.soundReady
       ? "🔈 Klikni pro zvuk"
       : v.muted

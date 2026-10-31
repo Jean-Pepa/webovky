@@ -12,8 +12,8 @@ Postavy (zvířátka), trať i věci jsou vlastní, nejde o kopii žádné exist
 2. Na telefonu naskenuj QR kód z obrazovky. Případně otevři `…/pad` a zadej čtyřpísmenný kód.
 3. Na telefonu si vyber postavičku a napiš jméno. Hrát můžou **až 4 hráči**, zbytek startovního pole
    doplní boti.
-4. Hráč 1 (👑) zvolí **jeden závod** nebo **pohár** (všechny 3 tratě za sebou, body za umístění),
-   trať, rychlost (Pohodová / Závodní / Šílená), kola a soupeře. Pak dá **START**.
+4. Hráč 1 (👑) vybere trať, nebo jako poslední možnost **🏆 Pohár** (všechny 4 tratě za sebou,
+   body za umístění). Případně změní počet kol a soupeřů a dá **START**.
 
 **Tratě:** Zelená louka (pro začátek), Písečný kaňon (vracečky, dva skokánky), Ledové jezero
 (silnice klouže) a **Šílená hora**: serpentiny do kopce, tunel skrz skálu, most přes vlastní trať,
@@ -23,10 +23,12 @@ ukáže červený kruh na silnici a varování na obrazovce. Hořící trosky pa
 **Zlaté bedny** visí ve vzduchu nad skokánky, sebrat jdou jen výskokem. Nejčastěji z nich padnou
 🦅 **Křídla**: pár vteřin letíš nad tratí, jsi rychlejší a nic tě netrefí.
 
-**Postavičky** se liší: lehké (Kvak, Hop) rychle zrychlí a dobře zatáčí, těžké (Huňáč, Šroubek,
-Kvík) mají vyšší max. rychlost a při srážce odstrčí lehčí.
+**Všichni jsou stejně rychlí.** Postavičky se liší jen vzhledem a boti mají stejné motokáry jako
+hráči, jen někteří z nich řídí hůř (víc ubírají plyn v zatáčkách a méně driftují). Rychlejší tě
+udělá jen turbo, drift, závětří, skokánky, kopec dolů a věci.
 
-**Ovládání na telefonu** (drž ho na šířku):
+**Ovládání na telefonu** (drž ho na šířku). Nastavení (náklon nebo dotyk, citlivost, automatický
+plyn, vibrace, zrcátko) je v lobby pod **⚙️ Ovládání**, jinak stačí vybrat postavičku.
 - **Náklon jako volant:** natáčej telefon doleva a doprava. Funguje jen přes https, na iPhonu je
   potřeba ťuknutím povolit pohybové senzory.
 - **Dotykové řízení** (záloha): táhni prstem do stran v levé polovině displeje. Plyn je automatický.
@@ -48,20 +50,21 @@ Kvík) mají vyšší max. rychlost a při srážce odstrčí lehčí.
   - 🦅 **Křídla** (hlavně ze zlaté bedny) — let nad tratí.
   Čím jsi dál vzadu, tím lepší věci padají.
 - **Zpětné zrcátko** nahoře uprostřed obrazovky ukazuje, kdo se blíží zezadu. Každý hráč si ho
-  může vypnout v nastavení na telefonu, na PC jde vypnout pro všechny tlačítkem 🪞 v lobby
-  (nebo klávesou `Z`).
+  může vypnout na telefonu pod ⚙️ Ovládání.
 - Telefon vibruje při nárazu, zásahu a v cíli. Na iPhonu vibrace nejsou, Safari je nepodporuje.
 
 **Bez telefonu:** v lobby klávesa `K` přidá hráče na klávesnici (max. dva). Ovládá se šipkami nebo
 WASD, drift a trik je `mezerník` / pravý `Shift`, věc `E` / `Enter`, hod opačným směrem `Q` /
-pravý `Ctrl`. V lobby `T` mění trať, `P` přepíná pohár, `R` rychlost, `↑↓` počet kol a `←→`
-soupeře. `Enter` přeskočí průlet kamerou a `Esc` dá pauzu (pokračovat, začít znovu, do lobby).
+pravý `Ctrl`. V lobby `T` mění trať (poslední možnost je pohár), `↑↓` počet kol a `←→`
+soupeře. `Backspace` odebere hráče na klávesnici. `Enter` přeskočí průlet kamerou a `Esc` dá pauzu (pokračovat, začít znovu, do lobby).
 Pauzu může dát i hráč 1 tlačítkem ⏸ na telefonu.
 
 ## Jak to funguje
 
 - **PC** (`kary.html`, `src/game/`) vykresluje 3D scénu (three.js), počítá fyziku, boty, věci
-  a pořadí. Pro 2–4 hráče rozdělí obrazovku. Před startem proletí kamera nad tratí, při
+  a pořadí. Obrazovku rozdělí podle počtu hráčů: dva hráči vlevo a vpravo, tři a čtyři do
+  čtverce 2×2 (u tří je ve volném čtverci pohled na závod, mapa a průběžné pořadí). Před startem
+  proletí kamera nad tratí, při
   výsledcích krouží kolem vítěze. Hudba i zvuky se generují v prohlížeči (Web Audio) a mají
   vlastní melodie pro každou trať.
 - **Telefon** (`pad.html`, `src/pad/`) posílá asi 30× za sekundu, jak je natočený a co mačkáš.

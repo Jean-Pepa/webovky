@@ -1,5 +1,8 @@
 // Boti: jedou po ideální stopě (do vnitřku zatáček), driftují a používají věci.
-import type { Controls, Kart } from "./kart";
+// Motokáru mají stejnou jako hráči. Obtížnost (skill) mění jen to, jak dobře řídí:
+// slabší boti v zatáčkách víc ubírají plyn, méně driftují a drift pouštějí dřív
+// (slabší turbo).
+import { MAX_SPEED, type Controls, type Kart } from "./kart";
 import type { Track } from "./track";
 import { clamp, wrapAngle } from "./util";
 
@@ -65,6 +68,9 @@ export class BotBrain {
       gas = 0;
       brake = 1;
       steer = -steer;
+    } else if (this.skill < 1 && ctx.racing && k.boostT <= 0) {
+      const sharp = clamp((Math.abs(track.curvAhead(idx, 4, 26)) - 0.012) / 0.035, 0, 1);
+      if (vF > MAX_SPEED * (1 - (1 - this.skill) * 1.5 * sharp)) gas = 0;
     }
 
     // drift do delších zatáček
@@ -76,11 +82,11 @@ export class BotBrain {
       if (!k.drifting && this.holdT > 0.45) this.hold = false;
       if (k.drifting) {
         const stillTurning = Math.abs(cNow) > 0.01 && Math.sign(cNow) === -k.driftDir;
-        if (k.driftLevel >= 2 || (k.driftLevel >= 1 && !stillTurning) || this.holdT > 3.6) this.hold = false;
+        if (k.driftLevel >= (this.skill >= 0.9 ? 2 : 1) || (k.driftLevel >= 1 && !stillTurning) || this.holdT > 3.6) this.hold = false;
       }
       if (!k.drifting && Math.abs(steer) < 0.4) steer = Math.sign(-kAhead || steer) * 0.6;
       if (!this.hold) drift = false;
-    } else if (this.reverseT <= 0 && vF > 15 && Math.abs(kAhead) > 0.02 && r() < dt * 2.5 * this.skill) {
+    } else if (this.reverseT <= 0 && vF > 15 && Math.abs(kAhead) > 0.02 && r() < dt * 2.5 * this.skill * this.skill) {
       this.hold = true;
       this.holdT = 0;
       drift = true;

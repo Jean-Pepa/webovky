@@ -2,7 +2,8 @@
 
 ## Co stavíme
 Vlastní závody motokár. Hra běží v prohlížeči na PC (velká obrazovka), ovladače jsou telefony
-hráčů. 1–4 hráči + boti, při více hráčích rozdělená obrazovka. Nic se neinstaluje: PC otevře web,
+hráčů. 1–4 hráči + boti, při více hráčích rozdělená obrazovka (2 hráči vlevo a vpravo,
+3–4 hráči čtverec 2×2). Nic se neinstaluje: PC otevře web,
 telefon naskenuje QR kód.
 
 Je to **originální hra**, ne kopie Mario Kart: vlastní postavy (zvířátka), vlastní trať, vlastní
@@ -20,16 +21,18 @@ věci. Žádné postavy, názvy, grafika, hudba ani zvuky od Nintenda.
 ## Rozsah
 - 4 tratě (`src/game/tracks.ts`): Zelená louka, Písečný kaňon, Ledové jezero (klouže) a Šílená
   hora (výškové rozdíly, serpentiny, tunel skrz skálu, most přes trať, velký skok, padající
-  letadla s hořícími troskami). Jeden závod nebo pohár ze všech tratí s body. 3 rychlosti,
-  1–5 kol, 0–7 botů.
+  letadla s hořícími troskami). Jeden závod nebo pohár ze všech tratí s body (pohár je poslední
+  možnost ve výběru trati). 1–5 kol, 0–7 botů.
 - Zlaté bedny (visí nad skokánky, sebrat jdou jen výskokem): nejčastěji **křídla** — pár vteřin
   let nad tratí (rychlejší, nic tě netrefí).
-- 8 postav s vlastnostmi (lehké / střední / těžké — `src/shared/characters.ts`).
+- 8 postav (`src/shared/characters.ts`), liší se jen vzhledem. **Všechny motokáry (i boti) jsou
+  stejně rychlé a stejně těžké**, zrychlují jen turbo, drift, závětří, skokánky a věci. Boti se
+  liší jen tím, jak dobře řídí (`src/game/ai.ts`), žádná skrytá „gumička“.
 - Věci (`src/shared/items.ts`): turbo, trojité turbo, olej (vylít za sebe / hodit dopředu),
   kokos (letí rovně a odráží se), raketa (navádí se dopředu i dozadu), roj včel (letí na
   vedoucího), štít, beranidlo (krátká nezranitelnost a trkání), křídla (let).
 - Jízda: drift se 3 stupni turba, turbo start, závětří, skokánky s triky (turbo po dopadu),
-  turbo pásy, bariéry, srážky podle váhy.
+  turbo pásy, bariéry, srážky (beranidlo odstrčí ostatní).
 
 ## Kdo co dělá
 | Část | Kdo | Soubory |
@@ -168,8 +171,8 @@ a předej uživateli nebo založ GitHub issue v repu `Jean-Pepa/webovky`.
 7. Při ztrátě spojení zkoušej znovu každé 2 s se stejným `cid`.
 8. `hud` chodí asi 6× za sekundu a při změně, `buzz` = vibrace (`navigator.vibrate`),
    `results` po závodě.
-9. Jen hostitel lobby (`lobby.host === true`) posílá `cmd`: `start`, `track` (v = index),
-   `laps` (v = 1–5), `bots` (v = 0…maxBots), `lobby` (z výsledků zpět do lobby).
+9. Jen hostitel lobby (`lobby.host === true`) posílá `cmd`: `start`, `track` (v = index trati,
+   v = počet tratí = pohár), `laps` (v = 1–5), `bots` (v = 0…maxBots), `next` (z výsledků dál).
 
 ## Ovladač: požadavky
 - Na šířku. Na výšku ukaž výzvu „Otoč telefon“.
@@ -182,7 +185,8 @@ a předej uživateli nebo založ GitHub issue v repu `Jean-Pepa/webovky`.
   Volba „automatický plyn“.
 - Multi-touch přes pointer events, `touch-action: none`, žádný zoom ani označování textu.
 - Wake Lock (displej nezhasne), na Androidu celá obrazovka.
-- Lobby: jméno, výběr postavy (obsazené zašedlé). Hostitel navíc trať, kola, boti a START.
+- Lobby: jméno, výběr postavy (obsazené zašedlé). Hostitel navíc trať (i pohár), kola, boti
+  a START. Nastavení ovládání je sbalené pod „⚙️ Ovládání“.
 - Výsledky: tvoje místo a tabulka. Hostitel má tlačítko „Další závod“.
 
 ## Vývoj
@@ -205,3 +209,5 @@ náklon až přes HTTPS (Vercel).
 - v2: `hud.drift` je -1 (nedriftuje) až 3 (třetí stupeň); `hud` navíc `pause` a `host`;
   `cmd` navíc `pause`, `restart`, `quit` (pauza z telefonu hostitele).
 - v2: `me` má volitelné `mirror` (zapnutí/vypnutí zpětného zrcátka hráče).
+- v3: rychlostní třídy zrušeny (`cmd` `speed`, `lobby.speed`, `lobby.speeds`). Zrušen i `cmd`
+  `mode`: pohár se volí přes `cmd` `track` s `v` = počet tratí, `lobby.mode` pak je `"cup"`.

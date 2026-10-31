@@ -13,6 +13,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ink); color: var(--white); font-family: var(--text); }
 #scene { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
 #hud, #ui { position: fixed; inset: 0; pointer-events: none; }
@@ -63,14 +64,11 @@ kbd { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2
 .av { flex: none; width: 52px; height: 52px; border-radius: 50%; background: var(--c); display: grid; place-items: center; overflow: hidden;
   border: 3px solid var(--line); box-shadow: 0 3px 0 var(--line); font-size: 30px; }
 .av img { width: 100%; height: 100%; object-fit: cover; }
-.lb-setup { display: grid; grid-template-columns: 1.7fr 1fr 1.25fr 0.85fr 0.95fr auto; gap: 10px; align-items: stretch; }
+.lb-setup { display: grid; grid-template-columns: 2.2fr 1fr 1fr auto; gap: 10px; align-items: stretch; }
 .tsel { display: flex; align-items: center; gap: 8px; }
 .tsel b { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tsel button, .mode-btn { border: 0; border-radius: 10px; background: rgba(255,255,255,0.14); color: #fff; font-weight: 800; }
-.tsel button { width: 32px; height: 32px; font-size: 14px; }
-.mode-btn { padding: 8px 10px; font-size: 16px; text-align: left; }
-.tsel button:hover, .mode-btn:hover { background: rgba(255,255,255,0.25); }
-.speedn { font-family: var(--text) !important; font-weight: 800 !important; font-size: 17px !important; min-width: 74px !important; }
+.tsel button { width: 36px; height: 36px; border: 0; border-radius: 10px; background: rgba(255,255,255,0.14); color: #fff; font-weight: 800; font-size: 15px; }
+.tsel button:hover { background: rgba(255,255,255,0.25); }
 .opt { background: rgba(255,255,255,0.06); border-radius: 18px; padding: 10px 16px; display: grid; align-content: center; gap: 2px; }
 .opt small { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
 .opt b { font-size: 22px; }
@@ -91,7 +89,6 @@ kbd { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2
 
 /* ---------- HUD ---------- */
 .pp { position: absolute; overflow: hidden; --u: 18px; font-size: var(--u); }
-.pp + .pp { box-shadow: inset 0 0 0 2px rgba(22,15,51,0.9); }
 .pp-tl { position: absolute; left: calc(var(--u) * 0.9); top: calc(var(--u) * 0.6); display: grid; gap: 2px; }
 .pp-pos { font-family: var(--title); line-height: 0.9; color: #fff; -webkit-text-stroke: calc(var(--u) * 0.16) var(--line); paint-order: stroke fill;
   text-shadow: 0 calc(var(--u) * 0.18) 0 var(--line); }
@@ -136,6 +133,19 @@ kbd { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2
   box-shadow: 0 0 0 2px var(--line), 0 4px 0 var(--line), 0 8px 18px rgba(0,0,0,0.35); }
 .pp-mirror::after { content: ""; position: absolute; left: 50%; top: -10px; width: 16px; height: 8px; margin-left: -8px; border-radius: 4px 4px 0 0; background: var(--line); }
 .minimap { position: absolute; display: none; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.45)); }
+.split { position: absolute; background: var(--line); box-shadow: 0 0 0 1px rgba(255,255,255,0.16); pointer-events: none; }
+.split.v { top: 0; bottom: 0; width: 4px; margin-left: -2px; }
+.split.h { left: 0; right: 0; height: 4px; margin-top: -2px; }
+.board { position: absolute; display: grid; align-content: start; gap: calc(var(--u) * 0.3); font-size: var(--u); pointer-events: none; }
+.board h4 { margin: 0; font-family: var(--title); font-weight: 400; font-size: calc(var(--u) * 1.5); color: var(--yellow);
+  -webkit-text-stroke: calc(var(--u) * 0.12) var(--line); paint-order: stroke fill; }
+.board ol { list-style: none; margin: 0; padding: 0; display: grid; gap: calc(var(--u) * 0.25); }
+.board li { display: grid; grid-template-columns: calc(var(--u) * 1.8) calc(var(--u) * 0.9) 1fr auto; align-items: center; gap: calc(var(--u) * 0.5);
+  padding: calc(var(--u) * 0.1) calc(var(--u) * 0.7); border-radius: 999px; background: rgba(22,15,51,0.72); font-weight: 800; font-size: calc(var(--u) * 1.05); line-height: 1.5; }
+.board li.me { background: color-mix(in srgb, var(--c) 45%, rgba(22,15,51,0.8)); box-shadow: inset 0 0 0 2px var(--c); }
+.board li b { font-family: var(--title); font-weight: 400; color: var(--yellow); }
+.board li i { width: calc(var(--u) * 0.9); height: calc(var(--u) * 0.9); border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px var(--line); }
+.board li span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .countdown { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--title); font-size: 22vh; color: var(--yellow);
   -webkit-text-stroke: 1.2vh var(--line); paint-order: stroke fill; text-shadow: 0 1.6vh 0 var(--line); opacity: 0; pointer-events: none; }
 .countdown.pop { animation: count 0.9s ease-out forwards; }
@@ -180,12 +190,24 @@ kbd { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2
 @media (max-width: 900px), (max-height: 640px) {
   .lb-card { padding: 14px 16px; gap: 10px; border-radius: 20px; }
   .logo-text { font-size: 44px; }
+  .lb-logo { height: 60px; }
   .lb-head p { font-size: 16px; }
+  .lb-join { gap: 18px; }
+  .qr-card canvas { width: 150px; height: 150px; }
+  .lb-steps li { font-size: 17px; padding-left: 44px; }
+  .lb-steps li::before { width: 32px; height: 32px; font-size: 20px; }
+  .lb-steps small { font-size: 14px; }
+  .net { margin-top: 8px; }
+  .pl { min-height: 62px; padding: 8px 10px; }
+  .av { width: 44px; height: 44px; }
+  .opt { padding: 8px 14px; }
+  .start-btn { font-size: 28px; padding: 0 26px; }
+  .rs-cols { grid-auto-flow: row; }
+}
+@media (max-width: 900px) {
   .lb-join { grid-template-columns: 1fr; justify-items: center; }
-  .qr-card canvas { width: 180px; height: 180px; }
   .lb-players { grid-template-columns: repeat(2, 1fr); }
   .lb-setup { grid-template-columns: 1fr 1fr; }
-  .rs-cols { grid-auto-flow: row; }
   .lb-setup .track, .start-btn { grid-column: 1 / -1; }
   .start-btn { padding: 10px; }
 }

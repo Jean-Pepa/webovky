@@ -90,7 +90,7 @@ export class PadNet {
   }
 
   send(m: PadMsg) {
-    if (!this.conn || !this.conn.open) return;
+    if (!this.conn || !this.conn.open || this.conn.dataChannel?.readyState !== "open") return;
     try {
       void this.conn.send(m);
     } catch {

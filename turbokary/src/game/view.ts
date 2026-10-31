@@ -25,27 +25,31 @@ export class ChaseCam {
     if (slot >= 0) this.cam.layers.disable(1 + slot);
   }
 
-  snap(k: Kart) {
+  snap(k: Kart, aspect = 16 / 9) {
+    const narrow = clamp((1.45 - aspect) / 0.55, 0, 1);
     this.yaw = k.heading;
     const fx = Math.sin(this.yaw), fz = Math.cos(this.yaw);
-    this.pos.set(k.x - fx * 6.4, k.gy + 2.7, k.z - fz * 6.4);
+    this.pos.set(k.x - fx * (6.4 + narrow * 0.9), k.gy + 2.7 + narrow * 0.6, k.z - fz * (6.4 + narrow * 0.9));
     this.look.set(k.x + fx * 4, k.gy + 1.1, k.z + fz * 4);
     this.cam.position.copy(this.pos);
     this.cam.lookAt(this.look);
   }
 
-  update(k: Kart, dt: number) {
+  /** aspect = poměr stran výřezu; úzký výřez (dva hráči vedle sebe) dostane širší záběr. */
+  update(k: Kart, dt: number, aspect = 16 / 9) {
+    const narrow = clamp((1.45 - aspect) / 0.55, 0, 1);
+    const back = 6.4 + narrow * 0.9, up = 2.7 + narrow * 0.6;
     const sp = Math.hypot(k.vx, k.vz);
     const velYaw = sp > 3 && k.vF > 0 ? Math.atan2(k.vx, k.vz) : k.heading;
     const target = dampAngle(k.heading, velYaw, 1, 0.35);
     this.yaw = dampAngle(this.yaw, target, 5.5, dt);
     const fx = Math.sin(this.yaw), fz = Math.cos(this.yaw);
-    const want = new THREE.Vector3(k.x - fx * 6.4, k.gy + 2.7 + k.y * 0.8, k.z - fz * 6.4);
+    const want = new THREE.Vector3(k.x - fx * back, k.gy + up + k.y * 0.8, k.z - fz * back);
     this.pos.lerp(want, 1 - Math.exp(-12 * dt));
     // kamera nesmí pod silnici (sjezd z kopce)
     this.pos.y = Math.max(this.pos.y, k.gy + 1.6);
     this.look.set(k.x + fx * 4, k.gy + 1.1 + k.y * 0.85, k.z + fz * 4);
-    const f = 66 + 10 * clamp(k.vF / MAX_SPEED, 0, 1.4) + (k.boostT > 0 ? 6 : 0);
+    const f = 66 + narrow * 10 + 10 * clamp(k.vF / MAX_SPEED, 0, 1.4) + (k.boostT > 0 ? 6 : 0);
     this.fov = damp(this.fov, f, 4, dt);
     this.cam.fov = this.fov;
     this.cam.position.copy(this.pos);
@@ -61,7 +65,7 @@ export class ChaseCam {
 
 /** Poloha zpětného zrcátka v rámci výřezu hráče (nahoře uprostřed). */
 export function mirrorRect(r: Rect): Rect {
-  const w = Math.round(Math.max(170, Math.min(440, r.w * 0.3)));
+  const w = Math.round(Math.max(150, Math.min(440, r.w * 0.3)));
   const h = Math.round(w / 3.3);
   return { x: Math.round(r.x + (r.w - w) / 2), y: r.y + Math.round(Math.max(8, r.h * 0.025)), w, h };
 }
@@ -144,12 +148,16 @@ export class View {
     this.scene.background = new THREE.Color(th.skyHorizon);
   }
 
-  /** Rozložení výřezů (souřadnice CSS, počátek vlevo nahoře). */
+  /**
+   * Rozložení výřezů (souřadnice CSS, počátek vlevo nahoře):
+   * 1 hráč celá obrazovka, 2 hráči vlevo a vpravo, 3–4 hráči čtverec 2×2
+   * (u tří hráčů je ve 4. čtverci pohled na závod, mapa a pořadí).
+   */
   layout(n: number): Rect[] {
     const W = this.width, H = this.height;
-    if (n <= 1) return [{ x: 0, y: 0, w: W, h: H }];
-    if (n === 2) return [{ x: 0, y: 0, w: W, h: Math.floor(H / 2) }, { x: 0, y: Math.floor(H / 2), w: W, h: H - Math.floor(H / 2) }];
     const w2 = Math.floor(W / 2), h2 = Math.floor(H / 2);
+    if (n <= 1) return [{ x: 0, y: 0, w: W, h: H }];
+    if (n === 2) return [{ x: 0, y: 0, w: w2, h: H }, { x: w2, y: 0, w: W - w2, h: H }];
     return [
       { x: 0, y: 0, w: w2, h: h2 },
       { x: w2, y: 0, w: W - w2, h: h2 },
@@ -170,7 +178,8 @@ export class View {
   }
 
   snapCams(humans: Kart[]) {
-    humans.forEach((k, i) => this.cams[i].snap(k));
+    const rects = this.layout(humans.length);
+    humans.forEach((k, i) => this.cams[i].snap(k, rects[i].w / Math.max(1, rects[i].h)));
   }
 
   shake(index: number, amount: number) {
@@ -214,7 +223,7 @@ export class View {
     this.frameNo++;
     this.renderer.setScissorTest(true);
     humans.forEach((k, i) => {
-      this.cams[i].update(k, dt);
+      this.cams[i].update(k, dt, rects[i].w / Math.max(1, rects[i].h));
       this.draw(this.cams[i].cam, rects[i], fx);
       // při 3–4 hráčích se zrcátka obnovují ob snímek (šetří výkon)
       if (mirrors[i]) this.drawMirror(i, k, rects[i], fx, humans.length < 3 || (this.frameNo + i) % 2 === 0);

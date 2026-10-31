@@ -28,6 +28,8 @@ function itemHtml(id: ItemId) {
   return src ? `<img src="${src}" alt="${ITEMS[id].name}">` : `<span>${ITEMS[id].emoji}</span>`;
 }
 
+const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+
 export class Hud {
   private root: HTMLElement;
   private panels: Panel[] = [];
@@ -35,6 +37,10 @@ export class Hud {
   private mini: HTMLCanvasElement;
   private miniBase: HTMLCanvasElement | null = null;
   private miniMap = { sx: 1, ox: 0, oz: 0, size: 200 };
+  /** dělicí čáry mezi výřezy a tabulka pořadí (u 3 hráčů ve 4. čtverci) */
+  private extras: HTMLElement[] = [];
+  private board: HTMLElement | null = null;
+  private boardKey = "";
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -90,12 +96,17 @@ export class Hud {
   /** Vytvoří panely pro hráče podle výřezů obrazovky. */
   layout(rects: Rect[], humans: Kart[], icons: string[], mirrors: boolean[] = []) {
     for (const p of this.panels) p.el.remove();
+    for (const e of this.extras) e.remove();
+    this.extras = [];
+    this.board = null;
+    this.boardKey = "";
+    const unit = (r: Rect) => Math.max(11, Math.min(28, r.h / 24, r.w / 30));
     this.panels = humans.map((k, i) => {
       const r = rects[i];
       const el = document.createElement("div");
       el.className = "pp";
       Object.assign(el.style, { left: r.x + "px", top: r.y + "px", width: r.w + "px", height: r.h + "px" });
-      el.style.setProperty("--u", Math.max(11, Math.min(28, r.h / 24)) + "px");
+      el.style.setProperty("--u", unit(r) + "px");
       el.style.setProperty("--pc", hex(k.char.kart));
       el.innerHTML = `
         <div class="pp-tl"><div class="pp-pos"><b>1.</b><small>/8</small></div><div class="pp-lap">KOLO <b>1</b>/3</div></div>
@@ -128,19 +139,55 @@ export class Hud {
       panel.name.textContent = `${icons[i] ?? ""} ${k.name}`;
       return panel;
     });
-    // minimapa
+    // dělicí čáry: svislá mezi dvěma hráči, u 3–4 hráčů kříž
     const n = humans.length;
     const W = innerWidth, H = innerHeight;
-    const size = n >= 4 ? 150 : n === 3 ? Math.min(W / 2, H / 2) * 0.8 : n === 2 ? 170 : 200;
-    let left = W - size - 18, top = H - size - 18;
-    if (n === 2) top = H / 2 - size / 2;
-    if (n === 3) {
-      left = W * 0.75 - size / 2;
-      top = H * 0.75 - size / 2;
-    }
-    if (n >= 4) {
+    const line = (cls: string, st: Partial<CSSStyleDeclaration>) => {
+      const e = document.createElement("div");
+      e.className = "split " + cls;
+      Object.assign(e.style, st);
+      this.root.insertBefore(e, this.mini);
+      this.extras.push(e);
+    };
+    if (n >= 2) line("v", { left: rects[1].x + "px" });
+    if (n >= 3) line("h", { top: rects[2].y + "px" });
+    // minimapa: 1 hráč vpravo dole, 2 hráči uprostřed na dělicí čáře,
+    // 3 hráči ve volném čtverci (vedle pořadí), 4 hráči uprostřed kříže
+    let size: number, left: number, top: number;
+    if (n <= 1) {
+      size = Math.round(Math.max(150, Math.min(230, H * 0.24)));
+      left = W - size - 18;
+      top = H - size - 18;
+    } else if (n === 2) {
+      size = Math.round(Math.max(120, Math.min(200, H * 0.2)));
+      left = rects[1].x - size / 2;
+      top = H / 2 - size / 2;
+    } else if (n === 3) {
+      const q = rects[3];
+      size = Math.round(Math.min(q.w * 0.48, q.h * 0.86));
+      left = q.x + q.w - size - q.w * 0.05;
+      top = q.y + (q.h - size) / 2;
+      const b = document.createElement("div");
+      b.className = "board";
+      Object.assign(b.style, { left: q.x + q.w * 0.05 + "px", top: q.y + q.h * 0.07 + "px", width: q.w * 0.4 + "px", height: q.h * 0.86 + "px" });
+      b.style.setProperty("--u", unit(q) + "px");
+      this.root.insertBefore(b, this.mini);
+      this.extras.push(b);
+      this.board = b;
+    } else {
+      size = Math.round(Math.max(110, Math.min(180, Math.min(W, H) * 0.17)));
       left = W / 2 - size / 2;
       top = H / 2 - size / 2;
+      // minimapa je uprostřed kříže: prvky HUD v rozích u středu odsunout stranou
+      const away = `calc(var(--u) * 0.9 + ${Math.round(size / 2 + 8)}px)`;
+      this.panels.forEach((p, i) => {
+        const r = rects[i];
+        const right = r.x > 0, bottom = r.y > 0;
+        const q = (sel: string) => p.el.querySelector(sel) as HTMLElement;
+        if (right && bottom) q(".pp-tl").style.left = away;
+        else if (right) q(".pp-bl").style.left = away;
+        else if (bottom) q(".pp-tr").style.right = away;
+      });
     }
     const dpr = Math.min(2, devicePixelRatio);
     this.mini.width = this.mini.height = Math.round(size * dpr);
@@ -199,7 +246,21 @@ export class Hud {
       }
       p.el.classList.toggle("boost", k.boostT > 0);
     });
+    if (this.board) this.drawBoard(race);
     this.drawMini(race, humans);
+  }
+
+  /** Průběžné pořadí všech závodníků (ve volném čtverci u tří hráčů). */
+  private drawBoard(race: Race) {
+    const key = race.standings.map((k) => k.id + (k.finished ? "f" : "")).join(",");
+    if (key === this.boardKey || !this.board) return;
+    this.boardKey = key;
+    this.board.innerHTML =
+      `<h4>Pořadí</h4><ol>` +
+      race.standings
+        .map((k) => `<li class="${k.human ? "me" : ""}" style="--c:${hex(k.char.kart)}"><b>${k.place}.</b><i></i><span>${esc(k.name)}</span>${k.finished ? "🏁" : ""}</li>`)
+        .join("") +
+      `</ol>`;
   }
 
   private drawMini(race: Race, humans: Kart[]) {
@@ -233,6 +294,9 @@ export class Hud {
 
   clear() {
     for (const p of this.panels) p.el.remove();
+    for (const e of this.extras) e.remove();
+    this.extras = [];
+    this.board = null;
     this.panels = [];
     this.mini.style.display = "none";
     this.countEl.textContent = "";
