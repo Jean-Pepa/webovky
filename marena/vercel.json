@@ -3,11 +3,19 @@
   "framework": "nextjs",
   "git": {
     "deploymentEnabled": {
-      "claude/busy-gauss-t83y4w": false
+      "claude/busy-gauss-t83y4w": false,
+      "claude/*": false,
+      "codex/*": false
     }
   },
   "crons": [
-    { "path": "/api/cron/reminders", "schedule": "0 10 * * 1" },
-    { "path": "/api/cron/due-tasks", "schedule": "0 6 * * *" }
+    {
+      "path": "/api/cron/reminders",
+      "schedule": "0 10 * * 1"
+    },
+    {
+      "path": "/api/cron/due-tasks",
+      "schedule": "0 6 * * *"
+    }
   ]
 }
