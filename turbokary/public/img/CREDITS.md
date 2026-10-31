@@ -347,3 +347,29 @@ Technický export přes Windows System.Drawing/GDI+: zdrojové PNG 2172×724 px 
 
 
 Zdroje vestavěného generátoru: `exec-6ef934c1-d47d-4fe5-a069-864ea31f05ed.png` (první verze), `exec-cb5f508a-2aaa-4475-8e5b-09ce9d434dbc.png` (vybraná finální verze před technickým exportem).
+
+
+## Náhled čtvrté trati — Šílená hora
+
+Soubor: `tracks/hora.png` (640×360 PNG, RGBA, vložený profil sRGB, 373 443 B).
+
+Vytvořeno vestavěným nástrojem OpenAI ImageGen podle zadání Šílené hory. Vlastní existující náhledy `tracks/kanon.png`, `tracks/louka.png` a `tracks/jezero.png` sloužily jako stylové a kompoziční reference. Následovala jedna cílená úprava v ImageGen: nahrazení potoka pod mostem spodním úsekem závodní trati, aby bylo viditelné mimoúrovňové křížení dvou cest. Scéna obsahuje serpentiny, rozdíly výšek, tunel, most přes trať a velký skok ve fialovobroskvovém osvětlení, bez textu. Nejde o snímek skutečného herního okruhu, ale stylizovanou ilustraci.
+
+Zdrojový výstup prvního generování: `exec-69361042-77c5-40d6-ac53-42b5dcd08d77.png`.
+Finální zdroj po úpravě: `exec-f1dc4c02-e79d-4172-8c4f-bc91bb2873b0.png`.
+
+Export: sharp, zmenšení Lanczos3 na 640×360 pomocí contain bez ořezu, průhledné případné doplnění okrajů, sRGB ICC, bezeztrátová PNG komprese úrovně 9 s adaptivním filtrováním. Ověřeny rozměry, skutečný alpha kanál, nulová alpha všech čtyř rohů (89 784 zcela průhledných pixelů) a vzhled v konečné velikosti. Žádné ruční dokreslování, cizí obrázky ani textury.
+
+### Přesný původní prompt
+
+```text
+Use case: stylized-concept. Asset: one lobby track thumbnail for the original Czech cartoon kart game TurboKáry, final 640x360 landscape 16:9 PNG with REAL TRANSPARENT surroundings. Input images are STYLE AND COMPOSITION REFERENCES ONLY: match their charming miniature isometric floating-island diorama, chunky clean outlined shapes, softly shaded colorful game illustration, and legibility at thumbnail size; create a different mountain track.
+Subject: "Crazy Mountain" racetrack diorama viewed from above at an isometric three-quarter angle. A spectacular small rocky mountain island with clearly visible height differences: a gray asphalt circuit climbs a series of hairpin switchbacks, enters a dark arched tunnel THROUGH the central mountain rock, emerges higher up, and passes across a sturdy elevated bridge that visibly crosses ABOVE a lower segment of the road. Include one prominent jump: a yellow launch ramp ending at a modest gap and a clearly aligned landing ramp, with a tiny orange go-kart airborne above the gap. Red-and-white curb stripes and a few simple safety rails make the driving route legible. Use layered purple and mauve crags with warm peach highlights, a few small pine trees, and dramatic violet-to-peach sunset lighting (violet #4b3ab8 shadows, peach #ffb68a rim light). Keep the tunnel opening, overpass crossing, switchbacks, and jump distinct and immediately understandable, with a compact unified island footprint. The mountain should feel adventurous and playful, not realistic or grim.
+Full island silhouette entirely visible, centered, generous clear alpha margin on all four sides, broad horizontal composition filling most of the 16:9 frame. Bold dark outline #1b1430, soft cel shading, crisp attractive details consistent with the reference thumbnails. NO SKY PANEL, no ground beyond the floating diorama, no backdrop, no cast shadow outside the island, no rectangular card. No text, labels, numbers, logos, signs with writing, people, real brands or existing game characters. Actual transparent background, NOT a checkerboard painted in the image. One illustration only.
+```
+
+### Přesný prompt cílené úpravy
+
+```text
+Use case: precise-object-edit. Edit the provided mountain kart-racing diorama. Change ONLY the water area under and behind the large central stone bridge: REPLACE ALL of that waterfall, turquoise water and water-pool rocks with a clearly visible LOWER GRAY ASPHALT RACE TRACK with red-and-white curbs that passes UNDER THE BRIDGE ARCH. The upper road on the stone bridge must visibly cross over this lower roadway. Make the lower roadway emerge from the arch toward the viewer then bend right to join the existing lower foreground circuit naturally; remove any fence blocking that connection. No water or waterfall remains. Keep the rest of the composition, purple/peach mountain colors, tunnel through the mountain on the left, switchbacks, yellow jump ramps and tiny airborne orange kart, trees, stone island silhouette, thick outlined colorful cartoon style and full transparent surroundings unchanged. This is an overpass with two racing road levels, not a bridge over a river. No new text or labels. Preserve REAL ALPHA TRANSPARENCY and 16:9 landscape composition with the whole diorama visible.
+```
