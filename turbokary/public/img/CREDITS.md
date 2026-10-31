@@ -226,3 +226,14 @@ Use case: stylized-concept. Make one new original character portrait for the sam
 
 
 
+## Brána start/cíl
+
+Soubor: `start-banner.png`, 2048×256, PNG sRGB s průhledným okolím. Vytvořeno 31. října 2026 vestavěným nástrojem OpenAI ImageGen, samostatné generování bez externí obrazové předlohy. Zdroj: `exec-a2c896f5-2f19-4d43-86b2-cb301976f3c6.png`. Export Windows System.Drawing: nalezeny hranice alfa pixelů nad prahem 24/255 (ignorování neviditelného šumu), oříznut pouze prázdný okraj a zachován poměr stran ilustrace; proporční bicubické zmenšení a vystředění do průhledného plátna 2048×256. Žádná deformace písmen. Vizuálně ověřen přesný nápis START · CÍL včetně čárky nad Í a prostřední tečky.
+
+Přesný prompt:
+
+```text
+Use case: logo-brand. Asset type: original cheerful kart racing game START / FINISH gate banner texture, final 2048×256 pixels (8:1 very long horizontal aspect). Draw a single very long, low horizontal banner isolated with genuinely transparent outside area. The actual artwork must have 8:1 width-to-height proportions, centered across the image; if the canvas is taller, leave empty transparent space above and below, NEVER make the banner taller to fill the canvas. Exact text in ONE line: "START · CÍL". Preserve the Czech capital Í in CÍL (acute accent over I) and middle dot between the words. No other words. Large chunky cheerful rounded uppercase display lettering, subtle yellow #ffd21f to orange #ff7a1a shading, very thick dark plum #1b1430 outline and pale cream thin keyline so text stays readable against dark purple #160f33 or a 3D scene. A compact black-and-white checkerboard panel on EACH end of the long banner. Narrow dark-plum structural backing with softly rounded ends behind the lettering and checkerboard, small yellow trim. Face-on orthographic flat graphic, not a 3D gate, no posts, no perspective distortion. Typography consumes the central 70% of width, checkerboards each about 12% width. Crisp simple shapes, soft polished shading matching cartoon inventory icons, balanced symmetry, clean silhouette, transparent corners and surroundings. No karts, characters, scenery, trademarks, sponsor marks, Nintendo references, watermark, or extra text. Do not include any crop marks. The banner must remain very low and wide.
+```
+
+
