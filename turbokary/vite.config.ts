@@ -33,7 +33,8 @@ function assetList(): Plugin {
   };
 }
 
-// Dvě stránky: index.html = obrazovka na PC (hra), pad.html = ovladač v telefonu.
+// Stránky: index.html = volba hry (TurboKáry / Mečovačka), kary.html = obrazovka na PC (hra),
+// pad.html = ovladač v telefonu. Mečovačka je hotový build v public/mece/ (viz mecovacka/README.md).
 export default defineConfig({
   plugins: [assetList()],
   server: { host: true },
@@ -42,7 +43,7 @@ export default defineConfig({
     target: "es2020",
     chunkSizeWarningLimit: 1500,
     rollupOptions: {
-      input: { main: here("./index.html"), pad: here("./pad.html") },
+      input: { hub: here("./index.html"), main: here("./kary.html"), pad: here("./pad.html") },
     },
   },
 });

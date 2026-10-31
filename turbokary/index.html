@@ -4,14 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#160f33" />
-    <title>TurboKáry</title>
-    <meta name="description" content="Závody motokár na PC, ovladačem je tvůj telefon." />
+    <title>Hry s telefonem — TurboKáry a Mečovačka</title>
+    <meta name="description" content="Hry na PC, ovladačem je tvůj telefon: závody motokár TurboKáry a souboje s pěnovými meči Mečovačka." />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <meta property="og:title" content="TurboKáry a Mečovačka" />
+    <meta property="og:description" content="Hry na PC, ovladačem je tvůj telefon." />
+    <meta property="og:image" content="/og.png" />
   </head>
-  <body class="screen">
-    <canvas id="scene" aria-label="Závodní trať"></canvas>
-    <div id="hud"></div>
-    <div id="ui"></div>
-    <script type="module" src="/src/game/main.ts"></script>
+  <body class="hub">
+    <main id="hub"></main>
+    <script type="module" src="/src/hub/main.ts"></script>
   </body>
 </html>
