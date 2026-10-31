@@ -75,7 +75,7 @@ export class Lobby {
         </section>
         <footer class="lb-foot">
           <span>Bez telefonu: <kbd>M</kbd> přidá hráče s myší (pohyb myši = meč, levé tlačítko / <kbd>mezerník</kbd> = KRYT). <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> hra, <kbd>Enter</kbd> start, <kbd>Esc</kbd> pauza.</span>
-          <span class="foot-btns"><button data-a="mouse">🖱️ Hráč s myší</button><button data-a="sound" class="snd">🔊 Zvuk</button><button data-a="fs">⛶ Celá obrazovka</button></span>
+          <span class="foot-btns">${import.meta.env.BASE_URL !== "/" ? `<a class="hub-link" href="/">🎮 Jiná hra</a>` : ""}<button data-a="mouse">🖱️ Hráč s myší</button><button data-a="sound" class="snd">🔊 Zvuk</button><button data-a="fs">⛶ Celá obrazovka</button></span>
         </footer>
       </div>`;
     parent.append(this.el);

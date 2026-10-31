@@ -66,16 +66,21 @@ Ladění: `?mouse` rovnou přidá hráče s myší, v konzoli `__mc.state()`.
 
 ## Grafika
 
-Veškerý design dělá Astra (modely, obrázky, logo, ikony) — zadání, názvy souborů a pravidla modelů jsou
-v `AGENTS.md`. Hra zatím kreslí náhrady z tvarů a soubory od Astry (`public/models/`, `public/img/`)
+Veškerý design dělá Codex (modely, obrázky, logo, ikony) — zadání, názvy souborů a pravidla modelů jsou
+v `AGENTS.md`. Hra zatím kreslí náhrady z tvarů a soubory od Codexu (`public/models/`, `public/img/`)
 použije sama, jakmile existují.
 
-## Nasazení na Vercel
+## Nasazení
 
-Nasazuje se jen na výslovný pokyn (viz `CLAUDE.md` v kořeni repa). Nový projekt na Vercelu:
+Mečovačka běží na **stejném webu jako TurboKáry** (Vercel projekt s Root Directory `turbokary`):
+na `/` je volba hry, Mečovačka na `/mece/`, meč v telefonu na `/mece/pad`.
 
-1. **Add New → Project** → repozitář `webovky`.
-2. **Root Directory = `mecovacka`**, framework Vite (podle `vercel.json`).
-3. Deploy. Žádné proměnné prostředí nejsou potřeba.
+Nasazuje se jen na výslovný pokyn (viz `CLAUDE.md` v kořeni repa). Před nasazením:
 
-Https z Vercelu je potřeba pro pohybové senzory v telefonu.
+```bash
+cd mecovacka
+npm run build:kary   # build s adresou /mece/ do ../turbokary/public/mece/
+```
+
+a výsledek v `turbokary/public/mece/` commitnout — Vercel při buildu TurboKár nevidí soubory mimo
+složku `turbokary`, takže si Mečovačku sám nesestaví. Https z Vercelu je potřeba pro pohybové senzory.

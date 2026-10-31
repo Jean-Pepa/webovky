@@ -1,4 +1,4 @@
-/* Funkční vzhled obrazovek na PC. Výtvarný návrh dodává Astra (viz AGENTS.md). */
+/* Funkční vzhled obrazovek na PC. Výtvarný návrh dodává Codex (viz AGENTS.md). */
 :root {
   --ink: #14123a;
   --ink2: #221d58;
@@ -86,7 +86,7 @@ kbd { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2
 .start-btn:disabled { filter: grayscale(0.8); opacity: 0.5; cursor: default; }
 .lb-foot { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: 14px; }
 .foot-btns { display: flex; gap: 8px; }
-.foot-btns button { border: 0; border-radius: 12px; padding: 7px 12px; background: rgba(255,255,255,0.1); color: #fff; font-weight: 700; }
+.foot-btns button, .foot-btns .hub-link { border: 0; border-radius: 12px; padding: 7px 12px; background: rgba(255,255,255,0.1); color: #fff; font-weight: 700; font-size: 13.33px; text-decoration: none; }
 @keyframes popin { from { transform: scale(0.85); opacity: 0; } }
 
 /* ---------- HUD ---------- */

@@ -226,7 +226,8 @@ class Game {
   }
 
   private padUrl(code: string) {
-    const u = new URL(import.meta.env.DEV ? "pad.html" : "pad", location.href);
+    // podle BASE_URL: hra běží samostatně (/) i na webu TurboKár (/mece/)
+    const u = new URL(import.meta.env.BASE_URL + (import.meta.env.DEV ? "pad.html" : "pad"), location.origin);
     u.search = "";
     u.hash = "";
     u.searchParams.set("r", code);
@@ -236,7 +237,7 @@ class Game {
   }
 
   private shortUrl() {
-    return `${location.host}/${import.meta.env.DEV ? "pad.html" : "pad"}`;
+    return `${location.host}${import.meta.env.BASE_URL}${import.meta.env.DEV ? "pad.html" : "pad"}`;
   }
 
   private lanCheck() {

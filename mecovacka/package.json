@@ -7,6 +7,7 @@
     "dev": "vite --host",
     "dev:https": "vite --host --mode https",
     "build": "tsc --noEmit && vite build",
+    "build:kary": "tsc --noEmit && vite build --base /mece/ --outDir ../turbokary/public/mece --emptyOutDir",
     "preview": "vite preview --host",
     "peer": "peerjs --host 0.0.0.0 --port 9000",
     "e2e": "node e2e/smoke.mjs"

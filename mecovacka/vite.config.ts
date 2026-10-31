@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const here = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
 /**
- * Seznamy souborů od Astry jako moduly `virtual:assets` (obrázky v public/img) a `virtual:models`
+ * Seznamy souborů od Codexu jako moduly `virtual:assets` (obrázky v public/img) a `virtual:models`
  * (3D modely v public/models). Hra tak ví, co existuje, a jinak kreslí náhradu — bez zbytečných 404.
  */
 function assetList(): Plugin {

@@ -1,4 +1,4 @@
-// 3D modely od Astry (public/models, formát GLB). Když chybí, hra si postaví náhradu z tvarů v kódu.
+// 3D modely od Codexu (public/models, formát GLB). Když chybí, hra si postaví náhradu z tvarů v kódu.
 // Pravidla pro modely (osy, uzly, materiály) jsou v AGENTS.md.
 import type * as THREE from "three";
 import files from "virtual:models";

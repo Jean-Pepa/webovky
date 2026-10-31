@@ -1,4 +1,4 @@
-# Mečovačka — společné zadání (Claude i Astra)
+# Mečovačka — společné zadání (Claude i Codex)
 
 ## Co stavíme
 Šermování s pěnovými meči. Hra běží v prohlížeči na PC (velká obrazovka), **mečem je telefon**:
@@ -9,6 +9,16 @@ při dvou hráčích rozdělená obrazovka. Nic se neinstaluje: PC otevře web, 
 Je to **originální hra**, ne kopie Wii Sports Resort: vlastní postavy (zvířátka z TurboKár), vlastní
 aréna, vlastní režimy. Žádné postavy, názvy, grafika, hudba ani zvuky od Nintenda (žádné Mii,
 žádný ostrov Wuhu, žádné jejich meče ani nápisy).
+
+## Kde běží
+Na stejném webu jako TurboKáry (Vercel projekt s Root Directory `turbokary`):
+- `/` — **volba hry** (rozcestník: TurboKáry, nebo Mečovačka),
+- `/kary` — TurboKáry, `/pad` — volant v telefonu,
+- `/mece/` — Mečovačka na PC, `/mece/pad` — meč v telefonu.
+
+Zdroják Mečovačky je v `mecovacka/`. Do webu TurboKár se dostane hotový build: `npm run build:kary`
+(v `mecovacka/`) ho sestaví s adresou `/mece/` do `turbokary/public/mece/` a ten se commitne — Vercel
+při buildu TurboKár nevidí soubory mimo svou složku. Build dělá Claude před každým nasazením.
 
 ## Jak to funguje
 - **PC** (`index.html`, `src/game/`): 3D hra (three.js), lobby s QR kódem, souboj, výsledky.
@@ -35,27 +45,31 @@ aréna, vlastní režimy. Žádné postavy, názvy, grafika, hudba ani zvuky od 
 | Část | Kdo | Soubory |
 |---|---|---|
 | Veškerý kód: hra na PC, meč v telefonu, spojení, fyzika, počítačový soupeř, zvuk, testy | Claude | `src/`, `index.html`, `pad.html`, `e2e/`, `scripts/` |
-| **Veškerý design:** 3D modely šermířů, mečů, arény a věcí na krájení, portréty, logo, obloha, ikony, návrhy vzhledu obrazovek | Astra | `public/models/`, `public/img/`, `public/icon-*.png`, `public/og.png` |
-| Test na skutečném PC a telefonech, hlášení chyb | Astra (s uživatelem) | — |
+| **Veškerý design:** 3D modely šermířů, mečů, arény a věcí na krájení, portréty, logo, obloha, ikony, obrázky rozcestníku, návrhy vzhledu obrazovek | Codex | `mecovacka/public/models/`, `mecovacka/public/img/`, `mecovacka/public/icon-*.png`, `mecovacka/public/og.png`, `turbokary/public/img/hub/` |
+| Test na skutečném PC a telefonech, hlášení chyb | Codex (s uživatelem) | — |
 
-Do cizích souborů nesahej. Astra nemění kód, Claude nemění obrázky ani modely. Kód je jen načítá podle
+Do cizích souborů nesahej. Codex nemění kód, Claude nemění obrázky ani modely. Kód je jen načítá podle
 názvů níže a **když soubor chybí, hra kreslí náhradu z tvarů** — grafiku jde dodávat postupně. Které
 soubory existují, zjistí build sám (moduly `virtual:assets` a `virtual:models` ve `vite.config.ts`),
 takže stačí soubor přidat a znovu sestavit.
 
-Vzhled obrazovek (lobby na PC, telefon, HUD) navrhuje Astra jako obrázky v `public/img/design/`
+Vzhled obrazovek (lobby na PC, telefon, HUD, rozcestník) navrhuje Codex jako obrázky v `public/img/design/`
 (např. `lobby.png`, `pad-lobby.png`, `pad-game.png`, `hud.png`); Claude je přenese do CSS.
 
 ## Pravidla pro Git
-- Claude pracuje na své větvi `claude/…` (teď `claude/epic-edison-d4tn7h`), Astra na `astra/mecovacka`
-  (založené z větve Clauda). Každý ve vlastní pracovní kopii.
-- Malé commity, často push (po každé hotové skupině obrázků / modelů). Spojení dělá Claude.
+- Claude pracuje na své větvi `claude/…` (teď `claude/epic-edison-d4tn7h`), Codex na `codex/mecovacka`
+  (založené z `main`). Každý ve vlastní pracovní kopii.
+- Malé commity, často push (po každé hotové skupině obrázků / modelů). Spojení dělá Claude
+  (`git fetch` + `git merge origin/codex/mecovacka`), pak `npm run build:kary` a nasazení na pokyn uživatele.
+- Rozcestník a build Mečovačky jsou ve složce `turbokary/` (`index.html`, `src/hub/`, `public/mece/`).
+  **Kdo nasazuje TurboKáry, musí mít ve větvi aktuální `main`** (`git merge origin/main`), jinak squash
+  nasazení vrátí rozcestník na starou verzi.
 - **Nikdy push do `main` a nikdy nasazení na Vercel bez výslovného pokynu uživatele**
   (viz `CLAUDE.md` v kořeni repa).
 - Nové npm závislosti jen když je to nutné; do commitu napiš proč.
 - Zprávy commitů bez názvu nebo identifikátoru AI modelu.
 
-## Zadání designu (Astra)
+## Zadání designu (Codex)
 
 ### Společný styl
 - Veselý kreslený styl jako v TurboKárách: jednoduchá „low-poly“ zvířátka, tlustá tmavá obrysová linka
@@ -84,6 +98,7 @@ Vzhled obrazovek (lobby na PC, telefon, HUD) navrhuje Astra jako obrázky v `pub
 rukávy v barvě trička, tmavé kalhoty, boty v doplňkové barvě.
 
 ### Seznam (v pořadí důležitosti)
+Cesty jsou vůči `mecovacka/` (kromě rozcestníku).
 
 1. **Aréna — molo na rybníce** (`public/models/arenas/molo.glb` + `public/img/sky-molo.jpg`).
    Hlavní úkol, má být „super“: jihočeský rybník v odpoledním zlatém světle, dřevěné molo, rákos,
@@ -104,7 +119,12 @@ rukávy v barvě trička, tmavé kalhoty, boty v doplňkové barvě.
    vychází čepel, palec na displeji.
 9. **Ikony aplikace** `public/icon-192.png`, `public/icon-512.png` (zkřížené pěnové meče na `#14123a`)
    a `public/og.png` 1200×630 (náhled odkazu: logo, molo, dva šermíři).
-10. **Návrhy obrazovek** (volitelně) `public/img/design/*.png` — viz výše.
+10. **Rozcestník (volba hry)** na webu TurboKár — obrázky do `turbokary/public/img/hub/`:
+    `kary.png` a `mece.png` (karty her 960×540: motokáry v zatáčce / dva šermíři na molu, bez textu),
+    `bg.jpg` (pozadí 1920×1080, klidné, tmavé k okrajům, ať jsou karty čitelné). Logo Mečovačky si
+    rozcestník vezme z `mecovacka/public/img/logo.png` (po buildu `/mece/img/logo.png`), logo TurboKár
+    z `turbokary/public/img/logo.png`.
+11. **Návrhy obrazovek** (volitelně) `public/img/design/*.png` — viz výše.
 
 ### Obloha `public/img/sky-molo.jpg`
 4096×1024, panorama dokola (levý a pravý okraj navazují bez švu), JPG ~85, do 1,5 MB. Odpolední

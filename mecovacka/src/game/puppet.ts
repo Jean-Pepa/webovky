@@ -1,5 +1,5 @@
 // Šermíř jako loutka z kloubů: boky, trup, hlava, paže (rameno–loket–zápěstí), nohy.
-// Model od Astry (fighters/<id>.glb) má stejné pojmenované uzly; když chybí, postaví se z tvarů.
+// Model od Codexu (fighters/<id>.glb) má stejné pojmenované uzly; když chybí, postaví se z tvarů.
 // Ruka s mečem se dopočítá inverzní kinematikou: meč je přesně podle telefonu (1:1)
 // a paže se k němu natáhne.
 import * as THREE from "three";
@@ -211,7 +211,7 @@ const JOINTS: JointName[] = [
   "hips", "torso", "head", "upperarm_r", "forearm_r", "hand_r", "grip_r", "upperarm_l", "forearm_l", "hand_l", "grip_l", "thigh_r", "shin_r", "thigh_l", "shin_l",
 ];
 
-/** Loutka z tvarů — stejná hierarchie uzlů jako model od Astry (dívá se do +Z, pravá strana = −X). */
+/** Loutka z tvarů — stejná hierarchie uzlů jako model od Codexu (dívá se do +Z, pravá strana = −X). */
 function proceduralFighter(c: CharacterDef | null): THREE.Group {
   const root = new THREE.Group();
   const main = c ? c.main : 0xc9a46a;
@@ -353,7 +353,7 @@ export class Puppet {
   /** skutečná poloha úchopu po dosažení paží (svět) */
   readonly gripActual = new THREE.Vector3();
   readonly materials: THREE.Material[] = [];
-  /** model je kopie šablony od Astry (geometrie sdílená — nemazat) */
+  /** model je kopie šablony od Codexu (geometrie sdílená — nemazat) */
   private fromTemplate = false;
 
   constructor(c: CharacterDef | null) {

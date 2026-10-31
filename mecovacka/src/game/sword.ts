@@ -1,4 +1,4 @@
-// Pěnový meč (model od Astry nebo náhrada z tvarů) a světelná stopa za čepelí.
+// Pěnový meč (model od Codexu nebo náhrada z tvarů) a světelná stopa za čepelí.
 import * as THREE from "three";
 import type { CharacterDef } from "../shared/characters";
 import { MODELS, findNode } from "./models";

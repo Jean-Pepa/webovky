@@ -128,7 +128,7 @@ function noTexture() {
   return noTex;
 }
 
-/** Dvě poloviny věci rozdělené rovinou x = 0 (model od Astry nebo náhrada). */
+/** Dvě poloviny věci rozdělené rovinou x = 0 (model od Codexu nebo náhrada). */
 function buildHalves(def: ItemDef): THREE.Object3D[] {
   const tpl = MODELS.slice.get(def.id);
   if (tpl) {
@@ -451,7 +451,7 @@ export class SliceActivity implements Activity {
     });
   }
 
-  /** Odebere věc ze scény a uvolní její geometrie (šablony od Astry ne). */
+  /** Odebere věc ze scény a uvolní její geometrie (šablony od Codexu ne). */
   private free(th: Thing) {
     th.group.removeFromParent();
     const shared = MODELS.slice.has(th.def.id);

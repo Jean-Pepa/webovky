@@ -1,5 +1,5 @@
 // Aréna: dřevěné molo na rybníce. Šermuje se po délce mola, zábradlí po stranách,
-// konce jsou volné — kdo přepadne, žbluňkne do vody. Vzhled (model okolí, obloha) dodává Astra
+// konce jsou volné — kdo přepadne, žbluňkne do vody. Vzhled (model okolí, obloha) dodává Codex
 // (models/arenas/molo.glb, img/sky-molo.jpg); bez nich se postaví náhrada z tvarů.
 import * as THREE from "three";
 import { img } from "../shared/assets";
