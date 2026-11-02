@@ -16,11 +16,19 @@ description: Ranní přehled dne na požádání – spánek, co dnes udělat, t
 5. **Kalendář:** `agent-kalendar udalosti`. Když hlásí, že nejsi přihlášený, kalendář vynech.
    **Architektura:** z dnešního `novinky/RRRR-MM-DD.md` vyber 1–3 nejdůležitější body, změnu
    předpisů vždycky. Když soubor chybí, vynech to.
-6. Napiš mi přehled rovnou do chatu, nejvýš 12 řádků, v tomhle pořadí:
+   **Svět:** z dnešního `svet/RRRR-MM-DD.md` opiš 3 body ze sekce „Nejdůležitější".
+   **Noční průzkum:** když existuje dnešní `pruzkum/RRRR-MM-DD.md`, u každého dotazu jedna věta
+   s odpovědí.
+   **Soubory a bezpečnost:** když `agent-soubory historie --dni 1` ukazuje akce, napiš jednou
+   větou, co jsem s nimi dělal (když hlásí chybu, vynech to). Každé POZOR
+   z `bezpecnost/kontrola.md` napiš vždycky.
+6. Napiš mi přehled rovnou do chatu, nejvýš 16 řádků, v tomhle pořadí:
+   - bezpečnost: každé POZOR (když žádné není, vynech),
    - spánek a zotavení, nejvýš 3 řádky (upozornění ze skriptu vždycky celé),
    - 3 nejdůležitější věci na dnešek a proč,
    - dnešní události z kalendáře s časem a termíny z úkolů,
-   - z architektury 1–3 body s odkazem na přehled,
+   - svět: 3 body, z architektury 1–3 body, obojí s odkazem na přehled,
+   - noční průzkum: odpověď na každý dotaz jednou větou,
    - maily, které čekají na odpověď (od koho, o co jde),
    - co můžeš udělat za mě (koncepty, rešerše, nákup).
 

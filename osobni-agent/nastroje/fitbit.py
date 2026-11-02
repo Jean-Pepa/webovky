@@ -27,8 +27,9 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import google_ucet as google
+import zaklad
 
-MOZEK = Path(os.environ.get("AGENT_MOZEK", Path.home() / "Mozek"))
+MOZEK = zaklad.MOZEK
 API_URL = "https://health.googleapis.com/v4/"
 SCOPES = [
     "https://www.googleapis.com/auth/googlehealth.sleep.readonly",
@@ -369,7 +370,7 @@ WantedBy=timers.target
 
 
 def cmd_timer(units: Path | None = None, run=subprocess.run) -> int:
-    units = units or Path.home() / ".config/systemd/user"
+    units = units or zaklad.UNITS_DIR
     units.mkdir(parents=True, exist_ok=True)
     (units / "agent-fitbit.service").write_text(SERVICE, encoding="utf-8")
     (units / "agent-fitbit.timer").write_text(TIMER, encoding="utf-8")

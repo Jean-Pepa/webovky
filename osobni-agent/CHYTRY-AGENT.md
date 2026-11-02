@@ -29,8 +29,14 @@ neztratí.
 - Zdraví z náramku, kalendář, přepis hlasu, zápisy z jednání, rešerše pozemku, texty
   k dokumentaci podle vyhlášky.
 - Archi agent: novinky z architektury každou noc a knihovna (krok 20).
+- Přehled světa každé ráno (krok 22), průzkum webu na pokyn i přes noc z večerního deníku
+  (krok 23).
+- Soubory na počítači: najít, přesunout, přejmenovat, otevřít, bez mazání a se vracením
+  (krok 21).
+- Rejstřík rozhodnutí, inspirace a učení z oprav (krok 24).
 - Bezpečnost: zamčená pravidla, povolené příkazy, zakázané nástroje na posílání ven, jen
-  lokální modely, kontrolní skript.
+  lokální modely, internet čte jen model bez nástrojů, nástroje bez nastavení z proměnných,
+  červené tlačítko a kontrola zámků každou noc.
 
 ## Co můžeš přidat
 
@@ -42,9 +48,9 @@ Seřazené podle toho, kolik to přinese. U každé věci je odhad práce.
    navrhuješ). Asi 8 sezení po 30–40 minutách.
 2. **Rejstřík rozhodnutí** `rozhodnuti/`: u každého důležitého rozhodnutí co, proč, jaké byly
    možnosti a po čase, jak to dopadlo. Agent pak radí podle tvých skutečných výsledků, ne
-   obecně. *Postavím za hodinu.*
+   obecně. *Hotovo (krok 24).*
 3. **Inspirace** `inspirace/`: fotka nebo odkaz a k tomu „líbí se mi, protože…". Noční úklid
-   z toho skládá, co se ti opakovaně líbí, tedy tvoje design DNA. *Postavím za hodinu.*
+   z toho skládá, co se ti opakovaně líbí, tedy tvoje design DNA. *Hotovo (krok 24).*
 4. **Pět projektů, na které jsi hrdý,** a proč jsou takové (`ja/navrhovani.md`).
 5. **Tvoje staré texty** do `podklady/vzory/`. Agent se z nich naučí styl (dovednost
    `uceni-ze-vzoru`).
@@ -59,8 +65,9 @@ Seřazené podle toho, kolik to přinese. U každé věci je odhad práce.
 3. **Standardy ČKA a technické listy výrobců,** které používáš, do knihovny.
 4. **Koupené normy ČSN** jen pro tebe, do `podklady/`. Volně stáhnout nejdou.
 5. **Průzkum webu na jednu větu.** „Zjisti, kolik stojí projekt RD v Praze" a agent sám najde
-   zdroje. Lokálně přes vyhledávač SearXNG v notebooku (`agent-pruzkum`, postavím), nebo
-   v nejlepší kvalitě přes Clauda.
+   zdroje. Lokálně přes vyhledávač SearXNG v notebooku (`agent-pruzkum`, *hotovo, krok 23*),
+   nebo v nejlepší kvalitě přes Clauda.
+6. **Přehled světa každé ráno** ze zpravodajských webů. *Hotovo (krok 22).*
 
 ### 3. Učení z oprav
 
@@ -71,7 +78,7 @@ Podle výzkumu i praxe ostatních platí tři věci:
 
 1. **Smyčka učení:** každá tvoje oprava se zapíše do `opravy.md` s datem a souvislostí.
    Když se stejná chyba objeví potřetí, noční úklid ti navrhne nové pravidlo do dovednosti.
-   Schválíš ho ty, protože pravidla jsou zamčená. *Postavím za hodinu.*
+   Schválíš ho ty, protože pravidla jsou zamčená. *Hotovo (krok 24).*
 2. **Zkouška kopie jednou měsíčně:** 10 otázek, na které znáš odpověď, a počet trefených.
    Pozná se z toho, jestli se agent zlepšuje.
 3. **Týdenní opravy v Obsidianu** (10 minut): `ja/`, `MEMORY.md` a mapa Mozku.
@@ -100,8 +107,8 @@ Podle výzkumu i praxe ostatních platí tři věci:
 
 ### 6. Spolehlivost a bezpečnost
 
-1. **Bezpečnostní kontrola sama jednou týdně:** kontrolní skript poběží z časovače a POZOR
-   ti ukáže v ranním přehledu. *Postavím za půl hodiny.*
+1. **Bezpečnostní kontrola sama každou noc:** kontrolní skript běží z časovače ve 4:40 a POZOR
+   ti ukáže v ranním přehledu. *Hotovo (krok 24).*
 2. **Záloha Mozku každou noc** (`wsl/zaloha-mozku.sh`). Ověř, že běží.
 3. **Po každé aktualizaci OpenClaw** spusť kontrolní skript. Nové verze přidávají nástroje,
    jako se to stalo s `conversations_send`.
@@ -120,9 +127,9 @@ Podle výzkumu i praxe ostatních platí tři věci:
 
 | Kdy | Co |
 |---|---|
-| **Tento týden** | krok 8 (pošta a klíč Claude), ověřit zdroje novinek, výpis hledání v paměti, rozhovor téma 4 |
-| **Do měsíce** | rejstřík rozhodnutí, inspirace, smyčka učení z oprav, týdenní bezpečnostní kontrola, první zkouška kopie |
-| **Do 3 měsíců** | průzkum webu na jednu větu, předpisy offline, zrychlení MoE, zkouška nového modelu |
+| **Tento týden** | kroky 21–24, krok 8 (pošta a klíč Claude), ověřit zdroje novinek a světa, výpis hledání v paměti, rozhovor téma 4 |
+| **Do měsíce** | plnit rozhodnutí a inspirace, první zkouška kopie |
+| **Do 3 měsíců** | předpisy offline, zrychlení MoE, zkouška nového modelu |
 | **Později** | Revit, Active Memory, styl přes LoRA, AI telefonista pro firmu |
 
 ## Co nedoporučuju

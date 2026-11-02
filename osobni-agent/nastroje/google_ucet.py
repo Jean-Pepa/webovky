@@ -22,7 +22,9 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-CONFIG_DIR = Path(os.environ.get("AGENT_CONFIG_DIR", Path.home() / ".config/agent"))
+import zaklad
+
+CONFIG_DIR = zaklad.CONFIG_DIR
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 AUTH_KEYS = ("refresh_token", "access_token", "expires_at", "scope")

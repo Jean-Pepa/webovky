@@ -28,13 +28,16 @@ import warnings
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-# Telemetrie pyannote je vypnutá, ať nic neodchází ven.
-os.environ.setdefault("PYANNOTE_METRICS_ENABLED", "0")
+# Telemetrie pyannote je vypnutá a modely se berou jen z výchozí složky a z Hugging Face,
+# ne odkud by je podstrčil agent v proměnných prostředí.
+import zaklad  # noqa: E402
 
-CONFIG_DIR = Path(os.environ.get("AGENT_CONFIG_DIR", Path.home() / ".config/agent"))
-STATE_DIR = Path(os.environ.get("AGENT_STATE_DIR", Path.home() / ".local/state/agent"))
+zaklad.clean_model_env()
+
+CONFIG_DIR = zaklad.CONFIG_DIR
+STATE_DIR = zaklad.STATE_DIR
 MODELS_MARK = STATE_DIR / "jednani-modely.txt"  # modely jsou stažené, další běhy bez internetu
-WHISPER_MODEL = os.environ.get("AGENT_WHISPER_MODEL", "large-v3-turbo")
+WHISPER_MODEL = "large-v3-turbo"
 DIARIZATION_MODEL = "pyannote/speaker-diarization-community-1"
 SAMPLE_RATE = 16000  # oba modely pracují s 16 kHz mono
 PAUSE_SPLIT = 1.5  # delší pauza než tohle začne novou repliku i u stejného mluvčího
@@ -165,8 +168,6 @@ def to_markdown(source: Path, utterances: list[Utterance], names: dict[str, str]
 
 
 def _load_token() -> str | None:
-    if os.environ.get("HF_TOKEN"):
-        return os.environ["HF_TOKEN"]
     path = CONFIG_DIR / "huggingface.env"
     try:
         for line in path.read_text(encoding="utf-8").splitlines():

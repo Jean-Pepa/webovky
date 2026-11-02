@@ -4,7 +4,7 @@
     agent-prepis nahravka.m4a          přepis na procesoru (výchozí, nezabírá grafiku)
     agent-prepis nahravka.m4a --gpu    přepis na grafice (rychlejší, když neběží velký model)
 
-Model jde změnit proměnnou AGENT_WHISPER_MODEL (výchozí large-v3-turbo).
+Model je large-v3-turbo. Proměnné prostředí knihoven pro modely se nečtou (zaklad.py).
 Při prvním spuštění se model jednou stáhne (asi 1,6 GB), pak už běží bez internetu.
 """
 
@@ -15,7 +15,10 @@ import os
 import sys
 from pathlib import Path
 
-MODEL = os.environ.get("AGENT_WHISPER_MODEL", "large-v3-turbo")
+import zaklad  # noqa: E402
+
+zaklad.clean_model_env()
+MODEL = "large-v3-turbo"
 
 
 def main(argv: list[str] | None = None) -> int:

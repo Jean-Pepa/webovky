@@ -45,6 +45,8 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+import zaklad
+
 VERSION = "1.0"
 
 # Pravidla vyhodnocení. Odůvodnění a zdroje jsou v skills/zdravi/METODIKA.md.
@@ -1160,7 +1162,7 @@ def write(path: Path, text: str) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="agent-zdravi",
                                      description="Vyhodnocení dat z náramku. Čísla počítá skript, ne model.")
-    parser.add_argument("--mozek", type=Path, default=Path(os.environ.get("AGENT_MOZEK", Path.home() / "Mozek")))
+    parser.add_argument("--mozek", type=Path, default=zaklad.MOZEK)
     sub = parser.add_subparsers(dest="cmd", required=True)
     p_day = sub.add_parser("den", help="ranní souhrn: noc, zotavení, včerejší aktivita")
     p_day.add_argument("--datum", type=date.fromisoformat, default=date.today())

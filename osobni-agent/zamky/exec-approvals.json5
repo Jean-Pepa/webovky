@@ -1,4 +1,4 @@
-// Seznam příkazů, které agent smí spustit sám. Ověřeno proti OpenClaw 2026.10.8.
+// Seznam příkazů, které agent smí spustit sám. Ověřeno proti OpenClaw 2026.10.9.
 //
 // Použití (NAVOD.md, krok 6b):
 //   openclaw approvals set --file ~/osobni-agent/zamky/exec-approvals.json5
@@ -26,9 +26,18 @@
         // Kalendář: číst, navrhnout, zapsat a smazat hned. Google mu s tímhle přihlášením dovolí
         // měnit jen jeho vlastní kalendář Mozek. Přihlášení (prihlasit) spouštíš ty.
         { pattern: "~/.local/bin/agent-kalendar", argPattern: "^(udalosti|navrh|zapis|smaz)( .*)?$" },
-        // Převod PDF na text a dokumentů do Wordu.
-        { pattern: "/usr/bin/pdftotext" },
-        { pattern: "/usr/bin/pandoc" },
+        // Soubory ve Windows: jen ve složkách ze ~/.config/agent/soubory.txt. Nic nemaže ani
+        // nepřepíše, co má vyhodit, dá do Koše agenta, a každá akce jde vrátit. Přesun nebo
+        // kopii do složky, která se nahrává do cloudu (--do-cloudu), a nastavení složek (nastav)
+        // schvaluješ ty.
+        { pattern: "~/.local/bin/agent-soubory", argPattern: "^(?!.*--do-cloudu)(slozky|vypis|najdi|presun|kopiruj|prejmenuj|slozka|kos|vrat|historie|otevri)( .*)?$" },
+        // Hledání na internetu: obecný dotaz bez osobních údajů do vyhledávače v notebooku,
+        // stránky čte lokální model bez nástrojů. Noční frontu (noc) spouští jen časovač.
+        { pattern: "~/.local/bin/agent-pruzkum", argPattern: "^(hledej|log)( .*)?$" },
+        // Převod PDF na text a dokumentů do Wordu, jen ve složce Mozek. pdftotext a pandoc
+        // napřímo povolené nejsou: pandoc umí spustit filtr (libovolný kód) a oba umí zapsat
+        // soubor kamkoli. agent-prevod je spouští s pevnými volbami a dokument předem vyčistí.
+        { pattern: "~/.local/bin/agent-prevod", argPattern: "^(pdf|dokument)( .*)?$" },
       ],
     },
   },

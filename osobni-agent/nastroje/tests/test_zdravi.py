@@ -13,6 +13,7 @@ from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))  # nástroje sdílejí zaklad.py
 
 
 def load_module():

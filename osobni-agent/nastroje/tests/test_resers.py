@@ -11,6 +11,7 @@ from types import SimpleNamespace as NS
 from unittest import mock
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))  # nástroje sdílejí zaklad.py
 
 
 def load_module():
@@ -57,17 +58,17 @@ class RedactTests(unittest.TestCase):
 class FlowTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        os.environ["AGENT_STATE_DIR"] = self.tmp.name
-        os.environ["AGENT_CONFIG_DIR"] = self.tmp.name
         self.r = load_module()
+        self.r.CONFIG_DIR = Path(self.tmp.name)
+        self.r.STATE_DIR = Path(self.tmp.name) / "resers"
+        self.r.PENDING_DIR = self.r.STATE_DIR / "ke-schvaleni"
+        self.r.LOG_PATH = self.r.STATE_DIR / "odeslano.jsonl"
         key = Path(self.tmp.name) / "anthropic.env"
         key.write_text("ANTHROPIC_API_KEY=sk-test\n")
         key.chmod(0o600)
 
     def tearDown(self):
         self.tmp.cleanup()
-        os.environ.pop("AGENT_STATE_DIR", None)
-        os.environ.pop("AGENT_CONFIG_DIR", None)
 
     def fake_response(self, stop="end_turn"):
         cit = NS(url="https://example.cz/test", title="Test vysavačů", cited_text="...")

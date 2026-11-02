@@ -33,7 +33,7 @@
         "hlidani-mailu", "kalendar", "nakup-rohlik", "nocni-uklid-pameti", "poznej-me",
         "ranni-prehled", "resers-pozemku", "resers-web", "texty-dokumentace", "texty-studie",
         "tydenni-plan", "uceni-ze-vzoru", "vecerni-denik", "zapis-diktatu", "zapis-jednani",
-        "zdravi", "architektura",
+        "zdravi", "architektura", "soubory", "pruzkum", "svet", "rozhodnuti", "inspirace",
       ],
       // Přepnout se dá jen na modely v notebooku. Bez tohoto pravidla by šlo přepnout
       // rozhovor i na model v cloudu a celý jeho obsah by odešel ven.
@@ -46,14 +46,14 @@
 
   // Hledání v paměti jen přes lokální Ollamu. Bez tohoto nastavení by OpenClaw
   // použil OpenAI a při chybě by mohl přejít na jinou cloudovou službu.
-  // Kromě deníku a MEMORY.md prohledává i tvoji digitální kopii (ja/), lidi (lide/)
-  // a knihovnu architektury (novinky/clanky/, znalosti/).
+  // Kromě deníku a MEMORY.md prohledává i tvoji digitální kopii (ja/), lidi (lide/),
+  // rozhodnutí, inspirace, opravy, výsledky průzkumu a knihovnu architektury.
   memory: {
     search: {
       provider: "ollama",
       model: "embeddinggemma",
       fallback: "none",
-      extraPaths: ["ja", "lide", "novinky/clanky", "znalosti"],
+      extraPaths: ["ja", "lide", "rozhodnuti", "inspirace", "opravy.md", "pruzkum", "novinky/clanky", "znalosti"],
     },
   },
 
@@ -73,7 +73,8 @@
     // které si agent píše sám (měnily by jeho chování bez tvého souhlasu).
     // Agent si také sám nenaplánuje úlohy (cron) a nespustí aktualizaci OpenClaw
     // (gateway). Naplánované úlohy zakládáš jen ty příkazem openclaw automations.
-    // Na internet smí agent jen přes agent-resers, a to po tvém schválení.
+    // Na internet smí agent jen přes agent-resers (po tvém schválení) a agent-pruzkum
+    // (obecný dotaz, stránky čte model bez nástrojů). Web a prohlížeč OpenClaw nemá.
     deny: [
       "group:web",
       "group:ui",

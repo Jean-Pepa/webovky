@@ -41,8 +41,10 @@ from email.utils import formatdate, make_msgid, parseaddr
 from html.parser import HTMLParser
 from pathlib import Path
 
-CONFIG_PATH = Path(os.environ.get("AGENT_MAIL_CONFIG", Path.home() / ".config/agent/mail.env"))
-STATE_DIR = Path(os.environ.get("AGENT_STATE_DIR", Path.home() / ".local/state/agent"))
+import zaklad
+
+CONFIG_PATH = zaklad.CONFIG_DIR / "mail.env"
+STATE_DIR = zaklad.STATE_DIR
 STATE_PATH = STATE_DIR / "mail-stav.json"
 
 # IMAP vyžaduje anglické zkratky měsíců bez ohledu na jazyk systému.
@@ -62,7 +64,8 @@ class MailError(Exception):
     """Chyba, kterou umíme uživateli srozumitelně vysvětlit."""
 
 
-def load_config(path: Path = CONFIG_PATH) -> dict[str, str]:
+def load_config(path: Path | None = None) -> dict[str, str]:
+    path = path or CONFIG_PATH
     if not path.exists():
         raise MailError(f"Chybí soubor s přihlášením {path}. Vytvoř ho podle NAVOD.md (krok 8).")
     if path.stat().st_mode & (stat.S_IRWXG | stat.S_IRWXO):

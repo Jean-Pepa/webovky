@@ -17,7 +17,8 @@ description: Rešerše pozemku před návrhem (katastr, územní plán, limity, 
    - Výsledky, které ti pošlu (text, čísla, snímky), zapisuj se zdrojem a datem.
    - Co zjistit nejde, nech `[DOPLNIT]`.
 4. **Územní plán:** podívej se do `podklady/obce/<obec>/regulativy.md`.
-   - Když tam regulativy nejsou, převeď textovou část ÚP (`pdftotext -layout`) do
+   - Když tam regulativy nejsou, převeď textovou část ÚP
+     (`agent-prevod pdf "cesta k ÚP.pdf" up-textova-cast.txt --layout`) do
      `up-textova-cast.txt`.
    - Na hlubokém modelu (navrhni mi `/model hluboky`) vytáhni regulativy plochy pozemku:
      využití, koeficient zastavění, výšku, minimální výměru a další podmínky.

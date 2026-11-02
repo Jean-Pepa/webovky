@@ -14,6 +14,10 @@ description: Nedělní souhrn uplynulého týdne a plán na další týden. Pou�
    kopie v `ja/` (dovednost `vecerni-denik`, bod 7).
 5. Když existuje složka `zdravi/data/`, přidej týdenní rozbor zdraví podle dovednosti
    `zdravi` (`agent-zdravi tyden`). Navrhni nanejvýš jeden pokus.
+5b. **Rozhodnutí:** u rozhodnutí v `rozhodnuti/`, která mají termín „Vyhodnotit" do příští
+   neděle, se mě zeptej, jak dopadla (dovednost `rozhodnuti`).
+5c. **Opravy:** shrň, co jsi tento týden dělal špatně podle `opravy.md`, a návrhy pravidel
+   z nočního úklidu, které ještě čekají na mé rozhodnutí.
 6. Pošli mi to ke schválení. Po mém „ano" zapiš priority a termíny do `ukoly.md`
    a schválené zápisy do `ja/`.
 7. Souhrn i plán ulož do deníku pod nadpis „Týdenní plán".

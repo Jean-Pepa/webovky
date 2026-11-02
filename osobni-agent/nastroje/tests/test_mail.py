@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest import mock
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))  # nástroje sdílejí zaklad.py
 
 
 def load_module():
@@ -87,13 +88,13 @@ class FakeIMAP:
 class MailTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        os.environ["AGENT_STATE_DIR"] = self.tmp.name
         self.mail = load_module()
+        self.mail.STATE_DIR = Path(self.tmp.name)
+        self.mail.STATE_PATH = Path(self.tmp.name) / "mail-stav.json"
         self.cfg = {"IMAP_HOST": "imap.example.cz", "IMAP_USER": "ja@example.cz", "IMAP_PASSWORD": "x"}
 
     def tearDown(self):
         self.tmp.cleanup()
-        os.environ.pop("AGENT_STATE_DIR", None)
 
     def test_summary_plain_and_attachment(self):
         info = self.mail.summarize(5, make_raw(attachment=True), 4000)

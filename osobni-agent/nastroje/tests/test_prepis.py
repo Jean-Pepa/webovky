@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest import mock
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))  # nástroje sdílejí zaklad.py
 
 
 def load_module():

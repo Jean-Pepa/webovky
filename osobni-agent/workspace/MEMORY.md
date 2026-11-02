@@ -11,4 +11,6 @@ Agent sem zapisuje sám. Jednou týdně si to přečti, oprav nesmysly a smaž, 
 
 ## Opakující se věci (platby, termíny, zvyky)
 
-## Opravy (co agent dělal špatně a jak to má dělat)
+## Kde je víc
+Opravy agentovy práce jsou v `opravy.md`, rozhodnutí s důvody v `rozhodnuti/`, podrobnosti
+o mně v `ja/`. Sem patří jen krátká trvalá fakta, nejvýš asi 100 řádků.

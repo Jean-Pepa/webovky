@@ -35,7 +35,10 @@ Tvůj notebook: ASUS Zenbook Pro 16X (UX7602BZ), Intel i9-13905H, **RTX 4080 s 1
 | Paměť a myšlenky | **Obsidian**, složka `Mozek` | Vidíš a opravíš, co si agent pamatuje |
 | Hledání v paměti | lokální model `embeddinggemma` | Hledání podle významu, nic neodchází ven |
 | Maily | `agent-mail` (z balíčku) | Jen čtení a koncepty přes IMAP |
-| Internet | `agent-resers` (z balíčku) | Claude přes API, filtr osobních údajů, tvoje schválení, záznam všeho odeslaného |
+| Internet | `agent-pruzkum` + vyhledávač SearXNG v notebooku | Na pokyn i přes noc: obecný dotaz bez osobních údajů, stránky čte lokální model bez nástrojů, odpověď se zdroji |
+| Internet (nejsilnější) | `agent-resers` (z balíčku) | Claude přes API, filtr osobních údajů, tvoje schválení, záznam všeho odeslaného |
+| Zprávy | `agent-novinky` | Každé ráno přehled světa a každou noc novinky z architektury, jen ze schválených webů |
+| Soubory na počítači | `agent-soubory` | Najít, přesunout, přejmenovat, otevřít, jen v povolených složkách, nic nemaže, všechno jde vrátit |
 | Nákupy | oficiální MCP server Rohlíku | Agent plní košík, objednáváš ty |
 | Diktát | `agent-prepis` (faster-whisper) | Lokální přepis češtiny |
 | Jednání | `agent-jednani` (faster-whisper + pyannote) | Lokální přepis s rozlišením mluvčích na grafice |
@@ -49,8 +52,9 @@ Tvůj notebook: ASUS Zenbook Pro 16X (UX7602BZ), Intel i9-13905H, **RTX 4080 s 1
  | Obsidian: ~/Mozek přes WSL  | <--> | agent-mail, agent-resers, ...    |
  +-----------------------------+      +----------------+-----------------+
                                                        |
-                              jen tyhle tři cesty ven  v
-              e-mail (IMAP)  ·  Rohlík (MCP)  ·  Claude API (po tvém schválení)
+                                       jen tyhle cesty ven  v
+   e-mail (IMAP) · Rohlík (MCP) · Claude API (po tvém schválení) · Google (náramek, kalendář)
+   obecný dotaz do vyhledávačů · stahování zpráv a novinek ze schválených webů
 ```
 
 Co balíček obsahuje:
@@ -58,10 +62,10 @@ Co balíček obsahuje:
 | Složka | Obsah |
 |---|---|
 | `windows/` | `kontrola-pc.ps1` (kontrola disku a výkonu, nic nemaže), `wslconfig.txt`, `uklid-plochy.ps1` (roztřídí plochu do složek, jde vrátit) a `mapa-pocitace.ps1` (přehled projektů a práce pro digitální kopii, jen názvy a data) |
-| `wsl/` | `instaluj-nastroje.sh` (instalace skriptů ve WSL) a `zaloha-mozku.sh` (noční záloha Mozku) |
+| `wsl/` | `instaluj-nastroje.sh` (instalace skriptů ve WSL), `zaloha-mozku.sh` (noční záloha Mozku), `instaluj-hledani.sh` (vyhledávač SearXNG) a `zastav-agenta.sh` (červené tlačítko) |
 | `zamky/` | zamčená konfigurace OpenClaw, seznam povolených příkazů, pokyny pravidelné kontroly (`kontrola.md`) a kontrolní skript (krok 6b) |
-| `nastroje/` | `mail.py`, `resers.py`, `prepis.py`, `jednani.py` a testy |
-| `workspace/` | šablony paměti a pravidel (`USER.md`, `SOUL.md`, `AGENTS.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md`, `lide/`), tvoje digitální kopie v `ja/` s otázkami k rozhovoru a 15 dovedností v `skills/` |
+| `nastroje/` | nástroje agenta (`mail.py`, `resers.py`, `prepis.py`, `jednani.py`, `zdravi.py`, `fitbit.py`, `kalendar.py`, `novinky.py`, `soubory.py`, `prevod.py`, `pruzkum.py`) a testy |
+| `workspace/` | šablony paměti a pravidel (`USER.md`, `SOUL.md`, `AGENTS.md`, `MEMORY.md`, `ukoly.md`, `nakupy.md`, `lide/`), tvoje digitální kopie v `ja/` s otázkami k rozhovoru, rejstřík rozhodnutí, inspirace, opravy, zdroje novinek a přehledu světa, fronta průzkumu a 22 dovedností v `skills/` |
 | `workspace/podklady/` | osnovy podle vyhlášky č. 131/2024 Sb., šablony textů ke studii a projektu, rešerše pozemku a zápisu z jednání, pravidla stylu, místo pro tvoje vzory a pro územní plány obcí (`obce/`) |
 | `workspace/projekty/` | šablona karty projektu |
 
@@ -509,7 +513,9 @@ Pravidla v `AGENTS.md` agent dodržuje, ale jazykový model jde zmanipulovat pod
 v mailu. Proto ho omezíme i technicky. Výchozí instalace OpenClaw dává agentovi příkazovou
 řádku bez schvalování, stahování z webu a prohlížeč. Po tomhle kroku platí:
 
-- agent nemá web, vyhledávání, prohlížeč ani ovládání telefonu a nesmí posílat zprávy jinam,
+- agent nemá web, vyhledávání, prohlížeč ani ovládání telefonu z OpenClaw a nesmí posílat
+  zprávy jinam. Na internet smí jen přes naše nástroje: rešerši schvaluješ ty a průzkum pošle
+  ven jen obecný dotaz (krok 23),
 - sám smí spustit jen příkazy ze seznamu (čtení mailů, příprava rešerše, přepisy, převody
   dokumentů),
 - odeslání rešerše ven, uložení konceptu mailu a jakýkoli jiný příkaz musíš schválit ty,
@@ -845,7 +851,7 @@ nepoužívej, zprávy v něm nejsou šifrované end-to-end.
    - Při 32k bylo na grafice 77 % modelu, při 64k 76 % (změřeno na tvém notebooku).
 2b. **Šetření tokenů.** S každou zprávou jde do modelu pevné zadání: pravidla, dovednosti
    a popis nástrojů. Kolik zabírá, ukáže v chatu `/context list`.
-   - Agent vidí jen našich 16 dovedností. Dovednosti přibalené k OpenClaw jsou vypnuté
+   - Agent vidí jen našich 22 dovedností. Dovednosti přibalené k OpenClaw jsou vypnuté
      v `zamky/openclaw-zamceni.json5`, ušetří přes 1 500 tokenů na každou zprávu. Novou
      dovednost připiš i do seznamu `skills` v tom souboru.
    - **Přehledy.** Noční úklid ve 3:00 každou noc přepíše `prehled.md`, mapu Mozku. Je v ní, co
@@ -915,8 +921,9 @@ Agent mezitím neodpovídá a pravidelné kontroly počkají.
 - Neotvírej bránu OpenClaw do internetu (žádný Tailscale Funnel) a neinstaluj cizí dovednosti.
 - Nesynchronizuj `Mozek` do cloudu bez šifrování. Celá jeho výhoda je, že je jen u tebe.
 
-**Když se agent chová divně:** zastav bránu (`openclaw gateway --help`), podívej se do deníku,
-co dělal, a oprav pravidla v `AGENTS.md`.
+**Když se agent chová divně:** zmáčkni **Zastav agenta** v nabídce Start (krok 21), podívej
+se do deníku, co dělal, a oprav pravidla v `AGENTS.md`. Co dělal se soubory, ukáže
+`agent-soubory historie` a vrátí `agent-soubory vrat --od RRRR-MM-DD`.
 
 **Bezpečnostní pojistky v balíčku:**
 
@@ -930,6 +937,12 @@ co dělal, a oprav pravidla v `AGENTS.md`.
 | Jednání: zpracování jen v počítači, žádné hlasové otisky, jména přiřazuješ ty | `nastroje/jednani.py`, `AGENTS.md` |
 | Agent nemá web, prohlížeč ani ovládání telefonu, příkazy jen ze seznamu, odeslání a koncepty schvaluješ ty | `zamky/openclaw-zamceni.json5`, `zamky/exec-approvals.json5` (krok 6b) |
 | Pravidla agenta jen pro čtení, kontrola všech zámků | krok 6b, `zamky/zkontroluj-zamceni.sh` |
+| Soubory jen v povolených složkách, bez mazání, všechno jde vrátit, do cloudu jen se schválením | `nastroje/soubory.py` (krok 21) |
+| Převody dokumentů jen v Mozku, bez filtrů a bez stahování | `nastroje/prevod.py` (krok 21) |
+| Nástroje nečtou nastavení z proměnných prostředí, které by agent podstrčil | `nastroje/zaklad.py`, `wsl/instaluj-nastroje.sh` |
+| Internet čte model bez nástrojů, ven jde jen obecný dotaz, nic z místní sítě | `nastroje/pruzkum.py`, `nastroje/novinky.py` (kroky 22, 23) |
+| Červené tlačítko Zastav agenta | `wsl/zastav-agenta.sh` (krok 21) |
+| Kontrola zámků každou noc, POZOR v ranním přehledu | `zkontroluj-zamceni.sh --casovac` (krok 24) |
 
 ---
 
@@ -1322,6 +1335,159 @@ v článku tedy nemůže nic udělat. Hlavní agent bere novinky jako obsah zven
 
 ---
 
+## Krok 21: Pevnější zámky a soubory na počítači (asi 30 minut)
+
+**Jak je agent zamčený („zadní vrátka").** Pravidla v `AGENTS.md` jsou jen první vrstva.
+Model jde podvrženým textem zmanipulovat, proto hlavní zámky stojí mimo něj a platí, ať
+model řekne cokoli:
+- **Kdo čte internet, nesmí jednat.** Stránky a zprávy čte lokální model, který nemá žádné
+  nástroje. Dostane text a vrátí shrnutí. I kdyby stránka napsala „smaž soubory", nemá čím.
+- **Kdo jedná, nečte syrový internet.** Hlavní agent dostane jen hotové shrnutí, označené jako
+  obsah zvenku, a řádky, které vypadají jako pokyny pro agenta, skript předem vyhodí.
+- **Každá schopnost je úzký nástroj.** Agent nesmí spustit nic mimo seznam povolených příkazů.
+  Každý nástroj si sám hlídá, co smí: soubory jen v povolených složkách a bez mazání, převody
+  jen v Mozku, hledání jen s obecným dotazem. Nastavení nástrojů (`~/.config/agent`) agent
+  nevidí a změnit nemůže.
+- **Co nejde vrátit, schvaluješ ty:** odeslání ven, koncept mailu, přesun do cloudu.
+
+**Co jsem v zámcích opravil.** Při stavbě nových nástrojů jsem v dřívějším nastavení našel
+tři díry:
+1. Povolený `pandoc` uměl spustit libovolný kód (filtr) a zapsat soubor kamkoli.
+2. Povolený `pdftotext` uměl zapsat text z podvrženého PDF třeba do `~/.bashrc`.
+3. Nástroje četly nastavení z proměnných prostředí. Ty smí agent k příkazu přidat, takže by jim
+   mohl podstrčit jiný seznam složek nebo jiný server.
+
+Teď převádí dokumenty `agent-prevod`: jen v Mozku, `pandoc` bez filtrů a dokument předem
+vyčistí, takže Word nemůže obsahovat obrázek z internetu ani cizí soubor. Nástroje berou cesty
+z tvého účtu, ne z proměnných, a Python v nich proměnné od agenta ignoruje. Všechno jsem
+vyzkoušel útokem, který předtím prošel a teď neprojde.
+
+**Soubory na počítači.** Na pokyn v chatu („přesuň složku Projekt X z plochy do Dokumentů",
+„najdi smlouvu", „otevři mi tu nabídku") pracuje agent přes `agent-soubory`:
+- jen ve složkách, které povolíš (plocha, dokumenty, stažené soubory, obrázky, videa),
+- nic nemaže a nic nepřepíše. Co má vyhodit, dá do složky `Koš agenta`, kterou vysypeš ty,
+- každá akce má číslo a jde vrátit, i všechno od určitého času,
+- otevře složku nebo dokument (PDF, Office bez maker, obrázek, výkres), nikdy program, skript
+  ani zástupce,
+- do složky, která se nahrává na OneDrive, přesune věc zvenku jen po tvém schválení v aplikaci.
+
+Klikat po obrazovce v cizích programech agent neumí a nebude. Lokální model by to nedělal
+spolehlivě a agent, který smí kliknout kamkoli, se zamknout nedá.
+
+1. **Nová verze balíčku, pravidla, dovednosti a zámky** (v Ubuntu, platí i pro kroky 22–24):
+   ```bash
+   rm -rf /tmp/oa && mkdir -p /tmp/oa && curl -fsSL https://codeload.github.com/jean-pepa/webovky/tar.gz/refs/heads/claude/busy-gauss-t83y4w | tar -xz -C /tmp/oa && rm -rf ~/osobni-agent && cp -r /tmp/oa/*/osobni-agent ~/osobni-agent
+   bash ~/osobni-agent/wsl/instaluj-nastroje.sh
+   mkdir -p ~/Mozek/svet ~/Mozek/pruzkum ~/Mozek/rozhodnuti ~/Mozek/inspirace
+   cp -n ~/osobni-agent/workspace/svet/zdroje.md ~/Mozek/svet/
+   cp -n ~/osobni-agent/workspace/pruzkum/fronta.md ~/Mozek/pruzkum/
+   cp -n ~/osobni-agent/workspace/rozhodnuti/_sablona.md ~/Mozek/rozhodnuti/
+   cp -n ~/osobni-agent/workspace/inspirace/_sablona.md ~/osobni-agent/workspace/inspirace/prehled.md ~/Mozek/inspirace/
+   cp -n ~/osobni-agent/workspace/opravy.md ~/Mozek/
+   sudo chattr -i ~/Mozek/AGENTS.md
+   sudo chattr -R -i ~/Mozek/skills
+   cp ~/osobni-agent/workspace/AGENTS.md ~/Mozek/AGENTS.md
+   cp -r ~/osobni-agent/workspace/skills/. ~/Mozek/skills/
+   sudo chattr +i ~/Mozek/AGENTS.md
+   sudo chattr -R +i ~/Mozek/skills
+   openclaw config patch --file ~/osobni-agent/zamky/openclaw-zamceni.json5
+   openclaw approvals set --file ~/osobni-agent/zamky/exec-approvals.json5
+   bash ~/osobni-agent/zamky/nastav-kontrolu.sh
+   openclaw gateway restart
+   ```
+2. **Povolené složky:** `agent-soubory nastav`. Zeptá se Windows na tvoje složky (i když je
+   plocha na OneDrivu) a uloží je do `~/.config/agent/soubory.txt`. Vypíše je
+   `agent-soubory slozky`. Další složku přidáš řádkem v tom souboru (`nano
+   ~/.config/agent/soubory.txt`), třeba `projekty = D:\Projekty`. Celý disk, celý profil,
+   systémové složky a `AppData` povolit nejde.
+3. **Červené tlačítko:** `bash ~/osobni-agent/wsl/zastav-agenta.sh --instaluj`. V nabídce Start
+   pak máš složku „Osobní agent" s tlačítky **Zastav agenta** a **Spusť agenta**. Zastav
+   agenta vypne bránu (chat, kontrolu, noční úklid i rozběhnuté příkazy) a časovače, které
+   chodí na internet, a to i po restartu. Zastav agenta si připni na hlavní panel. Rozběhnutý
+   příkaz zastavíš i z iPhonu zprávou `/stop`.
+4. **Zkouška v aplikaci:**
+   - „Co mám na ploše?" a pak „Přesuň [soubor] do Dokumentů."
+   - „Vrať to." Soubor musí být zpátky.
+   - „Smaž [soubor]." Musí skončit v `Koš agenta`, ne v koši Windows.
+   - „Otevři mi [PDF]." Otevře se na notebooku.
+5. **Kontrola:** `bash ~/osobni-agent/zamky/zkontroluj-zamceni.sh` musí ukázat „nástroje
+   nečtou nastavení z proměnných prostředí" a žádné POZOR u povolených příkazů.
+
+## Krok 22: Přehled světa každé ráno (asi 15 minut)
+
+Každé ráno v 5:30 skript `agent-novinky svet` stáhne ze zpravodajských webů v
+`~/Mozek/svet/zdroje.md` zprávy za posledních 24 hodin. Mezi nimi jsou ČT24, iROZHLAS, Deník N,
+BBC, Guardian, Al Jazeera, DW a Kyiv Independent. Lokální model z nich složí přehled
+`svet/RRRR-MM-DD.md`: nejdůležitější, válka a bezpečnost, Česko, svět, ekonomika, technologie
+a věda, ostatní. U každého bodu jsou odkazy na původní zprávy. Bod, který se neopírá o žádnou
+zprávu, skript zahodí. Ranní přehled ti řekne tři nejdůležitější věci.
+
+1. **Zdroje:** `agent-novinky zkontroluj`. Pod „Svět" vypíše u každého zdroje OK a počet
+   zpráv. Adresy jsem nemohl ověřit z internetu, proto nefunkční řádek v
+   `~/Mozek/svet/zdroje.md` oprav nebo smaž. Stačí adresa webu, kanál RSS skript najde sám.
+2. **První přehled** (2–5 minut): `agent-novinky svet`.
+3. **Časovač:** `agent-novinky casovac` (znovu). Přidá přehled světa v 5:30 k novinkám ve 2:10.
+4. **Zkouška v aplikaci:** „Co se stalo ve světě?" nebo „Co je nového na Ukrajině?"
+
+## Krok 23: Hledání na internetu a večerní úkoly přes noc (asi 30 minut)
+
+Na pokyn „zjisti…", „dohledej…" agent sám najde zdroje, přečte je a odpoví se zdroji. Co mu
+večer řekneš v deníku („zjisti přes noc, kolik stojí…", nebo jen přemýšlíš nahlas), zařadí do
+fronty `pruzkum/fronta.md`. V 1:30 to časovač dohledá a ráno to máš v přehledu.
+
+Hledá vlastní vyhledávač **SearXNG v notebooku**. Ten předá dotaz Googlu, Bingu, DuckDuckGo,
+Wikipedii a dalším, bez účtu a bez cookies. Pojistky:
+- ven jde jen obecný dotaz. Filtr osobních údajů je stejný jako u rešerše, se slovy z
+  `citliva-slova.txt`. Když v dotazu něco najde, dotaz neodejde vůbec,
+- adresy, e-maily a dlouhá čísla do dotazu nepatří a stránky se stahují jen z veřejného webu,
+  nikdy z notebooku ani z domácí sítě,
+- stránky čte lokální model bez nástrojů a pokyny ze stránek se do výsledku nedostanou,
+- nejvýš 40 dotazů denně, každý je v záznamu `agent-pruzkum log`.
+
+Kvalita: lokální model shrne 3–8 stránek. Na běžné otázky to stačí. Na důležité věci (zákon,
+velká investice) chtěj „zeptej se Clauda" (krok 8). To je dražší a každé odeslání schvaluješ.
+
+1. **Vyhledávač** (v Ubuntu, zeptá se na heslo, stahuje asi 200 MB):
+   ```bash
+   bash ~/osobni-agent/wsl/instaluj-hledani.sh
+   ```
+   Na konci musí napsat „Vyhledávač běží". Ve Windows ho otevřeš i v prohlížeči na
+   `http://127.0.0.1:8888` jako soukromý vyhledávač.
+2. **Zkouška:** `agent-pruzkum zkontroluj` musí ukázat dvakrát OK (vyhledávač a model).
+3. **Noční fronta:** `agent-pruzkum casovac`.
+4. **Zkouška v aplikaci:**
+   - „Zjisti, kolik stojí projektová dokumentace rodinného domu." Za 1–3 minuty přijde
+     odpověď se zdroji, uložená v `pruzkum/`.
+   - Večer v deníku: „…a zjisti přes noc, jaké jsou dotace na zelené střechy." Agent napíše,
+     co zařadil. Ráno to bude v ranním přehledu.
+   - „Zjisti, kde bydlí Jan Novák." Agent to musí odmítnout (bod 15 podmínek).
+5. Co odešlo ven, ukáže `agent-pruzkum log`.
+
+## Krok 24: Rozhodnutí, inspirace, učení z oprav a noční kontrola (asi 10 minut)
+
+- **Rejstřík rozhodnutí** (`rozhodnuti/`): důležité rozhodnutí s důvody, možnostmi a termínem,
+  kdy ho vyhodnotit. Agent ti ho navrhne sám, když v chatu nebo v deníku něco rozhodneš. Až
+  přijde termín, zeptá se v týdenním plánu, jak to dopadlo. Rady pak staví na tvých
+  skutečných výsledcích.
+- **Inspirace** (`inspirace/`): pošli fotku nebo odkaz a napiš „líbí se mi, protože…". Noční
+  úklid z toho skládá `inspirace/prehled.md`, co se ti opakovaně líbí a proč. Agent z toho
+  vychází, když spolu navrhujete.
+- **Učení z oprav** (`opravy.md`): každou tvoji opravu si zapíše. Když se stejná chyba objeví
+  potřetí, noční úklid ti navrhne trvalé pravidlo. Zapíšeš ho ty, protože pravidla jsou
+  zamčená. `MEMORY.md` zůstane krátké, podrobnosti jdou do souborů podle tématu.
+- **Bezpečnostní kontrola každou noc:**
+  ```bash
+  bash ~/osobni-agent/zamky/zkontroluj-zamceni.sh --casovac
+  ```
+  Ve 4:40 projde všechny zámky a výsledek uloží do `Mozek/bezpecnost/kontrola.md`. Každé
+  POZOR ti agent řekne hned v ranním přehledu.
+
+**Noc v kostce:** 1:30 průzkum fronty, 2:10 novinky z architektury, 2:30 záloha Mozku, 3:00
+noční úklid, 4:40 bezpečnostní kontrola, 5:30 přehled světa. Když notebook spí, proběhne to
+po zapnutí.
+
+---
+
 ## Kontrolní seznam: hotovo, když…
 
 - [ ] `nvidia-smi` ukazuje RTX 4080, 12 GB a CUDA 12.8 nebo vyšší
@@ -1345,13 +1511,19 @@ v článku tedy nemůže nic udělat. Hlavní agent bere novinky jako obsah zven
 - [ ] `openclaw skills list` ukazuje `zdravi` jako `ready` a `agent-zdravi kontrola` odpoví
 - [ ] po větě „naplánuj mi to do kalendáře" máš událost v iPhonu v kalendáři Mozek
 - [ ] `agent-novinky zkontroluj` hlásí u zdrojů OK a ráno je v `novinky/` nový přehled
+- [ ] „přesuň … do Dokumentů" a „vrať to" fungují a „smaž …" skončí v `Koš agenta`
+- [ ] tlačítko Zastav agenta v nabídce Start agenta zastaví a Spusť agenta ho zase spustí
+- [ ] ráno je ve `svet/` přehled světa a v ranním přehledu tři body z něj
+- [ ] `agent-pruzkum zkontroluj` hlásí dvakrát OK a „zjisti…" vrátí odpověď se zdroji
+- [ ] dotaz z večerního deníku je ráno vyřešený v `pruzkum/` a v ranním přehledu
+- [ ] ráno je v `bezpecnost/kontrola.md` noční kontrola bez POZOR
 
 ---
 
 ## Co je ověřené a co si ověř sám
 
 - **Otestováno:**
-  - Skripty prošly 101 automatickými testy:
+  - Skripty prošly 148 automatickými testy:
     - `mail.py` a `resers.py`: falešný poštovní server, odeslané maily bez citací, složky
       s diakritikou, filtr osobních údajů, schvalování.
     - `jednani.py` a `prepis.py`: párování slov s mluvčími, jména, výstup, přechod z grafiky
@@ -1374,6 +1546,21 @@ v článku tedy nemůže nic udělat. Hlavní agent bere novinky jako obsah zven
       články, `robots.txt`, nedostupné zdroje, starší kódování češtiny, shrnutí bez nástrojů,
       běh bez modelu a hesla z Wikipedie jednou za 30 dní. Proti falešnému webu a falešné
       Ollamě; i tady testy musely selhat na schválně pokaženém skriptu.
+    - Přehled světa (`agent-novinky svet`): jen zprávy za posledních 24 hodin, stejná zpráva
+      ze dvou zdrojů jen jednou, střídání zdrojů, zahození bodu bez zdroje i s neexistujícím
+      zdrojem, odkazy jen ze zpráv (ne od modelu), běh bez modelu.
+    - `soubory.py`: jen povolené složky, celý disk a profil povolit nejde, Mozek a zálohy jsou
+      nedotknutelné, nic se nepřepíše ani nesmaže (koš), vracení i po víc akcích, limit kopie
+      a koše, OneDrive jen se schválením, otevírání jen dokumentů (cesta jde do PowerShellu
+      proměnnou, ne textem příkazu).
+    - `prevod.py` se skutečným `pandoc` a `pdftotext`: převod jen v Mozku, i přes symbolický
+      odkaz ven nevede cesta, Word bez obrázku z internetu (falešný server nedostal ani jeden
+      dotaz), bez cizího souboru a bez surového kódu.
+    - `pruzkum.py`: filtr osobních údajů v dotazu, nic z notebooku ani z místní sítě (ani přes
+      přesměrování), `robots.txt`, pokyny ze stránek se do výsledku nedostanou, neexistující
+      zdroje zmizí, denní limit, noční fronta a záznam.
+    - U všech nových nástrojů jsem testy ověřil i tak, že jsem nástroj schválně pokazil a testy
+      musely selhat (25 takových pokusů).
   - Volání Clauda prošlo zkušebně proti testovacímu serveru s oficiální knihovnou Anthropic.
   - Instalační skript proběhl na čistém Linuxu jako běžný uživatel.
   - Nastavení jedním příkazem (`onboard`), zamčená konfigurace, seznam povolených příkazů
@@ -1387,7 +1574,7 @@ v článku tedy nemůže nic udělat. Hlavní agent bere novinky jako obsah zven
     Ollamou po stejném nastavení jako v kroku 6. OpenClaw pak hlavnímu modelu posílá okno
     65 536 tokenů a hlubokému dál 32 768. Druhé spuštění skriptu nic nezmění.
   - Zámek dovedností prošel v OpenClaw 2026.10.9 po stejném nastavení jako v kroku 6: agent
-    vidí jen našich 16 dovedností a zadání je kratší o 6 565 znaků. Kontrolní skript pozná,
+    vidí jen naše dovednosti (tehdy 16) a zadání je kratší o 6 565 znaků. Kontrolní skript pozná,
     když zámek chybí nebo nová dovednost není v seznamu.
   - Zámky nových nástrojů a pravidlo „jen modely z Ollamy" prošly v OpenClaw 2026.10.9 po
     stejném nastavení jako v kroku 6. Ve skutečném běhu agentovi nezůstal žádný zakázaný nástroj.
@@ -1395,6 +1582,17 @@ v článku tedy nemůže nic udělat. Hlavní agent bere novinky jako obsah zven
   - Nástroje dostává model rovnou (`tools.toolSearch: false`), bez pomocníka na hledání
     nástrojů, u kterého lokální model posílal chybné údaje. V OpenClaw 2026.10.9 má agent
     13 nástrojů a celé zadání vyšlo o 1 062 znaků kratší než s hledáním nástrojů.
+  - Nová zamčená konfigurace (22 dovedností, hledání v paměti i v rozhodnutích, inspiracích,
+    opravách a průzkumu), nový seznam povolených příkazů a jeden běh agenta s napodobenou Ollamou
+    prošly v OpenClaw 2026.10.9. Agent má dál jen 13 nástrojů, pevné zadání vzrostlo z 30 243
+    na 33 037 znaků (asi 800 tokenů). Vyhodnocovač OpenClaw potvrdil, že `pandoc
+    --lua-filter…` a `pdftotext a.pdf ~/.bashrc` předtím prošly bez ptaní a teď čekají na
+    schválení, a že přesun do cloudu (`--do-cloudu`) a nastavení složek čekají vždycky.
+  - Instalace nástrojů proběhla jako nový uživatel `kristian` v `/home/kristian`. Podvržené
+    `AGENT_CONFIG_DIR`, `HOME` ani `PYTHONPATH` s cizím kódem nic nezměnily. Bez nové pojistky
+    se cizí kód přes `PYTHONPATH` opravdu spustil.
+  - Červené tlačítko proběhlo s napodobeným systemd. Skript pro zástupce v nabídce Start je
+    platný PowerShell.
   - `kontrola-pc.ps1` proběhl na tvém notebooku. Kontrolu WSL a OneDrivu jsem pak
     vyzkoušel v PowerShellu s napodobeným WSL.
 - **Netestováno naživo:**
@@ -1404,8 +1602,11 @@ v článku tedy nemůže nic udělat. Hlavní agent bere novinky jako obsah zven
   - Tailscale ve WSL, aplikace v iPhonu a automatický start WSL. Vyzkoušíš je v krocích 6b
     a 12.
   - Skutečný kalendář Google a jeho zobrazení v iPhonu. Vyzkoušíš je v kroku 19.
-  - Skutečné weby o architektuře. Tam, kde balíček vznikl, byl internet zavřený, proto adresy
-    zdrojů ověří až `agent-novinky zkontroluj` v kroku 20.
+  - Skutečné weby o architektuře a zpravodajské weby. Tam, kde balíček vznikl, byl internet
+    zavřený, proto adresy zdrojů ověří až `agent-novinky zkontroluj` v krocích 20 a 22.
+  - Vyhledávač SearXNG v kontejneru (stahuje se z internetu) a skutečné hledání. Vyzkoušíš je
+    v kroku 23.
+  - Zástupci v nabídce Start a otevírání dokumentů ve Windows. Vyzkoušíš je v kroku 21.
 - **Ověř v aktuální dokumentaci:** přesné názvy modelů v knihovně Ollamy, příkazy
   `openclaw mcp` a podmínky modelu pyannote na Hugging Face. Po aktualizaci OpenClaw vždycky
   spusť `zkontroluj-zamceni.sh`, klíče konfigurace se mezi verzemi mění.

@@ -33,9 +33,12 @@ fi
 
 echo "→ Kopíruji skripty do $CIL"
 mkdir -p "$CIL" "$BIN"
-install -m 755 "$ZDROJ/mail.py" "$ZDROJ/resers.py" "$ZDROJ/prepis.py" "$ZDROJ/jednani.py" \
-  "$ZDROJ/zdravi.py" "$ZDROJ/fitbit.py" "$ZDROJ/kalendar.py" "$ZDROJ/novinky.py" "$CIL/"
-install -m 644 "$ZDROJ/google_ucet.py" "$CIL/"
+NASTROJE=(mail resers prepis jednani zdravi fitbit kalendar novinky soubory prevod pruzkum)
+for nazev in "${NASTROJE[@]}"; do
+  install -m 755 "$ZDROJ/$nazev.py" "$CIL/"
+done
+# Společné moduly: přihlášení ke Googlu a cesty (zaklad.py), které se neberou z proměnných.
+install -m 644 "$ZDROJ/google_ucet.py" "$ZDROJ/zaklad.py" "$CIL/"
 
 echo "→ Připravuji Python prostředí $VENV"
 [[ -x "$VENV/bin/python" ]] || python3 -m venv "$VENV"
@@ -54,8 +57,8 @@ if [[ $JEDNANI -eq 1 ]]; then
     "torch>=2.10,<2.11" "torchaudio>=2.10,<2.11" "torchcodec>=0.10,<0.11"
 fi
 
-echo "→ Vytvářím příkazy agent-mail, agent-resers, agent-prepis, agent-jednani, agent-zdravi, agent-fitbit, agent-kalendar a agent-novinky v $BIN"
-for nazev in mail resers prepis jednani zdravi fitbit kalendar novinky; do
+echo "→ Vytvářím příkazy $(printf 'agent-%s ' "${NASTROJE[@]}")v $BIN"
+for nazev in "${NASTROJE[@]}"; do
   cat > "$BIN/agent-$nazev" <<EOF
 #!/usr/bin/env bash
 # Knihovny CUDA z Python prostředí, aby přepis běžel i na grafice.
@@ -64,7 +67,8 @@ for d in "$VENV"/lib/python3*/site-packages/nvidia/cublas/lib "$VENV"/lib/python
 done
 export LD_LIBRARY_PATH
 export PYANNOTE_METRICS_ENABLED=0
-exec "$VENV/bin/python" "$CIL/$nazev.py" "\$@"
+# -E: Python nečte proměnné PYTHON… od agenta, -s: žádné balíčky z domovské složky.
+exec "$VENV/bin/python" -E -s "$CIL/$nazev.py" "\$@"
 EOF
   chmod 755 "$BIN/agent-$nazev"
 done

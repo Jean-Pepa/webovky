@@ -34,6 +34,12 @@ description: Večerní deník z hlasové zprávy nebo textu – co se stalo, roz
    - Štítky patří ke dni, o kterém mluvím. Když deník posílám po půlnoci, zapiš je do
      souboru předchozího dne.
 4. **Úkoly:** závazky a termíny mi navrhni do `ukoly.md`.
+4b. **Na noc:** když říkám „zjisti", „dohledej", „co je nového o…", nebo o něčem přemýšlím
+   a pomohly by fakta z internetu, zformuluj obecný dotaz (dovednost `pruzkum`, bod 1)
+   a připiš ho do `pruzkum/fronta.md` jako `- [ ] dotaz`. Nejvýš 5 za večer. V odpovědi mi
+   napiš, co jsi zařadil, abych to mohl opravit. Ráno bude výsledek v ranním přehledu.
+4c. **Rozhodnutí a inspirace:** důležité rozhodnutí mi navrhni do rejstříku (dovednost
+   `rozhodnuti`), co se mi líbilo, ulož do inspirací (dovednost `inspirace`).
 5. **Digitální kopie:** když se objeví něco, co mění to, co o mně víš (nový cíl, změna
    názoru, důležité rozhodnutí s důvodem, nový člověk), navrhni zápis do `ja/` nebo `lide/`.
    Zapiš až po mém „ano". Rozhodnutí s důvody patří do tabulky v
@@ -43,4 +49,5 @@ description: Večerní deník z hlasové zprávy nebo textu – co se stalo, roz
 7. **Týdně:** v nedělním týdenním plánu shrň témata deníku za týden a navrhni, co z nich
    zapsat do `ja/`.
 
-Deník je jen pro mě. Nic z něj nedávej do dotazů přes `agent-resers`.
+Deník je jen pro mě. Nic osobního z něj nedávej do dotazů přes `agent-resers` ani do fronty
+průzkumu, tam patří jen obecná otázka.

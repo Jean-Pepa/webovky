@@ -7,8 +7,8 @@ description: Naučí se můj styl psaní ze starších textů a navrhne pravidla
 
 1. **Vzory** jsou v `podklady/vzory/`. Soubory PDF a DOCX nejdřív převeď na text (ve složce
    vzorů):
-   - `pdftotext -layout soubor.pdf soubor.txt`
-   - `pandoc soubor.docx -t gfm -o soubor.md`
+   - `agent-prevod pdf soubor.pdf soubor.txt --layout`
+   - `agent-prevod dokument soubor.docx soubor.md`
 2. **Rozbor** dělej na hlubokém modelu; když běžíš na jiném, navrhni mi `/model hluboky`.
    U každého vzoru zjisti:
    - členění a pořadí kapitol a jak se liší od osnovy vyhlášky,

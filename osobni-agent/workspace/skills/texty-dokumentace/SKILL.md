@@ -32,9 +32,9 @@ description: Koncepty textů projektové dokumentace podle vyhlášky č. 131/20
    investora a doporučené kontroly.
 7. **Shrnutí pro mě:** co je hotové, kolik bodů čeká, tři největší rizika.
 8. **Export do Wordu** jen na můj pokyn:
-   `pandoc B-souhrnna-technicka-zprava.md -o B-souhrnna-technicka-zprava.docx`.
+   `agent-prevod dokument B-souhrnna-technicka-zprava.md B-souhrnna-technicka-zprava.docx`.
    Když je v `podklady/sablony/` soubor `hlavicka.docx`, přidej
-   `--reference-doc=podklady/sablony/hlavicka.docx`.
+   `--sablona podklady/sablony/hlavicka.docx`.
 
 Výstup je koncept. Kontroluje, podepisuje a odpovídá za něj autorizovaná osoba.
 Údaje o stavebníkovi nepiš do paměti, deníku ani do dotazů ven (`resers-web`).

@@ -8,7 +8,7 @@ Postup má dva kroky, aby každý odchozí dotaz prošel tvým schválením:
 
 Klíč k API se čte z ~/.config/agent/anthropic.env (ANTHROPIC_API_KEY=...), práva 600.
 Citlivá slova (jména, ulice, firma…) patří do ~/.config/agent/citliva-slova.txt, jedno na řádek.
-Model a úsilí jdou změnit proměnnými AGENT_CLOUD_MODEL a AGENT_CLOUD_EFFORT.
+Model a úsilí jsou pevně v konstantách MODEL a EFFORT (proměnné prostředí se nečtou).
 """
 
 from __future__ import annotations
@@ -23,13 +23,16 @@ import sys
 import time
 from pathlib import Path
 
-CONFIG_DIR = Path(os.environ.get("AGENT_CONFIG_DIR", Path.home() / ".config/agent"))
-STATE_DIR = Path(os.environ.get("AGENT_STATE_DIR", Path.home() / ".local/state/agent")) / "resers"
+import zaklad
+
+CONFIG_DIR = zaklad.CONFIG_DIR
+STATE_DIR = zaklad.STATE_DIR / "resers"
 PENDING_DIR = STATE_DIR / "ke-schvaleni"
 LOG_PATH = STATE_DIR / "odeslano.jsonl"
 
-MODEL = os.environ.get("AGENT_CLOUD_MODEL", "claude-opus-5-5")
-EFFORT = os.environ.get("AGENT_CLOUD_EFFORT", "medium")
+MODEL = "claude-opus-5-5"
+EFFORT = "medium"
+API_URL = "https://api.anthropic.com"  # pevně, ne z proměnné ANTHROPIC_BASE_URL
 MAX_QUERY_CHARS = 2000
 
 SYSTEM_PROMPT = (
@@ -216,7 +219,7 @@ def _usage_totals(responses: list) -> dict:
 def ask_claude(query: str, api_key: str) -> tuple[list, object]:
     import anthropic
 
-    client = anthropic.Anthropic(api_key=api_key)
+    client = anthropic.Anthropic(api_key=api_key, base_url=API_URL)
     messages: list[dict] = [{"role": "user", "content": query}]
     responses: list = []
     try:

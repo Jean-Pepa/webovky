@@ -4,6 +4,56 @@
 # Na konci vypíše počet nálezů POZOR. NEVÍM znamená, že to skript nemohl ověřit.
 set -uo pipefail
 
+# --ulozit: výsledek uloží i do Mozku (bezpecnost/kontrola.md), ať ho agent ukáže v ranním přehledu.
+# --casovac: kontrola poběží sama každou noc ve 4:40.
+if [[ "${1:-}" == "--casovac" ]]; then
+  mkdir -p "$HOME/.config/systemd/user"
+  cat > "$HOME/.config/systemd/user/agent-kontrola-zamku.service" <<'EOF'
+[Unit]
+Description=Bezpečnostní kontrola zámků agenta
+
+[Service]
+Type=oneshot
+Environment=PATH=%h/.local/bin:%h/.npm-global/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/bin/bash -lc '"$HOME"/osobni-agent/zamky/zkontroluj-zamceni.sh --ulozit'
+EOF
+  cat > "$HOME/.config/systemd/user/agent-kontrola-zamku.timer" <<'EOF'
+[Unit]
+Description=Bezpečnostní kontrola každou noc ve 4:40
+
+[Timer]
+OnCalendar=*-*-* 04:40:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+  systemctl --user daemon-reload
+  systemctl --user enable --now agent-kontrola-zamku.timer
+  echo "Hotovo. Kontrola poběží každou noc ve 4:40, výsledek bude v Mozku v bezpecnost/kontrola.md."
+  exit 0
+fi
+if [[ "${1:-}" == "--ulozit" ]]; then
+  vystup=$(bash "${BASH_SOURCE[0]}" 2>&1)
+  kod=$?
+  slozka=$(openclaw config get agents.defaults.workspace --json 2>/dev/null | tr -d '"')
+  slozka=${slozka:-$HOME/Mozek}
+  mkdir -p "$slozka/bezpecnost"
+  {
+    echo "# Bezpečnostní kontrola $(date '+%-d. %-m. %Y %H:%M')"
+    echo
+    echo "Výsledek skriptu zamky/zkontroluj-zamceni.sh. Každé POZOR oprav podle NAVOD.md."
+    echo
+    grep '^POZOR' <<<"$vystup" | sed 's/^/- /' || true
+    echo
+    echo '```'
+    echo "$vystup"
+    echo '```'
+  } > "$slozka/bezpecnost/kontrola.md"
+  echo "$vystup"
+  exit $kod
+fi
+
 POCET=0
 ok()    { printf 'OK      %s\n' "$1"; }
 pozor() { printf 'POZOR   %s\n' "$1"; POCET=$((POCET + 1)); }
@@ -122,7 +172,11 @@ defaults = f.get("defaults", {})
 def line(ok, text):
     print(("OK      " if ok else "POZOR   ") + text)
 # Tyhle příkazy musí vždycky čekat na tvé schválení.
-approve = {"agent-mail": ["koncept"], "agent-resers": ["odeslat"], "agent-kalendar": ["prihlasit"]}
+approve = {"agent-mail": ["koncept"], "agent-resers": ["odeslat"], "agent-kalendar": ["prihlasit"],
+           "agent-soubory": ["nastav", "presun a b --do-cloudu", "kopiruj a b --do-cloudu"],
+           "agent-pruzkum": ["noc", "casovac"]}
+# Tyhle spouští jen časovač, agent je nesmí spustit vůbec.
+timer_only = ("agent-novinky", "agent-fitbit")
 line(defaults.get("security") == "allowlist", f"jen seznam povolených příkazů (security = {defaults.get('security')})")
 line(defaults.get("ask") in ("on-miss", "always"), f"ostatní příkazy čekají na schválení (ask = {defaults.get('ask')})")
 line(defaults.get("askFallback", "deny") == "deny", f"bez odpovědi se příkaz zamítne (askFallback = {defaults.get('askFallback', 'deny')})")
@@ -136,17 +190,46 @@ for agent, cfg in (f.get("agents") or {}).items():
         elif name in approve:
             for sub in approve[name]:
                 try:
-                    allowed = re.search(entry["argPattern"], f"{sub} --x") is not None
+                    allowed = re.search(entry["argPattern"], sub if " " in sub else f"{sub} --x") is not None
                 except re.error:
                     allowed = True
                 if allowed:
                     line(False, f"{name} {sub} se spustí bez tvého schválení, uprav argPattern")
         if name in risky or pattern in ("*", "**"):
             line(False, f"{pattern} umí spustit cokoli nebo poslat data ven, z povolených ho vyřaď")
+        elif name in timer_only:
+            line(False, f"{name} spouští jen časovač, ze seznamu povolených příkazů ho vyřaď")
+        elif not name.startswith("agent-"):
+            line(False, f"{pattern} není nástroj agenta. Programy jako pandoc nebo pdftotext umí spustit kód nebo "
+                        "zapsat soubor kamkoli. Nahraj znovu zamky/exec-approvals.json5")
 PY
 )"
 else
   nevim "seznam povolených příkazů (openclaw approvals get)"
+fi
+
+echo "== Nástroje agenta"
+if [[ -d "$HOME/.local/bin" ]] && compgen -G "$HOME/.local/bin/agent-*" >/dev/null; then
+  stare=$(grep -L -- ' -E -s ' "$HOME"/.local/bin/agent-* 2>/dev/null | xargs -r -n1 basename | tr '\n' ' ')
+  if [[ -n "$stare" ]]; then
+    pozor "příkazy ${stare}čtou proměnné prostředí od agenta, spusť znovu: bash ~/osobni-agent/wsl/instaluj-nastroje.sh"
+  else
+    ok "nástroje nečtou nastavení z proměnných prostředí (agent jim nic nepodstrčí)"
+  fi
+  [[ -f "$HOME/agent-nastroje/zaklad.py" ]] || pozor "chybí ~/agent-nastroje/zaklad.py, spusť znovu instaluj-nastroje.sh"
+else
+  nevim "nástroje agenta zatím nejsou nainstalované (wsl/instaluj-nastroje.sh)"
+fi
+soubory="$HOME/.config/agent/soubory.txt"
+if [[ -f "$soubory" ]]; then
+  if [[ "$(stat -c %a "$soubory")" != "600" ]]; then
+    pozor "soubory.txt (složky, kde agent smí pracovat) smí měnit jen ty: chmod 600 $soubory"
+  else
+    ok "agent pracuje se soubory jen ve složkách ze soubory.txt ($(grep -cE '^[^#].*=' "$soubory") řádků)"
+  fi
+fi
+if [[ -s "$HOME/.local/state/agent/zastaveno" ]]; then
+  pozor "agent je zastavený tlačítkem Zastav agenta. Spustíš ho tlačítkem Spusť agenta v nabídce Start"
 fi
 
 echo "== Bezpečnostní audit OpenClaw"
@@ -388,6 +471,41 @@ if [[ -f "${workspace:-$HOME/Mozek}/novinky/zdroje.md" ]]; then
   else
     nevim "přehled novinek zatím nevznikl (agent-novinky stahni)"
   fi
+fi
+
+# Přehled světa (jen když je nastavený): časovač a čerstvý přehled.
+if [[ -f "${workspace:-$HOME/Mozek}/svet/zdroje.md" ]]; then
+  if [[ "$(systemctl --user is-enabled agent-svet.timer 2>/dev/null)" == "enabled" ]]; then
+    ok "přehled světa se skládá každé ráno"
+  else
+    pozor "přehled světa se neskládá, zapni časovače znovu: agent-novinky casovac"
+  fi
+fi
+
+# Vyhledávač pro průzkum (jen když je nainstalovaný): běží a poslouchá jen v notebooku.
+if [[ -f "$HOME/.config/containers/systemd/searxng.container" ]]; then
+  if [[ "$(systemctl --user is-active searxng.service 2>/dev/null)" == "active" ]]; then
+    ok "vyhledávač SearXNG běží"
+  else
+    pozor "vyhledávač SearXNG neběží: systemctl --user start searxng (journalctl --user -u searxng)"
+  fi
+  if command -v ss >/dev/null; then
+    venku=$(ss -ltnH 2>/dev/null | awk '{print $4}' | grep -E ':8888$' | grep -vE '^(127\.0\.0\.1|\[::1\]):' || true)
+    if [[ -n "$venku" ]]; then
+      pozor "vyhledávač je dostupný i mimo notebook: $(echo "$venku" | tr '\n' ' ')(v searxng.container má být 127.0.0.1:8888)"
+    else
+      ok "vyhledávač poslouchá jen v notebooku"
+    fi
+  fi
+  if [[ "$(systemctl --user is-enabled agent-pruzkum.timer 2>/dev/null)" != "enabled" ]]; then
+    pozor "noční průzkum fronty neběží: agent-pruzkum casovac"
+  fi
+fi
+
+if [[ "$(systemctl --user is-enabled agent-kontrola-zamku.timer 2>/dev/null)" == "enabled" ]]; then
+  ok "tahle kontrola běží sama každou noc (výsledek v bezpecnost/kontrola.md)"
+else
+  pozor "kontrola neběží sama, zapni ji: bash ~/osobni-agent/zamky/zkontroluj-zamceni.sh --casovac"
 fi
 
 # Kalendář (jen když je napojený): přihlášení čitelné jen pro tebe a žádná práva navíc.
