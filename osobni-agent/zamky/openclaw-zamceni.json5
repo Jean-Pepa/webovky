@@ -34,6 +34,7 @@
         "ranni-prehled", "resers-pozemku", "resers-web", "texty-dokumentace", "texty-studie",
         "tydenni-plan", "uceni-ze-vzoru", "vecerni-denik", "zapis-diktatu", "zapis-jednani",
         "zdravi", "architektura", "soubory", "pruzkum", "svet", "rozhodnuti", "inspirace",
+        "zpravy",
       ],
       // Přepnout se dá jen na modely v notebooku. Bez tohoto pravidla by šlo přepnout
       // rozhovor i na model v cloudu a celý jeho obsah by odešel ven.

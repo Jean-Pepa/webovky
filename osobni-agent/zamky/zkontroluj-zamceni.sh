@@ -172,7 +172,7 @@ defaults = f.get("defaults", {})
 def line(ok, text):
     print(("OK      " if ok else "POZOR   ") + text)
 # Tyhle příkazy musí vždycky čekat na tvé schválení.
-approve = {"agent-mail": ["koncept"], "agent-resers": ["odeslat"], "agent-kalendar": ["prihlasit"],
+approve = {"agent-mail": ["odeslat"], "agent-resers": ["odeslat"], "agent-kalendar": ["prihlasit"],
            "agent-soubory": ["nastav", "presun a b --do-cloudu", "kopiruj a b --do-cloudu"],
            "agent-pruzkum": ["noc", "casovac"]}
 # Tyhle spouští jen časovač, agent je nesmí spustit vůbec.

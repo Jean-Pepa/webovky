@@ -6,38 +6,41 @@
 //
 // Cokoli, co tu není, OpenClaw nespustí, dokud to neschválíš v aplikaci v iPhonu
 // (Approvals) nebo v ovládacím panelu. Když nikdo neodpoví, příkaz se zamítne.
-// Hlavně: odeslání dotazu ven (agent-resers odeslat) a uložení konceptu mailu
-// (agent-mail koncept) tu schválně nejsou, takže je vždycky potvrzuješ ty.
+// Hlavně: odeslání dotazu ven (agent-resers odeslat) a odeslání mailu (agent-mail odeslat)
+// tu schválně nejsou, takže je vždycky potvrzuješ ty a ve schválení vidíš celý text.
 {
   version: 1,
   defaults: { security: "allowlist", ask: "on-miss", askFallback: "deny" },
   agents: {
     main: {
       allowlist: [
-        // Maily: jen číst (nové, jednu zprávu, odeslané kvůli tvému stylu).
-        { pattern: "~/.local/bin/agent-mail", argPattern: "^(nove|precti|odeslane)( .*)?$" },
+        // Maily: číst, hledat, odeslané kvůli tvému stylu a koncept do tvé pošty (nic neodejde).
+        // Odeslání (odeslat) tu není, to schvaluješ ty.
+        { pattern: "~/.local/bin/agent-mail", argPattern: "^(nove|precti|hledej|odeslane|koncept)( [\\s\\S]*)?$" },
+        // WhatsApp, SMS, Messenger: jen odkaz s hotovou zprávou, odesíláš ty z telefonu.
+        { pattern: "~/.local/bin/agent-zpravy", argPattern: "^(whatsapp|sms|messenger)( [\\s\\S]*)?$" },
         // Rešerše: jen připravit dotaz a prohlížet záznam odeslaného.
-        { pattern: "~/.local/bin/agent-resers", argPattern: "^(priprav|log)( .*)?$" },
+        { pattern: "~/.local/bin/agent-resers", argPattern: "^(priprav|log)( [\\s\\S]*)?$" },
         // Přepis diktátu a jednání (běží lokálně).
         { pattern: "~/.local/bin/agent-prepis" },
         { pattern: "~/.local/bin/agent-jednani" },
         // Zdraví z náramku: jen výpočty v notebooku, nic se neodesílá.
-        { pattern: "~/.local/bin/agent-zdravi", argPattern: "^(den|noc|noci|data|tyden|pokus|kontrola)( .*)?$" },
+        { pattern: "~/.local/bin/agent-zdravi", argPattern: "^(den|noc|noci|data|tyden|pokus|kontrola)( [\\s\\S]*)?$" },
         // Kalendář: číst, navrhnout, zapsat a smazat hned. Google mu s tímhle přihlášením dovolí
         // měnit jen jeho vlastní kalendář Mozek. Přihlášení (prihlasit) spouštíš ty.
-        { pattern: "~/.local/bin/agent-kalendar", argPattern: "^(udalosti|navrh|zapis|smaz)( .*)?$" },
+        { pattern: "~/.local/bin/agent-kalendar", argPattern: "^(udalosti|navrh|zapis|smaz)( [\\s\\S]*)?$" },
         // Soubory ve Windows: jen ve složkách ze ~/.config/agent/soubory.txt. Nic nemaže ani
         // nepřepíše, co má vyhodit, dá do Koše agenta, a každá akce jde vrátit. Přesun nebo
         // kopii do složky, která se nahrává do cloudu (--do-cloudu), a nastavení složek (nastav)
         // schvaluješ ty.
-        { pattern: "~/.local/bin/agent-soubory", argPattern: "^(?!.*--do-cloudu)(slozky|vypis|najdi|presun|kopiruj|prejmenuj|slozka|kos|vrat|historie|otevri)( .*)?$" },
+        { pattern: "~/.local/bin/agent-soubory", argPattern: "^(?![\\s\\S]*--do-cloudu)(slozky|vypis|najdi|presun|kopiruj|prejmenuj|slozka|kos|vrat|historie|otevri)( [\\s\\S]*)?$" },
         // Hledání na internetu: obecný dotaz bez osobních údajů do vyhledávače v notebooku,
         // stránky čte lokální model bez nástrojů. Noční frontu (noc) spouští jen časovač.
-        { pattern: "~/.local/bin/agent-pruzkum", argPattern: "^(hledej|log)( .*)?$" },
+        { pattern: "~/.local/bin/agent-pruzkum", argPattern: "^(hledej|log)( [\\s\\S]*)?$" },
         // Převod PDF na text a dokumentů do Wordu, jen ve složce Mozek. pdftotext a pandoc
         // napřímo povolené nejsou: pandoc umí spustit filtr (libovolný kód) a oba umí zapsat
         // soubor kamkoli. agent-prevod je spouští s pevnými volbami a dokument předem vyčistí.
-        { pattern: "~/.local/bin/agent-prevod", argPattern: "^(pdf|dokument)( .*)?$" },
+        { pattern: "~/.local/bin/agent-prevod", argPattern: "^(pdf|dokument)( [\\s\\S]*)?$" },
       ],
     },
   },

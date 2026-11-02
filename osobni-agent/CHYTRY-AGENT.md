@@ -54,8 +54,8 @@ Seřazené podle toho, kolik to přinese. U každé věci je odhad práce.
 4. **Pět projektů, na které jsi hrdý,** a proč jsou takové (`ja/navrhovani.md`).
 5. **Tvoje staré texty** do `podklady/vzory/`. Agent se z nich naučí styl (dovednost
    `uceni-ze-vzoru`).
-6. **Pošta (krok 8).** Agent se z odeslaných mailů naučí, jak píšeš, a bude psát koncepty
-   tvým tónem.
+6. **Pošta (krok 8).** Agent se z odeslaných mailů naučí, jak píšeš, a píše maily i zprávy
+   tvým tónem. Odejdou až po tvém potvrzení (krok 25).
 
 ### 2. Znalosti o světě
 

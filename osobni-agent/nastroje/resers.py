@@ -8,7 +8,8 @@ Postup má dva kroky, aby každý odchozí dotaz prošel tvým schválením:
 
 Klíč k API se čte z ~/.config/agent/anthropic.env (ANTHROPIC_API_KEY=...), práva 600.
 Citlivá slova (jména, ulice, firma…) patří do ~/.config/agent/citliva-slova.txt, jedno na řádek.
-Model a úsilí jsou pevně v konstantách MODEL a EFFORT (proměnné prostředí se nečtou).
+Jiný model nastavíš řádkem ANTHROPIC_MODEL=claude-sonnet-5-5 v anthropic.env (proměnné
+prostředí se nečtou, agent by je mohl podstrčit).
 """
 
 from __future__ import annotations
@@ -216,16 +217,31 @@ def _usage_totals(responses: list) -> dict:
     return totals
 
 
+def configured_model(path: Path | None = None) -> str:
+    """Model z řádku ANTHROPIC_MODEL= v anthropic.env, jinak výchozí MODEL."""
+    path = path or CONFIG_DIR / "anthropic.env"
+    try:
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.strip().startswith("ANTHROPIC_MODEL="):
+                value = line.split("=", 1)[1].strip().strip('"').strip("'")
+                if re.fullmatch(r"claude-[a-z0-9.-]+", value):
+                    return value
+    except OSError:
+        pass
+    return MODEL
+
+
 def ask_claude(query: str, api_key: str) -> tuple[list, object]:
     import anthropic
 
+    model = configured_model()
     client = anthropic.Anthropic(api_key=api_key, base_url=API_URL)
     messages: list[dict] = [{"role": "user", "content": query}]
     responses: list = []
     try:
         for _ in range(5):
             response = client.beta.messages.create(
-                model=MODEL,
+                model=model,
                 max_tokens=16000,
                 system=SYSTEM_PROMPT,
                 betas=["server-side-fallback-2026-07-01"],
@@ -242,7 +258,7 @@ def ask_claude(query: str, api_key: str) -> tuple[list, object]:
     except anthropic.AuthenticationError as exc:
         raise ResearchError("Klíč k API neplatí. Zkontroluj ~/.config/agent/anthropic.env.") from exc
     except anthropic.NotFoundError as exc:
-        raise ResearchError(f"Model {MODEL} neexistuje nebo k němu nemáš přístup.") from exc
+        raise ResearchError(f"Model {model} neexistuje nebo k němu nemáš přístup.") from exc
     except anthropic.RateLimitError as exc:
         raise ResearchError("Překročený limit API, zkus to za chvíli znovu.") from exc
     except anthropic.APIStatusError as exc:

@@ -15,7 +15,8 @@ nic nenajde a já souhlasím.
    - Dobře: „cena projektové dokumentace rodinného domu 2026 Středočeský kraj"
 2. **Hned:** `agent-pruzkum hledej "DOTAZ"`. Trvá minutu až tři, napiš mi „Hledám…" a výsledek
    pošli, až doběhne. `--hloubka 1` je rychlé (3 zdroje), `--hloubka 3` důkladné (8 zdrojů).
-   Zahraniční témata hledej `--jazyk en`.
+   Zahraniční témata hledej `--jazyk en`. Jen na jednom webu (když řeknu „na Srealitách",
+   „na ArchDaily") přidej `--web sreality.cz`.
 3. **Přes noc:** když řeknu „zjisti přes noc", nebo když to plyne z večerního deníku, připiš do
    `pruzkum/fronta.md` řádek `- [ ] DOTAZ`. V 1:30 ho zpracuje časovač a ráno je výsledek
    v `pruzkum/RRRR-MM-DD.md`. Řekni mi, co jsi zařadil.

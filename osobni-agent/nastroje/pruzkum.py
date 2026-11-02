@@ -2,8 +2,8 @@
 """Průzkum webu v notebooku: hledání přes vlastní vyhledávač SearXNG, čtení stránek lokálním
 modelem bez nástrojů a odpověď se zdroji.
 
-    agent-pruzkum hledej "dotaz" [--hloubka 1|2|3] [--jazyk cs|en|vse]
-        najde zdroje, přečte je a odpoví se zdroji (minuta až tři)
+    agent-pruzkum hledej "dotaz" [--hloubka 1|2|3] [--jazyk cs|en|vse] [--web sreality.cz]
+        najde zdroje, přečte je a odpoví se zdroji (minuta až tři), případně jen na jednom webu
     agent-pruzkum noc          zpracuje frontu pruzkum/fronta.md (časovač každou noc v 1:30)
     agent-pruzkum log [--pocet N]   co odešlo do vyhledávače
     agent-pruzkum zkontroluj   ověří vyhledávač a model
@@ -114,6 +114,14 @@ def check_query(query: str) -> str:
         raise PruzkumError(f"Dotaz obsahuje osobní údaj ({kinds}), takže neodešel. Přeformuluj ho obecně, "
                            f"bez jmen, adres, kontaktů a údajů o klientech.{hint}")
     return query
+
+
+def check_site(text: str) -> str:
+    """Doména webu pro hledání jen na něm (site:), třeba sreality.cz."""
+    host = re.sub(r"^https?://", "", text.strip().lower()).split("/")[0].removeprefix("www.")
+    if not re.fullmatch(r"[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}", host):
+        raise PruzkumError(f"„{text}“ nevypadá jako web. Napiš doménu, třeba sreality.cz.")
+    return host
 
 
 # ---------- záznam a limit ----------
@@ -359,14 +367,15 @@ def parse_answer(text: str, count: int) -> tuple[str, list[str], str]:
 
 
 def research(query: str, depth: int = 2, lang: str = "cs", web: SafeWeb | None = None,
-             today: date | None = None, origin: str = "chat") -> Result:
+             today: date | None = None, origin: str = "chat", site: str | None = None) -> Result:
     today = today or date.today()
     query = check_query(query)
+    sent = f"{query} site:{check_site(site)}" if site else query
     check_limit(today)
     web = web or SafeWeb()
     # Zapsat dřív, než dotaz odejde: v záznamu je i dotaz, u kterého pak něco selže.
-    write_log({"cas": datetime.now().isoformat(timespec="seconds"), "dotaz": query, "zdroj": origin})
-    results = search(query, lang)
+    write_log({"cas": datetime.now().isoformat(timespec="seconds"), "dotaz": sent, "zdroj": origin})
+    results = search(sent, lang)
     candidates = pick(results, PAGES.get(depth, 5))
     result = Result(query)
     if not candidates:
@@ -566,6 +575,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("dotaz")
     p.add_argument("--hloubka", type=int, choices=(1, 2, 3), default=2)
     p.add_argument("--jazyk", choices=tuple(LANGS), default="cs")
+    p.add_argument("--web", help="hledat jen na jednom webu, třeba sreality.cz")
     sub.add_parser("noc", help="zpracuje frontu pruzkum/fronta.md")
     p = sub.add_parser("log", help="co odešlo do vyhledávače")
     p.add_argument("--pocet", type=int, default=20)
@@ -575,7 +585,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.cmd == "hledej":
             today = date.today()
-            result = research(args.dotaz, args.hloubka, args.jazyk, today=today)
+            result = research(args.dotaz, args.hloubka, args.jazyk, today=today, site=args.web)
             print(render(result, today))
             if result.path:
                 print(f"Uloženo: {result.path.relative_to(MOZEK)}")

@@ -220,5 +220,182 @@ class MailTests(unittest.TestCase):
         self.assertEqual(self.mail.imap_date(0, now=1793174400), "28-Oct-2026")
 
 
+
+class FakeIMAP2(FakeIMAP):
+    """Falešný IMAP i se složkou odeslaných a hledáním podle adres a textu."""
+
+    def __init__(self, messages, sent_to=(), inbox_from=(), **kw):
+        super().__init__(messages, list_lines=[b'(\\HasNoChildren) "/" "INBOX"',
+                                               b'(\\HasNoChildren \\Drafts) "/" "Koncepty"',
+                                               b'(\\HasNoChildren \\Sent) "/" "Sent"'], **kw)
+        self.sent_to, self.inbox_from = set(sent_to), set(inbox_from)
+        self.literal = None
+        self.literals = []
+
+    def uid(self, command, *args):
+        args = [a for a in args if a is not None]
+        if command == "SEARCH" and args and args[0] in ("TO", "CC", "FROM"):
+            addr = args[1].strip('"')
+            folder = (self.selected or "").strip('"')
+            hit = (folder == "Sent" and args[0] in ("TO", "CC") and addr in self.sent_to) or \
+                  (folder == "INBOX" and args[0] == "FROM" and addr in self.inbox_from)
+            return "OK", [b"3" if hit else b""]
+        if command == "SEARCH" and args and args[0] == "CHARSET":
+            text = self.literal.decode("utf-8")
+            self.literals.append(text)
+            self.literal = None
+            found = [u for u, raw in self.messages.items()
+                     if text.lower() in EmailMessageText.of(raw).lower()]
+            return "OK", [" ".join(map(str, sorted(found))).encode()]
+        return super().uid(command, *args)
+
+
+class EmailMessageText:
+    @staticmethod
+    def of(raw):
+        import email as _email
+        from email import policy as _policy
+        msg = _email.message_from_bytes(raw, policy=_policy.default)
+        body = msg.get_body(preferencelist=("plain", "html"))
+        return f"{msg['Subject']} {body.get_content() if body else ''}"
+
+
+class FakeSMTP:
+    sent = []
+
+    def __init__(self, host, port):
+        self.host, self.port = host, port
+
+    def login(self, user, password):
+        self.user = user
+
+    def send_message(self, msg, to_addrs):
+        FakeSMTP.sent.append((self.host, self.port, msg, list(to_addrs)))
+        return {}
+
+    def quit(self):
+        pass
+
+
+class SendTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        self.mail = load_module()
+        self.mail.STATE_DIR = root / "state"
+        self.mail.STATE_PATH = root / "state" / "mail-stav.json"
+        self.mail.SEND_LOG = root / "state" / "mail-odeslano.jsonl"
+        self.mail.MOZEK = root / "Mozek"
+        for d in ("projekty/dum", "memory", "lide"):
+            (root / "Mozek" / d).mkdir(parents=True)
+        (root / "Mozek" / "projekty" / "dum" / "nabidka.pdf").write_bytes(b"%PDF-1.4 nabidka")
+        (root / "Mozek" / "memory" / "2026-11-02.md").write_text("deník", encoding="utf-8")
+        (root / "Mozek" / "lide" / "petra.md").write_text("# Petra\n- E-mail: Petra <petra@example.cz>\n", encoding="utf-8")
+        (root / "jinde.txt").write_text("cizí", encoding="utf-8")
+        body = make_raw(subject="Nabídka", body="Posílám nabídku na dům.")
+        self.imap = FakeIMAP2({5: make_raw(), 6: body}, sent_to={"petr@example.cz"}, inbox_from={"jan@example.cz"})
+        self.mail.connect = lambda cfg: self.imap
+        self.cfg = {"IMAP_HOST": "imap.seznam.cz", "IMAP_USER": "ja@seznam.cz", "IMAP_PASSWORD": "x"}
+        FakeSMTP.sent = []
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def send(self, **kw):
+        args = {"to": ["jan@example.cz"], "cc": [], "subject": "Re: Faktura", "text": "Dobrý den,\ndíky.",
+                "reply_uid": None, "files": [], "new_ok": False, **kw}
+        return self.mail.cmd_odeslat(self.cfg, args["to"], args["cc"], args["subject"], args["text"],
+                                     args["reply_uid"], args["files"], args["new_ok"], smtp_factory=FakeSMTP)
+
+    def log(self):
+        return self.mail.load_send_log()
+
+    def test_reply_to_known_sender(self):
+        res = self.send(reply_uid=5)
+        host, port, msg, to = FakeSMTP.sent[0]
+        self.assertEqual((host, port, to), ("smtp.seznam.cz", 465, ["jan@example.cz"]))
+        self.assertEqual(msg["In-Reply-To"], "<abc@example.cz>")
+        self.assertIsNone(msg["Bcc"])
+        self.assertTrue(res["odeslano"])
+        self.assertEqual(self.log()[0]["predmet"], "Re: Faktura")
+        self.assertEqual(self.imap.appended[0][0], '"Sent"')  # kopie v odeslaných (Seznam ji sám neuloží)
+
+    def test_unknown_recipient_needs_novy(self):
+        with self.assertRaises(self.mail.MailError) as ctx:
+            self.send(to=["cizi@example.com"])
+        self.assertIn("--novy", str(ctx.exception))
+        self.assertEqual(FakeSMTP.sent, [])
+        self.assertEqual(self.log(), [])
+        res = self.send(to=["cizi@example.com"], new_ok=True)
+        self.assertEqual(res["novi_prijemci"], ["cizi@example.com"])
+        self.assertEqual(len(FakeSMTP.sent), 1)
+
+    def test_known_from_sent_and_people(self):
+        self.send(to=["Petr <petr@example.cz>"])
+        self.send(to=["petra@example.cz"], cc=["jan@example.cz"])
+        self.assertEqual(FakeSMTP.sent[1][3], ["petra@example.cz", "jan@example.cz"])
+        self.assertEqual(FakeSMTP.sent[1][2]["Cc"], "jan@example.cz")
+
+    def test_attachments_only_from_work_folders(self):
+        res = self.send(files=["projekty/dum/nabidka.pdf"])
+        msg = FakeSMTP.sent[0][2]
+        self.assertEqual([p.get_filename() for p in msg.iter_attachments()], ["nabidka.pdf"])
+        self.assertEqual(res["prilohy"], ["nabidka.pdf"])
+        (self.mail.MOZEK / "projekty" / "dum" / "odkaz.md").symlink_to(self.mail.MOZEK / "memory" / "2026-11-02.md")
+        for bad in ("memory/2026-11-02.md", "../jinde.txt", str(Path(self.tmp.name) / "jinde.txt"),
+                    "projekty/dum/odkaz.md", "projekty/dum/neni.pdf", "lide/petra.md"):
+            with self.assertRaises(self.mail.MailError, msg=bad):
+                self.send(files=[bad])
+        self.assertEqual(len(FakeSMTP.sent), 1)
+
+    def test_limits(self):
+        with self.assertRaises(self.mail.MailError):
+            self.send(to=[f"a{i}@example.cz" for i in range(6)], new_ok=True)
+        for bad in (["neni-adresa"], ["a@b"], []):
+            with self.assertRaises(self.mail.MailError):
+                self.send(to=bad, new_ok=True)
+        self.mail.STATE_DIR.mkdir(parents=True)
+        today = __import__("time").strftime("%Y-%m-%d")
+        self.mail.SEND_LOG.write_text("".join(json.dumps({"cas": f"{today}T08:{n:02d}:00"}) + "\n" for n in range(30)),
+                                      encoding="utf-8")
+        with self.assertRaises(self.mail.MailError) as ctx:
+            self.send()
+        self.assertIn("30", str(ctx.exception))
+        self.assertEqual(FakeSMTP.sent, [])
+
+    def test_gmail_saves_sent_copy_itself(self):
+        self.cfg["IMAP_HOST"] = "imap.gmail.com"
+        res = self.send()
+        self.assertEqual(FakeSMTP.sent[0][0], "smtp.gmail.com")
+        self.assertEqual(self.imap.appended, [])
+        self.assertEqual(res["kopie_v_odeslanych"], "gmail si ji uloží sám")
+
+    def test_smtp_settings(self):
+        self.assertEqual(self.mail.smtp_settings(self.cfg)[:2], ("smtp.seznam.cz", 465))
+        self.assertEqual(self.mail.smtp_settings({**self.cfg, "SMTP_HOST": "mail.firma.cz", "SMTP_PORT": "587"})[:2],
+                         ("mail.firma.cz", 587))
+        with self.assertRaises(self.mail.MailError):
+            self.mail.smtp_settings({**self.cfg, "IMAP_HOST": "posta.firma.cz"})
+
+    def test_draft_with_text_copy_and_attachment(self):
+        res = self.mail.cmd_koncept(self.cfg, ["jan@example.cz"], "Nabídka", "Posílám nabídku.", None,
+                                    cc=["petr@example.cz"], files=["projekty/dum/nabidka.pdf"])
+        mailbox, flags, raw = self.imap.appended[0]
+        self.assertEqual(mailbox, '"Koncepty"')
+        self.assertIn("Draft", flags)
+        self.assertIn(b"Cc: petr@example.cz", raw)
+        self.assertIn(b'filename="nabidka.pdf"', raw)
+        self.assertEqual(res["prilohy"], ["nabidka.pdf"])
+        self.assertEqual(FakeSMTP.sent, [])  # koncept nic neodesílá
+
+    def test_search_with_diacritics(self):
+        res = self.mail.cmd_hledej(self.cfg, 'nabídku "dům"', 30, 10, 2000)
+        self.assertEqual(self.imap.literals, ["nabídku dům"])
+        self.assertEqual(res["nalezeno"], 0)
+        res = self.mail.cmd_hledej(self.cfg, "nabídku", 30, 10, 2000)
+        self.assertEqual([m["uid"] for m in res["zpravy"]], [6])
+        self.assertTrue(self.imap.readonly)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -134,5 +134,18 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(answer["chyby_nastroju"], ["max_uses_exceeded"])
 
 
+
+class ModelChoiceTests(unittest.TestCase):
+    def test_model_only_from_config_file(self):
+        r = load_module()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "anthropic.env"
+            path.write_text("ANTHROPIC_API_KEY=x\nANTHROPIC_MODEL=claude-sonnet-5-5\n", encoding="utf-8")
+            self.assertEqual(r.configured_model(path), "claude-sonnet-5-5")
+            path.write_text("ANTHROPIC_MODEL=gpt; rm -rf ~\n", encoding="utf-8")
+            self.assertEqual(r.configured_model(path), r.MODEL)
+            self.assertEqual(r.configured_model(Path(tmp) / "neni.env"), r.MODEL)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -33,7 +33,7 @@ fi
 
 echo "→ Kopíruji skripty do $CIL"
 mkdir -p "$CIL" "$BIN"
-NASTROJE=(mail resers prepis jednani zdravi fitbit kalendar novinky soubory prevod pruzkum)
+NASTROJE=(mail resers prepis jednani zdravi fitbit kalendar novinky soubory prevod pruzkum zpravy)
 for nazev in "${NASTROJE[@]}"; do
   install -m 755 "$ZDROJ/$nazev.py" "$CIL/"
 done
@@ -87,6 +87,10 @@ IMAP_PASSWORD=
 # Volitelné: názvy složek konceptů a odeslaných, když je skript nenajde sám
 DRAFTS_FOLDER=
 SENT_FOLDER=
+# Volitelné pro odesílání: jinak smtp.<poskytovatel> (smtp.gmail.com, smtp.seznam.cz),
+# port 465 a stejné heslo pro aplikace jako u IMAP
+SMTP_HOST=
+SMTP_PORT=
 EOF
 fi
 if [[ ! -f "$KONFIG/anthropic.env" ]]; then

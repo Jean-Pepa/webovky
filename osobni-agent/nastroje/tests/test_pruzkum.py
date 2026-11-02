@@ -206,6 +206,14 @@ class PruzkumTests(unittest.TestCase):
         log = (pruzkum.STATE_DIR / "odeslano.jsonl").read_text(encoding="utf-8")
         self.assertIn("cena projektové dokumentace", log)
 
+    def test_search_on_one_website(self):
+        pruzkum.research("byty 3+kk Praha 7", 1, web=self.web(), today=TODAY, site="https://www.Sreality.cz/hledani")
+        self.assertEqual(Fake.searches[0]["q"], ["byty 3+kk Praha 7 site:sreality.cz"])
+        for bad in ("sreality", "sreality.cz; rm -rf", "http://", "a b.cz"):
+            with self.assertRaises(pruzkum.PruzkumError, msg=bad):
+                pruzkum.research("byty Praha", 1, web=self.web(), today=TODAY, site=bad)
+        self.assertEqual(len(Fake.searches), 1)
+
     def test_never_local_network(self):
         for url in ("http://127.0.0.1:18789/", "http://localhost/", "http://10.0.0.5/", "http://192.168.1.1/",
                     "http://100.101.102.103/", "http://[::1]/", "http://169.254.169.254/latest", "file:///etc/passwd"):
