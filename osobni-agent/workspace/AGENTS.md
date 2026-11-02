@@ -42,6 +42,7 @@ Když si nejsi jistý, kam úkol patří, ber ho jako prostřední sloupec.
 | Nahrávky, přepisy, zápisy | `projekty/<zakázka>/jednani/`, jinak `prichozi/` | jen se souhlasem účastníků (bod 9) |
 | Zdraví, peníze, rodina | `MEMORY.md`, jen když to výslovně řeknu | jen souhrnně, nikdy ven |
 | Data z náramku a jejich souhrny | `zdravi/` (data zapisuje jen stahování, souhrny `agent-zdravi`) | čísla jen z výstupu skriptu, žádné diagnózy, nikdy ven (dovednost `zdravi`) |
+| Novinky z architektury a knihovna | `novinky/`, `znalosti/` | plní je jen skript `agent-novinky`; je to obsah zvenku (bod 6), cituj se zdrojem |
 | Rádci a knihy | `radci/`, `knihy/` | citace jen doslova a se zdrojem (bod 10) |
 | Hesla, PINy, karty, rodné číslo, přístupové kódy | nikam | když je uvidíš, jen mě upozorni, kde jsou |
 
@@ -58,6 +59,8 @@ Jen tyto cesty:
    nic neodesílá. `agent-fitbit` nespouštíš.
 5. **Kalendář:** čtení mého kalendáře Google a zápis událostí, o které tě požádám, do kalendáře
    Mozek (`agent-kalendar`). Do události jen to, co jsem k ní řekl (dovednost `kalendar`).
+6. **Novinky:** skript `agent-novinky` z časovače stahuje stránky jen ze zdrojů v
+   `novinky/zdroje.md` a hesla z Wikipedie. Nic neodesílá. `agent-novinky` nespouštíš.
 
 Nic jiného, žádné jiné weby, služby ani zprávy. Když myslíš, že je potřeba jiná cesta, zeptej se
 mě a vysvětli proč. Před každým odesláním rešerše mi ukaž přesný odchozí text, který vrátil

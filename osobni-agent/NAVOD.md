@@ -1268,6 +1268,60 @@ událost dvakrát nezapíše. Datum a čas počítá skript, ne model, takže �
 
 ---
 
+## Krok 20: Archi agent: novinky z architektury a knihovna (asi 20 minut)
+
+Každou noc ve 2:10 skript `agent-novinky` projde schválené zdroje v `Mozek/novinky/zdroje.md`
+(české a světové weby o architektuře, ČKA, ministerstvo, soutěže a ceny). Najde nové články
+a nechá je lokální model shrnout. Ráno pak máš přehled `novinky/RRRR-MM-DD.md` rozdělený
+na předpisy, nové stavby, soutěže a ceny a ostatní. Agent ti z něj v ranním přehledu řekne
+1–3 nejdůležitější body.
+
+Články se ukládají do knihovny `novinky/clanky/`. Hesla z Wikipedie podle seznamu
+`znalosti/temata.md` jdou do `znalosti/wikipedie/` a jednou za 30 dní se obnoví. Na otázky
+o architektuře agent hledá v knihovně a odpovídá se zdrojem a datem. Knihovna každou noc
+roste. Chytřejší model tím ale nebude, jen bude mít víc přesných podkladů.
+
+**Bezpečnost:** skript chodí jen na weby ze seznamu, dodržuje jejich `robots.txt` a nic
+neodesílá. Model dostane jen text článku, bez nástrojů a bez tvých dat. Podvržený pokyn
+v článku tedy nemůže nic udělat. Hlavní agent bere novinky jako obsah zvenku.
+
+1. **Nová verze balíčku, pravidla a zámky** (v Ubuntu):
+   ```bash
+   rm -rf /tmp/oa && mkdir -p /tmp/oa && curl -fsSL https://codeload.github.com/jean-pepa/webovky/tar.gz/refs/heads/claude/busy-gauss-t83y4w | tar -xz -C /tmp/oa && rm -rf ~/osobni-agent && cp -r /tmp/oa/*/osobni-agent ~/osobni-agent
+   bash ~/osobni-agent/wsl/instaluj-nastroje.sh
+   mkdir -p ~/Mozek/novinky ~/Mozek/znalosti
+   cp -n ~/osobni-agent/workspace/novinky/zdroje.md ~/Mozek/novinky/zdroje.md
+   cp -n ~/osobni-agent/workspace/znalosti/temata.md ~/Mozek/znalosti/temata.md
+   sudo chattr -i ~/Mozek/AGENTS.md
+   sudo chattr -R -i ~/Mozek/skills
+   cp ~/osobni-agent/workspace/AGENTS.md ~/Mozek/AGENTS.md
+   cp -r ~/osobni-agent/workspace/skills/. ~/Mozek/skills/
+   sudo chattr +i ~/Mozek/AGENTS.md
+   sudo chattr -R +i ~/Mozek/skills
+   openclaw config patch --file ~/osobni-agent/zamky/openclaw-zamceni.json5
+   openclaw gateway restart
+   ```
+2. **Zkontroluj zdroje:**
+   ```bash
+   agent-novinky zkontroluj
+   ```
+   U každého zdroje vypíše OK a počet článků, nebo POZOR a proč. Nefunkční řádek
+   v `~/Mozek/novinky/zdroje.md` oprav nebo smaž. Vlastní zdroj přidáš řádkem
+   `- kategorie | název | adresa`.
+3. **První stažení** (5–10 minut, běží lokální model):
+   ```bash
+   agent-novinky stahni
+   ```
+   Vznikne `~/Mozek/novinky/RRRR-MM-DD.md`. Při prvním běhu vezme z každého zdroje jen
+   3 nejnovější články. Další noci přidá jen to, co přibylo.
+4. **Časovač:** `agent-novinky casovac`. Od teď se novinky stahují každou noc ve 2:10, před
+   nočním úklidem paměti. Když notebook spí, proběhnou po zapnutí.
+5. **Zkouška v aplikaci:** „Co je nového v architektuře?" nebo „Co víš o funkcionalismu?"
+6. **Kontrola:** `bash ~/osobni-agent/zamky/zkontroluj-zamceni.sh` musí ukázat „novinky
+   z architektury se stahují každou noc".
+
+---
+
 ## Kontrolní seznam: hotovo, když…
 
 - [ ] `nvidia-smi` ukazuje RTX 4080, 12 GB a CUDA 12.8 nebo vyšší
@@ -1290,13 +1344,14 @@ událost dvakrát nezapíše. Datum a čas počítá skript, ne model, takže �
 - [ ] první rešerše pozemku je v kartě projektu i se zdroji
 - [ ] `openclaw skills list` ukazuje `zdravi` jako `ready` a `agent-zdravi kontrola` odpoví
 - [ ] po větě „naplánuj mi to do kalendáře" máš událost v iPhonu v kalendáři Mozek
+- [ ] `agent-novinky zkontroluj` hlásí u zdrojů OK a ráno je v `novinky/` nový přehled
 
 ---
 
 ## Co je ověřené a co si ověř sám
 
 - **Otestováno:**
-  - Skripty prošly 92 automatickými testy:
+  - Skripty prošly 101 automatickými testy:
     - `mail.py` a `resers.py`: falešný poštovní server, odeslané maily bez citací, složky
       s diakritikou, filtr osobních údajů, schvalování.
     - `jednani.py` a `prepis.py`: párování slov s mluvčími, jména, výstup, přechod z grafiky
@@ -1315,6 +1370,10 @@ událost dvakrát nezapíše. Datum a čas počítá skript, ne model, takže �
       dvojího zápisu, mazání jen v Mozku a srozumitelné chyby. Proti falešnému serveru podle oficiálního popisu
       Google Calendar API v3 (discovery dokument z 30. 10. 2026). Testy jsem ověřil i tak, že
       jsem skript schválně pokazil a testy musely selhat.
+    - `novinky.py`: RSS, nalezení kanálu na stránce i odkazy ze stránky bez kanálu, jen nové
+      články, `robots.txt`, nedostupné zdroje, starší kódování češtiny, shrnutí bez nástrojů,
+      běh bez modelu a hesla z Wikipedie jednou za 30 dní. Proti falešnému webu a falešné
+      Ollamě; i tady testy musely selhat na schválně pokaženém skriptu.
   - Volání Clauda prošlo zkušebně proti testovacímu serveru s oficiální knihovnou Anthropic.
   - Instalační skript proběhl na čistém Linuxu jako běžný uživatel.
   - Nastavení jedním příkazem (`onboard`), zamčená konfigurace, seznam povolených příkazů
@@ -1345,6 +1404,8 @@ událost dvakrát nezapíše. Datum a čas počítá skript, ne model, takže �
   - Tailscale ve WSL, aplikace v iPhonu a automatický start WSL. Vyzkoušíš je v krocích 6b
     a 12.
   - Skutečný kalendář Google a jeho zobrazení v iPhonu. Vyzkoušíš je v kroku 19.
+  - Skutečné weby o architektuře. Tam, kde balíček vznikl, byl internet zavřený, proto adresy
+    zdrojů ověří až `agent-novinky zkontroluj` v kroku 20.
 - **Ověř v aktuální dokumentaci:** přesné názvy modelů v knihovně Ollamy, příkazy
   `openclaw mcp` a podmínky modelu pyannote na Hugging Face. Po aktualizaci OpenClaw vždycky
   spusť `zkontroluj-zamceni.sh`, klíče konfigurace se mezi verzemi mění.

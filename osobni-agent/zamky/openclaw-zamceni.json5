@@ -33,7 +33,7 @@
         "hlidani-mailu", "kalendar", "nakup-rohlik", "nocni-uklid-pameti", "poznej-me",
         "ranni-prehled", "resers-pozemku", "resers-web", "texty-dokumentace", "texty-studie",
         "tydenni-plan", "uceni-ze-vzoru", "vecerni-denik", "zapis-diktatu", "zapis-jednani",
-        "zdravi",
+        "zdravi", "architektura",
       ],
       // Přepnout se dá jen na modely v notebooku. Bez tohoto pravidla by šlo přepnout
       // rozhovor i na model v cloudu a celý jeho obsah by odešel ven.
@@ -46,13 +46,14 @@
 
   // Hledání v paměti jen přes lokální Ollamu. Bez tohoto nastavení by OpenClaw
   // použil OpenAI a při chybě by mohl přejít na jinou cloudovou službu.
-  // Kromě deníku a MEMORY.md prohledává i tvoji digitální kopii (ja/) a lidi (lide/).
+  // Kromě deníku a MEMORY.md prohledává i tvoji digitální kopii (ja/), lidi (lide/)
+  // a knihovnu architektury (novinky/clanky/, znalosti/).
   memory: {
     search: {
       provider: "ollama",
       model: "embeddinggemma",
       fallback: "none",
-      extraPaths: ["ja", "lide"],
+      extraPaths: ["ja", "lide", "novinky/clanky", "znalosti"],
     },
   },
 

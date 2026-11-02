@@ -17,6 +17,10 @@ Zatím prázdný. Každou noc ve 3:00 ho celý přepíše noční úklid (dovedn
 
 Tabulka všech dní a souhrn: `zdravi/prehled.md` (obnovuje ho noční úklid).
 
+## Architektura
+
+Novinky za každý den: `novinky/RRRR-MM-DD.md`, knihovna: `novinky/clanky/` a `znalosti/`.
+
 ## Kde co je
 
 - deník: `memory/RRRR-MM-DD.md`

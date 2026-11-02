@@ -370,6 +370,26 @@ if [[ -f "$HOME/.config/agent/google-health-token.json" ]]; then
   fi
 fi
 
+# Novinky z architektury (jen když jsou nastavené): časovač a čerstvý přehled.
+if [[ -f "${workspace:-$HOME/Mozek}/novinky/zdroje.md" ]]; then
+  if [[ "$(systemctl --user is-enabled agent-novinky.timer 2>/dev/null)" == "enabled" ]]; then
+    ok "novinky z architektury se stahují každou noc"
+  else
+    pozor "novinky z architektury se nestahují, zapni časovač: agent-novinky casovac"
+  fi
+  posledni=$(ls -1 "${workspace:-$HOME/Mozek}/novinky/"20*.md 2>/dev/null | tail -1)
+  if [[ -n "$posledni" ]]; then
+    den=$(basename "$posledni" .md)
+    if stari=$(( ($(date +%s) - $(date -d "$den" +%s)) / 86400 )) 2>/dev/null && (( stari > 2 )); then
+      pozor "poslední přehled novinek je z $den, stahování asi neběží (journalctl --user -u agent-novinky)"
+    else
+      ok "přehled novinek z architektury je čerstvý ($den)"
+    fi
+  else
+    nevim "přehled novinek zatím nevznikl (agent-novinky stahni)"
+  fi
+fi
+
 # Kalendář (jen když je napojený): přihlášení čitelné jen pro tebe a žádná práva navíc.
 kalendar="$HOME/.config/agent/google-calendar-token.json"
 if [[ -f "$kalendar" ]]; then

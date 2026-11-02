@@ -50,7 +50,11 @@ název – stav a další krok → projekty/<název>/projekt.md
 řádek se souhrnem za 7 dní z výstupu agent-zdravi data --ulozit, opsaný přesně
 → zdravi/prehled.md (všechny dny)
 
+## Architektura
+nejdůležitější bod z novinek za poslední den → novinky/RRRR-MM-DD.md, knihovna v novinky/clanky/
+a znalosti/
+
 ## Kde co je
 deník, úkoly, nákupy, MEMORY.md, ja/ (jednou větou, co je v kterém souboru), lide/,
-projekty/, podklady/, prichozi/
+projekty/, podklady/, prichozi/, novinky/, znalosti/
 ```
